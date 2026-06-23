@@ -56,3 +56,20 @@ so that every later story inherits a working, enforced boundary.
 
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §4/§9; refined to ready for Sprint 0.
+- 2026-06-23: implemented (commits 3c030c9, a69d3eb, efc4c69, 4c4a3ac, 2c5f9c8, eff37c9).
+  import-linter needed `include_external_packages = true` (forbidden set names sqlalchemy/httpx).
+  Dossier §4's vendor subpackage names (`...inbound.dynatrace`) don't exist yet → contracts use
+  the real packages `src.adapters.{inbound,outbound,persistence}`. Spec review PASS (all AC MET,
+  AC2 negative demonstration independently reproduced); quality review APPROVE (FK SQL direction
+  confirmed correct). DoD gate: pytest 0, lint-imports 0 (3 kept), FK-check 0. Marked Done.
+- 2026-06-23: QUALITY-MINORS (non-blocking notes):
+  (1) `scripts/check_fk_direction.py` — composite/multi-column FKs make `constraint_column_usage`
+      emit one row per referenced column → duplicate (source,target) pairs inflate the "N checked"
+      count (direction logic unaffected). `SELECT DISTINCT` would tidy it. Cosmetic; no composite
+      FKs exist yet — revisit if/when STORY-006 adds any.
+  (2) The function-local `import psycopg` (keeps the pure `find_violations` path driver-free for the
+      unit test) is deliberate — worth a one-line comment so a future reader doesn't "fix" it.
+  Candidate tiny chore; not blocking.
+- 2026-06-23: NOTE — `core-internal-layering` and `adapters-independence` contracts are currently
+  vacuously green (skeleton has no real imports). They begin to bite once real code lands in
+  zones 1–4. Expected and correctly configured.

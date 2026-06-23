@@ -26,13 +26,31 @@ stories:
     blast_radius_resolved: true   # no wiki articles yet — nothing to resolve
   - id: STORY-002
     points: 3
-    board: todo
+    board: done
     pipeline: full
+    spec_review: PASS       # all 5 AC MET, independently reproduced
+    quality_review: APPROVE # zero critical/major; 2 minors recorded as notes
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "6 passed in 0.02s"
+        commit: eff37c9
+        at: 2026-06-23T19:45:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: eff37c9
+        at: 2026-06-23T19:45:00+05:30
+      - command: "python scripts/check_fk_direction.py  # DATABASE_URL=empty Dockerized postgres:16"
+        exit_code: 0
+        output_tail: "FK-direction OK: 0 foreign key(s) checked, 0 violations."
+        commit: eff37c9
+        at: 2026-06-23T19:45:00+05:30
+      # alembic upgrade head not yet wired (STORY-003) — not part of this story's gate
+    blast_radius_resolved: true   # no wiki articles yet — nothing to resolve
   - id: STORY-003
     points: 2
     board: todo
