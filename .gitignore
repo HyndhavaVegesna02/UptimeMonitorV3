@@ -1,0 +1,33 @@
+# YourTeam — active session lock is local, never committed
+.scrum/session.lock
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+.env
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Node / frontend (activates from Zone 7)
+node_modules/
+frontend/dist/
+frontend/.vite/
+*.local
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
+.vscode/

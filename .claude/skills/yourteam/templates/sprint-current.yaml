@@ -1,0 +1,10 @@
+# YourTeam active sprint board. No active sprint when status: none.
+sprint: 0
+status: none      # none | active | review | closed | aborted
+goal: null
+branch: null
+start_tag: null
+started: null
+stories: []
+hotfixes: []
+interrupts: []

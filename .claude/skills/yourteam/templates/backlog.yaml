@@ -1,0 +1,4 @@
+# YourTeam backlog — machine state, source of truth for story status.
+# Stories are never deleted; status is a field, never a folder.
+next_story_id: 1
+stories: []

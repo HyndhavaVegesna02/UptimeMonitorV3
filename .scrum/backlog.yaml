@@ -1,0 +1,152 @@
+# YourTeam backlog — machine state, source of truth for story status.
+# Stories are never deleted; status is a field, never a folder.
+# Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
+# seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
+# its split) before it may enter a sprint — so they stay `draft` until then.
+next_story_id: 18
+stories:
+  # ── Sprint 0 — Setup ─────────────────────────────────────────────
+  - id: STORY-001
+    title: Repo scaffold + four-zone structure
+    file: docs/scrum/stories/STORY-001-repo-scaffold-four-zones.md
+    status: ready
+    points: 3
+    priority: 1
+    type: chore
+    sprint: 0
+  - id: STORY-002
+    title: CI contracts = the DoD floor
+    file: docs/scrum/stories/STORY-002-ci-contracts-dod-floor.md
+    status: ready
+    points: 3
+    priority: 2
+    type: chore
+    sprint: 0
+  - id: STORY-003
+    title: Alembic + Neon two-connection setup
+    file: docs/scrum/stories/STORY-003-alembic-neon-two-connection.md
+    status: ready
+    points: 2
+    priority: 3
+    type: chore
+    sprint: 0
+  # ── Zone 1 — Canonical types + ports ─────────────────────────────
+  - id: STORY-004
+    title: Canonical SignalObservation type
+    file: docs/scrum/stories/STORY-004-canonical-signal-observation.md
+    status: draft
+    points: 3
+    priority: 4
+    type: feature
+    sprint: null
+  - id: STORY-005
+    title: The core ports
+    file: docs/scrum/stories/STORY-005-core-ports.md
+    status: draft
+    points: 3
+    priority: 5
+    type: feature
+    sprint: null
+  # ── Zone 2 — Schema + migrations + repositories ──────────────────
+  - id: STORY-006
+    title: Spine schema migration
+    file: docs/scrum/stories/STORY-006-spine-schema-migration.md
+    status: draft
+    points: 5
+    priority: 6
+    type: feature
+    sprint: null
+  - id: STORY-007
+    title: Repository adapters behind the ports
+    file: docs/scrum/stories/STORY-007-repository-adapters.md
+    status: draft
+    points: 3
+    priority: 7
+    type: feature
+    sprint: null
+  # ── Zone 3 — Ingest adapter ──────────────────────────────────────
+  - id: STORY-008
+    title: Dynatrace adapter + DQL normalization
+    file: docs/scrum/stories/STORY-008-dynatrace-adapter-dql.md
+    status: draft
+    points: 5
+    priority: 8
+    type: feature
+    sprint: null
+  - id: STORY-009
+    title: Pull loop with watermarks + validation gate
+    file: docs/scrum/stories/STORY-009-pull-loop-watermarks.md
+    status: draft
+    points: 5
+    priority: 9
+    type: feature
+    sprint: null
+  # ── Zone 4 — Core pipeline + availability ────────────────────────
+  - id: STORY-010
+    title: Four-stage core pipeline
+    file: docs/scrum/stories/STORY-010-core-pipeline-four-stage.md
+    status: draft
+    points: 5
+    priority: 10
+    type: feature
+    sprint: null
+  - id: STORY-011
+    title: Availability calculator
+    file: docs/scrum/stories/STORY-011-availability-calculator.md
+    status: draft
+    points: 5
+    priority: 11
+    type: feature
+    sprint: null
+  # ── Zone 5 — Proposal lifecycle + publish ────────────────────────
+  - id: STORY-012
+    title: Proposal lifecycle
+    file: docs/scrum/stories/STORY-012-proposal-lifecycle.md
+    status: draft
+    points: 5
+    priority: 12
+    type: feature
+    sprint: null
+  - id: STORY-013
+    title: Statuspage publish adapter + commit-first boundary
+    file: docs/scrum/stories/STORY-013-statuspage-publish-adapter.md
+    status: draft
+    points: 3
+    priority: 13
+    type: feature
+    sprint: null
+  # ── Zone 6 — API ─────────────────────────────────────────────────
+  - id: STORY-014
+    title: Five-file feature modules
+    file: docs/scrum/stories/STORY-014-five-file-api-modules.md
+    status: draft
+    points: 5
+    priority: 14
+    type: feature
+    sprint: null
+  # ── Zone 7 — Frontend ────────────────────────────────────────────
+  - id: STORY-015
+    title: Dashboard shell + six tabs (redesigned)
+    file: docs/scrum/stories/STORY-015-frontend-dashboard-six-tabs.md
+    status: draft   # likely an 8 — MUST be split before it can enter a sprint
+    points: 5
+    priority: 15
+    type: feature
+    sprint: null
+  # ── Integration + Deployment ─────────────────────────────────────
+  - id: STORY-016
+    title: First end-to-end thread
+    file: docs/scrum/stories/STORY-016-first-end-to-end-thread.md
+    status: draft
+    points: 5
+    priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-017
+    title: Deployment topology
+    file: docs/scrum/stories/STORY-017-deployment-topology.md
+    status: draft
+    points: 3
+    priority: 17
+    type: chore
+    sprint: null

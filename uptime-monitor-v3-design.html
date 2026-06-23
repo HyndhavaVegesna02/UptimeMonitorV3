@@ -1,0 +1,1219 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Uptime Monitor V3 — Consolidated Design</title>
+<style>
+  :root {
+    --ivory: #FAF9F5;
+    --paper: #FFFFFF;
+    --slate: #141413;
+    --clay: #D97757;
+    --clay-d: #B85C3E;
+    --oat: #E3DACC;
+    --olive: #788C5D;
+    --rust: #B04A3F;
+    --g100: #F0EEE6;
+    --g200: #E6E3DA;
+    --g300: #D1CFC5;
+    --g500: #87867F;
+    --g700: #3D3D3A;
+
+    --serif: ui-serif, Georgia, "Times New Roman", Times, serif;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Monaco, Consolas, monospace;
+
+    --radius-panel: 12px;
+    --radius-row: 8px;
+    --border: 1.5px solid var(--g300);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--ivory);
+    color: var(--slate);
+    font-family: var(--sans);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---------- Layout: sidebar + content ---------- */
+  .shell {
+    display: grid;
+    grid-template-columns: 256px minmax(0, 1fr);
+    max-width: 1180px;
+    margin: 0 auto;
+  }
+
+  nav.toc {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    height: 100vh;
+    overflow-y: auto;
+    padding: 40px 20px 60px 28px;
+    border-right: var(--border);
+    background: var(--ivory);
+  }
+  nav.toc .brand {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--g500);
+    margin-bottom: 4px;
+  }
+  nav.toc .brand b { color: var(--clay); font-weight: 600; }
+  nav.toc h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    margin: 0 0 20px;
+  }
+  nav.toc ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    counter-reset: nav;
+  }
+  nav.toc li { margin: 0; }
+  nav.toc a {
+    display: block;
+    text-decoration: none;
+    color: var(--g700);
+    font-size: 13.5px;
+    padding: 5px 0 5px 26px;
+    position: relative;
+    border-radius: var(--radius-row);
+    line-height: 1.35;
+  }
+  nav.toc a:hover { color: var(--clay-d); }
+  nav.toc a::before {
+    counter-increment: nav;
+    content: counter(nav, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 5px;
+    font-family: var(--mono);
+    font-size: 10.5px;
+    color: var(--g500);
+    letter-spacing: 0.04em;
+  }
+  nav.toc a.sub {
+    padding-left: 26px;
+    font-size: 12.5px;
+    color: var(--g500);
+  }
+  nav.toc a.sub::before { content: "·"; font-size: 14px; top: 4px; }
+
+  main {
+    padding: 48px 56px 160px;
+    min-width: 0;
+  }
+
+  /* ---------- Header / eyebrow ---------- */
+  .eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--g500);
+    margin-bottom: 16px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 28px;
+    height: 2px;
+    background: var(--clay);
+    display: inline-block;
+  }
+  h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.018em;
+    margin: 0 0 14px;
+  }
+  .lede {
+    font-size: 17px;
+    color: var(--g700);
+    line-height: 1.6;
+    max-width: 64ch;
+    margin: 0 0 10px;
+  }
+  .meta-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 22px;
+  }
+
+  /* ---------- Sections ---------- */
+  section { scroll-margin-top: 24px; padding-top: 30px; }
+  section + section { margin-top: 26px; }
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-top: var(--border);
+    padding-top: 22px;
+    margin-bottom: 18px;
+  }
+  .sec-num {
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--clay);
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+  h2.sec-title {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 27px;
+    letter-spacing: -0.014em;
+    margin: 0;
+  }
+  h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 19px;
+    letter-spacing: -0.01em;
+    margin: 28px 0 10px;
+  }
+  h4 {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 14px;
+    margin: 20px 0 6px;
+  }
+  p { margin: 0 0 13px; max-width: 72ch; }
+  strong { font-weight: 600; }
+
+  /* ---------- Tags / pills ---------- */
+  .tag {
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    padding: 3px 9px;
+    border-radius: var(--radius-row);
+    border: var(--border);
+    background: var(--g100);
+    color: var(--g700);
+    white-space: nowrap;
+    display: inline-block;
+  }
+  .tag.clay { background: #FBEDE7; border-color: #E9C3B2; color: var(--clay-d); }
+  .tag.olive { background: #EDF1E5; border-color: #C5D2AE; color: #51663A; }
+  .tag.rust { background: #F6E7E4; border-color: #E0B5AF; color: var(--rust); }
+
+  /* ---------- Inline code ---------- */
+  code {
+    font-family: var(--mono);
+    font-size: 0.88em;
+    background: var(--g100);
+    padding: 2px 5px;
+    border-radius: 4px;
+    color: var(--g700);
+  }
+  pre {
+    font-family: var(--mono);
+    font-size: 12.5px;
+    line-height: 1.6;
+    background: var(--paper);
+    border: var(--border);
+    border-radius: var(--radius-panel);
+    padding: 18px 20px;
+    overflow-x: auto;
+    margin: 0 0 16px;
+    color: var(--g700);
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  .c-key { color: var(--clay-d); }
+  .c-com { color: var(--g500); font-style: italic; }
+
+  /* ---------- Cards / callouts ---------- */
+  .card {
+    background: var(--paper);
+    border: var(--border);
+    border-radius: var(--radius-panel);
+    padding: 22px 26px;
+    margin: 0 0 18px;
+  }
+
+  .decision {
+    background: var(--paper);
+    border: var(--border);
+    border-left: 4px solid var(--clay);
+    border-radius: var(--radius-panel);
+    padding: 18px 22px;
+    margin: 18px 0;
+  }
+  .decision .d-label {
+    font-family: var(--mono);
+    font-size: 10.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--clay-d);
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+  .decision p:last-child { margin-bottom: 0; }
+
+  .principle {
+    border-left: 4px solid var(--olive);
+  }
+  .principle .d-label { color: #51663A; }
+
+  .gap {
+    border-left: 4px solid var(--rust);
+  }
+  .gap .d-label { color: var(--rust); }
+
+  /* ---------- Lists ---------- */
+  ul.clean, ol.clean { margin: 0 0 14px; padding-left: 22px; }
+  ul.clean li, ol.clean li { margin: 0 0 7px; max-width: 70ch; }
+  ul.tight li { margin: 0 0 3px; }
+
+  .kv {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 6px 18px;
+    margin: 0 0 16px;
+    font-size: 14px;
+  }
+  .kv dt { font-family: var(--mono); font-size: 12px; color: var(--clay-d); letter-spacing: 0.03em; padding-top: 1px; }
+  .kv dd { margin: 0; color: var(--g700); }
+
+  /* ---------- Tables ---------- */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 18px;
+    font-size: 13.5px;
+  }
+  th {
+    text-align: left;
+    font-family: var(--mono);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--g500);
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: var(--border);
+  }
+  td {
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--g200);
+    vertical-align: top;
+    color: var(--g700);
+  }
+  tr:last-child td { border-bottom: none; }
+  td code { font-size: 12px; }
+
+  /* ---------- Figures ---------- */
+  figure { margin: 22px 0; }
+  figure svg { display: block; width: 100%; height: auto; background: var(--paper); border: var(--border); border-radius: var(--radius-panel); }
+  figcaption { font-family: var(--mono); font-size: 11px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--g500); margin-top: 10px; text-align: center; }
+
+  .svg-label { font-family: var(--mono); font-size: 11px; fill: var(--g500); letter-spacing: 0.04em; }
+  .svg-title { font-family: var(--sans); font-size: 13px; font-weight: 600; fill: var(--slate); }
+  .svg-sub { font-family: var(--sans); font-size: 11px; fill: var(--g500); }
+
+  /* two-column helper */
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 0 0 18px; }
+  @media (max-width: 1080px) {
+    .shell { grid-template-columns: 1fr; }
+    nav.toc { position: static; height: auto; border-right: none; border-bottom: var(--border); }
+    main { padding: 40px 28px 100px; }
+    .cols2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<nav class="toc">
+  <div class="brand">Hyndhava · <b>Uptime V3</b></div>
+  <h2>Design dossier</h2>
+  <ol>
+    <li><a href="#summary">Executive summary</a></li>
+    <li><a href="#principles">Architectural principles</a></li>
+    <li><a href="#stack">Stack &amp; deployment surface</a></li>
+    <li><a href="#zones">The four backend zones</a></li>
+    <li><a href="#signal">Canonical signal</a></li>
+    <li><a href="#ports">Ports &amp; interfaces</a></li>
+    <li><a href="#mapping">Mapping ownership</a></li>
+    <li><a href="#ingest">Ingest &amp; pull loop</a></li>
+    <li><a href="#schema">Neon data model</a></li>
+    <li><a href="#logic">Core logic pipeline</a></li>
+    <li><a href="#availability">Availability engine</a></li>
+    <li><a href="#proposals">Proposal lifecycle</a></li>
+    <li><a href="#convention">Five-file API convention</a></li>
+    <li><a href="#tier1">Hardening · Tier 1</a></li>
+    <li><a href="#tier2">Hardening · Tier 2</a></li>
+    <li><a href="#tier3">Deferred · Tier 3</a></li>
+    <li><a href="#deploy">Deployment topology</a></li>
+    <li><a href="#log">Decision log</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header>
+  <div class="eyebrow">Consolidated architecture · v3</div>
+  <h1>Uptime Monitor V3</h1>
+  <p class="lede">A provider-agnostic monitoring and status-page platform, redesigned from the ground up around a single organizing principle: <strong>separation by replaceability</strong>. Every decision locked across the design sessions, in one place.</p>
+  <div class="meta-row">
+    <span class="tag clay">Hexagonal core</span>
+    <span class="tag">FastAPI · Neon · React</span>
+    <span class="tag">Dynatrace → Statuspage</span>
+    <span class="tag olive">Council-reviewed</span>
+  </div>
+</header>
+
+<!-- 1. EXECUTIVE SUMMARY -->
+<section id="summary">
+  <div class="sec-head"><span class="sec-num">01</span><h2 class="sec-title">Executive summary</h2></div>
+
+  <p>V3 is not an incremental upgrade of the V2 MVP — it is a ground-up redesign that keeps V2's hard-won <em>business logic</em> (anti-flap, human-approved degradations, availability-vs-status separation) while replacing its <em>structure</em> with a clean hexagonal architecture. The V2 reference implementation talked to a mock publisher and a single synthetic probe; V3 consumes real multi-location synthetic results from Dynatrace and publishes to a live Statuspage.</p>
+
+  <p>The whole design answers one question consistently: <strong>which parts are replaceable, and which are constant?</strong> The monitored application is replaceable. The observability vendor is replaceable. The mapping configuration is replaceable. The <em>business core</em> — how signals become verdicts become customer-facing status — is constant, and is sealed behind a canonical boundary so that swapping any replaceable part touches it not at all.</p>
+
+  <div class="decision">
+    <div class="d-label">The litmus test that governs every decision</div>
+    <p>Delete the Dynatrace adapter, write a Datadog adapter implementing the same ports, change one wiring line in the composition root — and the core does not change by a single character. If a proposed design would force a change to the core when a replaceable part is swapped, the design is wrong.</p>
+  </div>
+
+  <h3>What this document covers</h3>
+  <p>The canonical signal type and the boundary it enforces; the ports and adapters; how monitor identifiers map through to status-page objects; the pull-based ingestion loop with its idempotency and validation guarantees; the Neon Postgres schema; the four-stage core logic pipeline; the availability engine and its two-grain math; the proposal lifecycle with supersession and auto-obsoletion; the physical codebase structure and its CI-enforced dependency rules; the five-file API convention; the hardening resolutions from an adversarial design review, sorted into what was fixed now and what is a documented contract for later; and the deployment topology.</p>
+</section>
+
+<!-- 2. PRINCIPLES -->
+<section id="principles">
+  <div class="sec-head"><span class="sec-num">02</span><h2 class="sec-title">Architectural principles</h2></div>
+
+  <p>Five principles recur throughout and resolve most ambiguities on their own.</p>
+
+  <div class="decision principle">
+    <div class="d-label">P1 · Replaceability is the organizing axis</div>
+    <p>Components are sorted into <em>replaceable</em> (the app, the vendor, the mappings) and <em>constant</em> (the business core). Every structural choice is evaluated against whether it places things on the correct side of that line and keeps the line crossable in exactly one direction.</p>
+  </div>
+
+  <div class="decision principle">
+    <div class="d-label">P2 · The boundary is enforced by tooling, not convention</div>
+    <p>The dependency direction (edges depend on the core, never the reverse) is checked by <code>import-linter</code> contracts in CI. An architectural rule that can be violated silently is not a rule. A wrong import fails the build.</p>
+  </div>
+
+  <div class="decision principle">
+    <div class="d-label">P3 · The core speaks only canonical vocabulary</div>
+    <p>The core never imports a vendor type. A port signature must make sense to someone who has never heard of Dynatrace. Vendor identifiers live only inside provenance fields, never in logic.</p>
+  </div>
+
+  <div class="decision principle">
+    <div class="d-label">P4 · Availability is honest; status is stable</div>
+    <p>The raw availability ratio is never smoothed — every failure drags it down truthfully. Anti-flap governs only the <em>displayed status</em>, never the percentage. These are two computations off the same observations, deliberately kept apart (V2's decision D-3).</p>
+  </div>
+
+  <div class="decision principle">
+    <div class="d-label">P5 · Correctness beats certainty for a status page</div>
+    <p>Where freshness and responsiveness conflict, the platform reacts now and <em>discloses</em> uncertainty rather than waiting for perfect data — because a delayed outage announcement is worse than a disclosed-but-imperfect one. Self-correction (supersession, obsoletion) makes fast reaction safe.</p>
+  </div>
+</section>
+
+<!-- 3. STACK -->
+<section id="stack">
+  <div class="sec-head"><span class="sec-num">03</span><h2 class="sec-title">Stack &amp; deployment surface</h2></div>
+
+  <p>The demo is a genuinely deployed system, not a local reference. The infrastructure is chosen so that the persistent pull loop has a home and the rest is serverless.</p>
+
+  <dl class="kv">
+    <dt>backend</dt><dd>FastAPI on <strong>Railway</strong> — hosts both the HTTP API and the persistent pull-loop scheduler (Vercel's serverless model can't run a long-lived loop).</dd>
+    <dt>frontend</dt><dd>React + TypeScript on <strong>Vercel</strong> — the dashboard and approval UI.</dd>
+    <dt>database</dt><dd><strong>Neon</strong> serverless Postgres, reached through the pooled PgBouncer connection string.</dd>
+    <dt>observability</dt><dd><strong>Dynatrace</strong> synthetic monitors; results read from Grail via DQL.</dd>
+    <dt>demo app</dt><dd><strong>Sock Shop</strong> on Railway — the replaceable monitored application.</dd>
+    <dt>publish target</dt><dd><strong>Statuspage</strong> — a fixed core target (not swappable in V3 scope).</dd>
+  </dl>
+
+  <div class="card">
+    <h4>Why pull-first, with push as a later option</h4>
+    <p>Availability requires a complete, evenly-spaced series and a reconciliation safety net — only a pull loop guarantees that. Dynatrace exposes no native per-execution synthetic webhook; its push surface (Workflows on Davis events/problems) is better suited to <em>enrichment</em> than to the authoritative availability series. So pull is mandatory and authoritative; push, when added, is an optional accelerator for latency and incident seeding and flows through the same canonical ingest port — but it can never compute availability on its own.</p>
+  </div>
+</section>
+
+<!-- 4. ZONES -->
+<section id="zones">
+  <div class="sec-head"><span class="sec-num">04</span><h2 class="sec-title">The four backend zones</h2></div>
+
+  <p>The backend lives under <code>backend/src/</code> as four zones. The dependency direction between them is the entire architecture: every arrow points inward toward the core, and the core has no outgoing arrows.</p>
+
+  <figure>
+    <svg viewBox="0 0 720 380" role="img" aria-label="Four backend zones with all dependency arrows pointing inward toward the core">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#87867F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="20" y="20" width="680" height="40" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="38" text-anchor="middle" class="svg-title">import-linter (CI)</text>
+      <text x="360" y="52" text-anchor="middle" class="svg-sub">build fails if the core imports outward — the boundary is a test, not a hope</text>
+
+      <rect x="270" y="150" width="180" height="92" rx="12" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="360" y="184" text-anchor="middle" class="svg-title">core/</text>
+      <text x="360" y="204" text-anchor="middle" class="svg-sub">domain · ports · services</text>
+      <text x="360" y="222" text-anchor="middle" class="svg-sub">imports only itself</text>
+
+      <rect x="40" y="110" width="170" height="64" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="125" y="138" text-anchor="middle" class="svg-title">adapters/</text>
+      <text x="125" y="156" text-anchor="middle" class="svg-sub">dynatrace · statuspage · neon</text>
+
+      <rect x="510" y="110" width="170" height="64" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="595" y="138" text-anchor="middle" class="svg-title">api/</text>
+      <text x="595" y="156" text-anchor="middle" class="svg-sub">FastAPI HTTP surface</text>
+
+      <rect x="270" y="300" width="180" height="64" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="328" text-anchor="middle" class="svg-title">composition/</text>
+      <text x="360" y="346" text-anchor="middle" class="svg-sub">wires adapters into core</text>
+
+      <line x1="170" y1="174" x2="285" y2="196" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="550" y1="174" x2="435" y2="196" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="360" y1="300" x2="360" y2="246" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah)"/>
+      <line x1="290" y1="300" x2="245" y2="210" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah)"/>
+    </svg>
+    <figcaption>All dependencies point inward · composition is the only zone importing both sides</figcaption>
+  </figure>
+
+  <table>
+    <thead><tr><th>Zone</th><th>Role</th><th>May import</th></tr></thead>
+    <tbody>
+      <tr><td><code>core/</code></td><td>The constant. Domain types, port interfaces, business services.</td><td>Only <code>core</code> itself.</td></tr>
+      <tr><td><code>adapters/</code></td><td>The replaceable edge. Vendor and persistence concerns.</td><td><code>core</code>. Never another adapter.</td></tr>
+      <tr><td><code>composition/</code></td><td>The wiring (the "main" layer). Constructs and injects.</td><td><code>core</code> and <code>adapters</code>.</td></tr>
+      <tr><td><code>api/</code></td><td>Thin HTTP surface (FastAPI).</td><td><code>core</code> and <code>composition</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Core internal layering</h3>
+  <p>Within the core there is a second, finer gradient — also linter-enforced — so that drift is caught early: <code>domain/</code> (pure data, depends on nothing) ← <code>ports/</code> (interfaces, expressed in domain types) ← <code>services/</code> (logic, calls ports, manipulates domain types). A violation can be as fine as "a domain type imported a service."</p>
+
+  <h3>What the contracts guarantee</h3>
+  <pre><code><span class="c-com"># importlinter.ini — three contracts, three guarantees</span>
+<span class="c-key">[importlinter:contract:core-independence]</span>
+type = forbidden
+source_modules = src.core
+forbidden_modules = src.adapters, src.composition, src.api, sqlalchemy, httpx
+
+<span class="c-key">[importlinter:contract:core-internal-layering]</span>
+type = layers
+layers = src.core.services, src.core.ports, src.core.domain
+
+<span class="c-key">[importlinter:contract:adapters-dont-cross]</span>
+type = independence
+modules = src.adapters.inbound.dynatrace, src.adapters.outbound.statuspage, src.adapters.persistence.neon</code></pre>
+
+  <p>Two physical conventions reinforce the separation: real <strong>Alembic migrations</strong> live at the repository top level and are versioned from day one (V2 shipped an empty <code>versions/</code> and used <code>create_all</code> — a flagged gap); and <strong>config lives outside <code>backend/</code></strong>, at the repo root, to signal that editing it is a topology change, not a code change.</p>
+</section>
+
+<!-- 5. CANONICAL SIGNAL -->
+<section id="signal">
+  <div class="sec-head"><span class="sec-num">05</span><h2 class="sec-title">Canonical signal</h2></div>
+
+  <p>The core consumes exactly three canonical input types and never a vendor type. The spine of the system is <code>SignalObservation</code> — the flattened, vendor-neutral form of one synthetic monitor execution from one location.</p>
+
+  <div class="card">
+    <h4><code>SignalObservation</code> — the canonical spine</h4>
+    <dl class="kv">
+      <dt>signal_key</dt><dd>Stable name <em>you</em> choose — never a Dynatrace id. The shock absorber.</dd>
+      <dt>observed_at</dt><dd>UTC run time of the execution.</dd>
+      <dt>health</dt><dd>Closed enum: <code>up</code> · <code>down</code> · <code>degraded</code>. Not pass/fail — so a partial outage can be expressed.</dd>
+      <dt>source_event_id</dt><dd>Idempotency key for exactly-once ingestion.</dd>
+      <dt>source</dt><dd>Provenance only: <code>{system, native_id, native_kind}</code>. The vendor id lives <em>here and nowhere else</em>.</dd>
+      <dt>location</dt><dd>The probe location for this execution. Enables <code>COUNT(DISTINCT location)</code>.</dd>
+      <dt>latency_ms?</dt><dd>Optional measured latency.</dd>
+      <dt>raw_ref?</dt><dd>Pointer to archived raw payload; the core never reads it.</dd>
+    </dl>
+  </div>
+
+  <p>The other two canonical types are <code>ProblemSignal</code> (enrichment / incident seed, push-era) and <code>MaintenanceSignal</code> (deferred). The vocabulary rule (P3) is the test: every field above makes sense to someone who has never heard of Dynatrace.</p>
+
+  <h3>Normalization rules</h3>
+  <ul class="clean">
+    <li><strong>Monitor type is provenance, not logic.</strong> HTTP, clickpath, single-browser, and NAM monitors each get their own normalizer that flattens to the <em>same</em> canonical shape; the type survives only as <code>native_kind</code>. Multi-step monitors collapse to a monitor-level verdict, with step detail archived rather than modelled.</li>
+    <li><strong>Each location execution is its own observation.</strong> The adapter is deliberately dumb and lossless — it does not aggregate. Aggregation is a core concern.</li>
+    <li><strong>Collapse is a core step, not an adapter step.</strong> Turning N per-location observations into one verdict per cycle happens inside the core (see §10), so the rule is provider-blind and testable.</li>
+  </ul>
+</section>
+
+<!-- 6. PORTS -->
+<section id="ports">
+  <div class="sec-head"><span class="sec-num">06</span><h2 class="sec-title">Ports &amp; interfaces</h2></div>
+
+  <p>Ports are interfaces the <em>core owns</em> but does not implement. Adapters implement them. This is the inversion that lets the core depend on nothing.</p>
+
+  <table>
+    <thead><tr><th>Port</th><th>Direction</th><th>Contract</th></tr></thead>
+    <tbody>
+      <tr><td><code>SignalIngestPort</code></td><td>inbound</td><td>The core's front door. Adapters push <em>batches</em>; the port is idempotent and validating <em>by contract</em> (see §8). Push and pull both enter here.</td></tr>
+      <tr><td><code>StatusPublisherPort</code></td><td>outbound</td><td>The core sends a canonical <code>StatusChange</code> with a canonical <code>component_id</code> — never a Statuspage id. The adapter translates.</td></tr>
+      <tr><td><code>ObservationRepository</code><br><code>WatermarkRepository</code> …</td><td>outbound</td><td>Persistence interfaces. Neon implements them. <code>save_new</code> uses <code>INSERT … ON CONFLICT DO NOTHING</code>; the watermark is core-owned.</td></tr>
+      <tr><td><code>ClockPort</code></td><td>outbound</td><td><code>now()</code> is injected, so time is controllable in tests.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="decision">
+    <div class="d-label">Why ingest is a port, not adapter logic</div>
+    <p>Because validation, idempotency, and the watermark all live <em>on the core side</em> of this boundary, any adapter that ever feeds the core — the Dynatrace poller now, a Datadog adapter or a push webhook later — inherits all three guarantees and cannot bypass them. The adapter's only job is to translate; the core accepts only valid canonical signals.</p>
+  </div>
+
+  <p>OOP note: the ports <em>are</em> abstract interfaces and the adapters <em>are</em> their concrete classes, constructed with their dependencies and injected by the composition root. That is the strongest object-oriented seam in the system, even though the API edge stays in the procedural five-file style (see §12).</p>
+</section>
+
+<!-- 7. MAPPING -->
+<section id="mapping">
+  <div class="sec-head"><span class="sec-num">07</span><h2 class="sec-title">Mapping ownership</h2></div>
+
+  <p>A monitor result must travel from a vendor identifier all the way to a status-page object. That journey is three arrows, and <code>signal_key</code> sits in the middle as the stable name that absorbs vendor churn.</p>
+
+  <figure>
+    <svg viewBox="0 0 720 150" role="img" aria-label="Mapping chain from Dynatrace monitor id through signal key and component to Statuspage object">
+      <defs>
+        <marker id="ah2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#D97757" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="14" y="46" width="150" height="58" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="89" y="72" text-anchor="middle" class="svg-title">Dynatrace</text>
+      <text x="89" y="90" text-anchor="middle" class="svg-sub">monitor id</text>
+
+      <rect x="200" y="46" width="150" height="58" rx="10" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="275" y="72" text-anchor="middle" class="svg-title">signal_key</text>
+      <text x="275" y="90" text-anchor="middle" class="svg-sub">you choose · stable</text>
+
+      <rect x="386" y="46" width="150" height="58" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="461" y="72" text-anchor="middle" class="svg-title">component</text>
+      <text x="461" y="90" text-anchor="middle" class="svg-sub">internal</text>
+
+      <rect x="572" y="46" width="150" height="58" rx="10" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="647" y="72" text-anchor="middle" class="svg-title">Statuspage</text>
+      <text x="647" y="90" text-anchor="middle" class="svg-sub">object</text>
+
+      <line x1="166" y1="75" x2="196" y2="75" stroke="#D97757" stroke-width="1.5" marker-end="url(#ah2)"/>
+      <line x1="352" y1="75" x2="382" y2="75" stroke="#D97757" stroke-width="1.5" marker-end="url(#ah2)"/>
+      <line x1="538" y1="75" x2="568" y2="75" stroke="#D97757" stroke-width="1.5" marker-end="url(#ah2)"/>
+    </svg>
+    <figcaption>Three arrows, all Git-versioned · signal_key never carries a vendor id</figcaption>
+  </figure>
+
+  <div class="decision">
+    <div class="d-label">Option C · config owns the mapping, Neon is a read model</div>
+    <p>All three arrows live in Git-versioned config and are seeded into Neon as a read model at boot. Onboarding a new app is a reviewed commit — the right amount of friction for something that affects a customer-facing page.</p>
+  </div>
+
+  <ul class="clean">
+    <li><strong>One file per app</strong> under <code>config/apps/</code> (e.g. <code>sockshop.yaml</code>). The app id namespaces its signal keys, and each app declares its own <code>monitor_provider</code> — the future Datadog seam.</li>
+    <li><strong>Shared infrastructure</strong> (the Statuspage page config, the notification channel) lives in <code>config/publishing.yaml</code>; secrets stay in the environment.</li>
+    <li><strong>Topology vs state.</strong> Mappings, signals, and components are seeded topology. Observations, proposals, maintenance, and watermarks are operational state born in Neon. Boot does a strict, fail-fast validation, then an idempotent upsert keyed on stable ids.</li>
+  </ul>
+</section>
+
+<!-- 8. INGEST -->
+<section id="ingest">
+  <div class="sec-head"><span class="sec-num">08</span><h2 class="sec-title">Ingest &amp; pull loop</h2></div>
+
+  <p>One pull cycle reads a per-signal watermark, queries Dynatrace for everything newer (with an overlap window for safety), normalizes each location execution, and hands the batch to the ingest port. The crash-safety guarantee comes from the strict ordering inside the port.</p>
+
+  <pre><code><span class="c-key">ingest_observations(batch):</span>
+  1. <span class="c-com"># validate each observation FIRST</span>
+     invalid → rejected_observations table   <span class="c-com"># quarantine, never silently dropped</span>
+  2. <span class="c-com"># dedupe valid ones</span>
+     INSERT … ON CONFLICT (source_event_id) DO NOTHING
+  3. persist the new valid rows
+  4. advance watermark to max(observed_at) <span class="c-key">over ACCEPTED observations only</span>
+  5. hand newly-inserted rows to the pipeline (collapse → anti-flap)
+  <span class="c-com"># then COMMIT, then sleep</span></code></pre>
+
+  <div class="decision">
+    <div class="d-label">Watermark advances only after commit, only on accepted data</div>
+    <p>Overlap on read + commit-before-advance + dedupe on write = lose nothing, double-count nothing. And because the watermark moves only on <em>accepted</em> observations, a single malformed timestamp can never leap the cursor into the future and silently freeze ingestion (the "year-2099" failure). Validation order is <em>validate, then dedupe</em>, so a bad row is recorded as a rejection rather than deduped away.</p>
+  </div>
+
+  <p>The poller runs inside the Railway backend for the demo. Relocating it later (a dedicated worker, a queue consumer) is a deployment change, not a core change — the loop only calls the ingest port.</p>
+</section>
+
+<!-- 9. SCHEMA -->
+<section id="schema">
+  <div class="sec-head"><span class="sec-num">09</span><h2 class="sec-title">Neon data model</h2></div>
+
+  <p>Three groups of tables. Topology is seeded from config; signals and workflow are runtime truth born in the database.</p>
+
+  <table>
+    <thead><tr><th>Group</th><th>Tables</th><th>Nature</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag clay">topology</span></td><td><code>apps</code> · <code>signals</code> · <code>components</code></td><td>Seeded from Git config at boot. Idempotent upsert.</td></tr>
+      <tr><td><span class="tag">signals</span></td><td><code>observations</code> · <code>problem_signals</code> · <code>watermarks</code> · <code>rejected_observations</code></td><td>Runtime, append-only.</td></tr>
+      <tr><td><span class="tag">workflow</span></td><td><code>status_proposals</code> · <code>approval_events</code> · <code>publications</code> · <code>maintenance_windows</code></td><td>Runtime, V2-proven shapes.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Postgres upgrades over V2's SQLite</h3>
+  <ul class="clean">
+    <li><code>timestamptz</code> everywhere — kills the entire class of <code>tzinfo</code> bugs and SQLite <code>strftime</code> hacks.</li>
+    <li><code>JSONB</code> for <code>source</code> and payloads — opaque to the core but queryable when debugging.</li>
+    <li><code>UNIQUE(source_event_id)</code> + <code>ON CONFLICT</code> — concurrency-safe idempotency at the database, not a racy read-then-write.</li>
+    <li>Composite index on <code>(signal_key, observed_at)</code> for the window queries.</li>
+    <li>A <strong>partial unique index</strong> enforcing one <em>active</em> proposal per component (see §11).</li>
+    <li>Real Alembic migrations from day one.</li>
+  </ul>
+
+  <h3>Per-app behavioral config</h3>
+  <p>The <code>apps</code> row carries per-app behavioral config (a <code>JSONB</code> config column, or a thin <code>app_config</code> keyed by app id) holding the resolved anti-flap thresholds, approval SLA, and gap policy — merged from the app's file over a global default. This is seeded topology, not runtime-mutable (Tier-2 item 6).</p>
+
+  <h3>Modular by bounded domain — designed to grow</h3>
+  <p>The schema is organized so new business-logic features can be added over time without modifying the existing core. The mechanism is the same one-directional dependency rule the code boundary uses, expressed in foreign keys: a <strong>stable spine</strong> that new feature domains attach to, never the reverse.</p>
+
+  <div class="card">
+    <h4>Two categories of addition — and only one touches the schema</h4>
+    <p>A precise distinction governs what "adding a feature" means, because the two kinds have very different footprints:</p>
+    <dl class="kv">
+      <dt>calculator</dt><dd><strong>Compute-only.</strong> Reads the spine, returns values, persists <em>nothing</em>. Lives in <code>core/services/</code> and is part of the constant core — no tables, no migration, no schema footprint. <strong>Availability is a calculator</strong>: it derives availability% and completeness% from raw observations on demand and stores no result (consistent with D-1). Adding one is a pure <code>core/services/</code> change.</dd>
+      <dt>feature module</dt><dd><strong>Stateful.</strong> Reads the spine <em>and</em> persists its own state in its own tables, which foreign-key inward to the spine. Genuinely addable and removable. <strong>An incident module is a feature module</strong>: it tracks a lifecycle and timeline that must be remembered across cycles, so it owns an <code>incidents</code> table. This is the category the modularity model below governs.</dd>
+    </dl>
+    <p style="margin-bottom:0;">The test is simply: <em>does it persist its own state?</em> No → calculator (no schema impact). Yes → feature module (owns inward-FK'd tables, governed by the boundary rule and its CI check). The modularity machinery exists for feature modules; calculators need none of it because they have nothing to attach.</p>
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 720 430" role="img" aria-label="Schema as a stable spine with stateful feature modules attaching one-way via foreign keys">
+      <defs>
+        <marker id="ah5" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#87867F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+
+      <rect x="20" y="20" width="680" height="150" rx="12" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="40" y="44" class="svg-label" style="fill:#B85C3E;">STABLE SPINE — the constant core, never altered by a new feature</text>
+
+      <rect x="42" y="58" width="150" height="50" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="117" y="78" text-anchor="middle" class="svg-title">topology</text>
+      <text x="117" y="95" text-anchor="middle" class="svg-sub">apps · signals</text>
+
+      <rect x="204" y="58" width="150" height="50" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="279" y="78" text-anchor="middle" class="svg-title">signals</text>
+      <text x="279" y="95" text-anchor="middle" class="svg-sub">observations</text>
+
+      <rect x="366" y="58" width="150" height="50" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="441" y="78" text-anchor="middle" class="svg-title">decision</text>
+      <text x="441" y="95" text-anchor="middle" class="svg-sub">proposals</text>
+
+      <rect x="528" y="58" width="150" height="50" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="603" y="78" text-anchor="middle" class="svg-title">publication</text>
+      <text x="603" y="95" text-anchor="middle" class="svg-sub">publications</text>
+
+      <rect x="260" y="122" width="200" height="34" rx="9" fill="#F0EEE6" stroke="#D97757" stroke-width="1.5"/>
+      <text x="360" y="143" text-anchor="middle" class="svg-title">components — central hub</text>
+
+      <text x="40" y="206" class="svg-label">FUTURE FEATURE DOMAINS — attach one-way at sanctioned points</text>
+
+      <rect x="42" y="222" width="200" height="74" rx="10" fill="#EDF1E5" stroke="#788C5D" stroke-width="1.5"/>
+      <text x="142" y="248" text-anchor="middle" class="svg-title">new inputs</text>
+      <text x="142" y="266" text-anchor="middle" class="svg-sub">metrics · problems</text>
+      <text x="142" y="283" text-anchor="middle" class="svg-sub">FK → signals</text>
+
+      <rect x="260" y="222" width="200" height="74" rx="10" fill="#FBEDE7" stroke="#D97757" stroke-width="1.5"/>
+      <text x="360" y="246" text-anchor="middle" class="svg-title">stateful modules</text>
+      <text x="360" y="264" text-anchor="middle" class="svg-sub">incidents · SLA tracking</text>
+      <text x="360" y="281" text-anchor="middle" class="svg-sub">own tables · FK → components</text>
+
+      <rect x="478" y="222" width="200" height="74" rx="10" fill="#F6E7E4" stroke="#B04A3F" stroke-width="1.5"/>
+      <text x="578" y="248" text-anchor="middle" class="svg-title">new outputs</text>
+      <text x="578" y="266" text-anchor="middle" class="svg-sub">PagerDuty · webhooks</text>
+      <text x="578" y="283" text-anchor="middle" class="svg-sub">mostly adapter</text>
+
+      <line x1="142" y1="222" x2="142" y2="190" stroke="#87867F" stroke-width="1.5"/>
+      <line x1="142" y1="190" x2="279" y2="190" stroke="#87867F" stroke-width="1.5"/>
+      <line x1="279" y1="190" x2="279" y2="112" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah5)"/>
+      <line x1="360" y1="222" x2="360" y2="160" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah5)"/>
+      <line x1="578" y1="222" x2="578" y2="190" stroke="#87867F" stroke-width="1.5"/>
+      <line x1="578" y1="190" x2="441" y2="190" stroke="#87867F" stroke-width="1.5"/>
+      <line x1="441" y1="190" x2="441" y2="112" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah5)"/>
+
+      <rect x="20" y="324" width="680" height="92" rx="10" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="36" y="348" class="svg-label">THE INVARIANT</text>
+      <text x="36" y="370" class="svg-sub" style="font-size:12px;">Feature tables foreign-key INTO the spine; the spine never references a feature.</text>
+      <text x="36" y="390" class="svg-sub" style="font-size:12px;">The spine has no knowledge a feature exists — so features are purely additive, and integrity is never traded away.</text>
+      <text x="36" y="408" class="svg-sub" style="font-size:12px;">Same inward-dependency direction as the import-linter code boundary.</text>
+    </svg>
+    <figcaption>New inputs attach at signals · stateful modules attach at components · dependency points inward, exactly like the code</figcaption>
+  </figure>
+
+  <p>The rules that keep it modular, all of which preserve full referential integrity (the design is add-mostly, so nothing is sacrificed for removability):</p>
+  <ul class="clean">
+    <li><strong>A new feature is new tables plus a new migration — never an <code>ALTER</code> to a spine table.</strong> Adding a metrics input does not touch <code>observations</code>; adding an incident module does not touch <code>status_proposals</code>. (A pure calculator adds no tables at all — it is not part of this model.)</li>
+    <li><strong>Feature tables foreign-key into the spine; the spine never foreign-keys into a feature.</strong> The load-bearing rule — the spine stays unaware a feature exists, so the feature attaches (and, if ever needed, detaches) without the core caring.</li>
+    <li><strong>Two sanctioned join points.</strong> New <em>inputs</em> reference <code>signals</code> (a metrics table points at <code>signal_key</code> the way <code>observations</code> does); new <em>stateful modules</em> reference <code>components</code> (and sometimes <code>status_proposals</code>). Every future stateful feature has one obvious correct place to connect.</li>
+    <li><strong>Behavioral policy stays in config, never becomes feature tables.</strong> Anti-flap thresholds, SLA, and gap policy live in the seeded <code>app_config</code> JSONB, added and removed by editing Git-versioned YAML — modular at the config layer, not as runtime toggle-tables.</li>
+    <li><strong>Strong foreign keys throughout.</strong> Within the spine and from features into the spine, with <code>ON DELETE</code> behavior chosen explicitly per relationship. Integrity is upgraded over V2, not weakened.</li>
+  </ul>
+
+  <div class="decision">
+    <div class="d-label">The boundary is enforced, not just documented (P2 applied to the schema)</div>
+    <p>The one-way FK rule above must be a <em>rule</em>, not a convention — the same standard the code boundary is held to. So a CI check reads the database's actual foreign keys from the information schema and <strong>fails the build if any spine table references a feature table</strong>. A developer who adds a column to <code>components</code> pointing at <code>incidents</code> breaks the build, exactly as a forbidden import would. This closes the asymmetry where the code boundary was tool-enforced but the schema boundary was honor-system.</p>
+    <pre style="margin-top:14px;"><code><span class="c-com"># test_schema_boundary.py — runs in CI against a migrated test DB</span>
+SPINE = {<span class="c-key">"apps"</span>, <span class="c-key">"signals"</span>, <span class="c-key">"components"</span>, <span class="c-key">"observations"</span>, <span class="c-key">"watermarks"</span>,
+         <span class="c-key">"rejected_observations"</span>, <span class="c-key">"problem_signals"</span>, <span class="c-key">"status_proposals"</span>,
+         <span class="c-key">"approval_events"</span>, <span class="c-key">"publications"</span>, <span class="c-key">"maintenance_windows"</span>}
+
+<span class="c-com"># Query information_schema for every FK whose source table is in SPINE</span>
+<span class="c-com"># and whose target table is NOT in SPINE → that is an outward reference.</span>
+violations = [fk for fk in all_foreign_keys()
+              if fk.source_table in SPINE and fk.target_table not in SPINE]
+
+assert not violations, f<span class="c-key">"Spine references a feature table: {violations}"</span></code></pre>
+    <p style="margin-bottom:0;">The spine list is the explicit allowlist of constant-core tables; everything else is a feature domain. The check is direction-only — features referencing the spine inward is correct and passes; the spine referencing outward is the violation.</p>
+  </div>
+
+  <div class="decision">
+    <div class="d-label">What this does and does not give you</div>
+    <p>You get clean modularity at the <em>feature-domain</em> boundary: a whole incident module or metrics pipeline can be added (or dropped) without disturbing the constant core, because the dependency is one-way. You deliberately do <em>not</em> get table-level removability inside the spine — the proposal lifecycle and its approval events are cohesive by design. Wanting to remove a spine table would signal the core thesis changed, which is a redesign, not a migration.</p>
+  </div>
+
+  <div class="card">
+    <h4>Gone from V2 — and why</h4>
+    <p>No <code>transactions</code> / <code>transaction_steps</code> / <code>component_targets</code> tables, and no <code>verdict</code> table. Verdicts are <em>derived</em> from observations on read (V2's decision D-1), so storing them would be a denormalized cache inviting drift. The canonical observation is the single source of truth; everything else is computed.</p>
+  </div>
+</section>
+
+<!-- 10. CORE LOGIC -->
+<section id="logic">
+  <div class="sec-head"><span class="sec-num">10</span><h2 class="sec-title">Core logic pipeline</h2></div>
+
+  <p>The constant core, expressed as four pure stages. Nothing here mentions Dynatrace, Grail, DQL, or executions — the pipeline consumes canonical observations and produces canonical proposals, and would not change if the vendor were swapped. This is the litmus test applied to the brain.</p>
+
+  <figure>
+    <svg viewBox="0 0 720 360" role="img" aria-label="Four-stage core logic pipeline from observations to proposal">
+      <defs>
+        <marker id="ah3" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#87867F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="250" y="14" width="220" height="40" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="32" text-anchor="middle" class="svg-title">observations</text>
+      <text x="360" y="46" text-anchor="middle" class="svg-sub">per location, per cycle</text>
+
+      <rect x="250" y="80" width="220" height="46" rx="10" fill="#FFFFFF" stroke="#D97757" stroke-width="1.5"/>
+      <text x="360" y="100" text-anchor="middle" class="svg-title">1 · collapse</text>
+      <text x="360" y="116" text-anchor="middle" class="svg-sub">locations → one verdict · maintenance excluded</text>
+
+      <rect x="250" y="146" width="220" height="46" rx="10" fill="#FFFFFF" stroke="#D97757" stroke-width="1.5"/>
+      <text x="360" y="166" text-anchor="middle" class="svg-title">2 · streak</text>
+      <text x="360" y="182" text-anchor="middle" class="svg-sub">consecutive same-health verdicts</text>
+
+      <rect x="250" y="212" width="220" height="46" rx="10" fill="#FFFFFF" stroke="#D97757" stroke-width="1.5"/>
+      <text x="360" y="232" text-anchor="middle" class="svg-title">3 · anti-flap</text>
+      <text x="360" y="248" text-anchor="middle" class="svg-sub">streak length → proposed status (per-app config)</text>
+
+      <rect x="250" y="278" width="220" height="46" rx="10" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="360" y="298" text-anchor="middle" class="svg-title">4 · decide</text>
+      <text x="360" y="314" text-anchor="middle" class="svg-sub">proposed vs current → proposal / nothing</text>
+
+      <line x1="360" y1="54" x2="360" y2="76" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <line x1="360" y1="126" x2="360" y2="142" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <line x1="360" y1="192" x2="360" y2="208" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah3)"/>
+      <line x1="360" y1="258" x2="360" y2="274" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah3)"/>
+
+      <rect x="40" y="146" width="170" height="80" rx="10" fill="#EDF1E5" stroke="#C5D2AE" stroke-width="1.5"/>
+      <text x="125" y="176" text-anchor="middle" class="svg-title">availability</text>
+      <text x="125" y="194" text-anchor="middle" class="svg-sub">computed separately</text>
+      <text x="125" y="210" text-anchor="middle" class="svg-sub">off the same observations</text>
+      <line x1="250" y1="103" x2="212" y2="160" stroke="#87867F" stroke-width="1.2" stroke-dasharray="4 4"/>
+    </svg>
+    <figcaption>Four pure stages · availability is a compute-only calculator running in parallel, never reading the streak (P4)</figcaption>
+  </figure>
+
+  <h3>Stage by stage</h3>
+  <dl class="kv">
+    <dt>1 collapse</dt><dd>Per cycle: all-up → <code>up</code>, all-down → <code>down</code>, some-down → <code>degraded</code>. Maintenance is checked here and <em>excluded</em> from the verdict (it counts as planned work, not up or down — V2's FR-8); a maintenance cycle short-circuits the rest of the pipeline. Multi-step monitors collapse internally.</dd>
+    <dt>2 streak</dt><dd>Count consecutive verdicts of the same health, reading backward, over <em>non-maintenance</em> verdicts only. Governs the displayed status, never the availability ratio (P4 / D-3).</dd>
+    <dt>3 anti-flap</dt><dd>Pure lookup from streak length to status, driven by per-app config: ≥5 failing → major, ≥3 → partial, ≥2 → degraded, a single failure → internal warning (logged, never published), ≥2 passes → operational. A sustained <code>degraded</code> streak maps to degraded-performance. Thresholds resolve via component → app → that app's block.</dd>
+    <dt>4 decide</dt><dd>Compare proposed status to the component's current published status. Same → nothing. Worse → a degradation proposal (the human-approval gate). Better → a recovery (auto-publishes). This stage also <em>reconciles open proposals</em> and computes the per-component skew flag (Tier-2 item 7).</dd>
+  </dl>
+
+  <div class="decision">
+    <div class="d-label">Lineage</div>
+    <p>Collapse is the one genuinely new stage (V2 had single-location checks). Streak, the anti-flap thresholds, severity-ordered direction, dedup, and the availability-vs-status separation are all V2 logic re-expressed on canonical types. V3 re-houses the brain behind a clean boundary and adds the one stage multi-location monitoring demands.</p>
+  </div>
+</section>
+
+<!-- 11. AVAILABILITY -->
+<section id="availability">
+  <div class="sec-head"><span class="sec-num">11</span><h2 class="sec-title">Availability engine</h2></div>
+
+  <p>The availability engine is the system's first <em>calculator</em> — compute-only, no tables, part of the constant core (<code>core/services/availability.py</code>). It reads observations through the repository port and computes two percentages on demand, persisting nothing (D-1). It runs in parallel to the four-stage pipeline and never consults the streak (P4).</p>
+
+  <h3>Two metrics, two grains</h3>
+  <p>The engine computes two numbers from the same observation stream but at deliberately different grains — they answer different questions and must never share a denominator.</p>
+
+  <table>
+    <thead><tr><th>Metric</th><th>Grain</th><th>Formula</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Availability %</strong></td><td>collapsed verdicts (cycles)</td><td><code>passing ÷ (total − maintenance)</code> — <code>up</code> passes; <code>down</code>/<code>degraded</code> don't; maintenance excluded both sides; gaps excluded from the denominator (default <code>exclude</code> policy).</td></tr>
+      <tr><td><strong>Completeness %</strong></td><td>raw observations</td><td><code>actual ÷ (intervals × distinct_locations)</code> where <code>intervals = window ÷ interval</code> and locations are <code>COUNT(DISTINCT location)</code>.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="decision">
+    <div class="d-label">The grain split is correct, not inconsistent</div>
+    <p>Availability asks "what fraction of cycles were healthy" — a cycle is the unit a status page cares about. Completeness asks "did all expected location-runs report" — the honesty check on the data feeding availability. The location-aware completeness denominator is the multi-location fix: V2 computed <code>expected = window ÷ interval</code> for a single probe; multiplying by distinct locations stops a 3-location signal reporting 300% completeness. The <code>location</code> field on the canonical observation is what makes <code>COUNT(DISTINCT location)</code> possible.</p>
+  </div>
+
+  <h3>Group rollup</h3>
+  <p>A group's availability and completeness are each the <strong>min of its children</strong> — a group is only as available as its worst component. Counts (verdicts, passing, maintenance, gaps) sum across children; percentages take the min. Children with no data are excluded from the min but their absence stays visible. (V2-proven, preserved.)</p>
+
+  <h3>Skew, surfaced</h3>
+  <p>Because the engine already reads watermarks, it also surfaces the per-component skew flag (item 7): a feeding signal lagging its peers by more than its own interval. This rides alongside completeness — related but distinct, since completeness can be low for other reasons — and appears both on the dashboard and as an annotation on any proposal born during skew.</p>
+
+  <h3>Read strategy — derive now, measure, optimize only if needed</h3>
+  <div class="decision">
+    <div class="d-label">Pure-derive, with a designed-in escape hatch</div>
+    <p>The engine recomputes from raw observations on every read — no stored verdicts, honoring "derive everything" (D-1). The one unquantified risk is 30-day multi-location reads under dashboard auto-refresh (a 5-min × 3-location × 30-day window scans tens of thousands of rows per signal per request). Rather than optimize speculatively, the entry points are shaped so a short-TTL (~60s, matching the refresh interval) cache drops in cleanly if measurement shows it's needed. The cache would be ephemeral and self-invalidating — still derived, never persisted verdicts — so it doesn't reintroduce the cache-drift problem that storing verdicts would. Build pure, point a realistic dataset at it, measure, and add the cache only if the numbers demand it.</p>
+  </div>
+
+  <h3>Shape</h3>
+  <pre><code>@dataclass(frozen=True)
+class AvailabilityResult:
+    availability_pct: float | None    <span class="c-com"># over verdicts</span>
+    completeness_pct: float | None    <span class="c-com"># over observations</span>
+    total_verdicts: int
+    passing_verdicts: int
+    maintenance_verdicts: int
+    gap_verdicts: int
+    distinct_locations: int           <span class="c-com"># makes the completeness denominator auditable</span>
+    window: str
+    computed_at: datetime</code></pre>
+  <p>Provider-blind by construction: it consumes canonical observations and would not change if Dynatrace became Datadog. Pure functions, fully unit-testable with in-memory observations — the same approach that gave V2 its ~130 tests. All SQL lives behind the repository port, not smeared into the service (fixing a V2 leak).</p>
+</section>
+
+<!-- 12. PROPOSALS -->
+<section id="proposals">
+  <div class="sec-head"><span class="sec-num">12</span><h2 class="sec-title">Proposal lifecycle</h2></div>
+
+  <p>A proposal is not a frozen artifact waiting for a human — it is valid only while it still matches what the engine currently computes. Every ingest cycle reconciles open proposals against current reality. This single rule covers escalation, de-escalation, and recovery-before-approval, and it closes a real V2 bug.</p>
+
+  <figure>
+    <svg viewBox="0 0 720 330" role="img" aria-label="Proposal state machine with supersession and obsoletion">
+      <defs>
+        <marker id="ah4" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#87867F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="280" y="14" width="160" height="42" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="40" text-anchor="middle" class="svg-title">proposed</text>
+
+      <rect x="40" y="100" width="180" height="50" rx="10" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="130" y="122" text-anchor="middle" class="svg-title">pending approval</text>
+      <text x="130" y="138" text-anchor="middle" class="svg-sub">reconciled each cycle</text>
+
+      <rect x="500" y="100" width="180" height="50" rx="10" fill="#EDF1E5" stroke="#788C5D" stroke-width="1.5"/>
+      <text x="590" y="122" text-anchor="middle" class="svg-title">auto-published</text>
+      <text x="590" y="138" text-anchor="middle" class="svg-sub">recovery · no gate</text>
+
+      <line x1="300" y1="56" x2="180" y2="96" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+      <text x="190" y="80" class="svg-label">degradation</text>
+      <line x1="420" y1="56" x2="540" y2="96" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+      <text x="470" y="80" class="svg-label">recovery</text>
+
+      <rect x="40" y="246" width="135" height="58" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="107" y="270" text-anchor="middle" class="svg-title">published</text>
+      <text x="107" y="288" text-anchor="middle" class="svg-sub">human approved</text>
+
+      <rect x="195" y="246" width="135" height="58" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="262" y="270" text-anchor="middle" class="svg-title">rejected</text>
+      <text x="262" y="288" text-anchor="middle" class="svg-sub">human said no</text>
+
+      <rect x="350" y="246" width="135" height="58" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="417" y="270" text-anchor="middle" class="svg-title">superseded</text>
+      <text x="417" y="288" text-anchor="middle" class="svg-sub">worse replaced it</text>
+
+      <rect x="505" y="246" width="135" height="58" rx="9" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="572" y="270" text-anchor="middle" class="svg-title">obsoleted</text>
+      <text x="572" y="288" text-anchor="middle" class="svg-sub">recovered first</text>
+
+      <line x1="120" y1="150" x2="108" y2="242" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+      <line x1="160" y1="150" x2="255" y2="242" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+      <line x1="190" y1="150" x2="410" y2="242" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+      <line x1="210" y1="150" x2="560" y2="242" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah4)"/>
+    </svg>
+    <figcaption>Two new terminal states — superseded, obsoleted — guarantee a pending degradation never publishes a finished outage</figcaption>
+  </figure>
+
+  <h3>The reconciliation rule</h3>
+  <p>Each cycle, the engine compares its freshly computed status against any open proposal for the component:</p>
+  <ul class="clean">
+    <li><strong>Worse computed</strong> → the pending lesser proposal moves to <code>superseded</code>; a new proposal for the worse status becomes the single active decision. The human always sees one proposal per component — the current worst.</li>
+    <li><strong>Recovered</strong> → the pending degradation moves to <code>obsoleted</code> with an audit reason, and <em>nothing is published</em>. The component was never shown down to customers, so there is nothing to clear. This honors the approval gate by suppressing a now-false alarm rather than publishing without approval.</li>
+    <li><strong>Same</strong> → leave it.</li>
+  </ul>
+
+  <div class="decision">
+    <div class="d-label">The constraint that makes it concurrency-safe</div>
+    <p>A partial unique index enforces <strong>one active proposal per <code>component_id</code></strong> (over the actionable states). Supersession means there is only ever one active proposal per component anyway, so the index needs no <code>to_status</code> dimension. A losing concurrent writer hits <code>ON CONFLICT DO NOTHING</code> and no-ops with a debug log — silent correctness plus a signal for whether multi-instance polling ever actually collides.</p>
+  </div>
+
+  <p>The bug this fixes: in V2, a pending degradation could be approved <em>after</em> the outage had already recovered, publishing a "Major Outage" for an incident that was over. Auto-obsoletion makes that impossible.</p>
+</section>
+
+<!-- 12. CONVENTION -->
+<section id="convention">
+  <div class="sec-head"><span class="sec-num">13</span><h2 class="sec-title">Five-file API convention</h2></div>
+
+  <p>Every FastAPI feature at the edge uses the same five files as Hyndhava's existing module convention, so any developer who knows the existing codebase recognizes every module. The one adjustment: the edge <code>service.py</code> stays <em>thin</em> and delegates inward.</p>
+
+  <pre><code>backend/src/api/v1/&lt;feature&gt;/
+├── __init__.py        <span class="c-com"># package marker (+ optional router re-export)</span>
+├── controller.py      <span class="c-com"># routes, scopes, rate limits, status codes</span>
+├── models.py          <span class="c-com"># pydantic HTTP DTOs only</span>
+├── validation.py      <span class="c-com"># HTTP-input shape checks only</span>
+└── service.py         <span class="c-key"># THIN: validate → call core → shape result</span></code></pre>
+
+  <table>
+    <thead><tr><th>File</th><th>Holds</th><th>May import</th></tr></thead>
+    <tbody>
+      <tr><td><code>controller.py</code></td><td>HTTP wiring. No logic.</td><td>models, validation, service</td></tr>
+      <tr><td><code>models.py</code></td><td>Request/response DTOs the client sees. Not canonical domain types.</td><td>pydantic only</td></tr>
+      <tr><td><code>validation.py</code></td><td>Syntactic input checks. Business validation lives in core.</td><td>stdlib only — no services</td></tr>
+      <tr><td><code>service.py</code></td><td>Orchestration: validate, call a core service via the container, shape the HTTP result.</td><td>core, container — <strong>never another feature</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="decision">
+    <div class="d-label">The adjustment that lets both styles coexist</div>
+    <p>The convention governs the edge's <em>shape</em>; the boundary governs <em>where logic lives</em>. The edge <code>service.py</code> orchestrates and shapes — it never holds business logic and never imports another feature's service. The real logic (collapse, anti-flap, availability) lives in <code>core/services/</code>, provider-blind, and never imports FastAPI.</p>
+  </div>
+
+  <ul class="clean">
+    <li><strong>No horizontal feature imports.</strong> If a feature needs another's data, it goes through a core service — not <code>from api.v1.other.service import …</code>. This eliminates the in-function import hack the existing convention uses to dodge circular imports, and is enforceable as a fourth linter contract.</li>
+    <li><strong>Two "service" words, two layers.</strong> The edge <code>service.py</code> (orchestration) and <code>core/services/*</code> (logic) share the word but live in different packages; the import path always says which you're looking at.</li>
+  </ul>
+</section>
+
+<!-- 13. TIER 1 -->
+<section id="tier1">
+  <div class="sec-head"><span class="sec-num">14</span><h2 class="sec-title">Hardening · Tier 1</h2></div>
+
+  <p>An adversarial design review (four reviewer lenses — distributed systems, security, future-maintainer, SRE-skeptic — plus a chairman synthesis) found that the <em>architecture</em> was sound but several <em>seams between separately-designed topics</em> were unwelded. Tier 1 are the correctness and safety holes, all resolved.</p>
+
+  <div class="decision">
+    <div class="d-label">T1.1 · Transaction boundary vs side effects</div>
+    <p>Commit the database <strong>first</strong>, then make notification and publication calls in a try/except — never hold a transaction open across a webhook. A failed notification is logged; the proposal already exists, and the human reliably finds out through two independent channels: the dashboard always shows pending proposals, and an SLA re-notify job retries. <span class="tag">delivery: best-effort</span></p>
+  </div>
+
+  <div class="decision">
+    <div class="d-label">T1.2 · Concurrent duplicate proposals</div>
+    <p>A partial unique index enforces one active proposal per component; supersession + auto-obsoletion handle "the world changed while pending" (see §11). On collision, <code>ON CONFLICT DO NOTHING</code> + debug log. This also fixed the stale-approval bug. <span class="tag">supersession model</span></p>
+  </div>
+
+  <div class="decision">
+    <div class="d-label">T1.3 · Canonical validation gate</div>
+    <p>Validation lives on the core ingest port, as the first act of ingestion — so push inherits it and cannot bypass it. Invalid observations are quarantined to a real <code>rejected_observations</code> table; the rest of the batch proceeds (no poison pill); and the watermark advances on accepted observations only (kills the year-2099 poisoning). <span class="tag">reject-and-quarantine</span></p>
+  </div>
+
+  <div class="decision gap">
+    <div class="d-label">T1.4 · Authentication — deliberately deferred</div>
+    <p>No API auth in v1, by choice. <code>actor</code> stays self-declared and is therefore <em>not</em> a trustworthy audit field until auth lands. Recorded as a <strong>known pre-production gap</strong>: this must be closed before exposing a real customer-facing Statuspage outside a demo. When added it is edge-only — a <code>require_scope</code> dependency on the controllers plus a token-derived <code>actor</code> — touching no core, ports, adapters, or schema. The hexagonal boundary is what makes deferring it low-regret. <span class="tag rust">close before production</span></p>
+  </div>
+</section>
+
+<!-- 14. TIER 2 -->
+<section id="tier2">
+  <div class="sec-head"><span class="sec-num">15</span><h2 class="sec-title">Hardening · Tier 2</h2></div>
+
+  <p>Decisions that touch the schema or core logic — settled now because they are cheap before code and expensive after.</p>
+
+  <div class="decision">
+    <div class="d-label">T2.5 · Multi-location completeness</div>
+    <p>The gap formula is location-aware: <code>expected = (window ÷ interval) × distinct_locations_observed</code>. Observed-distinct means zero config maintenance and self-adjustment as locations change. Known limit: it cannot detect a <em>single</em> location going fully silent (it catches whole-monitor death) — upgrading to a declared location set is additive, recorded for later. Availability is measured per <em>verdict</em>; completeness per <em>observation</em> — different grains, intentionally.</p>
+  </div>
+
+  <div class="decision">
+    <div class="d-label">T2.6 · Per-app vs global config</div>
+    <p>Behavioral policy (anti-flap thresholds, approval SLA, gap policy) is <strong>per-app with global defaults</strong>; infrastructure (Statuspage page, notification channel) stays global. Config is seeded topology, not runtime-mutable. Per-app notification routing is a recorded later enhancement. Anti-flap thresholds resolve via component → app → block.</p>
+  </div>
+
+  <div class="decision">
+    <div class="d-label">T2.7 · Components with multi-watermark signals</div>
+    <p><strong>React-now-and-disclose.</strong> Component status is computed each cycle on whatever verdicts are present — never waiting at the speed of the slowest signal. Safe because anti-flap filters transient skew and supersession/obsoletion self-corrects premature reactions. A <strong>skew flag</strong> fires when a feeding signal lags its peers by more than its own interval (self-scaling, no hardcoded number) and surfaces in two places: a dashboard indicator, and an annotation on any proposal born during skew — so the approver sees the caveat at the gate.</p>
+  </div>
+</section>
+
+<!-- 15. TIER 3 -->
+<section id="tier3">
+  <div class="sec-head"><span class="sec-num">16</span><h2 class="sec-title">Deferred · Tier 3</h2></div>
+
+  <p>Not loose ends — deliberately deferred work, each with its contract noted so it can be built later without rework. These are isolated by the architecture, so deferring them entangles nothing.</p>
+
+  <table>
+    <thead><tr><th>Item</th><th>Contract to settle when built</th></tr></thead>
+    <tbody>
+      <tr><td>ProblemSignal → incident</td><td>Whether a problem <em>opens</em> an incident or <em>enriches</em> one already opened by anti-flap.</td></tr>
+      <tr><td>Status vs Dynatrace problem</td><td>Which is the public truth when both exist for one failure (V2's D-10 call).</td></tr>
+      <tr><td>Dynatrace maintenance ingestion</td><td>Whether to ingest their maintenance state to avoid false pages from their planned work.</td></tr>
+      <tr><td>Intra-core call graph</td><td>A linter contract constraining how <code>core/services/</code> modules call each other, before the core becomes a ball of mud.</td></tr>
+      <tr><td>Completeness option C</td><td>Declared location set for per-location outage detection (additive over T2.5).</td></tr>
+      <tr><td>Per-app notification routing</td><td>Different apps alerting different channels (additive over T2.6).</td></tr>
+      <tr><td>Guaranteed-delivery outbox</td><td>A durable notification queue, if best-effort (T1.1) ever proves insufficient.</td></tr>
+      <tr><td>Pull-loop liveness</td><td>A heartbeat / last-successful-poll timestamp surfaced on the dashboard. A silently-dead single-instance loop currently looks healthy — the deployment-level twin of signal skew. All inputs are already computed; this only needs surfacing.</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- 17. DEPLOYMENT -->
+<section id="deploy">
+  <div class="sec-head"><span class="sec-num">17</span><h2 class="sec-title">Deployment topology</h2></div>
+
+  <p>Five pieces in three categories, mapping exactly to the replaceability thesis: a constant platform, a replaceable monitored app, and external SaaS we configure but don't host. The one structural fact that shapes everything: the pull loop is a persistent process, so the backend cannot be serverless.</p>
+
+  <table>
+    <thead><tr><th>Category</th><th>Piece</th><th>Where</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="3"><span class="tag clay">platform · constant</span></td><td>Backend (FastAPI + pull loop)</td><td>Railway service #1 — persistent container, single instance</td></tr>
+      <tr><td>Frontend (React SPA)</td><td>Vercel — serverless static + edge</td></tr>
+      <tr><td>Database (Postgres)</td><td>Neon — pooled + direct connection strings</td></tr>
+      <tr><td rowspan="2"><span class="tag olive">monitored · replaceable</span></td><td>Sock Shop</td><td>Railway service #2 — separate service, the demo target</td></tr>
+      <tr><td>Failure shim (break-it)</td><td>In front of one monitored route — toggle-able for live demos</td></tr>
+      <tr><td rowspan="2"><span class="tag">external SaaS</span></td><td>Dynatrace (synthetic monitors)</td><td>Dynatrace SaaS — source of truth, polled</td></tr>
+      <tr><td>Statuspage (publish target)</td><td>Statuspage SaaS — fixed core target, real customer-facing page</td></tr>
+    </tbody>
+  </table>
+
+  <p>Sock Shop is a separate Railway service precisely <em>because</em> it is the replaceable monitored app — it could be deleted and Dynatrace pointed at something else without touching platform deployment. The two SaaS pieces are external dependencies, configured but not hosted by us.</p>
+
+  <p>Statuspage is called a <em>fixed</em> target yet sits behind <code>StatusPublisherPort</code> — a deliberate asymmetry with the Dynatrace adapter. The Dynatrace adapter exists for genuine replaceability (the litmus test swaps it for Datadog). The publisher port exists for <em>testability</em> — a mock publisher in tests, the real one in production — not because a second real publisher is anticipated. Same pattern, two different justifications, both intentional.</p>
+
+  <h3>Deploy flow — migrations as a separate gate</h3>
+  <figure>
+    <svg viewBox="0 0 720 360" role="img" aria-label="Deploy flow with migrations as a separate release step before the app boots">
+      <defs>
+        <marker id="ah6" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M2 1L8 5L2 9" fill="none" stroke="#87867F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </marker>
+      </defs>
+      <rect x="270" y="16" width="180" height="40" rx="8" fill="#F0EEE6" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="40" text-anchor="middle" class="svg-title">git push</text>
+
+      <rect x="250" y="80" width="220" height="40" rx="8" fill="#FFFFFF" stroke="#D1CFC5" stroke-width="1.5"/>
+      <text x="360" y="104" text-anchor="middle" class="svg-title">Railway builds container</text>
+
+      <rect x="210" y="144" width="300" height="64" rx="10" fill="#FBEDE7" stroke="#D97757" stroke-width="2"/>
+      <text x="360" y="168" text-anchor="middle" class="svg-title">release step · alembic upgrade head</text>
+      <text x="360" y="188" text-anchor="middle" class="svg-sub">Neon DIRECT conn · fails → deploy halts, old container serves</text>
+
+      <rect x="230" y="232" width="260" height="76" rx="10" fill="#EDF1E5" stroke="#788C5D" stroke-width="1.5"/>
+      <text x="360" y="254" text-anchor="middle" class="svg-title">app boot (pooled conn)</text>
+      <text x="360" y="274" text-anchor="middle" class="svg-sub">1 · seed topology from config</text>
+      <text x="360" y="292" text-anchor="middle" class="svg-sub">2 · start scheduler  3 · serve</text>
+
+      <line x1="360" y1="56" x2="360" y2="76" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah6)"/>
+      <line x1="360" y1="120" x2="360" y2="140" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah6)"/>
+      <line x1="360" y1="208" x2="360" y2="228" stroke="#87867F" stroke-width="1.5" marker-end="url(#ah6)"/>
+      <text x="360" y="338" text-anchor="middle" class="svg-sub">Railway swaps traffic to new container, kills old one</text>
+    </svg>
+    <figcaption>Migrations are a gate before serving · the app boot is only seed → schedule → serve</figcaption>
+  </figure>
+
+  <p>This is your B decision made concrete. Schema authority lives in the deploy pipeline, not the application — the app assumes a correct schema and uses it. A failed migration halts the deploy and leaves the old container serving (fail-safe), rather than crash-looping a live container (fail-messy). It is also instance-model-independent: the migration runs exactly once as a deploy step regardless of how many app instances run.</p>
+
+  <div class="decision">
+    <div class="d-label">The boundary is logical, not physical</div>
+    <p>The core, the pull loop, the scheduler, the seeder, and the API all run co-resident in one Railway container. The hexagonal boundary is enforced at the <em>import</em> level by CI contracts, not at the <em>process</em> level — this is not microservices. Swapping Dynatrace for Datadog does not redeploy a different core; it ships a new adapter inside the same container and changes one wiring line. The constant core is a module that cannot be illegally imported, not an independently deployable service.</p>
+  </div>
+
+  <h3>Runtime wiring</h3>
+  <p>Data flow matches the architecture: Dynatrace runs synthetic checks <em>against</em> Sock Shop; the backend <em>pulls</em> results from Dynatrace (never querying Sock Shop directly — it is monitored, not queried); the backend computes and <em>pushes</em> approved status to Statuspage. The frontend talks only to the backend API.</p>
+
+  <dl class="kv">
+    <dt>backend → Dynatrace</dt><dd>Pull loop: DQL queries over the per-signal watermark.</dd>
+    <dt>Dynatrace → Sock Shop</dt><dd>Synthetic monitors hit Sock Shop's routes (including the shimmed one).</dd>
+    <dt>backend → Neon</dt><dd>Pooled (PgBouncer) connection for all app runtime.</dd>
+    <dt>backend → Statuspage</dt><dd>Commit-first, best-effort publish of approved status changes.</dd>
+    <dt>frontend → backend</dt><dd>REST; CORS restricted to the Vercel origin.</dd>
+  </dl>
+
+  <h3>Connection split &amp; secrets</h3>
+  <p>Neon exposes two connection strings used for two purposes: the <strong>direct (non-pooled)</strong> string for the migration release step (DDL misbehaves through PgBouncer's transaction pooling), and the <strong>pooled</strong> string for all app runtime. All secrets live in Railway env, never in YAML; config files reference env var <em>names</em>, never values.</p>
+  <pre><code>DATABASE_URL          <span class="c-com"># Neon POOLED — app runtime</span>
+DATABASE_URL_DIRECT   <span class="c-com"># Neon DIRECT — migration release step only</span>
+DYNATRACE_API_TOKEN · DYNATRACE_ENV_ID    <span class="c-com"># polling synthetic results</span>
+STATUSPAGE_API_TOKEN · STATUSPAGE_PAGE_ID <span class="c-com"># publishing</span>
+CORS_ALLOWED_ORIGINS  <span class="c-com"># the Vercel frontend URL(s) + localhost</span>
+<span class="c-com"># AUTH_TOKEN / scopes → deferred — the one var NOT set yet</span></code></pre>
+
+  <h3>Two surfaces, not one</h3>
+  <p>The system presents two distinct surfaces to two audiences. The <strong>internal dashboard</strong> (React SPA on Vercel) is the operator cockpit — live health, availability, pending proposals with approve/reject, check history, maintenance, publications. The <strong>public Statuspage</strong> (Statuspage SaaS) is what customers see — only the final, approved, published statuses. The approval gate sits between them: a degradation appears as a proposal on the dashboard, a human approves it, and only then does it reach the public page. The dashboard carries forward V2's six-tab information architecture (Dashboard · Availability · Approvals · Check History · Maintenance · Publications), visually redesigned, and deploys independently on Vercel — a UI redesign is a frontend-only deploy that never touches the backend, schema, or API contract. Unlike V2's mock publisher, V3's Statuspage is real, which is what makes the deferred auth a live exposure.</p>
+
+  <h3>The demo path — making it watchable</h3>
+  <p>The pipeline only visibly acts when a monitored service fails, so the demo needs a controllable failure. The <strong>failure shim</strong> (primary) is a toggle-able proxy in front of the one Sock Shop route the headline monitor watches — instant, precise, scriptable. Stopping the Sock Shop Railway service is the <em>authentic-outage</em> variant. The catch is two latency gates: clicking "break" → Dynatrace's next synthetic run detects it → the backend's next pull cycle ingests it. So the demo environment runs tight cadences (≈1-minute monitors, short poll interval) to keep click-to-react near two minutes rather than ten, and the operator narrates the expected delay.</p>
+
+  <div class="decision">
+    <div class="d-label">Single instance, safe by design on redeploy</div>
+    <p>One backend instance is the intent; the idempotency built into ingestion (unique <code>source_event_id</code>, watermark commit-before-advance, the partial unique proposal index) is the safety net if a deploy overlap briefly runs two. Railway replaces the container on redeploy; the watermark persists in Neon, so a restart mid-poll resumes losing nothing — the pull loop simply pauses for the swap (tens of seconds, invisible at a 1-minute cadence).</p>
+  </div>
+
+  <div class="decision gap">
+    <div class="d-label">The auth exposure is now live</div>
+    <p>With the backend on a public Railway URL and auth deferred, the decision endpoints are reachable by anyone who finds the URL — CORS restriction stops browser cross-origin calls but not direct API calls. This is the accepted posture for a short-lived, unadvertised demo. The moment it becomes longer-lived or customer-visible, auth is the first addition — edge-only, slotting into the controllers without touching core, ports, adapters, or schema.</p>
+  </div>
+</section>
+
+<!-- 18. DECISION LOG -->
+<section id="log">
+  <div class="sec-head"><span class="sec-num">18</span><h2 class="sec-title">Decision log</h2></div>
+
+  <p>Every locked decision, at a glance.</p>
+
+  <table>
+    <thead><tr><th>#</th><th>Decision</th><th>Resolution</th></tr></thead>
+    <tbody>
+      <tr><td>D1</td><td>Organizing principle</td><td>Separation by replaceability; one-direction boundary.</td></tr>
+      <tr><td>D2</td><td>Boundary enforcement</td><td>import-linter contracts in CI, not convention.</td></tr>
+      <tr><td>D3</td><td>Canonical spine</td><td><code>SignalObservation</code> with health up/down/degraded; vendor id in provenance only.</td></tr>
+      <tr><td>D4</td><td>Ingestion model</td><td>Pull-first &amp; authoritative; push optional, same canonical entry.</td></tr>
+      <tr><td>D5</td><td>Collapse location</td><td>A core step, not adapter logic.</td></tr>
+      <tr><td>D6</td><td>Mapping ownership</td><td>Option C — Git config seeded into Neon; one file per app.</td></tr>
+      <tr><td>D7</td><td>Idempotency</td><td><code>UNIQUE(source_event_id)</code> + <code>ON CONFLICT</code>; watermark on accepted only, after commit.</td></tr>
+      <tr><td>D8</td><td>Verdict storage</td><td>Derived on read, never stored (D-1 preserved).</td></tr>
+      <tr><td>D9</td><td>Availability vs status</td><td>Two computations off one observation stream; never conflated (D-3).</td></tr>
+      <tr><td>D10</td><td>Pipeline</td><td>Four pure stages: collapse → streak → anti-flap → decide.</td></tr>
+      <tr><td>D10b</td><td>Availability engine</td><td>Compute-only calculator; two-grain math (availability over verdicts, completeness over observations); min-of-children rollup; pure-derive with cache escape hatch.</td></tr>
+      <tr><td>D11</td><td>API edge</td><td>Five-file convention; thin edge service delegating to core; no horizontal imports.</td></tr>
+      <tr><td>T1.1</td><td>Transaction boundary</td><td>Commit-first; best-effort notify; dashboard + SLA retry.</td></tr>
+      <tr><td>T1.2</td><td>Duplicate proposals</td><td>Supersession + auto-obsoletion; one active proposal per component.</td></tr>
+      <tr><td>T1.3</td><td>Validation gate</td><td>On the ingest port; reject-and-quarantine; accepted-only watermark.</td></tr>
+      <tr><td>T1.4</td><td>Authentication</td><td>Deferred; known pre-production gap; edge-only when added.</td></tr>
+      <tr><td>T2.5</td><td>Completeness</td><td>Location-aware formula; per-verdict vs per-observation grains.</td></tr>
+      <tr><td>T2.6</td><td>Config scope</td><td>Behavioral per-app w/ defaults; infrastructure global.</td></tr>
+      <tr><td>T2.7</td><td>Multi-watermark</td><td>React-now-and-disclose; self-scaling skew flag on dashboard + proposals.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="card" style="margin-top:24px;">
+    <h4>Bottom line</h4>
+    <p>The architecture held under adversarial review — no reviewer broke the canonical boundary, the dependency direction, or the swap-ability premise. What the review found were unwelded seams between topics designed in different sessions, and every one is now welded or carries a documented contract. Several resolutions (auto-obsoletion, react-and-disclose) improved on the initial recommendations. The design is tightly coupled in the good sense: the pieces compose, the edge cases have decisions, and the enhancement paths are isolated so they stay additive. It is ready to build.</p>
+  </div>
+</section>
+
+</main>
+</div>
+</body>
+</html>
