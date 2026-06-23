@@ -22,16 +22,16 @@ needed in Sprint 0.
 
 ## STORY-001 — Repo scaffold + four-zone structure (3 pts, full pipeline)
 
-- [ ] 1. Create `pyproject.toml` (project + deps + `package-dir = {"" = "backend"}` so
+- [x] 1. Create `pyproject.toml` (project + deps + `package-dir = {"" = "backend"}` so
       `src` is importable) and a `.venv`; write a failing smoke test
       `backend/tests/test_smoke.py` that imports `src.core` etc. (fails: packages absent).
-- [ ] 2. Create the four zones with `__init__.py`: `core/{domain,ports,services}`,
+- [x] 2. Create the four zones with `__init__.py`: `core/{domain,ports,services}`,
       `adapters/{inbound,outbound,persistence}`, `composition`, `api`. Run smoke test → pass. Commit.
-- [ ] 3. Configure pytest (pythonpath/packaging) so `pytest` exits 0 on the harness;
+- [x] 3. Configure pytest (pythonpath/packaging) so `pytest` exits 0 on the harness;
       confirm `python -c "import src.core, src.adapters, src.composition, src.api"`. Commit.
-- [ ] 4. Write `CLAUDE.md` (overview, stack, key commands, tooling inventory, YourTeam
+- [x] 4. Write `CLAUDE.md` (overview, stack, key commands, tooling inventory, YourTeam
       session-start pointer) and `config/README` placeholder. Commit.
-- [ ] 5. Self-run DoD (`pytest` → 0); self-review diff. Report.
+- [x] 5. Self-run DoD (`pytest` → 0); self-review diff. Report.
 
 ## STORY-002 — CI contracts = the DoD floor (3 pts, full pipeline)
 
