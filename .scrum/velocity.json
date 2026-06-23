@@ -1,3 +1,5 @@
 {
-  "sprints": []
+  "sprints": [
+    {"sprint": 0, "committed": 8, "accepted": 8}
+  ]
 }

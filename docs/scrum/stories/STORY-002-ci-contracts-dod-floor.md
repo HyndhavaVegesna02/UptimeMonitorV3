@@ -37,17 +37,17 @@ so that every later story inherits a working, enforced boundary.
    they execute via the bare commands the DoD lists.
 
 ## Acceptance Criteria
-- [ ] AC1: `lint-imports` exits 0 on the STORY-001 skeleton, with all three contracts
+- [x] AC1: `lint-imports` exits 0 on the STORY-001 skeleton, with all three contracts
       present and active (core-independence, core-internal-layering, adapter-independence).
-- [ ] AC2: A deliberately-introduced forbidden import (e.g. `src/core/services` importing
+- [x] AC2: A deliberately-introduced forbidden import (e.g. `src/core/services` importing
       `src/adapters` or `sqlalchemy`) makes `lint-imports` exit nonzero — proven by a test
       or a documented demonstration, then reverted. (The contract actually bites.)
-- [ ] AC3: `scripts/check_fk_direction.py` exists and exits 0 against a freshly-migrated
+- [x] AC3: `scripts/check_fk_direction.py` exists and exits 0 against a freshly-migrated
       (currently empty) database; it reads real FKs from `information_schema`, uses the
       §9 SPINE allowlist, and reports any spine→feature FK as a violation.
-- [ ] AC4: Both `lint-imports` and `python scripts/check_fk_direction.py` are listed in
+- [x] AC4: Both `lint-imports` and `python scripts/check_fk_direction.py` are listed in
       the Definition of Done and run by the bare commands shown there.
-- [ ] AC5: A unit test covers the FK-direction checker's violation logic (given a fake
+- [x] AC5: A unit test covers the FK-direction checker's violation logic (given a fake
       set of FKs including a spine→feature edge, it flags exactly that edge) so the gate
       itself is tested, not just asserted.
 
@@ -56,3 +56,20 @@ so that every later story inherits a working, enforced boundary.
 
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §4/§9; refined to ready for Sprint 0.
+- 2026-06-23: implemented (commits 3c030c9, a69d3eb, efc4c69, 4c4a3ac, 2c5f9c8, eff37c9).
+  import-linter needed `include_external_packages = true` (forbidden set names sqlalchemy/httpx).
+  Dossier §4's vendor subpackage names (`...inbound.dynatrace`) don't exist yet → contracts use
+  the real packages `src.adapters.{inbound,outbound,persistence}`. Spec review PASS (all AC MET,
+  AC2 negative demonstration independently reproduced); quality review APPROVE (FK SQL direction
+  confirmed correct). DoD gate: pytest 0, lint-imports 0 (3 kept), FK-check 0. Marked Done.
+- 2026-06-23: QUALITY-MINORS (non-blocking notes):
+  (1) `scripts/check_fk_direction.py` — composite/multi-column FKs make `constraint_column_usage`
+      emit one row per referenced column → duplicate (source,target) pairs inflate the "N checked"
+      count (direction logic unaffected). `SELECT DISTINCT` would tidy it. Cosmetic; no composite
+      FKs exist yet — revisit if/when STORY-006 adds any.
+  (2) The function-local `import psycopg` (keeps the pure `find_violations` path driver-free for the
+      unit test) is deliberate — worth a one-line comment so a future reader doesn't "fix" it.
+  Candidate tiny chore; not blocking.
+- 2026-06-23: NOTE — `core-internal-layering` and `adapters-independence` contracts are currently
+  vacuously green (skeleton has no real imports). They begin to bite once real code lands in
+  zones 1–4. Expected and correctly configured.

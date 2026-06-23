@@ -37,4 +37,13 @@
   deployment story onward, CORS is restricted to the Vercel origin (+ localhost for dev).
 
 ## Amendments
+- 2026-06-23 — **Command-sync in the brief.** Any story that adds, removes, or changes a
+  DoD / build / test / run command MUST carry an explicit "update CLAUDE.md in the same
+  commit" step in the implementer brief and is checked at the DoD gate. (Motivated by
+  Sprint 0, STORY-002: it made `lint-imports` + the FK-check real DoD commands, but the brief
+  omitted the doc sync, so CLAUDE.md said they "arrive in later stories" until a manual patch.)
+- 2026-06-23 — **Single canonical Definition of Done.** `.scrum/definition-of-done.md` is the
+  sole source of truth the gate runner reads; the root `definition-of-done.md` is reduced to a
+  one-line pointer to it. No second editable copy. (Motivated by Sprint 0, STORY-003: the
+  implementer flagged two DoD files as a drift risk.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

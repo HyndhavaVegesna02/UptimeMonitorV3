@@ -1,0 +1,54 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "uptime-monitor-v3"
+version = "0.1.0"
+description = "Uptime Monitor V3 — hexagonal backend (four-zone architecture)"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi",
+    "pydantic>=2",
+    "sqlalchemy>=2",
+    "alembic",
+    "psycopg[binary]",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "import-linter"]
+
+[tool.setuptools]
+package-dir = {"" = "backend"}
+
+[tool.setuptools.packages.find]
+where = ["backend"]
+
+[tool.pytest.ini_options]
+testpaths = ["backend/tests"]
+
+# Import-linter contracts (dossier §4) — the architecture's non-LLM boundary floor.
+# Run via the bare command `lint-imports`. root_package `src` lives at backend/src
+# (exposed by package-dir above); the editable install makes it importable.
+[tool.importlinter]
+root_package = "src"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "core-independence"
+type = "forbidden"
+source_modules = ["src.core"]
+forbidden_modules = ["src.adapters", "src.composition", "src.api", "sqlalchemy", "httpx"]
+
+[[tool.importlinter.contracts]]
+name = "core-internal-layering"
+type = "layers"
+layers = ["src.core.services", "src.core.ports", "src.core.domain"]
+
+# Dossier §4 names vendor subpackages (inbound.dynatrace, outbound.statuspage,
+# persistence.neon) that do not exist yet. The real packages created by STORY-001
+# are used here so the contract runs green against real modules, not phantoms.
+[[tool.importlinter.contracts]]
+name = "adapters-independence"
+type = "independence"
+modules = ["src.adapters.inbound", "src.adapters.outbound", "src.adapters.persistence"]
