@@ -55,7 +55,7 @@ needed in Sprint 0.
       Write a test/asserts the two vars are wired distinctly. Commit.
 - [x] 2. Create the empty baseline migration (real `upgrade`/`downgrade`, no tables, no
       `create_all`). Commit.
-- [ ] 3. Bring up throwaway Postgres (documented one-liner); `alembic upgrade head` → 0;
+- [x] 3. Bring up throwaway Postgres (documented one-liner); `alembic upgrade head` → 0;
       `alembic downgrade base` → `alembic upgrade head` round-trips → 0. Commit.
 - [ ] 4. Update `CLAUDE.md` with migration command + connection-var convention + the
       Postgres one-liner. Commit.
