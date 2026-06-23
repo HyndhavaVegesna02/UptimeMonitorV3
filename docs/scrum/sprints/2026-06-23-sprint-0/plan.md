@@ -40,9 +40,9 @@ needed in Sprint 0.
       import makes `lint-imports` fail, then ensure the clean skeleton passes. Commit.
 - [x] 2. Add `core-internal-layering` (layers: services→ports→domain) and
       `adapters-dont-cross` (independence) contracts; `lint-imports` → 0 on skeleton. Commit.
-- [ ] 3. Write failing unit test for `scripts/check_fk_direction.py` violation logic
+- [x] 3. Write failing unit test for `scripts/check_fk_direction.py` violation logic
       (fake FK set incl. a spine→feature edge → flagged). Commit test.
-- [ ] 4. Implement `scripts/check_fk_direction.py` (reads `information_schema` via
+- [x] 4. Implement `scripts/check_fk_direction.py` (reads `information_schema` via
       `DATABASE_URL`, §9 SPINE allowlist, direction-only); unit test passes. Commit.
 - [ ] 5. Run it against a migrated empty DB (Dockerized Postgres) → exit 0 (zero FKs);
       confirm both commands are the bare DoD commands. Commit.
