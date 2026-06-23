@@ -52,7 +52,7 @@ psycopg 3.
 ## Key commands
 
 Run from the repo root with the virtualenv active (or call the `.venv` binaries
-directly on Windows: `.venv/Scripts/python.exe`).
+directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe`).
 
 | Task                | Command                                  |
 | ------------------- | ---------------------------------------- |
@@ -60,10 +60,19 @@ directly on Windows: `.venv/Scripts/python.exe`).
 | Install (editable)  | `.venv/Scripts/python.exe -m pip install -e ".[dev]"` |
 | Run tests           | `pytest`                                  |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
+| Import boundary     | `lint-imports` (3 contracts; must exit 0) |
+| Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
-`package-dir = {"" = "backend"}` in `pyproject.toml`). Import-linter contracts and
-Alembic arrive in later stories.
+`package-dir = {"" = "backend"}` in `pyproject.toml`).
+
+The four DoD gate commands are `pytest`, `lint-imports`,
+`python scripts/check_fk_direction.py`, and `alembic upgrade head`. The first three
+are live as of STORY-002; **Alembic migrations arrive in STORY-003**. `lint-imports`
+enforces the three dossier §4 contracts (core-independence, core-internal-layering,
+adapters-independence); `check_fk_direction.py` enforces the dossier §9 schema spine
+boundary (no spine→feature foreign key) by reading `information_schema` over
+`DATABASE_URL`.
 
 ## Tooling inventory
 
@@ -72,7 +81,8 @@ Alembic arrive in later stories.
 | Python            | 3.13.9 (miniconda)            | runtime                                   |
 | pip               | 25.2                          | package management                        |
 | pytest            | test runner (DoD gate)        | `pytest` must exit 0                       |
-| import-linter     | `lint-imports` (from STORY-002)| enforces zone dependency boundaries       |
+| import-linter     | `lint-imports` (live, STORY-002)| enforces zone dependency boundaries (DoD)|
+| FK-direction check| `scripts/check_fk_direction.py` (live, STORY-002)| enforces schema spine boundary (DoD)|
 | SQLAlchemy 2 / Alembic | (Alembic wired in STORY-003) | ORM + migrations                       |
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
 | git               | configured                    | version control                           |
