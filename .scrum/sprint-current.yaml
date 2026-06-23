@@ -53,12 +53,33 @@ stories:
     blast_radius_resolved: true   # no wiki articles yet — nothing to resolve
   - id: STORY-003
     points: 2
-    board: todo
-    pipeline: light        # 1-2 pts -> implementer + DoD gate
+    board: done
+    pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "10 passed in 0.47s"
+        commit: 772a98e
+        at: 2026-06-23T20:10:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: 772a98e
+        at: 2026-06-23T20:10:00+05:30
+      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16; round-trip downgrade base->upgrade head also exit 0"
+        exit_code: 0
+        output_tail: "Running upgrade  -> eda70ac11454, baseline"
+        commit: 772a98e
+        at: 2026-06-23T20:10:00+05:30
+      - command: "python scripts/check_fk_direction.py  # against migrated baseline"
+        exit_code: 0
+        output_tail: "FK-direction OK: 0 foreign key(s) checked, 0 violations."
+        commit: 772a98e
+        at: 2026-06-23T20:10:00+05:30
+    blast_radius_resolved: true   # no wiki articles yet — nothing to resolve
+    # NOTE: first story exercising the FULL four-command gate. All four DoD commands now live.
 hotfixes: []
 interrupts: []

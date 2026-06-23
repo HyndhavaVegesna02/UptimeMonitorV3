@@ -50,3 +50,16 @@ Do NOT define any spine tables here and never introduce `create_all` anywhere.
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §3/§4/§17; refined to ready for Sprint 0.
   Confirmed Docker 28.5.2 is available locally, so the `alembic upgrade head` gate runs
   against a throwaway Postgres container (no Neon credentials needed for Sprint 0).
+- 2026-06-23: implemented (commits 68540c5, f44a0ff, 14eef2a, 916c0c0, 772a98e). Light pipeline
+  (2 pts) → DoD gate only. First story exercising the FULL four-command gate; all green
+  (pytest 10, lint-imports 3 kept, alembic upgrade head + reversible round-trip, FK-check 0).
+  Marked Done.
+- 2026-06-23: NOTE (URL dialect split, documented in CLAUDE.md): Alembic (SQLAlchemy 2) needs
+  `postgresql+psycopg://…`; `check_fk_direction.py` (raw psycopg) needs plain `postgresql://…`.
+  So `DATABASE_URL_DIRECT` carries the `+psycopg` form, `DATABASE_URL` the plain form.
+- 2026-06-23: CANDIDATE BACKLOG (from implementer, out of scope here — surface at retro):
+  (1) Two DoD docs exist — root `definition-of-done.md` (seed companion) and
+      `.scrum/definition-of-done.md` (operational/canonical). Add a pointer/dedup to avoid drift.
+  (2) `migrations/env.py` resolves the URL at import time, so any `alembic` subcommand (even
+      `revision`) requires `DATABASE_URL_DIRECT` set — fine now; revisit if offline `revision`
+      ergonomics matter.
