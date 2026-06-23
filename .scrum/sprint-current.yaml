@@ -1,6 +1,9 @@
 # YourTeam active sprint board.
 sprint: 0
-status: active            # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-23
+# Sprint 0 closed: 3/3 stories accepted at review, 8/8 pts, merged to main.
+# No active sprint — next session offers planning for Sprint 1 (Zone 1: STORY-004/005).
 goal: "A running backend skeleton with the four CI contracts green on an empty build — the boundary gates exist before any business logic."
 branch: sprint-0
 start_tag: sprint-0-start

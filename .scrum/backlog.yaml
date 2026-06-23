@@ -9,7 +9,7 @@ stories:
   - id: STORY-001
     title: Repo scaffold + four-zone structure
     file: docs/scrum/stories/STORY-001-repo-scaffold-four-zones.md
-    status: ready
+    status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 3
     priority: 1
     type: chore
@@ -17,7 +17,7 @@ stories:
   - id: STORY-002
     title: CI contracts = the DoD floor
     file: docs/scrum/stories/STORY-002-ci-contracts-dod-floor.md
-    status: ready
+    status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 3
     priority: 2
     type: chore
@@ -25,7 +25,7 @@ stories:
   - id: STORY-003
     title: Alembic + Neon two-connection setup
     file: docs/scrum/stories/STORY-003-alembic-neon-two-connection.md
-    status: ready
+    status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 2
     priority: 3
     type: chore
