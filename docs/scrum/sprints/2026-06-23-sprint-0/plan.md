@@ -50,7 +50,7 @@ needed in Sprint 0.
 
 ## STORY-003 — Alembic + Neon two-connection setup (2 pts, light pipeline)
 
-- [ ] 1. `alembic init` at repo top level; configure `env.py` to read
+- [x] 1. `alembic init` at repo top level; configure `env.py` to read
       `DATABASE_URL_DIRECT` for migrations; app settings read `DATABASE_URL` (pooled).
       Write a test/asserts the two vars are wired distinctly. Commit.
 - [ ] 2. Create the empty baseline migration (real `upgrade`/`downgrade`, no tables, no
