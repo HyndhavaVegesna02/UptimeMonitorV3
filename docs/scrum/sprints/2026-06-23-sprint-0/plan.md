@@ -53,7 +53,7 @@ needed in Sprint 0.
 - [x] 1. `alembic init` at repo top level; configure `env.py` to read
       `DATABASE_URL_DIRECT` for migrations; app settings read `DATABASE_URL` (pooled).
       Write a test/asserts the two vars are wired distinctly. Commit.
-- [ ] 2. Create the empty baseline migration (real `upgrade`/`downgrade`, no tables, no
+- [x] 2. Create the empty baseline migration (real `upgrade`/`downgrade`, no tables, no
       `create_all`). Commit.
 - [ ] 3. Bring up throwaway Postgres (documented one-liner); `alembic upgrade head` → 0;
       `alembic downgrade base` → `alembic upgrade head` round-trips → 0. Commit.
