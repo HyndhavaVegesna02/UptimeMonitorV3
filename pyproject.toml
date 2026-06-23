@@ -39,3 +39,16 @@ name = "core-independence"
 type = "forbidden"
 source_modules = ["src.core"]
 forbidden_modules = ["src.adapters", "src.composition", "src.api", "sqlalchemy", "httpx"]
+
+[[tool.importlinter.contracts]]
+name = "core-internal-layering"
+type = "layers"
+layers = ["src.core.services", "src.core.ports", "src.core.domain"]
+
+# Dossier §4 names vendor subpackages (inbound.dynatrace, outbound.statuspage,
+# persistence.neon) that do not exist yet. The real packages created by STORY-001
+# are used here so the contract runs green against real modules, not phantoms.
+[[tool.importlinter.contracts]]
+name = "adapters-independence"
+type = "independence"
+modules = ["src.adapters.inbound", "src.adapters.outbound", "src.adapters.persistence"]

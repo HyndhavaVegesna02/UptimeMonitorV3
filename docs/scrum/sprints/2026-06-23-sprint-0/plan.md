@@ -38,7 +38,7 @@ needed in Sprint 0.
 - [x] 1. Add import-linter config (pyproject `[tool.importlinter]` or `.importlinter`):
       contract `core-independence` (forbidden). Write a test/demonstration that a forbidden
       import makes `lint-imports` fail, then ensure the clean skeleton passes. Commit.
-- [ ] 2. Add `core-internal-layering` (layers: services→ports→domain) and
+- [x] 2. Add `core-internal-layering` (layers: services→ports→domain) and
       `adapters-dont-cross` (independence) contracts; `lint-imports` → 0 on skeleton. Commit.
 - [ ] 3. Write failing unit test for `scripts/check_fk_direction.py` violation logic
       (fake FK set incl. a spine→feature edge → flagged). Commit test.
