@@ -57,7 +57,7 @@ needed in Sprint 0.
       `create_all`). Commit.
 - [x] 3. Bring up throwaway Postgres (documented one-liner); `alembic upgrade head` → 0;
       `alembic downgrade base` → `alembic upgrade head` round-trips → 0. Commit.
-- [ ] 4. Update `CLAUDE.md` with migration command + connection-var convention + the
+- [x] 4. Update `CLAUDE.md` with migration command + connection-var convention + the
       Postgres one-liner. Commit.
 - [ ] 5. Self-run full DoD (`pytest`, `lint-imports`, `check_fk_direction.py`,
       `alembic upgrade head` → all 0); report.

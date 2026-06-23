@@ -62,17 +62,59 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
 | Import boundary     | `lint-imports` (3 contracts; must exit 0) |
 | Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
+| Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
 
 The four DoD gate commands are `pytest`, `lint-imports`,
-`python scripts/check_fk_direction.py`, and `alembic upgrade head`. The first three
-are live as of STORY-002; **Alembic migrations arrive in STORY-003**. `lint-imports`
-enforces the three dossier §4 contracts (core-independence, core-internal-layering,
-adapters-independence); `check_fk_direction.py` enforces the dossier §9 schema spine
-boundary (no spine→feature foreign key) by reading `information_schema` over
-`DATABASE_URL`.
+`python scripts/check_fk_direction.py`, and `alembic upgrade head`. All four are
+live as of STORY-003. `lint-imports` enforces the three dossier §4 contracts
+(core-independence, core-internal-layering, adapters-independence);
+`check_fk_direction.py` enforces the dossier §9 schema spine boundary (no
+spine→feature foreign key) by reading `information_schema` over `DATABASE_URL`;
+`alembic upgrade head` applies the migrations at the repo top level.
+
+## Database & migrations (dossier §3, §4, §17)
+
+Two distinct connection strings, two distinct env vars — never mix them:
+
+| Env var               | Connection            | Used by                                      |
+| --------------------- | --------------------- | -------------------------------------------- |
+| `DATABASE_URL`        | Neon **pooled** (PgBouncer) | app runtime (`src.composition.settings`) and `scripts/check_fk_direction.py` |
+| `DATABASE_URL_DIRECT` | Neon **direct** (non-pooled) | Alembic migrations (`migrations/env.py`) — DDL misbehaves through transaction pooling |
+
+Migrations are real, versioned from day one, and live at the **repo top level**
+(`alembic.ini` + `migrations/`), NOT under `backend/`. Never `create_all`. They
+run as a **separate release step** on the DIRECT connection; the app runtime uses
+the POOLED connection.
+
+URL dialect note: `migrations/env.py` (SQLAlchemy 2) needs the psycopg3 driver,
+so it normalizes a bare `postgresql://…` to `postgresql+psycopg://…`. The
+FK-direction check uses raw psycopg, which wants a plain libpq
+`postgresql://…` URL (no `+psycopg`). So when both run against the same DB,
+set `DATABASE_URL_DIRECT` to the `postgresql+psycopg://…` form and `DATABASE_URL`
+to the plain `postgresql://…` form.
+
+### Throwaway Postgres for local/CI runs (no Neon needed in Sprint 0)
+
+```bash
+# one-liner to start a disposable Postgres (Docker 28.x):
+docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16
+# wait until ready: docker exec uptime_pg_test pg_isready -U postgres
+
+# migrations use the DIRECT URL (SQLAlchemy/psycopg3 dialect):
+export DATABASE_URL_DIRECT="postgresql+psycopg://postgres:postgres@localhost:55432/uptime"
+# the FK-direction check uses the pooled DATABASE_URL (plain libpq form):
+export DATABASE_URL="postgresql://postgres:postgres@localhost:55432/uptime"
+
+alembic upgrade head                 # apply migrations  -> exit 0
+alembic downgrade base               # reverse to empty  -> exit 0
+alembic upgrade head                 # re-apply          -> exit 0
+python scripts/check_fk_direction.py # 0 FKs on baseline -> exit 0
+
+docker rm -f uptime_pg_test          # clean up (never commit container/data)
+```
 
 ## Tooling inventory
 
@@ -83,7 +125,7 @@ boundary (no spine→feature foreign key) by reading `information_schema` over
 | pytest            | test runner (DoD gate)        | `pytest` must exit 0                       |
 | import-linter     | `lint-imports` (live, STORY-002)| enforces zone dependency boundaries (DoD)|
 | FK-direction check| `scripts/check_fk_direction.py` (live, STORY-002)| enforces schema spine boundary (DoD)|
-| SQLAlchemy 2 / Alembic | (Alembic wired in STORY-003) | ORM + migrations                       |
+| SQLAlchemy 2 / Alembic | live (STORY-003); `alembic upgrade head` (DoD) | ORM + migrations at repo top level |
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
 | git               | configured                    | version control                           |
 
