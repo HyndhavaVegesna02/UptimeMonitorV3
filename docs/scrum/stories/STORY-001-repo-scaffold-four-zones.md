@@ -65,3 +65,9 @@ Do NOT write any domain/business logic — that's Zone 1 onward.
 
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §3/§4; refined to ready for Sprint 0.
+- 2026-06-23: implemented (commits 862f44a, 29afbb3, c641664, d9441c2). Spec review PASS
+  (all AC MET); quality review APPROVE. DoD gate: `pytest` exit 0. Marked Done.
+- 2026-06-23: QUALITY-MINOR (non-blocking note): bare `pytest` currently requires
+  `pip install -e ".[dev]"` first; adding `[tool.pytest.ini_options] pythonpath = ["backend"]`
+  would make the harness self-contained for a fresh clone / CI without an editable install.
+  Candidate tiny chore if it causes friction — STORY-002/003 will surface whether it matters.

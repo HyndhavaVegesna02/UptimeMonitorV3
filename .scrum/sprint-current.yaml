@@ -8,13 +8,22 @@ started: 2026-06-23
 stories:
   - id: STORY-001
     points: 3
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 3+ pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: PASS      # all 4 AC MET
+    quality_review: APPROVE # zero critical/major; 1 minor recorded as note
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "1 passed in 0.01s"
+        commit: d9441c2
+        at: 2026-06-23T19:20:00+05:30
+      # Bootstrap: lint-imports / FK-check / alembic do not exist yet (STORY-002/003);
+      # AC2 import check `python -c "import src.core, src.adapters, src.composition, src.api"` -> exit 0 @ d9441c2
+    blast_radius_resolved: true   # no wiki articles yet — nothing to resolve
   - id: STORY-002
     points: 3
     board: todo
