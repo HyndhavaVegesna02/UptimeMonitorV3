@@ -1,0 +1,37 @@
+# YourTeam active sprint board.
+sprint: 0
+status: active            # none | active | review | closed | aborted
+goal: "A running backend skeleton with the four CI contracts green on an empty build — the boundary gates exist before any business logic."
+branch: sprint-0
+start_tag: sprint-0-start
+started: 2026-06-23
+stories:
+  - id: STORY-001
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 3+ pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
+  - id: STORY-002
+    points: 3
+    board: todo
+    pipeline: full
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
+  - id: STORY-003
+    points: 2
+    board: todo
+    pipeline: light        # 1-2 pts -> implementer + DoD gate
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
+hotfixes: []
+interrupts: []
