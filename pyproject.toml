@@ -26,3 +26,16 @@ where = ["backend"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests"]
+
+# Import-linter contracts (dossier §4) — the architecture's non-LLM boundary floor.
+# Run via the bare command `lint-imports`. root_package `src` lives at backend/src
+# (exposed by package-dir above); the editable install makes it importable.
+[tool.importlinter]
+root_package = "src"
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "core-independence"
+type = "forbidden"
+source_modules = ["src.core"]
+forbidden_modules = ["src.adapters", "src.composition", "src.api", "sqlalchemy", "httpx"]
