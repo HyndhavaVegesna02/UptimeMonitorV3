@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py]
-verified_sha: 2ee3266
+verified_sha: 1a61002
 verified_sprint: sprint-0
 status: verified
 ---
@@ -27,9 +27,9 @@ status: verified
 - No `psql` client installed; no Neon/Dynatrace/Statuspage credentials needed in Sprint 0.
 
 ## Inference (synthesis, not verified)
-- Two Definition-of-Done files exist: root `definition-of-done.md` (seed companion) and
-  `.scrum/definition-of-done.md` (operational/canonical; the `.scrum/` copy is authoritative
-  for the gate runner). Candidate to dedup/cross-link to avoid drift (raised for retro).
+- `.scrum/definition-of-done.md` is the single canonical DoD (Sprint 0 retro working
+  agreement, 2026-06-23). The root `definition-of-done.md` is now just a one-line pointer to
+  it — no second editable copy.
 
 ## History
 - sprint-0: created (compile pass folding STORY-001/002/003 setup learnings).

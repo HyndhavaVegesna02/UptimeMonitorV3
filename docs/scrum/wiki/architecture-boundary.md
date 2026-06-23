@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
-verified_sha: 2ee3266
+verified_sha: 1a61002
 verified_sprint: sprint-0
 status: verified
 ---
