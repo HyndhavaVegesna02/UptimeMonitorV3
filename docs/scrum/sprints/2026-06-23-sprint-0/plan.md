@@ -44,9 +44,9 @@ needed in Sprint 0.
       (fake FK set incl. a spine→feature edge → flagged). Commit test.
 - [x] 4. Implement `scripts/check_fk_direction.py` (reads `information_schema` via
       `DATABASE_URL`, §9 SPINE allowlist, direction-only); unit test passes. Commit.
-- [ ] 5. Run it against a migrated empty DB (Dockerized Postgres) → exit 0 (zero FKs);
+- [x] 5. Run it against a migrated empty DB (Dockerized Postgres) → exit 0 (zero FKs);
       confirm both commands are the bare DoD commands. Commit.
-- [ ] 6. Self-run DoD (`pytest`, `lint-imports`, `check_fk_direction.py` → all 0); report.
+- [x] 6. Self-run DoD (`pytest`, `lint-imports`, `check_fk_direction.py` → all 0); report.
 
 ## STORY-003 — Alembic + Neon two-connection setup (2 pts, light pipeline)
 

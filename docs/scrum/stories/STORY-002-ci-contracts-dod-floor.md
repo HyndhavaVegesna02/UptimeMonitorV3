@@ -37,17 +37,17 @@ so that every later story inherits a working, enforced boundary.
    they execute via the bare commands the DoD lists.
 
 ## Acceptance Criteria
-- [ ] AC1: `lint-imports` exits 0 on the STORY-001 skeleton, with all three contracts
+- [x] AC1: `lint-imports` exits 0 on the STORY-001 skeleton, with all three contracts
       present and active (core-independence, core-internal-layering, adapter-independence).
-- [ ] AC2: A deliberately-introduced forbidden import (e.g. `src/core/services` importing
+- [x] AC2: A deliberately-introduced forbidden import (e.g. `src/core/services` importing
       `src/adapters` or `sqlalchemy`) makes `lint-imports` exit nonzero — proven by a test
       or a documented demonstration, then reverted. (The contract actually bites.)
-- [ ] AC3: `scripts/check_fk_direction.py` exists and exits 0 against a freshly-migrated
+- [x] AC3: `scripts/check_fk_direction.py` exists and exits 0 against a freshly-migrated
       (currently empty) database; it reads real FKs from `information_schema`, uses the
       §9 SPINE allowlist, and reports any spine→feature FK as a violation.
-- [ ] AC4: Both `lint-imports` and `python scripts/check_fk_direction.py` are listed in
+- [x] AC4: Both `lint-imports` and `python scripts/check_fk_direction.py` are listed in
       the Definition of Done and run by the bare commands shown there.
-- [ ] AC5: A unit test covers the FK-direction checker's violation logic (given a fake
+- [x] AC5: A unit test covers the FK-direction checker's violation logic (given a fake
       set of FKs including a spine→feature edge, it flags exactly that edge) so the gate
       itself is tested, not just asserted.
 
