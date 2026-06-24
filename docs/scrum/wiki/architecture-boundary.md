@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
-verified_sha: 1a61002
-verified_sprint: sprint-0
+verified_sha: d7d3b18
+verified_sprint: sprint-1
 status: verified
 ---
 
@@ -37,9 +37,11 @@ status: verified
   watermarks, rejected_observations, problem_signals, status_proposals, approval_events,
   publications, maintenance_windows. Direction-only: feature→spine passes, spine→feature is
   the violation.
-- As of sprint-0 the skeleton has no real imports and no tables, so the layering/independence
-  contracts and the FK check are vacuously green; they begin to bite once real code/schema
-  land in zones 1–4 / STORY-006.
+- As of sprint-1, Zone 1 code lives in `core/domain` and `core/ports`, so
+  `core-internal-layering` now actually bites: `core/ports` imports `core/domain` (allowed)
+  and not `core/services` — verified KEPT. The FK check is still vacuously green (no tables
+  until STORY-006). The Zone 1 types/ports themselves are catalogued in
+  [[canonical-types-and-ports]].
 
 ## Inference (synthesis, not verified)
 - The two mechanical checks (`lint-imports`, FK-direction) are the project's whole bet:
@@ -48,3 +50,4 @@ status: verified
 
 ## History
 - sprint-0: created (STORY-001 scaffold + STORY-002 CI contracts).
+- sprint-1: re-verified after Zone 1 landed (STORY-004/005); layering contract now bites.
