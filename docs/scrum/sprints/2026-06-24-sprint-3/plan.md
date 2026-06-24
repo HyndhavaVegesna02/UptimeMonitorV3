@@ -63,7 +63,7 @@ Neon/Postgres implementations of `ObservationRepository` (`save_new` → `INSERT
       rows, returned count reflects only new rows (`ON CONFLICT DO NOTHING`); make it pass; commit.
 - [x] 4. Failing tests for `WatermarkRepository`: `get` None before advance, the advanced UTC
       instant after, monotonic re-advance; implement the concrete repo; make them pass; commit.
-- [ ] 5. Confirm no SQL above the repository layer — `lint-imports` green (core-independence
+- [x] 5. Confirm no SQL above the repository layer — `lint-imports` green (core-independence
       forbids `sqlalchemy` in core); self-review for leaks; commit any test/cleanup.
-- [ ] 6. Run the four DoD gates; resolve forward blast radius (confirm no port-signature drift
+- [x] 6. Run the four DoD gates; resolve forward blast radius (confirm no port-signature drift
       vs canonical-types-and-ports.md); record evidence; → review.
