@@ -38,7 +38,7 @@ Library: Pydantic v2 frozen model (`ConfigDict(frozen=True)`). New module(s) und
 - [x] 10. Write failing test: no field outside `source` carries a vendor id; field names read vendor-neutrally (AC4). See it fail → confirm structure satisfies → pass. Commit.
 - [x] 11. Write failing test: round-trip `construct → model_dump → reconstruct` equal; missing required field raises (AC5). See it fail.
 - [x] 12. Confirm round-trip + validation pass. Commit.
-- [ ] 13. Run full gate: `pytest`, `lint-imports` (AC6), `alembic upgrade head`, `check_fk_direction.py`. Record DoD evidence. Resolve forward blast radius (no wiki articles on core/domain yet). No command/stack/arch change → CLAUDE.md untouched.
+- [x] 13. Run full gate: `pytest`, `lint-imports` (AC6), `alembic upgrade head`, `check_fk_direction.py`. Record DoD evidence. Resolve forward blast radius (no wiki articles on core/domain yet). No command/stack/arch change → CLAUDE.md untouched.
 
 ## STORY-005 — The core ports (3 pts)
 
