@@ -45,8 +45,8 @@ Library: Pydantic v2 frozen model (`ConfigDict(frozen=True)`). New module(s) und
 ABCs in `src/core/ports/`. Supporting domain types (`IngestResult`, `StatusChange`,
 `ComponentStatus`) added to `src/core/domain/`. Fakes under `tests/`.
 
-- [ ] 1. Write failing test: `ComponentStatus` closed enum (`operational`/`degraded`/`partial_outage`/`major_outage`) + frozen `StatusChange{component_id, status}` + `IngestResult{accepted, rejected}`. See it fail.
-- [ ] 2. Add the three supporting domain types. See it pass. Commit.
+- [x] 1. Write failing test: `ComponentStatus` closed enum (`operational`/`degraded`/`partial_outage`/`major_outage`) + frozen `StatusChange{component_id, status}` + `IngestResult{accepted, rejected}`. See it fail.
+- [x] 2. Add the three supporting domain types. See it pass. Commit.
 - [ ] 3. Write failing test: `ClockPort` ABC cannot be instantiated; a `FakeClock` (tests/) returns injected fixed tz-aware UTC time (AC3). See it fail.
 - [ ] 4. Add `ClockPort(ABC)` + `FakeClock`. See it pass. Commit.
 - [ ] 5. Write failing test: `WatermarkRepository` ABC; `FakeWatermarkRepository.get` returns None unset, `advance`→`get` round-trips (AC4). See it fail.
