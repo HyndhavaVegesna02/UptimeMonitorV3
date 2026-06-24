@@ -1,84 +1,42 @@
 # YourTeam active sprint board.
-sprint: 1
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-24
-# Sprint 1 closed: 2/2 stories accepted at review, 6/6 pts, merged to main.
-# Zone 1 complete (canonical types + core ports). Next: planning for Sprint 2
-# (Zone 2: STORY-006 spine schema migration [5] + STORY-007 repository adapters [3]).
-goal: "Zone 1 complete — the canonical vocabulary and the core's owned interfaces exist, so every later zone has vendor-neutral types and ports to build against."
-branch: sprint-1
-start_tag: sprint-1-start
+sprint: 2
+status: active           # none | active | review | closed | aborted
+goal: "Zone 2 spine exists — the eleven-table data model is migrated, reversible, and FK-direction-clean, so the repositories (Sprint 3) and every later zone have real tables to attach to."
+branch: sprint-2
+start_tag: sprint-2-start
 started: 2026-06-24
-# Capacity note: velocity history = 1 sprint (8 accepted). With a single data point,
-# committed 6 pts rather than stretching to 8. Green DoD baseline verified on main
-# before lock (pytest 10 passed, lint-imports 3 kept, alembic upgrade head, FK-check 0).
+# Capacity: velocity history = 2 sprints (8 accepted, 6 accepted), mean ~7. Committed 6
+# (deliberate 1-pt under-commit behind one load-bearing foundation story). Green DoD
+# baseline re-verified on main @ 8374de1 before lock: pytest 45 passed, lint-imports 3 kept
+# 0 broken, alembic upgrade head -> eda70ac11454, FK-direction 0 violations.
+# Plan decision (refinement): STORY-006 builds the FULL 11-table spine; STORY-007 (repos)
+# was sequenced into Sprint 3 so the spine is PO-accepted before adapters build on it.
+# Model assignment (PO rule): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-004
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 3+ pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # all 6 AC MET; UTC-offset-==0 strictness endorsed vs §5; no scope creep
-    quality_review: APPROVE # zero critical/major; 2 minors recorded as notes (no change needed)
+  - id: STORY-006
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "26 passed in 0.61s"
-        commit: 30c46e7
-        at: 2026-06-24T12:30:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 30c46e7
-        at: 2026-06-24T12:30:00+05:30
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_s4)"
-        exit_code: 0
-        output_tail: "Running upgrade  -> eda70ac11454, baseline"
-        commit: 30c46e7
-        at: 2026-06-24T12:30:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated baseline"
-        exit_code: 0
-        output_tail: "FK-direction OK: 0 foreign key(s) checked, 0 violations."
-        commit: 30c46e7
-        at: 2026-06-24T12:30:00+05:30
-    blast_radius_resolved: true   # architecture-boundary.md code_refs include backend/src/ but its
-                                  # Facts describe zone STRUCTURE (unchanged); added types, no new zone/
-                                  # package/contract/table. No edit, no verified_sha bump — confirmed by
-                                  # implementer + accepted by orchestrator. No other articles overlap.
-  - id: STORY-005
-    points: 3
-    board: done
-    pipeline: full
-    spec_review: PASS       # all 5 AC MET; ports map 1:1 to dossier §6; no improper scope
-    quality_review: APPROVE # zero critical/major; 3 minors recorded as notes
+    dod_evidence: []
+    blast_radius_resolved: false  # high blast radius: the schema foundation. The forward
+                                  # blast-radius check at DoD must match the migration's new
+                                  # tables against architecture-boundary.md code_refs and any
+                                  # §9 schema article, updating/re-verifying before Done.
+  - id: STORY-018
+    points: 1
+    board: todo
+    pipeline: lite          # 1 pt -> implementer + DoD gate (no reviewers)
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "45 passed in 0.46s"
-        commit: ce4c7c7
-        at: 2026-06-24T12:55:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: core-internal-layering now bites (ports->domain, not services)
-        commit: ce4c7c7
-        at: 2026-06-24T12:55:00+05:30
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_s5)"
-        exit_code: 0
-        output_tail: "Running upgrade  -> eda70ac11454, baseline"
-        commit: ce4c7c7
-        at: 2026-06-24T12:55:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated baseline"
-        exit_code: 0
-        output_tail: "FK-direction OK: 0 foreign key(s) checked, 0 violations."
-        commit: ce4c7c7
-        at: 2026-06-24T12:55:00+05:30
-    blast_radius_resolved: true   # architecture-boundary.md: zone STRUCTURE unchanged (ports added
-                                  # inside existing core/ports/); core-internal-layering now actually
-                                  # bites as the article predicted. No Fact contradicted, no edit/bump.
+    dod_evidence: []
+    blast_radius_resolved: false  # non-functional repo-hygiene change; no code_refs expected
 hotfixes: []
 interrupts: []
