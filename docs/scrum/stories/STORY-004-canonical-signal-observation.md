@@ -48,7 +48,17 @@ and serialize→reconstruct round-trip natively. `Provenance` (frozen: `system`,
 - None — resolved at refinement (2026-06-24): library = Pydantic v2 frozen model;
   estimate = 3; naive datetime is rejected, not coerced.
 
+## Review notes (Sprint 1 — non-blocking minors from quality review)
+- `signal.py` `_require_utc` validator accepts any zero-offset tzinfo (e.g. a tz literally
+  named "GMT"), not strictly `timezone.utc`. Correct per §5 ("UTC run time" = the instant,
+  offset-zero); recorded only so the choice is on record. No change needed.
+- `test_vendor_id_appears_only_inside_source` stringifies `model_dump()` values and checks
+  substring absence — solid for the current flat shape; would need recursion if a future
+  nested non-source field were added. Out of scope for this story.
+
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §5/§6. Status: draft.
 - 2026-06-24: refined for Sprint 1 — AC finalized, library decision (Pydantic v2 frozen
   model) recorded, open questions resolved. Status: ready.
+- 2026-06-24: implemented (commits abeb448..30c46e7), spec review PASS (6/6 AC MET),
+  quality review APPROVE (0 critical/major). Full DoD gate green. Status: done (board).
