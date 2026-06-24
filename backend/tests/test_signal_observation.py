@@ -82,3 +82,11 @@ def test_signal_observation_is_frozen():
     obs = SignalObservation(**_valid_observation())
     with pytest.raises(ValidationError):
         obs.signal_key = "mutated"
+
+
+# --- Step 7: invalid health raises ValidationError (AC2) ------------------------
+
+
+def test_signal_observation_rejects_unknown_health():
+    with pytest.raises(ValidationError):
+        SignalObservation(**_valid_observation(health="flapping"))
