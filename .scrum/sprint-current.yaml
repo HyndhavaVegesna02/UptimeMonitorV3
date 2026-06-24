@@ -62,12 +62,12 @@ stories:
                                   # do not overlap the diff.
   - id: STORY-007
     points: 3
-    board: todo
+    board: in-progress
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: null
     quality_review: null
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false  # touches backend/src/adapters/persistence/ (new repos) +
