@@ -59,3 +59,14 @@ _(none — ready)_
   (`ObservationRepository`, `WatermarkRepository`); nothing deferred (no other ports yet).
   Confirmed the no-SQL-in-core boundary is the existing `core-independence` contract, not a
   new one. Estimate held at 3. Status: ready. Sequenced for Sprint 3 (depends on STORY-006).
+- 2026-06-25: implemented — `PostgresObservationRepository`/`PostgresWatermarkRepository` in
+  `adapters/persistence/`, injected SQLAlchemy `Engine`. `save_new` uses
+  `insert(...).on_conflict_do_nothing(index_elements=["source_event_id"]).returning(...)` and
+  counts `len(fetchall())` (RETURNING yields only newly-inserted rows → exact accepted-vs-deduped
+  delta); `advance` is a single `on_conflict_do_update` upsert; `get` forces tz-aware UTC via
+  `.astimezone(timezone.utc)`. Tests seed parent `apps`+`signals` (raw psycopg arrangement) for
+  the FK and use the `migrated_db` fixture from STORY-019. Spec review PASS (6/6 AC), quality
+  review APPROVE (0 critical/major). DoD green @ f11a7be (alembic, pytest 89, lint 3 kept, FK
+  10/0). Board: done. Quality-review MINOR notes (non-blocking, no change required): (1) `advance`
+  doesn't refresh `watermarks.updated_at` on re-advance — audit metadata only, nothing reads it;
+  (2) repo imports sit inside test functions (TDD residue), could be hoisted.

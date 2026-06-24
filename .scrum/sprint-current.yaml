@@ -62,17 +62,44 @@ stories:
                                   # do not overlap the diff.
   - id: STORY-007
     points: 3
-    board: in-progress
+    board: done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # all 6 AC MET (verified by running). Partial-overlap dedup proves the
+                            # RETURNING-based newly-inserted count; tz-aware-UTC assertion present.
+    quality_review: APPROVE # zero critical/major. 2 minors recorded as notes (non-blocking):
+                            # (1) advance() upsert doesn't refresh watermarks.updated_at on re-advance
+                            # (audit-only, nothing reads it); (2) in-function repo imports (TDD residue).
     blocked_question: null
     attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false  # touches backend/src/adapters/persistence/ (new repos) +
-                                  # tests. canonical-types-and-ports.md (core/ports/) describes
-                                  # the interfaces being implemented — not edited by an adapter,
-                                  # but confirm no port signature drift; check at DoD.
+    dod_evidence:
+      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod07)"
+        exit_code: 0
+        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
+        commit: f11a7be
+        at: 2026-06-25T11:05:00+05:30
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "89 passed in 19.33s"   # 84 baseline + 5 new persistence integration tests
+        commit: f11a7be
+        at: 2026-06-25T11:05:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: no sqlalchemy leak above persistence
+        commit: f11a7be
+        at: 2026-06-25T11:05:00+05:30
+      - command: "python scripts/check_fk_direction.py  # against migrated spine"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: f11a7be
+        at: 2026-06-25T11:05:00+05:30
+    blast_radius_resolved: true   # diff adds backend/src/adapters/persistence/{observation,watermark}
+                                  # _repository.py (+ tests). architecture-boundary.md (code_refs incl.
+                                  # backend/src/) was mechanically stale; re-verified — Facts describe
+                                  # zone STRUCTURE/contracts (unchanged: no new zone/package/contract,
+                                  # lint-imports 3 kept), so no Fact edit, verified_sha bumped
+                                  # ac1d468 -> f11a7be. canonical-types-and-ports.md: core untouched
+                                  # this story (no overlap). Implementer flagged a future persistence
+                                  # article once a 3rd adapter exists — deferred to a later compile pass.
 hotfixes: []
 interrupts: []
