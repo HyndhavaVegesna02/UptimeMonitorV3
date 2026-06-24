@@ -34,7 +34,7 @@ stories:
   - id: STORY-004
     title: Canonical SignalObservation type
     file: docs/scrum/stories/STORY-004-canonical-signal-observation.md
-    status: ready           # refined 2026-06-24; committed to Sprint 1
+    status: done            # accepted at Sprint 1 review (2026-06-24)
     points: 3
     priority: 4
     type: feature
@@ -42,7 +42,7 @@ stories:
   - id: STORY-005
     title: The core ports
     file: docs/scrum/stories/STORY-005-core-ports.md
-    status: ready           # refined 2026-06-24; committed to Sprint 1
+    status: done            # accepted at Sprint 1 review (2026-06-24)
     points: 3
     priority: 5
     type: feature
