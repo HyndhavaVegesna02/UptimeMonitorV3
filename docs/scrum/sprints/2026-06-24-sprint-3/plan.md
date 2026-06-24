@@ -43,7 +43,7 @@ Python helper `scripts/dev_db.py` (`up`/`down`) + a pytest **session-scoped** fi
       untouched; commit.
 - [x] 6. Write `scripts/dev_db.py` `up`/`down`; `up` → start+wait+migrate+emit both URLs,
       `down` → remove container. Prove `up` then `check_fk_direction.py` exits 0; commit.
-- [ ] 7. Update `CLAUDE.md` (command-sync agreement): document `scripts/dev_db.py` as the
+- [x] 7. Update `CLAUDE.md` (command-sync agreement): document `scripts/dev_db.py` as the
       standard local way to run the DB gates; point the throwaway-Postgres section at it; commit.
 - [ ] 8. Run the four DoD gates; resolve forward blast radius (dev-setup-and-dod.md /
       migrations-and-db.md reference CLAUDE.md + the one-liner — update/re-verify); record
