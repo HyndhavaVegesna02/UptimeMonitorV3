@@ -51,15 +51,15 @@ stories:
   - id: STORY-006
     title: Spine schema migration
     file: docs/scrum/stories/STORY-006-spine-schema-migration.md
-    status: draft
+    status: ready           # refined 2026-06-24: full 11-table spine, JSONB app config
     points: 5
     priority: 6
     type: feature
-    sprint: null
+    sprint: 2
   - id: STORY-007
     title: Repository adapters behind the ports
     file: docs/scrum/stories/STORY-007-repository-adapters.md
-    status: draft
+    status: ready           # refined 2026-06-24: 2 persistence ports; sequenced for Sprint 3
     points: 3
     priority: 7
     type: feature
@@ -154,8 +154,8 @@ stories:
   - id: STORY-018
     title: Add .gitattributes to normalize line endings
     file: docs/scrum/stories/STORY-018-gitattributes-line-endings.md
-    status: draft   # from Sprint 1 retro; refine before a sprint
+    status: ready   # refined 2026-06-24 from Sprint 1 retro
     points: 1
     priority: 18
     type: chore
-    sprint: null
+    sprint: 2

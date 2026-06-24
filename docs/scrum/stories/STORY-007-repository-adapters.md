@@ -5,25 +5,57 @@ type: feature
 ---
 
 ## Context
-Spec: dossier §6 (repository ports) + §9 (schema). Zone 2. Neon-backed implementations
-of the repository ports from STORY-005. All SQL stays behind the repository layer.
+Spec: dossier §6 (repository ports) + §9 (schema). Zone 2. Neon/Postgres-backed
+implementations of the two persistence ports that exist after STORY-005:
+`ObservationRepository` (`save_new`) and `WatermarkRepository` (`get` / `advance`). They
+sit in `adapters/persistence/` and run against the spine tables created by STORY-006. All
+SQL stays behind the repository layer — the existing `core-independence` import contract
+already forbids `sqlalchemy` inside `src.core`, so a leak is a build failure, not a review
+note.
+
+Refined 2026-06-24: scope is exactly those two repositories (no others have ports yet —
+nothing is deferred). Depends on STORY-006; planned for Sprint 3 so the spine is
+PO-accepted before adapter code and integration tests are written against it.
 
 ## Description
-Implement the repository ports in `adapters/persistence/` (Neon/Postgres via
-SQLAlchemy). `save_new` uses `INSERT … ON CONFLICT (source_event_id) DO NOTHING`;
-the watermark repository is core-owned in semantics but DB-backed here. No SQL leaks
-above the repository layer.
+Implement two concrete adapters in `adapters/persistence/` (SQLAlchemy 2 / psycopg 3):
 
-## Acceptance Criteria (draft — confirm at refinement)
-- [ ] AC1: Each repository adapter implements its port interface from STORY-005.
-- [ ] AC2: Integration tests run against a test database (Dockerized Postgres) and cover
-      insert/idempotency/read paths.
-- [ ] AC3: No SQL appears above the repository layer (enforced by review + `lint-imports`:
-      `sqlalchemy` forbidden in `core`).
-- [ ] AC4: `ON CONFLICT DO NOTHING` idempotency proven by a duplicate-insert test.
+- `ObservationRepository.save_new(batch)` → `INSERT … ON CONFLICT (source_event_id) DO
+  NOTHING`, returning the count of rows **newly** inserted (so the core can report
+  accepted-vs-deduped without SQL leaking upward).
+- `WatermarkRepository.get(signal_key)` / `advance(signal_key, to)` → DB-backed cursor;
+  core-owned in semantics, stored here. `to` is a tz-aware UTC `datetime` and must
+  round-trip through `timestamptz` unchanged.
+
+Integration tests run against a **throwaway Dockerized Postgres** migrated with
+`alembic upgrade head` (per the working agreement: real adapters use a throwaway test DB,
+never a mock of the database). No live Neon required.
+
+## Acceptance Criteria
+- [ ] AC1: A concrete `ObservationRepository` and a concrete `WatermarkRepository` live in
+      `adapters/persistence/`, each implementing its STORY-005 port interface (subclass /
+      registered ABC), constructed with an injected SQLAlchemy engine/session.
+- [ ] AC2: Integration tests run against a Dockerized Postgres migrated to head and cover,
+      for observations: inserting a fresh batch, reading it back, and the dedup path; for
+      watermarks: `get` before any advance, `get` after `advance`, and re-`advance`.
+- [ ] AC3: `save_new` is idempotent: re-inserting a batch whose `source_event_id`s already
+      exist inserts **0** new rows and the returned count reflects only newly-inserted rows
+      (`ON CONFLICT (source_event_id) DO NOTHING`), proven by a duplicate-insert test.
+- [ ] AC4: `WatermarkRepository.get` returns `None` before the first `advance`, returns the
+      advanced instant afterward as a tz-aware UTC `datetime`, and a later `advance` moves
+      it forward — proven by tests.
+- [ ] AC5: No SQL appears above the repository layer; `lint-imports` stays green (the
+      existing `core-independence` contract forbids `sqlalchemy` in `src.core`) and review
+      confirms no raw SQL leaks above `adapters/persistence/`.
+- [ ] AC6: All four DoD commands exit 0 (`pytest`, `lint-imports`,
+      `scripts/check_fk_direction.py`, `alembic upgrade head`).
 
 ## Open Questions
-- Confirm which repositories are in scope for this story vs deferred.
+_(none — ready)_
 
 ## History
-- 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §6/§9. Status: draft — refine before its sprint.
+- 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §6/§9. Status: draft.
+- 2026-06-24: refined with PO. Scope resolved to the two existing persistence ports
+  (`ObservationRepository`, `WatermarkRepository`); nothing deferred (no other ports yet).
+  Confirmed the no-SQL-in-core boundary is the existing `core-independence` contract, not a
+  new one. Estimate held at 3. Status: ready. Sequenced for Sprint 3 (depends on STORY-006).
