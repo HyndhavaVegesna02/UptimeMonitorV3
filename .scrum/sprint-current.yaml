@@ -45,7 +45,7 @@ stories:
                                   # implementer + accepted by orchestrator. No other articles overlap.
   - id: STORY-005
     points: 3
-    board: todo
+    board: in-progress
     pipeline: full
     spec_review: null
     quality_review: null
