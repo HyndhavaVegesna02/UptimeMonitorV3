@@ -7,46 +7,59 @@ type: chore
 ## Context
 From the Sprint 2 retro. The two DB-backed DoD gates (`alembic upgrade head`,
 `scripts/check_fk_direction.py`) and the DB-gated tests require a migrated throwaway
-Postgres. Across Sprint 2, that setup was hand-rolled **five** separate times
-(STORY-006 implementer, spec reviewer, the orchestrator DoD gate, STORY-018 implementer,
-its gate) — each re-implementing `docker run` + wait-ready + `alembic upgrade head` + the
-two-URL dialect split (`DATABASE_URL` plain libpq vs `DATABASE_URL_DIRECT` `+psycopg`).
-Every remaining Zone 2–4 story is DB-heavy, so the cost and the foot-gun surface (wrong
-dialect, forgetting to migrate before the FK check) compound. One shared harness removes it.
+Postgres. Across Sprint 2 that setup was hand-rolled **five** separate times — each
+re-implementing `docker run` + wait-ready + `alembic upgrade head` + the two-URL dialect
+split (`DATABASE_URL` plain libpq vs `DATABASE_URL_DIRECT` `+psycopg`). Today
+`backend/tests/test_spine_schema.py` carries its own `pytest.mark.skipif(not DATABASE_URL)`
++ a `conn` fixture and assumes a human/CI already migrated the DB. Every remaining Zone 2–4
+story is DB-heavy, so the cost and the foot-gun surface (wrong dialect; forgetting to migrate
+before the FK check) compound. One shared harness removes it.
+
+Refined 2026-06-24. Decisions locked (resolving the prior open questions):
+1. **Python, not bash/PowerShell.** A small `scripts/dev_db.py` helper + a pytest
+   **session-scoped fixture** in `backend/tests/conftest.py`. Cross-platform, fits the Python
+   stack, and avoids a bash-vs-PowerShell split on a Windows-first repo that nonetheless drives
+   the gates from Git Bash.
+2. **Fixture behavior:** session-scoped; if `DATABASE_URL`/`DATABASE_URL_DIRECT` are already set
+   externally (CI or a running DB), reuse them and ensure the DB is migrated; otherwise, if
+   Docker is available, spawn `postgres:16`, wait ready, set both URLs in their correct
+   dialects, `alembic upgrade head`, yield, then tear the container down in a finalizer that
+   runs **even on test failure**. When neither an external DB nor Docker is available, skip
+   cleanly.
 
 ## Description
-Provide a single reusable way to obtain a migrated throwaway Postgres:
-- A **helper** (e.g. `scripts/dev_db.*` or a documented runner target) that starts a
-  throwaway `postgres:16`, waits until ready, runs `alembic upgrade head`, and exports both
-  connection URLs in their correct dialects.
-- A **pytest session-scoped fixture** that DB-gated tests depend on, so they stop carrying
-  their own skip/connect boilerplate. It must reuse an externally-provided `DATABASE_URL`
-  when present (CI / a running DB) and otherwise manage a container locally, with teardown
-  that runs even on test failure.
+- **Helper** `scripts/dev_db.py` with `up`/`down` (names confirmed at implementation): `up`
+  starts a throwaway `postgres:16`, waits ready, runs `alembic upgrade head`, and emits both
+  URLs in their correct dialects; `down` removes the container. Replaces the hand-copied
+  CLAUDE.md one-liner for manual gate runs.
+- **Pytest session fixture** in the existing `conftest.py` implementing the behavior above.
+  Migrate `test_spine_schema.py` to depend on it (drop its local `skipif`/`conn` boilerplate),
+  proving the fixture on a real consumer. `test_fk_direction.py` stays a pure unit test (no DB)
+  — do not touch it.
+- Test/dev tooling only — **no production code changes**.
 
-No production code changes — this is test/dev tooling only.
-
-## Acceptance Criteria (draft — confirm at refinement)
-- [ ] AC1: One command/helper starts a throwaway `postgres:16`, waits for readiness, runs
-      `alembic upgrade head`, and emits `DATABASE_URL` (plain) + `DATABASE_URL_DIRECT`
-      (`+psycopg`); after running it, `python scripts/check_fk_direction.py` exits 0 with no
-      manual URL juggling.
-- [ ] AC2: A pytest session-scoped fixture supplies a migrated DB to the existing DB-gated
-      tests (`backend/tests/test_spine_schema.py`, `test_fk_direction.py`); they pass through
-      the fixture and the container is torn down even when a test fails.
-- [ ] AC3: The fixture reuses an externally-set `DATABASE_URL` when present (no container
-      spawned), and skips cleanly when neither an external DB nor Docker is available.
-- [ ] AC4: `CLAUDE.md` updated to document the harness as the standard way to run the DB
-      gates locally (command-sync working agreement).
-- [ ] AC5: All four DoD gates exit 0.
+## Acceptance Criteria
+- [ ] AC1: `python scripts/dev_db.py up` starts a throwaway `postgres:16`, waits for readiness,
+      runs `alembic upgrade head`, and emits `DATABASE_URL` (plain libpq) + `DATABASE_URL_DIRECT`
+      (`+psycopg`); afterward `python scripts/check_fk_direction.py` exits 0 with no manual URL
+      juggling, and `python scripts/dev_db.py down` removes the container.
+- [ ] AC2: A pytest session-scoped fixture supplies a migrated DB to the DB-gated tests;
+      `test_spine_schema.py` is refactored onto it (its local `skipif`/`conn` removed) and its
+      tests pass through the fixture. The container is torn down even when a test fails (proven
+      by a finalizer, not by happy-path cleanup).
+- [ ] AC3: With `DATABASE_URL`/`DATABASE_URL_DIRECT` set externally, the fixture reuses them
+      (ensuring migrated) and spawns no container; with neither an external DB nor Docker
+      available, the DB-gated tests skip cleanly (no error).
+- [ ] AC4: `CLAUDE.md` updated to document `scripts/dev_db.py` as the standard local way to run
+      the DB gates (command-sync working agreement); the hand one-liner section points to it.
+- [ ] AC5: All four DoD gates exit 0 (`pytest`, `lint-imports`, `scripts/check_fk_direction.py`,
+      `alembic upgrade head`).
 
 ## Open Questions
-- Bash script vs PowerShell vs a tiny Python runner for the helper (Windows-first repo).
-- Exact fixture scope/teardown semantics and the CI-vs-local reuse switch — confirm at refinement.
-- Sequencing: planning should consider running this BEFORE STORY-007 so the repository
-  adapters' integration tests are written against the fixture from the start.
+_(none — ready)_
 
 ## History
-- 2026-06-24: created from Sprint 2 retro (PO-approved amendment). Status: draft — refine
-  and estimate before a sprint. Provisional estimate 3 (Docker lifecycle in a fixture +
-  CI/local reuse + teardown-on-failure + doc sync).
+- 2026-06-24: created from Sprint 2 retro (PO-approved amendment).
+- 2026-06-24: refined with PO. Decisions: Python helper + session fixture (not bash/PowerShell);
+  reuse-external-or-spawn behavior with teardown-on-failure; refactor `test_spine_schema.py`
+  onto the fixture. Estimate held at 3. Status: ready. Planned for Sprint 3 ahead of STORY-007.
