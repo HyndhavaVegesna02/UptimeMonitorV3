@@ -1,7 +1,7 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py]
-verified_sha: 6d34ef2
+verified_sha: 0a6dd27
 verified_sprint: sprint-3
 status: verified
 ---

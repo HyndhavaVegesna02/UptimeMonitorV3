@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: 6d34ef2
+verified_sha: 0a6dd27
 verified_sprint: sprint-3
 status: verified
 ---
