@@ -61,7 +61,7 @@ Neon/Postgres implementations of `ObservationRepository` (`save_new` → `INSERT
       2 / psycopg 3, injected engine/session); make the insert+readback test pass; commit.
 - [x] 3. Failing test for idempotency: re-inserting the same `source_event_id`s inserts 0 new
       rows, returned count reflects only new rows (`ON CONFLICT DO NOTHING`); make it pass; commit.
-- [ ] 4. Failing tests for `WatermarkRepository`: `get` None before advance, the advanced UTC
+- [x] 4. Failing tests for `WatermarkRepository`: `get` None before advance, the advanced UTC
       instant after, monotonic re-advance; implement the concrete repo; make them pass; commit.
 - [ ] 5. Confirm no SQL above the repository layer — `lint-imports` green (core-independence
       forbids `sqlalchemy` in core); self-review for leaks; commit any test/cleanup.

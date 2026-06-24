@@ -159,3 +159,51 @@ def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_
             (total,) = cur.fetchone()
 
     assert total == 3
+
+
+# --- WatermarkRepository ----------------------------------------------------
+
+
+def test_watermark_get_returns_none_before_any_advance(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-get-none")
+    repo = PostgresWatermarkRepository(engine)
+
+    assert repo.get("watermark-get-none") is None
+
+
+def test_watermark_advance_then_get_round_trips_as_tz_aware_utc(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-advance")
+    repo = PostgresWatermarkRepository(engine)
+    mark = datetime(2026, 6, 24, 10, 5, 0, tzinfo=timezone.utc)
+
+    repo.advance("watermark-advance", mark)
+    result = repo.get("watermark-advance")
+
+    assert result == mark
+    assert result.tzinfo is not None
+    assert result.utcoffset() == timedelta(0)
+
+
+def test_watermark_re_advance_moves_it_forward(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-readvance")
+    repo = PostgresWatermarkRepository(engine)
+    first = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    second = datetime(2026, 6, 24, 11, 30, 0, tzinfo=timezone.utc)
+
+    repo.advance("watermark-readvance", first)
+    assert repo.get("watermark-readvance") == first
+
+    repo.advance("watermark-readvance", second)
+    assert repo.get("watermark-readvance") == second
