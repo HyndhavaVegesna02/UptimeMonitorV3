@@ -19,6 +19,13 @@
 - 2026-01-01 — One active session: honor .scrum/session.lock; a second session
   runs read-only. (Default)
 
+## PO-stated rules (added during work — binding immediately)
+- 2026-06-24 — **Subagent model assignment is mandatory.** Implementation/implementer
+  subagents MUST be dispatched on the **Sonnet** model (`model: "sonnet"`); reviewer
+  subagents (spec-compliance AND code-quality) MUST be dispatched on the **Opus** model
+  (`model: "opus"`). This applies to every Agent dispatch in the YourTeam pipeline, every
+  story size. Not negotiable, no per-story override. (PO directive, 2026-06-24.)
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the
