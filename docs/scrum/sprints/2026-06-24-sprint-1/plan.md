@@ -28,8 +28,8 @@ Library: Pydantic v2 frozen model (`ConfigDict(frozen=True)`). New module(s) und
 
 - [x] 1. Write failing test: `Health` is a closed enum with exactly `up`/`down`/`degraded`. See it fail.
 - [x] 2. Add `Health(str, Enum)` in `core/domain`. See it pass. Commit.
-- [ ] 3. Write failing test: `Provenance` frozen model `{system, native_id, native_kind}` constructs; mutation raises. See it fail.
-- [ ] 4. Add frozen `Provenance`. See it pass. Commit.
+- [x] 3. Write failing test: `Provenance` frozen model `{system, native_id, native_kind}` constructs; mutation raises. See it fail.
+- [x] 4. Add frozen `Provenance`. See it pass. Commit.
 - [ ] 5. Write failing test: `SignalObservation` constructs from valid §5 fields (AC1); the object is frozen (mutation raises). See it fail.
 - [ ] 6. Add frozen `SignalObservation` with all §5 fields (incl. optional `latency_ms`, `raw_ref`). See it pass. Commit.
 - [ ] 7. Write failing test: invalid `health` value raises `ValidationError` (AC2). See it fail → make pass (enum already enforces) → confirm. Commit.
