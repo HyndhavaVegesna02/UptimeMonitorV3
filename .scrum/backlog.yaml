@@ -34,19 +34,19 @@ stories:
   - id: STORY-004
     title: Canonical SignalObservation type
     file: docs/scrum/stories/STORY-004-canonical-signal-observation.md
-    status: draft
+    status: ready           # refined 2026-06-24; committed to Sprint 1
     points: 3
     priority: 4
     type: feature
-    sprint: null
+    sprint: 1
   - id: STORY-005
     title: The core ports
     file: docs/scrum/stories/STORY-005-core-ports.md
-    status: draft
+    status: ready           # refined 2026-06-24; committed to Sprint 1
     points: 3
     priority: 5
     type: feature
-    sprint: null
+    sprint: 1
   # ── Zone 2 — Schema + migrations + repositories ──────────────────
   - id: STORY-006
     title: Spine schema migration
