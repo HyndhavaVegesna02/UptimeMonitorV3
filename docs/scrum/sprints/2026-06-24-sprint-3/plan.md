@@ -29,14 +29,14 @@ Python helper `scripts/dev_db.py` (`up`/`down`) + a pytest **session-scoped** fi
 (ensuring migrated), else spawn `postgres:16`, wait, migrate, yield, tear down on a finalizer
 (even on failure); skip cleanly when neither external DB nor Docker is available.
 
-- [ ] 1. Write a failing test for the fixture contract: depending on the fixture yields a
+- [x] 1. Write a failing test for the fixture contract: depending on the fixture yields a
       live, migrated connection (the eleven spine tables exist); see it fail (no fixture yet).
-- [ ] 2. Implement the session fixture in `conftest.py` — external-URL reuse branch first
+- [x] 2. Implement the session fixture in `conftest.py` — external-URL reuse branch first
       (assume a provided DB), migrate-and-connect, make step-1 test pass; commit.
-- [ ] 3. Add the container-spawn branch (Docker present, no external URL): start `postgres:16`,
+- [x] 3. Add the container-spawn branch (Docker present, no external URL): start `postgres:16`,
       wait ready, set both URLs in correct dialects, `alembic upgrade head`; teardown finalizer
       that runs on failure. Test the teardown-on-failure path; commit.
-- [ ] 4. Add the clean-skip branch (no external DB, no Docker) — DB-gated tests skip, no error;
+- [x] 4. Add the clean-skip branch (no external DB, no Docker) — DB-gated tests skip, no error;
       test it; commit.
 - [ ] 5. Refactor `test_spine_schema.py` onto the fixture (drop its local `skipif`/`conn`);
       confirm its tests still pass through the fixture; leave `test_fk_direction.py` (pure unit)
