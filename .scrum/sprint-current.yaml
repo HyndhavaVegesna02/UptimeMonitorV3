@@ -1,93 +1,48 @@
 # YourTeam active sprint board.
-sprint: 2
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-24
-# Sprint 2 closed: 2/2 stories accepted at review, 6/6 pts, merged to main.
-# Zone 2 schema complete (eleven-table spine + line-ending hygiene). Next: planning for
-# Sprint 3 (Zone 2 STORY-007 repository adapters [3], leading into Zone 3 ingest).
-goal: "Zone 2 spine exists — the eleven-table data model is migrated, reversible, and FK-direction-clean, so the repositories (Sprint 3) and every later zone have real tables to attach to."
-branch: sprint-2
-start_tag: sprint-2-start
+sprint: 3
+status: active           # none | active | review | closed | aborted
+goal: "Zone 2 closes — repository adapters implement the persistence ports against the spine, on a shared throwaway-DB harness so every later DB-gated story stops hand-rolling Postgres."
+branch: sprint-3
+start_tag: sprint-3-start
 started: 2026-06-24
-# Capacity: velocity history = 2 sprints (8 accepted, 6 accepted), mean ~7. Committed 6
-# (deliberate 1-pt under-commit behind one load-bearing foundation story). Green DoD
-# baseline re-verified on main @ 8374de1 before lock: pytest 45 passed, lint-imports 3 kept
-# 0 broken, alembic upgrade head -> eda70ac11454, FK-direction 0 violations.
-# Plan decision (refinement): STORY-006 builds the FULL 11-table spine; STORY-007 (repos)
-# was sequenced into Sprint 3 so the spine is PO-accepted before adapters build on it.
+# Capacity: velocity history (8, 6, 6), mean ~7. Committed 6 (deliberate 1-pt under-commit).
+# Green DoD baseline re-verified on main @ d5dd2c8 before lock: alembic upgrade head ->
+# 3a8254bcfe59, pytest 77 passed, lint-imports 3 kept/0 broken, FK-direction 10 checked/0
+# violations. (Note: the lint-imports.exe launcher was corrupted at verify time and
+# regenerated via `pip install --force-reinstall --no-deps import-linter` — a .venv-only
+# fix, no repo change.)
+# Order: STORY-019 (DB harness) FIRST so STORY-007's integration tests are written against
+# the shared fixture from the start (Sprint 2 retro sequencing call).
 # Model assignment (PO rule): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-006
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # all 6 AC MET, each verified against a live Postgres (incl. functional
-                            # proof of one-active-proposal-per-component). Scope additions noted, AC-clean.
-    quality_review: APPROVE # zero critical/major; 2 minors recorded as notes on the story (no change needed)
-    blocked_question: null
-    attempts: 1
-    paused_at_commit: null
-    dod_evidence:
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod)"
-        exit_code: 0
-        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
-        commit: cc54e13
-        at: 2026-06-24T13:40:00+05:30
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "77 passed in 3.46s"   # 32 DB-gated tests in test_spine_schema.py
-        commit: cc54e13
-        at: 2026-06-24T13:40:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: cc54e13
-        at: 2026-06-24T13:40:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated spine"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: cc54e13
-        at: 2026-06-24T13:40:00+05:30
-    blast_radius_resolved: true   # forward blast radius: the diff adds migrations/3a8254bcfe59;
-                                  # migrations-and-db.md (code_refs incl. migrations/) updated by the
-                                  # implementer with the spine-migration Facts + verified_sha bumped to
-                                  # 54eb5c5 (not stale: no migrations/ change after it). Other three
-                                  # articles' code_refs do not overlap the diff. Confirmed by reviewers.
-  - id: STORY-018
-    points: 1
-    board: done
-    pipeline: lite          # 1 pt -> implementer + DoD gate (no reviewers)
-    spec_review: null        # lite pipeline (1 pt): no reviewers, DoD gate only
+  - id: STORY-019
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
     quality_review: null
     blocked_question: null
-    attempts: 1
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod18)"
-        exit_code: 0
-        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
-        commit: 69219ed
-        at: 2026-06-24T13:55:00+05:30
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "77 passed in 3.35s"
-        commit: 69219ed
-        at: 2026-06-24T13:55:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 69219ed
-        at: 2026-06-24T13:55:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated spine"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: 69219ed
-        at: 2026-06-24T13:55:00+05:30
-    blast_radius_resolved: true   # no wiki article's code_refs include .gitattributes; nothing to resolve.
-                                  # Implementation note: `git add --renormalize .` staged nothing (index
-                                  # blobs already LF; working-tree CRLF comes from the user's global
-                                  # core.autocrlf=true). .gitattributes prevents future CRLF churn. AC2
-                                  # verified: a post-.gitattributes `git add` of a text file emits no
-                                  # LF->CRLF warning.
+    dod_evidence: []
+    blast_radius_resolved: false  # touches backend/tests/conftest.py, test_spine_schema.py,
+                                  # scripts/dev_db.py (new), CLAUDE.md. At DoD, match the diff
+                                  # against dev-setup-and-dod.md code_refs (CLAUDE.md is one) and
+                                  # migrations-and-db.md (the throwaway-DB one-liner) and
+                                  # update/re-verify before Done.
+  - id: STORY-007
+    points: 3
+    board: todo
+    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false  # touches backend/src/adapters/persistence/ (new repos) +
+                                  # tests. canonical-types-and-ports.md (core/ports/) describes
+                                  # the interfaces being implemented — not edited by an adapter,
+                                  # but confirm no port signature drift; check at DoD.
 hotfixes: []
 interrupts: []
