@@ -1,6 +1,10 @@
 # YourTeam active sprint board.
 sprint: 2
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-24
+# Sprint 2 closed: 2/2 stories accepted at review, 6/6 pts, merged to main.
+# Zone 2 schema complete (eleven-table spine + line-ending hygiene). Next: planning for
+# Sprint 3 (Zone 2 STORY-007 repository adapters [3], leading into Zone 3 ingest).
 goal: "Zone 2 spine exists — the eleven-table data model is migrated, reversible, and FK-direction-clean, so the repositories (Sprint 3) and every later zone have real tables to attach to."
 branch: sprint-2
 start_tag: sprint-2-start
