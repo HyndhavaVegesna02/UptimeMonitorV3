@@ -30,6 +30,7 @@ import os
 import subprocess
 import sys
 import time
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -64,6 +65,25 @@ def docker_available() -> bool:
     except (OSError, subprocess.TimeoutExpired):
         return False
     return result.returncode == 0
+
+
+def _free_tcp_port() -> int:
+    """Ask the OS for an ephemeral free TCP port (avoids collisions between
+    concurrent/nested pytest runs that would otherwise fight over a fixed
+    host port, e.g. a subprocess-driven test spawning a second throwaway DB
+    while the outer session's container is still bound to the default port)."""
+    import socket
+
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return sock.getsockname()[1]
+
+
+def unique_container_name(prefix: str = "uptime_pg_pytest") -> str:
+    """A container name unique to this process, to avoid collisions when a
+    test spawns a nested pytest subprocess that also resolves a DB (e.g. the
+    teardown-on-failure test) while this process's own container is alive."""
+    return f"{prefix}_{os.getpid()}_{uuid.uuid4().hex[:8]}"
 
 
 def start_container(
@@ -161,7 +181,7 @@ def resolve_db(
     docker_available: "callable" = docker_available,
     spawn_container: "callable" = None,
     migrate: "callable" = run_migrations,
-    container_name: str = CONTAINER_NAME,
+    container_name: str | None = None,
 ) -> DbPlan:
     """Decide and execute how to obtain a migrated DB; returns a DbPlan.
 
@@ -171,6 +191,12 @@ def resolve_db(
     `spawn_container`, which must start it, wait for readiness, and migrate);
     (3) else return a "skip" plan — the caller (fixture) turns this into a
     clean pytest.skip, never an error.
+
+    The spawned container gets a PID+UUID-unique name and an OS-assigned free
+    host port by default (not the fixed CONTAINER_NAME/HOST_PORT the CLI
+    `up`/`down` use) — this avoids a nested/concurrent pytest run (e.g. a
+    subprocess-driven test) colliding with this process's own still-alive
+    session container on name or port.
     """
     if env is None:
         env = os.environ
@@ -188,21 +214,36 @@ def resolve_db(
     if not docker_available():
         return DbPlan(source="skip", database_url=None, database_url_direct=None)
 
+    name = container_name or unique_container_name()
     if spawn_container is None:
-        spawn_container = lambda: _spawn_default(container_name, migrate)
-    spawn_container()
+        port_box: list[int] = []
+        spawn_container = lambda: _spawn_default(name, migrate, port_box)
+        spawn_container()
+        port = port_box[0]
+        database_url = f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+        database_url_direct = (
+            f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+        )
+    else:
+        spawn_container()
+        database_url = DATABASE_URL_PLAIN
+        database_url_direct = DATABASE_URL_DIRECT
+
     return DbPlan(
         source="container",
-        database_url=DATABASE_URL_PLAIN,
-        database_url_direct=DATABASE_URL_DIRECT,
-        container_name=container_name,
+        database_url=database_url,
+        database_url_direct=database_url_direct,
+        container_name=name,
     )
 
 
-def _spawn_default(container_name: str, migrate) -> None:
-    start_container(name=container_name)
+def _spawn_default(container_name: str, migrate, port_box: list) -> None:
+    port = _free_tcp_port()
+    start_container(name=container_name, host_port=port)
     wait_for_postgres(name=container_name)
-    migrate(DATABASE_URL_DIRECT)
+    direct_url = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+    migrate(direct_url)
+    port_box.append(port)
 
 
 # --------------------------------------------------------------------------
