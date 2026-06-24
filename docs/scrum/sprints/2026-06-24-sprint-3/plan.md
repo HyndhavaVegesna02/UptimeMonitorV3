@@ -38,7 +38,7 @@ Python helper `scripts/dev_db.py` (`up`/`down`) + a pytest **session-scoped** fi
       that runs on failure. Test the teardown-on-failure path; commit.
 - [x] 4. Add the clean-skip branch (no external DB, no Docker) — DB-gated tests skip, no error;
       test it; commit.
-- [ ] 5. Refactor `test_spine_schema.py` onto the fixture (drop its local `skipif`/`conn`);
+- [x] 5. Refactor `test_spine_schema.py` onto the fixture (drop its local `skipif`/`conn`);
       confirm its tests still pass through the fixture; leave `test_fk_direction.py` (pure unit)
       untouched; commit.
 - [x] 6. Write `scripts/dev_db.py` `up`/`down`; `up` → start+wait+migrate+emit both URLs,

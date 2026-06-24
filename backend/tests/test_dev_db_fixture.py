@@ -15,7 +15,6 @@ These tests exercise the fixture's *contract*, independent of `test_spine_schema
 from __future__ import annotations
 
 import os
-from pathlib import Path
 
 import pytest
 
@@ -139,90 +138,60 @@ def test_spawn_failure_does_not_leak_a_container(monkeypatch):
     )
 
 
-def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails():
+@pytest.mark.skipif(_docker_unavailable(), reason="requires Docker to spawn a real container")
+def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails(monkeypatch):
     """AC2: the finalizer runs on test FAILURE, not just happy-path cleanup.
 
-    Drives a deliberately-failing test that depends on `migrated_db` in a
-    fresh pytest subprocess (so this outer test's own use of the fixture
-    doesn't interfere), then asserts: (a) the subprocess reports the
-    deliberate failure (proving teardown didn't swallow/mask it), and (b) no
-    `uptime_pg_pytest` container is left running afterward (proving the
-    finalizer fired despite the failure).
+    Drives `provide_migrated_db()` directly: advance it to get a live
+    container-backed plan, then `.throw()` an exception into it at the
+    `yield` point (simulating a test that uses the fixture and fails). The
+    generator has no `except` around the yield, so its `finally` runs
+    teardown and the exception propagates out of `.throw()` unchanged.
 
-    The temp test file is placed inside `backend/tests/` (not an arbitrary
-    tmp_path) so pytest's conftest discovery picks up the `migrated_db`
-    fixture from this directory's conftest.py; it is removed in a finally
-    block regardless of outcome.
+    This is deterministic and in-process: exactly one container is spawned
+    (no nested pytest subprocess, no second concurrent container, no temp
+    test file), unlike the previous version of this test.
     """
     import subprocess
-    import sys
-    import uuid
 
-    repo_root = Path(__file__).resolve().parents[2]
-    tests_dir = Path(__file__).resolve().parent
-    failing_test = tests_dir / f"test_zz_deliberately_failing_{uuid.uuid4().hex[:8]}.py"
-    # The test prints the container name it was given so this outer test can
-    # check specifically for THAT container (not any container matching a
-    # shared prefix) — the fixture mints a PID+UUID-unique name per process
-    # specifically so a nested/concurrent run never collides with this outer
-    # test's own still-alive session container.
-    failing_test.write_text(
-        "def test_deliberately_fails(migrated_db):\n"
-        "    print('CONTAINER_NAME=' + (migrated_db.container_name or ''))\n"
-        "    assert False, 'deliberate failure to prove teardown-on-failure'\n",
-        encoding="utf-8",
+    from conftest import provide_migrated_db
+
+    # This outer test process may already have DATABASE_URL/DATABASE_URL_DIRECT
+    # set (e.g. by the session-scoped `migrated_db` fixture having run earlier
+    # in the suite). Clear them so resolve_db() takes the container-spawn
+    # branch instead of the reuse branch — this test needs a REAL spawned
+    # container to prove its teardown.
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("DATABASE_URL_DIRECT", raising=False)
+
+    gen = provide_migrated_db()
+    plan = next(gen)
+    assert plan.source == "container"
+    container_name = plan.container_name
+    assert container_name
+
+    running = subprocess.run(
+        ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+        capture_output=True,
+        text=True,
+    )
+    assert running.stdout.strip() == container_name, (
+        f"expected container {container_name!r} to exist after spawn:\n{running.stdout}{running.stderr}"
     )
 
-    # Force the subprocess down the container-spawn branch: this outer test's
-    # own session fixture may have already set these in os.environ (inherited
-    # by subprocesses by default), which would make the inner run reuse the
-    # OUTER container instead of spawning its own.
-    subprocess_env = dict(os.environ)
-    subprocess_env.pop("DATABASE_URL", None)
-    subprocess_env.pop("DATABASE_URL_DIRECT", None)
-
     try:
-        result = subprocess.run(
-            [sys.executable, "-m", "pytest", str(failing_test), "-p", "no:cacheprovider", "-q", "-s"],
-            cwd=str(repo_root),
-            env=subprocess_env,
+        with pytest.raises(RuntimeError, match="simulated test failure"):
+            gen.throw(RuntimeError("simulated test failure"))
+    finally:
+        # Defensive cleanup so a regression doesn't leak across runs while red.
+        leftover = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
             capture_output=True,
             text=True,
         )
+        if leftover.stdout.strip():
+            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True, text=True)
 
-        assert result.returncode != 0, (
-            "expected the deliberately-failing test to fail the subprocess run:\n"
-            + result.stdout + result.stderr
-        )
-        combined_output = result.stdout + result.stderr
-        assert "deliberate failure" in combined_output
-
-        container_name = None
-        for line in combined_output.splitlines():
-            if line.startswith("CONTAINER_NAME="):
-                container_name = line.split("=", 1)[1].strip()
-        assert container_name, (
-            f"could not find the spawned container's name in subprocess output:\n{combined_output}"
-        )
-
-        # `docker rm -f` can return slightly before `docker ps -a` reflects the
-        # removal; poll briefly rather than racing a single snapshot.
-        import time
-
-        deadline = time.monotonic() + 10
-        leftover_names = container_name
-        while time.monotonic() < deadline:
-            leftover = subprocess.run(
-                ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
-                capture_output=True,
-                text=True,
-            )
-            leftover_names = leftover.stdout.strip()
-            if leftover_names == "":
-                break
-            time.sleep(0.5)
-        assert leftover_names == "", (
-            f"container {container_name!r} left behind after a failing test"
-        )
-    finally:
-        failing_test.unlink(missing_ok=True)
+    assert leftover.stdout.strip() == "", (
+        f"container {container_name!r} left behind after the fixture-using test failed"
+    )
