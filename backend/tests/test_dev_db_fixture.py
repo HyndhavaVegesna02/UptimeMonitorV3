@@ -17,6 +17,8 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+import pytest
+
 SPINE_TABLES = {
     "apps",
     "signals",
@@ -90,6 +92,51 @@ def test_resolve_db_skips_cleanly_when_no_external_db_and_no_docker(monkeypatch)
     assert plan.source == "skip"
     assert plan.database_url is None
     assert plan.database_url_direct is None
+
+
+def _docker_unavailable() -> bool:
+    import subprocess as _sp
+
+    return _sp.run(["docker", "version"], capture_output=True, text=True).returncode != 0
+
+
+@pytest.mark.skipif(_docker_unavailable(), reason="requires Docker to spawn a real container")
+def test_spawn_failure_does_not_leak_a_container(monkeypatch):
+    """MAJOR regression: if readiness or migration raises AFTER start_container
+    has created the container, resolve_db must tear that container down before
+    re-raising — otherwise the PID+UUID-uniquely-named container leaks with
+    nothing to ever reclaim it. The failure happens inside resolve_db, BEFORE
+    the fixture's try/finally around `yield` is established, so the cleanup
+    cannot live in the fixture; it must be in the spawn path itself.
+    """
+    import subprocess
+
+    import dev_db
+
+    monkeypatch.delenv("DATABASE_URL", raising=False)
+    monkeypatch.delenv("DATABASE_URL_DIRECT", raising=False)
+
+    name = dev_db.unique_container_name(prefix="uptime_pg_pytest_leaktest")
+
+    def failing_migrate(_direct_url):
+        raise RuntimeError("simulated alembic upgrade head failure after container start")
+
+    with pytest.raises(RuntimeError, match="simulated alembic"):
+        dev_db.resolve_db(migrate=failing_migrate, container_name=name)
+
+    # The container was created by start_container, then migrate raised — it
+    # must NOT survive.
+    leftover = subprocess.run(
+        ["docker", "ps", "-a", "--filter", f"name={name}", "--format", "{{.Names}}"],
+        capture_output=True,
+        text=True,
+    )
+    # Defensive cleanup so a regression doesn't leak across runs while red.
+    if leftover.stdout.strip():
+        subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+    assert leftover.stdout.strip() == "", (
+        f"spawn-time failure leaked container {name!r}"
+    )
 
 
 def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails():

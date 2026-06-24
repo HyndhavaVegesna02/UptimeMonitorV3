@@ -31,6 +31,7 @@ import subprocess
 import sys
 import time
 import uuid
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -40,9 +41,6 @@ CONTAINER_NAME = "uptime_pg_pytest"
 HOST_PORT = 55432
 POSTGRES_PASSWORD = "postgres"
 POSTGRES_DB = "uptime"
-
-DATABASE_URL_PLAIN = f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{HOST_PORT}/{POSTGRES_DB}"
-DATABASE_URL_DIRECT = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{HOST_PORT}/{POSTGRES_DB}"
 
 READY_TIMEOUT_SECONDS = 30
 READY_POLL_INTERVAL_SECONDS = 0.5
@@ -177,10 +175,10 @@ class DbPlan:
 
 def resolve_db(
     *,
-    env: "os._Environ[str] | dict[str, str] | None" = None,
-    docker_available: "callable" = docker_available,
-    spawn_container: "callable" = None,
-    migrate: "callable" = run_migrations,
+    env: Mapping[str, str] | None = None,
+    docker_available: Callable[[], bool] = docker_available,
+    spawn_container: Callable[[], None] | None = None,
+    migrate: Callable[[str], None] = run_migrations,
     container_name: str | None = None,
 ) -> DbPlan:
     """Decide and execute how to obtain a migrated DB; returns a DbPlan.
@@ -216,18 +214,20 @@ def resolve_db(
 
     name = container_name or unique_container_name()
     if spawn_container is None:
+        # Default path: pick a free host port (avoids collisions between
+        # concurrent/nested runs) and report the URLs at that port.
         port_box: list[int] = []
-        spawn_container = lambda: _spawn_default(name, migrate, port_box)
-        spawn_container()
+        _spawn_default(name, migrate, port_box)
         port = port_box[0]
-        database_url = f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
-        database_url_direct = (
-            f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
-        )
     else:
+        # Injected spawner (tests): it owns the lifecycle and is assumed to
+        # bind the fixed default port, so report URLs at HOST_PORT.
         spawn_container()
-        database_url = DATABASE_URL_PLAIN
-        database_url_direct = DATABASE_URL_DIRECT
+        port = HOST_PORT
+    database_url = f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+    database_url_direct = (
+        f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+    )
 
     return DbPlan(
         source="container",
@@ -238,11 +238,21 @@ def resolve_db(
 
 
 def _spawn_default(container_name: str, migrate, port_box: list) -> None:
+    """Start -> wait-ready -> migrate. If readiness or migration raises AFTER
+    the container is created, tear it down before re-raising so a half-started
+    container never leaks (the failure propagates out of resolve_db, before any
+    caller finalizer is established, so cleanup must live here)."""
     port = _free_tcp_port()
     start_container(name=container_name, host_port=port)
-    wait_for_postgres(name=container_name)
-    direct_url = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
-    migrate(direct_url)
+    try:
+        wait_for_postgres(name=container_name)
+        direct_url = (
+            f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+        )
+        migrate(direct_url)
+    except BaseException:
+        stop_container(name=container_name)
+        raise
     port_box.append(port)
 
 
@@ -255,16 +265,22 @@ def cmd_up(args: argparse.Namespace) -> int:
     name = args.name
     print(f"Starting throwaway postgres:16 container {name!r} on port {args.port}...")
     start_container(name=name, host_port=args.port)
-    print("Waiting for readiness...")
-    wait_for_postgres(name=name)
     database_url = (
         f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
     )
     database_url_direct = (
         f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
     )
-    print("Running `alembic upgrade head`...")
-    run_migrations(database_url_direct)
+    try:
+        print("Waiting for readiness...")
+        wait_for_postgres(name=name)
+        print("Running `alembic upgrade head`...")
+        run_migrations(database_url_direct)
+    except BaseException:
+        # Don't leave a half-started container behind on readiness/migration
+        # failure (same reasoning as _spawn_default).
+        stop_container(name=name)
+        raise
 
     print("\nDB is up and migrated. Export these in your shell:\n")
     print(f"  export DATABASE_URL={database_url}")
