@@ -51,14 +51,39 @@ stories:
                                   # articles' code_refs do not overlap the diff. Confirmed by reviewers.
   - id: STORY-018
     points: 1
-    board: in-progress
+    board: done
     pipeline: lite          # 1 pt -> implementer + DoD gate (no reviewers)
-    spec_review: null
+    spec_review: null        # lite pipeline (1 pt): no reviewers, DoD gate only
     quality_review: null
     blocked_question: null
     attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false  # non-functional repo-hygiene change; no code_refs expected
+    dod_evidence:
+      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod18)"
+        exit_code: 0
+        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
+        commit: 69219ed
+        at: 2026-06-24T13:55:00+05:30
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "77 passed in 3.35s"
+        commit: 69219ed
+        at: 2026-06-24T13:55:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: 69219ed
+        at: 2026-06-24T13:55:00+05:30
+      - command: "python scripts/check_fk_direction.py  # against migrated spine"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: 69219ed
+        at: 2026-06-24T13:55:00+05:30
+    blast_radius_resolved: true   # no wiki article's code_refs include .gitattributes; nothing to resolve.
+                                  # Implementation note: `git add --renormalize .` staged nothing (index
+                                  # blobs already LF; working-tree CRLF comes from the user's global
+                                  # core.autocrlf=true). .gitattributes prevents future CRLF churn. AC2
+                                  # verified: a post-.gitattributes `git add` of a text file emits no
+                                  # LF->CRLF warning.
 hotfixes: []
 interrupts: []
