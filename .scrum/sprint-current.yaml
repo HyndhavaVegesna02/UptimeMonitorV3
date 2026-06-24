@@ -51,12 +51,12 @@ stories:
                                   # articles' code_refs do not overlap the diff. Confirmed by reviewers.
   - id: STORY-018
     points: 1
-    board: todo
+    board: in-progress
     pipeline: lite          # 1 pt -> implementer + DoD gate (no reviewers)
     spec_review: null
     quality_review: null
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false  # non-functional repo-hygiene change; no code_refs expected
