@@ -49,13 +49,13 @@ ABCs in `src/core/ports/`. Supporting domain types (`IngestResult`, `StatusChang
 - [x] 2. Add the three supporting domain types. See it pass. Commit.
 - [x] 3. Write failing test: `ClockPort` ABC cannot be instantiated; a `FakeClock` (tests/) returns injected fixed tz-aware UTC time (AC3). See it fail.
 - [x] 4. Add `ClockPort(ABC)` + `FakeClock`. See it pass. Commit.
-- [ ] 5. Write failing test: `WatermarkRepository` ABC; `FakeWatermarkRepository.get` returns None unset, `advance`→`get` round-trips (AC4). See it fail.
-- [ ] 6. Add `WatermarkRepository(ABC)` + fake. See it pass. Commit.
-- [ ] 7. Write failing test: `ObservationRepository.save_new(batch) -> int` ABC + in-memory fake counts inserts. See it fail.
-- [ ] 8. Add `ObservationRepository(ABC)` + fake. See it pass. Commit.
-- [ ] 9. Write failing test: `StatusPublisherPort.publish(StatusChange) -> None` ABC + recording fake. See it fail.
-- [ ] 10. Add `StatusPublisherPort(ABC)` + fake. See it pass. Commit.
-- [ ] 11. Write failing test: `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult` ABC + fake. See it fail.
-- [ ] 12. Add `SignalIngestPort(ABC)` + fake. See it pass. Commit.
-- [ ] 13. Confirm each fake satisfies its interface and is exercised by a test (AC2); signatures use canonical vocabulary only (AC1). Commit any test additions.
+- [x] 5. Write failing test: `WatermarkRepository` ABC; `FakeWatermarkRepository.get` returns None unset, `advance`→`get` round-trips (AC4). See it fail.
+- [x] 6. Add `WatermarkRepository(ABC)` + fake. See it pass. Commit.
+- [x] 7. Write failing test: `ObservationRepository.save_new(batch) -> int` ABC + in-memory fake counts inserts. See it fail.
+- [x] 8. Add `ObservationRepository(ABC)` + fake. See it pass. Commit.
+- [x] 9. Write failing test: `StatusPublisherPort.publish(StatusChange) -> None` ABC + recording fake. See it fail.
+- [x] 10. Add `StatusPublisherPort(ABC)` + fake. See it pass. Commit.
+- [x] 11. Write failing test: `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult` ABC + fake. See it fail.
+- [x] 12. Add `SignalIngestPort(ABC)` + fake. See it pass. Commit.
+- [x] 13. Confirm each fake satisfies its interface and is exercised by a test (AC2); signatures use canonical vocabulary only (AC1). Commit any test additions.
 - [ ] 14. Run full gate: `pytest`, `lint-imports` (AC5 — core/ports imports domain not services), `alembic upgrade head`, `check_fk_direction.py`. Record DoD evidence. Resolve forward blast radius. No command/stack change → CLAUDE.md untouched.
