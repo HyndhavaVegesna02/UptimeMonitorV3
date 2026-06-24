@@ -46,4 +46,10 @@
   sole source of truth the gate runner reads; the root `definition-of-done.md` is reduced to a
   one-line pointer to it. No second editable copy. (Motivated by Sprint 0, STORY-003: the
   implementer flagged two DoD files as a drift risk.)
+- 2026-06-24 — **Clean tree at dispatch; scoped staging.** The orchestrator commits any
+  board/state edit (`.scrum/sprint-current.yaml`, board transitions) BEFORE dispatching an
+  implementer, so the working tree is clean at dispatch. Implementers stage only the files
+  they created/changed for the step — never `git add -A`. (Motivated by Sprint 1, STORY-004:
+  the orchestrator's uncommitted board→in-progress edit was swept by the implementer's
+  `git add -A` into code commit abeb448, putting a state change inside a story commit.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
