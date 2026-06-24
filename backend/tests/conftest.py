@@ -21,9 +21,13 @@ if str(_SCRIPTS) not in sys.path:
 import dev_db  # noqa: E402  (after sys.path setup above)
 
 
-@pytest.fixture(scope="session")
-def migrated_db():
-    """Session-scoped: yield a migrated DB's connection URLs to DB-gated tests.
+def provide_migrated_db():
+    """Generator implementing the `migrated_db` fixture's lifecycle.
+
+    Extracted as a plain generator so the teardown-on-failure contract can be
+    driven directly in a test (`.throw()` an exception in, assert the
+    container is still torn down) — deterministically, without racing a nested
+    pytest subprocess on Docker spin-up.
 
     Decision order (STORY-019, dossier §3/§17):
       1. If DATABASE_URL + DATABASE_URL_DIRECT are already set externally
@@ -66,3 +70,9 @@ def migrated_db():
             os.environ.pop("DATABASE_URL_DIRECT", None)
         else:
             os.environ["DATABASE_URL_DIRECT"] = prev_direct
+
+
+@pytest.fixture(scope="session")
+def migrated_db():
+    """Session-scoped throwaway-DB fixture; see provide_migrated_db()."""
+    yield from provide_migrated_db()
