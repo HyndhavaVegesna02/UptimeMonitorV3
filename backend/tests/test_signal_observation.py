@@ -149,3 +149,35 @@ def test_vendor_id_appears_only_inside_source():
     # ...and appears in no field outside `source`.
     outside_source = obs.model_dump(exclude={"source"})
     assert vendor_id not in {str(v) for v in outside_source.values()}
+
+
+# --- Step 11/12: round-trip equality + missing required field raises (AC5) ------
+
+
+def test_signal_observation_round_trips_via_model_dump():
+    obs = SignalObservation(**_valid_observation())
+    reconstructed = SignalObservation(**obs.model_dump())
+    assert reconstructed == obs
+
+
+def test_signal_observation_round_trips_with_optionals_omitted():
+    fields = _valid_observation()
+    del fields["latency_ms"]
+    del fields["raw_ref"]
+    obs = SignalObservation(**fields)
+    reconstructed = SignalObservation(**obs.model_dump())
+    assert reconstructed == obs
+
+
+def test_signal_observation_requires_signal_key():
+    fields = _valid_observation()
+    del fields["signal_key"]
+    with pytest.raises(ValidationError):
+        SignalObservation(**fields)
+
+
+def test_signal_observation_requires_source():
+    fields = _valid_observation()
+    del fields["source"]
+    with pytest.raises(ValidationError):
+        SignalObservation(**fields)
