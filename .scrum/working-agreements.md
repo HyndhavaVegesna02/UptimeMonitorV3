@@ -59,4 +59,13 @@
   they created/changed for the step — never `git add -A`. (Motivated by Sprint 1, STORY-004:
   the orchestrator's uncommitted board→in-progress edit was swept by the implementer's
   `git add -A` into code commit abeb448, putting a state change inside a story commit.)
+- 2026-06-24 — **DB-gated work uses the shared throwaway-DB harness.** Once STORY-019 lands,
+  every DB-gated story (migrations, repositories, schema checks) and reviewer/gate run uses
+  the shared helper + pytest fixture to obtain a migrated throwaway Postgres — no hand-rolled
+  `docker run` + `alembic upgrade head` + URL-export sequence in individual briefs. Until then,
+  DB-gated briefs must still carry the explicit migrate-first sequence and the two-URL dialect
+  split. (Motivated by Sprint 2: the throwaway-Postgres setup was hand-rolled FIVE separate
+  times — across the STORY-006/018 implementers, the spec reviewer, and the orchestrator DoD
+  gates — each re-implementing the `DATABASE_URL` plain-libpq vs `DATABASE_URL_DIRECT`
+  `+psycopg` dialect split, a standing foot-gun. Every remaining Zone 2–4 story is DB-heavy.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
