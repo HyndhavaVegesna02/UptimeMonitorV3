@@ -113,3 +113,49 @@ def test_save_new_inserts_a_fresh_batch_and_reports_count(migrated_db, engine):
             rows = cur.fetchall()
 
     assert rows == [("evt-1", "up", "us-east"), ("evt-2", "up", "us-east")]
+
+
+def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_db, engine):
+    """AC3: re-inserting a batch whose `source_event_id`s already exist must
+    insert 0 new rows (`ON CONFLICT (source_event_id) DO NOTHING`), and the
+    returned count must reflect only newly-inserted rows — proven by mixing
+    one duplicate with one genuinely new event id.
+
+    Uses a signal_key/event-id namespace unique to this test (the session-
+    scoped `migrated_db` fixture is shared across tests in this module, so
+    rows from other tests' batches persist for the life of the session).
+    """
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "dedup-http")
+    repo = PostgresObservationRepository(engine)
+
+    first_batch = [
+        _observation(signal_key="dedup-http", event_id="dedup-evt-1"),
+        _observation(signal_key="dedup-http", event_id="dedup-evt-2"),
+    ]
+    assert repo.save_new(first_batch) == 2
+
+    # Re-insert the exact same batch: every source_event_id already exists.
+    duplicate_inserted = repo.save_new(first_batch)
+    assert duplicate_inserted == 0
+
+    # Mixed batch: one duplicate + one genuinely new id -> only the new one counts.
+    mixed_batch = [
+        _observation(signal_key="dedup-http", event_id="dedup-evt-2"),
+        _observation(signal_key="dedup-http", event_id="dedup-evt-3"),
+    ]
+    mixed_inserted = repo.save_new(mixed_batch)
+    assert mixed_inserted == 1
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT count(*) FROM observations WHERE signal_key = %s",
+                ("dedup-http",),
+            )
+            (total,) = cur.fetchone()
+
+    assert total == 3

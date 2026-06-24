@@ -55,11 +55,11 @@ Neon/Postgres implementations of `ObservationRepository` (`save_new` → `INSERT
 (source_event_id) DO NOTHING`, returns newly-inserted count) and `WatermarkRepository`
 (`get`/`advance`) in `adapters/persistence/`, against the spine, using the 019 fixture.
 
-- [ ] 1. Failing test: `ObservationRepository.save_new` inserts a batch and returns the count;
+- [x] 1. Failing test: `ObservationRepository.save_new` inserts a batch and returns the count;
       read it back. (Uses the 019 session fixture.) See it fail (no adapter yet); commit on green.
-- [ ] 2. Implement the concrete `ObservationRepository` in `adapters/persistence/` (SQLAlchemy
+- [x] 2. Implement the concrete `ObservationRepository` in `adapters/persistence/` (SQLAlchemy
       2 / psycopg 3, injected engine/session); make the insert+readback test pass; commit.
-- [ ] 3. Failing test for idempotency: re-inserting the same `source_event_id`s inserts 0 new
+- [x] 3. Failing test for idempotency: re-inserting the same `source_event_id`s inserts 0 new
       rows, returned count reflects only new rows (`ON CONFLICT DO NOTHING`); make it pass; commit.
 - [ ] 4. Failing tests for `WatermarkRepository`: `get` None before advance, the advanced UTC
       instant after, monotonic re-advance; implement the concrete repo; make them pass; commit.
