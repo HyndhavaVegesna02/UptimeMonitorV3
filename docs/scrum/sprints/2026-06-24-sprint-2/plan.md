@@ -52,8 +52,9 @@ DoD DB gates use a throwaway Dockerized Postgres (Docker 28.5.2; see CLAUDE.md o
 
 ## STORY-018 — .gitattributes line-ending normalization (1 pt, lite pipeline)
 
-- [ ] 1. Add repo-root `.gitattributes`: `* text=auto eol=lf` + explicit `binary` rules for
+- [x] 1. Add repo-root `.gitattributes`: `* text=auto eol=lf` + explicit `binary` rules for
       `*.png *.jpg *.jpeg *.gif *.ico *.pdf *.woff *.woff2`.
-- [ ] 2. `git add --renormalize .`; commit the normalization.
-- [ ] 3. Verify a subsequent text-file edit-and-commit emits no `LF will be replaced by CRLF`
+- [x] 2. `git add --renormalize .`; commit the normalization. (Nothing to renormalize — the
+      index was already LF-clean; `.gitattributes` now prevents future CRLF churn going forward.)
+- [x] 3. Verify a subsequent text-file edit-and-commit emits no `LF will be replaced by CRLF`
       warning; run the four DoD gates (non-functional change → stay green); record evidence; → review.
