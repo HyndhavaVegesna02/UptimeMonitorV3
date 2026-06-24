@@ -15,18 +15,40 @@ started: 2026-06-24
 stories:
   - id: STORY-006
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # all 6 AC MET, each verified against a live Postgres (incl. functional
+                            # proof of one-active-proposal-per-component). Scope additions noted, AC-clean.
+    quality_review: APPROVE # zero critical/major; 2 minors recorded as notes on the story (no change needed)
     blocked_question: null
     attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false  # high blast radius: the schema foundation. The forward
-                                  # blast-radius check at DoD must match the migration's new
-                                  # tables against architecture-boundary.md code_refs and any
-                                  # §9 schema article, updating/re-verifying before Done.
+    dod_evidence:
+      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod)"
+        exit_code: 0
+        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
+        commit: cc54e13
+        at: 2026-06-24T13:40:00+05:30
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "77 passed in 3.46s"   # 32 DB-gated tests in test_spine_schema.py
+        commit: cc54e13
+        at: 2026-06-24T13:40:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: cc54e13
+        at: 2026-06-24T13:40:00+05:30
+      - command: "python scripts/check_fk_direction.py  # against migrated spine"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: cc54e13
+        at: 2026-06-24T13:40:00+05:30
+    blast_radius_resolved: true   # forward blast radius: the diff adds migrations/3a8254bcfe59;
+                                  # migrations-and-db.md (code_refs incl. migrations/) updated by the
+                                  # implementer with the spine-migration Facts + verified_sha bumped to
+                                  # 54eb5c5 (not stale: no migrations/ change after it). Other three
+                                  # articles' code_refs do not overlap the diff. Confirmed by reviewers.
   - id: STORY-018
     points: 1
     board: todo
