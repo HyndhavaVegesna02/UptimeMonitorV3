@@ -6,10 +6,10 @@ live ONLY inside `Provenance`; every other field reads to someone who has never
 heard of Dynatrace (vocabulary rule P3, dossier §6).
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 
 class Health(str, Enum):
@@ -73,3 +73,16 @@ class SignalObservation(BaseModel):
 
     raw_ref: str | None = None
     """Optional pointer to the archived raw payload; the core never reads it."""
+
+    @field_validator("observed_at")
+    @classmethod
+    def _require_utc(cls, value: datetime) -> datetime:
+        """Reject naive or non-UTC timestamps rather than silently coercing them.
+
+        A naive datetime carries no instant; a non-UTC offset means the upstream
+        adapter failed to normalize. Surfacing it here keeps bad data out of the
+        core (dossier §5; AC3).
+        """
+        if value.tzinfo is None or value.utcoffset() != timedelta(0):
+            raise ValueError("observed_at must be a tz-aware UTC datetime")
+        return value

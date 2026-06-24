@@ -33,8 +33,8 @@ Library: Pydantic v2 frozen model (`ConfigDict(frozen=True)`). New module(s) und
 - [x] 5. Write failing test: `SignalObservation` constructs from valid §5 fields (AC1); the object is frozen (mutation raises). See it fail.
 - [x] 6. Add frozen `SignalObservation` with all §5 fields (incl. optional `latency_ms`, `raw_ref`). See it pass. Commit.
 - [x] 7. Write failing test: invalid `health` value raises `ValidationError` (AC2). See it fail → make pass (enum already enforces) → confirm. Commit.
-- [ ] 8. Write failing test: naive `observed_at` is rejected; tz-aware UTC accepted (AC3). See it fail.
-- [ ] 9. Add UTC validator (reject naive). See it pass. Commit.
+- [x] 8. Write failing test: naive `observed_at` is rejected; tz-aware UTC accepted (AC3). See it fail.
+- [x] 9. Add UTC validator (reject naive). See it pass. Commit.
 - [ ] 10. Write failing test: no field outside `source` carries a vendor id; field names read vendor-neutrally (AC4). See it fail → confirm structure satisfies → pass. Commit.
 - [ ] 11. Write failing test: round-trip `construct → model_dump → reconstruct` equal; missing required field raises (AC5). See it fail.
 - [ ] 12. Confirm round-trip + validation pass. Commit.

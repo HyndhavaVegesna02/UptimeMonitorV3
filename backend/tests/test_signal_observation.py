@@ -90,3 +90,25 @@ def test_signal_observation_is_frozen():
 def test_signal_observation_rejects_unknown_health():
     with pytest.raises(ValidationError):
         SignalObservation(**_valid_observation(health="flapping"))
+
+
+# --- Step 8/9: observed_at must be tz-aware UTC; naive rejected (AC3) -----------
+
+
+def test_signal_observation_rejects_naive_observed_at():
+    naive = datetime(2026, 6, 24, 10, 0, 0)  # no tzinfo
+    assert naive.tzinfo is None
+    with pytest.raises(ValidationError):
+        SignalObservation(**_valid_observation(observed_at=naive))
+
+
+def test_signal_observation_accepts_tz_aware_utc_observed_at():
+    aware = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    obs = SignalObservation(**_valid_observation(observed_at=aware))
+    assert obs.observed_at == aware
+
+
+def test_signal_observation_rejects_non_utc_offset_observed_at():
+    plus_two = datetime(2026, 6, 24, 12, 0, 0, tzinfo=timezone(timedelta(hours=2)))
+    with pytest.raises(ValidationError):
+        SignalObservation(**_valid_observation(observed_at=plus_two))
