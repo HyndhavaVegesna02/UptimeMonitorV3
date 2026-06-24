@@ -19,8 +19,13 @@ stories:
     points: 3
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # all 5 AC MET (verified by running). Non-blocking flag: teardown test
+                            # flakes ~1/4 full-suite runs on concurrent container spin-up.
+    quality_review: FIX_REQUIRED  # fix loop 1: 1 MAJOR — spawn-time container leak. If wait/migrate
+                            # raises after start_container, the exception escapes resolve_db() before
+                            # the fixture try/finally, so the finalizer never registers -> leaked,
+                            # uniquely-named container. Bundling the spec reviewer's flakiness flag
+                            # (same root cause) into this loop. 2 minors noted (non-blocking).
     blocked_question: null
     attempts: 1
     paused_at_commit: null
