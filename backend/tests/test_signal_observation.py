@@ -112,3 +112,40 @@ def test_signal_observation_rejects_non_utc_offset_observed_at():
     plus_two = datetime(2026, 6, 24, 12, 0, 0, tzinfo=timezone(timedelta(hours=2)))
     with pytest.raises(ValidationError):
         SignalObservation(**_valid_observation(observed_at=plus_two))
+
+
+# --- Step 10: vendor id lives ONLY in source; names read vendor-neutrally (AC4) -
+
+# Field names that make sense to a reader who has never heard of Dynatrace.
+_VENDOR_NEUTRAL_FIELDS = {
+    "signal_key",
+    "observed_at",
+    "health",
+    "source_event_id",
+    "source",
+    "location",
+    "latency_ms",
+    "raw_ref",
+}
+
+
+def test_signal_observation_field_names_are_vendor_neutral():
+    assert set(SignalObservation.model_fields) == _VENDOR_NEUTRAL_FIELDS
+    # No top-level field name leaks a vendor word.
+    for name in SignalObservation.model_fields:
+        lowered = name.lower()
+        assert "dynatrace" not in lowered
+        assert "native" not in lowered  # `native_*` belongs to Provenance, not here
+
+
+def test_vendor_id_appears_only_inside_source():
+    vendor_id = "HTTP_CHECK-9F2A"
+    obs = SignalObservation(**_valid_observation(source=Provenance(
+        system="dynatrace", native_id=vendor_id, native_kind="http"
+    )))
+
+    # The vendor id is reachable only via source.native_id...
+    assert obs.source.native_id == vendor_id
+    # ...and appears in no field outside `source`.
+    outside_source = obs.model_dump(exclude={"source"})
+    assert vendor_id not in {str(v) for v in outside_source.values()}
