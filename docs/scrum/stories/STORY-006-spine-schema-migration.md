@@ -70,3 +70,16 @@ _(none — ready)_
   (3) explicit `ON DELETE RESTRICT` on FKs into topology. AC made testable against
   `information_schema`. Estimate held at 5 (high blast radius → full review pipeline).
   Status: ready. Planned into Sprint 2.
+- 2026-06-24: implemented (migration `3a8254bcfe59`, commits `54eb5c5`, `cc54e13`).
+  Spec review PASS (all 6 AC MET, verified against live Postgres); quality review APPROVE
+  (zero critical/major). DoD gate green (alembic head, pytest 77, lint-imports 3 kept,
+  FK-direction 10 checked/0 violations). Board: done. Awaiting PO acceptance at review.
+  Implementer decisions within AC: health/status/state stored as `text` + CHECK mirroring
+  the closed Python enums (not Postgres ENUM, so the enums stay the single source of truth);
+  `rejected_observations.signal_key` has NO FK (quarantine must not be rejectable by a
+  missing-FK error); `approval_events`/`publications` → `status_proposals` use explicit
+  `ON DELETE CASCADE` (child audit/publish rows have no meaning without their proposal).
+  Quality-review MINOR notes (non-blocking, no change required): (1) `downgrade()` drops
+  `uq_observations_source_event_id` explicitly before its table — harmless/symmetric;
+  (2) the composite-index column-order test uses a substring-position heuristic on the
+  index def rather than parsing `pg_index` order — acceptable for a presence test.

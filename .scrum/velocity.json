@@ -1,6 +1,7 @@
 {
   "sprints": [
     {"sprint": 0, "committed": 8, "accepted": 8},
-    {"sprint": 1, "committed": 6, "accepted": 6}
+    {"sprint": 1, "committed": 6, "accepted": 6},
+    {"sprint": 2, "committed": 6, "accepted": 6}
   ]
 }

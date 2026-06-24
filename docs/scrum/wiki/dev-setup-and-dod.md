@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py]
-verified_sha: 1a61002
-verified_sprint: sprint-0
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, .gitattributes]
+verified_sha: 6128cb0
+verified_sprint: sprint-2
 status: verified
 ---
 
@@ -25,6 +25,12 @@ status: verified
 - The console script is `lint-imports` (`.venv/Scripts/lint-imports.exe`); `python -m importlinter`
   does NOT work (it is a package with no `__main__`).
 - No `psql` client installed; no Neon/Dynatrace/Statuspage credentials needed in Sprint 0.
+- **Line endings are normalized to LF in the repo** via `.gitattributes` (`* text=auto eol=lf`
+  + `binary` rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). Gotcha: the index
+  blobs were already LF, so `git add --renormalize .` stages nothing — the CRLF a Windows
+  checkout shows in the *working tree* comes from the contributor's global `core.autocrlf=true`
+  (a checkout-time conversion), not from repo content. `.gitattributes` keeps it that way and
+  stops the per-commit `LF will be replaced by CRLF` warnings.
 
 ## Inference (synthesis, not verified)
 - `.scrum/definition-of-done.md` is the single canonical DoD (Sprint 0 retro working
