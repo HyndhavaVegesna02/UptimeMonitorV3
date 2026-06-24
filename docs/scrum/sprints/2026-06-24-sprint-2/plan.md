@@ -30,23 +30,23 @@ config = JSONB `config` column on `apps`; explicit `ON DELETE RESTRICT` on FKs i
 
 DoD DB gates use a throwaway Dockerized Postgres (Docker 28.5.2; see CLAUDE.md one-liner).
 
-- [ ] 1. Write a test that asserts all eleven spine tables exist after `upgrade head`
+- [x] 1. Write a test that asserts all eleven spine tables exist after `upgrade head`
       (query `information_schema.tables`); see it fail against the baseline.
-- [ ] 2. Author the migration: topology group (`apps` w/ `config jsonb not null`, `signals`,
+- [x] 2. Author the migration: topology group (`apps` w/ `config jsonb not null`, `signals`,
       `components`) with `timestamptz` columns; minimal upgrade to make the table test pass; commit.
-- [ ] 3. Add the signals group (`observations` mirroring the canonical `SignalObservation`
+- [x] 3. Add the signals group (`observations` mirroring the canonical `SignalObservation`
       fields, `problem_signals`, `watermarks` keyed by `signal_key`, `rejected_observations`
       w/ JSONB payload); `observations.source` as `jsonb`; commit on green.
-- [ ] 4. Add the workflow group (`status_proposals`, `approval_events`, `publications`,
+- [x] 4. Add the workflow group (`status_proposals`, `approval_events`, `publications`,
       `maintenance_windows`); commit on green.
-- [ ] 5. Add the three required indexes: `UNIQUE(observations.source_event_id)`, composite
+- [x] 5. Add the three required indexes: `UNIQUE(observations.source_event_id)`, composite
       `(observations.signal_key, observed_at)`, partial-unique on `status_proposals(component_id)`
       filtered to active proposals. Test their presence via `information_schema` / `pg_indexes`; commit.
-- [ ] 6. Declare every FK with explicit `ON DELETE RESTRICT` into topology; runtime/workflow
+- [x] 6. Declare every FK with explicit `ON DELETE RESTRICT` into topology; runtime/workflow
       FK inward only. Test against `information_schema.referential_constraints`; commit.
-- [ ] 7. Write the reversibility test: `upgrade head` → `downgrade base` → `upgrade head`
+- [x] 7. Write the reversibility test: `upgrade head` → `downgrade base` → `upgrade head`
       each exit 0; make `downgrade` drop every spine object cleanly; commit.
-- [ ] 8. Run the four DoD gates against the throwaway DB; resolve the forward blast-radius
+- [x] 8. Run the four DoD gates against the throwaway DB; resolve the forward blast-radius
       check (match new tables against `architecture-boundary.md` / any §9 schema article,
       update or re-verify `verified_sha`); record DoD evidence; → review.
 
