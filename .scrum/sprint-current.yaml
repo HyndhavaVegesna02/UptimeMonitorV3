@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 1
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
+# Both stories Done (full pipeline green); wiki compile pass complete. Awaiting PO review.
 goal: "Zone 1 complete — the canonical vocabulary and the core's owned interfaces exist, so every later zone has vendor-neutral types and ports to build against."
 branch: sprint-1
 start_tag: sprint-1-start
