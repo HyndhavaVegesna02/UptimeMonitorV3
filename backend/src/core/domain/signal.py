@@ -6,6 +6,7 @@ live ONLY inside `Provenance`; every other field reads to someone who has never
 heard of Dynatrace (vocabulary rule P3, dossier §6).
 """
 
+from datetime import datetime
 from enum import Enum
 
 from pydantic import BaseModel, ConfigDict
@@ -36,3 +37,39 @@ class Provenance(BaseModel):
     system: str
     native_id: str
     native_kind: str
+
+
+class SignalObservation(BaseModel):
+    """One synthetic monitor execution from one location, vendor-neutral (dossier §5).
+
+    The canonical spine of the system. Frozen and validated at construction so a
+    bad upstream payload surfaces immediately rather than corrupting core logic.
+    Every field below makes sense to a reader who has never heard of Dynatrace;
+    the vendor's own identifiers live solely inside `source` (Provenance).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    signal_key: str
+    """Stable name we choose — never a vendor id. The shock absorber for churn."""
+
+    observed_at: datetime
+    """UTC run time of the execution (tz-aware; naive is rejected, see validator)."""
+
+    health: Health
+    """Closed verdict: up / down / degraded."""
+
+    source_event_id: str
+    """Idempotency key for exactly-once ingestion."""
+
+    source: Provenance
+    """Provenance only — the sole home of vendor identifiers."""
+
+    location: str
+    """The probe location for this execution (enables COUNT(DISTINCT location))."""
+
+    latency_ms: int | None = None
+    """Optional measured latency in milliseconds."""
+
+    raw_ref: str | None = None
+    """Optional pointer to the archived raw payload; the core never reads it."""
