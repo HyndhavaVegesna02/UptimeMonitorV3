@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 2
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 goal: "Zone 2 spine exists — the eleven-table data model is migrated, reversible, and FK-direction-clean, so the repositories (Sprint 3) and every later zone have real tables to attach to."
 branch: sprint-2
 start_tag: sprint-2-start
