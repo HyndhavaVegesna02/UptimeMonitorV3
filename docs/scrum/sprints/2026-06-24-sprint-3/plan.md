@@ -41,7 +41,7 @@ Python helper `scripts/dev_db.py` (`up`/`down`) + a pytest **session-scoped** fi
 - [ ] 5. Refactor `test_spine_schema.py` onto the fixture (drop its local `skipif`/`conn`);
       confirm its tests still pass through the fixture; leave `test_fk_direction.py` (pure unit)
       untouched; commit.
-- [ ] 6. Write `scripts/dev_db.py` `up`/`down`; `up` → start+wait+migrate+emit both URLs,
+- [x] 6. Write `scripts/dev_db.py` `up`/`down`; `up` → start+wait+migrate+emit both URLs,
       `down` → remove container. Prove `up` then `check_fk_direction.py` exits 0; commit.
 - [ ] 7. Update `CLAUDE.md` (command-sync agreement): document `scripts/dev_db.py` as the
       standard local way to run the DB gates; point the throwaway-Postgres section at it; commit.
