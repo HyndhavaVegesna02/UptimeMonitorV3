@@ -10,10 +10,9 @@ The raw row (steps included) is what an archived `raw_ref` would point at;
 the core never reads it.
 """
 
-from datetime import datetime
+from src.core.domain import SignalObservation
 
-from src.core.domain import Provenance, SignalObservation
-
+from src.adapters.inbound.dynatrace._assembly import assemble_observation
 from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
 
 NATIVE_KIND = "clickpath"
@@ -30,21 +29,15 @@ def normalize_clickpath_row(
     `execution.outcome` (the monitor-level verdict Dynatrace already collapsed
     the per-step results into), `request.response_time_ms`, and a `steps`
     array that this normalizer deliberately does not read — step detail is
-    not modelled on the canonical shape (dossier §5; AC3).
+    not modelled on the canonical shape (dossier §5; AC3). The timestamp parse
+    and `SignalObservation`/`Provenance` assembly are shared with the HTTP
+    normalizer via `_assembly.assemble_observation`; only the health mapping
+    (the multi-step-to-one-verdict collapse) is clickpath-specific.
     """
-    observed_at = datetime.fromisoformat(row["timestamp"].replace("Z", "+00:00"))
-
-    return SignalObservation(
+    return assemble_observation(
+        row,
         signal_key=signal_key,
-        observed_at=observed_at,
         health=map_execution_outcome(row["execution.outcome"]),
-        source_event_id=row["event.id"],
-        source=Provenance(
-            system="dynatrace",
-            native_id=row["synthetic_test.id"],
-            native_kind=NATIVE_KIND,
-        ),
-        location=row["synthetic_location.name"],
-        latency_ms=row.get("request.response_time_ms"),
+        native_kind=NATIVE_KIND,
         raw_ref=raw_ref,
     )

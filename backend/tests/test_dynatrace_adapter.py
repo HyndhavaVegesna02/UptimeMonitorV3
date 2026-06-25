@@ -323,3 +323,51 @@ def test_fetch_observations_raises_unsupported_for_unsupported_monitor_rows():
             watermark=None,
             executor=fake_executor,
         )
+
+
+# --- Fix loop 1: shared assembly helper (extracted from the two normalizers) --
+
+
+def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
+    """The shared helper does the timestamp parse + SignalObservation assembly
+    that both per-type normalizers delegate to; this exercises it directly,
+    independent of either normalizer's health-mapping logic.
+    """
+    from src.adapters.inbound.dynatrace._assembly import assemble_observation
+
+    rows = _load("http_multi_location.json")["records"]
+    row = rows[0]  # us-east-1, success
+
+    obs = assemble_observation(
+        row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+    )
+
+    assert obs.signal_key == "checkout-http"
+    assert obs.observed_at == datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    assert obs.health is Health.UP
+    assert obs.source_event_id == "evt-http-checkout-001"
+    assert obs.source.native_id == "HTTP_CHECK-9F2A"
+    assert obs.source.native_kind == "http"
+    assert obs.location == "us-east-1"
+    assert obs.latency_ms == 142
+    assert obs.raw_ref is None  # omitted raw_ref defaults to None, symmetric with HTTP
+
+
+def test_assemble_observation_attaches_optional_raw_ref():
+    """`raw_ref` is symmetric across both call sites: any caller may pass it,
+    not just clickpath — the helper itself draws no distinction.
+    """
+    from src.adapters.inbound.dynatrace._assembly import assemble_observation
+
+    rows = _load("clickpath_multi_location.json")["records"]
+    row = rows[0]
+
+    obs = assemble_observation(
+        row,
+        signal_key="sockshop-purchase",
+        health=Health.UP,
+        native_kind="clickpath",
+        raw_ref="s3://raw/evt-clickpath-journey-001.json",
+    )
+
+    assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"

@@ -45,6 +45,9 @@ def build_dql_query(
     ):
         raise ValueError("watermark must be a tz-aware UTC datetime")
 
+    # `native_id` is interpolated unescaped: it is trusted vendor config (the
+    # monitor id we configured in Dynatrace, not end-user input), and this
+    # query is a read-only Grail fetch, so there is no injection vector here.
     clauses = [f'synthetic_test.id == "{native_id}"']
     if watermark is not None:
         since = watermark - overlap

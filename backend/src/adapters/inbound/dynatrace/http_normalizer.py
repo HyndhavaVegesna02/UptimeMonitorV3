@@ -7,10 +7,9 @@ normalization rules) — the caller (the adapter dispatch, see `adapter.py`)
 is responsible for iterating rows.
 """
 
-from datetime import datetime
+from src.core.domain import SignalObservation
 
-from src.core.domain import Provenance, SignalObservation
-
+from src.adapters.inbound.dynatrace._assembly import assemble_observation
 from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
 
 NATIVE_KIND = "http"
@@ -22,20 +21,14 @@ def normalize_http_row(row: dict, *, signal_key: str) -> SignalObservation:
     `row` is the flat dict shape documented in dossier §8 / the recorded
     fixtures (`backend/tests/fixtures/dynatrace/http_multi_location.json`):
     `timestamp`, `event.id`, `synthetic_test.id`, `synthetic_location.name`,
-    `execution.outcome`, and `request.response_time_ms`.
+    `execution.outcome`, and `request.response_time_ms`. The timestamp parse
+    and `SignalObservation`/`Provenance` assembly are shared with the
+    clickpath normalizer via `_assembly.assemble_observation`; only the health
+    mapping (a single vendor outcome here) is HTTP-specific.
     """
-    observed_at = datetime.fromisoformat(row["timestamp"].replace("Z", "+00:00"))
-
-    return SignalObservation(
+    return assemble_observation(
+        row,
         signal_key=signal_key,
-        observed_at=observed_at,
         health=map_execution_outcome(row["execution.outcome"]),
-        source_event_id=row["event.id"],
-        source=Provenance(
-            system="dynatrace",
-            native_id=row["synthetic_test.id"],
-            native_kind=NATIVE_KIND,
-        ),
-        location=row["synthetic_location.name"],
-        latency_ms=row.get("request.response_time_ms"),
+        native_kind=NATIVE_KIND,
     )
