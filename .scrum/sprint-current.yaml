@@ -27,11 +27,15 @@ stories:
     quality_review: null
     blocked_question: null
     attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: re-verify canonical-types-and-ports.md
-                                   # (code_refs incl. core/domain/signal.py, core/ports/) and
-                                   # architecture-boundary.md (code_refs incl. backend/src/) —
-                                   # the diff adds backend/src/adapters/inbound/dynatrace/.
+    paused_at_commit: b2c8671
+    dod_evidence:
+      - "pytest: 107 passed, exit 0 (89 baseline + 18 new dynatrace adapter tests)"
+      - "lint-imports: 3 kept, 0 broken, exit 0"
+      - "check_fk_direction.py: 10 foreign key(s) checked, 0 violations, exit 0 (throwaway postgres:16 via scripts/dev_db.py)"
+      - "alembic upgrade head: exit 0, no-op (no new migration added by this story)"
+    blast_radius_resolved: true    # canonical-types-and-ports.md: read-only (signal.py,
+                                   # core/ports/ untouched) -> stays verified, no bump.
+                                   # architecture-boundary.md: re-verified, Facts unchanged,
+                                   # verified_sha bumped to b2c8671 (sprint-4).
 hotfixes: []
 interrupts: []
