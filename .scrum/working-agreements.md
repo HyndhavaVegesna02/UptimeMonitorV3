@@ -137,4 +137,23 @@
   iterables, not a domain statement — while its sibling `streak([])` already returned `None`
   cleanly. The asymmetry was the tell; the quality reviewer raised it as a MAJOR and it cost a
   fix-loop dispatch to add a guard + test that should have shipped with the function.)
+- 2026-06-25 — **Every wiki Fact's cited file must be covered by the article's `code_refs`.** A
+  Fact that cites `file:line` (or a file) NOT listed in the article's `code_refs` is forbidden — the
+  staleness check (`git diff verified_sha..HEAD -- <code_refs>`) would never flag that Fact when its
+  code changes, so it can silently rot (the "trusted-and-wrong" failure the wiki invariant exists to
+  prevent). At the forward-blast-radius/DoD step AND the sprint-end compile pass, check that every
+  file a Fact addresses is in `code_refs`; if not, either extend `code_refs` or split the article so
+  each article's Facts are fully covered. (Motivated by Sprint 7: `canonical-types-and-ports.md` had
+  grown to document `core/services/pipeline.py`'s `collapse`/`streak` Facts, but `pipeline.py` was
+  never in its `code_refs` — those Facts were uncovered by the staleness check for TWO sprints
+  (STORY-010 through STORY-011) until the compile pass extracted [[core-pipeline-and-availability]].)
+- 2026-06-25 — **Range/window math must test a NON-aligned boundary case, not just clean inputs.**
+  Any computation over a window / range / interval / cadence must include a test where the inputs do
+  NOT divide evenly (e.g. a window that is not an integer multiple of the interval, an off-by-one
+  span, a partial trailing bucket) — in addition to the empty-input test the existing agreement
+  requires. Clean/divisible-only test suites hide boundary bugs. (Motivated by Sprint 7, STORY-011:
+  cycle bucketing used FLOOR `expected_cycles`, but `in_window` returns observations in the partial
+  tail of a non-divisible window; every test used an exact-multiple window, so a quality-review
+  CRITICAL — `gap_verdicts` going negative / completeness >100% on a realistic "last 24h from now"
+  window — slipped all the way to review and cost a fix-loop dispatch.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
