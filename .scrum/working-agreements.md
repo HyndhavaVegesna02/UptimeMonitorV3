@@ -88,4 +88,22 @@
   the fixture's `try/finally` registered, leaking a uniquely-named container with nothing to
   reclaim it. The implementer brief had described the lifecycle but not demanded teardown on
   partial-setup failure.)
+- 2026-06-25 — **Parallel-shape stories carry a "share the assembly" instruction.** When a
+  story implements N variants that flatten to the SAME output shape (per-type normalizers,
+  per-X handlers, per-format parsers), the implementer brief MUST direct factoring the common
+  assembly into one shared helper from the start — only the genuinely per-variant logic lives
+  in each variant. This is checked by the quality reviewer. (Motivated by Sprint 4, STORY-008:
+  the HTTP and clickpath normalizers copy-pasted the identical timestamp-parse +
+  SignalObservation/Provenance assembly, differing only in native_kind; the quality reviewer
+  raised it as a MAJOR ("duplication of logic that will drift") and it cost a full fix-loop
+  dispatch to extract `_assembly.assemble_observation` — predictable from the story shape and
+  preventable by the brief.)
+- 2026-06-25 — **Implementers never write sprint board state.** Implementers report DoD
+  evidence, blast-radius resolution, and review-relevant findings in their FINAL MESSAGE only;
+  the orchestrator is the sole writer of `.scrum/sprint-current.yaml` (dod_evidence, board
+  transitions, review verdicts). An implementer editing the board is treated like any other
+  out-of-scope change. (Motivated by Sprint 4, STORY-008: the implementer rewrote the
+  `dod_evidence` block of `sprint-current.yaml` in a non-standard free-string format and set
+  `blast_radius_resolved`/`paused_at_commit` itself, which the orchestrator then had to reconcile
+  back to the structured schema — board state is the orchestrator's ledger, not the implementer's.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
