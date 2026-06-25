@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/, backend/tests/test_dynatrace_adapter.py, backend/tests/fixtures/dynatrace/]
-verified_sha: 834b90c
+verified_sha: 40ed985
 verified_sprint: sprint-4
 status: verified          # verified | stale | archived
 ---
