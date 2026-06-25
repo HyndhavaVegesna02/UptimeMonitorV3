@@ -58,14 +58,22 @@ stories:
     points: 3
     board: in-progress
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 4 AC MET — skewed iff lag > own interval vs MAX peer watermark
+                            # (strict > boundary), separate result type diverging from completeness,
+                            # injected peers (pure), empty/single/None-watermark degenerate cases tested.
+    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — SkewResult has no model_validator for its
+                            # coherence invariant (skewed must equal bool(lagging_signals)); the SAME
+                            # latent-incoherence pattern STORY-025 (Verdict) + STORY-028 (AntiFlapOutcome)
+                            # already enforced. Fix = model_validator(mode="after") rejecting
+                            # skewed != bool(lagging_signals) + a test. 2 minors: wiki verified_sha points
+                            # to the step-4 commit not HEAD (fix at re-stamp); naive datetime (consistent
+                            # with availability.py — no action).
     blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: adds skew (+ a SkewResult type) to core/services/ ->
-                                   # update [[core-pipeline-and-availability]] (and ensure the new
-                                   # file, if any, is in that article's code_refs — sprint-7 agreement).
+    attempts: 1             # fix loop 1 (fresh agent per working agreement)
+    paused_at_commit: 3ba187d
+    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
+    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. core-pipeline-and-availability.md
+                                   # was updated (skew Facts + skew.py added to code_refs); re-verify +
+                                   # re-stamp to the final fix commit (fixing the stale verified_sha).
 hotfixes: []
 interrupts: []
