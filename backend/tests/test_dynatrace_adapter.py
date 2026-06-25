@@ -142,3 +142,43 @@ def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
     )
 
     assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"
+
+
+# --- Step 7: adapter dispatch -> flat list, one obs per location execution ----
+
+
+def test_dispatch_normalizes_mixed_monitor_types_to_flat_observation_list():
+    from src.adapters.inbound.dynatrace.dispatch import normalize_rows
+
+    rows = _load("mixed_monitor_types.json")["records"]
+
+    observations = normalize_rows(rows, signal_key="sockshop-mixed")
+
+    assert len(observations) == 2  # one per row/location execution, no aggregation
+    assert {obs.source.native_kind for obs in observations} == {"http", "clickpath"}
+
+    http_obs = next(o for o in observations if o.source.native_kind == "http")
+    clickpath_obs = next(o for o in observations if o.source.native_kind == "clickpath")
+
+    assert http_obs.source_event_id == "evt-mixed-http-001"
+    assert http_obs.health is Health.UP
+    assert http_obs.location == "us-east-1"
+
+    assert clickpath_obs.source_event_id == "evt-mixed-clickpath-001"
+    assert clickpath_obs.health is Health.UP
+    assert clickpath_obs.location == "us-east-1"
+
+
+def test_dispatch_produces_one_observation_per_row_no_aggregation():
+    from src.adapters.inbound.dynatrace.dispatch import normalize_rows
+
+    rows = _load("http_multi_location.json")["records"]  # 3 distinct locations
+
+    observations = normalize_rows(rows, signal_key="checkout-http")
+
+    assert len(observations) == 3
+    assert {obs.location for obs in observations} == {
+        "us-east-1",
+        "eu-west-1",
+        "ap-southeast-1",
+    }
