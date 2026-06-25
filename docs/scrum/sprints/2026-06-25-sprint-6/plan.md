@@ -26,28 +26,30 @@ ingest_service.py` to match style (frozen Pydantic, docstrings citing dossier, i
 
 TDD steps (commit after every green step; stage only files you touched — never `git add -A`):
 
-- [ ] 1. Add the `Verdict` domain type in `core/domain/` (frozen Pydantic v2) + export from
+- [x] 1. Add the `Verdict` domain type in `core/domain/` (frozen Pydantic v2) + export from
         `core/domain/__init__.py`. Failing test: construct a `Verdict`. `pytest` + `lint-imports`
-        green. Commit.
-- [ ] 2. Failing test: `collapse` maps a cycle's per-location observations → one `up` verdict when
+        green. Commit. (513b2a9)
+- [x] 2. Failing test: `collapse` maps a cycle's per-location observations → one `up` verdict when
         ALL are `up`. Implement minimal `collapse` in a new `core/services/pipeline.py`. Pass. Commit.
-- [ ] 3. Failing tests: `collapse` → `down` when ALL `down`; → `degraded` for any mix / any non-up
-        (down or degraded) alongside others (dossier §10). Implement. Commit.
-- [ ] 4. Failing test: a cycle flagged under maintenance (injected predicate) is EXCLUDED from the
+        (137977e)
+- [x] 3. Failing tests: `collapse` → `down` when ALL `down`; → `degraded` for any mix / any non-up
+        (down or degraded) alongside others (dossier §10). Implement. Commit. (fa80b63)
+- [x] 4. Failing test: a cycle flagged under maintenance (injected predicate) is EXCLUDED from the
         verdict and short-circuits the pipeline (yields a maintenance marker, not up/down). Implement
-        the maintenance check at collapse. Commit. (AC2)
-- [ ] 5. Failing test: `streak` counts consecutive same-health verdicts reading BACKWARD over a
+        the maintenance check at collapse. Commit. (AC2) (2c22901)
+- [x] 5. Failing test: `streak` counts consecutive same-health verdicts reading BACKWARD over a
         sequence; a health change terminates the count. Implement `streak`. Pass. Commit. (AC3)
-- [ ] 6. Failing test: `streak` skips/excludes maintenance verdicts (counts over non-maintenance
-        only, per §10). Implement. Commit. (AC2/AC3)
-- [ ] 7. Self-review: the module is pure (no vendor/HTTP/SQL imports); `core/services` imports only
-        `core`; tidy TDD residue. Commit.
-- [ ] 8. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (core-independence +
+        (5b444b3)
+- [x] 6. Failing test: `streak` skips/excludes maintenance verdicts (counts over non-maintenance
+        only, per §10). Implement. Commit. (AC2/AC3) (28f6f04)
+- [x] 7. Self-review: the module is pure (no vendor/HTTP/SQL imports); `core/services` imports only
+        `core`; tidy TDD residue. Commit. (12febf1)
+- [x] 8. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (core-independence +
         core-internal-layering stay green), `python scripts/check_fk_direction.py`,
         `alembic upgrade head` (DB-gated via `scripts/dev_db.py`). Forward blast radius: update
         `canonical-types-and-ports.md` (code_refs incl. `core/domain/` — you ADD the `Verdict` type →
         update its Facts + bump `verified_sha`). CLAUDE.md: only if a command/stack changed (none).
-        Record evidence in your FINAL MESSAGE (orchestrator writes the board). Commit.
+        Record evidence in your FINAL MESSAGE (orchestrator writes the board). Commit. (a513b11)
 
 **Reviews (after step 8):** spec reviewer (Opus) against AC1–AC4 verbatim; then code-quality
 reviewer (Opus). Working agreements: parallel-shape work shares its assembly; implementer never
