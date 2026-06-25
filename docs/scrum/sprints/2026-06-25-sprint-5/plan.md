@@ -69,7 +69,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         domain logic (only calls the port + adapter) and is a plain `asyncio` task (NO new dependency
         in `pyproject.toml`). Implement the single-cycle function + the periodic asyncio wrapper. Commit.
         (AC5)
-- [ ] 9. Self-review the whole diff: `core/services/` imports only `core`; `composition/` may import
+- [x] 9. Self-review the whole diff: `core/services/` imports only `core`; `composition/` may import
         both sides; the loop has no business logic; no SQL above persistence. Tidy any TDD residue. Commit.
 - [ ] 10. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (the new service is core — must
         import only core; the loop is composition), `python scripts/check_fk_direction.py`,
