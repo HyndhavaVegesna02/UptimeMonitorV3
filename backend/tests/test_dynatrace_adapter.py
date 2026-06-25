@@ -88,3 +88,57 @@ def test_http_normalizer_maps_success_failure_partial_rows_across_locations():
     assert partial_obs.health is Health.DEGRADED
     assert partial_obs.location == "ap-southeast-1"
     assert partial_obs.latency_ms == 980
+
+
+# --- Step 6: clickpath normalizer collapses multi-step to ONE verdict ---------
+
+
+def test_clickpath_normalizer_collapses_multi_step_row_to_one_verdict():
+    from src.adapters.inbound.dynatrace.clickpath_normalizer import (
+        normalize_clickpath_row,
+    )
+
+    rows = _load("clickpath_multi_location.json")["records"]
+    success_row = rows[0]  # us-east-1, all 3 steps succeed
+
+    obs = normalize_clickpath_row(success_row, signal_key="sockshop-purchase")
+
+    assert obs.signal_key == "sockshop-purchase"
+    assert obs.observed_at == datetime(2026, 6, 24, 10, 5, 0, tzinfo=timezone.utc)
+    assert obs.health is Health.UP  # one monitor-level verdict, not 3 step verdicts
+    assert obs.source_event_id == "evt-clickpath-journey-001"
+    assert obs.source.system == "dynatrace"
+    assert obs.source.native_id == "CLICKPATH-7B3C"
+    assert obs.source.native_kind == "clickpath"
+    assert obs.location == "us-east-1"
+    assert obs.latency_ms == 2310
+    # Step detail is not modelled on the canonical shape at all.
+    assert not hasattr(obs, "steps")
+
+
+def test_clickpath_normalizer_one_failed_step_yields_monitor_level_down():
+    from src.adapters.inbound.dynatrace.clickpath_normalizer import (
+        normalize_clickpath_row,
+    )
+
+    rows = _load("clickpath_multi_location.json")["records"]
+    failure_row = rows[1]  # eu-west-1, checkout step fails
+
+    obs = normalize_clickpath_row(failure_row, signal_key="sockshop-purchase")
+
+    assert obs.health is Health.DOWN
+    assert obs.location == "eu-west-1"
+    assert obs.latency_ms is None
+
+
+def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
+    from src.adapters.inbound.dynatrace.clickpath_normalizer import (
+        normalize_clickpath_row,
+    )
+
+    rows = _load("clickpath_multi_location.json")["records"]
+    obs = normalize_clickpath_row(
+        rows[0], signal_key="sockshop-purchase", raw_ref="s3://raw/evt-clickpath-journey-001.json"
+    )
+
+    assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"
