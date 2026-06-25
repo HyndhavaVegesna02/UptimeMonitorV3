@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/]
-verified_sha: 01ea878
-verified_sprint: sprint-6
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/, backend/src/core/services/availability.py]
+verified_sha: f16fdca
+verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
 
@@ -49,6 +49,12 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   (`status_publisher.py:14-18`).
 - `ObservationRepository.save_new(batch: Sequence[SignalObservation]) -> int` — outbound
   persistence; returns insert count (ON CONFLICT DO NOTHING semantics) (`observation_repository.py:16-20`).
+  STORY-011 adds `ObservationRepository.in_window(signal_key: str, since: datetime, until:
+  datetime) -> Sequence[SignalObservation]` (`observation_repository.py:29-39`) — the READ
+  side: returns `signal_key`'s observations with `observed_at` in the half-open range
+  `[since, until)`, so adjacent windows never double-count the boundary instant. This is the
+  only read path the availability engine uses; ALL SQL for it stays behind the Postgres
+  adapter (see [[persistence-adapters]]).
 - `WatermarkRepository.get(signal_key: str) -> datetime | None` + `advance(signal_key: str,
   to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py:15-24`).
 - `ClockPort.now() -> datetime` — injected, returns tz-aware UTC, so time is controllable
@@ -78,6 +84,60 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   count nor break a surrounding run (AC2). Returns `None` if every verdict supplied is
   maintenance (no non-maintenance verdict to start from).
 - Stages 3-4 (anti-flap + decide) are explicitly OUT OF SCOPE here — STORY-024.
+
+### The availability engine (`core/services/availability.py`, STORY-011, dossier §11)
+- `AvailabilityResult` (frozen Pydantic, `availability.py:37`) — the §11 result shape:
+  `availability_pct: float|None`, `completeness_pct: float|None`, `total_verdicts: int`,
+  `passing_verdicts: int`, `maintenance_verdicts: int`, `gap_verdicts: int`,
+  `distinct_locations: int`, `window: str`, `computed_at: datetime`. Either percentage is
+  `None` on a degenerate denominator (AC6) — never a sentinel `0.0`/`-1` and never a
+  `ZeroDivisionError`.
+- `AvailabilityCalculator` (`availability.py:110`) — the entry point, constructed with
+  `observation_repo: ObservationRepository` injected (no global, no SQL). `compute(signal_key,
+  *, since, until, interval, window, maintenance, computed_at)` is the only method; `interval`,
+  `window`, `maintenance` (a predicate over a cycle's start instant — injected, never a DB
+  lookup, mirroring `collapse`'s `under_maintenance`), and `computed_at` are ALL injected
+  parameters — no per-app config read, no wall-clock read, inside this service.
+- **Cycle bucketing** (a calculator design call, since §11 leaves the mechanism open):
+  `_bucket_into_cycles` (`availability.py:81`) slices `[since, until)` into consecutive
+  `interval`-wide buckets keyed by their start instant (`since + k*interval`); every
+  observation lands in exactly one bucket by `observed_at`. A bucket with zero observations
+  never appears in the map — it is a gap. Each non-empty bucket is one cycle, collapsed via
+  `collapse` (STORY-010), with `maintenance(cycle_start)` passed straight through as
+  `collapse`'s `under_maintenance`.
+- **Availability% (AC1)**: `passing_verdicts / (total_verdicts - maintenance_verdicts)` if
+  that denominator is `>0`, else `None`. `total_verdicts` counts EVERY non-gap cycle
+  (maintenance included); `passing_verdicts` counts only non-maintenance `Health.UP`
+  verdicts. Gaps never reach `collapse` at all, so the default `exclude` policy falls out
+  naturally — a gap is neither counted nor maintenance nor passing.
+- **Completeness% (AC2)**: `len(observations) / (expected_cycles * distinct_locations)` if
+  that denominator is `>0`, else `None`. `expected_cycles = max(0, (until - since) //
+  interval)`; `distinct_locations = len({o.location for o in observations})` — observed-
+  distinct, not a declared/configured set, so a 3-location signal with full coverage reads
+  exactly 100%, never 300% (the multi-location fix, dossier §11/T2.5).
+- **Group rollup** — `rollup_group(children: Sequence[AvailabilityResult], *, window,
+  computed_at) -> AvailabilityResult` (`availability.py:216`), a free function (no port
+  dependency: it combines already-computed results, not raw observations).
+  `availability_pct`/`completeness_pct` are each `min()` over the children whose value is
+  not `None` (a no-data child can't drag a healthy group to "unknown"); if every child is
+  `None`, the rollup's percentage is also `None`. `total_verdicts`, `passing_verdicts`,
+  `maintenance_verdicts`, `gap_verdicts` SUM across ALL children including no-data ones (AC3:
+  "excluded from the min but their absence stays visible") — these four are exactly the
+  fields dossier §11's rollup sentence names. **`distinct_locations` is deliberately NOT
+  summed** — it is documented on `AvailabilityResult` as making ONE signal's own completeness
+  denominator auditable; summing it across children would double-count shared locations and
+  misrepresent the group's location footprint. A rolled-up result reports
+  `distinct_locations=0`. `rollup_group([], ...)` (zero children) does not raise — both
+  percentages are `None`, all counts are `0`.
+- **Derive-on-read (AC4)**: `compute` and `rollup_group` persist nothing; every call re-reads
+  `in_window` and recomputes. No cache exists; `AvailabilityCalculator`'s only state is the
+  injected repo, so a short-TTL cache could wrap `compute` later without changing this class
+  — built pure per the working agreement (measure before optimizing).
+- Never consults `streak` (P4) — no import of it anywhere in this module. Imports ONLY
+  `src.core.*` (`domain`, `ports`, `services.pipeline`) plus `pydantic`/stdlib — no vendor,
+  HTTP, or SQL (AC5).
+- The skew flag (dossier §11 "Skew, surfaced", Tier-2 item 7) is OUT OF SCOPE here — split to
+  STORY-026 at sprint-7 refinement.
 
 ### Boundary status
 - `core/ports` imports `core/domain` but NOT `core/services`; the `core-internal-layering`
@@ -120,3 +180,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `ValueError` ("collapse requires at least one observation for a cycle") on an
   empty `observations` sequence instead of leaking a stdlib `max()`/`IndexError`;
   re-verified, Fact text above was already accurate (made no empty-input claim).
+- sprint-7: STORY-011 adds `ObservationRepository.in_window` (the read side; Postgres
+  implementation in [[persistence-adapters]]) and `core/services/availability.py`'s
+  `AvailabilityResult`/`AvailabilityCalculator`/`rollup_group` — the two-grain
+  availability/completeness calculator and min-of-children group rollup (dossier §11).
+  The skew flag is split to STORY-026 (out of scope here).

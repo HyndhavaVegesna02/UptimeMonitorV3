@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/tests/test_persistence_adapters.py]
-verified_sha: a6c6d0d
-verified_sprint: sprint-5
+verified_sha: f16fdca
+verified_sprint: sprint-7
 status: verified
 ---
 
@@ -37,6 +37,24 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   specifies, enforced by the DB's `UNIQUE(source_event_id)` index, not a racy read-then-write.
 - Empty batch short-circuits to `0` (`:51`). `health` is stored as the enum's `.value`;
   `source` as `Provenance.model_dump()` (`:58-60`).
+
+### `PostgresObservationRepository.in_window` — the read side (STORY-011, dossier §11)
+- A plain `SELECT` over `_OBSERVATIONS` filtered to one `signal_key` and the half-open range
+  `observed_at >= since AND observed_at < until` (`observation_repository.py:94-107`), run on
+  `engine.connect()` (read-only, no transaction needed) — mirrors `PostgresWatermarkRepository
+  .get`'s read-path convention. Half-open `[since, until)` means adjacent calendar windows
+  (e.g. two consecutive 24h reporting windows) never double-count the boundary instant.
+- This is the ONLY read path `core/services/availability.py`'s `AvailabilityCalculator` uses
+  (see [[canonical-types-and-ports]]) — all SQL for the availability engine's data access
+  lives here, never in core.
+- Reconstructs canonical `SignalObservation`s row-by-row (`:112-124`): `health` from its
+  stored `.value` string via `Health(row.health)`, `source` from its stored `JSONB` dict via
+  `Provenance(**row.source)`, and `observed_at` re-normalized to UTC via
+  `.astimezone(timezone.utc)` — the same psycopg tz-aware-`timestamptz` convention `get`
+  already relies on (`:45`). The core never sees a raw row or a driver-specific type.
+- An unknown/never-ingested `signal_key`, or a window with no matching rows, returns `[]` —
+  no error, no `None` — consistent with the AC6 degenerate-input contract the availability
+  engine depends on.
 
 ### `PostgresWatermarkRepository` — per-signal cursor, tz-aware UTC
 - `advance` is a single upsert: `INSERT … ON CONFLICT (signal_key) DO UPDATE SET watermark=…`
@@ -81,3 +99,6 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   tz-aware-UTC watermark, FK-seeding in tests).
 - sprint-5: STORY-009 adds `PostgresRejectedObservationRepository` (the quarantine-sink
   adapter) and its no-FK testing convention.
+- sprint-7: STORY-011 adds `PostgresObservationRepository.in_window` — the half-open-range
+  `SELECT` the new availability engine (`core/services/availability.py`) reads through; no
+  schema change, no new migration.
