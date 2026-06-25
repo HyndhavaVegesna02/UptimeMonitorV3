@@ -14,7 +14,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
+from pydantic import BaseModel, ConfigDict
+
 from src.core.domain import Health, SignalObservation, Verdict
+
+
+class Streak(BaseModel):
+    """The current streak: `length` consecutive verdicts of `health` (dossier §10).
+
+    Read off the most recent NON-maintenance verdict's health, counting
+    backward over non-maintenance verdicts only. Governs the displayed
+    status; never the availability ratio (P4 / D-3).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    health: Health
+    length: int
 
 
 def collapse(
@@ -67,3 +83,29 @@ def _collapse_health(healths: Iterable[Health]) -> Health:
     if distinct == {Health.DOWN}:
         return Health.DOWN
     return Health.DEGRADED
+
+
+def streak(verdicts: Sequence[Verdict]) -> Streak | None:
+    """Count the current streak reading backward over `verdicts` (dossier §10).
+
+    `verdicts` is ordered oldest-to-newest (the natural cycle order); this
+    reads it from the end. Maintenance verdicts are skipped entirely — they
+    are excluded from the sequence the streak reads and do not themselves
+    break a run, since a maintenance verdict simply never participates.
+    Counting starts from the most recent NON-maintenance verdict's health and
+    continues backward while consecutive non-maintenance verdicts match it; a
+    health change terminates the streak. Returns `None` if there is no
+    non-maintenance verdict to start from.
+    """
+    non_maintenance = [v for v in verdicts if not v.under_maintenance]
+    if not non_maintenance:
+        return None
+
+    current_health = non_maintenance[-1].health
+    length = 0
+    for verdict in reversed(non_maintenance):
+        if verdict.health != current_health:
+            break
+        length += 1
+
+    return Streak(health=current_health, length=length)
