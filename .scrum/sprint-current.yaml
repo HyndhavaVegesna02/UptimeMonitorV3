@@ -19,21 +19,50 @@ start_tag: sprint-5-start
 stories:
   - id: STORY-009
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 5 AC MET with real (non-vacuous) tests, incl. a live-DB
+                            # rejected_observations row test. §8 ordering correct (validate->dedupe->
+                            # persist->accepted-only advance); accepted count = save_new return.
+    quality_review: APPROVE # Opus: zero Critical, zero Major. Boundary spirit holds (ingest_service
+                            # imports only src.core.*; pull_loop is pure wiring; SQL stays in
+                            # persistence). 3 minors recorded as story notes (non-blocking):
+                            # (1) single-signal-batch assumption signal_key=valid[0].signal_key is
+                            # documented + matches fetch_observations (1 signal/cycle) — latent only if
+                            # a future multi-signal batch arrives; (2) stop_event checked twice in
+                            # run_periodic (intentional, a comment would help); (3) the new persistence
+                            # adapter mirrors the existing repos acceptably (no extractable shared assembly).
     blocked_question: null
-    attempts: 0
+    attempts: 0             # no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: this story ADDS a RejectedObservationRepository port
-                                   # under core/ports/ (-> canonical-types-and-ports.md, code_refs
-                                   # incl. core/ports/) and a Postgres rejected-obs adapter under
-                                   # persistence/ (-> persistence-adapters.md). Both must be updated
-                                   # or re-verified. dynatrace-adapter.md: the loop only CONSUMES
-                                   # fetch_observations (no adapter change) -> re-verify only if the
-                                   # diff touches the adapter dir.
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "127 passed in 13.51s"   # 109 baseline + 18 new (ingest service + pull loop + rejected adapter)
+        commit: 5a62ba6
+        at: 2026-06-25T13:05:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: core/services imports only core; loop is composition
+        commit: 5a62ba6
+        at: 2026-06-25T13:05:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: 5a62ba6
+        at: 2026-06-25T13:05:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration added (uses existing rejected_observations)"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: 5a62ba6
+        at: 2026-06-25T13:05:00+05:30
+    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/ports/): updated
+                                  # — added RejectedObservationRepository (6th port) + the first
+                                  # core/services impl (IngestService); verified_sha -> 7d5fec9.
+                                  # persistence-adapters.md (code_refs incl. persistence repos): updated
+                                  # — added PostgresRejectedObservationRepository (3rd adapter, no-FK
+                                  # quarantine sink); verified_sha -> 7d5fec9. dynatrace-adapter.md NOT
+                                  # touched (loop only consumes fetch_observations; no adapter-dir change).
   - id: STORY-020
     points: 1
     board: todo
