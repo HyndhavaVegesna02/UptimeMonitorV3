@@ -68,15 +68,39 @@ stories:
                                   # main at merge.
   - id: STORY-025
     points: 1
-    board: in-progress
+    board: done
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null
+    spec_review: null      # light pipeline: no reviewers at 1 pt
     quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # diff touches core/domain/verdict.py -> re-verify
-                                   # canonical-types-and-ports.md (the Verdict Fact).
+    # Note: one existing STORY-010 test (test_verdict_health_defaults_to_none) asserted the
+    # now-invalid shape (normal verdict with health=None) succeeds — it contradicted the very
+    # invariant this story enforces, so the implementer correctly replaced it with a raises-test.
+    # A legitimate, flagged exception to "existing tests pass unchanged."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "191 passed (orchestrator-verified at HEAD); 187 + 5 new - 1 replaced contradictory test"
+        commit: 6fb1d53
+        at: 2026-06-25T19:25:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified)"
+        commit: 6fb1d53
+        at: 2026-06-25T19:25:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations. (consolidated DB gate, orchestrator-verified)"
+        commit: 6fb1d53
+        at: 2026-06-25T19:25:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration (pure-core change)"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: 6fb1d53
+        at: 2026-06-25T19:25:00+05:30
+    blast_radius_resolved: true   # canonical-types-and-ports.md re-verified: the Verdict Fact now notes
+                                  # the ENFORCED maintenance<->health invariant; verified_sha -> 15d1484.
 hotfixes: []
 interrupts: []
