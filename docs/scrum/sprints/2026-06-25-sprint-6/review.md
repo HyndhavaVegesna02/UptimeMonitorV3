@@ -80,7 +80,10 @@ correctly did NOT go falsely stale (sprint-5 amendment paid off); learnings fold
 - STORY-011 (availability calculator, 5, draft) — depends on collapse (now built).
 
 ## PO verdict
-- [ ] STORY-010 — accept / reject
-- [ ] STORY-021 — accept / reject
-- [ ] STORY-022 — accept / reject
-- [ ] STORY-023 — accept / reject
+- [x] STORY-010 — **ACCEPTED** (2026-06-25). 3 pts. Merged to main.
+- [x] STORY-021 — **ACCEPTED** (2026-06-25). 1 pt. Merged to main.
+- [x] STORY-022 — **ACCEPTED** (2026-06-25). 1 pt. Merged to main.
+- [x] STORY-023 — **ACCEPTED** (2026-06-25). 1 pt. Merged to main.
+- PO directed a follow-up from the minor: **STORY-025** (enforce the Verdict
+  `under_maintenance ⇔ health is None` invariant via a `model_validator`) added to the backlog
+  as `ready`. The second minor (`Streak.health` typing) needs no action.

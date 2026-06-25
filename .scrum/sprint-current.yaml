@@ -1,6 +1,13 @@
 # YourTeam active sprint board.
 sprint: 6
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-25
+# Sprint 6 closed: STORY-010 (3) + STORY-021/022/023 (1 each) all accepted at review (6/6 pts),
+# merged to main. Zone 4 opened: pure collapse + streak pipeline stages + the Verdict domain
+# type; three carried chores cleared. STORY-010 needed one fix loop (empty-collapse guard). PO
+# directed the Verdict-invariant minor into STORY-025 (ready). The sprint-5 narrowed-code_refs
+# amendment paid off (architecture-boundary.md did not go falsely stale). Next: planning Sprint 7
+# (STORY-024 anti-flap+decide needs refinement; STORY-011 availability; STORY-025 chore).
 started: 2026-06-25
 goal: "Zone 4 opens — the first two pure pipeline stages (collapse: per-location observations
   to one verdict, maintenance excluded; streak: consecutive same-health verdicts) land as
