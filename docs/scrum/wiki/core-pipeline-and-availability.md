@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak) and the availability engine
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_availability.py]
-verified_sha: 98bebe9
+verified_sha: 205e1fe
 verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
