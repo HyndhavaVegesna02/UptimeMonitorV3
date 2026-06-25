@@ -46,7 +46,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         `operational`; a streak below all thresholds → nothing. Implement. Commit. (AC2)
 - [x] 5. Failing test: degenerate inputs — length 0, and (per the empty-input agreement) a streak
         with no actionable length — have defined behavior (nothing/no crash). Commit. (AC4)
-- [ ] 6. Self-review: pure (no vendor/HTTP/SQL); imports only `src.core.*`; thresholds injected, not
+- [x] 6. Self-review: pure (no vendor/HTTP/SQL); imports only `src.core.*`; thresholds injected, not
         read. Tidy residue. Commit.
 - [ ] 7. **DoD gate** (all four exit 0): `pytest`, `lint-imports`, `python scripts/check_fk_direction.py`,
         `alembic upgrade head` (DB-gated via `scripts/dev_db.py`; no migration — pure logic). Forward

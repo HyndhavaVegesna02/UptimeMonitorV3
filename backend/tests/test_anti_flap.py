@@ -7,6 +7,8 @@ nothing. Tested with in-memory canonical fixtures only — no DB, no vendor
 types, no I/O, no config read.
 """
 
+import pytest
+
 from src.core.domain import ComponentStatus, Health
 from src.core.services.pipeline import (
     AntiFlapOutcome,
@@ -36,7 +38,7 @@ def test_thresholds_construct_with_the_dossier_defaults():
 
 def test_thresholds_are_frozen():
     thresholds = AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)
-    with __import__("pytest").raises(Exception):
+    with pytest.raises(Exception):
         thresholds.major = 10  # type: ignore[misc]
 
 
@@ -60,7 +62,7 @@ def test_outcome_constructs_as_nothing():
 
 def test_outcome_is_frozen():
     outcome = AntiFlapOutcome(proposed_status=None, internal_warning=False)
-    with __import__("pytest").raises(Exception):
+    with pytest.raises(Exception):
         outcome.internal_warning = True  # type: ignore[misc]
 
 

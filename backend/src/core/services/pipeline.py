@@ -173,6 +173,11 @@ _NOTHING = AntiFlapOutcome(proposed_status=None, internal_warning=False)
 _INTERNAL_WARNING = AntiFlapOutcome(proposed_status=None, internal_warning=True)
 
 
+def _propose(status: ComponentStatus) -> AntiFlapOutcome:
+    """Shared assembly for the "propose a status" outcome shape (never an internal warning)."""
+    return AntiFlapOutcome(proposed_status=status, internal_warning=False)
+
+
 def anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome:
     """Map a `Streak` to an `AntiFlapOutcome` against INJECTED thresholds (dossier §10, stage 3).
 
@@ -191,19 +196,19 @@ def anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcom
     """
     if streak_.health is Health.DOWN:
         if streak_.length >= thresholds.major:
-            return AntiFlapOutcome(proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=False)
+            return _propose(ComponentStatus.MAJOR_OUTAGE)
         if streak_.length >= thresholds.partial:
-            return AntiFlapOutcome(proposed_status=ComponentStatus.PARTIAL_OUTAGE, internal_warning=False)
+            return _propose(ComponentStatus.PARTIAL_OUTAGE)
         if streak_.length >= thresholds.degraded:
-            return AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+            return _propose(ComponentStatus.DEGRADED)
         if streak_.length == 1:
             return _INTERNAL_WARNING
         return _NOTHING
 
     if streak_.health is Health.DEGRADED:
-        return AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+        return _propose(ComponentStatus.DEGRADED)
 
     # Health.UP
     if streak_.length >= thresholds.recovery:
-        return AntiFlapOutcome(proposed_status=ComponentStatus.OPERATIONAL, internal_warning=False)
+        return _propose(ComponentStatus.OPERATIONAL)
     return _NOTHING
