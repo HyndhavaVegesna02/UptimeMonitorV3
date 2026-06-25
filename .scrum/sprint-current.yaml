@@ -65,15 +65,41 @@ stories:
                                   # touched (loop only consumes fetch_observations; no adapter-dir change).
   - id: STORY-020
     points: 1
-    board: in-progress
+    board: done
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null
+    spec_review: null      # light pipeline: no reviewers at 1 pt
     quality_review: null
     blocked_question: null
-    attempts: 0
+    attempts: 0            # implementer subagent hit a SESSION LIMIT after committing step 1 +
+                          # the shared MalformedDqlRowError/require_field; orchestrator finished
+                          # the trivial remainder (per fresh-agent/verify-tree working agreement:
+                          # preserved the coherent uncommitted step-2 test — fixed only a missing
+                          # `import re` — and routed assemble_observation's 4 required fields
+                          # through require_field). Not a fix loop.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # diff touches the dynatrace adapter (dispatch.py + _assembly.py)
-                                   # -> re-verify dynatrace-adapter.md (code_refs incl. the package).
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "133 passed in 15.52s"   # 127 baseline + 5 new (4 missing-field parametrized + 1 optional-latency)
+        commit: 4afb5a2
+        at: 2026-06-25T15:40:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: 4afb5a2
+        at: 2026-06-25T15:40:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: 4afb5a2
+        at: 2026-06-25T15:40:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration added"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: 4afb5a2
+        at: 2026-06-25T15:40:00+05:30
+    blast_radius_resolved: true   # diff touches dynatrace adapter (dispatch.py + _assembly.py + tests)
+                                  # -> dynatrace-adapter.md re-verified: added a Fact on the named
+                                  # MalformedDqlRowError + require_field; verified_sha -> d3a864d.
 hotfixes: []
 interrupts: []
