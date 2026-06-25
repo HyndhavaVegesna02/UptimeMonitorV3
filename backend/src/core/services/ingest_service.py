@@ -18,7 +18,7 @@ service is fully exercisable with in-memory fakes (no DB, no Dynatrace).
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from src.core.domain import IngestResult, SignalObservation
 from src.core.ports import (
@@ -109,5 +109,5 @@ class IngestService(SignalIngestPort):
 
         return IngestResult(accepted=accepted_count, rejected=rejected_count)
 
-    def _is_implausibly_future(self, observed_at, now) -> bool:
+    def _is_implausibly_future(self, observed_at: datetime, now: datetime) -> bool:
         return observed_at > now + FUTURE_TOLERANCE
