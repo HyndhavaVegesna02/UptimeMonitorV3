@@ -64,19 +64,21 @@ def assemble_observation(
     symmetric across both call sites — callers that have no raw payload
     pointer simply omit it.
     """
-    observed_at = datetime.fromisoformat(row["timestamp"].replace("Z", "+00:00"))
+    observed_at = datetime.fromisoformat(
+        require_field(row, "timestamp").replace("Z", "+00:00")
+    )
 
     return SignalObservation(
         signal_key=signal_key,
         observed_at=observed_at,
         health=health,
-        source_event_id=row["event.id"],
+        source_event_id=require_field(row, "event.id"),
         source=Provenance(
             system="dynatrace",
-            native_id=row["synthetic_test.id"],
+            native_id=require_field(row, "synthetic_test.id"),
             native_kind=native_kind,
         ),
-        location=row["synthetic_location.name"],
+        location=require_field(row, "synthetic_location.name"),
         latency_ms=row.get("request.response_time_ms"),
         raw_ref=raw_ref,
     )

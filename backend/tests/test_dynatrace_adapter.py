@@ -6,6 +6,7 @@ Dynatrace in any test (working agreement: pure core, mockable edges).
 """
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -243,6 +244,41 @@ def test_dispatch_raises_malformed_for_missing_synthetic_test_type():
 
     with pytest.raises(MalformedDqlRowError, match="synthetic_test.type"):
         normalize_row(row, signal_key="checkout-http")
+
+
+@pytest.mark.parametrize(
+    "missing_field",
+    ["timestamp", "event.id", "synthetic_test.id", "synthetic_location.name"],
+)
+def test_assemble_observation_raises_malformed_for_missing_required_field(
+    missing_field,
+):
+    from src.adapters.inbound.dynatrace._assembly import (
+        MalformedDqlRowError,
+        assemble_observation,
+    )
+
+    row = _load("http_multi_location.json")["records"][0].copy()
+    del row[missing_field]
+
+    with pytest.raises(MalformedDqlRowError, match=re.escape(missing_field)):
+        assemble_observation(
+            row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+        )
+
+
+def test_assemble_observation_does_not_require_optional_latency():
+    """`request.response_time_ms` is read via `.get` — absence is not malformed."""
+    from src.adapters.inbound.dynatrace._assembly import assemble_observation
+
+    row = _load("http_multi_location.json")["records"][0].copy()
+    del row["request.response_time_ms"]
+
+    obs = assemble_observation(
+        row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+    )
+
+    assert obs.latency_ms is None
 
 
 # --- Step 9: DQL query builder (watermark + overlap window) + injected executor

@@ -97,13 +97,17 @@ Spec: Sprint 4 review follow-up. Replace the bare `KeyError` on a malformed DQL 
 
 TDD steps:
 
-- [ ] 1. Failing test: a DQL row missing the dispatch key `synthetic_test.type` raises
+- [x] 1. Failing test: a DQL row missing the dispatch key `synthetic_test.type` raises
         `MalformedDqlRowError` (naming the field) from `dispatch.normalize_row`, not `KeyError`.
         Implement. Commit.
-- [ ] 2. Failing test (parametrized): a row missing any of `timestamp`, `event.id`,
+- [x] 2. Failing test (parametrized): a row missing any of `timestamp`, `event.id`,
         `synthetic_test.id`, `synthetic_location.name` raises `MalformedDqlRowError` naming the field
         from `_assembly.assemble_observation`. Implement (define the error once, reuse it; keep
         `latency_ms`/`request.response_time_ms` OPTIONAL — absence is not an error). Commit.
+        (Finished by orchestrator after the implementer subagent hit a session limit mid-step: it
+        had committed step 1 + the shared MalformedDqlRowError/require_field in _assembly.py, and
+        left a coherent uncommitted step-2 test missing only `import re`; orchestrator fixed the
+        import and routed the 4 required fields in assemble_observation through require_field.)
 - [ ] 3. **DoD gate** (all four exit 0): `pytest` (the 20 STORY-008 tests still pass unchanged +
         the new ones), `lint-imports`, `check_fk_direction.py`, `alembic upgrade head` (DB-gated).
         Forward blast radius: re-verify `dynatrace-adapter.md` (its code_refs include the package) —
