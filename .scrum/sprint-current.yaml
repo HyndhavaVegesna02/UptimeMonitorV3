@@ -21,23 +21,50 @@ start_tag: sprint-4-start
 stories:
   - id: STORY-008
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: PASS       # Opus: all 5 AC MET, verified against the diff with expected-value
                             # assertions (multi-location no-aggregation + mixed-batch coverage present).
-    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — duplicated observation-assembly
-                            # (timestamp parse + SignalObservation/Provenance construction copy-pasted
-                            # between http_normalizer.py and clickpath_normalizer.py; will drift).
-                            # 3 minors recorded as story notes (non-blocking): DQL native_id not
-                            # escaped (trusted input; document the assumption), bare KeyError on a
-                            # malformed row vs a named adapter error, raw_ref param asymmetry (folds
-                            # into the shared-helper fix).
+    quality_review: APPROVE # Opus, after fix loop 1. Original review: 1 MAJOR — duplicated
+                            # observation-assembly (timestamp parse + SignalObservation/Provenance
+                            # construction copy-pasted between the http/clickpath normalizers).
+                            # Fix loop 1 (fresh agent) extracted a shared _assembly.assemble_observation
+                            # helper both normalizers delegate to (per-type Health logic preserved) +
+                            # documented the DQL trusted-input assumption. Re-review (Opus) confirmed
+                            # the MAJOR resolved, behavior preserved (18 originals intact + 2 new helper
+                            # tests), zero new Critical/Major. 3 original minors recorded as story notes
+                            # (non-blocking): bare KeyError on a malformed row vs a named adapter error,
+                            # fail-loud style (both deferred); the native_id-escaping + raw_ref-asymmetry
+                            # minors were closed by the fix.
     blocked_question: null
-    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
-    paused_at_commit: 3a9707e
-    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit (commits change)
-    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. (Implementer had bumped
-                                   # architecture-boundary.md verified_sha to b2c8671; re-stamp to the
-                                   # final fix commit. canonical-types-and-ports.md stays read-only.)
+    attempts: 1             # one fix loop (fresh agent per working agreement), not a fresh attempt
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "109 passed in 13.34s"   # 89 baseline + 18 adapter + 2 fix-loop helper tests
+        commit: d9e5532
+        at: 2026-06-25T12:05:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."   # AC2: core untouched, no adapter->adapter import
+        commit: d9e5532
+        at: 2026-06-25T12:05:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: d9e5532
+        at: 2026-06-25T12:05:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration added by this story"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: d9e5532
+        at: 2026-06-25T12:05:00+05:30
+    blast_radius_resolved: true   # diff stays within backend/src/adapters/inbound/dynatrace/ + tests.
+                                  # architecture-boundary.md (code_refs incl. backend/src/): Facts
+                                  # describe zone STRUCTURE + the 3 contracts — unchanged by adding an
+                                  # inbound package + a within-package helper; re-verified, verified_sha
+                                  # bumped to b2ee794 (sprint-4). canonical-types-and-ports.md: core
+                                  # read-only this story (no overlap) -> stays verified, no bump.
 hotfixes: []
 interrupts: []
