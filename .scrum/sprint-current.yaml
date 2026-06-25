@@ -1,6 +1,11 @@
 # YourTeam active sprint board.
 sprint: 4
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-25
+# Sprint 4 closed: STORY-008 accepted at review (5/5 pts), merged to main. Zone 3 ingest's
+# first inbound adapter (Dynatrace DQL -> canonical observations) is live. One fix loop
+# (duplicated assembly, resolved by a fresh agent). PO directed both review minors into
+# chore stories STORY-020 + STORY-021. Next: planning Sprint 5 (STORY-009 pull loop, ready).
 started: 2026-06-25
 goal: "Zone 3 ingest opens — the Dynatrace inbound adapter queries synthetic monitor
   results via DQL and normalizes each location execution into a canonical

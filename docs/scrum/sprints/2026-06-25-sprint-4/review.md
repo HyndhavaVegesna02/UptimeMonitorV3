@@ -73,4 +73,7 @@ Compile pass done (blocks review, completed): no stale articles; new verified ar
 `b2ee794`. Internal links lint clean.
 
 ## PO verdict
-- [ ] STORY-008 — **accept** (merge `sprint-4` to main) / **reject** (back to backlog with feedback)
+- [x] STORY-008 — **ACCEPTED** (2026-06-25). Merge `sprint-4` to main; 5 pts recorded.
+      PO directed both recorded minors become chore stories: **STORY-020** (named
+      malformed-DQL-row error) and **STORY-021** (guard `native_id` interpolation) added to
+      the backlog as `draft` follow-ups.
