@@ -1,11 +1,12 @@
 """Core logic pipeline, stages 1-2 (dossier §10) — pure, provider-blind.
 
 `collapse` (stage 1) maps one signal's per-location observations for a single
-cycle to one `Verdict`. `streak` (stage 2, added in a later step) counts
-consecutive same-health verdicts reading backward. Nothing here mentions
-Dynatrace, Grail, or DQL — the pipeline consumes canonical `SignalObservation`s
-and produces canonical `Verdict`s, and would not change if the vendor were
-swapped (dossier §10).
+cycle to one `Verdict`. `streak` (stage 2) counts consecutive same-health
+verdicts reading backward over non-maintenance verdicts only. Nothing here
+mentions Dynatrace, Grail, or DQL — the pipeline consumes canonical
+`SignalObservation`s and produces canonical `Verdict`s, and would not change
+if the vendor were swapped (dossier §10). Stages 3-4 (anti-flap + decide) are
+out of scope (STORY-024).
 
 This module imports ONLY `src.core.*` — no SQL, no vendor types, no I/O.
 """
