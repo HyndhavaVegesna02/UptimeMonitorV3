@@ -43,14 +43,55 @@ def test_verdict_is_frozen():
         verdict.health = Health.DOWN
 
 
-def test_verdict_health_defaults_to_none():
-    fields = _valid_verdict()
-    del fields["health"]
-    verdict = Verdict(**fields)
+def test_maintenance_verdict_carries_no_health_verdict():
+    verdict = Verdict(
+        signal_key="checkout-http",
+        observed_at=datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc),
+        health=None,
+        under_maintenance=True,
+    )
+    assert verdict.under_maintenance is True
     assert verdict.health is None
 
 
-def test_maintenance_verdict_carries_no_health_verdict():
+# --- STORY-025: the maintenance<->health invariant is enforced at construction --
+
+
+def test_normal_verdict_omitting_health_raises():
+    """`under_maintenance=False` with `health` left at its `None` default is incoherent.
+
+    Superseded by STORY-025: this combination used to construct fine (`health`
+    defaulting to `None`); it is now one of the two invalid shapes the
+    `model_validator` rejects.
+    """
+    fields = _valid_verdict()
+    del fields["health"]
+    with pytest.raises(ValidationError):
+        Verdict(**fields)
+
+
+def test_maintenance_verdict_with_health_raises():
+    with pytest.raises(ValidationError):
+        Verdict(
+            signal_key="checkout-http",
+            observed_at=datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc),
+            health=Health.UP,
+            under_maintenance=True,
+        )
+
+
+def test_normal_verdict_with_explicit_none_health_raises():
+    with pytest.raises(ValidationError):
+        Verdict(**_valid_verdict(health=None))
+
+
+def test_normal_verdict_with_set_health_constructs():
+    verdict = Verdict(**_valid_verdict(health=Health.DOWN, under_maintenance=False))
+    assert verdict.under_maintenance is False
+    assert verdict.health is Health.DOWN
+
+
+def test_maintenance_verdict_with_none_health_constructs():
     verdict = Verdict(
         signal_key="checkout-http",
         observed_at=datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc),

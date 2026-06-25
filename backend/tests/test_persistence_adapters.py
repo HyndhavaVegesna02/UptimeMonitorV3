@@ -161,6 +161,94 @@ def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_
     assert total == 3
 
 
+def test_in_window_returns_only_observations_inside_the_half_open_range(migrated_db, engine):
+    """STORY-011 AC5: the read side of the persistence boundary the
+    availability engine derives from. Half-open `[since, until)` — a row
+    exactly AT `until` must be excluded, proving adjacent windows can never
+    double-count the boundary instant.
+    """
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "in-window-http")
+    repo = PostgresObservationRepository(engine)
+    since = datetime(2026, 6, 25, 9, 0, 0, tzinfo=timezone.utc)
+    until = datetime(2026, 6, 25, 9, 10, 0, tzinfo=timezone.utc)
+
+    repo.save_new(
+        [
+            _observation(
+                signal_key="in-window-http",
+                event_id="before-window",
+                observed_at=since - timedelta(minutes=1),
+            ),
+            _observation(
+                signal_key="in-window-http",
+                event_id="at-since-boundary",
+                observed_at=since,
+            ),
+            _observation(
+                signal_key="in-window-http",
+                event_id="inside-window",
+                observed_at=since + timedelta(minutes=5),
+                health=Health.DOWN,
+                location="eu-west",
+            ),
+            _observation(
+                signal_key="in-window-http",
+                event_id="at-until-boundary",
+                observed_at=until,
+            ),
+            _observation(
+                signal_key="in-window-http",
+                event_id="after-window",
+                observed_at=until + timedelta(minutes=1),
+            ),
+        ]
+    )
+
+    result = repo.in_window("in-window-http", since, until)
+
+    by_event_id = {o.source_event_id: o for o in result}
+    assert set(by_event_id) == {"at-since-boundary", "inside-window"}
+    assert by_event_id["inside-window"].health == Health.DOWN
+    assert by_event_id["inside-window"].location == "eu-west"
+    assert by_event_id["inside-window"].observed_at == since + timedelta(minutes=5)
+    assert by_event_id["inside-window"].observed_at.tzinfo is not None
+
+
+def test_in_window_filters_by_signal_key_and_returns_empty_for_unknown_signal(
+    migrated_db, engine
+):
+    """A signal with zero rows (or a signal nothing has ever reported for) is
+    a legitimate empty result, not an error — this is exactly the AC6
+    degenerate input the availability engine must handle without crashing.
+    """
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "in-window-other-signal")
+    repo = PostgresObservationRepository(engine)
+    since = datetime(2026, 6, 25, 9, 0, 0, tzinfo=timezone.utc)
+    until = datetime(2026, 6, 25, 9, 10, 0, tzinfo=timezone.utc)
+
+    repo.save_new(
+        [
+            _observation(
+                signal_key="in-window-other-signal",
+                event_id="belongs-to-other-signal",
+                observed_at=since + timedelta(minutes=1),
+            ),
+        ]
+    )
+
+    result = repo.in_window("signal-with-no-rows-at-all", since, until)
+
+    assert result == []
+
+
 # --- WatermarkRepository ----------------------------------------------------
 
 

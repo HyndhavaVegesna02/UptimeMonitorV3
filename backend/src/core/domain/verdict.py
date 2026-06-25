@@ -9,7 +9,7 @@ the pipeline rather than carrying a health value.
 
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from src.core.domain.signal import Health
 
@@ -50,3 +50,26 @@ class Verdict(BaseModel):
         if value.tzinfo is None or value.utcoffset() != timedelta(0):
             raise ValueError("observed_at must be a tz-aware UTC datetime")
         return value
+
+    @model_validator(mode="after")
+    def _require_maintenance_health_coherence(self) -> "Verdict":
+        """Enforce the maintenance<->health invariant this type represents.
+
+        A maintenance cycle (`under_maintenance=True`) is neither up nor down,
+        so it must carry no health value; a normal cycle
+        (`under_maintenance=False`) always has a closed verdict, so it must
+        carry one. Rejecting the two incoherent shapes here, at construction,
+        keeps a hand-built `Verdict` from reaching `streak` in a state that
+        cannot be expressed cleanly (see module docstring).
+        """
+        if self.under_maintenance and self.health is not None:
+            raise ValueError(
+                "under_maintenance=True requires health=None "
+                "(a maintenance cycle carries no health verdict)"
+            )
+        if not self.under_maintenance and self.health is None:
+            raise ValueError(
+                "under_maintenance=False requires a set health "
+                "(a normal verdict always carries a closed health verdict)"
+            )
+        return self

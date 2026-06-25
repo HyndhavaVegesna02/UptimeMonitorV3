@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/]
-verified_sha: 01ea878
-verified_sprint: sprint-6
+verified_sha: 15d1484
+verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
 
@@ -38,6 +38,14 @@ status: verified          # verified | stale | archived
   health verdict (`under_maintenance=False`, `health` set) AND a maintenance marker
   (`under_maintenance=True`, `health=None`) in one type, so `streak` can skip
   maintenance verdicts without a second type.
+- STORY-025: that maintenance<->health shape is now ENFORCED, not just documented — a
+  `model_validator(mode="after")` (`verdict.py:54`,
+  `_require_maintenance_health_coherence`) rejects both incoherent shapes at
+  construction (`under_maintenance=True` with a set `health`; `under_maintenance=False`
+  with `health=None`), raising `ValueError` (wrapped as Pydantic `ValidationError`).
+  Mirrors `signal.py`'s `_require_utc` validate-at-construction pattern. `collapse`
+  (`pipeline.py:37`) already only ever builds the two coherent shapes, so this is
+  unreachable from the existing pipeline today — it guards future hand-built `Verdict`s.
 
 ### The six core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
@@ -49,6 +57,12 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   (`status_publisher.py:14-18`).
 - `ObservationRepository.save_new(batch: Sequence[SignalObservation]) -> int` — outbound
   persistence; returns insert count (ON CONFLICT DO NOTHING semantics) (`observation_repository.py:16-20`).
+  STORY-011 adds `ObservationRepository.in_window(signal_key: str, since: datetime, until:
+  datetime) -> Sequence[SignalObservation]` (`observation_repository.py:29-39`) — the READ
+  side: returns `signal_key`'s observations with `observed_at` in the half-open range
+  `[since, until)`, so adjacent windows never double-count the boundary instant. This is the
+  only read path the availability engine uses; ALL SQL for it stays behind the Postgres
+  adapter (see [[persistence-adapters]]).
 - `WatermarkRepository.get(signal_key: str) -> datetime | None` + `advance(signal_key: str,
   to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py:15-24`).
 - `ClockPort.now() -> datetime` — injected, returns tz-aware UTC, so time is controllable
@@ -59,25 +73,13 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py:17-33`).
 
-### Core pipeline stages 1-2 (`core/services/pipeline.py`, STORY-010)
-- `collapse(observations: Sequence[SignalObservation], *, under_maintenance: bool) ->
-  Verdict` (`pipeline.py:36`) — stage 1 (dossier §10). Assumes all observations belong
-  to one signal + one cycle (the caller groups; collapse does not). `under_maintenance`
-  is an INJECTED boolean, never a DB/table lookup, so the function stays pure. When
-  `True`, returns a `Verdict(under_maintenance=True, health=None)` immediately —
-  maintenance short-circuits before health is ever computed (AC2). Otherwise delegates
-  to `_collapse_health`: all `up` -> `up`; all `down` -> `down`; any mix (including
-  all-`degraded`) -> `degraded` (AC1).
-- `Streak` (frozen, `pipeline.py:22`) `{health:Health, length:int}` — the current
-  streak's health and consecutive count.
-- `streak(verdicts: Sequence[Verdict]) -> Streak | None` (`pipeline.py:88`) — stage 2
-  (dossier §10). `verdicts` is ordered oldest-to-newest; filters out every
-  `under_maintenance` verdict first, then reads the remaining sequence backward from
-  the most recent, counting while health matches and stopping at the first change
-  (AC3). Maintenance verdicts are excluded from the sequence entirely — they neither
-  count nor break a surrounding run (AC2). Returns `None` if every verdict supplied is
-  maintenance (no non-maintenance verdict to start from).
-- Stages 3-4 (anti-flap + decide) are explicitly OUT OF SCOPE here — STORY-024.
+### Zone 4 core logic — moved
+- The pipeline (`collapse`/`streak`, STORY-010) and the availability engine
+  (`AvailabilityCalculator`/`rollup_group`, STORY-011) — both in `core/services/` and both
+  CONSUMERS of the `Verdict` type + the `ObservationRepository` port catalogued here — are
+  documented in [[core-pipeline-and-availability]] (extracted sprint-7 so their `core/services/`
+  Facts are covered by that article's `code_refs`). The ingest service (`IngestService`, STORY-009)
+  is in [[ingest-service-and-pull-loop]].
 
 ### Boundary status
 - `core/ports` imports `core/domain` but NOT `core/services`; the `core-internal-layering`
@@ -91,15 +93,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `FakeRejectedObservationRepository`, `FakeClock`) rather than extending `tests/fakes.py`,
   because it needs a `save_new` that actually honors `source_event_id` dedupe (AC3) — the
   shared `tests/fakes.py` fake from STORY-005 only had to prove the interface shape.
-- `core/services/` now has its first concrete implementation: `IngestService`
-  (`core/services/ingest_service.py`), the concrete `SignalIngestPort` (STORY-009). It is
-  constructed with all four ports injected (`observation_repo`, `watermark_repo`,
-  `rejected_repo`, `clock`) and implements the dossier §8 ordering: validate (a
-  future-timestamp gate against the injected clock, `FUTURE_TOLERANCE = timedelta(minutes=5)`)
-  → dedupe+persist via `save_new`'s true newly-inserted count → advance the watermark to
-  `max(observed_at)` over ACCEPTED observations only, after `save_new` returns (so a raise
-  never leaves the watermark ahead of persisted data). It imports only `src.core.*` — no SQL,
-  no vendor types.
+- `core/services/` concrete implementations are documented in their own articles (so their
+  `code_refs` cover them): `IngestService` (STORY-009) in [[ingest-service-and-pull-loop]];
+  `collapse`/`streak` (STORY-010) + the availability engine (STORY-011) in
+  [[core-pipeline-and-availability]].
 
 ## Inference (synthesis, not verified)
 - The deliberately small repository surface (`save_new`, `get`, `advance` only) reflects a
@@ -120,3 +117,20 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `ValueError` ("collapse requires at least one observation for a cycle") on an
   empty `observations` sequence instead of leaking a stdlib `max()`/`IndexError`;
   re-verified, Fact text above was already accurate (made no empty-input claim).
+- sprint-7: STORY-011 adds `ObservationRepository.in_window` (the read side; Postgres
+  implementation in [[persistence-adapters]]) and `core/services/availability.py`'s
+  `AvailabilityResult`/`AvailabilityCalculator`/`rollup_group` — the two-grain
+  availability/completeness calculator and min-of-children group rollup (dossier §11).
+  The skew flag is split to STORY-026 (out of scope here).
+- sprint-7: fix loop 1 (quality review CRITICAL) — `expected_cycles` now takes the CEILING
+  of `(until - since) / interval` instead of the floor, so a non-divisible window's partial
+  trailing cycle no longer makes `gap_verdicts` go negative / `total_verdicts` overcount.
+- sprint-7 (compile pass): EXTRACTED the Zone 4 service-logic Facts (the pipeline
+  `collapse`/`streak` and the availability engine) to the new [[core-pipeline-and-availability]]
+  article, and re-scoped this article's `code_refs` to `core/domain/` + `core/ports/` only. This
+  article had grown into a catch-all whose `code_refs` did not even list `pipeline.py`, so its
+  collapse/streak Facts were not staleness-covered — the extraction restores coverage. This
+  article is now back to its title scope: the canonical vocabulary + the core ports.
+- sprint-7: STORY-025 (Sprint 6 review follow-up) adds a `model_validator(mode="after")`
+  to `Verdict` enforcing the maintenance<->health invariant at construction (previously
+  documented only); see Fact above.

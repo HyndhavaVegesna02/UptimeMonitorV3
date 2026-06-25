@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 01ea878
-verified_sprint: sprint-6
+verified_sha: 98bebe9
+verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
 
@@ -92,3 +92,8 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   whole batch up front. Verified at 49bc707.
 - sprint-6: re-verified (STORY-023). Comment-only — `run_periodic`'s post-cycle `stop_event`
   re-check now carries an explanatory comment; no Fact changed. Verified at 9e5b329.
+- sprint-7: re-verified (STORY-011 incidental). `test_ingest_service.py`'s local
+  `DedupingObservationRepository` fake gained an `in_window` `NotImplementedError` stub (just to
+  satisfy the `ObservationRepository` ABC after STORY-011 added the read method) — a fixture-
+  compliance stub, no behavior change; the ingest-service/pull-loop Facts are unchanged.
+  Verified at 98bebe9.
