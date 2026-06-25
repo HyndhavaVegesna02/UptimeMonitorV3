@@ -22,18 +22,24 @@ stories:
     points: 3
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 4 AC MET — collapse health rule, maintenance exclusion/
+                            # short-circuit, streak backward + maintenance-gap skip, purity. Tests
+                            # assert expected values incl. the tricky maintenance-between-same-health case.
+    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — collapse([]) on an empty observation
+                            # list raises a leaky `max() iterable argument is empty` (and would
+                            # IndexError on signal_key) instead of a clear domain error; the brief
+                            # flagged this case and streak([]) IS handled, so collapse's gap is
+                            # conspicuous. 2 minors recorded as story notes (non-blocking): (1) the
+                            # Verdict maintenance<=>health-is-None invariant is documented but not
+                            # enforced (a model_validator would close it, consistent with signal.py);
+                            # (2) Streak.health non-optional while streak()->Streak|None — judged fine.
     blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: adds a new core/services pipeline module + a new
-                                   # core/domain type (Verdict) -> canonical-types-and-ports.md
-                                   # (code_refs incl. core/domain/, core/ports/) must be updated.
-                                   # A dedicated pipeline article may be created at the compile pass.
-                                   # architecture-boundary.md NOT flagged (narrowed code_refs — a new
-                                   # in-zone module doesn't touch the zone roots).
+    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
+    paused_at_commit: 87f20d9
+    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
+    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. canonical-types-and-ports.md
+                                   # was updated by the implementer (Verdict + pipeline); re-verify +
+                                   # re-stamp to the final fix commit.
   - id: STORY-021
     points: 1
     board: todo
