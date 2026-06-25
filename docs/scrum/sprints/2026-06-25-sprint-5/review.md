@@ -87,5 +87,8 @@ gained the `MalformedDqlRowError` Fact. Links lint clean; no stale articles rema
 - Zone 4 (STORY-010 four-stage core pipeline, STORY-011 availability) — `draft`.
 
 ## PO verdict
-- [ ] STORY-009 — accept / reject
-- [ ] STORY-020 — accept / reject
+- [x] STORY-009 — **ACCEPTED** (2026-06-25). 5 pts. Merged to main.
+- [x] STORY-020 — **ACCEPTED** (2026-06-25). 1 pt. Merged to main.
+- PO directed two follow-ups from the minors: **STORY-022** (fail loud on a mixed-signal batch,
+  draft — minor #1) and **STORY-023** (clarify the double stop_event check, ready — minor #2).
+  Minor #3 (persistence mirroring) needs no action.
