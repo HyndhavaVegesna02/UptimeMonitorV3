@@ -69,18 +69,18 @@ SEPARATE per-component skew type (names the lagging signals), NOT a field on `Av
 feeder is SKEWED when it lags the most-recent peer watermark by MORE than its own `interval`.
 
 TDD steps:
-- [ ] 1. Define the input feeder shape + the `SkewResult` type (frozen; names lagging signals).
+- [x] 1. Define the input feeder shape + the `SkewResult` type (frozen; names lagging signals).
         Failing test → construct. Commit.
-- [ ] 2. Failing tests: a feeder lagging the peer-max by more than its interval is flagged; one
+- [x] 2. Failing tests: a feeder lagging the peer-max by more than its interval is flagged; one
         within its interval is not; lagging by EXACTLY its interval is NOT skewed (sprint-7 boundary
         agreement — at vs just-over). Implement. Commit. (AC1, AC4)
-- [ ] 3. Failing test: skew is a SEPARATE result, can diverge from completeness (full completeness +
+- [x] 3. Failing test: skew is a SEPARATE result, can diverge from completeness (full completeness +
         a skewed feeder, and vice versa — exercise both). Implement/assert. Commit. (AC2)
-- [ ] 4. Failing test: degenerate inputs (empty peer set; single-signal component → no peers → no
+- [x] 4. Failing test: degenerate inputs (empty peer set; single-signal component → no peers → no
         skew; a feeder with no watermark yet) — defined, no crash (empty-input agreement). Commit. (AC4)
-- [ ] 5. Self-review: pure (injected peers/watermarks/intervals; no DB/vendor/HTTP); imports only
+- [x] 5. Self-review: pure (injected peers/watermarks/intervals; no DB/vendor/HTTP); imports only
         `src.core.*`. Commit.
-- [ ] 6. **DoD gate** (all four exit 0, as above; no migration). Forward blast radius: update
+- [x] 6. **DoD gate** (all four exit 0, as above; no migration). Forward blast radius: update
         `core-pipeline-and-availability.md` (add a skew Facts subsection; ensure the file holding
         `skew` is in that article's `code_refs` — sprint-7 agreement; bump `verified_sha`). Record
         evidence in your FINAL MESSAGE. Commit.

@@ -1,7 +1,7 @@
 ---
-title: Zone 4 — the core pipeline (collapse + streak + anti-flap) and the availability engine
-code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py]
-verified_sha: 767fbae
+title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
+code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py]
+verified_sha: 5ade223
 verified_sprint: sprint-8
 status: verified          # verified | stale | archived
 ---
@@ -115,7 +115,36 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   the working agreement (measure before optimizing).
 - Never consults `streak` (P4) — no import of it in this module. Imports ONLY `src.core.*`
   (`domain`, `ports`, `services.pipeline`) plus `pydantic`/stdlib — no vendor, HTTP, or SQL (AC5).
-- The skew flag (§11 "Skew, surfaced", Tier-2 item 7) is OUT OF SCOPE — STORY-026.
+
+### The skew flag (`core/services/skew.py`, STORY-026, dossier §11 "Skew, surfaced" / Tier-2 T2.7)
+- Split out of the availability calculator at refinement: a SEPARATE per-component cross-signal
+  watermark comparison, never a field on `AvailabilityResult` (AC2) — completeness can be low for
+  reasons unrelated to any one feeder lagging its peers, so the two signals are independent and can
+  diverge (full completeness + a skewed feeder, and vice versa — both exercised in
+  `test_skew.py`).
+- `SignalFeeder` (frozen, `skew.py:31`) `{signal_key:str, watermark:datetime|None,
+  interval:timedelta}` — one feeding signal's current watermark and its own lag tolerance, ALL
+  INJECTED by the caller (no component->signals topology load, no DB/vendor/HTTP/SQL — AC3).
+  `watermark` is `None` for a signal that has never advanced (AC4).
+- `SkewResult` (frozen, `skew.py:54`) `{skewed:bool, lagging_signals:tuple[str,...]}` — names which
+  feeders tripped the flag (in input order), not just a bare boolean, so a dashboard/proposal
+  annotation can show them (§11).
+- `skew(feeders: Sequence[SignalFeeder]) -> SkewResult` (`skew.py:76`) — pure, no I/O. The
+  reference is the MOST-RECENT peer watermark (the MAX `watermark` across feeders that have one). A
+  feeder is skewed when `reference - feeder.watermark > feeder.interval` — strict `>`, lagging by
+  EXACTLY its interval is NOT skewed (AC1/AC4 boundary, tested at-boundary and one-second-over). Each
+  feeder's OWN `interval` governs its own tolerance (two feeders with the same lag but different
+  intervals can resolve differently — tested). The feeder supplying the reference itself is never
+  flagged (zero lag).
+- **No-watermark rule (AC4, documented)**: a feeder with `watermark is None` can never SUPPLY the
+  reference, but when at least one peer has a watermark, it is treated as MAXIMALLY lagging (skewed)
+  — "no data yet" is at least as stale as any observed lag. If every feeder is watermark-less, there
+  is no reference at all and nothing is flagged.
+- **Degenerate inputs (AC4)**: an empty peer set, and a single-signal component (one feeder, no
+  peers to lag behind), both yield `SkewResult(skewed=False, lagging_signals=())` — no crash, no
+  false flag.
+- Imports ONLY stdlib (`collections.abc`, `datetime`) + `pydantic` — no `src.core.*` import at all,
+  let alone vendor/HTTP/SQL (AC3, the strictest purity bar in this module so far).
 
 ## Inference (synthesis, not verified)
 - Cycle-bucketing-by-`observed_at` (rather than a stored cycle key) was chosen because it needs no
@@ -137,3 +166,8 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   impossible. Added `_require_status_warning_coherence` (a `model_validator(mode="after")`,
   same pattern as `Verdict`'s STORY-025 validator) to reject it with a `ValidationError`; the three
   valid shapes are unaffected. Verified at 767fbae.
+- sprint-8 (STORY-026): added the skew-flag Facts subsection — `SignalFeeder`, `SkewResult`, `skew`,
+  all in a NEW file `core/services/skew.py` (split out of the availability calculator at refinement,
+  dossier §11 "Skew, surfaced" / Tier-2 T2.7). `code_refs` gained `backend/src/core/services/skew.py`
+  and `backend/tests/test_skew.py` per the sprint-7 agreement (every Fact's cited file must be
+  code_ref-covered). Title updated to mention the skew flag. Verified at 5ade223.
