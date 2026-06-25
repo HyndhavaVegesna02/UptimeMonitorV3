@@ -23,19 +23,21 @@ stories:
     points: 5
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 5 AC MET, verified against the diff with expected-value
+                            # assertions (multi-location no-aggregation + mixed-batch coverage present).
+    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — duplicated observation-assembly
+                            # (timestamp parse + SignalObservation/Provenance construction copy-pasted
+                            # between http_normalizer.py and clickpath_normalizer.py; will drift).
+                            # 3 minors recorded as story notes (non-blocking): DQL native_id not
+                            # escaped (trusted input; document the assumption), bare KeyError on a
+                            # malformed row vs a named adapter error, raw_ref param asymmetry (folds
+                            # into the shared-helper fix).
     blocked_question: null
-    attempts: 0
-    paused_at_commit: b2c8671
-    dod_evidence:
-      - "pytest: 107 passed, exit 0 (89 baseline + 18 new dynatrace adapter tests)"
-      - "lint-imports: 3 kept, 0 broken, exit 0"
-      - "check_fk_direction.py: 10 foreign key(s) checked, 0 violations, exit 0 (throwaway postgres:16 via scripts/dev_db.py)"
-      - "alembic upgrade head: exit 0, no-op (no new migration added by this story)"
-    blast_radius_resolved: true    # canonical-types-and-ports.md: read-only (signal.py,
-                                   # core/ports/ untouched) -> stays verified, no bump.
-                                   # architecture-boundary.md: re-verified, Facts unchanged,
-                                   # verified_sha bumped to b2c8671 (sprint-4).
+    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
+    paused_at_commit: 3a9707e
+    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit (commits change)
+    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. (Implementer had bumped
+                                   # architecture-boundary.md verified_sha to b2c8671; re-stamp to the
+                                   # final fix commit. canonical-types-and-ports.md stays read-only.)
 hotfixes: []
 interrupts: []
