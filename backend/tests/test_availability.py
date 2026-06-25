@@ -516,3 +516,95 @@ def test_rollup_group_carries_through_window_label_and_computed_at():
 
     assert rolled_up.window == "custom-window"
     assert rolled_up.computed_at == _COMPUTED_AT
+
+
+# --- AC6: empty/degenerate input has defined, tested behavior --------------
+#
+# Sprint-6 working agreement: no leaked ZeroDivisionError / max()-on-empty /
+# similar stdlib crash. A window with zero observations means zero cycles
+# to judge (availability_pct=None) and a zero completeness denominator
+# (completeness_pct=None) -- both documented, neither a crash.
+
+
+def test_compute_with_zero_observations_in_window_returns_none_percentages_and_zero_counts():
+    repo = _repo_with([])  # nothing saved at all
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.availability_pct is None
+    assert result.completeness_pct is None
+    assert result.total_verdicts == 0
+    assert result.passing_verdicts == 0
+    assert result.maintenance_verdicts == 0
+    # 20 minutes / 5-minute interval = 4 expected cycles, none observed.
+    assert result.gap_verdicts == 4
+    assert result.distinct_locations == 0
+
+
+def test_compute_with_a_signal_that_has_no_observations_at_all_does_not_raise():
+    # A different signal_key entirely -- in_window legitimately returns an
+    # empty sequence for a signal nothing has ever reported for.
+    repo = _repo_with(
+        [_observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1")]
+    )
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        "never-reported-signal",
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.availability_pct is None
+    assert result.completeness_pct is None
+    assert result.total_verdicts == 0
+
+
+def test_compute_with_a_zero_width_window_does_not_raise_and_yields_none():
+    # since == until: no cycles are even expected. Degenerate but must not
+    # crash (no ZeroDivisionError from a zero `intervals` denominator).
+    repo = _repo_with([])
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE,
+        interval=_INTERVAL,
+        window="0m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.availability_pct is None
+    assert result.completeness_pct is None
+    assert result.total_verdicts == 0
+    assert result.gap_verdicts == 0
+
+
+def test_rollup_group_of_zero_children_does_not_raise_and_yields_none():
+    # An empty group (e.g. a group whose children list is empty) is the
+    # rollup's own degenerate case -- min([]) would raise ValueError if not
+    # guarded.
+    rolled_up = rollup_group([], window="20m", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.availability_pct is None
+    assert rolled_up.completeness_pct is None
+    assert rolled_up.total_verdicts == 0
+    assert rolled_up.passing_verdicts == 0
+    assert rolled_up.maintenance_verdicts == 0
+    assert rolled_up.gap_verdicts == 0
+    assert rolled_up.distinct_locations == 0
