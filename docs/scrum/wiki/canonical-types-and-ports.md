@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/, backend/src/core/services/availability.py]
-verified_sha: f16fdca
+verified_sha: d5aadc2
 verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
@@ -111,8 +111,14 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   verdicts. Gaps never reach `collapse` at all, so the default `exclude` policy falls out
   naturally — a gap is neither counted nor maintenance nor passing.
 - **Completeness% (AC2)**: `len(observations) / (expected_cycles * distinct_locations)` if
-  that denominator is `>0`, else `None`. `expected_cycles = max(0, (until - since) //
-  interval)`; `distinct_locations = len({o.location for o in observations})` — observed-
+  that denominator is `>0`, else `None`. `expected_cycles = max(0, -((since - until) //
+  interval))` — the CEILING of `(until - since) / interval`, not the floor: a partial
+  trailing cycle (the window is not an exact multiple of the interval) still counts as one
+  full expected cycle, so every in-window observation's bucket index from
+  `_bucket_into_cycles` stays within `[0, expected_cycles)` and `gap_verdicts` can never go
+  negative (sprint-7 fix loop 1, quality review CRITICAL). When `(until - since)` IS an exact
+  multiple of `interval`, ceil equals floor, so this is unchanged for divisible windows.
+  `distinct_locations = len({o.location for o in observations})` — observed-
   distinct, not a declared/configured set, so a 3-location signal with full coverage reads
   exactly 100%, never 300% (the multi-location fix, dossier §11/T2.5).
 - **Group rollup** — `rollup_group(children: Sequence[AvailabilityResult], *, window,
@@ -185,3 +191,7 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `AvailabilityResult`/`AvailabilityCalculator`/`rollup_group` — the two-grain
   availability/completeness calculator and min-of-children group rollup (dossier §11).
   The skew flag is split to STORY-026 (out of scope here).
+- sprint-7: fix loop 1 (quality review CRITICAL) — `expected_cycles` now takes the CEILING
+  of `(until - since) / interval` instead of the floor, so a non-divisible window's partial
+  trailing cycle no longer makes `gap_verdicts` go negative / `total_verdicts` overcount;
+  Completeness% Fact above corrected from floor to ceiling.
