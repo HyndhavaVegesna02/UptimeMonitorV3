@@ -94,8 +94,9 @@ Spec: Sprint 5 review follow-up. Comment-ONLY. In `backend/src/composition/pull_
 a brief inline comment explaining why the post-cycle `stop_event.is_set()` check exists (skip the
 final `sleep` on a mid-cycle stop). No behaviour change.
 
-- [ ] 1. Add the clarifying comment. Run `pytest` (existing pull-loop tests pass unchanged) +
-        `lint-imports`. Commit.
-- [ ] 2. DoD gate (all four exit 0). Forward blast radius: re-verify `ingest-service-and-pull-loop.md`
-        (comment-only; re-verify, no Fact change expected) — bump `verified_sha` only if you re-read it
-        against the code. Record evidence. Commit.
+- [x] 1. Add the clarifying comment. Run `pytest` (existing pull-loop tests pass unchanged) +
+        `lint-imports`. Commit. (9e5b329 — done directly by orchestrator: comment-only, no testable
+        behaviour change; existing pull-loop tests are the regression guard.)
+- [x] 2. DoD gate (all four exit 0): pytest 162, lint-imports 3 kept, FK 10/0, alembic no-op
+        (consolidated DB gate at the final tree). `ingest-service-and-pull-loop.md` re-verified
+        (comment-only, no Fact change) + verified_sha bumped to 9e5b329.

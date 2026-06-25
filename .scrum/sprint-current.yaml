@@ -121,15 +121,33 @@ stories:
                                   # verified_sha -> 49bc707.
   - id: STORY-023
     points: 1
-    board: in-progress
+    board: done
     pipeline: light
-    spec_review: null
+    spec_review: null      # light pipeline: no reviewers at 1 pt
     quality_review: null
     blocked_question: null
-    attempts: 0
+    attempts: 0            # comment-only; done directly by orchestrator (no testable behaviour,
+                          # existing pull-loop tests are the regression guard) — per the sprint-5
+                          # "orchestrator may finish a trivial change" amendment, applied here to a
+                          # comment-only chore rather than an interrupted tail.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # comment-only change in pull_loop.py -> re-verify
-                                   # ingest-service-and-pull-loop.md (no Fact change expected).
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "162 passed (consolidated DB gate at final tree); pull-loop tests unchanged"
+        commit: 9e5b329
+        at: 2026-06-25T17:15:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: 9e5b329
+        at: 2026-06-25T17:15:00+05:30
+      - command: "check_fk_direction.py + alembic upgrade head"
+        exit_code: 0
+        output_tail: "FK-direction OK 10/0; alembic no-op (consolidated sprint-6 DB gate, orchestrator-verified)"
+        commit: 9e5b329
+        at: 2026-06-25T17:15:00+05:30
+    blast_radius_resolved: true   # ingest-service-and-pull-loop.md re-verified (comment-only,
+                                  # no Fact change); verified_sha -> 9e5b329.
 hotfixes: []
 interrupts: []

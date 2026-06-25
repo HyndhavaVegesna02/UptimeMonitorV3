@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 49bc707
+verified_sha: 9e5b329
 verified_sprint: sprint-6
 status: verified          # verified | stale | archived
 ---
@@ -90,3 +90,5 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - sprint-6: re-verified (STORY-022). The single-signal-batch assumption Fact is updated from
   "documented, not guarded; a latent hazard" to ENFORCED — `MixedSignalBatchError` now guards the
   whole batch up front. Verified at 49bc707.
+- sprint-6: re-verified (STORY-023). Comment-only — `run_periodic`'s post-cycle `stop_event`
+  re-check now carries an explanatory comment; no Fact changed. Verified at 9e5b329.
