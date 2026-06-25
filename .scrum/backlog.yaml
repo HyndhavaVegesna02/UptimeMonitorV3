@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 24
+next_story_id: 25
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -83,11 +83,19 @@ stories:
     sprint: 5
   # ── Zone 4 — Core pipeline + availability ────────────────────────
   - id: STORY-010
-    title: Four-stage core pipeline
+    title: Core pipeline stages 1-2 — collapse + streak
     file: docs/scrum/stories/STORY-010-core-pipeline-four-stage.md
-    status: draft
-    points: 5
+    status: ready   # refined 2026-06-25: split from the original 4-stage 8; re-scoped to stages 1-2
+    points: 3
     priority: 10
+    type: feature
+    sprint: 6
+  - id: STORY-024
+    title: Core pipeline stages 3-4 — anti-flap + decide
+    file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
+    status: draft   # split from STORY-010 (2026-06-25); open Qs (config mechanism, proposal seam)
+    points: 5
+    priority: 11
     type: feature
     sprint: null
   - id: STORY-011
@@ -95,7 +103,7 @@ stories:
     file: docs/scrum/stories/STORY-011-availability-calculator.md
     status: draft
     points: 5
-    priority: 11
+    priority: 12
     type: feature
     sprint: null
   # ── Zone 5 — Proposal lifecycle + publish ────────────────────────
@@ -178,19 +186,19 @@ stories:
   - id: STORY-021
     title: Guard native_id interpolation in the DQL query builder
     file: docs/scrum/stories/STORY-021-dql-native-id-injection-guard.md
-    status: ready   # refined 2026-06-25; open question resolved (reject, not escape); for Sprint 6
+    status: ready   # refined 2026-06-25; open question resolved (reject, not escape)
     points: 1
     priority: 20
     type: chore
-    sprint: null
+    sprint: 6
   - id: STORY-022
     title: Fail loud on a mixed-signal batch in the ingest service
     file: docs/scrum/stories/STORY-022-ingest-mixed-signal-batch-guard.md
-    status: draft   # follow-up from Sprint 5 review; open question (guard scope) -> refine first
+    status: ready   # refined 2026-06-25; open question resolved (whole-batch up-front guard)
     points: 1
     priority: 21
     type: chore
-    sprint: null
+    sprint: 6
   - id: STORY-023
     title: Clarify the double stop_event check in run_periodic
     file: docs/scrum/stories/STORY-023-pull-loop-stop-check-comment.md
@@ -198,4 +206,4 @@ stories:
     points: 1
     priority: 22
     type: chore
-    sprint: null
+    sprint: 6

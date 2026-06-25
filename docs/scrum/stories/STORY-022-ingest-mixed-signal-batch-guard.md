@@ -22,20 +22,21 @@ Make `IngestService` reject a batch that spans more than one distinct `signal_ke
 clear named error, rather than trusting `valid[0]`. Keep the happy path (single-signal
 batch) unchanged.
 
-## Acceptance Criteria (draft — confirm at refinement)
+## Acceptance Criteria (refined — PO-approved 2026-06-25)
 - [ ] AC1: Given a batch whose observations span >1 distinct `signal_key`, `ingest_observations`
-      raises a clear named error (e.g. `MixedSignalBatchError`) naming the offending keys —
-      it never silently advances one signal's watermark using another's timestamps.
-- [ ] AC2: A single-signal batch (the current producer's shape) behaves exactly as today; all
-      existing STORY-009 ingest tests pass unchanged.
+      raises a clear named error (e.g. `MixedSignalBatchError`) naming the offending keys,
+      checked UP FRONT over the WHOLE batch — before any validation, persistence, or watermark
+      work — so it never silently advances one signal's watermark using another's timestamps.
+- [ ] AC2: A single-signal batch (the current producer's shape) behaves exactly as today; an
+      empty batch is still a clean no-op; all existing STORY-009 ingest tests pass unchanged.
 - [ ] AC3: A test covers the mixed-signal batch case. `lint-imports` stays green (the error
       type lives in core).
 
-## Open Questions
-- Guard the WHOLE batch, or only the validated (non-rejected) observations that actually drive
-  the watermark? (Leaning whole-batch: a mixed batch is a programming error upstream, surface it
-  before doing any work.) Resolve at refinement.
+## Resolved Questions
+- Guard scope: **the WHOLE batch, up front** (PO-approved 2026-06-25) — a mixed-signal batch is
+  an upstream programming error; surface it before doing any work, not after partial processing.
 
 ## History
 - 2026-06-25: created from Sprint 5 review (PO asked minor #1 become a follow-up story).
-  Status: draft — one open question (guard scope) to resolve at refinement. Proposed estimate: 1.
+- 2026-06-25: refined for Sprint 6. Open question resolved (whole-batch, up-front guard);
+  AC1–AC3 finalized; estimate 1. Status: ready.
