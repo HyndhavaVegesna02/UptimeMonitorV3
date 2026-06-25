@@ -1,0 +1,30 @@
+{
+  "_comment": "A single DQL pull-cycle response (dossier §8) mixing TWO in-scope monitor types -- one HTTP monitor (one location) and one browser-clickpath monitor (one location) -- so the adapter dispatch test (STORY-008 step 7) can assert a flat list of canonical observations, one per location execution, with no aggregation across rows or across monitor types.",
+  "records": [
+    {
+      "timestamp": "2026-06-24T10:10:00.000Z",
+      "event.id": "evt-mixed-http-001",
+      "synthetic_test.id": "HTTP_CHECK-9F2A",
+      "synthetic_test.name": "checkout-api-http",
+      "synthetic_test.type": "HTTP_CHECK",
+      "synthetic_location.name": "us-east-1",
+      "execution.outcome": "success",
+      "request.response_time_ms": 150
+    },
+    {
+      "timestamp": "2026-06-24T10:10:02.000Z",
+      "event.id": "evt-mixed-clickpath-001",
+      "synthetic_test.id": "CLICKPATH-7B3C",
+      "synthetic_test.name": "sockshop-purchase-journey",
+      "synthetic_test.type": "BROWSER_CLICKPATH",
+      "synthetic_location.name": "us-east-1",
+      "execution.outcome": "success",
+      "request.response_time_ms": 2200,
+      "steps": [
+        {"name": "open storefront", "outcome": "success", "duration_ms": 500},
+        {"name": "add to cart", "outcome": "success", "duration_ms": 600},
+        {"name": "checkout", "outcome": "success", "duration_ms": 1100}
+      ]
+    }
+  ]
+}

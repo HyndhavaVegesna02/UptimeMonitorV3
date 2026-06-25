@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
-verified_sha: 08917c0
-verified_sprint: sprint-3
+verified_sha: b2ee794
+verified_sprint: sprint-4
 status: verified
 ---
 
@@ -51,3 +51,14 @@ status: verified
 ## History
 - sprint-0: created (STORY-001 scaffold + STORY-002 CI contracts).
 - sprint-1: re-verified after Zone 1 landed (STORY-004/005); layering contract now bites.
+- sprint-4: re-verified after STORY-008 added the first real `adapters.inbound`
+  package (`backend/src/adapters/inbound/dynatrace/`). The Facts above were checked
+  against the new code and remain true unchanged: `adapters-independence` now bites for
+  real (the dynatrace package imports `src.core.domain` only, no other adapter), and
+  `lint-imports` stayed `3 kept, 0 broken`. No contract definition or zone-tree Fact
+  changed — only the inference about phantom packages (dossier §4's
+  `inbound.dynatrace` example) is no longer phantom on the inbound side.
+- sprint-4 (fix loop 1): re-verified after extracting the shared
+  `_assembly.assemble_observation` helper within `dynatrace/` (no new
+  zone/package/contract — purely a within-package move). `lint-imports` stayed
+  `3 kept, 0 broken`.

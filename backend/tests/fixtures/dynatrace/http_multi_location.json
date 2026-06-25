@@ -1,0 +1,35 @@
+{
+  "_comment": "Representative DQL `fetch dt.synthetic.executions` rows (dossier §8) for ONE HTTP monitor across THREE probe locations in a single pull cycle. No live Dynatrace was used to record these (none is available in this sprint) -- field names/shape follow the documented Grail synthetic-execution row convention: one row per location execution, a vendor monitor id, a vendor monitor type, a per-location vendor outcome, and a response-time metric. Health mapping (success/failure/partial -> up/down/degraded) is exercised across the three rows below.",
+  "records": [
+    {
+      "timestamp": "2026-06-24T10:00:00.000Z",
+      "event.id": "evt-http-checkout-001",
+      "synthetic_test.id": "HTTP_CHECK-9F2A",
+      "synthetic_test.name": "checkout-api-http",
+      "synthetic_test.type": "HTTP_CHECK",
+      "synthetic_location.name": "us-east-1",
+      "execution.outcome": "success",
+      "request.response_time_ms": 142
+    },
+    {
+      "timestamp": "2026-06-24T10:00:05.000Z",
+      "event.id": "evt-http-checkout-002",
+      "synthetic_test.id": "HTTP_CHECK-9F2A",
+      "synthetic_test.name": "checkout-api-http",
+      "synthetic_test.type": "HTTP_CHECK",
+      "synthetic_location.name": "eu-west-1",
+      "execution.outcome": "failure",
+      "request.response_time_ms": null
+    },
+    {
+      "timestamp": "2026-06-24T10:00:11.000Z",
+      "event.id": "evt-http-checkout-003",
+      "synthetic_test.id": "HTTP_CHECK-9F2A",
+      "synthetic_test.name": "checkout-api-http",
+      "synthetic_test.type": "HTTP_CHECK",
+      "synthetic_location.name": "ap-southeast-1",
+      "execution.outcome": "partial",
+      "request.response_time_ms": 980
+    }
+  ]
+}
