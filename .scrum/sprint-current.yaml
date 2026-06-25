@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 5
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 started: 2026-06-25
 goal: "Zone 3 ingest closes — the core ingest service + an asyncio pull loop pull from the
   Dynatrace adapter, validate-then-quarantine, dedupe on source_event_id, and advance the
