@@ -74,3 +74,52 @@ def test_streak_treats_degraded_as_its_own_health_value():
     ]
     result = streak(verdicts)
     assert result == Streak(health=Health.DEGRADED, length=2)
+
+
+# --- Step 6: streak excludes maintenance verdicts -----------------------------
+
+
+def test_streak_skips_a_trailing_maintenance_verdict():
+    # The most recent verdict is maintenance; the streak reads through it to
+    # the most recent NON-maintenance verdict's health (UP) instead.
+    verdicts = [
+        _verdict(Health.UP, offset_minutes=0),
+        _verdict(Health.UP, offset_minutes=1),
+        _verdict(None, offset_minutes=2, under_maintenance=True),
+    ]
+    result = streak(verdicts)
+    assert result == Streak(health=Health.UP, length=2)
+
+
+def test_streak_does_not_let_a_maintenance_gap_break_a_matching_run():
+    # A maintenance verdict sandwiched between two UP verdicts is excluded
+    # from the sequence entirely — it neither counts nor breaks the run of UP.
+    verdicts = [
+        _verdict(Health.UP, offset_minutes=0),
+        _verdict(None, offset_minutes=1, under_maintenance=True),
+        _verdict(Health.UP, offset_minutes=2),
+    ]
+    result = streak(verdicts)
+    assert result == Streak(health=Health.UP, length=2)
+
+
+def test_streak_skips_maintenance_to_find_the_health_change_boundary():
+    # DOWN, maintenance, DOWN, UP (most recent) -> the streak is UP length 1;
+    # reading further back the DOWN run is separate and must not be merged in.
+    verdicts = [
+        _verdict(Health.DOWN, offset_minutes=0),
+        _verdict(None, offset_minutes=1, under_maintenance=True),
+        _verdict(Health.DOWN, offset_minutes=2),
+        _verdict(Health.UP, offset_minutes=3),
+    ]
+    result = streak(verdicts)
+    assert result == Streak(health=Health.UP, length=1)
+
+
+def test_streak_returns_none_when_every_verdict_is_maintenance():
+    verdicts = [
+        _verdict(None, offset_minutes=0, under_maintenance=True),
+        _verdict(None, offset_minutes=1, under_maintenance=True),
+    ]
+    result = streak(verdicts)
+    assert result is None
