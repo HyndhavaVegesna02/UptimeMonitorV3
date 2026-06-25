@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 3
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 goal: "Zone 2 closes — repository adapters implement the persistence ports against the spine, on a shared throwaway-DB harness so every later DB-gated story stops hand-rolling Postgres."
 branch: sprint-3
 start_tag: sprint-3-start
