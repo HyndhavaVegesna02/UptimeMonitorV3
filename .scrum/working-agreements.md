@@ -106,4 +106,26 @@
   `dod_evidence` block of `sprint-current.yaml` in a non-standard free-string format and set
   `blast_radius_resolved`/`paused_at_commit` itself, which the orchestrator then had to reconcile
   back to the structured schema — board state is the orchestrator's ledger, not the implementer's.)
+- 2026-06-25 — **A wiki article's `code_refs` are the files that DEFINE its subject, not every
+  file its subject touches.** An article must not carry an over-broad directory `code_ref` (e.g.
+  `backend/src/`) when its Facts describe a stable contract/structure, because the mechanical
+  staleness check then flags it on every unrelated in-zone change, forcing a no-op rehab each
+  sprint. Scope `code_refs` to the defining files; let detailed in-zone facts live in their own
+  narrower articles. (Motivated by Sprint 4 AND Sprint 5: `architecture-boundary.md` went stale
+  both sprints purely because its `code_refs` listed all of `backend/src/`, even though its Facts —
+  the four-zone tree, the three import-linter contracts, the FK-direction boundary — never changed;
+  its `code_refs` were re-scoped to `pyproject.toml` + `scripts/check_fk_direction.py` + the four
+  zone-root `__init__.py` files, so it now goes stale only when the boundary itself changes.)
+- 2026-06-25 — **The orchestrator may finish a trivial interrupted tail directly instead of
+  re-dispatching.** When an implementer subagent is interrupted (crash, connection drop, session
+  limit) leaving only a trivial remainder AND a committed failing test already pins the contract
+  for that remainder, the orchestrator may complete it directly — after the usual verify-the-tree
+  step (preserve coherent committed/uncommitted work, discard scraps) — rather than burn a fresh
+  dispatch. The completion must be recorded in the story's plan/board note, and the full DoD gate
+  (plus reviewers, if the story's size requires them) still applies unchanged. For anything beyond
+  a trivial tail, the fresh-agent rule stands. (Motivated by Sprint 5, STORY-020: the implementer
+  subagent hit a session limit after committing step 1 + the shared error helper, leaving a
+  coherent uncommitted step-2 test that only lacked an `import re`; the orchestrator fixed the
+  import and routed the four required fields through `require_field` — a ~4-line completion — rather
+  than re-dispatch a fresh agent for it.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

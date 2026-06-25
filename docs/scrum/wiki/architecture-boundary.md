@@ -1,9 +1,14 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
-code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
+code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
 verified_sha: a6c6d0d
 verified_sprint: sprint-5
 status: verified
+# code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
+# contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
+# roots — NOT all of backend/src/. The article describes the BOUNDARY, which changes only when a
+# contract or a zone is added/removed; in-zone code additions no longer falsely flag it stale (the
+# detailed in-zone facts live in their own articles). See working-agreements.md (sprint-5 amendment).
 ---
 
 ## Facts (verified against code)
