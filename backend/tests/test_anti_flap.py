@@ -187,3 +187,36 @@ def test_failing_streak_below_all_thresholds_and_not_length_one_yields_nothing()
     streak = Streak(health=Health.DOWN, length=0)
     outcome = anti_flap(streak, _THRESHOLDS)
     assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
+
+
+# --- Step 5: degenerate inputs (length 0) have defined, no-crash behavior (AC4) --
+
+
+def test_degenerate_down_streak_of_length_zero_yields_nothing_not_a_crash():
+    outcome = anti_flap(_down(0), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
+
+
+def test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded():
+    # Health.DEGRADED's single bucket does not consult length at all, so even
+    # a degenerate length-0 DEGRADED streak proposes degraded rather than
+    # silently mis-bucketing into nothing.
+    streak = Streak(health=Health.DEGRADED, length=0)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+
+
+def test_degenerate_up_streak_of_length_zero_yields_nothing_not_a_crash():
+    streak = Streak(health=Health.UP, length=0)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
+
+
+def test_negative_length_is_never_mistaken_for_a_threshold_match():
+    # Not a value Streak should ever carry in practice, but anti_flap must
+    # not crash or silently mis-bucket a nonsensical negative length — it
+    # falls through every ">=" check and is not exactly 1, so the failing
+    # branch correctly yields nothing.
+    streak = Streak(health=Health.DOWN, length=-1)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)

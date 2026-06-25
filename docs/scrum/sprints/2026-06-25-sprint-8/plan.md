@@ -44,7 +44,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         status). Implement. Commit. (AC2)
 - [x] 4. Failing tests: a sustained `degraded` streak → `degraded`; a passing streak `>= recovery` →
         `operational`; a streak below all thresholds → nothing. Implement. Commit. (AC2)
-- [ ] 5. Failing test: degenerate inputs — length 0, and (per the empty-input agreement) a streak
+- [x] 5. Failing test: degenerate inputs — length 0, and (per the empty-input agreement) a streak
         with no actionable length — have defined behavior (nothing/no crash). Commit. (AC4)
 - [ ] 6. Self-review: pure (no vendor/HTTP/SQL); imports only `src.core.*`; thresholds injected, not
         read. Tidy residue. Commit.
