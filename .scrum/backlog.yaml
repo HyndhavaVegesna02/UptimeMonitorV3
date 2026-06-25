@@ -68,15 +68,15 @@ stories:
   - id: STORY-008
     title: Dynatrace adapter + DQL normalization
     file: docs/scrum/stories/STORY-008-dynatrace-adapter-dql.md
-    status: draft
+    status: ready            # refined + PO-approved 2026-06-25; scope = HTTP + browser clickpath
     points: 5
     priority: 8
     type: feature
-    sprint: null
+    sprint: 4
   - id: STORY-009
     title: Pull loop with watermarks + validation gate
     file: docs/scrum/stories/STORY-009-pull-loop-watermarks.md
-    status: draft
+    status: ready            # refined 2026-06-25 (scheduler = asyncio); depends on STORY-008; for Sprint 5
     points: 5
     priority: 9
     type: feature
