@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/, backend/tests/test_dynatrace_adapter.py, backend/tests/fixtures/dynatrace/]
-verified_sha: 40ed985
-verified_sprint: sprint-4
+verified_sha: d3a864d
+verified_sprint: sprint-5
 status: verified          # verified | stale | archived
 ---
 
@@ -61,6 +61,11 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   `synthetic_test.id` (→ `native_id`), `synthetic_test.type` (dispatch key),
   `synthetic_location.name` (→ `location`), `execution.outcome` (→ health),
   `request.response_time_ms` (→ optional `latency_ms`), and clickpath's unread `steps`.
+- A missing REQUIRED field surfaces as a named `MalformedDqlRowError` (`_assembly.py:20`), not a
+  bare `KeyError` (STORY-020). Both `dispatch.normalize_row` (the `synthetic_test.type` dispatch
+  key) and `assemble_observation` (the other four required fields) read through one
+  `require_field(row, name)` helper (`_assembly.py:33`) so the error message is uniform.
+  `request.response_time_ms` stays optional (read via `.get`) — its absence is NOT malformed.
 
 ### Health mapping (`health_mapping.py`) — the only place vendor outcome words are read
 - `map_execution_outcome(outcome)` (`health_mapping.py:25`) is the single explicit, unit-tested
@@ -84,4 +89,6 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 
 ## History
 - sprint-4: created (STORY-008). Documents the Dynatrace inbound adapter as built + the STORY-008
-  fix-loop-1 shared-assembly extraction. Verified at 834b90c.
+  fix-loop-1 shared-assembly extraction. Verified at 834b90c (re-stamped to 40ed985 at merge).
+- sprint-5: STORY-020 — required DQL fields now raise the named `MalformedDqlRowError` via a shared
+  `require_field` helper (replacing bare `KeyError`). Re-verified at d3a864d.

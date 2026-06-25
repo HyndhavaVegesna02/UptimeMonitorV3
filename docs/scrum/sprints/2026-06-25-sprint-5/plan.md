@@ -108,7 +108,8 @@ TDD steps:
         had committed step 1 + the shared MalformedDqlRowError/require_field in _assembly.py, and
         left a coherent uncommitted step-2 test missing only `import re`; orchestrator fixed the
         import and routed the 4 required fields in assemble_observation through require_field.)
-- [ ] 3. **DoD gate** (all four exit 0): `pytest` (the 20 STORY-008 tests still pass unchanged +
+- [x] 3. **DoD gate** (all four exit 0): `pytest` (the 20 STORY-008 tests still pass unchanged +
         the new ones), `lint-imports`, `check_fk_direction.py`, `alembic upgrade head` (DB-gated).
         Forward blast radius: re-verify `dynatrace-adapter.md` (its code_refs include the package) —
         add a Fact about the named error + bump `verified_sha`. Record evidence. Commit.
+        DONE: pytest 133, lint-imports 3 kept, FK 10/0, alembic no-op — all exit 0.
