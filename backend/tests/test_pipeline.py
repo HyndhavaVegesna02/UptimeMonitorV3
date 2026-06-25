@@ -107,3 +107,41 @@ def test_collapse_returns_degraded_for_three_way_mix():
     ]
     verdict = collapse(observations, under_maintenance=False)
     assert verdict.health is Health.DEGRADED
+
+
+# --- Step 4: maintenance is excluded from the verdict + short-circuits -------
+
+
+def test_collapse_under_maintenance_excludes_the_verdict_even_when_all_up():
+    # Even an all-up cycle yields no up/down verdict once flagged under
+    # maintenance: maintenance is planned work, neither up nor down (V2 FR-8).
+    observations = [
+        _observation(Health.UP, "us-east"),
+        _observation(Health.UP, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=True)
+    assert verdict.under_maintenance is True
+    assert verdict.health is None
+
+
+def test_collapse_under_maintenance_short_circuits_even_when_all_down():
+    # A down cycle flagged under maintenance still yields no health verdict —
+    # maintenance short-circuits the rest of the pipeline before health is
+    # ever considered.
+    observations = [
+        _observation(Health.DOWN, "us-east"),
+        _observation(Health.DOWN, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=True)
+    assert verdict.under_maintenance is True
+    assert verdict.health is None
+
+
+def test_collapse_under_maintenance_preserves_signal_key_and_cycle_instant():
+    observations = [
+        _observation(Health.UP, "us-east", offset_seconds=0, signal_key="payments-http"),
+        _observation(Health.UP, "eu-west", offset_seconds=30, signal_key="payments-http"),
+    ]
+    verdict = collapse(observations, under_maintenance=True)
+    assert verdict.signal_key == "payments-http"
+    assert verdict.observed_at == _BASE_TIME + timedelta(seconds=30)
