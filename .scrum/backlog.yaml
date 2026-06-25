@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 28
+next_story_id: 29
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -90,12 +90,20 @@ stories:
     priority: 10
     type: feature
     sprint: 6
-  - id: STORY-024
-    title: Core pipeline stages 3-4 — anti-flap + decide
-    file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
-    status: draft   # split from STORY-010 (2026-06-25); open Qs (config mechanism, proposal seam)
-    points: 5
+  - id: STORY-028
+    title: Core pipeline stage 3 — anti-flap
+    file: docs/scrum/stories/STORY-028-pipeline-antiflap.md
+    status: ready   # split from STORY-024 (sprint-8); pure threshold lookup, injected thresholds
+    points: 3
     priority: 11
+    type: feature
+    sprint: 8
+  - id: STORY-024
+    title: Core pipeline stage 4 — decide
+    file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
+    status: draft   # split again (sprint-8): anti-flap -> STORY-028; this is decide, blocked on STORY-012 proposals
+    points: 3
+    priority: 12
     type: feature
     sprint: null
   - id: STORY-011
@@ -109,11 +117,11 @@ stories:
   - id: STORY-026
     title: Per-component skew flag (Tier-2)
     file: docs/scrum/stories/STORY-026-skew-flag.md
-    status: draft   # split from STORY-011 (2026-06-25); open Qs (peer-set source, result shape)
+    status: ready   # refined sprint-8: injected peers + separate result type; open Qs resolved
     points: 3
     priority: 13
     type: feature
-    sprint: null
+    sprint: 8
   # ── Zone 5 — Proposal lifecycle + publish ────────────────────────
   - id: STORY-012
     title: Proposal lifecycle
