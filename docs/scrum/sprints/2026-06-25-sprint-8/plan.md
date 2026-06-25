@@ -37,7 +37,7 @@ warning} | {nothing}.
 TDD steps (commit after every green step; stage only files you touched — never `git add -A`):
 - [x] 1. Define the thresholds value object (frozen) + the anti-flap result/outcome type (frozen).
         Failing test → construct them. `pytest` + `lint-imports` green. Commit.
-- [ ] 2. Failing tests: a FAILING streak → `major_outage`/`partial_outage`/`degraded` by length vs
+- [x] 2. Failing tests: a FAILING streak → `major_outage`/`partial_outage`/`degraded` by length vs
         the injected thresholds (test AT each threshold and JUST BELOW — sprint-7 boundary agreement).
         Implement the failing-branch lookup. Commit. (AC1, AC4)
 - [ ] 3. Failing test: a single failure (length 1) → internal warning (distinct, never a published

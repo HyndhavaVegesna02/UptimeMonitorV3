@@ -19,6 +19,10 @@ from src.core.services.pipeline import (
 _THRESHOLDS = AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)
 
 
+def _down(length: int) -> Streak:
+    return Streak(health=Health.DOWN, length=length)
+
+
 # --- Step 1: the thresholds value object + outcome type construct and are frozen --
 
 
@@ -58,3 +62,57 @@ def test_outcome_is_frozen():
     outcome = AntiFlapOutcome(proposed_status=None, internal_warning=False)
     with __import__("pytest").raises(Exception):
         outcome.internal_warning = True  # type: ignore[misc]
+
+
+# --- Step 2: a FAILING streak maps to major/partial/degraded by length (AC1, AC4) --
+
+
+def test_failing_streak_at_major_threshold_proposes_major_outage():
+    outcome = anti_flap(_down(_THRESHOLDS.major), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=False
+    )
+
+
+def test_failing_streak_above_major_threshold_proposes_major_outage():
+    outcome = anti_flap(_down(_THRESHOLDS.major + 1), _THRESHOLDS)
+    assert outcome.proposed_status is ComponentStatus.MAJOR_OUTAGE
+
+
+def test_failing_streak_just_below_major_threshold_proposes_partial_outage():
+    # major=5; length 4 clears partial (>=3) but not major.
+    outcome = anti_flap(_down(_THRESHOLDS.major - 1), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.PARTIAL_OUTAGE, internal_warning=False
+    )
+
+
+def test_failing_streak_at_partial_threshold_proposes_partial_outage():
+    outcome = anti_flap(_down(_THRESHOLDS.partial), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.PARTIAL_OUTAGE, internal_warning=False
+    )
+
+
+def test_failing_streak_just_below_partial_threshold_proposes_degraded():
+    # partial=3; length 2 clears degraded (>=2) but not partial.
+    outcome = anti_flap(_down(_THRESHOLDS.partial - 1), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
+
+
+def test_failing_streak_at_degraded_threshold_proposes_degraded():
+    outcome = anti_flap(_down(_THRESHOLDS.degraded), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
+
+
+def test_failing_severity_ladder_is_checked_most_severe_first():
+    # A pathological-but-legal thresholds object where partial == degraded:
+    # a streak that also clears major must still win major, not fall through
+    # to a lower rung — the ladder is order-sensitive, most-severe-first.
+    thresholds = AntiFlapThresholds(major=3, partial=3, degraded=3, recovery=2)
+    outcome = anti_flap(_down(3), thresholds)
+    assert outcome.proposed_status is ComponentStatus.MAJOR_OUTAGE
