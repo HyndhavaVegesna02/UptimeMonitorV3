@@ -62,7 +62,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         test (use the `migrated_db` fixture from `backend/tests/conftest.py`): `save(...)` writes a
         row into `rejected_observations` with the reason + payload jsonb. Implement. Commit. (AC1
         persistence)
-- [ ] 8. Add the asyncio pull loop in `backend/src/composition/`. Failing test: a single-cycle
+- [x] 8. Add the asyncio pull loop in `backend/src/composition/`. Failing test: a single-cycle
         coroutine, given a signal + an injected adapter `Executor` (fake) + the ingest port + clock,
         runs ONE cycle — `WatermarkRepository.get(signal_key)` → `dynatrace.fetch_observations(...)`
         (watermark + overlap) → `SignalIngestPort.ingest_observations(batch)`. Assert it holds NO
