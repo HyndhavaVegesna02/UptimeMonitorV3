@@ -35,7 +35,7 @@ not hard-coded. Model a clear result type distinguishing {proposed ComponentStat
 warning} | {nothing}.
 
 TDD steps (commit after every green step; stage only files you touched — never `git add -A`):
-- [ ] 1. Define the thresholds value object (frozen) + the anti-flap result/outcome type (frozen).
+- [x] 1. Define the thresholds value object (frozen) + the anti-flap result/outcome type (frozen).
         Failing test → construct them. `pytest` + `lint-imports` green. Commit.
 - [ ] 2. Failing tests: a FAILING streak → `major_outage`/`partial_outage`/`degraded` by length vs
         the injected thresholds (test AT each threshold and JUST BELOW — sprint-7 boundary agreement).

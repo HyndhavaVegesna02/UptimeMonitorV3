@@ -1,12 +1,15 @@
-"""Core logic pipeline, stages 1-2 (dossier §10) — pure, provider-blind.
+"""Core logic pipeline, stages 1-3 (dossier §10) — pure, provider-blind.
 
 `collapse` (stage 1) maps one signal's per-location observations for a single
 cycle to one `Verdict`. `streak` (stage 2) counts consecutive same-health
-verdicts reading backward over non-maintenance verdicts only. Nothing here
-mentions Dynatrace, Grail, or DQL — the pipeline consumes canonical
-`SignalObservation`s and produces canonical `Verdict`s, and would not change
-if the vendor were swapped (dossier §10). Stages 3-4 (anti-flap + decide) are
-out of scope (STORY-024).
+verdicts reading backward over non-maintenance verdicts only. `anti_flap`
+(stage 3) maps a `Streak` plus INJECTED per-app `AntiFlapThresholds` to an
+`AntiFlapOutcome` — a proposed `ComponentStatus`, a distinct internal-warning
+marker, or nothing. Nothing here mentions Dynatrace, Grail, or DQL — the
+pipeline consumes canonical `SignalObservation`s and produces canonical
+`Verdict`s, and would not change if the vendor were swapped (dossier §10).
+Stage 4 (decide) is out of scope (STORY-024) — it needs the proposal
+lifecycle / "current status" reads that anti-flap deliberately does not have.
 
 This module imports ONLY `src.core.*` — no SQL, no vendor types, no I/O.
 """
@@ -17,7 +20,7 @@ from collections.abc import Iterable, Sequence
 
 from pydantic import BaseModel, ConfigDict
 
-from src.core.domain import Health, SignalObservation, Verdict
+from src.core.domain import ComponentStatus, Health, SignalObservation, Verdict
 
 
 class Streak(BaseModel):
@@ -118,3 +121,89 @@ def streak(verdicts: Sequence[Verdict]) -> Streak | None:
         length += 1
 
     return Streak(health=current_health, length=length)
+
+
+class AntiFlapThresholds(BaseModel):
+    """Per-app anti-flap streak-length thresholds (dossier §10), INJECTED.
+
+    `anti_flap` never constructs this from config/DB — the
+    `component -> app -> block` resolution that produces these values is
+    config loading and is OUT OF SCOPE for this module (deferred to a later
+    config story). The dossier §10 defaults are `major=5, partial=3,
+    degraded=2, recovery=2`; callers that want them literally must supply
+    them explicitly rather than relying on a hidden default here, so the
+    injection boundary stays honest.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    major: int
+    """FAILING streak length at/above which the proposed status is `major_outage`."""
+
+    partial: int
+    """FAILING streak length at/above which the proposed status is `partial_outage`."""
+
+    degraded: int
+    """FAILING streak length at/above which the proposed status is `degraded`."""
+
+    recovery: int
+    """PASSING streak length at/above which the proposed status is `operational`."""
+
+
+class AntiFlapOutcome(BaseModel):
+    """The result of one `anti_flap` call (dossier §10) — three distinguishable outcomes.
+
+    Exactly one of three shapes, never conflated:
+    - a proposed status: `proposed_status` is a `ComponentStatus`, `internal_warning` is `False`.
+    - an internal warning: `proposed_status` is `None`, `internal_warning` is `True`. This is
+      logged, NEVER published — it is not, and must never become, a `ComponentStatus`.
+    - nothing: `proposed_status` is `None`, `internal_warning` is `False`.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    proposed_status: ComponentStatus | None
+    """The status `decide` (stage 4, STORY-024) may act on; `None` if there is nothing to propose."""
+
+    internal_warning: bool
+    """`True` only for the single-failure internal-warning outcome; never paired with a status."""
+
+
+_NOTHING = AntiFlapOutcome(proposed_status=None, internal_warning=False)
+_INTERNAL_WARNING = AntiFlapOutcome(proposed_status=None, internal_warning=True)
+
+
+def anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome:
+    """Map a `Streak` to an `AntiFlapOutcome` against INJECTED thresholds (dossier §10, stage 3).
+
+    Pure lookup, no I/O, no config/DB read — `thresholds` is supplied by the caller (config
+    loading and the `component -> app -> block` resolution are out of scope here). Branches on
+    `streak_.health`:
+    - `Health.DOWN` (failing): the severity ladder, checked most-severe-first so a streak that
+      clears `major` is never mis-bucketed into `partial`/`degraded` — `length >= major` ->
+      `major_outage`; else `length >= partial` -> `partial_outage`; else `length >= degraded` ->
+      `degraded`; else a streak of exactly 1 -> an internal warning (logged, never published);
+      else (e.g. length 0) -> nothing.
+    - `Health.DEGRADED` (sustained degraded-performance): always `degraded` — there is only one
+      failing-adjacent bucket for this health, so no length comparison is needed.
+    - `Health.UP` (passing): `length >= recovery` -> `operational`; else -> nothing (not yet
+      confirmed recovered).
+    """
+    if streak_.health is Health.DOWN:
+        if streak_.length >= thresholds.major:
+            return AntiFlapOutcome(proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=False)
+        if streak_.length >= thresholds.partial:
+            return AntiFlapOutcome(proposed_status=ComponentStatus.PARTIAL_OUTAGE, internal_warning=False)
+        if streak_.length >= thresholds.degraded:
+            return AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+        if streak_.length == 1:
+            return _INTERNAL_WARNING
+        return _NOTHING
+
+    if streak_.health is Health.DEGRADED:
+        return AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+
+    # Health.UP
+    if streak_.length >= thresholds.recovery:
+        return AntiFlapOutcome(proposed_status=ComponentStatus.OPERATIONAL, internal_warning=False)
+    return _NOTHING
