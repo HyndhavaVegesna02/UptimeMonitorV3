@@ -48,7 +48,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         with no actionable length — have defined behavior (nothing/no crash). Commit. (AC4)
 - [x] 6. Self-review: pure (no vendor/HTTP/SQL); imports only `src.core.*`; thresholds injected, not
         read. Tidy residue. Commit.
-- [ ] 7. **DoD gate** (all four exit 0): `pytest`, `lint-imports`, `python scripts/check_fk_direction.py`,
+- [x] 7. **DoD gate** (all four exit 0): `pytest`, `lint-imports`, `python scripts/check_fk_direction.py`,
         `alembic upgrade head` (DB-gated via `scripts/dev_db.py`; no migration — pure logic). Forward
         blast radius: update `core-pipeline-and-availability.md` (code_refs incl. `pipeline.py` — add an
         anti-flap Facts subsection + bump `verified_sha`; if you put anti-flap in a NEW file, ADD that

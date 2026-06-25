@@ -1,8 +1,8 @@
 ---
-title: Zone 4 — the core pipeline (collapse + streak) and the availability engine
-code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_availability.py]
-verified_sha: 205e1fe
-verified_sprint: sprint-7
+title: Zone 4 — the core pipeline (collapse + streak + anti-flap) and the availability engine
+code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py]
+verified_sha: 3d4a51c
+verified_sprint: sprint-8
 status: verified          # verified | stale | archived
 ---
 
@@ -29,7 +29,38 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   remaining sequence backward from the most recent, counting while health matches and stopping at
   the first change (AC3). Maintenance verdicts are excluded entirely — they neither count nor break
   a surrounding run (AC2). Returns `None` if every verdict supplied is maintenance.
-- Stages 3-4 (anti-flap + decide) are OUT OF SCOPE here — STORY-024.
+- Stage 4 (decide) is OUT OF SCOPE here — it needs the proposal lifecycle / "current status"
+  reads, and stays in STORY-024.
+
+### Core pipeline stage 3 — anti-flap (`core/services/pipeline.py`, STORY-028, dossier §10)
+- `AntiFlapThresholds` (frozen, `pipeline.py:126`) `{major:int, partial:int, degraded:int,
+  recovery:int}` — per-app streak-length thresholds, INJECTED by the caller. `anti_flap` never
+  constructs this from config/DB; the `component -> app -> block` resolution that produces these
+  values (dossier §7) is config loading and stays out of scope (deferred). The dossier §10 defaults
+  are `major=5, partial=3, degraded=2, recovery=2`, but they are not hard-coded anywhere in this
+  module — a caller wanting the defaults must supply them explicitly.
+- `AntiFlapOutcome` (frozen, `pipeline.py:153`) `{proposed_status: ComponentStatus|None,
+  internal_warning: bool}` — three distinguishable, non-overlapping shapes: (a) a proposed status
+  (`proposed_status` set, `internal_warning=False`); (b) an internal warning (`proposed_status=None,
+  internal_warning=True`) — logged, NEVER published, never a `ComponentStatus`; (c) nothing
+  (`proposed_status=None, internal_warning=False`).
+- `anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome` (`pipeline.py:181`)
+  — stage 3, a pure lookup. Branches on `streak_.health` (AC1/AC2):
+  - `Health.DOWN` (failing): the severity ladder, checked most-severe-first — `length >= major` ->
+    `major_outage`; else `length >= partial` -> `partial_outage`; else `length >= degraded` ->
+    `degraded`; else `length == 1` -> the internal-warning outcome; else (e.g. `length == 0`, or a
+    defensive negative length) -> nothing. Checking most-severe-first means a streak that also
+    clears a lower rung (e.g. a pathological config where `partial == degraded`) still resolves to
+    the highest rung it clears, never a weaker one.
+  - `Health.DEGRADED` (sustained degraded-performance): always `degraded`, regardless of length —
+    there is only one failing-adjacent bucket for this health, so no length comparison applies.
+  - `Health.UP` (passing): `length >= recovery` -> `operational`; else -> nothing (not yet confirmed
+    recovered).
+  - Degenerate/boundary inputs (AC4) all have defined, no-crash behavior: length exactly at each
+    threshold and just below it (tested for major/partial/degraded/recovery), length 0 for every
+    health value, and a defensive negative length for `Health.DOWN` — none of these raise or
+    mis-bucket; they fall through to the documented branch.
+  - Pure: no I/O, no config/DB read, imports only `src.core.domain` types + `pydantic`/stdlib (AC3).
 
 ### The availability engine (`core/services/availability.py`, STORY-011, dossier §11)
 - `AvailabilityResult` (frozen Pydantic, `availability.py:37`) — the §11 result shape:
@@ -91,3 +122,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   into a catch-all whose code_refs did not even list `pipeline.py` (its collapse/streak Facts were
   uncovered by the staleness check). This article's `code_refs` cover both service modules, so the
   Facts are now staleness-checked. Verified at 98bebe9.
+- sprint-8: added the anti-flap Facts subsection (STORY-028, dossier §10 stage 3 — `anti_flap`,
+  `AntiFlapThresholds`, `AntiFlapOutcome`, all in `pipeline.py`). `code_refs` gained
+  `backend/tests/test_anti_flap.py` so its Facts stay staleness-checked (sprint-7 agreement). Stage
+  4 (decide) remains out of scope — STORY-024. Verified at 3d4a51c.
