@@ -59,11 +59,11 @@ stories:
   - id: STORY-007
     title: Repository adapters behind the ports
     file: docs/scrum/stories/STORY-007-repository-adapters.md
-    status: ready           # refined 2026-06-24: 2 persistence ports; sequenced for Sprint 3
+    status: done            # accepted at Sprint 3 review (2026-06-25)
     points: 3
     priority: 7
     type: feature
-    sprint: null
+    sprint: 3
   # ── Zone 3 — Ingest adapter ──────────────────────────────────────
   - id: STORY-008
     title: Dynatrace adapter + DQL normalization
@@ -162,8 +162,8 @@ stories:
   - id: STORY-019
     title: Shared throwaway-DB test harness (script + pytest fixture)
     file: docs/scrum/stories/STORY-019-shared-throwaway-db-harness.md
-    status: ready   # refined 2026-06-24: Python helper + session fixture
+    status: done    # accepted at Sprint 3 review (2026-06-25)
     points: 3
     priority: 7     # chore enabling DB-gated work; sequenced before STORY-007 in Sprint 3
     type: chore
-    sprint: null
+    sprint: 3

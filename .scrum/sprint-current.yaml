@@ -1,6 +1,12 @@
 # YourTeam active sprint board.
 sprint: 3
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-25
+# Sprint 3 closed: 2/2 stories accepted at review, 6/6 pts, merged to main.
+# Zone 2 complete (spine schema + repository adapters) + shared throwaway-DB harness.
+# STORY-019 needed one fix loop (spawn-time leak + flaky teardown test); recovered across
+# two implementer connection-drop crashes. Next: planning for Sprint 4 (Zone 3 ingest:
+# STORY-008 Dynatrace adapter + DQL, STORY-009 pull loop + watermarks).
 goal: "Zone 2 closes — repository adapters implement the persistence ports against the spine, on a shared throwaway-DB harness so every later DB-gated story stops hand-rolling Postgres."
 branch: sprint-3
 start_tag: sprint-3-start
