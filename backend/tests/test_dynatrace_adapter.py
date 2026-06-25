@@ -44,3 +44,47 @@ def test_http_normalizer_maps_one_location_execution_row():
     assert obs.source.native_kind == "http"
     assert obs.location == "us-east-1"
     assert obs.latency_ms == 142
+
+
+# --- Step 5: HTTP health mapping success/failure/partial -> up/down/degraded ---
+
+
+def test_health_mapping_is_explicit_for_success_failure_partial():
+    from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
+
+    assert map_execution_outcome("success") is Health.UP
+    assert map_execution_outcome("failure") is Health.DOWN
+    assert map_execution_outcome("partial") is Health.DEGRADED
+
+
+def test_health_mapping_rejects_unknown_outcome():
+    from src.adapters.inbound.dynatrace.health_mapping import (
+        UnknownVendorOutcomeError,
+        map_execution_outcome,
+    )
+
+    import pytest
+
+    with pytest.raises(UnknownVendorOutcomeError):
+        map_execution_outcome("timeout")
+
+
+def test_http_normalizer_maps_success_failure_partial_rows_across_locations():
+    from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
+
+    rows = _load("http_multi_location.json")["records"]
+
+    success_obs = normalize_http_row(rows[0], signal_key="checkout-http")
+    failure_obs = normalize_http_row(rows[1], signal_key="checkout-http")
+    partial_obs = normalize_http_row(rows[2], signal_key="checkout-http")
+
+    assert success_obs.health is Health.UP
+    assert success_obs.location == "us-east-1"
+
+    assert failure_obs.health is Health.DOWN
+    assert failure_obs.location == "eu-west-1"
+    assert failure_obs.latency_ms is None
+
+    assert partial_obs.health is Health.DEGRADED
+    assert partial_obs.location == "ap-southeast-1"
+    assert partial_obs.latency_ms == 980
