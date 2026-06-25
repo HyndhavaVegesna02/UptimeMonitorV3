@@ -1,112 +1,73 @@
 # YourTeam active sprint board.
-sprint: 5
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-25
-# Sprint 5 closed: STORY-009 (5) + STORY-020 (1) both accepted at review (6/6 pts), merged to
-# main. Zone 3 ingest is complete — core ingest service (§8 ordering) + asyncio pull loop +
-# rejected-obs port/adapter + named malformed-row error. STORY-009 cleared first try (no fix
-# loop). STORY-020's implementer subagent hit a session limit; orchestrator finished the
-# trivial remainder (verify-tree agreement). PO directed minors into STORY-022 (draft) +
-# STORY-023 (ready). Next: planning Sprint 6 (Zone 4 pipeline + the carried chores).
+sprint: 6
+status: active           # none | active | review | closed | aborted
 started: 2026-06-25
-goal: "Zone 3 ingest closes — the core ingest service + an asyncio pull loop pull from the
-  Dynatrace adapter, validate-then-quarantine, dedupe on source_event_id, and advance the
-  per-signal watermark over accepted observations only, committing before advancing so a
-  crash mid-loop loses nothing."
-branch: sprint-5
-start_tag: sprint-5-start
-# Capacity: velocity history (8, 6, 6, 6, 5), last-3 mean (6, 6, 5) = ~6. Committed 6.
-# Order: STORY-009 FIRST (5 pts, the high-risk centerpiece — the §8 crash-safety ordering;
-# a blocker there still leaves time for the 1-pt chore), then STORY-020 (1 pt mop-up in the
-# adapter code touched last sprint). STORY-021 (reject native_id) is ready for Sprint 6.
-# Green DoD baseline re-verified on main @ 8023941 before lock: pytest 109 passed,
-# lint-imports 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16 via
-# scripts/dev_db.py), check_fk_direction 10 checked/0 violations.
+goal: "Zone 4 opens — the first two pure pipeline stages (collapse: per-location observations
+  to one verdict, maintenance excluded; streak: consecutive same-health verdicts) land as
+  provider-blind core logic, and the three carried 1-pt chores clear the small debt."
+branch: sprint-6
+start_tag: sprint-6-start
+# Capacity: velocity history (8, 6, 6, 6, 5, 6), last-3 mean (6, 5, 6) = ~6. Committed 6.
+# STORY-010 was SPLIT at refinement (the original 4-stage pipeline read as an 8): this sprint
+# takes stages 1-2 (collapse + streak, 3 pts, pure, no config/proposals); stages 3-4 (anti-flap
+# + decide) are STORY-024 (draft, for later). Plus the three carried chores (021/022/023).
+# Order: STORY-010 FIRST (the high-risk new Zone 4 work — a blocker still leaves time for the
+# 1-pt chores), then 021, 022, 023.
+# Green DoD baseline re-verified on main @ f543b5a before lock: pytest 133, lint-imports
+# 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16), check_fk_direction
+# 10 checked/0 violations.
 # Model assignment (PO rule, mandatory): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-009
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 5 AC MET with real (non-vacuous) tests, incl. a live-DB
-                            # rejected_observations row test. §8 ordering correct (validate->dedupe->
-                            # persist->accepted-only advance); accepted count = save_new return.
-    quality_review: APPROVE # Opus: zero Critical, zero Major. Boundary spirit holds (ingest_service
-                            # imports only src.core.*; pull_loop is pure wiring; SQL stays in
-                            # persistence). 3 minors recorded as story notes (non-blocking):
-                            # (1) single-signal-batch assumption signal_key=valid[0].signal_key is
-                            # documented + matches fetch_observations (1 signal/cycle) — latent only if
-                            # a future multi-signal batch arrives; (2) stop_event checked twice in
-                            # run_periodic (intentional, a comment would help); (3) the new persistence
-                            # adapter mirrors the existing repos acceptably (no extractable shared assembly).
-    blocked_question: null
-    attempts: 0             # no fix loop
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "127 passed in 13.51s"   # 109 baseline + 18 new (ingest service + pull loop + rejected adapter)
-        commit: 5a62ba6
-        at: 2026-06-25T13:05:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: core/services imports only core; loop is composition
-        commit: 5a62ba6
-        at: 2026-06-25T13:05:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: 5a62ba6
-        at: 2026-06-25T13:05:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration added (uses existing rejected_observations)"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: 5a62ba6
-        at: 2026-06-25T13:05:00+05:30
-    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/ports/): updated
-                                  # — added RejectedObservationRepository (6th port) + the first
-                                  # core/services impl (IngestService); verified_sha -> 7d5fec9.
-                                  # persistence-adapters.md (code_refs incl. persistence repos): updated
-                                  # — added PostgresRejectedObservationRepository (3rd adapter, no-FK
-                                  # quarantine sink); verified_sha -> 7d5fec9. dynatrace-adapter.md NOT
-                                  # touched (loop only consumes fetch_observations; no adapter-dir change).
-  - id: STORY-020
-    points: 1
-    board: done
-    pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null      # light pipeline: no reviewers at 1 pt
+  - id: STORY-010
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
     quality_review: null
     blocked_question: null
-    attempts: 0            # implementer subagent hit a SESSION LIMIT after committing step 1 +
-                          # the shared MalformedDqlRowError/require_field; orchestrator finished
-                          # the trivial remainder (per fresh-agent/verify-tree working agreement:
-                          # preserved the coherent uncommitted step-2 test — fixed only a missing
-                          # `import re` — and routed assemble_observation's 4 required fields
-                          # through require_field). Not a fix loop.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "133 passed in 15.52s"   # 127 baseline + 5 new (4 missing-field parametrized + 1 optional-latency)
-        commit: 4afb5a2
-        at: 2026-06-25T15:40:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 4afb5a2
-        at: 2026-06-25T15:40:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: 4afb5a2
-        at: 2026-06-25T15:40:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration added"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: 4afb5a2
-        at: 2026-06-25T15:40:00+05:30
-    blast_radius_resolved: true   # diff touches dynatrace adapter (dispatch.py + _assembly.py + tests)
-                                  # -> dynatrace-adapter.md re-verified: added a Fact on the named
-                                  # MalformedDqlRowError + require_field; verified_sha -> d3a864d.
+    dod_evidence: []
+    blast_radius_resolved: false   # at DoD: adds a new core/services pipeline module + a new
+                                   # core/domain type (Verdict) -> canonical-types-and-ports.md
+                                   # (code_refs incl. core/domain/, core/ports/) must be updated.
+                                   # A dedicated pipeline article may be created at the compile pass.
+                                   # architecture-boundary.md NOT flagged (narrowed code_refs — a new
+                                   # in-zone module doesn't touch the zone roots).
+  - id: STORY-021
+    points: 1
+    board: todo
+    pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
+    spec_review: null
+    quality_review: null
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # diff touches dynatrace query.py -> re-verify dynatrace-adapter.md
+  - id: STORY-022
+    points: 1
+    board: todo
+    pipeline: light
+    spec_review: null
+    quality_review: null
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # diff touches core ingest_service.py -> re-verify
+                                   # ingest-service-and-pull-loop.md (the single-signal-batch Fact).
+  - id: STORY-023
+    points: 1
+    board: todo
+    pipeline: light
+    spec_review: null
+    quality_review: null
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # comment-only change in pull_loop.py -> re-verify
+                                   # ingest-service-and-pull-loop.md (no Fact change expected).
 hotfixes: []
 interrupts: []
