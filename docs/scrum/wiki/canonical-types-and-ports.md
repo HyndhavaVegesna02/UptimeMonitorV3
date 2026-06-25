@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/ports/]
-verified_sha: ac1d468
-verified_sprint: sprint-1
+verified_sha: 7d5fec9
+verified_sprint: sprint-5
 status: verified          # verified | stale | archived
 ---
 
@@ -31,9 +31,9 @@ status: verified          # verified | stale | archived
 - `IngestResult` (frozen) `{accepted:int, rejected:int}` (`status.py:46-59`) — the outcome
   of ingesting one batch.
 
-### The five core ports (`core/ports/`, ABCs)
+### The six core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All five are `abc.ABC` with `@abstractmethod`,
+them, the composition root injects them. All six are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py:17-22`).
@@ -45,6 +45,11 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py:15-24`).
 - `ClockPort.now() -> datetime` — injected, returns tz-aware UTC, so time is controllable
   in tests (`clock.py:12-21`).
+- `RejectedObservationRepository.save(*, signal_key: str | None, reason: str, payload: dict,
+  rejected_at: datetime) -> None` — the quarantine sink for observations the ingest
+  validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
+  an unknown/absent signal_key is often exactly *why* a row was rejected
+  (`rejected_observation_repository.py:17-33`).
 
 ### Boundary status
 - `core/ports` imports `core/domain` but NOT `core/services`; the `core-internal-layering`
@@ -52,7 +57,21 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   KEPT (no adapter / sqlalchemy / httpx in core). See [[architecture-boundary]].
 - Fakes for every port live under `backend/tests/fakes.py` (FakeClock, FakeWatermarkRepository,
   FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort) — never in
-  `src/adapters`, keeping the production edge clean.
+  `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
+  (`backend/tests/test_ingest_service.py`) additionally defines its own local fakes
+  (`DedupingObservationRepository`, `FakeWatermarkRepository`,
+  `FakeRejectedObservationRepository`, `FakeClock`) rather than extending `tests/fakes.py`,
+  because it needs a `save_new` that actually honors `source_event_id` dedupe (AC3) — the
+  shared `tests/fakes.py` fake from STORY-005 only had to prove the interface shape.
+- `core/services/` now has its first concrete implementation: `IngestService`
+  (`core/services/ingest_service.py`), the concrete `SignalIngestPort` (STORY-009). It is
+  constructed with all four ports injected (`observation_repo`, `watermark_repo`,
+  `rejected_repo`, `clock`) and implements the dossier §8 ordering: validate (a
+  future-timestamp gate against the injected clock, `FUTURE_TOLERANCE = timedelta(minutes=5)`)
+  → dedupe+persist via `save_new`'s true newly-inserted count → advance the watermark to
+  `max(observed_at)` over ACCEPTED observations only, after `save_new` returns (so a raise
+  never leaves the watermark ahead of persisted data). It imports only `src.core.*` — no SQL,
+  no vendor types.
 
 ## Inference (synthesis, not verified)
 - The deliberately small repository surface (`save_new`, `get`, `advance` only) reflects a
@@ -63,3 +82,5 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 
 ## History
 - sprint-1: created (STORY-004 canonical types, STORY-005 core ports).
+- sprint-5: STORY-009 adds the sixth port (`RejectedObservationRepository`) and the first
+  `core/services/` implementation (`IngestService`), the concrete `SignalIngestPort`.
