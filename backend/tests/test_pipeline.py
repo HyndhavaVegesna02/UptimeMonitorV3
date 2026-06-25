@@ -8,6 +8,8 @@ in-memory canonical fixtures only — no DB, no vendor types, no I/O.
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+
 from src.core.domain import Health, Provenance, SignalObservation, Verdict
 from src.core.services.pipeline import collapse
 
@@ -145,3 +147,14 @@ def test_collapse_under_maintenance_preserves_signal_key_and_cycle_instant():
     verdict = collapse(observations, under_maintenance=True)
     assert verdict.signal_key == "payments-http"
     assert verdict.observed_at == _BASE_TIME + timedelta(seconds=30)
+
+
+# --- Step 5: collapse on an empty cycle raises a clear domain error ----------
+
+
+def test_collapse_raises_clear_domain_error_on_empty_observations():
+    # The symmetric case to streak([]) -> None: collapse has no observation to
+    # derive a cycle instant or signal key from, so it must fail loudly with a
+    # domain-level message rather than leak a stdlib max()/IndexError detail.
+    with pytest.raises(ValueError, match="collapse requires at least one observation"):
+        collapse([], under_maintenance=False)

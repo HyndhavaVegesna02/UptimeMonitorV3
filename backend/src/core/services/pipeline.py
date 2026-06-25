@@ -48,7 +48,15 @@ def collapse(
     The cycle instant is `max(observed_at)` across the cycle's observations,
     timestamping the verdict to when the slowest-reporting location actually
     completed.
+
+    Raises `ValueError` if `observations` is empty — there is no cycle instant
+    or signal key to collapse from. The symmetric empty-input case for
+    `streak` returns `None` instead, since `streak` always has a well-defined
+    "no streak yet" answer; `collapse` has no equivalent default `Verdict`.
     """
+    if not observations:
+        raise ValueError("collapse requires at least one observation for a cycle")
+
     cycle_instant = max(observation.observed_at for observation in observations)
     signal_key = observations[0].signal_key
 
