@@ -77,6 +77,18 @@ def test_skew_result_is_frozen():
         result.skewed = True  # type: ignore[misc]
 
 
+def test_skew_result_rejects_skewed_true_with_no_lagging_signals():
+    # Incoherent: skewed=True implies at least one lagging signal named.
+    with pytest.raises(ValidationError):
+        SkewResult(skewed=True, lagging_signals=())
+
+
+def test_skew_result_rejects_skewed_false_with_lagging_signals():
+    # Incoherent: a named lagging signal implies skewed=True.
+    with pytest.raises(ValidationError):
+        SkewResult(skewed=False, lagging_signals=("checkout-http",))
+
+
 # --- Step 2: a feeder lagging more than its interval is flagged (AC1, AC4) --
 #
 # Reference = the most-recent peer watermark (the MAX across all feeders).

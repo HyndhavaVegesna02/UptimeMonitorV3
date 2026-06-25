@@ -25,7 +25,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 
 class SignalFeeder(BaseModel):
@@ -71,6 +71,24 @@ class SkewResult(BaseModel):
 
     lagging_signals: tuple[str, ...]
     """The `signal_key`s of every feeder lagging its peers by more than its own `interval`."""
+
+    @model_validator(mode="after")
+    def _require_skewed_lagging_signals_coherence(self) -> "SkewResult":
+        """Enforce the skewed<->lagging_signals invariant this type represents.
+
+        `skewed` is true iff `lagging_signals` is non-empty: a flag with no
+        named feeders, or named feeders with the flag unset, cannot be
+        expressed cleanly (see class docstring). Rejecting the incoherent
+        combination here, at construction, keeps a hand-built `SkewResult`
+        from reaching a caller in a state `skew` itself never produces.
+        """
+        if self.skewed != bool(self.lagging_signals):
+            raise ValueError(
+                "skewed must equal bool(lagging_signals) "
+                "(skewed=True requires a non-empty lagging_signals, "
+                "and a non-empty lagging_signals requires skewed=True)"
+            )
+        return self
 
 
 def skew(feeders: Sequence[SignalFeeder]) -> SkewResult:
