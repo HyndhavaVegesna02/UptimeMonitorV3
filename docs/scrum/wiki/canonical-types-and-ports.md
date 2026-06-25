@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/]
-verified_sha: 12febf1
+verified_sha: fc74e53
 verified_sprint: sprint-6
 status: verified          # verified | stale | archived
 ---
@@ -116,3 +116,7 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   first two core-logic-pipeline stages (`core/services/pipeline.py`: `collapse`,
   `Streak`, `streak`) — dossier §10 stages 1-2 only; stages 3-4 (anti-flap + decide) are
   STORY-024.
+- sprint-6: fix loop 1 (quality review MAJOR) — `collapse` now raises a plain
+  `ValueError` ("collapse requires at least one observation for a cycle") on an
+  empty `observations` sequence instead of leaking a stdlib `max()`/`IndexError`;
+  re-verified, Fact text above was already accurate (made no empty-input claim).
