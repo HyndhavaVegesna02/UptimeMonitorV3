@@ -20,30 +20,55 @@ start_tag: sprint-7-start
 stories:
   - id: STORY-011
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 6 AC MET — availability formula (passing/(total-maintenance)
-                            # over collapsed verdicts), location-aware completeness (3-loc never >100%),
-                            # min-of-children rollup, derive-on-read, purity, empty-input. The rollup
-                            # distinct_locations=0 is spec-coherent (never fed into a division).
-    quality_review: FIX_REQUIRED  # Opus (re-run after the first quality reviewer hit a session limit):
-                            # 1 CRITICAL — cycle bucketing breaks on a non-divisible window. expected_cycles
-                            # uses FLOOR division but in_window returns observations in the partial tail
-                            # [since+n*interval, until); those land in an uncounted bucket, so
-                            # gap_verdicts goes NEGATIVE and total_verdicts overcounts (repro: 22m window /
-                            # 5m interval / obs@21m -> total=5, gap=-1). Every existing test uses a
-                            # divisible window, so the suite misses it. 1 minor (lazy import inconsistency
-                            # in test helper) recorded as a note.
+    spec_review: PASS       # Opus: all 6 AC MET — availability formula over collapsed verdicts,
+                            # location-aware completeness (3-loc never >100%), min-of-children rollup,
+                            # derive-on-read, purity, empty-input.
+    quality_review: APPROVE # Opus, after fix loop 1. Original (re-run after the first quality reviewer
+                            # hit a session limit): 1 CRITICAL — cycle bucketing on a NON-divisible window
+                            # used FLOOR expected_cycles while a partial-tail observation bucketed one past,
+                            # making gap_verdicts negative + total/completeness overcount (>100%). Fix loop 1
+                            # (fresh agent) switched expected_cycles to integer CEILING
+                            # (max(0, -((since-until)//interval))) so every obs maps into [0, expected_cycles)
+                            # — preserves divisible-window behavior, kills the negative gap — + a
+                            # non-divisible-window regression test. Re-review (Opus) confirmed the ceil
+                            # arithmetic across exact-multiple/non-divisible/degenerate cases, 22/22 tests
+                            # intact, AC6 safe, zero new issues. 1 minor (lazy import in a test helper)
+                            # recorded as a note.
     blocked_question: null
-    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
-    paused_at_commit: 6f8f247
-    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
-    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. canonical-types-and-ports.md +
-                                   # persistence-adapters.md were updated by the implementer; re-verify +
-                                   # re-stamp to the final fix commit.
+    attempts: 1             # one fix loop (fresh agent per working agreement)
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "187 passed in 15.32s"   # 162 baseline + 24 availability/ports + 1 fix-loop non-divisible test
+        commit: d25e32d
+        at: 2026-06-25T19:10:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: service pure, all SQL behind the in_window port
+        commit: d25e32d
+        at: 2026-06-25T19:10:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: d25e32d
+        at: 2026-06-25T19:10:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration (read-only SELECT added)"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: d25e32d
+        at: 2026-06-25T19:10:00+05:30
+    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/ports/): updated
+                                  # by the implementer (added in_window + AvailabilityResult/Calculator),
+                                  # corrected to ceil semantics in the fix loop, verified_sha -> d5aadc2.
+                                  # persistence-adapters.md (code_refs incl. persistence repos): updated
+                                  # (Postgres in_window impl), verified_sha -> f16fdca. Both re-stamped to
+                                  # main at merge.
   - id: STORY-025
     points: 1
-    board: todo
+    board: in-progress
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
     spec_review: null
     quality_review: null
