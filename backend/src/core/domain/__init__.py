@@ -2,6 +2,7 @@
 
 from src.core.domain.signal import Health, Provenance, SignalObservation
 from src.core.domain.status import ComponentStatus, IngestResult, StatusChange
+from src.core.domain.verdict import Verdict
 
 __all__ = [
     "ComponentStatus",
@@ -10,4 +11,5 @@ __all__ = [
     "Provenance",
     "SignalObservation",
     "StatusChange",
+    "Verdict",
 ]
