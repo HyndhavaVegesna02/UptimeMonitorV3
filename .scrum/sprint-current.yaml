@@ -22,15 +22,22 @@ stories:
     points: 3
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 4 AC MET — severity-ordered failing ladder (>=, most-severe-
+                            # first, order-sensitivity proven), internal-warning distinct + never
+                            # published, boundary + degenerate inputs tested. Thresholds injected.
+    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — AntiFlapOutcome can construct an
+                            # incoherent shape (proposed_status set AND internal_warning=True); its
+                            # docstring promises the invariant but doesn't enforce it. Same latent
+                            # incoherence STORY-025 added a model_validator to Verdict for — inconsistency
+                            # with that established precedent. anti_flap never emits the bad shape (latent),
+                            # fix = a model_validator(mode="after") rejecting it + a test. 2 minors noted
+                            # (closed-enum UP fall-through; _propose helper is sound — no action).
     blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: adds anti_flap (+ a thresholds value object + result type)
-                                   # to core/services/pipeline.py -> update
-                                   # [[core-pipeline-and-availability]] (code_refs incl. pipeline.py).
+    attempts: 1             # fix loop 1 (fresh agent per working agreement)
+    paused_at_commit: f8a7915
+    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
+    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. core-pipeline-and-availability.md
+                                   # was updated by the implementer (anti-flap Facts); re-verify + re-stamp.
   - id: STORY-026
     points: 3
     board: todo
