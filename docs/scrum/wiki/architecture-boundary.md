@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
-verified_sha: 40ed985
-verified_sprint: sprint-4
+verified_sha: cca043f
+verified_sprint: sprint-5
 status: verified
 ---
 
@@ -39,9 +39,16 @@ status: verified
   the violation.
 - As of sprint-1, Zone 1 code lives in `core/domain` and `core/ports`, so
   `core-internal-layering` now actually bites: `core/ports` imports `core/domain` (allowed)
-  and not `core/services` — verified KEPT. The FK check is still vacuously green (no tables
-  until STORY-006). The Zone 1 types/ports themselves are catalogued in
+  and not `core/services` — verified KEPT. The Zone 1 types/ports themselves are catalogued in
   [[canonical-types-and-ports]].
+- As of sprint-5, `core/services` is populated for the first time (`IngestService`,
+  STORY-009), so the FULL layering chain `core.services → core.ports → core.domain` is now
+  exercised end-to-end and `core-internal-layering` stays KEPT against real service code.
+  `composition/pull_loop.py` (STORY-009) is the first concrete module importing BOTH sides of
+  the boundary (`src.core` + `src.adapters`) — the composition zone's defining privilege —
+  and `core-independence` stays KEPT (the service imports no adapter/sqlalchemy/httpx). The
+  ingest service + loop are catalogued in [[ingest-service-and-pull-loop]]. The FK check is
+  live and green since STORY-006 (`10 checked, 0 violations`).
 
 ## Inference (synthesis, not verified)
 - The two mechanical checks (`lint-imports`, FK-direction) are the project's whole bet:
@@ -62,3 +69,8 @@ status: verified
   `_assembly.assemble_observation` helper within `dynatrace/` (no new
   zone/package/contract — purely a within-package move). `lint-imports` stayed
   `3 kept, 0 broken`.
+- sprint-5: re-verified after STORY-009 populated `core/services` (`IngestService`) + added
+  `composition/pull_loop.py`, and STORY-020 added a named error in `dynatrace/`. No
+  zone-tree / contract Fact changed; the full `core.services→ports→domain` layering chain is
+  now exercised and `composition` gained its first both-sides importer. `lint-imports` stayed
+  `3 kept, 0 broken`; FK-direction `10 checked, 0 violations`. verified_sha → cca043f.

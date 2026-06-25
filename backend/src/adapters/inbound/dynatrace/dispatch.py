@@ -13,6 +13,10 @@ from collections.abc import Callable, Sequence
 
 from src.core.domain import SignalObservation
 
+from src.adapters.inbound.dynatrace._assembly import (
+    MalformedDqlRowError,
+    require_field,
+)
 from src.adapters.inbound.dynatrace.clickpath_normalizer import (
     normalize_clickpath_row,
 )
@@ -39,9 +43,11 @@ def normalize_row(row: dict, *, signal_key: str) -> SignalObservation:
     """Dispatch one DQL row to its monitor-type normalizer.
 
     Raises `UnsupportedMonitorTypeError` for any `synthetic_test.type` not in
-    `_NORMALIZERS` (e.g. `BROWSER`, `NAM`) instead of guessing.
+    `_NORMALIZERS` (e.g. `BROWSER`, `NAM`) instead of guessing, and
+    `MalformedDqlRowError` (STORY-020) if the dispatch key itself is missing
+    from the row.
     """
-    monitor_type = row["synthetic_test.type"]
+    monitor_type = require_field(row, "synthetic_test.type")
     try:
         normalizer = _NORMALIZERS[monitor_type]
     except KeyError:
