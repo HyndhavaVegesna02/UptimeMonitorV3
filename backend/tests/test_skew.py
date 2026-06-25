@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 import pytest
 from pydantic import ValidationError
 
-from src.core.services.skew import SignalFeeder, SkewResult
+from src.core.services.skew import SignalFeeder, SkewResult, skew
 
 _NOW = datetime(2026, 6, 25, 12, 0, 0, tzinfo=timezone.utc)
 _INTERVAL = timedelta(minutes=5)
@@ -68,3 +68,104 @@ def test_skew_result_is_frozen():
 
     with pytest.raises(ValidationError):
         result.skewed = True  # type: ignore[misc]
+
+
+# --- Step 2: a feeder lagging more than its interval is flagged (AC1, AC4) --
+#
+# Reference = the most-recent peer watermark (the MAX across all feeders).
+# A feeder is skewed when reference - feeder.watermark > feeder.interval.
+# Lagging by EXACTLY the interval is NOT skewed (">" not ">="), per the
+# sprint-7 boundary-value agreement.
+
+
+def test_feeder_lagging_more_than_its_interval_is_flagged_skewed():
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("stale", _NOW - timedelta(minutes=6)),  # 6m lag > 5m interval
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is True
+    assert result.lagging_signals == ("stale",)
+
+
+def test_feeder_within_its_interval_is_not_flagged():
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("slightly-behind", _NOW - timedelta(minutes=3)),  # 3m lag < 5m interval
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_feeder_lagging_exactly_its_interval_is_not_skewed():
+    # Boundary: lag == interval is NOT skewed ("> ", not ">=").
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("at-boundary", _NOW - _INTERVAL),  # exactly 5m lag == 5m interval
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_feeder_lagging_just_over_its_interval_is_skewed():
+    # Boundary: lag == interval + 1 second IS skewed.
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("just-over", _NOW - _INTERVAL - timedelta(seconds=1)),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is True
+    assert result.lagging_signals == ("just-over",)
+
+
+def test_multiple_lagging_feeders_are_all_named():
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("stale-1", _NOW - timedelta(minutes=10)),
+        _feeder("stale-2", _NOW - timedelta(minutes=20)),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is True
+    assert result.lagging_signals == ("stale-1", "stale-2")
+
+
+def test_the_freshest_feeder_itself_is_never_flagged():
+    # The feeder supplying the reference watermark (lag == 0) cannot be
+    # skewed relative to itself.
+    feeders = [
+        _feeder("freshest", _NOW),
+        _feeder("also-fresh", _NOW),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_each_feeders_own_interval_governs_its_own_lag_tolerance():
+    # Two feeders lag the reference by the same 6 minutes, but only the one
+    # with the tighter (5m) interval is skewed; the other's looser (10m)
+    # interval tolerates the same lag.
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("tight-interval", _NOW - timedelta(minutes=6), interval=timedelta(minutes=5)),
+        _feeder("loose-interval", _NOW - timedelta(minutes=6), interval=timedelta(minutes=10)),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is True
+    assert result.lagging_signals == ("tight-interval",)

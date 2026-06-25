@@ -76,8 +76,21 @@ class SkewResult(BaseModel):
 def skew(feeders: Sequence[SignalFeeder]) -> SkewResult:
     """Flag feeders lagging their peers' most-recent watermark (dossier §11, AC1).
 
-    Implementation lands in a later step (STORY-026 plan step 2); for now
-    this is the type-only scaffold so `SignalFeeder`/`SkewResult` can be
-    constructed and tested in isolation.
+    The reference is the MOST-RECENT peer watermark — the MAX `watermark`
+    across `feeders`. A feeder is skewed when `reference - feeder.watermark
+    > feeder.interval` — lagging by EXACTLY its interval is NOT skewed
+    (strict `>`, not `>=`; AC4 boundary). The feeder supplying the
+    reference itself has zero lag and is never flagged.
+
+    Degenerate inputs (empty peer set; a feeder with no watermark yet) are
+    handled in a later step (STORY-026 plan step 4).
     """
-    raise NotImplementedError
+    reference = max(feeder.watermark for feeder in feeders)
+
+    lagging = tuple(
+        feeder.signal_key
+        for feeder in feeders
+        if reference - feeder.watermark > feeder.interval
+    )
+
+    return SkewResult(skewed=bool(lagging), lagging_signals=lagging)
