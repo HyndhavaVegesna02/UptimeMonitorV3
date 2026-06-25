@@ -30,29 +30,29 @@ pipeline: Zone 4, OUT OF SCOPE] → commit → sleep.
 
 TDD steps (commit after every green step; stage only files you touched — never `git add -A`):
 
-- [ ] 1. Create `backend/src/core/services/__init__.py` + the ingest-service module skeleton.
+- [x] 1. Create `backend/src/core/services/__init__.py` + the ingest-service module skeleton.
         Add a `RejectedObservationRepository` port under `core/ports/` (a quarantine sink:
         `save(*, signal_key, reason, payload, rejected_at)` in domain terms) and export it from
         `core/ports/__init__.py`. Failing test: the service class is a `SignalIngestPort`. `pytest`
         + `lint-imports` green. Commit.
-- [ ] 2. Ingest service constructor takes the four core ports (observation repo, watermark repo,
+- [x] 2. Ingest service constructor takes the four core ports (observation repo, watermark repo,
         rejected repo, clock) injected — no globals. Failing test (in-memory fakes): a batch of all
         VALID observations → service calls `save_new`, returns `IngestResult(accepted=<save_new
         return>, rejected=0)`, and advances the watermark to `max(observed_at)`. Implement the happy
         path. Commit. (AC3 happy path)
-- [ ] 3. Failing test: an observation with an implausibly-FUTURE `observed_at` (the "year-2099"
+- [x] 3. Failing test: an observation with an implausibly-FUTURE `observed_at` (the "year-2099"
         case, judged against the injected `ClockPort.now()` + a tolerance) is QUARANTINED to the
         rejected repo (with reason + payload), is NOT passed to `save_new`, and the rest of the batch
         still proceeds (no poison pill). `IngestResult.rejected` counts it. Order is validate-THEN-
         dedupe. Implement the validation gate. Commit. (AC1)
-- [ ] 4. Failing test: the watermark advances to `max(observed_at)` over ACCEPTED observations
+- [x] 4. Failing test: the watermark advances to `max(observed_at)` over ACCEPTED observations
         ONLY — the future-timestamp reject from step 3 cannot leap the cursor. Implement accepted-only
         advance. Commit. (AC2)
-- [ ] 5. Failing test: a duplicate `source_event_id` makes `save_new` return fewer than
+- [x] 5. Failing test: a duplicate `source_event_id` makes `save_new` return fewer than
         `len(valid)`; `IngestResult.accepted` reflects the TRUE newly-inserted count returned by
         `save_new` (not `len(valid)`). Re-ingesting the same batch is a no-op (idempotent). Implement.
         Commit. (AC3)
-- [ ] 6. Failing test: commit-before-advance ordering at the service level — if `save_new` raises,
+- [x] 6. Failing test: commit-before-advance ordering at the service level — if `save_new` raises,
         the watermark is NOT advanced and nothing counts as accepted (a half-applied cycle never moves
         the cursor). Plus an idempotent-replay test proving overlap + dedupe + accepted-only-advance
         together lose nothing and double-count nothing across a re-run. Implement the ordering /
