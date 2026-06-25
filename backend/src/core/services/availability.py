@@ -23,9 +23,15 @@ skew flag (dossier §11 "Skew, surfaced") is OUT OF SCOPE here (STORY-026).
 
 from __future__ import annotations
 
-from datetime import datetime
+from collections import defaultdict
+from collections.abc import Callable
+from datetime import datetime, timedelta
 
 from pydantic import BaseModel, ConfigDict
+
+from src.core.domain import Health, SignalObservation
+from src.core.ports import ObservationRepository
+from src.core.services.pipeline import collapse
 
 
 class AvailabilityResult(BaseModel):
@@ -70,3 +76,123 @@ class AvailabilityResult(BaseModel):
 
     computed_at: datetime
     """The instant this result was derived — always "now", since nothing is cached or stored."""
+
+
+def _bucket_into_cycles(
+    observations: list[SignalObservation], *, since: datetime, interval: timedelta
+) -> dict[datetime, list[SignalObservation]]:
+    """Slice `observations` into consecutive `interval`-wide cycles starting at `since`.
+
+    Cycle bucketing design (a calculator design call, dossier §11 leaves the
+    mechanism open): bucket *k* covers `[since + k*interval, since +
+    (k+1)*interval)`, identified by its start instant `since + k*interval`.
+    Every observation falls into exactly one bucket by its `observed_at` —
+    floor-divide the offset from `since` by `interval`. This needs no
+    cycle-key field on `SignalObservation`; it works for any signal whose
+    `observed_at` values land on (or near) the configured cadence, which is
+    the only shape `in_window` ever returns. A bucket with zero observations
+    never appears in the returned mapping — it is a gap, handled by the
+    caller comparing the expected cycle count against `len(buckets)`.
+
+    Only non-empty buckets are returned (a dict keyed by cycle start), so
+    `len(result)` is the number of cycles that actually have data — the
+    `total_verdicts - gap_verdicts` count the caller needs.
+    """
+    buckets: dict[datetime, list[SignalObservation]] = defaultdict(list)
+    for observation in observations:
+        offset = observation.observed_at - since
+        bucket_index = offset // interval
+        cycle_start = since + bucket_index * interval
+        buckets[cycle_start].append(observation)
+    return dict(buckets)
+
+
+class AvailabilityCalculator:
+    """Computes availability% and completeness% on demand (dossier §11). Zone 4.
+
+    Constructed with the `ObservationRepository` port injected — no global,
+    no SQL — so it is fully exercisable with an in-memory fake. `compute` is
+    the entry point; its only state is the injected repository, so a
+    short-TTL cache could wrap `compute` later (AC4) without changing this
+    class. Never consults the streak (P4); reuses `collapse` (STORY-010) to
+    derive one verdict per cycle.
+    """
+
+    def __init__(self, *, observation_repo: ObservationRepository) -> None:
+        self._observation_repo = observation_repo
+
+    def compute(
+        self,
+        signal_key: str,
+        *,
+        since: datetime,
+        until: datetime,
+        interval: timedelta,
+        window: str,
+        maintenance: Callable[[datetime], bool],
+        computed_at: datetime,
+    ) -> AvailabilityResult:
+        """Compute one `AvailabilityResult` for `signal_key` over `[since, until)`.
+
+        `interval` and `window` are INJECTED — never read from per-app
+        config here (dossier §11; the composition layer supplies them).
+        `maintenance` is an injected predicate over a cycle's start instant,
+        mirroring `collapse`'s injected `under_maintenance` boolean — never a
+        DB/table lookup, so this stays pure and testable with hand-built
+        fixtures. `computed_at` is also injected (no wall-clock read here)
+        so the result is fully deterministic in tests.
+
+        Availability% (AC1): bucket `in_window`'s observations into cycles
+        (`_bucket_into_cycles`), `collapse` each non-empty cycle (passing
+        `maintenance(cycle_start)` straight through to `collapse`'s
+        `under_maintenance`), then `passing ÷ (total − maintenance)` over
+        the resulting verdicts — `up` passes, `down`/`degraded` don't,
+        maintenance is excluded from both total and passing, and a missing
+        cycle (a gap — no observations fell into that bucket) is excluded
+        from the denominator entirely (the default `exclude` policy: it
+        never reaches `collapse`, so it cannot be maintenance or passing
+        either). AC6: zero observations in the window means zero cycles,
+        so `availability_pct` is `None` (no verdicts to judge) rather than
+        a misleading `0.0` or a `ZeroDivisionError`.
+
+        Completeness% (this step's stub — see STORY-011 step 4) is `None`
+        until implemented.
+        """
+        observations = list(self._observation_repo.in_window(signal_key, since, until))
+
+        buckets = _bucket_into_cycles(observations, since=since, interval=interval)
+
+        expected_cycles = max(0, (until - since) // interval)
+        gap_verdicts = expected_cycles - len(buckets)
+
+        total_verdicts = 0
+        passing_verdicts = 0
+        maintenance_verdicts = 0
+        for cycle_start, cycle_observations in buckets.items():
+            verdict = collapse(
+                cycle_observations, under_maintenance=maintenance(cycle_start)
+            )
+            total_verdicts += 1
+            if verdict.under_maintenance:
+                maintenance_verdicts += 1
+            elif verdict.health is Health.UP:
+                passing_verdicts += 1
+
+        denominator = total_verdicts - maintenance_verdicts
+        availability_pct = (
+            passing_verdicts / denominator if denominator > 0 else None
+        )
+
+        distinct_locations = len({observation.location for observation in observations})
+
+        return AvailabilityResult(
+            availability_pct=availability_pct,
+            completeness_pct=None,
+            total_verdicts=total_verdicts,
+            passing_verdicts=passing_verdicts,
+            maintenance_verdicts=maintenance_verdicts,
+            gap_verdicts=gap_verdicts,
+            distinct_locations=distinct_locations,
+            window=window,
+            computed_at=computed_at,
+        )

@@ -9,11 +9,43 @@ Reuses `collapse` (STORY-010); never consults the streak (P4).
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import sys
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
+from src.core.domain import Health, Provenance, SignalObservation
 from src.core.services.availability import AvailabilityResult
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fakes import FakeObservationRepository  # noqa: E402  (after sys.path setup above)
+
 _COMPUTED_AT = datetime(2026, 6, 25, 12, 0, 0, tzinfo=timezone.utc)
+_SINCE = datetime(2026, 6, 25, 10, 0, 0, tzinfo=timezone.utc)
+_INTERVAL = timedelta(minutes=5)
+_SIGNAL = "checkout-http"
+
+
+def _observation(
+    health: Health,
+    location: str,
+    *,
+    offset: timedelta,
+    event_id: str,
+) -> SignalObservation:
+    return SignalObservation(
+        signal_key=_SIGNAL,
+        observed_at=_SINCE + offset,
+        health=health,
+        source_event_id=event_id,
+        source=Provenance(system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"),
+        location=location,
+    )
+
+
+def _repo_with(observations: list[SignalObservation]) -> FakeObservationRepository:
+    repo = FakeObservationRepository()
+    repo.save_new(observations)
+    return repo
 
 
 # --- AvailabilityResult: frozen result shape (dossier §11) -------------------
@@ -83,3 +115,181 @@ def test_availability_result_allows_none_percentages():
 
     assert result.availability_pct is None
     assert result.completeness_pct is None
+
+
+# --- AC1: availability% over collapsed verdicts (dossier §11) ---------------
+#
+# Cycle bucketing: the window [since, until) is sliced into consecutive
+# `interval`-wide buckets starting at `since` (bucket k covers
+# [since + k*interval, since + (k+1)*interval)). Every observation falls into
+# exactly one bucket by its `observed_at`; a bucket with >=1 observation is
+# one cycle, collapsed via `collapse` (one signal, one cycle, per its
+# contract). A bucket with zero observations is a gap (AC1: excluded from
+# the availability denominator under the default `exclude` policy) -- it
+# never reaches `collapse`. `maintenance` is an injected predicate over the
+# cycle's start instant (mirrors STORY-010's injected `under_maintenance`
+# boolean -- never a DB/table lookup), so a whole cycle can be marked under
+# maintenance without per-observation flags.
+
+
+def _calculator(repo):
+    from src.core.services.availability import AvailabilityCalculator
+
+    return AvailabilityCalculator(observation_repo=repo)
+
+
+def test_availability_pct_all_up_cycles_is_one_hundred_percent():
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=15),
+        interval=_INTERVAL,
+        window="15m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.availability_pct == 1.0
+    assert result.total_verdicts == 3
+    assert result.passing_verdicts == 3
+    assert result.maintenance_verdicts == 0
+    assert result.gap_verdicts == 0
+
+
+def test_availability_pct_down_and_degraded_cycles_do_not_pass():
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(Health.DEGRADED, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    # 4 cycles total: up, down, degraded, up -> 2 passing / 4 total.
+    assert result.total_verdicts == 4
+    assert result.passing_verdicts == 2
+    assert result.availability_pct == 0.5
+
+
+def test_availability_pct_excludes_maintenance_from_both_sides():
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+    maintenance_cycle_start = _SINCE + timedelta(minutes=5)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: cycle_start == maintenance_cycle_start,
+        computed_at=_COMPUTED_AT,
+    )
+
+    # The DOWN cycle is under maintenance: excluded from both sides of the
+    # ratio via `total - maintenance`. `total_verdicts` counts all 4 cycles
+    # (maintenance included, per dossier §11's `passing / (total -
+    # maintenance)` formula); the denominator nets out to 3, of which all 3
+    # non-maintenance cycles pass. Without exclusion this would be 3/4 =
+    # 0.75; with it, 3/3 = 1.0.
+    assert result.total_verdicts == 4
+    assert result.passing_verdicts == 3
+    assert result.maintenance_verdicts == 1
+    assert result.availability_pct == 1.0
+
+
+def test_availability_pct_excludes_gaps_from_the_denominator():
+    # Only 2 of 4 expected 5-minute cycles have any observation at all; the
+    # other 2 are gaps and (default `exclude` policy) never enter total.
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=15), event_id="e2"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.total_verdicts == 2
+    assert result.passing_verdicts == 1
+    assert result.gap_verdicts == 2
+    assert result.availability_pct == 0.5
+
+
+def test_availability_pct_uses_collapse_rule_for_mixed_locations_in_one_cycle():
+    # Same cycle (same 5-minute bucket), two locations: one up, one down ->
+    # collapse's rule makes this DEGRADED, which does not pass.
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.DOWN, "eu-west", offset=timedelta(minutes=1), event_id="e2"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=5),
+        interval=_INTERVAL,
+        window="5m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.total_verdicts == 1
+    assert result.passing_verdicts == 0
+    assert result.availability_pct == 0.0
+
+
+def test_availability_result_carries_through_window_label_and_computed_at():
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=5),
+        interval=_INTERVAL,
+        window="5m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.window == "5m"
+    assert result.computed_at == _COMPUTED_AT
