@@ -40,7 +40,7 @@ TDD steps (commit after every green step; stage only files you touched — never
 - [x] 2. Failing tests: a FAILING streak → `major_outage`/`partial_outage`/`degraded` by length vs
         the injected thresholds (test AT each threshold and JUST BELOW — sprint-7 boundary agreement).
         Implement the failing-branch lookup. Commit. (AC1, AC4)
-- [ ] 3. Failing test: a single failure (length 1) → internal warning (distinct, never a published
+- [x] 3. Failing test: a single failure (length 1) → internal warning (distinct, never a published
         status). Implement. Commit. (AC2)
 - [ ] 4. Failing tests: a sustained `degraded` streak → `degraded`; a passing streak `>= recovery` →
         `operational`; a streak below all thresholds → nothing. Implement. Commit. (AC2)

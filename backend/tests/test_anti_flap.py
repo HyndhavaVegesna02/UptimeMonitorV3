@@ -116,3 +116,30 @@ def test_failing_severity_ladder_is_checked_most_severe_first():
     thresholds = AntiFlapThresholds(major=3, partial=3, degraded=3, recovery=2)
     outcome = anti_flap(_down(3), thresholds)
     assert outcome.proposed_status is ComponentStatus.MAJOR_OUTAGE
+
+
+# --- Step 3: a single failure (length 1) is a distinct internal warning (AC2) --
+
+
+def test_single_failure_below_degraded_threshold_yields_internal_warning():
+    outcome = anti_flap(_down(1), _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=True)
+
+
+def test_internal_warning_is_never_a_published_component_status():
+    # The internal-warning outcome must never carry a proposed_status — it is
+    # a distinct, unpublishable signal, not a quiet alias for "degraded" or
+    # any other ComponentStatus.
+    outcome = anti_flap(_down(1), _THRESHOLDS)
+    assert outcome.proposed_status is None
+    assert outcome.internal_warning is True
+
+
+def test_internal_warning_still_applies_when_degraded_threshold_is_one():
+    # If an app's degraded threshold is configured down to 1, a single
+    # failure clears it via the ladder ("length >= degraded") and proposes
+    # degraded — the internal-warning rung only applies when length 1 is
+    # genuinely BELOW the degraded threshold, never as a separate override.
+    thresholds = AntiFlapThresholds(major=5, partial=3, degraded=1, recovery=2)
+    outcome = anti_flap(_down(1), thresholds)
+    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
