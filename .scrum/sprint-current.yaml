@@ -19,7 +19,7 @@ start_tag: sprint-5-start
 stories:
   - id: STORY-009
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: null
     quality_review: null
