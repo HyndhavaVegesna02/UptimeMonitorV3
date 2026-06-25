@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py]
-verified_sha: 5ade223
+verified_sha: 9ab7dd2
 verified_sprint: sprint-8
 status: verified          # verified | stale | archived
 ---
@@ -128,7 +128,14 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   `watermark` is `None` for a signal that has never advanced (AC4).
 - `SkewResult` (frozen, `skew.py:54`) `{skewed:bool, lagging_signals:tuple[str,...]}` — names which
   feeders tripped the flag (in input order), not just a bare boolean, so a dashboard/proposal
-  annotation can show them (§11).
+  annotation can show them (§11). The `skewed == bool(lagging_signals)` coherence invariant is now
+  ENFORCED at construction: a `model_validator(mode="after")`
+  (`_require_skewed_lagging_signals_coherence`, `skew.py:75`) rejects both incoherent combinations
+  (`skewed=True` with empty `lagging_signals`, and `skewed=False` with non-empty `lagging_signals`)
+  with a `ValidationError`, mirroring `Verdict`'s `_require_maintenance_health_coherence`
+  (STORY-025) and `AntiFlapOutcome`'s `_require_status_warning_coherence` (STORY-028) — same
+  pattern, same rationale (sprint-8 fix loop 1, quality MAJOR). The two coherent shapes `skew()`
+  itself produces are unaffected.
 - `skew(feeders: Sequence[SignalFeeder]) -> SkewResult` (`skew.py:76`) — pure, no I/O. The
   reference is the MOST-RECENT peer watermark (the MAX `watermark` across feeders that have one). A
   feeder is skewed when `reference - feeder.watermark > feeder.interval` — strict `>`, lagging by
@@ -171,3 +178,8 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   dossier §11 "Skew, surfaced" / Tier-2 T2.7). `code_refs` gained `backend/src/core/services/skew.py`
   and `backend/tests/test_skew.py` per the sprint-7 agreement (every Fact's cited file must be
   code_ref-covered). Title updated to mention the skew flag. Verified at 5ade223.
+- sprint-8 fix loop 1: closed a second code-quality MAJOR of the same shape — `SkewResult` could be
+  constructed with `skewed` and `lagging_signals` disagreeing (e.g. `skewed=True` with an empty
+  tuple). Added `_require_skewed_lagging_signals_coherence` (a `model_validator(mode="after")`,
+  same pattern as `Verdict` STORY-025 and `AntiFlapOutcome` STORY-028) to reject both incoherent
+  shapes with a `ValidationError`; the two coherent shapes are unaffected. Verified at 9ab7dd2.
