@@ -1,111 +1,37 @@
 # YourTeam active sprint board.
-sprint: 3
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-25
-# Sprint 3 closed: 2/2 stories accepted at review, 6/6 pts, merged to main.
-# Zone 2 complete (spine schema + repository adapters) + shared throwaway-DB harness.
-# STORY-019 needed one fix loop (spawn-time leak + flaky teardown test); recovered across
-# two implementer connection-drop crashes. Next: planning for Sprint 4 (Zone 3 ingest:
-# STORY-008 Dynatrace adapter + DQL, STORY-009 pull loop + watermarks).
-goal: "Zone 2 closes — repository adapters implement the persistence ports against the spine, on a shared throwaway-DB harness so every later DB-gated story stops hand-rolling Postgres."
-branch: sprint-3
-start_tag: sprint-3-start
-started: 2026-06-24
-# Capacity: velocity history (8, 6, 6), mean ~7. Committed 6 (deliberate 1-pt under-commit).
-# Green DoD baseline re-verified on main @ d5dd2c8 before lock: alembic upgrade head ->
-# 3a8254bcfe59, pytest 77 passed, lint-imports 3 kept/0 broken, FK-direction 10 checked/0
-# violations. (Note: the lint-imports.exe launcher was corrupted at verify time and
-# regenerated via `pip install --force-reinstall --no-deps import-linter` — a .venv-only
-# fix, no repo change.)
-# Order: STORY-019 (DB harness) FIRST so STORY-007's integration tests are written against
-# the shared fixture from the start (Sprint 2 retro sequencing call).
-# Model assignment (PO rule): implementers -> Sonnet, reviewers -> Opus.
+sprint: 4
+status: active           # none | active | review | closed | aborted
+started: 2026-06-25
+goal: "Zone 3 ingest opens — the Dynatrace inbound adapter queries synthetic monitor
+  results via DQL and normalizes each location execution into a canonical
+  SignalObservation, vendor specifics fully contained so the core stays untouched."
+branch: sprint-4
+start_tag: sprint-4-start
+# Capacity: velocity history (8, 6, 6, 6), last-3 mean = 6. Committed 5 (STORY-008 only).
+# Deliberate single-story sprint: STORY-008 is the dependency ROOT of Zone 3 (STORY-009's
+# pull loop calls it) and the highest-risk unknown (vendor DQL parsing + per-type
+# normalizers), so it is sequenced first and alone within capacity. STORY-009 (5 pts) was
+# refined this session (scheduler = asyncio) and is `ready` for Sprint 5.
+# Scope (PO-approved 2026-06-25): monitor types = HTTP + browser clickpath; single-browser
+# + NAM deferred (normalizer-dispatch seam keeps them additive).
+# Green DoD baseline re-verified on main @ 9af679a before lock: pytest 89 passed,
+# lint-imports 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16 via
+# scripts/dev_db.py), check_fk_direction 10 checked/0 violations.
+# Model assignment (PO rule, mandatory): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-019
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # all 5 AC MET (verified by running). The teardown AC stays MET after the
-                            # fix loop (behavior unchanged, just made deterministic).
-    quality_review: APPROVE # after fix loop 1. Original: 1 MAJOR (spawn-time container leak) + spec
-                            # reviewer's flakiness flag (teardown test raced ~1/4 runs). Re-review
-                            # (Opus) confirmed BOTH resolved: _spawn_default/cmd_up now tear down on
-                            # any post-create failure (try/except BaseException -> stop_container ->
-                            # raise) with a regression test; the teardown test was made deterministic
-                            # via a provide_migrated_db() generator + .throw() (no nested pytest
-                            # subprocess, no temp file). 2 minors fixed; 1 new non-blocking minor noted.
+  - id: STORY-008
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1             # one fix loop (not a fresh attempt); recovered across 2 implementer
-                            # connection-drop crashes (work preserved, last via a fresh implementer).
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod19)"
-        exit_code: 0
-        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
-        commit: 0a6dd27
-        at: 2026-06-24T15:10:00+05:30
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "84 passed in 17.25s"   # incl. deterministic teardown test; 5x consecutive green
-        commit: 0a6dd27
-        at: 2026-06-24T15:10:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 0a6dd27
-        at: 2026-06-24T15:10:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated spine"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: 0a6dd27
-        at: 2026-06-24T15:10:00+05:30
-    blast_radius_resolved: true   # diff touches scripts/dev_db.py + backend/tests/conftest.py
-                                  # (both code_refs of dev-setup-and-dod.md AND migrations-and-db.md)
-                                  # + test files + CLAUDE.md. Both articles re-verified: Facts describe
-                                  # the public contract (reuse/spawn/skip, finalizer-on-failure, the
-                                  # up/down CLI, URL dialects) which the fix loop left unchanged;
-                                  # verified_sha bumped 6d34ef2 -> 0a6dd27 on both. Other two articles
-                                  # do not overlap the diff.
-  - id: STORY-007
-    points: 3
-    board: done
-    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # all 6 AC MET (verified by running). Partial-overlap dedup proves the
-                            # RETURNING-based newly-inserted count; tz-aware-UTC assertion present.
-    quality_review: APPROVE # zero critical/major. 2 minors recorded as notes (non-blocking):
-                            # (1) advance() upsert doesn't refresh watermarks.updated_at on re-advance
-                            # (audit-only, nothing reads it); (2) in-function repo imports (TDD residue).
-    blocked_question: null
-    attempts: 1
-    paused_at_commit: null
-    dod_evidence:
-      - command: "alembic upgrade head  # DATABASE_URL_DIRECT=Dockerized postgres:16 (uptime_pg_dod07)"
-        exit_code: 0
-        output_tail: "Running upgrade eda70ac11454 -> 3a8254bcfe59, spine schema"
-        commit: f11a7be
-        at: 2026-06-25T11:05:00+05:30
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "89 passed in 19.33s"   # 84 baseline + 5 new persistence integration tests
-        commit: f11a7be
-        at: 2026-06-25T11:05:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: no sqlalchemy leak above persistence
-        commit: f11a7be
-        at: 2026-06-25T11:05:00+05:30
-      - command: "python scripts/check_fk_direction.py  # against migrated spine"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: f11a7be
-        at: 2026-06-25T11:05:00+05:30
-    blast_radius_resolved: true   # diff adds backend/src/adapters/persistence/{observation,watermark}
-                                  # _repository.py (+ tests). architecture-boundary.md (code_refs incl.
-                                  # backend/src/) was mechanically stale; re-verified — Facts describe
-                                  # zone STRUCTURE/contracts (unchanged: no new zone/package/contract,
-                                  # lint-imports 3 kept), so no Fact edit, verified_sha bumped
-                                  # ac1d468 -> f11a7be. canonical-types-and-ports.md: core untouched
-                                  # this story (no overlap). Implementer flagged a future persistence
-                                  # article once a 3rd adapter exists — deferred to a later compile pass.
+    dod_evidence: []
+    blast_radius_resolved: false   # at DoD: re-verify canonical-types-and-ports.md
+                                   # (code_refs incl. core/domain/signal.py, core/ports/) and
+                                   # architecture-boundary.md (code_refs incl. backend/src/) —
+                                   # the diff adds backend/src/adapters/inbound/dynatrace/.
 hotfixes: []
 interrupts: []
