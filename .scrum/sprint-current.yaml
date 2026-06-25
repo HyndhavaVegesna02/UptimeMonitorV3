@@ -1,160 +1,49 @@
 # YourTeam active sprint board.
-sprint: 6
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-25
-# Sprint 6 closed: STORY-010 (3) + STORY-021/022/023 (1 each) all accepted at review (6/6 pts),
-# merged to main. Zone 4 opened: pure collapse + streak pipeline stages + the Verdict domain
-# type; three carried chores cleared. STORY-010 needed one fix loop (empty-collapse guard). PO
-# directed the Verdict-invariant minor into STORY-025 (ready). The sprint-5 narrowed-code_refs
-# amendment paid off (architecture-boundary.md did not go falsely stale). Next: planning Sprint 7
-# (STORY-024 anti-flap+decide needs refinement; STORY-011 availability; STORY-025 chore).
+sprint: 7
+status: active           # none | active | review | closed | aborted
 started: 2026-06-25
-goal: "Zone 4 opens — the first two pure pipeline stages (collapse: per-location observations
-  to one verdict, maintenance excluded; streak: consecutive same-health verdicts) land as
-  provider-blind core logic, and the three carried 1-pt chores clear the small debt."
-branch: sprint-6
-start_tag: sprint-6-start
-# Capacity: velocity history (8, 6, 6, 6, 5, 6), last-3 mean (6, 5, 6) = ~6. Committed 6.
-# STORY-010 was SPLIT at refinement (the original 4-stage pipeline read as an 8): this sprint
-# takes stages 1-2 (collapse + streak, 3 pts, pure, no config/proposals); stages 3-4 (anti-flap
-# + decide) are STORY-024 (draft, for later). Plus the three carried chores (021/022/023).
-# Order: STORY-010 FIRST (the high-risk new Zone 4 work — a blocker still leaves time for the
-# 1-pt chores), then 021, 022, 023.
-# Green DoD baseline re-verified on main @ f543b5a before lock: pytest 133, lint-imports
+goal: "Zone 4's calculator lands — a pure, derive-on-read availability engine computes two-grain
+  availability% + location-aware completeness% (and a min-of-children group rollup) from canonical
+  observations, persisting nothing; plus the Verdict maintenance-invariant guard."
+branch: sprint-7
+start_tag: sprint-7-start
+# Capacity: velocity history (8, 6, 6, 6, 5, 6, 6), last-3 mean (5, 6, 6) = ~6. Committed 6.
+# STORY-011 SPLIT at refinement: the skew flag (Tier-2 cross-signal watermark comparison) was
+# spun into STORY-026; this sprint takes the two-grain math + group rollup (5). Plus STORY-025
+# (Verdict invariant, 1). Open Qs resolved from dossier §11 (gap=exclude, AvailabilityResult shape).
+# STORY-024 (anti-flap+decide) stays deferred — its per-app config mechanism is unresolved.
+# Order: STORY-011 FIRST (high-risk new calculator), then STORY-025 (1-pt chore).
+# Green DoD baseline re-verified on main @ d30ea6a before lock: pytest 162, lint-imports
 # 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16), check_fk_direction
 # 10 checked/0 violations.
 # Model assignment (PO rule, mandatory): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-010
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — collapse health rule, maintenance exclusion/
-                            # short-circuit, streak backward + maintenance-gap skip, purity.
-    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — collapse([]) leaked a
-                            # `max() iterable argument is empty` instead of a clear domain error.
-                            # Fix loop 1 (fresh agent) added a top-of-function guard raising
-                            # ValueError("collapse requires at least one observation for a cycle")
-                            # before the max()/[0] access, + a message-matching test. Re-review (Opus)
-                            # confirmed the MAJOR resolved, behavior preserved (25 tests intact + 1 new),
-                            # zero new Critical/Major. 2 minors recorded as notes (non-blocking):
-                            # (1) Verdict maintenance<=>health-is-None invariant documented but not
-                            # enforced (a model_validator would close it); (2) Streak.health
-                            # non-optional while streak()->Streak|None — judged fine.
+  - id: STORY-011
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1             # one fix loop (fresh agent per working agreement)
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "159 passed in 13.94s"   # 133 baseline + 25 STORY-010 + 1 fix-loop empty-collapse test
-        commit: c162a98
-        at: 2026-06-25T16:30:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."   # AC4: pure core, imports only src.core.*
-        commit: c162a98
-        at: 2026-06-25T16:30:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: c162a98
-        at: 2026-06-25T16:30:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration added (pure-core story)"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: c162a98
-        at: 2026-06-25T16:30:00+05:30
-    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/domain/): updated
-                                  # by the implementer (added Verdict + the core/services/pipeline.py
-                                  # collapse/streak Facts), re-verified after the fix loop (collapse Fact
-                                  # makes no empty-input claim, stays accurate), verified_sha -> fc74e53.
-                                  # architecture-boundary.md NOT flagged (narrowed code_refs — new in-zone
-                                  # module doesn't touch the zone roots; the sprint-5 amendment working).
-  - id: STORY-021
+    dod_evidence: []
+    blast_radius_resolved: false   # at DoD: adds core/services/availability.py + an observation-read
+                                   # method on ObservationRepository port (-> canonical-types-and-ports.md,
+                                   # code_refs incl. core/ports/) + its Postgres impl
+                                   # (-> persistence-adapters.md). Both must be updated. A dedicated
+                                   # availability article may be created at the compile pass.
+  - id: STORY-025
     points: 1
-    board: done
+    board: todo
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null      # light pipeline: no reviewers at 1 pt
+    spec_review: null
     quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "161 passed (orchestrator-verified at HEAD); 159 + 2 new native_id-guard tests"
-        commit: 885a321
-        at: 2026-06-25T16:45:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified)"
-        commit: 885a321
-        at: 2026-06-25T16:45:00+05:30
-      - command: "check_fk_direction.py + alembic upgrade head"
-        exit_code: 0
-        output_tail: "green at implementer run (pure adapter change, no schema); re-confirmed in sprint-6 consolidated DB gate"
-        commit: 885a321
-        at: 2026-06-25T16:45:00+05:30
-    blast_radius_resolved: true   # dynatrace-adapter.md re-verified: native_id Fact now documents the
-                                  # InvalidNativeIdError reject guard; verified_sha -> ae5f880.
-  - id: STORY-022
-    points: 1
-    board: done
-    pipeline: light
-    spec_review: null      # light pipeline: no reviewers at 1 pt
-    quality_review: null
-    blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "162 passed (orchestrator-verified at HEAD); 161 + 1 mixed-signal-guard test"
-        commit: b002073
-        at: 2026-06-25T17:00:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified; MixedSignalBatchError in core)"
-        commit: b002073
-        at: 2026-06-25T17:00:00+05:30
-      - command: "check_fk_direction.py + alembic upgrade head"
-        exit_code: 0
-        output_tail: "green at implementer run (pure core change, no schema); re-confirmed in sprint-6 consolidated DB gate"
-        commit: b002073
-        at: 2026-06-25T17:00:00+05:30
-    blast_radius_resolved: true   # ingest-service-and-pull-loop.md re-verified: the single-signal-batch
-                                  # assumption Fact now reads ENFORCED (MixedSignalBatchError up front);
-                                  # verified_sha -> 49bc707.
-  - id: STORY-023
-    points: 1
-    board: done
-    pipeline: light
-    spec_review: null      # light pipeline: no reviewers at 1 pt
-    quality_review: null
-    blocked_question: null
-    attempts: 0            # comment-only; done directly by orchestrator (no testable behaviour,
-                          # existing pull-loop tests are the regression guard) — per the sprint-5
-                          # "orchestrator may finish a trivial change" amendment, applied here to a
-                          # comment-only chore rather than an interrupted tail.
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "162 passed (consolidated DB gate at final tree); pull-loop tests unchanged"
-        commit: 9e5b329
-        at: 2026-06-25T17:15:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 9e5b329
-        at: 2026-06-25T17:15:00+05:30
-      - command: "check_fk_direction.py + alembic upgrade head"
-        exit_code: 0
-        output_tail: "FK-direction OK 10/0; alembic no-op (consolidated sprint-6 DB gate, orchestrator-verified)"
-        commit: 9e5b329
-        at: 2026-06-25T17:15:00+05:30
-    blast_radius_resolved: true   # ingest-service-and-pull-loop.md re-verified (comment-only,
-                                  # no Fact change); verified_sha -> 9e5b329.
+    dod_evidence: []
+    blast_radius_resolved: false   # diff touches core/domain/verdict.py -> re-verify
+                                   # canonical-types-and-ports.md (the Verdict Fact).
 hotfixes: []
 interrupts: []
