@@ -24,7 +24,7 @@ skew flag (dossier §11 "Skew, surfaced") is OUT OF SCOPE here (STORY-026).
 from __future__ import annotations
 
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta
 
 from pydantic import BaseModel, ConfigDict
@@ -211,3 +211,48 @@ class AvailabilityCalculator:
             window=window,
             computed_at=computed_at,
         )
+
+
+def rollup_group(
+    children: Sequence[AvailabilityResult], *, window: str, computed_at: datetime
+) -> AvailabilityResult:
+    """Roll up a group's `AvailabilityResult` from its children's (dossier §11, AC3).
+
+    A group is only as available as its worst component: `availability_pct`
+    and `completeness_pct` are each the MIN of the children that have a
+    value (i.e. excluding `None` — a no-data child cannot drag a healthy
+    group down to "unknown", since `min` would otherwise need to treat
+    `None` as either smallest or largest with no natural choice). If every
+    child is `None`, the rolled-up percentage is also `None` (AC6's
+    degenerate case propagates up rather than defaulting to some other
+    sentinel).
+
+    Counts (`total_verdicts`, `passing_verdicts`, `maintenance_verdicts`,
+    `gap_verdicts`, `distinct_locations`) always SUM across ALL children,
+    including no-data ones — so a no-data child is "excluded from the min
+    but its absence stays visible" (AC3): it contributes nothing to the
+    numerator/denominator counts that would inflate the group's apparent
+    health, yet the group's `gap_verdicts` (etc.) still reflects its
+    presence rather than the child vanishing from the rollup entirely.
+
+    `window` and `computed_at` are injected like `AvailabilityCalculator.
+    compute`'s — the rollup itself derives nothing from a clock or config.
+    """
+    availability_values = [
+        child.availability_pct for child in children if child.availability_pct is not None
+    ]
+    completeness_values = [
+        child.completeness_pct for child in children if child.completeness_pct is not None
+    ]
+
+    return AvailabilityResult(
+        availability_pct=min(availability_values) if availability_values else None,
+        completeness_pct=min(completeness_values) if completeness_values else None,
+        total_verdicts=sum(child.total_verdicts for child in children),
+        passing_verdicts=sum(child.passing_verdicts for child in children),
+        maintenance_verdicts=sum(child.maintenance_verdicts for child in children),
+        gap_verdicts=sum(child.gap_verdicts for child in children),
+        distinct_locations=sum(child.distinct_locations for child in children),
+        window=window,
+        computed_at=computed_at,
+    )

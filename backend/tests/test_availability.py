@@ -14,7 +14,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.services.availability import AvailabilityResult
+from src.core.services.availability import AvailabilityResult, rollup_group
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fakes import FakeObservationRepository  # noqa: E402  (after sys.path setup above)
@@ -392,3 +392,127 @@ def test_completeness_pct_partial_coverage_is_actual_over_expected():
 
     assert result.distinct_locations == 2
     assert result.completeness_pct == 0.75
+
+
+# --- AC3: group rollup — min of children, counts sum (dossier §11) ---------
+#
+# A group's availability/completeness is the MIN of its children's
+# percentages (a group is only as available as its worst component);
+# counts (verdicts, passing, maintenance, gaps) SUM across children.
+# Children with no data (percentages None) are excluded from the min
+# but their absence stays visible — i.e. they still contribute to the
+# rolled-up counts/distinct_locations rather than vanishing silently.
+
+
+def _result(
+    *,
+    availability_pct: float | None,
+    completeness_pct: float | None,
+    total_verdicts: int = 0,
+    passing_verdicts: int = 0,
+    maintenance_verdicts: int = 0,
+    gap_verdicts: int = 0,
+    distinct_locations: int = 0,
+    window: str = "20m",
+) -> AvailabilityResult:
+    return AvailabilityResult(
+        availability_pct=availability_pct,
+        completeness_pct=completeness_pct,
+        total_verdicts=total_verdicts,
+        passing_verdicts=passing_verdicts,
+        maintenance_verdicts=maintenance_verdicts,
+        gap_verdicts=gap_verdicts,
+        distinct_locations=distinct_locations,
+        window=window,
+        computed_at=_COMPUTED_AT,
+    )
+
+
+def test_rollup_group_percentages_are_the_min_of_children():
+    children = [
+        _result(availability_pct=1.0, completeness_pct=0.9),
+        _result(availability_pct=0.5, completeness_pct=1.0),
+        _result(availability_pct=0.8, completeness_pct=0.6),
+    ]
+
+    rolled_up = rollup_group(children, window="20m", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.availability_pct == 0.5
+    assert rolled_up.completeness_pct == 0.6
+
+
+def test_rollup_group_counts_sum_across_children():
+    children = [
+        _result(
+            availability_pct=1.0,
+            completeness_pct=1.0,
+            total_verdicts=4,
+            passing_verdicts=4,
+            maintenance_verdicts=0,
+            gap_verdicts=1,
+            distinct_locations=2,
+        ),
+        _result(
+            availability_pct=0.5,
+            completeness_pct=0.75,
+            total_verdicts=4,
+            passing_verdicts=2,
+            maintenance_verdicts=1,
+            gap_verdicts=0,
+            distinct_locations=1,
+        ),
+    ]
+
+    rolled_up = rollup_group(children, window="20m", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.total_verdicts == 8
+    assert rolled_up.passing_verdicts == 6
+    assert rolled_up.maintenance_verdicts == 1
+    assert rolled_up.gap_verdicts == 1
+    assert rolled_up.distinct_locations == 3
+
+
+def test_rollup_group_excludes_no_data_children_from_the_min_but_sums_their_counts():
+    # A child with zero observations (availability_pct=None) must not drag
+    # the min to None/0 -- but its (zero) counts still sum in, so a caller
+    # can see the group includes a no-data member rather than it silently
+    # disappearing.
+    children = [
+        _result(availability_pct=1.0, completeness_pct=1.0, total_verdicts=4, passing_verdicts=4),
+        _result(
+            availability_pct=None,
+            completeness_pct=None,
+            total_verdicts=0,
+            passing_verdicts=0,
+            gap_verdicts=4,
+        ),
+    ]
+
+    rolled_up = rollup_group(children, window="20m", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.availability_pct == 1.0
+    assert rolled_up.completeness_pct == 1.0
+    assert rolled_up.total_verdicts == 4
+    assert rolled_up.gap_verdicts == 4
+
+
+def test_rollup_group_all_children_no_data_yields_none_percentages():
+    children = [
+        _result(availability_pct=None, completeness_pct=None, gap_verdicts=4),
+        _result(availability_pct=None, completeness_pct=None, gap_verdicts=4),
+    ]
+
+    rolled_up = rollup_group(children, window="20m", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.availability_pct is None
+    assert rolled_up.completeness_pct is None
+    assert rolled_up.gap_verdicts == 8
+
+
+def test_rollup_group_carries_through_window_label_and_computed_at():
+    children = [_result(availability_pct=1.0, completeness_pct=1.0)]
+
+    rolled_up = rollup_group(children, window="custom-window", computed_at=_COMPUTED_AT)
+
+    assert rolled_up.window == "custom-window"
+    assert rolled_up.computed_at == _COMPUTED_AT
