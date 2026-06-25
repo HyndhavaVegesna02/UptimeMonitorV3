@@ -293,3 +293,102 @@ def test_availability_result_carries_through_window_label_and_computed_at():
 
     assert result.window == "5m"
     assert result.computed_at == _COMPUTED_AT
+
+
+# --- AC2: completeness% — location-aware denominator (dossier §11) ----------
+#
+# completeness_pct = actual / (intervals * distinct_locations), where
+# intervals = window / interval (the count of expected cycles) and
+# distinct_locations = COUNT(DISTINCT location) actually observed. This is
+# deliberately the OTHER grain from availability_pct: it counts raw
+# observations, never collapsed verdicts, and must never share a denominator
+# with availability (dossier §11 "two grains... must never share a
+# denominator").
+
+
+def test_completeness_pct_single_location_full_coverage_is_one_hundred_percent():
+    # 4 expected 5-minute cycles, 1 location, all 4 actually observed.
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.distinct_locations == 1
+    assert result.completeness_pct == 1.0
+
+
+def test_completeness_pct_three_locations_full_coverage_never_exceeds_one_hundred_percent():
+    # AC2's headline case: a 3-location signal, every cycle fully reporting
+    # from all 3 locations, must read exactly 100% -- never 300%. 4 expected
+    # cycles x 3 locations = 12 expected observations; exactly 12 arrive.
+    observations = []
+    event_id = 0
+    for offset_minutes in (0, 5, 10, 15):
+        for location in ("us-east", "eu-west", "ap-south"):
+            event_id += 1
+            observations.append(
+                _observation(
+                    Health.UP,
+                    location,
+                    offset=timedelta(minutes=offset_minutes),
+                    event_id=f"e{event_id}",
+                )
+            )
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.distinct_locations == 3
+    assert result.completeness_pct == 1.0
+
+
+def test_completeness_pct_partial_coverage_is_actual_over_expected():
+    # 4 expected cycles x 2 locations = 8 expected; only 6 observations
+    # arrive -> 6/8 = 0.75.
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.UP, "eu-west", offset=timedelta(minutes=0), event_id="e2"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=5), event_id="e3"),
+        _observation(Health.UP, "eu-west", offset=timedelta(minutes=5), event_id="e4"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e5"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e6"),
+        # eu-west misses cycles at minute 10 and minute 15: 2 missing of 8.
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=20),
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.distinct_locations == 2
+    assert result.completeness_pct == 0.75

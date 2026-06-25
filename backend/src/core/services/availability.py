@@ -155,8 +155,16 @@ class AvailabilityCalculator:
         so `availability_pct` is `None` (no verdicts to judge) rather than
         a misleading `0.0` or a `ZeroDivisionError`.
 
-        Completeness% (this step's stub — see STORY-011 step 4) is `None`
-        until implemented.
+        Completeness% (AC2): `actual ÷ (intervals × distinct_locations)`
+        where `intervals = window ÷ interval` (the same `expected_cycles`
+        availability computes) and `distinct_locations =
+        COUNT(DISTINCT location)` over the window's raw observations — NOT
+        a declared/configured location set, so the denominator self-adjusts
+        as locations come and go. This is the multi-location fix: without
+        it, a 3-location signal would report 300% (`actual` triples while
+        the single-location denominator does not). AC6: a zero denominator
+        (no observations at all, hence `distinct_locations == 0`) yields
+        `None` rather than a `ZeroDivisionError`.
         """
         observations = list(self._observation_repo.in_window(signal_key, since, until))
 
@@ -185,9 +193,16 @@ class AvailabilityCalculator:
 
         distinct_locations = len({observation.location for observation in observations})
 
+        completeness_denominator = expected_cycles * distinct_locations
+        completeness_pct = (
+            len(observations) / completeness_denominator
+            if completeness_denominator > 0
+            else None
+        )
+
         return AvailabilityResult(
             availability_pct=availability_pct,
-            completeness_pct=None,
+            completeness_pct=completeness_pct,
             total_verdicts=total_verdicts,
             passing_verdicts=passing_verdicts,
             maintenance_verdicts=maintenance_verdicts,
