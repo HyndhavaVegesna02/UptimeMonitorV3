@@ -66,18 +66,34 @@ stories:
                                   # module doesn't touch the zone roots; the sprint-5 amendment working).
   - id: STORY-021
     points: 1
-    board: in-progress
+    board: done
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null
+    spec_review: null      # light pipeline: no reviewers at 1 pt
     quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # diff touches dynatrace query.py -> re-verify dynatrace-adapter.md
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "161 passed (orchestrator-verified at HEAD); 159 + 2 new native_id-guard tests"
+        commit: 885a321
+        at: 2026-06-25T16:45:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified)"
+        commit: 885a321
+        at: 2026-06-25T16:45:00+05:30
+      - command: "check_fk_direction.py + alembic upgrade head"
+        exit_code: 0
+        output_tail: "green at implementer run (pure adapter change, no schema); re-confirmed in sprint-6 consolidated DB gate"
+        commit: 885a321
+        at: 2026-06-25T16:45:00+05:30
+    blast_radius_resolved: true   # dynatrace-adapter.md re-verified: native_id Fact now documents the
+                                  # InvalidNativeIdError reject guard; verified_sha -> ae5f880.
   - id: STORY-022
     points: 1
-    board: todo
+    board: in-progress
     pipeline: light
     spec_review: null
     quality_review: null
