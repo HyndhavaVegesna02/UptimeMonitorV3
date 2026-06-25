@@ -401,7 +401,10 @@ def test_completeness_pct_partial_coverage_is_actual_over_expected():
 # counts (verdicts, passing, maintenance, gaps) SUM across children.
 # Children with no data (percentages None) are excluded from the min
 # but their absence stays visible — i.e. they still contribute to the
-# rolled-up counts/distinct_locations rather than vanishing silently.
+# rolled-up counts rather than vanishing silently. `distinct_locations` is
+# deliberately NOT summed (dossier §11 names only verdicts/passing/
+# maintenance/gaps as summed counts) — see `rollup_group`'s docstring; a
+# synthesized group result reports `distinct_locations=0`.
 
 
 def _result(
@@ -469,7 +472,9 @@ def test_rollup_group_counts_sum_across_children():
     assert rolled_up.passing_verdicts == 6
     assert rolled_up.maintenance_verdicts == 1
     assert rolled_up.gap_verdicts == 1
-    assert rolled_up.distinct_locations == 3
+    # distinct_locations is per-leaf auditability, not a summed count
+    # (dossier §11 names only verdicts/passing/maintenance/gaps as summed).
+    assert rolled_up.distinct_locations == 0
 
 
 def test_rollup_group_excludes_no_data_children_from_the_min_but_sums_their_counts():

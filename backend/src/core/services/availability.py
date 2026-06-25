@@ -227,13 +227,19 @@ def rollup_group(
     degenerate case propagates up rather than defaulting to some other
     sentinel).
 
-    Counts (`total_verdicts`, `passing_verdicts`, `maintenance_verdicts`,
-    `gap_verdicts`, `distinct_locations`) always SUM across ALL children,
-    including no-data ones — so a no-data child is "excluded from the min
-    but its absence stays visible" (AC3): it contributes nothing to the
-    numerator/denominator counts that would inflate the group's apparent
-    health, yet the group's `gap_verdicts` (etc.) still reflects its
-    presence rather than the child vanishing from the rollup entirely.
+    Counts SUM across ALL children, including no-data ones — so a no-data
+    child is "excluded from the min but its absence stays visible" (AC3): it
+    contributes nothing to the numerator/denominator counts that would
+    inflate the group's apparent health, yet the group's `gap_verdicts`
+    still reflects its presence rather than the child vanishing from the
+    rollup entirely. Dossier §11 names exactly four count fields as summed:
+    `total_verdicts` ("verdicts"), `passing_verdicts`, `maintenance_verdicts`,
+    `gap_verdicts`. `distinct_locations` is deliberately NOT summed — it
+    exists per-leaf to make ONE signal's completeness denominator auditable
+    (its own docstring), and summing it across children would double-count
+    shared locations and misrepresent the group as having more distinct
+    probe locations than it does. A synthesized group result has no
+    observation stream of its own, so `distinct_locations` is `0` here.
 
     `window` and `computed_at` are injected like `AvailabilityCalculator.
     compute`'s — the rollup itself derives nothing from a clock or config.
@@ -252,7 +258,7 @@ def rollup_group(
         passing_verdicts=sum(child.passing_verdicts for child in children),
         maintenance_verdicts=sum(child.maintenance_verdicts for child in children),
         gap_verdicts=sum(child.gap_verdicts for child in children),
-        distinct_locations=sum(child.distinct_locations for child in children),
+        distinct_locations=0,
         window=window,
         computed_at=computed_at,
     )
