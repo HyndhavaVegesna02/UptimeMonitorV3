@@ -63,10 +63,10 @@ Spec: Sprint 4 review follow-up. In `backend/src/adapters/inbound/dynatrace/quer
 `build_dql_query` interpolates `native_id` unescaped (documented as trusted). REJECT (not escape):
 validate `native_id` and raise a clear named error on a query-breaking char (e.g. `"`).
 
-- [ ] 1. Failing test: `build_dql_query(native_id='a"b', ...)` raises a clear named error; a
+- [x] 1. Failing test: `build_dql_query(native_id='a"b', ...)` raises a clear named error; a
         well-formed `native_id` builds the same query as today (no regression). Implement the guard
         (a named `ValueError` subclass in the dynatrace package). Commit.
-- [ ] 2. DoD gate (all four exit 0). Forward blast radius: re-verify `dynatrace-adapter.md`
+- [x] 2. DoD gate (all four exit 0). Forward blast radius: re-verify `dynatrace-adapter.md`
         (note the native_id guard) + bump `verified_sha`. Record evidence. Commit.
 
 ---

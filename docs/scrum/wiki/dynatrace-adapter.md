@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/, backend/tests/test_dynatrace_adapter.py, backend/tests/fixtures/dynatrace/]
-verified_sha: a6c6d0d
-verified_sprint: sprint-5
+verified_sha: ae5f880
+verified_sprint: sprint-6
 status: verified          # verified | stale | archived
 ---
 
@@ -30,7 +30,10 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   the core's own `observed_at` validator (`core/domain/signal.py:77-88`).
 - `native_id` is interpolated unescaped into the query string (`query.py:48-51`); a comment
   documents the trusted-input assumption (vendor config id, read-only Grail fetch — no injection
-  vector).
+  vector). It is still validated first: any `native_id` containing a DQL-breaking character
+  (`"`, backslash, or a newline — `_DQL_BREAKING_CHARS`, `query.py:25-27`) raises the named
+  `InvalidNativeIdError` (`query.py:30-37`) rather than silently malforming the query — rejected,
+  not escaped/sanitized (STORY-021).
 - `Executor = Callable[[str], list[dict]]` (`query.py:23`) is the injected live-DQL seam.
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
@@ -75,7 +78,7 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   than silently mis-mapping.
 
 ### Tests + fixtures
-- `backend/tests/test_dynatrace_adapter.py` (20 tests) runs entirely off committed JSON fixtures
+- `backend/tests/test_dynatrace_adapter.py` (22 tests) runs entirely off committed JSON fixtures
   under `backend/tests/fixtures/dynatrace/` (`http_multi_location.json`,
   `clickpath_multi_location.json`, `mixed_monitor_types.json`, `unsupported_monitor_type.json`).
   No real recorded DQL exists yet (no live Dynatrace this sprint) — fixtures are representative,
@@ -92,3 +95,6 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   fix-loop-1 shared-assembly extraction. Verified at 834b90c (re-stamped to 40ed985 at merge).
 - sprint-5: STORY-020 — required DQL fields now raise the named `MalformedDqlRowError` via a shared
   `require_field` helper (replacing bare `KeyError`). Re-verified at d3a864d.
+- sprint-6: STORY-021 — `build_dql_query` now rejects a `native_id` containing a DQL-breaking
+  character (`"`, backslash, newline) via the named `InvalidNativeIdError`, instead of silently
+  interpolating it unescaped. Re-verified at ae5f880.
