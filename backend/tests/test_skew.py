@@ -245,3 +245,62 @@ def _full_completeness_repo() -> FakeObservationRepository:
     ]
     repo.save_new(observations)
     return repo
+
+
+# --- Step 4: degenerate inputs are defined, no crash (AC4) -----------------
+
+
+def test_empty_peer_set_yields_no_skew_and_does_not_crash():
+    result = skew([])
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_single_signal_component_has_no_peers_so_no_skew():
+    # One feeder, no peers to lag behind -- it is its own (only) reference.
+    feeders = [_feeder("solo", _NOW)]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_single_signal_component_with_no_watermark_yet_has_no_skew():
+    feeders = [_feeder("solo", None)]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()
+
+
+def test_a_feeder_with_no_watermark_yet_is_treated_as_maximally_lagging():
+    # Documented rule: a feeder that has never advanced (watermark=None)
+    # cannot supply the reference, and -- when peers exist -- is treated as
+    # maximally lagging (skewed), since "no data yet" is at least as stale
+    # as any observed lag.
+    feeders = [
+        _feeder("fresh", _NOW),
+        _feeder("never-advanced", None),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is True
+    assert result.lagging_signals == ("never-advanced",)
+
+
+def test_all_feeders_with_no_watermark_yields_no_reference_and_no_skew():
+    # No feeder has ever advanced -- there is no peer watermark to lag
+    # behind, so nothing can be flagged skewed (no crash, no false flag).
+    feeders = [
+        _feeder("never-advanced-1", None),
+        _feeder("never-advanced-2", None),
+    ]
+
+    result = skew(feeders)
+
+    assert result.skewed is False
+    assert result.lagging_signals == ()

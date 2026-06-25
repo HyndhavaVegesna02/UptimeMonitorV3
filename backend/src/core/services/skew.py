@@ -77,20 +77,36 @@ def skew(feeders: Sequence[SignalFeeder]) -> SkewResult:
     """Flag feeders lagging their peers' most-recent watermark (dossier §11, AC1).
 
     The reference is the MOST-RECENT peer watermark — the MAX `watermark`
-    across `feeders`. A feeder is skewed when `reference - feeder.watermark
-    > feeder.interval` — lagging by EXACTLY its interval is NOT skewed
-    (strict `>`, not `>=`; AC4 boundary). The feeder supplying the
-    reference itself has zero lag and is never flagged.
+    across `feeders` that actually have one. A feeder is skewed when
+    `reference - feeder.watermark > feeder.interval` — lagging by EXACTLY
+    its interval is NOT skewed (strict `>`, not `>=`; AC4 boundary). The
+    feeder supplying the reference itself has zero lag and is never
+    flagged.
 
-    Degenerate inputs (empty peer set; a feeder with no watermark yet) are
-    handled in a later step (STORY-026 plan step 4).
+    No-watermark rule (AC4, documented): a feeder with `watermark is None`
+    can never SUPPLY the reference (it has nothing to compare peers
+    against), but when at least one peer has a watermark, a never-advanced
+    feeder is treated as MAXIMALLY lagging — i.e. skewed — since "no data
+    yet" is at least as stale as any observed lag. If every feeder is
+    watermark-less, there is no reference at all, so nothing can be
+    flagged: no crash, no false positive.
+
+    Degenerate inputs (AC4): an empty peer set, or a single-signal
+    component (one feeder, no peers to lag behind), both yield
+    `SkewResult(skewed=False, lagging_signals=())` — there is nothing to
+    compare against, so nothing is skewed.
     """
-    reference = max(feeder.watermark for feeder in feeders)
+    watermarked = [feeder for feeder in feeders if feeder.watermark is not None]
+
+    if not watermarked or len(feeders) < 2:
+        return SkewResult(skewed=False, lagging_signals=())
+
+    reference = max(feeder.watermark for feeder in watermarked)
 
     lagging = tuple(
         feeder.signal_key
         for feeder in feeders
-        if reference - feeder.watermark > feeder.interval
+        if feeder.watermark is None or reference - feeder.watermark > feeder.interval
     )
 
     return SkewResult(skewed=bool(lagging), lagging_signals=lagging)
