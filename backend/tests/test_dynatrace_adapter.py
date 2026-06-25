@@ -6,7 +6,7 @@ Dynatrace in any test (working agreement: pure core, mockable edges).
 """
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -227,3 +227,99 @@ def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
 
     with pytest.raises(UnsupportedMonitorTypeError):
         normalize_rows([supported_row, unsupported_row], signal_key="mixed-scope")
+
+
+# --- Step 9: DQL query builder (watermark + overlap window) + injected executor
+
+
+def test_build_query_scopes_to_monitor_id_and_newer_than_watermark_minus_overlap():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    watermark = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    overlap = timedelta(minutes=5)
+
+    query = build_dql_query(
+        native_id="HTTP_CHECK-9F2A", watermark=watermark, overlap=overlap
+    )
+
+    assert "HTTP_CHECK-9F2A" in query
+    # The query reads from (watermark - overlap) = 10:00 - 5min = 09:55, never
+    # from the bare watermark, so a slow-to-land row just before the cursor is
+    # never missed (dossier §8).
+    assert "2026-06-24T09:55:00" in query
+    assert "2026-06-24T10:00:00" not in query
+
+
+def test_build_query_with_no_watermark_has_no_lower_time_bound():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    query = build_dql_query(
+        native_id="HTTP_CHECK-9F2A", watermark=None, overlap=timedelta(minutes=5)
+    )
+
+    assert "HTTP_CHECK-9F2A" in query
+    assert "timestamp >=" not in query
+
+
+def test_build_query_rejects_naive_watermark():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    naive = datetime(2026, 6, 24, 10, 0, 0)
+
+    with pytest.raises(ValueError):
+        build_dql_query(
+            native_id="HTTP_CHECK-9F2A", watermark=naive, overlap=timedelta(minutes=5)
+        )
+
+
+def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
+    """The live executor is a thin injected seam — never called live in tests.
+
+    A fake executor stands in for the real DQL HTTP call and returns the
+    recorded HTTP fixture rows; `fetch_observations` must build a query (via
+    the injected executor's input), call the executor exactly once, and
+    normalize every returned row.
+    """
+    from src.adapters.inbound.dynatrace.adapter import fetch_observations
+
+    rows = _load("http_multi_location.json")["records"]
+    calls = []
+
+    def fake_executor(query: str) -> list[dict]:
+        calls.append(query)
+        return rows
+
+    observations = fetch_observations(
+        signal_key="checkout-http",
+        native_id="HTTP_CHECK-9F2A",
+        watermark=None,
+        executor=fake_executor,
+    )
+
+    assert len(calls) == 1
+    assert "HTTP_CHECK-9F2A" in calls[0]
+    assert len(observations) == 3
+    assert all(obs.signal_key == "checkout-http" for obs in observations)
+    assert {obs.location for obs in observations} == {
+        "us-east-1",
+        "eu-west-1",
+        "ap-southeast-1",
+    }
+
+
+def test_fetch_observations_raises_unsupported_for_unsupported_monitor_rows():
+    from src.adapters.inbound.dynatrace.adapter import fetch_observations
+    from src.adapters.inbound.dynatrace.dispatch import UnsupportedMonitorTypeError
+
+    rows = _load("unsupported_monitor_type.json")["records"]
+
+    def fake_executor(query: str) -> list[dict]:
+        return rows
+
+    with pytest.raises(UnsupportedMonitorTypeError):
+        fetch_observations(
+            signal_key="homepage-browser",
+            native_id="BROWSER-4D1E",
+            watermark=None,
+            executor=fake_executor,
+        )
