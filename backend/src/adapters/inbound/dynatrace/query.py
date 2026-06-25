@@ -22,6 +22,21 @@ from datetime import datetime, timedelta
 #: do the real HTTP call; tests inject a fake/fixture-backed callable.
 Executor = Callable[[str], list[dict]]
 
+#: Characters that would break out of the `"{native_id}"` DQL string literal
+#: if interpolated unescaped (STORY-021).
+_DQL_BREAKING_CHARS = ('"', "\\", "\n", "\r")
+
+
+class InvalidNativeIdError(ValueError):
+    """Raised when `native_id` contains a character that would break the DQL
+    filter string literal it is interpolated into (STORY-021).
+
+    `native_id` is trusted vendor config (the monitor id we configured in
+    Dynatrace), not end-user input, so this is a misconfiguration rather than
+    an attack — but a breaking character (e.g. `"`) must surface loudly
+    instead of silently malforming the query.
+    """
+
 
 def build_dql_query(
     *, native_id: str, watermark: datetime | None, overlap: timedelta
@@ -48,6 +63,13 @@ def build_dql_query(
     # `native_id` is interpolated unescaped: it is trusted vendor config (the
     # monitor id we configured in Dynatrace, not end-user input), and this
     # query is a read-only Grail fetch, so there is no injection vector here.
+    # A breaking character (e.g. `"`) would still silently malform the query,
+    # so it is rejected rather than escaped/sanitized (STORY-021).
+    if any(char in native_id for char in _DQL_BREAKING_CHARS):
+        raise InvalidNativeIdError(
+            f"native_id contains a DQL-breaking character: {native_id!r}"
+        )
+
     clauses = [f'synthetic_test.id == "{native_id}"']
     if watermark is not None:
         since = watermark - overlap
