@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/, backend/src/core/services/availability.py]
-verified_sha: d5aadc2
+verified_sha: 15d1484
 verified_sprint: sprint-7
 status: verified          # verified | stale | archived
 ---
@@ -38,6 +38,14 @@ status: verified          # verified | stale | archived
   health verdict (`under_maintenance=False`, `health` set) AND a maintenance marker
   (`under_maintenance=True`, `health=None`) in one type, so `streak` can skip
   maintenance verdicts without a second type.
+- STORY-025: that maintenance<->health shape is now ENFORCED, not just documented — a
+  `model_validator(mode="after")` (`verdict.py:54`,
+  `_require_maintenance_health_coherence`) rejects both incoherent shapes at
+  construction (`under_maintenance=True` with a set `health`; `under_maintenance=False`
+  with `health=None`), raising `ValueError` (wrapped as Pydantic `ValidationError`).
+  Mirrors `signal.py`'s `_require_utc` validate-at-construction pattern. `collapse`
+  (`pipeline.py:37`) already only ever builds the two coherent shapes, so this is
+  unreachable from the existing pipeline today — it guards future hand-built `Verdict`s.
 
 ### The six core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
@@ -195,3 +203,6 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   of `(until - since) / interval` instead of the floor, so a non-divisible window's partial
   trailing cycle no longer makes `gap_verdicts` go negative / `total_verdicts` overcount;
   Completeness% Fact above corrected from floor to ceiling.
+- sprint-7: STORY-025 (Sprint 6 review follow-up) adds a `model_validator(mode="after")`
+  to `Verdict` enforcing the maintenance<->health invariant at construction (previously
+  documented only); see Fact above.
