@@ -65,7 +65,7 @@ stories:
                                   # touched (loop only consumes fetch_observations; no adapter-dir change).
   - id: STORY-020
     points: 1
-    board: todo
+    board: in-progress
     pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
     spec_review: null
     quality_review: null
