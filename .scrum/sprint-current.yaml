@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 6
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 started: 2026-06-25
 goal: "Zone 4 opens — the first two pure pipeline stages (collapse: per-location observations
   to one verdict, maintenance excluded; streak: consecutive same-health verdicts) land as
