@@ -68,4 +68,24 @@
   times — across the STORY-006/018 implementers, the spec reviewer, and the orchestrator DoD
   gates — each re-implementing the `DATABASE_URL` plain-libpq vs `DATABASE_URL_DIRECT`
   `+psycopg` dialect split, a standing foot-gun. Every remaining Zone 2–4 story is DB-heavy.)
+- 2026-06-25 — **Fix loops use a fresh agent; verify the tree after any agent crash.** For a
+  fix loop (or any continuation) where the original agent's transcript is already large, dispatch
+  a FRESH subagent with a focused brief stating the current committed state + the specific
+  remaining work — do NOT repeatedly resume the large-transcript agent. After ANY agent crash or
+  abnormal stop, the orchestrator inspects the working tree before proceeding: preserve coherent
+  committed/uncommitted work, discard scraps (last green commit is truth), and clean leaked
+  artifacts (e.g. temp test files written into `backend/tests/`). (Motivated by Sprint 3,
+  STORY-019: resuming the implementer for its fix loop crashed twice with
+  `API Error: Connection closed mid-response` — an artifact of a large transcript producing a
+  long response — leaving uncommitted work and a leaked `test_zz_*.py` in the tests dir; a fresh
+  tight-brief implementer then finished first try.)
+- 2026-06-25 — **Resource-lifecycle stories require teardown-on-failure in the brief.** Any story
+  that creates an external resource (Docker container, temp file, network connection, subprocess)
+  MUST have its implementer brief explicitly require teardown on EVERY failure path — including a
+  failure partway through setup, before any caller finalizer is established — plus a regression
+  test proving no resource leaks on that path. (Motivated by Sprint 3, STORY-019: a MAJOR review
+  finding — `resolve_db()` could raise after `start_container` created the container but before
+  the fixture's `try/finally` registered, leaking a uniquely-named container with nothing to
+  reclaim it. The implementer brief had described the lifecycle but not demanded teardown on
+  partial-setup failure.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

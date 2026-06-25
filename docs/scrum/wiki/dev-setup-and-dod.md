@@ -41,7 +41,12 @@ status: verified
   `docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16`
   (full one-liner + env exports in `CLAUDE.md` "Database & migrations").
 - The console script is `lint-imports` (`.venv/Scripts/lint-imports.exe`); `python -m importlinter`
-  does NOT work (it is a package with no `__main__`).
+  does NOT work (it is a package with no `__main__`). **Gotcha (operational):** the `.exe` launcher
+  occasionally fails to start with `Permission denied` / `ApplicationFailed` (a corrupted/locked
+  Windows launcher, not a contract break). Regenerate it with
+  `.venv/Scripts/python.exe -m pip install --force-reinstall --no-deps import-linter` and re-run;
+  to confirm the contracts independently of the launcher,
+  `.venv/Scripts/python.exe -c "import sys; from importlinter.cli import lint_imports; sys.exit(lint_imports())"`.
 - No `psql` client installed; no Neon/Dynatrace/Statuspage credentials needed in Sprint 0.
 - **Line endings are normalized to LF in the repo** via `.gitattributes` (`* text=auto eol=lf`
   + `binary` rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). Gotcha: the index
