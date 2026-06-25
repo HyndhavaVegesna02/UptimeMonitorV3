@@ -9,6 +9,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+import pytest
+
 import src.adapters.inbound.dynatrace as dynatrace_adapter
 from src.core.domain import Health
 
@@ -62,8 +64,6 @@ def test_health_mapping_rejects_unknown_outcome():
         UnknownVendorOutcomeError,
         map_execution_outcome,
     )
-
-    import pytest
 
     with pytest.raises(UnknownVendorOutcomeError):
         map_execution_outcome("timeout")
@@ -182,3 +182,48 @@ def test_dispatch_produces_one_observation_per_row_no_aggregation():
         "eu-west-1",
         "ap-southeast-1",
     }
+
+
+# --- Step 8: out-of-scope monitor type surfaced as unsupported (AC5) ----------
+
+
+def test_dispatch_raises_unsupported_for_single_browser_monitor_type():
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+        normalize_row,
+    )
+
+    rows = _load("unsupported_monitor_type.json")["records"]
+    browser_row = rows[0]  # synthetic_test.type == "BROWSER" (single-browser)
+
+    with pytest.raises(UnsupportedMonitorTypeError):
+        normalize_row(browser_row, signal_key="homepage-browser")
+
+
+def test_dispatch_raises_unsupported_for_nam_monitor_type():
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+        normalize_row,
+    )
+
+    rows = _load("unsupported_monitor_type.json")["records"]
+    nam_row = rows[1]  # synthetic_test.type == "NAM"
+
+    with pytest.raises(UnsupportedMonitorTypeError):
+        normalize_row(nam_row, signal_key="nam-check")
+
+
+def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
+    """A batch mixing a supported row with an unsupported one must raise, not
+    silently drop or mis-normalize the unsupported row as HTTP/clickpath.
+    """
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+        normalize_rows,
+    )
+
+    supported_row = _load("http_multi_location.json")["records"][0]
+    unsupported_row = _load("unsupported_monitor_type.json")["records"][0]
+
+    with pytest.raises(UnsupportedMonitorTypeError):
+        normalize_rows([supported_row, unsupported_row], signal_key="mixed-scope")
