@@ -1,6 +1,6 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/, backend/src/core/services/availability.py]
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/]
 verified_sha: 15d1484
 verified_sprint: sprint-7
 status: verified          # verified | stale | archived
@@ -73,85 +73,13 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py:17-33`).
 
-### Core pipeline stages 1-2 (`core/services/pipeline.py`, STORY-010)
-- `collapse(observations: Sequence[SignalObservation], *, under_maintenance: bool) ->
-  Verdict` (`pipeline.py:36`) — stage 1 (dossier §10). Assumes all observations belong
-  to one signal + one cycle (the caller groups; collapse does not). `under_maintenance`
-  is an INJECTED boolean, never a DB/table lookup, so the function stays pure. When
-  `True`, returns a `Verdict(under_maintenance=True, health=None)` immediately —
-  maintenance short-circuits before health is ever computed (AC2). Otherwise delegates
-  to `_collapse_health`: all `up` -> `up`; all `down` -> `down`; any mix (including
-  all-`degraded`) -> `degraded` (AC1).
-- `Streak` (frozen, `pipeline.py:22`) `{health:Health, length:int}` — the current
-  streak's health and consecutive count.
-- `streak(verdicts: Sequence[Verdict]) -> Streak | None` (`pipeline.py:88`) — stage 2
-  (dossier §10). `verdicts` is ordered oldest-to-newest; filters out every
-  `under_maintenance` verdict first, then reads the remaining sequence backward from
-  the most recent, counting while health matches and stopping at the first change
-  (AC3). Maintenance verdicts are excluded from the sequence entirely — they neither
-  count nor break a surrounding run (AC2). Returns `None` if every verdict supplied is
-  maintenance (no non-maintenance verdict to start from).
-- Stages 3-4 (anti-flap + decide) are explicitly OUT OF SCOPE here — STORY-024.
-
-### The availability engine (`core/services/availability.py`, STORY-011, dossier §11)
-- `AvailabilityResult` (frozen Pydantic, `availability.py:37`) — the §11 result shape:
-  `availability_pct: float|None`, `completeness_pct: float|None`, `total_verdicts: int`,
-  `passing_verdicts: int`, `maintenance_verdicts: int`, `gap_verdicts: int`,
-  `distinct_locations: int`, `window: str`, `computed_at: datetime`. Either percentage is
-  `None` on a degenerate denominator (AC6) — never a sentinel `0.0`/`-1` and never a
-  `ZeroDivisionError`.
-- `AvailabilityCalculator` (`availability.py:110`) — the entry point, constructed with
-  `observation_repo: ObservationRepository` injected (no global, no SQL). `compute(signal_key,
-  *, since, until, interval, window, maintenance, computed_at)` is the only method; `interval`,
-  `window`, `maintenance` (a predicate over a cycle's start instant — injected, never a DB
-  lookup, mirroring `collapse`'s `under_maintenance`), and `computed_at` are ALL injected
-  parameters — no per-app config read, no wall-clock read, inside this service.
-- **Cycle bucketing** (a calculator design call, since §11 leaves the mechanism open):
-  `_bucket_into_cycles` (`availability.py:81`) slices `[since, until)` into consecutive
-  `interval`-wide buckets keyed by their start instant (`since + k*interval`); every
-  observation lands in exactly one bucket by `observed_at`. A bucket with zero observations
-  never appears in the map — it is a gap. Each non-empty bucket is one cycle, collapsed via
-  `collapse` (STORY-010), with `maintenance(cycle_start)` passed straight through as
-  `collapse`'s `under_maintenance`.
-- **Availability% (AC1)**: `passing_verdicts / (total_verdicts - maintenance_verdicts)` if
-  that denominator is `>0`, else `None`. `total_verdicts` counts EVERY non-gap cycle
-  (maintenance included); `passing_verdicts` counts only non-maintenance `Health.UP`
-  verdicts. Gaps never reach `collapse` at all, so the default `exclude` policy falls out
-  naturally — a gap is neither counted nor maintenance nor passing.
-- **Completeness% (AC2)**: `len(observations) / (expected_cycles * distinct_locations)` if
-  that denominator is `>0`, else `None`. `expected_cycles = max(0, -((since - until) //
-  interval))` — the CEILING of `(until - since) / interval`, not the floor: a partial
-  trailing cycle (the window is not an exact multiple of the interval) still counts as one
-  full expected cycle, so every in-window observation's bucket index from
-  `_bucket_into_cycles` stays within `[0, expected_cycles)` and `gap_verdicts` can never go
-  negative (sprint-7 fix loop 1, quality review CRITICAL). When `(until - since)` IS an exact
-  multiple of `interval`, ceil equals floor, so this is unchanged for divisible windows.
-  `distinct_locations = len({o.location for o in observations})` — observed-
-  distinct, not a declared/configured set, so a 3-location signal with full coverage reads
-  exactly 100%, never 300% (the multi-location fix, dossier §11/T2.5).
-- **Group rollup** — `rollup_group(children: Sequence[AvailabilityResult], *, window,
-  computed_at) -> AvailabilityResult` (`availability.py:216`), a free function (no port
-  dependency: it combines already-computed results, not raw observations).
-  `availability_pct`/`completeness_pct` are each `min()` over the children whose value is
-  not `None` (a no-data child can't drag a healthy group to "unknown"); if every child is
-  `None`, the rollup's percentage is also `None`. `total_verdicts`, `passing_verdicts`,
-  `maintenance_verdicts`, `gap_verdicts` SUM across ALL children including no-data ones (AC3:
-  "excluded from the min but their absence stays visible") — these four are exactly the
-  fields dossier §11's rollup sentence names. **`distinct_locations` is deliberately NOT
-  summed** — it is documented on `AvailabilityResult` as making ONE signal's own completeness
-  denominator auditable; summing it across children would double-count shared locations and
-  misrepresent the group's location footprint. A rolled-up result reports
-  `distinct_locations=0`. `rollup_group([], ...)` (zero children) does not raise — both
-  percentages are `None`, all counts are `0`.
-- **Derive-on-read (AC4)**: `compute` and `rollup_group` persist nothing; every call re-reads
-  `in_window` and recomputes. No cache exists; `AvailabilityCalculator`'s only state is the
-  injected repo, so a short-TTL cache could wrap `compute` later without changing this class
-  — built pure per the working agreement (measure before optimizing).
-- Never consults `streak` (P4) — no import of it anywhere in this module. Imports ONLY
-  `src.core.*` (`domain`, `ports`, `services.pipeline`) plus `pydantic`/stdlib — no vendor,
-  HTTP, or SQL (AC5).
-- The skew flag (dossier §11 "Skew, surfaced", Tier-2 item 7) is OUT OF SCOPE here — split to
-  STORY-026 at sprint-7 refinement.
+### Zone 4 core logic — moved
+- The pipeline (`collapse`/`streak`, STORY-010) and the availability engine
+  (`AvailabilityCalculator`/`rollup_group`, STORY-011) — both in `core/services/` and both
+  CONSUMERS of the `Verdict` type + the `ObservationRepository` port catalogued here — are
+  documented in [[core-pipeline-and-availability]] (extracted sprint-7 so their `core/services/`
+  Facts are covered by that article's `code_refs`). The ingest service (`IngestService`, STORY-009)
+  is in [[ingest-service-and-pull-loop]].
 
 ### Boundary status
 - `core/ports` imports `core/domain` but NOT `core/services`; the `core-internal-layering`
@@ -165,15 +93,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `FakeRejectedObservationRepository`, `FakeClock`) rather than extending `tests/fakes.py`,
   because it needs a `save_new` that actually honors `source_event_id` dedupe (AC3) — the
   shared `tests/fakes.py` fake from STORY-005 only had to prove the interface shape.
-- `core/services/` now has its first concrete implementation: `IngestService`
-  (`core/services/ingest_service.py`), the concrete `SignalIngestPort` (STORY-009). It is
-  constructed with all four ports injected (`observation_repo`, `watermark_repo`,
-  `rejected_repo`, `clock`) and implements the dossier §8 ordering: validate (a
-  future-timestamp gate against the injected clock, `FUTURE_TOLERANCE = timedelta(minutes=5)`)
-  → dedupe+persist via `save_new`'s true newly-inserted count → advance the watermark to
-  `max(observed_at)` over ACCEPTED observations only, after `save_new` returns (so a raise
-  never leaves the watermark ahead of persisted data). It imports only `src.core.*` — no SQL,
-  no vendor types.
+- `core/services/` concrete implementations are documented in their own articles (so their
+  `code_refs` cover them): `IngestService` (STORY-009) in [[ingest-service-and-pull-loop]];
+  `collapse`/`streak` (STORY-010) + the availability engine (STORY-011) in
+  [[core-pipeline-and-availability]].
 
 ## Inference (synthesis, not verified)
 - The deliberately small repository surface (`save_new`, `get`, `advance` only) reflects a
@@ -201,8 +124,13 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   The skew flag is split to STORY-026 (out of scope here).
 - sprint-7: fix loop 1 (quality review CRITICAL) — `expected_cycles` now takes the CEILING
   of `(until - since) / interval` instead of the floor, so a non-divisible window's partial
-  trailing cycle no longer makes `gap_verdicts` go negative / `total_verdicts` overcount;
-  Completeness% Fact above corrected from floor to ceiling.
+  trailing cycle no longer makes `gap_verdicts` go negative / `total_verdicts` overcount.
+- sprint-7 (compile pass): EXTRACTED the Zone 4 service-logic Facts (the pipeline
+  `collapse`/`streak` and the availability engine) to the new [[core-pipeline-and-availability]]
+  article, and re-scoped this article's `code_refs` to `core/domain/` + `core/ports/` only. This
+  article had grown into a catch-all whose `code_refs` did not even list `pipeline.py`, so its
+  collapse/streak Facts were not staleness-covered — the extraction restores coverage. This
+  article is now back to its title scope: the canonical vocabulary + the core ports.
 - sprint-7: STORY-025 (Sprint 6 review follow-up) adds a `model_validator(mode="after")`
   to `Verdict` enforcing the maintenance<->health invariant at construction (previously
   documented only); see Fact above.
