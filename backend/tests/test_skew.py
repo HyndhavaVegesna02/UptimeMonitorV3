@@ -9,12 +9,19 @@ IN-MEMORY fixtures only — no DB, no topology load, no vendor types, no I/O.
 
 from __future__ import annotations
 
+import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
 
+from src.core.domain import Health, Provenance, SignalObservation
+from src.core.services.availability import AvailabilityCalculator
 from src.core.services.skew import SignalFeeder, SkewResult, skew
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fakes import FakeObservationRepository  # noqa: E402  (after sys.path setup above)
 
 _NOW = datetime(2026, 6, 25, 12, 0, 0, tzinfo=timezone.utc)
 _INTERVAL = timedelta(minutes=5)
@@ -169,3 +176,72 @@ def test_each_feeders_own_interval_governs_its_own_lag_tolerance():
 
     assert result.skewed is True
     assert result.lagging_signals == ("tight-interval",)
+
+
+# --- Step 3: skew is a SEPARATE result, can diverge from completeness (AC2) --
+#
+# Skew rides alongside completeness but is never derived from it: a
+# component can be 100% complete yet have a skewed feeder (every expected
+# observation arrived, but one feeder's clock is stale relative to its
+# peers), and a component can have low completeness yet no skew (sparse but
+# evenly-paced feeders whose watermarks still sit within each other's
+# interval tolerance).
+
+
+def test_full_completeness_can_still_have_a_skewed_feeder():
+    # All observations arrived (completeness 100%) but one feeder's
+    # watermark itself lags its peers beyond its own interval -- skew and
+    # completeness are independent measurements over different inputs.
+    repo = _full_completeness_repo()
+    calculator = AvailabilityCalculator(observation_repo=repo)
+    availability_result = calculator.compute(
+        "checkout-http",
+        since=_NOW - timedelta(minutes=20),
+        until=_NOW,
+        interval=_INTERVAL,
+        window="20m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_NOW,
+    )
+    assert availability_result.completeness_pct == 1.0
+
+    feeders = [
+        _feeder("checkout-http", _NOW),
+        _feeder("checkout-http-replica", _NOW - timedelta(minutes=10)),
+    ]
+    skew_result = skew(feeders)
+
+    assert skew_result.skewed is True
+    assert skew_result.lagging_signals == ("checkout-http-replica",)
+
+
+def test_low_completeness_can_still_have_no_skew():
+    # Sparse observations (low completeness, exercised separately via
+    # AvailabilityCalculator elsewhere) but the feeders' watermarks all sit
+    # within each other's interval tolerance here -- no skew.
+    feeders = [
+        _feeder("checkout-http", _NOW),
+        _feeder("checkout-http-replica", _NOW - timedelta(minutes=2)),
+    ]
+
+    skew_result = skew(feeders)
+
+    assert skew_result.skewed is False
+    assert skew_result.lagging_signals == ()
+
+
+def _full_completeness_repo() -> FakeObservationRepository:
+    repo = FakeObservationRepository()
+    observations = [
+        SignalObservation(
+            signal_key="checkout-http",
+            observed_at=_NOW - timedelta(minutes=offset),
+            health=Health.UP,
+            source_event_id=f"evt-{offset}",
+            source=Provenance(system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"),
+            location="us-east",
+        )
+        for offset in (20, 15, 10, 5)
+    ]
+    repo.save_new(observations)
+    return repo
