@@ -52,3 +52,58 @@ def test_collapse_preserves_signal_key_on_the_verdict():
     observations = [_observation(Health.UP, "us-east", signal_key="payments-http")]
     verdict = collapse(observations, under_maintenance=False)
     assert verdict.signal_key == "payments-http"
+
+
+# --- Step 3: collapse -> down (all down) / degraded (mixed, any non-up) -------
+
+
+def test_collapse_returns_down_for_single_down_observation():
+    observations = [_observation(Health.DOWN, "us-east")]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DOWN
+
+
+def test_collapse_returns_down_when_all_locations_are_down():
+    observations = [
+        _observation(Health.DOWN, "us-east"),
+        _observation(Health.DOWN, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DOWN
+
+
+def test_collapse_returns_degraded_when_up_and_down_are_mixed():
+    observations = [
+        _observation(Health.UP, "us-east"),
+        _observation(Health.DOWN, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DEGRADED
+
+
+def test_collapse_returns_degraded_when_up_and_degraded_are_mixed():
+    observations = [
+        _observation(Health.UP, "us-east"),
+        _observation(Health.DEGRADED, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DEGRADED
+
+
+def test_collapse_returns_degraded_when_all_locations_are_degraded():
+    observations = [
+        _observation(Health.DEGRADED, "us-east"),
+        _observation(Health.DEGRADED, "eu-west"),
+    ]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DEGRADED
+
+
+def test_collapse_returns_degraded_for_three_way_mix():
+    observations = [
+        _observation(Health.UP, "us-east"),
+        _observation(Health.DOWN, "eu-west"),
+        _observation(Health.DEGRADED, "ap-south"),
+    ]
+    verdict = collapse(observations, under_maintenance=False)
+    assert verdict.health is Health.DEGRADED

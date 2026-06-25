@@ -12,7 +12,7 @@ This module imports ONLY `src.core.*` — no SQL, no vendor types, no I/O.
 
 from __future__ import annotations
 
-from collections.abc import Sequence
+from collections.abc import Iterable, Sequence
 
 from src.core.domain import Health, SignalObservation, Verdict
 
@@ -43,7 +43,7 @@ def collapse(
             under_maintenance=True,
         )
 
-    health = Health.UP
+    health = _collapse_health(observation.health for observation in observations)
 
     return Verdict(
         signal_key=signal_key,
@@ -51,3 +51,19 @@ def collapse(
         health=health,
         under_maintenance=False,
     )
+
+
+def _collapse_health(healths: Iterable[Health]) -> Health:
+    """Apply the §10 collapse rule to a cycle's per-location health values.
+
+    All `up` -> `up`; all `down` -> `down`; anything else (a mix, or every
+    observation `degraded`) -> `degraded`. Any non-up value alongside others
+    is enough to drag the cycle to `degraded` rather than `down`.
+    """
+    distinct = set(healths)
+
+    if distinct == {Health.UP}:
+        return Health.UP
+    if distinct == {Health.DOWN}:
+        return Health.DOWN
+    return Health.DEGRADED
