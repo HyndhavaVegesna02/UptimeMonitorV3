@@ -1,115 +1,48 @@
 # YourTeam active sprint board.
-sprint: 7
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-25
-# Sprint 7 closed: STORY-011 (5) + STORY-025 (1) both accepted at review (6/6 pts), merged to
-# main. Zone 4's availability calculator (two-grain math + group rollup, derive-on-read) + the
-# Verdict maintenance-invariant guard. STORY-011 needed one fix loop (a real CRITICAL: floor vs
-# ceil expected_cycles -> negative gap_verdicts on non-divisible windows). The first quality
-# reviewer hit a session limit; a fresh one was re-dispatched. Compile pass extracted a new
-# core-pipeline-and-availability.md (fixing an uncovered-Facts gap). PO directed the lazy-import
-# minor into STORY-027 (ready). Next: planning Sprint 8 (STORY-024 still needs a config decision;
-# STORY-026 skew; STORY-027 cleanup).
+sprint: 8
+status: active           # none | active | review | closed | aborted
 started: 2026-06-25
-goal: "Zone 4's calculator lands — a pure, derive-on-read availability engine computes two-grain
-  availability% + location-aware completeness% (and a min-of-children group rollup) from canonical
-  observations, persisting nothing; plus the Verdict maintenance-invariant guard."
-branch: sprint-7
-start_tag: sprint-7-start
-# Capacity: velocity history (8, 6, 6, 6, 5, 6, 6), last-3 mean (5, 6, 6) = ~6. Committed 6.
-# STORY-011 SPLIT at refinement: the skew flag (Tier-2 cross-signal watermark comparison) was
-# spun into STORY-026; this sprint takes the two-grain math + group rollup (5). Plus STORY-025
-# (Verdict invariant, 1). Open Qs resolved from dossier §11 (gap=exclude, AvailabilityResult shape).
-# STORY-024 (anti-flap+decide) stays deferred — its per-app config mechanism is unresolved.
-# Order: STORY-011 FIRST (high-risk new calculator), then STORY-025 (1-pt chore).
-# Green DoD baseline re-verified on main @ d30ea6a before lock: pytest 162, lint-imports
+goal: "Zone 4's pure-logic surface closes — anti-flap (stage 3: streak length + injected
+  thresholds -> proposed status) and the per-component skew flag (cross-signal watermark lag),
+  both pure and injectable, no config-loading or proposal-persistence dependency."
+branch: sprint-8
+start_tag: sprint-8-start
+# Capacity: velocity history (8,6,6,6,5,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
+# STORY-024 was SPLIT AGAIN at refinement: anti-flap (stage 3) shipped here as STORY-028 with
+# INJECTED thresholds; decide (stage 4) stays STORY-024 (draft, blocked on STORY-012 proposals).
+# STORY-026 (skew) refined: injected peers + a separate result type. Both pure Zone 4, both 3 pts.
+# Order: STORY-028 FIRST (anti-flap is on the critical path -> decide), then STORY-026 (Tier-2).
+# Green DoD baseline re-verified on main @ 019ec3f before lock: pytest 191, lint-imports
 # 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16), check_fk_direction
-# 10 checked/0 violations.
+# 10 checked/0 violations. (A leftover uptime_pg_pytest container was holding port 55432 and was
+# removed before the baseline DB run.)
 # Model assignment (PO rule, mandatory): implementers -> Sonnet, reviewers -> Opus.
 stories:
-  - id: STORY-011
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 6 AC MET — availability formula over collapsed verdicts,
-                            # location-aware completeness (3-loc never >100%), min-of-children rollup,
-                            # derive-on-read, purity, empty-input.
-    quality_review: APPROVE # Opus, after fix loop 1. Original (re-run after the first quality reviewer
-                            # hit a session limit): 1 CRITICAL — cycle bucketing on a NON-divisible window
-                            # used FLOOR expected_cycles while a partial-tail observation bucketed one past,
-                            # making gap_verdicts negative + total/completeness overcount (>100%). Fix loop 1
-                            # (fresh agent) switched expected_cycles to integer CEILING
-                            # (max(0, -((since-until)//interval))) so every obs maps into [0, expected_cycles)
-                            # — preserves divisible-window behavior, kills the negative gap — + a
-                            # non-divisible-window regression test. Re-review (Opus) confirmed the ceil
-                            # arithmetic across exact-multiple/non-divisible/degenerate cases, 22/22 tests
-                            # intact, AC6 safe, zero new issues. 1 minor (lazy import in a test helper)
-                            # recorded as a note.
-    blocked_question: null
-    attempts: 1             # one fix loop (fresh agent per working agreement)
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "187 passed in 15.32s"   # 162 baseline + 24 availability/ports + 1 fix-loop non-divisible test
-        commit: d25e32d
-        at: 2026-06-25T19:10:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."   # AC5: service pure, all SQL behind the in_window port
-        commit: d25e32d
-        at: 2026-06-25T19:10:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: d25e32d
-        at: 2026-06-25T19:10:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration (read-only SELECT added)"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: d25e32d
-        at: 2026-06-25T19:10:00+05:30
-    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/ports/): updated
-                                  # by the implementer (added in_window + AvailabilityResult/Calculator),
-                                  # corrected to ceil semantics in the fix loop, verified_sha -> d5aadc2.
-                                  # persistence-adapters.md (code_refs incl. persistence repos): updated
-                                  # (Postgres in_window impl), verified_sha -> f16fdca. Both re-stamped to
-                                  # main at merge.
-  - id: STORY-025
-    points: 1
-    board: done
-    pipeline: light        # 1-2 pts -> implementer + DoD gate (no reviewers)
-    spec_review: null      # light pipeline: no reviewers at 1 pt
+  - id: STORY-028
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
     quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    # Note: one existing STORY-010 test (test_verdict_health_defaults_to_none) asserted the
-    # now-invalid shape (normal verdict with health=None) succeeds — it contradicted the very
-    # invariant this story enforces, so the implementer correctly replaced it with a raises-test.
-    # A legitimate, flagged exception to "existing tests pass unchanged."
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "191 passed (orchestrator-verified at HEAD); 187 + 5 new - 1 replaced contradictory test"
-        commit: 6fb1d53
-        at: 2026-06-25T19:25:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified)"
-        commit: 6fb1d53
-        at: 2026-06-25T19:25:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations. (consolidated DB gate, orchestrator-verified)"
-        commit: 6fb1d53
-        at: 2026-06-25T19:25:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration (pure-core change)"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: 6fb1d53
-        at: 2026-06-25T19:25:00+05:30
-    blast_radius_resolved: true   # canonical-types-and-ports.md re-verified: the Verdict Fact now notes
-                                  # the ENFORCED maintenance<->health invariant; verified_sha -> 15d1484.
+    dod_evidence: []
+    blast_radius_resolved: false   # at DoD: adds anti_flap (+ a thresholds value object + result type)
+                                   # to core/services/pipeline.py -> update
+                                   # [[core-pipeline-and-availability]] (code_refs incl. pipeline.py).
+  - id: STORY-026
+    points: 3
+    board: todo
+    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # at DoD: adds skew (+ a SkewResult type) to core/services/ ->
+                                   # update [[core-pipeline-and-availability]] (and ensure the new
+                                   # file, if any, is in that article's code_refs — sprint-7 agreement).
 hotfixes: []
 interrupts: []
