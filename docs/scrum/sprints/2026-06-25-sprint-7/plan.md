@@ -33,28 +33,28 @@ test pattern) FIRST.
 
 TDD steps (commit after every green step; stage only files you touched — never `git add -A`):
 
-- [ ] 1. Add an observation-READ capability to the persistence boundary: an abstract method on
+- [x] 1. Add an observation-READ capability to the persistence boundary: an abstract method on
         `ObservationRepository` (e.g. `in_window(signal_key, since, until) -> Sequence[
         SignalObservation]`) — keep ALL SQL behind the port. Failing test via a fake; wire the
         signature. `pytest` + `lint-imports` green. Commit.
-- [ ] 2. Define `AvailabilityResult` (frozen) in `core/services/availability.py`. Failing test →
+- [x] 2. Define `AvailabilityResult` (frozen) in `core/services/availability.py`. Failing test →
         construct it. Commit.
-- [ ] 3. Failing test: availability% = `passing ÷ (total − maintenance)` over collapsed verdicts —
+- [x] 3. Failing test: availability% = `passing ÷ (total − maintenance)` over collapsed verdicts —
         `up` passes; `down`/`degraded` don't; maintenance excluded BOTH sides; gaps excluded (default
         `exclude`). Implement using `collapse` + an injected fake read-repo. Commit. (AC1)
-- [ ] 4. Failing test: completeness% = `actual ÷ (intervals × distinct_locations)`,
+- [x] 4. Failing test: completeness% = `actual ÷ (intervals × distinct_locations)`,
         `intervals = window ÷ interval`, `distinct_locations = COUNT(DISTINCT location)` — a
         3-location signal NEVER exceeds 100%. Implement. Commit. (AC2)
-- [ ] 5. Failing test: group rollup — availability/completeness = MIN of children; counts SUM;
+- [x] 5. Failing test: group rollup — availability/completeness = MIN of children; counts SUM;
         children with no data excluded from the min but their absence stays visible. Implement. Commit. (AC3)
-- [ ] 6. Failing test (per the sprint-6 empty-input working agreement): a window with ZERO
+- [x] 6. Failing test (per the sprint-6 empty-input working agreement): a window with ZERO
         observations → `availability_pct=None` + zero counts; completeness with a zero denominator →
         `None` (not a divide error). No crash; document. Implement. Commit. (AC6)
-- [ ] 7. Add the Postgres implementation of the read method in `adapters/persistence/
+- [x] 7. Add the Postgres implementation of the read method in `adapters/persistence/
         observation_repository.py` (mirror `save_new`; injected `Engine`, all SQL here). Failing
         DB-gated test (the `migrated_db` fixture, seeding observations) asserts it reads the right
         window. Implement. Commit. (AC5 persistence)
-- [ ] 8. Self-review: service is pure (no vendor/HTTP/SQL); derive-on-read (nothing persisted);
+- [x] 8. Self-review: service is pure (no vendor/HTTP/SQL); derive-on-read (nothing persisted);
         entry points shaped so a short-TTL cache could drop in later but NO cache built (AC4). Tidy
         residue. Commit.
 - [ ] 9. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (core stays independent; the new
