@@ -32,22 +32,22 @@ Integration tests run against a **throwaway Dockerized Postgres** migrated with
 never a mock of the database). No live Neon required.
 
 ## Acceptance Criteria
-- [ ] AC1: A concrete `ObservationRepository` and a concrete `WatermarkRepository` live in
+- [x] AC1: A concrete `ObservationRepository` and a concrete `WatermarkRepository` live in
       `adapters/persistence/`, each implementing its STORY-005 port interface (subclass /
       registered ABC), constructed with an injected SQLAlchemy engine/session.
-- [ ] AC2: Integration tests run against a Dockerized Postgres migrated to head and cover,
+- [x] AC2: Integration tests run against a Dockerized Postgres migrated to head and cover,
       for observations: inserting a fresh batch, reading it back, and the dedup path; for
       watermarks: `get` before any advance, `get` after `advance`, and re-`advance`.
-- [ ] AC3: `save_new` is idempotent: re-inserting a batch whose `source_event_id`s already
+- [x] AC3: `save_new` is idempotent: re-inserting a batch whose `source_event_id`s already
       exist inserts **0** new rows and the returned count reflects only newly-inserted rows
       (`ON CONFLICT (source_event_id) DO NOTHING`), proven by a duplicate-insert test.
-- [ ] AC4: `WatermarkRepository.get` returns `None` before the first `advance`, returns the
+- [x] AC4: `WatermarkRepository.get` returns `None` before the first `advance`, returns the
       advanced instant afterward as a tz-aware UTC `datetime`, and a later `advance` moves
       it forward — proven by tests.
-- [ ] AC5: No SQL appears above the repository layer; `lint-imports` stays green (the
+- [x] AC5: No SQL appears above the repository layer; `lint-imports` stays green (the
       existing `core-independence` contract forbids `sqlalchemy` in `src.core`) and review
       confirms no raw SQL leaks above `adapters/persistence/`.
-- [ ] AC6: All four DoD commands exit 0 (`pytest`, `lint-imports`,
+- [x] AC6: All four DoD commands exit 0 (`pytest`, `lint-imports`,
       `scripts/check_fk_direction.py`, `alembic upgrade head`).
 
 ## Open Questions
@@ -59,3 +59,14 @@ _(none — ready)_
   (`ObservationRepository`, `WatermarkRepository`); nothing deferred (no other ports yet).
   Confirmed the no-SQL-in-core boundary is the existing `core-independence` contract, not a
   new one. Estimate held at 3. Status: ready. Sequenced for Sprint 3 (depends on STORY-006).
+- 2026-06-25: implemented — `PostgresObservationRepository`/`PostgresWatermarkRepository` in
+  `adapters/persistence/`, injected SQLAlchemy `Engine`. `save_new` uses
+  `insert(...).on_conflict_do_nothing(index_elements=["source_event_id"]).returning(...)` and
+  counts `len(fetchall())` (RETURNING yields only newly-inserted rows → exact accepted-vs-deduped
+  delta); `advance` is a single `on_conflict_do_update` upsert; `get` forces tz-aware UTC via
+  `.astimezone(timezone.utc)`. Tests seed parent `apps`+`signals` (raw psycopg arrangement) for
+  the FK and use the `migrated_db` fixture from STORY-019. Spec review PASS (6/6 AC), quality
+  review APPROVE (0 critical/major). DoD green @ f11a7be (alembic, pytest 89, lint 3 kept, FK
+  10/0). Board: done. Quality-review MINOR notes (non-blocking, no change required): (1) `advance`
+  doesn't refresh `watermarks.updated_at` on re-advance — audit metadata only, nothing reads it;
+  (2) repo imports sit inside test functions (TDD residue), could be hoisted.

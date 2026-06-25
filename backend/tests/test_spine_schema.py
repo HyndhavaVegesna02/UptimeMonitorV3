@@ -1,9 +1,11 @@
 """DB-gated tests for the spine schema migration (STORY-006, dossier §9/§11).
 
-These tests exercise the real Alembic migration against a live Postgres — they
-are gated on `DATABASE_URL` being set (see CLAUDE.md throwaway-Postgres
-one-liner) so a bare `pytest` run without a DB does not error, but they MUST
-run and pass against the Dockerized Postgres as part of the DoD.
+These tests exercise the real Alembic migration against a live Postgres,
+obtained via the shared `migrated_db` session fixture (STORY-019,
+`backend/tests/conftest.py`): it reuses an externally-set DATABASE_URL/
+DATABASE_URL_DIRECT, else spawns a throwaway `postgres:16` if Docker is
+available, else skips cleanly — so a bare `pytest` run never errors, but
+these tests MUST run and pass against a migrated Postgres as part of the DoD.
 
 Each test owns one AC:
   - AC1: all eleven spine tables exist after `upgrade head`.
@@ -25,13 +27,6 @@ import os
 import psycopg
 import pytest
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
-pytestmark = pytest.mark.skipif(
-    not DATABASE_URL,
-    reason="requires a live Postgres; set DATABASE_URL (see CLAUDE.md throwaway-Postgres one-liner)",
-)
-
 SPINE_TABLES = {
     "apps",
     "signals",
@@ -48,8 +43,8 @@ SPINE_TABLES = {
 
 
 @pytest.fixture
-def conn():
-    with psycopg.connect(DATABASE_URL) as connection:
+def conn(migrated_db):
+    with psycopg.connect(migrated_db.database_url) as connection:
         yield connection
 
 
@@ -240,7 +235,7 @@ def test_every_fk_has_explicit_on_delete_rule(conn):
             )
 
 
-def test_migration_round_trips_upgrade_downgrade_upgrade():
+def test_migration_round_trips_upgrade_downgrade_upgrade(migrated_db):
     """AC5: upgrade head -> downgrade base -> upgrade head, each succeeding,
     and downgrade actually drops every spine table (round-trip is real, not
     a no-op).
@@ -248,14 +243,19 @@ def test_migration_round_trips_upgrade_downgrade_upgrade():
     import subprocess
     import sys
 
-    direct_url = os.environ.get("DATABASE_URL_DIRECT")
-    if not direct_url:
-        pytest.skip("requires DATABASE_URL_DIRECT for alembic")
+    # `migrated_db` has already set DATABASE_URL/DATABASE_URL_DIRECT in the
+    # process env (reused-external or spawned-container, in the right
+    # dialects) — read them from there rather than re-deriving from the
+    # fixture object, since the alembic subprocess inherits os.environ.
+    direct_url = os.environ["DATABASE_URL_DIRECT"]
 
     def run_alembic(*args):
+        env = dict(os.environ)
+        env["DATABASE_URL_DIRECT"] = direct_url
         return subprocess.run(
             [sys.executable, "-m", "alembic", *args],
             cwd=os.environ.get("REPO_ROOT", os.getcwd()),
+            env=env,
             capture_output=True,
             text=True,
         )
@@ -267,7 +267,7 @@ def test_migration_round_trips_upgrade_downgrade_upgrade():
     result = run_alembic("downgrade", "base")
     assert result.returncode == 0, result.stdout + result.stderr
 
-    with psycopg.connect(DATABASE_URL) as connection:
+    with psycopg.connect(migrated_db.database_url) as connection:
         with connection.cursor() as cur:
             cur.execute(
                 "SELECT table_name FROM information_schema.tables "

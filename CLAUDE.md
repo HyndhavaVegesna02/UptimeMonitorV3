@@ -63,6 +63,8 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Import boundary     | `lint-imports` (3 contracts; must exit 0) |
 | Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
+| Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
+| Stop throwaway DB   | `python scripts/dev_db.py down` (removes the container) |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
@@ -98,6 +100,32 @@ to the plain `postgresql://…` form.
 
 ### Throwaway Postgres for local/CI runs (no Neon needed in Sprint 0)
 
+**Standard way (STORY-019):** `scripts/dev_db.py` is the shared helper — it
+replaces hand-rolling the `docker run` + wait-ready + `alembic upgrade head` +
+two-URL dialect split sequence shown below. Use it for manual local runs of
+the DB-gated DoD commands:
+
+```bash
+.venv/Scripts/python.exe scripts/dev_db.py up      # start + wait + migrate + print both URLs
+# copy/export the two `export DATABASE_URL...` lines it prints, or pass
+# --env-file path/to/.env to also write them to a dotenv file, then:
+.venv/Scripts/python.exe scripts/check_fk_direction.py   # -> exit 0, no manual juggling
+.venv/Scripts/alembic.exe upgrade head                   # -> exit 0
+.venv/Scripts/python.exe scripts/dev_db.py down    # remove the container
+```
+
+Under `pytest`, the same logic is exposed as the session-scoped `migrated_db`
+fixture (`backend/tests/conftest.py`): it reuses already-set
+`DATABASE_URL`/`DATABASE_URL_DIRECT` if both are present (migrating to ensure
+current), else spawns a throwaway `postgres:16` if Docker is available (one
+per test session, on a free port, torn down in a finalizer even if a test
+fails), else skips the DB-gated tests cleanly. DB-gated tests (e.g.
+`backend/tests/test_spine_schema.py`) depend on this fixture instead of
+rolling their own `skipif`/connection setup.
+
+The manual one-liner that `scripts/dev_db.py` wraps (kept here for reference,
+or for anyone who wants to drive Docker directly without the helper):
+
 ```bash
 # one-liner to start a disposable Postgres (Docker 28.x):
 docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16
@@ -127,6 +155,7 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 | FK-direction check| `scripts/check_fk_direction.py` (live, STORY-002)| enforces schema spine boundary (DoD)|
 | SQLAlchemy 2 / Alembic | live (STORY-003); `alembic upgrade head` (DoD) | ORM + migrations at repo top level |
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
+| `scripts/dev_db.py` | live (STORY-019)            | shared throwaway-DB helper (CLI `up`/`down`) + the `migrated_db` pytest session fixture |
 | git               | configured                    | version control                           |
 
 No `psql` client is installed. No Neon/Dynatrace/Statuspage credentials are

@@ -1,0 +1,209 @@
+"""Integration tests for the persistence adapters (STORY-007, dossier §6/§9).
+
+These exercise the real `ObservationRepository`/`WatermarkRepository`
+implementations (`src/adapters/persistence/`) against a live, migrated
+Postgres obtained via the shared `migrated_db` session fixture (STORY-019).
+No mock of the database — per the working agreement, real adapters get a
+real (throwaway) DB.
+
+The spine FKs `observations.signal_key` / `watermarks.signal_key` into
+`signals.signal_key` (`ON DELETE RESTRICT`), and `signals.app_id` into
+`apps.id`. Topology seeding from config is a later story, so each test seeds
+a minimal parent `apps` row + `signals` row itself via raw SQL — that's test
+arrangement, not production code, and stays out of `src/`.
+"""
+
+from __future__ import annotations
+
+from datetime import datetime, timedelta, timezone
+
+import psycopg
+import pytest
+import sqlalchemy as sa
+
+from src.core.domain import Health, Provenance, SignalObservation
+
+
+def _engine_url(database_url: str) -> str:
+    """Convert the plain libpq URL (`migrated_db.database_url`) into the
+    `postgresql+psycopg://` form SQLAlchemy 2 needs for the psycopg3 driver.
+    """
+    assert database_url.startswith("postgresql://"), database_url
+    return "postgresql+psycopg://" + database_url[len("postgresql://") :]
+
+
+@pytest.fixture
+def engine(migrated_db):
+    eng = sa.create_engine(_engine_url(migrated_db.database_url), future=True)
+    try:
+        yield eng
+    finally:
+        eng.dispose()
+
+
+def seed_signal(database_url: str, signal_key: str, app_id: str = "app-1") -> None:
+    """Insert a minimal `apps` row + `signals` row so FK-constrained inserts
+    against `observations`/`watermarks` for `signal_key` succeed. Raw SQL is
+    fine here: this is test arrangement, not the repository layer under test.
+    """
+    with psycopg.connect(database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO apps (id, name, config)
+                VALUES (%s, %s, '{}'::jsonb)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (app_id, app_id),
+            )
+            cur.execute(
+                """
+                INSERT INTO signals (signal_key, app_id, name)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (signal_key) DO NOTHING
+                """,
+                (signal_key, app_id, signal_key),
+            )
+        conn.commit()
+
+
+def _observation(
+    signal_key: str = "checkout-http",
+    event_id: str = "evt-1",
+    observed_at: datetime | None = None,
+    health: Health = Health.UP,
+    location: str = "us-east",
+) -> SignalObservation:
+    return SignalObservation(
+        signal_key=signal_key,
+        observed_at=observed_at or datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc),
+        health=health,
+        source_event_id=event_id,
+        source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
+        location=location,
+    )
+
+
+# --- ObservationRepository --------------------------------------------------
+
+
+def test_save_new_inserts_a_fresh_batch_and_reports_count(migrated_db, engine):
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "checkout-http")
+    repo = PostgresObservationRepository(engine)
+    batch = [
+        _observation(event_id="evt-1"),
+        _observation(event_id="evt-2"),
+    ]
+
+    inserted = repo.save_new(batch)
+
+    assert inserted == 2
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT source_event_id, health, location FROM observations "
+                "WHERE signal_key = %s ORDER BY source_event_id",
+                ("checkout-http",),
+            )
+            rows = cur.fetchall()
+
+    assert rows == [("evt-1", "up", "us-east"), ("evt-2", "up", "us-east")]
+
+
+def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_db, engine):
+    """AC3: re-inserting a batch whose `source_event_id`s already exist must
+    insert 0 new rows (`ON CONFLICT (source_event_id) DO NOTHING`), and the
+    returned count must reflect only newly-inserted rows — proven by mixing
+    one duplicate with one genuinely new event id.
+
+    Uses a signal_key/event-id namespace unique to this test (the session-
+    scoped `migrated_db` fixture is shared across tests in this module, so
+    rows from other tests' batches persist for the life of the session).
+    """
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "dedup-http")
+    repo = PostgresObservationRepository(engine)
+
+    first_batch = [
+        _observation(signal_key="dedup-http", event_id="dedup-evt-1"),
+        _observation(signal_key="dedup-http", event_id="dedup-evt-2"),
+    ]
+    assert repo.save_new(first_batch) == 2
+
+    # Re-insert the exact same batch: every source_event_id already exists.
+    duplicate_inserted = repo.save_new(first_batch)
+    assert duplicate_inserted == 0
+
+    # Mixed batch: one duplicate + one genuinely new id -> only the new one counts.
+    mixed_batch = [
+        _observation(signal_key="dedup-http", event_id="dedup-evt-2"),
+        _observation(signal_key="dedup-http", event_id="dedup-evt-3"),
+    ]
+    mixed_inserted = repo.save_new(mixed_batch)
+    assert mixed_inserted == 1
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT count(*) FROM observations WHERE signal_key = %s",
+                ("dedup-http",),
+            )
+            (total,) = cur.fetchone()
+
+    assert total == 3
+
+
+# --- WatermarkRepository ----------------------------------------------------
+
+
+def test_watermark_get_returns_none_before_any_advance(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-get-none")
+    repo = PostgresWatermarkRepository(engine)
+
+    assert repo.get("watermark-get-none") is None
+
+
+def test_watermark_advance_then_get_round_trips_as_tz_aware_utc(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-advance")
+    repo = PostgresWatermarkRepository(engine)
+    mark = datetime(2026, 6, 24, 10, 5, 0, tzinfo=timezone.utc)
+
+    repo.advance("watermark-advance", mark)
+    result = repo.get("watermark-advance")
+
+    assert result == mark
+    assert result.tzinfo is not None
+    assert result.utcoffset() == timedelta(0)
+
+
+def test_watermark_re_advance_moves_it_forward(migrated_db, engine):
+    from src.adapters.persistence.watermark_repository import (
+        PostgresWatermarkRepository,
+    )
+
+    seed_signal(migrated_db.database_url, "watermark-readvance")
+    repo = PostgresWatermarkRepository(engine)
+    first = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    second = datetime(2026, 6, 24, 11, 30, 0, tzinfo=timezone.utc)
+
+    repo.advance("watermark-readvance", first)
+    assert repo.get("watermark-readvance") == first
+
+    repo.advance("watermark-readvance", second)
+    assert repo.get("watermark-readvance") == second

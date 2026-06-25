@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/, backend/src/composition/settings.py]
-verified_sha: 37458b8
-verified_sprint: sprint-2
+code_refs: [alembic.ini, migrations/, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py]
+verified_sha: 0a6dd27
+verified_sprint: sprint-3
 status: verified
 ---
 
@@ -53,8 +53,21 @@ status: verified
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
   raw psycopg raise). So against the same DB, set `DATABASE_URL_DIRECT` to the `+psycopg`
   form and `DATABASE_URL` to the plain form. (Documented in `CLAUDE.md`.)
-- Sprint-0 / CI runs against a throwaway Dockerized `postgres:16` (host port 55432); real
-  Neon connection strings are deferred to the deployment zone (STORY-017).
+- Sprint-0 / CI runs against a throwaway Dockerized `postgres:16` (host port 55432 for the
+  manual one-liner / `scripts/dev_db.py up` CLI; an OS-assigned free port for the pytest
+  fixture's spawned containers, see below); real Neon connection strings are deferred to the
+  deployment zone (STORY-017).
+- **Shared throwaway-DB harness (STORY-019):** `scripts/dev_db.py` centralizes the
+  "start postgres:16 -> wait ready -> alembic upgrade head -> two-URL dialect split" sequence
+  that this article's gotcha above used to require hand-rolling per brief. `up` emits both
+  URLs already in the correct dialects (`DATABASE_URL` plain, `DATABASE_URL_DIRECT`
+  `+psycopg`) — copy them as printed, no manual dialect juggling. The pytest session fixture
+  `migrated_db` (`backend/tests/conftest.py`) wraps the same `dev_db.resolve_db()` decision
+  logic: reuse external `DATABASE_URL`/`DATABASE_URL_DIRECT` if both are set (re-migrating to
+  ensure current), else spawn a throwaway container if Docker is available (PID+UUID-unique
+  name + free port, torn down in a finalizer even on test failure), else skip the DB-gated
+  tests cleanly. `backend/tests/test_spine_schema.py` consumes this fixture instead of its own
+  `skipif`/`conn` boilerplate.
 
 ## Inference (synthesis, not verified)
 - `migrations/env.py` resolves the URL at import time, so any `alembic` subcommand (even
@@ -67,3 +80,7 @@ status: verified
   forward-references STORY-006 as future work); added the `3a8254bcfe59_spine_schema` Fact
   describing the eleven-table spine, the three required indexes, and the explicit
   `ON DELETE` choices. `verified_sha` re-stamped to `54eb5c5`.
+- sprint-3: updated (STORY-019 shared throwaway-DB harness) — added the `scripts/dev_db.py`
+  Fact superseding the hand-rolled-per-brief one-liner this article's URL-dialect-split gotcha
+  used to require, plus the `migrated_db` pytest fixture's reuse/spawn/skip decision logic.
+  `verified_sha` re-stamped accordingly.

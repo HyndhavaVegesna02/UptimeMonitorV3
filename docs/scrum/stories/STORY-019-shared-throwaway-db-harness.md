@@ -63,3 +63,15 @@ _(none — ready)_
 - 2026-06-24: refined with PO. Decisions: Python helper + session fixture (not bash/PowerShell);
   reuse-external-or-spawn behavior with teardown-on-failure; refactor `test_spine_schema.py`
   onto the fixture. Estimate held at 3. Status: ready. Planned for Sprint 3 ahead of STORY-007.
+- 2026-06-24: implemented (`scripts/dev_db.py` + `migrated_db` session fixture). Spec review PASS
+  (5/5 AC). Quality review raised 1 MAJOR (spawn-time container leak: `resolve_db()` could raise
+  after `start_container` but before the fixture finalizer registered, leaking the container) +
+  the spec reviewer flagged a flaky teardown test (nested-pytest-subprocess raced ~1/4 runs).
+  Fix loop 1: guarded the spawn path (`try/except BaseException -> stop_container -> raise`) with a
+  regression test, and made the teardown test deterministic via a `provide_migrated_db()` generator
+  driven by `.throw()` (no subprocess, no temp file). Recovered across two implementer
+  connection-drop crashes; finished by a fresh implementer. Quality re-review APPROVE; DoD green
+  (alembic, pytest 84 / 5x consecutive, lint 3 kept, FK 10/0 @ 0a6dd27). Board: done.
+  Quality-review MINOR notes (non-blocking, no change required): (1) `_docker_unavailable()` runs
+  `docker version` at collection time via the `skipif` decorator arg; (2) earlier-fixed minors —
+  string type-annotations on `resolve_db`, fixed-port asymmetry.
