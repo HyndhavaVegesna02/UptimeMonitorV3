@@ -22,17 +22,25 @@ stories:
     points: 5
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: full         # 5 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 6 AC MET — availability formula (passing/(total-maintenance)
+                            # over collapsed verdicts), location-aware completeness (3-loc never >100%),
+                            # min-of-children rollup, derive-on-read, purity, empty-input. The rollup
+                            # distinct_locations=0 is spec-coherent (never fed into a division).
+    quality_review: FIX_REQUIRED  # Opus (re-run after the first quality reviewer hit a session limit):
+                            # 1 CRITICAL — cycle bucketing breaks on a non-divisible window. expected_cycles
+                            # uses FLOOR division but in_window returns observations in the partial tail
+                            # [since+n*interval, until); those land in an uncounted bucket, so
+                            # gap_verdicts goes NEGATIVE and total_verdicts overcounts (repro: 22m window /
+                            # 5m interval / obs@21m -> total=5, gap=-1). Every existing test uses a
+                            # divisible window, so the suite misses it. 1 minor (lazy import inconsistency
+                            # in test helper) recorded as a note.
     blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at DoD: adds core/services/availability.py + an observation-read
-                                   # method on ObservationRepository port (-> canonical-types-and-ports.md,
-                                   # code_refs incl. core/ports/) + its Postgres impl
-                                   # (-> persistence-adapters.md). Both must be updated. A dedicated
-                                   # availability article may be created at the compile pass.
+    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
+    paused_at_commit: 6f8f247
+    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
+    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. canonical-types-and-ports.md +
+                                   # persistence-adapters.md were updated by the implementer; re-verify +
+                                   # re-stamp to the final fix commit.
   - id: STORY-025
     points: 1
     board: todo
