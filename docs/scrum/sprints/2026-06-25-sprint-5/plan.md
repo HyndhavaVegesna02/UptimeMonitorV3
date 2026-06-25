@@ -57,7 +57,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         the cursor). Plus an idempotent-replay test proving overlap + dedupe + accepted-only-advance
         together lose nothing and double-count nothing across a re-run. Implement the ordering /
         unit-of-work boundary. Commit. (AC4)
-- [ ] 7. Add `PostgresRejectedObservationRepository` under `backend/src/adapters/persistence/`,
+- [x] 7. Add `PostgresRejectedObservationRepository` under `backend/src/adapters/persistence/`,
         mirroring `PostgresObservationRepository` (injected `Engine`, no global). Failing DB-gated
         test (use the `migrated_db` fixture from `backend/tests/conftest.py`): `save(...)` writes a
         row into `rejected_observations` with the reason + payload jsonb. Implement. Commit. (AC1
