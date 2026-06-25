@@ -80,5 +80,7 @@ links lint clean.
 - STORY-026 (skew flag, 3, draft) — two open questions (peer-set source, result shape).
 
 ## PO verdict
-- [ ] STORY-011 — accept / reject
-- [ ] STORY-025 — accept / reject
+- [x] STORY-011 — **ACCEPTED** (2026-06-25). 5 pts. Merged to main.
+- [x] STORY-025 — **ACCEPTED** (2026-06-25). 1 pt. Merged to main.
+- PO directed a follow-up from the minor: **STORY-027** (hoist the lazy `AvailabilityCalculator`
+  import in `test_availability.py`) added to the backlog as `ready`.

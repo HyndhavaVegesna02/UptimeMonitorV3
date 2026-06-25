@@ -1,6 +1,15 @@
 # YourTeam active sprint board.
 sprint: 7
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-25
+# Sprint 7 closed: STORY-011 (5) + STORY-025 (1) both accepted at review (6/6 pts), merged to
+# main. Zone 4's availability calculator (two-grain math + group rollup, derive-on-read) + the
+# Verdict maintenance-invariant guard. STORY-011 needed one fix loop (a real CRITICAL: floor vs
+# ceil expected_cycles -> negative gap_verdicts on non-divisible windows). The first quality
+# reviewer hit a session limit; a fresh one was re-dispatched. Compile pass extracted a new
+# core-pipeline-and-availability.md (fixing an uncovered-Facts gap). PO directed the lazy-import
+# minor into STORY-027 (ready). Next: planning Sprint 8 (STORY-024 still needs a config decision;
+# STORY-026 skew; STORY-027 cleanup).
 started: 2026-06-25
 goal: "Zone 4's calculator lands — a pure, derive-on-read availability engine computes two-grain
   availability% + location-aware completeness% (and a min-of-children group rollup) from canonical
