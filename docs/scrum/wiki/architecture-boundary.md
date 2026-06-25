@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [backend/src/, pyproject.toml, scripts/check_fk_direction.py]
-verified_sha: b2c8671
+verified_sha: b2ee794
 verified_sprint: sprint-4
 status: verified
 ---
@@ -58,3 +58,7 @@ status: verified
   `lint-imports` stayed `3 kept, 0 broken`. No contract definition or zone-tree Fact
   changed — only the inference about phantom packages (dossier §4's
   `inbound.dynatrace` example) is no longer phantom on the inbound side.
+- sprint-4 (fix loop 1): re-verified after extracting the shared
+  `_assembly.assemble_observation` helper within `dynatrace/` (no new
+  zone/package/contract — purely a within-package move). `lint-imports` stayed
+  `3 kept, 0 broken`.
