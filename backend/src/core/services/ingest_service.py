@@ -40,6 +40,28 @@ FUTURE_TOLERANCE = timedelta(minutes=5)
 FUTURE_TIMESTAMP_REASON = "observed_at is implausibly in the future"
 
 
+class MixedSignalBatchError(ValueError):
+    """Raised when a batch spans more than one distinct `signal_key` (STORY-022).
+
+    The §8 ordering's watermark-advance step assumes a batch is scoped to one
+    signal per pull cycle (per `IngestService`'s docstring) — the only current
+    producer, the Dynatrace adapter's `fetch_observations`, satisfies that
+    assumption. Trusting it silently would mean a future mixed-signal batch
+    (e.g. a push webhook batching several monitors) advances only the FIRST
+    signal's watermark using `max(observed_at)` computed across OTHER
+    signals' timestamps — over-advancing one cursor while freezing the rest.
+    This error makes that programming error fail loud, up front, before any
+    validation, persistence, or watermark work happens.
+    """
+
+    def __init__(self, signal_keys: Sequence[str]) -> None:
+        self.signal_keys = sorted(set(signal_keys))
+        super().__init__(
+            "ingest_observations received a batch spanning more than one "
+            f"signal_key: {self.signal_keys!r}"
+        )
+
+
 class IngestService(SignalIngestPort):
     """Validates, dedupes, persists a batch, and advances the watermark (dossier §8).
 
@@ -68,6 +90,12 @@ class IngestService(SignalIngestPort):
         """Run the §8 ordering for one batch and return the accepted/rejected counts.
 
         Step order is significant for both AC1 and AC4:
+        0. **Guard the whole batch up front** (STORY-022): if the batch spans
+           more than one distinct `signal_key`, raise `MixedSignalBatchError`
+           naming the offending keys BEFORE any validation, persistence, or
+           watermark work — so a mixed-signal batch can never silently
+           advance one signal's watermark using another's timestamps. An
+           empty batch is unaffected (still a clean no-op, below).
         1. **Validate** every observation against the future-timestamp gate,
            quarantining failures to the rejected repo (reason + payload) —
            the rest of the batch proceeds (no poison pill).
@@ -82,6 +110,10 @@ class IngestService(SignalIngestPort):
         """
         if not batch:
             return IngestResult(accepted=0, rejected=0)
+
+        signal_keys = {observation.signal_key for observation in batch}
+        if len(signal_keys) > 1:
+            raise MixedSignalBatchError(signal_keys)
 
         now = self._clock.now()
         valid: list[SignalObservation] = []

@@ -345,6 +345,44 @@ def test_watermark_is_not_advanced_when_save_new_raises():
     assert watermark_repo.get("checkout-http") is None
 
 
+# --- Step 7: mixed-signal batch guard, up front (STORY-022) -----------------
+
+
+def test_mixed_signal_batch_raises_named_error_naming_the_keys_before_any_repo_call():
+    """A batch spanning >1 distinct signal_key must fail loud UP FRONT — before
+    validation, persistence, or watermark work — so it never silently advances
+    one signal's watermark using another's timestamps (AC1).
+    """
+    from src.core.services.ingest_service import MixedSignalBatchError
+
+    observation_repo = DedupingObservationRepository()
+    watermark_repo = FakeWatermarkRepository()
+    rejected_repo = FakeRejectedObservationRepository()
+    service = _make_service(
+        observation_repo=observation_repo,
+        watermark_repo=watermark_repo,
+        rejected_repo=rejected_repo,
+    )
+
+    batch = [
+        _observation(signal_key="checkout-http", event_id="evt-1"),
+        _observation(signal_key="login-http", event_id="evt-2"),
+    ]
+
+    with pytest.raises(MixedSignalBatchError) as exc_info:
+        service.ingest_observations(batch)
+
+    assert "checkout-http" in str(exc_info.value)
+    assert "login-http" in str(exc_info.value)
+    assert set(exc_info.value.signal_keys) == {"checkout-http", "login-http"}
+
+    # Proves "up front": no validation/persist/watermark work happened at all.
+    assert observation_repo.save_new_calls == []
+    assert observation_repo.saved == []
+    assert watermark_repo.advance_calls == []
+    assert rejected_repo.rejected == []
+
+
 def test_idempotent_replay_after_crash_loses_nothing_and_double_counts_nothing():
     """Simulates AC4's crash-mid-loop scenario at the service level: a batch
     is ingested once (the 'crash' would happen after this, before the pull
