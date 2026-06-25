@@ -42,7 +42,7 @@ TDD steps (commit after every green step; stage only files you touched — never
         Implement the failing-branch lookup. Commit. (AC1, AC4)
 - [x] 3. Failing test: a single failure (length 1) → internal warning (distinct, never a published
         status). Implement. Commit. (AC2)
-- [ ] 4. Failing tests: a sustained `degraded` streak → `degraded`; a passing streak `>= recovery` →
+- [x] 4. Failing tests: a sustained `degraded` streak → `degraded`; a passing streak `>= recovery` →
         `operational`; a streak below all thresholds → nothing. Implement. Commit. (AC2)
 - [ ] 5. Failing test: degenerate inputs — length 0, and (per the empty-input agreement) a streak
         with no actionable length — have defined behavior (nothing/no crash). Commit. (AC4)

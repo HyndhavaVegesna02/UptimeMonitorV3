@@ -143,3 +143,47 @@ def test_internal_warning_still_applies_when_degraded_threshold_is_one():
     thresholds = AntiFlapThresholds(major=5, partial=3, degraded=1, recovery=2)
     outcome = anti_flap(_down(1), thresholds)
     assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+
+
+# --- Step 4: sustained degraded / passing-recovered / below-all-thresholds (AC2) --
+
+
+def test_sustained_degraded_streak_of_length_one_proposes_degraded():
+    streak = Streak(health=Health.DEGRADED, length=1)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+
+
+def test_sustained_degraded_streak_of_longer_length_still_proposes_degraded():
+    # Health.DEGRADED has only one bucket regardless of streak length — it
+    # never escalates to partial/major the way a DOWN streak does.
+    streak = Streak(health=Health.DEGRADED, length=10)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+
+
+def test_passing_streak_at_recovery_threshold_proposes_operational():
+    streak = Streak(health=Health.UP, length=_THRESHOLDS.recovery)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.OPERATIONAL, internal_warning=False)
+
+
+def test_passing_streak_above_recovery_threshold_proposes_operational():
+    streak = Streak(health=Health.UP, length=_THRESHOLDS.recovery + 5)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome.proposed_status is ComponentStatus.OPERATIONAL
+
+
+def test_passing_streak_just_below_recovery_threshold_yields_nothing():
+    streak = Streak(health=Health.UP, length=_THRESHOLDS.recovery - 1)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
+
+
+def test_failing_streak_below_all_thresholds_and_not_length_one_yields_nothing():
+    # length 0 is the only DOWN length below every threshold and not the
+    # length-1 internal-warning case in this default-thresholds fixture;
+    # exercised again explicitly in the degenerate-input section below.
+    streak = Streak(health=Health.DOWN, length=0)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
