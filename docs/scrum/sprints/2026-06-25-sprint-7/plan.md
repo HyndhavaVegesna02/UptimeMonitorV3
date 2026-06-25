@@ -57,7 +57,7 @@ TDD steps (commit after every green step; stage only files you touched — never
 - [x] 8. Self-review: service is pure (no vendor/HTTP/SQL); derive-on-read (nothing persisted);
         entry points shaped so a short-TTL cache could drop in later but NO cache built (AC4). Tidy
         residue. Commit.
-- [ ] 9. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (core stays independent; the new
+- [x] 9. **DoD gate** (all four exit 0): `pytest`, `lint-imports` (core stays independent; the new
         read method keeps SQL behind the port), `python scripts/check_fk_direction.py`, `alembic
         upgrade head` (DB-gated via `scripts/dev_db.py`). Forward blast radius: update
         `canonical-types-and-ports.md` (code_refs incl. `core/ports/` — you ADD a port method → update
