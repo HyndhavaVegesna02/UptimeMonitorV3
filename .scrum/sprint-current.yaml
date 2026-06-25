@@ -20,27 +20,43 @@ start_tag: sprint-8-start
 stories:
   - id: STORY-028
     points: 3
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — severity-ordered failing ladder (>=, most-severe-
-                            # first, order-sensitivity proven), internal-warning distinct + never
-                            # published, boundary + degenerate inputs tested. Thresholds injected.
-    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — AntiFlapOutcome can construct an
-                            # incoherent shape (proposed_status set AND internal_warning=True); its
-                            # docstring promises the invariant but doesn't enforce it. Same latent
-                            # incoherence STORY-025 added a model_validator to Verdict for — inconsistency
-                            # with that established precedent. anti_flap never emits the bad shape (latent),
-                            # fix = a model_validator(mode="after") rejecting it + a test. 2 minors noted
-                            # (closed-enum UP fall-through; _propose helper is sound — no action).
+    spec_review: PASS       # Opus: all 4 AC MET — severity-ordered failing ladder, internal-warning
+                            # distinct + never published, boundary + degenerate inputs tested, injected thresholds.
+    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — AntiFlapOutcome could construct
+                            # an incoherent shape (proposed_status + internal_warning together). Fix loop 1
+                            # (fresh agent) added a model_validator(mode="after") rejecting it (mirroring
+                            # STORY-025's Verdict validator) + tests for the rejection and the 3 valid shapes.
+                            # Re-review (Opus) confirmed the validator catches exactly the incoherent shape,
+                            # 28 anti-flap tests pass, zero new issues. 2 minors noted (closed-enum UP
+                            # fall-through; _propose helper sound — no action).
     blocked_question: null
-    attempts: 1             # fix loop 1 (fresh agent per working agreement)
-    paused_at_commit: f8a7915
-    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
-    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. core-pipeline-and-availability.md
-                                   # was updated by the implementer (anti-flap Facts); re-verify + re-stamp.
+    attempts: 1             # one fix loop (fresh agent)
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "219 passed (orchestrator-verified at HEAD); 191 baseline + 28 anti-flap tests"
+        commit: 5389c4c
+        at: 2026-06-25T20:30:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken. (AC3: pure core, imports only src.core.*)"
+        commit: 5389c4c
+        at: 2026-06-25T20:30:00+05:30
+      - command: "check_fk_direction.py + alembic upgrade head"
+        exit_code: 0
+        output_tail: "green at fix-loop implementer run (pure-core, no schema); re-confirmed in sprint-8 consolidated DB gate"
+        commit: 5389c4c
+        at: 2026-06-25T20:30:00+05:30
+    blast_radius_resolved: true   # core-pipeline-and-availability.md updated (anti-flap Facts +
+                                  # AntiFlapOutcome coherence note); verified_sha -> 767fbae. Re-stamped
+                                  # to main at merge. (NB: pre-existing collapse/streak line-citation
+                                  # drift in that article flagged by the implementer -> fix at compile pass.)
   - id: STORY-026
     points: 3
-    board: todo
+    board: in-progress
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: null
     quality_review: null
