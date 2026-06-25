@@ -128,4 +128,13 @@
   coherent uncommitted step-2 test that only lacked an `import re`; the orchestrator fixed the
   import and routed the four required fields through `require_field` — a ~4-line completion — rather
   than re-dispatch a fresh agent for it.)
+- 2026-06-25 — **A function over a collection must define and TEST its empty-input behavior.**
+  Any function taking a list/sequence/iterable must have an explicit, tested answer for the empty
+  case — either raise a clear DOMAIN error (not a leaked stdlib message) or return a documented
+  default (e.g. `None`/empty). The empty-input test is part of the story's tests; its absence is a
+  review finding. (Motivated by Sprint 6, STORY-010: `collapse([])` ran `max(...)` on an empty
+  generator and leaked `ValueError: max() iterable argument is empty` — a stdlib message about
+  iterables, not a domain statement — while its sibling `streak([])` already returned `None`
+  cleanly. The asymmetry was the tell; the quality reviewer raised it as a MAJOR and it cost a
+  fix-loop dispatch to add a guard + test that should have shipped with the function.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
