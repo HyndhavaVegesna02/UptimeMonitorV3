@@ -8,6 +8,7 @@ types, no I/O, no config read.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from src.core.domain import ComponentStatus, Health
 from src.core.services.pipeline import (
@@ -64,6 +65,30 @@ def test_outcome_is_frozen():
     outcome = AntiFlapOutcome(proposed_status=None, internal_warning=False)
     with pytest.raises(Exception):
         outcome.internal_warning = True  # type: ignore[misc]
+
+
+def test_outcome_rejects_a_proposed_status_paired_with_an_internal_warning():
+    # The docstring promises exactly three shapes (a proposed status / an
+    # internal warning / nothing) and never a status AND a warning at once.
+    # Mirrors Verdict's `_require_maintenance_health_coherence` (STORY-025):
+    # the incoherent combination must be rejected at construction time, not
+    # left to be silently constructible.
+    with pytest.raises(ValidationError):
+        AntiFlapOutcome(proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=True)
+
+
+def test_outcome_three_valid_shapes_still_construct():
+    proposed = AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    assert proposed.proposed_status is ComponentStatus.DEGRADED
+    assert proposed.internal_warning is False
+
+    warning = AntiFlapOutcome(proposed_status=None, internal_warning=True)
+    assert warning.proposed_status is None
+    assert warning.internal_warning is True
+
+    nothing = AntiFlapOutcome(proposed_status=None, internal_warning=False)
+    assert nothing.proposed_status is None
+    assert nothing.internal_warning is False
 
 
 # --- Step 2: a FAILING streak maps to major/partial/degraded by length (AC1, AC4) --

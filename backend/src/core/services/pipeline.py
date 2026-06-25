@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Sequence
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from src.core.domain import ComponentStatus, Health, SignalObservation, Verdict
 
@@ -167,6 +167,24 @@ class AntiFlapOutcome(BaseModel):
 
     internal_warning: bool
     """`True` only for the single-failure internal-warning outcome; never paired with a status."""
+
+    @model_validator(mode="after")
+    def _require_status_warning_coherence(self) -> "AntiFlapOutcome":
+        """Enforce the proposed-status<->internal-warning invariant this type represents.
+
+        The internal-warning outcome is a distinct, unpublishable marker — it
+        is logged, never acted on by `decide`, and must never be conflated
+        with a proposed `ComponentStatus`. Rejecting the incoherent
+        combination here, at construction, keeps a hand-built `AntiFlapOutcome`
+        from reaching `decide` in a state that cannot be expressed cleanly
+        (see class docstring).
+        """
+        if self.proposed_status is not None and self.internal_warning:
+            raise ValueError(
+                "proposed_status and internal_warning=True are mutually exclusive "
+                "(an internal warning never carries a proposed status)"
+            )
+        return self
 
 
 _NOTHING = AntiFlapOutcome(proposed_status=None, internal_warning=False)
