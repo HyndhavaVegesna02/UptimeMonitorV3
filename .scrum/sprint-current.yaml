@@ -93,19 +93,35 @@ stories:
                                   # InvalidNativeIdError reject guard; verified_sha -> ae5f880.
   - id: STORY-022
     points: 1
-    board: in-progress
+    board: done
     pipeline: light
-    spec_review: null
+    spec_review: null      # light pipeline: no reviewers at 1 pt
     quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # diff touches core ingest_service.py -> re-verify
-                                   # ingest-service-and-pull-loop.md (the single-signal-batch Fact).
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "162 passed (orchestrator-verified at HEAD); 161 + 1 mixed-signal-guard test"
+        commit: b002073
+        at: 2026-06-25T17:00:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken. (orchestrator-verified; MixedSignalBatchError in core)"
+        commit: b002073
+        at: 2026-06-25T17:00:00+05:30
+      - command: "check_fk_direction.py + alembic upgrade head"
+        exit_code: 0
+        output_tail: "green at implementer run (pure core change, no schema); re-confirmed in sprint-6 consolidated DB gate"
+        commit: b002073
+        at: 2026-06-25T17:00:00+05:30
+    blast_radius_resolved: true   # ingest-service-and-pull-loop.md re-verified: the single-signal-batch
+                                  # assumption Fact now reads ENFORCED (MixedSignalBatchError up front);
+                                  # verified_sha -> 49bc707.
   - id: STORY-023
     points: 1
-    board: todo
+    board: in-progress
     pipeline: light
     spec_review: null
     quality_review: null
