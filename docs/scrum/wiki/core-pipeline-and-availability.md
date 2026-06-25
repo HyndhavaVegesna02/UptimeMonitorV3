@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap) and the availability engine
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py]
-verified_sha: 3d4a51c
+verified_sha: 767fbae
 verified_sprint: sprint-8
 status: verified          # verified | stale | archived
 ---
@@ -43,7 +43,13 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   internal_warning: bool}` — three distinguishable, non-overlapping shapes: (a) a proposed status
   (`proposed_status` set, `internal_warning=False`); (b) an internal warning (`proposed_status=None,
   internal_warning=True`) — logged, NEVER published, never a `ComponentStatus`; (c) nothing
-  (`proposed_status=None, internal_warning=False`).
+  (`proposed_status=None, internal_warning=False`). The fourth, incoherent combination
+  (`proposed_status` set AND `internal_warning=True`) is now ENFORCED unreachable: a
+  `model_validator(mode="after")` (`_require_status_warning_coherence`, `pipeline.py:171`) rejects
+  it at construction with a `ValidationError`, mirroring `Verdict`'s
+  `_require_maintenance_health_coherence` (STORY-025/[[canonical-types-and-ports]]) — same pattern,
+  same "reject at construction, not just by convention" rationale (sprint-8 fix loop 1, quality
+  MAJOR).
 - `anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome` (`pipeline.py:181`)
   — stage 3, a pure lookup. Branches on `streak_.health` (AC1/AC2):
   - `Health.DOWN` (failing): the severity ladder, checked most-severe-first — `length >= major` ->
@@ -126,3 +132,8 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   `AntiFlapThresholds`, `AntiFlapOutcome`, all in `pipeline.py`). `code_refs` gained
   `backend/tests/test_anti_flap.py` so its Facts stay staleness-checked (sprint-7 agreement). Stage
   4 (decide) remains out of scope — STORY-024. Verified at 3d4a51c.
+- sprint-8 fix loop 1: closed a code-quality MAJOR — `AntiFlapOutcome` could be constructed with
+  `proposed_status` set AND `internal_warning=True`, a combination its own docstring promised was
+  impossible. Added `_require_status_warning_coherence` (a `model_validator(mode="after")`,
+  same pattern as `Verdict`'s STORY-025 validator) to reject it with a `ValidationError`; the three
+  valid shapes are unaffected. Verified at 767fbae.
