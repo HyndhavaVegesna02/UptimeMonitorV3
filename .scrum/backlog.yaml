@@ -76,11 +76,11 @@ stories:
   - id: STORY-009
     title: Pull loop with watermarks + validation gate
     file: docs/scrum/stories/STORY-009-pull-loop-watermarks.md
-    status: ready            # refined 2026-06-25 (scheduler = asyncio); depends on STORY-008; for Sprint 5
+    status: ready            # refined 2026-06-25 (scheduler = asyncio); depends on STORY-008 (done)
     points: 5
     priority: 9
     type: feature
-    sprint: null
+    sprint: 5
   # ── Zone 4 — Core pipeline + availability ────────────────────────
   - id: STORY-010
     title: Four-stage core pipeline
@@ -170,15 +170,15 @@ stories:
   - id: STORY-020
     title: Named malformed-DQL-row error in the Dynatrace normalizers
     file: docs/scrum/stories/STORY-020-named-malformed-dql-row-error.md
-    status: draft   # follow-up from Sprint 4 review; refine + estimate (proposed 1) before a sprint
+    status: ready   # refined 2026-06-25; clear AC, no open Qs
     points: 1
     priority: 19
     type: chore
-    sprint: null
+    sprint: 5
   - id: STORY-021
     title: Guard native_id interpolation in the DQL query builder
     file: docs/scrum/stories/STORY-021-dql-native-id-injection-guard.md
-    status: draft   # follow-up from Sprint 4 review; open question (reject vs escape) -> refine first
+    status: ready   # refined 2026-06-25; open question resolved (reject, not escape); for Sprint 6
     points: 1
     priority: 20
     type: chore
