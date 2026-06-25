@@ -17,6 +17,35 @@ from datetime import datetime
 from src.core.domain import Health, Provenance, SignalObservation
 
 
+class MalformedDqlRowError(ValueError):
+    """Raised when a DQL row is missing a required field.
+
+    Required fields (`timestamp`, `event.id`, `synthetic_test.id`,
+    `synthetic_test.type`, `synthetic_location.name`) are subscripted
+    directly rather than guessed at, so a vendor shape change surfaces as
+    this named error naming the missing field instead of a bare `KeyError`
+    (Sprint 4 review follow-up, STORY-020). `request.response_time_ms`
+    (-> optional `latency_ms`) is read via `.get` and stays optional — its
+    absence is not malformed.
+    """
+
+
+def require_field(row: dict, field: str):
+    """Read a required DQL row field, raising `MalformedDqlRowError` if absent.
+
+    Single place both `dispatch.py` (the `synthetic_test.type` dispatch key)
+    and `assemble_observation` (below) read a required field through, so the
+    missing-field error message is identical regardless of which required
+    field is missing.
+    """
+    try:
+        return row[field]
+    except KeyError:
+        raise MalformedDqlRowError(
+            f"DQL row missing required field: {field!r}"
+        ) from None
+
+
 def assemble_observation(
     row: dict,
     *,

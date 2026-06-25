@@ -229,6 +229,22 @@ def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
         normalize_rows([supported_row, unsupported_row], signal_key="mixed-scope")
 
 
+# --- STORY-020: malformed DQL row -> named error, not bare KeyError -----------
+
+
+def test_dispatch_raises_malformed_for_missing_synthetic_test_type():
+    from src.adapters.inbound.dynatrace.dispatch import (
+        MalformedDqlRowError,
+        normalize_row,
+    )
+
+    row = _load("http_multi_location.json")["records"][0].copy()
+    del row["synthetic_test.type"]
+
+    with pytest.raises(MalformedDqlRowError, match="synthetic_test.type"):
+        normalize_row(row, signal_key="checkout-http")
+
+
 # --- Step 9: DQL query builder (watermark + overlap window) + injected executor
 
 
