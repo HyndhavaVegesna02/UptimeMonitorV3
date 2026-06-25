@@ -207,3 +207,85 @@ def test_watermark_re_advance_moves_it_forward(migrated_db, engine):
 
     repo.advance("watermark-readvance", second)
     assert repo.get("watermark-readvance") == second
+
+
+# --- RejectedObservationRepository (STORY-009, AC1 persistence) -------------
+
+
+def test_rejected_observation_save_writes_a_row_with_reason_and_payload(
+    migrated_db, engine
+):
+    """`rejected_observations` has NO FK (dossier §9 — a quarantined row may
+    carry a signal_key that does not, or does not yet, exist in seeded
+    topology), so unlike the observations/watermarks tests above this needs
+    no `seed_signal` call.
+    """
+    from src.adapters.persistence.rejected_observation_repository import (
+        PostgresRejectedObservationRepository,
+    )
+
+    repo = PostgresRejectedObservationRepository(engine)
+    rejected_at = datetime(2026, 6, 24, 12, 0, 0, tzinfo=timezone.utc)
+    payload = {
+        "signal_key": "checkout-http",
+        "observed_at": "2099-01-01T00:00:00+00:00",
+        "source_event_id": "evt-future",
+    }
+
+    repo.save(
+        signal_key="checkout-http",
+        reason="observed_at is implausibly in the future",
+        payload=payload,
+        rejected_at=rejected_at,
+    )
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT signal_key, reason, payload, rejected_at FROM rejected_observations "
+                "WHERE signal_key = %s",
+                ("checkout-http",),
+            )
+            rows = cur.fetchall()
+
+    assert len(rows) == 1
+    signal_key, reason, stored_payload, stored_rejected_at = rows[0]
+    assert signal_key == "checkout-http"
+    assert reason == "observed_at is implausibly in the future"
+    assert stored_payload == payload
+    assert stored_rejected_at == rejected_at
+
+
+def test_rejected_observation_save_allows_null_signal_key(migrated_db, engine):
+    """An unknown/absent signal_key is exactly the kind of row this table must
+    accept — that's often *why* the observation was rejected in the first
+    place (no FK, deliberately, per the migration's column comment).
+    """
+    from src.adapters.persistence.rejected_observation_repository import (
+        PostgresRejectedObservationRepository,
+    )
+
+    repo = PostgresRejectedObservationRepository(engine)
+    rejected_at = datetime(2026, 6, 24, 12, 30, 0, tzinfo=timezone.utc)
+
+    repo.save(
+        signal_key=None,
+        reason="missing required field",
+        payload={"raw": "malformed"},
+        rejected_at=rejected_at,
+    )
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT signal_key, reason, payload FROM rejected_observations "
+                "WHERE reason = %s",
+                ("missing required field",),
+            )
+            rows = cur.fetchall()
+
+    assert len(rows) == 1
+    signal_key, reason, stored_payload = rows[0]
+    assert signal_key is None
+    assert reason == "missing required field"
+    assert stored_payload == {"raw": "malformed"}
