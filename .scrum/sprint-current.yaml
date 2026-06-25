@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 7
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 started: 2026-06-25
 goal: "Zone 4's calculator lands — a pure, derive-on-read availability engine computes two-grain
   availability% + location-aware completeness% (and a min-of-children group rollup) from canonical
