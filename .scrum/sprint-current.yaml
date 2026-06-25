@@ -20,26 +20,50 @@ start_tag: sprint-6-start
 stories:
   - id: STORY-010
     points: 3
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: PASS       # Opus: all 4 AC MET — collapse health rule, maintenance exclusion/
-                            # short-circuit, streak backward + maintenance-gap skip, purity. Tests
-                            # assert expected values incl. the tricky maintenance-between-same-health case.
-    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — collapse([]) on an empty observation
-                            # list raises a leaky `max() iterable argument is empty` (and would
-                            # IndexError on signal_key) instead of a clear domain error; the brief
-                            # flagged this case and streak([]) IS handled, so collapse's gap is
-                            # conspicuous. 2 minors recorded as story notes (non-blocking): (1) the
-                            # Verdict maintenance<=>health-is-None invariant is documented but not
-                            # enforced (a model_validator would close it, consistent with signal.py);
-                            # (2) Streak.health non-optional while streak()->Streak|None — judged fine.
+                            # short-circuit, streak backward + maintenance-gap skip, purity.
+    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — collapse([]) leaked a
+                            # `max() iterable argument is empty` instead of a clear domain error.
+                            # Fix loop 1 (fresh agent) added a top-of-function guard raising
+                            # ValueError("collapse requires at least one observation for a cycle")
+                            # before the max()/[0] access, + a message-matching test. Re-review (Opus)
+                            # confirmed the MAJOR resolved, behavior preserved (25 tests intact + 1 new),
+                            # zero new Critical/Major. 2 minors recorded as notes (non-blocking):
+                            # (1) Verdict maintenance<=>health-is-None invariant documented but not
+                            # enforced (a model_validator would close it); (2) Streak.health
+                            # non-optional while streak()->Streak|None — judged fine.
     blocked_question: null
-    attempts: 1             # fix loop 1 (fresh agent per working agreement), not a fresh attempt
-    paused_at_commit: 87f20d9
-    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
-    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. canonical-types-and-ports.md
-                                   # was updated by the implementer (Verdict + pipeline); re-verify +
-                                   # re-stamp to the final fix commit.
+    attempts: 1             # one fix loop (fresh agent per working agreement)
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "159 passed in 13.94s"   # 133 baseline + 25 STORY-010 + 1 fix-loop empty-collapse test
+        commit: c162a98
+        at: 2026-06-25T16:30:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."   # AC4: pure core, imports only src.core.*
+        commit: c162a98
+        at: 2026-06-25T16:30:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: c162a98
+        at: 2026-06-25T16:30:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration added (pure-core story)"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: c162a98
+        at: 2026-06-25T16:30:00+05:30
+    blast_radius_resolved: true   # canonical-types-and-ports.md (code_refs incl. core/domain/): updated
+                                  # by the implementer (added Verdict + the core/services/pipeline.py
+                                  # collapse/streak Facts), re-verified after the fix loop (collapse Fact
+                                  # makes no empty-input claim, stays accurate), verified_sha -> fc74e53.
+                                  # architecture-boundary.md NOT flagged (narrowed code_refs — new in-zone
+                                  # module doesn't touch the zone roots; the sprint-5 amendment working).
   - id: STORY-021
     points: 1
     board: todo
