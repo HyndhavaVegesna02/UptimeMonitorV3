@@ -324,6 +324,44 @@ def test_build_query_rejects_naive_watermark():
         )
 
 
+def test_build_query_rejects_native_id_with_breaking_quote():
+    """STORY-021: a `native_id` containing a `"` would break out of the
+    `"{native_id}"` DQL string literal if interpolated unescaped — it must be
+    rejected with a clear, named error rather than silently malforming the
+    query.
+    """
+    from src.adapters.inbound.dynatrace.query import (
+        InvalidNativeIdError,
+        build_dql_query,
+    )
+
+    with pytest.raises(InvalidNativeIdError):
+        build_dql_query(
+            native_id='a"b', watermark=None, overlap=timedelta(minutes=5)
+        )
+
+
+def test_build_query_with_well_formed_native_id_is_unchanged():
+    """STORY-021 no-regression check: a well-formed `native_id` still builds
+    the exact same query string as before the guard was added (dossier §8).
+    """
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    watermark = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    overlap = timedelta(minutes=5)
+
+    query = build_dql_query(
+        native_id="HTTP_CHECK-9F2A", watermark=watermark, overlap=overlap
+    )
+
+    assert query == (
+        "fetch dt.synthetic.executions\n"
+        '| filter synthetic_test.id == "HTTP_CHECK-9F2A" '
+        'AND timestamp >= "2026-06-24T09:55:00Z"\n'
+        "| sort timestamp asc"
+    )
+
+
 def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
     """The live executor is a thin injected seam — never called live in tests.
 

@@ -17,14 +17,17 @@ Add a brief inline comment at the second `stop_event.is_set()` check explaining 
 (to avoid one extra interval of sleep after a stop requested mid-cycle). No behaviour change.
 
 ## Acceptance Criteria (refined — PO-approved 2026-06-25)
-- [ ] AC1: A one/two-line comment at `pull_loop.py` explains why the post-cycle
+- [x] AC1: A one/two-line comment at `pull_loop.py` explains why the post-cycle
       `stop_event.is_set()` check exists (skip the final sleep on a mid-cycle stop). No logic
       change — the existing STORY-009 pull-loop tests pass unchanged.
-- [ ] AC2: `lint-imports` stays green (comment-only change; no import/behaviour change).
+- [x] AC2: `lint-imports` stays green (comment-only change; no import/behaviour change).
 
 ## Resolved Questions
 - None. Comment-only chore.
 
 ## History
 - 2026-06-25: created from Sprint 5 review (PO asked minor #2 become a follow-up story).
-  Status: ready — comment-only, no open questions. Estimate: 1 (smallest unit; near-trivial).
+- 2026-06-25: implemented (commit 9e5b329) — added the explanatory comment at
+  `pull_loop.py`'s post-cycle `stop_event` re-check. Done directly by the orchestrator (a
+  comment-only change with no testable behaviour; the existing pull-loop tests are the
+  regression guard). DoD gate green (pytest 162, lint 3 kept, FK 10/0, alembic no-op).

@@ -90,6 +90,10 @@ async def run_periodic(
         )
         if on_cycle is not None:
             await on_cycle(result)
+        # Re-check stop AFTER the cycle (and after on_cycle, which may request it):
+        # the `while` guard only catches a stop set before a cycle starts. Without
+        # this second check we would always sleep one more `interval_seconds` after a
+        # stop requested mid-cycle, delaying shutdown by a full interval (STORY-023).
         if stop_event is not None and stop_event.is_set():
             break
         await asyncio.sleep(interval_seconds)
