@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 4
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 started: 2026-06-25
 goal: "Zone 3 ingest opens — the Dynatrace inbound adapter queries synthetic monitor
   results via DQL and normalizes each location execution into a canonical
