@@ -249,6 +249,57 @@ def test_availability_pct_excludes_gaps_from_the_denominator():
     assert result.availability_pct == 0.5
 
 
+def test_availability_pct_non_divisible_window_has_no_negative_gap_verdicts():
+    # Regression (code-quality review CRITICAL): a window that is NOT an
+    # exact multiple of the interval has a partial trailing cycle. With
+    # FLOOR division, expected_cycles undercounts: 22 minutes / 5-minute
+    # interval floors to 4 -- but the half-open `in_window` contract
+    # legitimately returns observations all the way up to (not including)
+    # `until`, including one in the partial tail [20, 22). That tail
+    # observation lands in bucket index 4 (offset 21 // 5 == 4) -- one PAST
+    # the floor count of 4 -- so with one observation per cycle across all
+    # 5 buckets (minutes 0, 5, 10, 15, 21), len(buckets)=5 > expected_cycles
+    # =4 and gap_verdicts goes NEGATIVE (-1) while total_verdicts (5)
+    # exceeds the floor expected_cycles. The fix takes the CEILING of
+    # (until - since) / interval: ceil(22/5) = 5 expected cycles (buckets
+    # 0..4: [0,5) [5,10) [10,15) [15,20) [20,22)), so every observation maps
+    # inside [0, expected_cycles) and gap_verdicts can never go negative.
+    observations = [
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
+        _observation(Health.UP, "us-east", offset=timedelta(minutes=21), event_id="e5"),
+    ]
+    repo = _repo_with(observations)
+    calculator = _calculator(repo)
+
+    result = calculator.compute(
+        _SIGNAL,
+        since=_SINCE,
+        until=_SINCE + timedelta(minutes=22),
+        interval=_INTERVAL,
+        window="22m",
+        maintenance=lambda cycle_start: False,
+        computed_at=_COMPUTED_AT,
+    )
+
+    assert result.gap_verdicts >= 0
+    # ceil(22/5) = 5 expected cycles, all 5 observed (one per bucket,
+    # including the partial tail) -> 0 gaps, not -1.
+    assert result.gap_verdicts == 0
+    # 5 buckets collapse into exactly 5 verdicts -- the tail observation is
+    # counted in the final (partial) cycle, not as a spurious extra beyond
+    # expected_cycles.
+    assert result.total_verdicts == 5
+    assert result.passing_verdicts == 5
+    assert result.availability_pct == 1.0
+    # completeness: ceil(22/5)=5 expected cycles * 1 location = 5 expected
+    # observations; exactly 5 arrived -> 1.0 (not capped/overcounted).
+    assert result.distinct_locations == 1
+    assert result.completeness_pct == 1.0
+
+
 def test_availability_pct_uses_collapse_rule_for_mixed_locations_in_one_cycle():
     # Same cycle (same 5-minute bucket), two locations: one up, one down ->
     # collapse's rule makes this DEGRADED, which does not pass.

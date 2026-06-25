@@ -92,7 +92,10 @@ def _bucket_into_cycles(
     `observed_at` values land on (or near) the configured cadence, which is
     the only shape `in_window` ever returns. A bucket with zero observations
     never appears in the returned mapping — it is a gap, handled by the
-    caller comparing the expected cycle count against `len(buckets)`.
+    caller comparing the expected cycle count (the CEILING of `(until -
+    since) / interval` — a partial trailing cycle still counts as one
+    expected cycle, so every in-window observation's bucket index stays
+    within range) against `len(buckets)`.
 
     Only non-empty buckets are returned (a dict keyed by cycle start), so
     `len(result)` is the number of cycles that actually have data — the
@@ -156,8 +159,9 @@ class AvailabilityCalculator:
         a misleading `0.0` or a `ZeroDivisionError`.
 
         Completeness% (AC2): `actual ÷ (intervals × distinct_locations)`
-        where `intervals = window ÷ interval` (the same `expected_cycles`
-        availability computes) and `distinct_locations =
+        where `intervals = ceil(window ÷ interval)` (the same `expected_cycles`
+        availability computes — a partial trailing cycle still counts as one
+        full expected cycle) and `distinct_locations =
         COUNT(DISTINCT location)` over the window's raw observations — NOT
         a declared/configured location set, so the denominator self-adjusts
         as locations come and go. This is the multi-location fix: without
@@ -170,7 +174,19 @@ class AvailabilityCalculator:
 
         buckets = _bucket_into_cycles(observations, since=since, interval=interval)
 
-        expected_cycles = max(0, (until - since) // interval)
+        # CEILING, not floor, of (until - since) / interval: a partial
+        # trailing cycle (the window is not an exact multiple of the
+        # interval) still counts as one full expected cycle. Floor division
+        # would undercount expected_cycles while `_bucket_into_cycles` (no
+        # upper clamp) still buckets every in-window observation, including
+        # ones that land in that partial tail -- which can push
+        # len(buckets) past a floor-based expected_cycles and drive
+        # gap_verdicts negative. Computed via integer floor-division of the
+        # NEGATED span (then negated back) to avoid float-rounding bugs:
+        # -((since - until) // interval) == ceil((until - since) / interval).
+        # When (until - since) is an exact multiple of interval, ceil ==
+        # floor, so this is unchanged for every previously-passing case.
+        expected_cycles = max(0, -((since - until) // interval))
         gap_verdicts = expected_cycles - len(buckets)
 
         total_verdicts = 0
