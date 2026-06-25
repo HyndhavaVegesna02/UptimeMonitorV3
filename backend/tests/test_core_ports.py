@@ -115,6 +115,43 @@ def test_fake_observation_repository_save_new_of_empty_batch_is_zero():
     assert repo.save_new([]) == 0
 
 
+def test_fake_observation_repository_in_window_filters_by_signal_and_half_open_range():
+    from fakes import FakeObservationRepository
+
+    repo = FakeObservationRepository()
+    since = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    until = datetime(2026, 6, 24, 11, 0, 0, tzinfo=timezone.utc)
+    in_range = SignalObservation(
+        signal_key="checkout-http",
+        observed_at=since,
+        health=Health.UP,
+        source_event_id="evt-in-range",
+        source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
+        location="us-east",
+    )
+    at_until_boundary = SignalObservation(
+        signal_key="checkout-http",
+        observed_at=until,
+        health=Health.UP,
+        source_event_id="evt-at-boundary",
+        source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
+        location="us-east",
+    )
+    other_signal = SignalObservation(
+        signal_key="login-http",
+        observed_at=since,
+        health=Health.UP,
+        source_event_id="evt-other-signal",
+        source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
+        location="us-east",
+    )
+    repo.save_new([in_range, at_until_boundary, other_signal])
+
+    result = repo.in_window("checkout-http", since, until)
+
+    assert result == [in_range]
+
+
 # --- StatusPublisherPort (AC1) --------------------------------------------------
 
 

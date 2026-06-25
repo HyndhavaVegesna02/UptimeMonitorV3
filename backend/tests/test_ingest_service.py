@@ -75,6 +75,15 @@ class DedupingObservationRepository(ObservationRepository):
             inserted += 1
         return inserted
 
+    def in_window(
+        self, signal_key: str, since: datetime, until: datetime
+    ) -> Sequence[SignalObservation]:
+        """Not exercised by these ingest-service tests; present only to
+        satisfy the `ObservationRepository` ABC (STORY-011 added this read
+        method to the port).
+        """
+        raise NotImplementedError
+
 
 class FakeWatermarkRepository(WatermarkRepository):
     """Dict-backed per-signal watermark; records every `advance` call."""

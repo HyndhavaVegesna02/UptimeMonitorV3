@@ -53,6 +53,16 @@ class FakeObservationRepository(ObservationRepository):
         self.saved.extend(batch)
         return len(batch)
 
+    def in_window(
+        self, signal_key: str, since: datetime, until: datetime
+    ) -> Sequence[SignalObservation]:
+        return [
+            observation
+            for observation in self.saved
+            if observation.signal_key == signal_key
+            and since <= observation.observed_at < until
+        ]
+
 
 class RecordingStatusPublisher(StatusPublisherPort):
     """A publisher that records every change instead of calling a real target."""
