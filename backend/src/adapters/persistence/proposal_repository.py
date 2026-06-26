@@ -1,7 +1,7 @@
 """Postgres-backed `ProposalRepository` (dossier §12, §9)."""
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Engine
 import sqlalchemy as sa
@@ -21,6 +21,16 @@ _STATUS_PROPOSALS = sa.table(
     sa.column("reason"),
     sa.column("proposed_at"),
     sa.column("resolved_at"),
+)
+
+_APPROVAL_EVENTS = sa.table(
+    "approval_events",
+    sa.column("id"),
+    sa.column("proposal_id"),
+    sa.column("actor"),
+    sa.column("action"),
+    sa.column("notes"),
+    sa.column("occurred_at"),
 )
 
 
@@ -70,7 +80,48 @@ class PostgresProposalRepository(ProposalRepository):
         return proposal.model_copy(update={"id": assigned_id})
 
     def get_open(self, component_id: str) -> StatusProposal | None:
-        raise NotImplementedError
+        """Retrieve the open status proposal for a component, if any."""
+        stmt = sa.select(
+            _STATUS_PROPOSALS.c.id,
+            _STATUS_PROPOSALS.c.component_id,
+            _STATUS_PROPOSALS.c.from_status,
+            _STATUS_PROPOSALS.c.to_status,
+            _STATUS_PROPOSALS.c.state,
+            _STATUS_PROPOSALS.c.reason,
+            _STATUS_PROPOSALS.c.proposed_at,
+            _STATUS_PROPOSALS.c.resolved_at,
+        ).where(
+            _STATUS_PROPOSALS.c.component_id == component_id,
+            _STATUS_PROPOSALS.c.state == ProposalState.OPEN.value,
+        )
+
+        with self._engine.connect() as conn:
+            row = conn.execute(stmt).fetchone()
+
+        if row is None:
+            return None
+
+        # Reconstruct ComponentStatus enums
+        from src.core.domain.status import ComponentStatus
+        from_status = (
+            ComponentStatus(row.from_status) if row.from_status else None
+        )
+        to_status = ComponentStatus(row.to_status)
+
+        return StatusProposal(
+            id=row.id,
+            component_id=row.component_id,
+            from_status=from_status,
+            to_status=to_status,
+            state=ProposalState(row.state),
+            reason=row.reason,
+            proposed_at=row.proposed_at.astimezone(timezone.utc),
+            resolved_at=(
+                row.resolved_at.astimezone(timezone.utc)
+                if row.resolved_at
+                else None
+            ),
+        )
 
     def resolve(
         self,
@@ -80,7 +131,18 @@ class PostgresProposalRepository(ProposalRepository):
         reason: str | None,
         resolved_at: datetime,
     ) -> None:
-        raise NotImplementedError
+        """Move an open status proposal to a terminal state."""
+        stmt = (
+            sa.update(_STATUS_PROPOSALS)
+            .where(_STATUS_PROPOSALS.c.id == proposal_id)
+            .values(
+                state=to_state.value,
+                reason=reason,
+                resolved_at=resolved_at,
+            )
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
 
     def record_approval_event(
         self,
@@ -91,4 +153,14 @@ class PostgresProposalRepository(ProposalRepository):
         notes: str | None,
         occurred_at: datetime,
     ) -> None:
-        raise NotImplementedError
+        """Record an approval or rejection event for a proposal."""
+        stmt = sa.insert(_APPROVAL_EVENTS).values(
+            proposal_id=proposal_id,
+            actor=actor,
+            action=action,
+            notes=notes,
+            occurred_at=occurred_at,
+        )
+        with self._engine.begin() as conn:
+            conn.execute(stmt)
+

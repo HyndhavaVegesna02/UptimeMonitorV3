@@ -439,3 +439,121 @@ def test_postgres_proposal_repository_enforces_one_open_proposal_per_component(m
     saved2 = repo.create_open(prop2)
     assert saved2 is None
 
+
+def test_postgres_proposal_repository_get_open(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "get-open-comp")
+    repo = PostgresProposalRepository(engine)
+
+    # get_open returns None when no open proposal exists
+    assert repo.get_open("get-open-comp") is None
+
+    prop = StatusProposal(
+        component_id="get-open-comp",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    # get_open returns the open proposal
+    fetched = repo.get_open("get-open-comp")
+    assert fetched is not None
+    assert fetched.id == saved.id
+    assert fetched.component_id == "get-open-comp"
+    assert fetched.from_status == ComponentStatus.OPERATIONAL
+    assert fetched.to_status == ComponentStatus.DEGRADED
+    assert fetched.state == ProposalState.OPEN
+    assert fetched.proposed_at == datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc)
+    assert fetched.resolved_at is None
+
+
+def test_postgres_proposal_repository_resolve(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "resolve-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="resolve-comp",
+        from_status=None,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="Incident verified",
+        resolved_at=resolved_time,
+    )
+
+    # get_open returns None because it is now terminal
+    assert repo.get_open("resolve-comp") is None
+
+    # We can create a new open proposal for the component now
+    new_prop = StatusProposal(
+        component_id="resolve-comp",
+        from_status=ComponentStatus.MAJOR_OUTAGE,
+        to_status=ComponentStatus.OPERATIONAL,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 15, 0, tzinfo=timezone.utc),
+    )
+    new_saved = repo.create_open(new_prop)
+    assert new_saved is not None
+    assert new_saved.id != saved.id
+
+
+def test_postgres_proposal_repository_record_approval_event(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "event-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="event-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    occurred_time = datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc)
+    repo.record_approval_event(
+        saved.id,
+        actor="ops-admin",
+        action="approved",
+        notes="Checked dashboard, confirmed",
+        occurred_at=occurred_time,
+    )
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT proposal_id, actor, action, notes, occurred_at FROM approval_events "
+                "WHERE proposal_id = %s",
+                (saved.id,),
+            )
+            rows = cur.fetchall()
+
+    assert len(rows) == 1
+    proposal_id, actor, action, notes, occurred_at = rows[0]
+    assert proposal_id == saved.id
+    assert actor == "ops-admin"
+    assert action == "approved"
+    assert notes == "Checked dashboard, confirmed"
+    assert occurred_at == occurred_time
+
+
