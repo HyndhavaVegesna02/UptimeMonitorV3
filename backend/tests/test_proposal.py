@@ -100,3 +100,60 @@ def test_terminal_proposal_without_resolved_at_raises():
                 resolved_at=None,
             )
         assert f"{terminal_state.value} state requires resolved_at to be set" in str(exc_info.value)
+
+
+def test_status_proposal_terminal_property():
+    open_prop = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        reason=None,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+        resolved_at=None,
+    )
+    assert open_prop.terminal is False
+
+    for terminal_state in [
+        ProposalState.APPROVED,
+        ProposalState.REJECTED,
+        ProposalState.SUPERSEDED,
+        ProposalState.OBSOLETED,
+    ]:
+        term_prop = StatusProposal(
+            component_id="checkout",
+            from_status=None,
+            to_status=ComponentStatus.DEGRADED,
+            state=terminal_state,
+            reason=None,
+            proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+            resolved_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+        )
+        assert term_prop.terminal is True
+
+
+def test_is_valid_transition():
+    from src.core.domain.proposal import is_valid_transition
+
+    # open -> terminal (Valid)
+    for terminal_state in [
+        ProposalState.APPROVED,
+        ProposalState.REJECTED,
+        ProposalState.SUPERSEDED,
+        ProposalState.OBSOLETED,
+    ]:
+        assert is_valid_transition(ProposalState.OPEN, terminal_state) is True
+
+    # open -> open (Invalid)
+    assert is_valid_transition(ProposalState.OPEN, ProposalState.OPEN) is False
+
+    # terminal -> anything (Invalid)
+    for term_from in [
+        ProposalState.APPROVED,
+        ProposalState.REJECTED,
+        ProposalState.SUPERSEDED,
+        ProposalState.OBSOLETED,
+    ]:
+        for to_state in ProposalState:
+            assert is_valid_transition(term_from, to_state) is False
+

@@ -73,3 +73,20 @@ class StatusProposal(BaseModel):
             if self.resolved_at is None:
                 raise ValueError(f"{self.state.value} state requires resolved_at to be set")
         return self
+
+    @property
+    def terminal(self) -> bool:
+        """True if the proposal is in a terminal state."""
+        return self.state != ProposalState.OPEN
+
+
+def is_valid_transition(from_state: ProposalState, to_state: ProposalState) -> bool:
+    """Determine if a transition from one state to another is allowed (dossier §12).
+
+    Transitions are only allowed from open to any terminal state.
+    Terminal states are final and cannot transition further.
+    """
+    if from_state == ProposalState.OPEN:
+        return to_state != ProposalState.OPEN
+    return False
+
