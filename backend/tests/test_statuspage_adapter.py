@@ -95,3 +95,24 @@ def test_publisher_raises_on_unmapped_component_id():
     assert "unknown_comp" in str(exc_info.value)
 
 
+def test_publish_best_effort_catches_and_logs_error(caplog):
+    from src.core.domain.status import StatusChange, ComponentStatus
+    from src.composition import publish_best_effort
+    import logging
+
+    class RaisingPublisher:
+        def publish(self, change: StatusChange) -> None:
+            raise RuntimeError("Statuspage is down!")
+
+    publisher = RaisingPublisher()
+    change = StatusChange(component_id="checkout", status=ComponentStatus.DEGRADED)
+
+    logger = logging.getLogger("test_best_effort")
+    with caplog.at_level(logging.ERROR, logger="test_best_effort"):
+        publish_best_effort(publisher, change, logger=logger)
+
+    assert len(caplog.records) == 1
+    assert "Failed to publish status change for checkout to Statuspage" in caplog.text
+
+
+
