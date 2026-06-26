@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 8
-status: active           # none | active | review | closed | aborted
+status: review           # none | active | review | closed | aborted
 started: 2026-06-25
 goal: "Zone 4's pure-logic surface closes — anti-flap (stage 3: streak length + injected
   thresholds -> proposed status) and the per-component skew flag (cross-signal watermark lag),
