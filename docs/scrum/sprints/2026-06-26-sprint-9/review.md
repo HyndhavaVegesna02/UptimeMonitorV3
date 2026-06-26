@@ -84,5 +84,7 @@ added the cited fixtures dir to `statuspage-publish.md`'s code_refs. Links clean
 - Chores: STORY-027 / 029 / 030 (1 pt each, ready).
 
 ## PO verdict
-- [ ] STORY-012 — accept / reject
-- [ ] STORY-013 — accept / reject
+- [x] STORY-012 — **ACCEPTED** (2026-06-26). 3 pts. Merged to main.
+- [x] STORY-013 — **ACCEPTED** (2026-06-26). 3 pts. Merged to main.
+- PO directed a follow-up: **STORY-031** (Sprint 9 review cleanups — leftover import-smoke test,
+  unused degraded fixture, style nits) added to the backlog as `ready`.
