@@ -124,21 +124,21 @@ stories:
     sprint: 8
   # ── Zone 5 — Proposal lifecycle + publish ────────────────────────
   - id: STORY-012
-    title: Proposal lifecycle
+    title: Proposal substrate - types + state machine + repository
     file: docs/scrum/stories/STORY-012-proposal-lifecycle.md
-    status: draft
-    points: 5
+    status: ready   # refined sprint-9: substrate-only (reconciliation -> STORY-024); 8 -> 3
+    points: 3
     priority: 12
     type: feature
-    sprint: null
+    sprint: 9
   - id: STORY-013
     title: Statuspage publish adapter + commit-first boundary
     file: docs/scrum/stories/STORY-013-statuspage-publish-adapter.md
-    status: draft
+    status: ready   # refined sprint-9: outbound adapter + best-effort publish; API surface resolved
     points: 3
     priority: 13
     type: feature
-    sprint: null
+    sprint: 9
   # ── Zone 6 — API ─────────────────────────────────────────────────
   - id: STORY-014
     title: Five-file feature modules
