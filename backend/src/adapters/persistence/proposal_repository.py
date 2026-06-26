@@ -1,11 +1,14 @@
 """Postgres-backed `ProposalRepository` (dossier §12, §9)."""
 
+from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Engine
 import sqlalchemy as sa
 
+from src.core.domain.status import ComponentStatus
 from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.ports.proposal_repository import ProposalRepository
 
@@ -51,7 +54,7 @@ class PostgresProposalRepository(ProposalRepository):
             .values(
                 {
                     "component_id": proposal.component_id,
-                    "from_status": proposal.from_status.value if proposal.from_status else None,
+                    "from_status": proposal.from_status.value if proposal.from_status is not None else None,
                     "to_status": proposal.to_status.value,
                     "state": proposal.state.value,
                     "reason": proposal.reason,
@@ -102,9 +105,8 @@ class PostgresProposalRepository(ProposalRepository):
             return None
 
         # Reconstruct ComponentStatus enums
-        from src.core.domain.status import ComponentStatus
         from_status = (
-            ComponentStatus(row.from_status) if row.from_status else None
+            ComponentStatus(row.from_status) if row.from_status is not None else None
         )
         to_status = ComponentStatus(row.to_status)
 
@@ -118,7 +120,7 @@ class PostgresProposalRepository(ProposalRepository):
             proposed_at=row.proposed_at.astimezone(timezone.utc),
             resolved_at=(
                 row.resolved_at.astimezone(timezone.utc)
-                if row.resolved_at
+                if row.resolved_at is not None
                 else None
             ),
         )
@@ -134,7 +136,10 @@ class PostgresProposalRepository(ProposalRepository):
         """Move an open status proposal to a terminal state."""
         stmt = (
             sa.update(_STATUS_PROPOSALS)
-            .where(_STATUS_PROPOSALS.c.id == proposal_id)
+            .where(
+                _STATUS_PROPOSALS.c.id == proposal_id,
+                _STATUS_PROPOSALS.c.state == ProposalState.OPEN.value,
+            )
             .values(
                 state=to_state.value,
                 reason=reason,
@@ -142,7 +147,11 @@ class PostgresProposalRepository(ProposalRepository):
             )
         )
         with self._engine.begin() as conn:
-            conn.execute(stmt)
+            result = conn.execute(stmt)
+            if result.rowcount != 1:
+                raise ValueError(
+                    f"Proposal {proposal_id} not found or not in open state."
+                )
 
     def record_approval_event(
         self,

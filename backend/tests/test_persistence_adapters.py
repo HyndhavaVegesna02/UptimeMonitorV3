@@ -557,3 +557,65 @@ def test_postgres_proposal_repository_record_approval_event(migrated_db, engine)
     assert occurred_at == occurred_time
 
 
+def test_postgres_proposal_repository_resolve_unknown_raises(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState
+
+    repo = PostgresProposalRepository(engine)
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+
+    # Resolving unknown proposal ID raises
+    with pytest.raises(ValueError):
+        repo.resolve(
+            9999,
+            to_state=ProposalState.APPROVED,
+            reason="Will fail",
+            resolved_at=resolved_time,
+        )
+
+
+def test_postgres_proposal_repository_resolve_already_terminal_raises(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "resolve-terminal-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="resolve-terminal-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    resolved_time = datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc)
+    # First resolve succeeds
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="first",
+        resolved_at=resolved_time,
+    )
+
+    # Resolving again raises ValueError and doesn't change stored row
+    with pytest.raises(ValueError):
+        repo.resolve(
+            saved.id,
+            to_state=ProposalState.SUPERSEDED,
+            reason="second",
+            resolved_at=resolved_time + timedelta(minutes=5),
+        )
+
+    # Verify that it remains APPROVED in the DB, not SUPERSEDED
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT state, reason FROM status_proposals WHERE id = %s", (saved.id,))
+            state, reason = cur.fetchone()
+    assert state == "approved"
+    assert reason == "first"
+
+
+

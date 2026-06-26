@@ -127,7 +127,6 @@ class FakeProposalRepository(ProposalRepository):
             ):
                 return existing
         return None
-
     def resolve(
         self,
         proposal_id: int,
@@ -137,8 +136,10 @@ class FakeProposalRepository(ProposalRepository):
         resolved_at: datetime,
     ) -> None:
         if proposal_id not in self.proposals:
-            raise KeyError(f"Proposal {proposal_id} not found")
+            raise ValueError(f"Proposal {proposal_id} not found")
         existing = self.proposals[proposal_id]
+        if existing.state != ProposalState.OPEN:
+            raise ValueError(f"Proposal {proposal_id} is not open (current state: {existing.state.value})")
         updated = existing.model_copy(
             update={
                 "state": to_state,

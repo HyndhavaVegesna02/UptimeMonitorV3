@@ -269,3 +269,33 @@ def test_fake_proposal_repository_create_and_get():
     assert evt["notes"] == "Checked logs, all good"
     assert evt["occurred_at"] == resolved_time
 
+
+def test_fake_proposal_repository_resolve_non_open_or_unknown_raises():
+    from fakes import FakeProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    repo = FakeProposalRepository()
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+
+    # Unknown ID raises
+    with pytest.raises(ValueError):
+        repo.resolve(999, to_state=ProposalState.APPROVED, reason="test", resolved_at=resolved_time)
+
+    prop = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    # First resolve succeeds
+    repo.resolve(saved.id, to_state=ProposalState.APPROVED, reason="first", resolved_at=resolved_time)
+
+    # Resolving again (now terminal, not open) raises ValueError
+    with pytest.raises(ValueError):
+        repo.resolve(saved.id, to_state=ProposalState.SUPERSEDED, reason="second", resolved_at=resolved_time)
+
+
