@@ -15,16 +15,16 @@ boundary CI floors are catalogued in [[architecture-boundary]].
 
 ### Core pipeline stages 1-2 (`core/services/pipeline.py`, STORY-010, dossier §10)
 - `collapse(observations: Sequence[SignalObservation], *, under_maintenance: bool) -> Verdict`
-  (`pipeline.py:36`) — stage 1. Assumes all observations belong to one signal + one cycle (the
+  (`pipeline.py:40`) — stage 1. Assumes all observations belong to one signal + one cycle (the
   caller groups; collapse does not). `under_maintenance` is an INJECTED boolean, never a DB/table
   lookup, so the function stays pure. When `True`, returns a `Verdict(under_maintenance=True,
   health=None)` immediately — maintenance short-circuits before health is ever computed (AC2).
   Otherwise delegates to `_collapse_health`: all `up` -> `up`; all `down` -> `down`; any mix
   (including all-`degraded`) -> `degraded` (AC1). Raises `ValueError` ("collapse requires at least
   one observation for a cycle") on an empty sequence (sprint-6 fix loop 1).
-- `Streak` (frozen, `pipeline.py:22`) `{health:Health, length:int}` — the current streak's health
+- `Streak` (frozen, `pipeline.py:26`) `{health:Health, length:int}` — the current streak's health
   and consecutive count.
-- `streak(verdicts: Sequence[Verdict]) -> Streak | None` (`pipeline.py:88`) — stage 2. `verdicts`
+- `streak(verdicts: Sequence[Verdict]) -> Streak | None` (`pipeline.py:100`) — stage 2. `verdicts`
   is ordered oldest-to-newest; filters out every `under_maintenance` verdict first, then reads the
   remaining sequence backward from the most recent, counting while health matches and stopping at
   the first change (AC3). Maintenance verdicts are excluded entirely — they neither count nor break
@@ -45,12 +45,12 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   internal_warning=True`) — logged, NEVER published, never a `ComponentStatus`; (c) nothing
   (`proposed_status=None, internal_warning=False`). The fourth, incoherent combination
   (`proposed_status` set AND `internal_warning=True`) is now ENFORCED unreachable: a
-  `model_validator(mode="after")` (`_require_status_warning_coherence`, `pipeline.py:171`) rejects
+  `model_validator(mode="after")` (`_require_status_warning_coherence`, `pipeline.py:172`) rejects
   it at construction with a `ValidationError`, mirroring `Verdict`'s
   `_require_maintenance_health_coherence` (STORY-025/[[canonical-types-and-ports]]) — same pattern,
   same "reject at construction, not just by convention" rationale (sprint-8 fix loop 1, quality
   MAJOR).
-- `anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome` (`pipeline.py:181`)
+- `anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcome` (`pipeline.py:199`)
   — stage 3, a pure lookup. Branches on `streak_.health` (AC1/AC2):
   - `Health.DOWN` (failing): the severity ladder, checked most-severe-first — `length >= major` ->
     `major_outage`; else `length >= partial` -> `partial_outage`; else `length >= degraded` ->
@@ -74,7 +74,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   `passing_verdicts: int`, `maintenance_verdicts: int`, `gap_verdicts: int`,
   `distinct_locations: int`, `window: str`, `computed_at: datetime`. Either percentage is `None` on
   a degenerate denominator (AC6) — never a sentinel `0.0`/`-1`, never a `ZeroDivisionError`.
-- `AvailabilityCalculator` (`availability.py:110`) — the entry point, constructed with
+- `AvailabilityCalculator` (`availability.py:113`) — the entry point, constructed with
   `observation_repo: ObservationRepository` injected (no global, no SQL). `compute(signal_key, *,
   since, until, interval, window, maintenance, computed_at)` is the only method; `interval`,
   `window`, `maintenance` (a predicate over a cycle's start instant — injected, never a DB lookup,
@@ -100,7 +100,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   observed-distinct, not a configured set, so a 3-location signal with full coverage reads exactly
   100%, never 300% (the multi-location fix, §11/T2.5).
 - **Group rollup** — `rollup_group(children: Sequence[AvailabilityResult], *, window, computed_at)
-  -> AvailabilityResult` (`availability.py:216`), a free function (combines already-computed
+  -> AvailabilityResult` (`availability.py:232`), a free function (combines already-computed
   results, not raw observations). `availability_pct`/`completeness_pct` are each `min()` over the
   children whose value is not `None` (a no-data child can't drag a healthy group to "unknown"); if
   every child is `None`, the rollup's percentage is `None`. `total_verdicts`, `passing_verdicts`,
@@ -130,13 +130,13 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   feeders tripped the flag (in input order), not just a bare boolean, so a dashboard/proposal
   annotation can show them (§11). The `skewed == bool(lagging_signals)` coherence invariant is now
   ENFORCED at construction: a `model_validator(mode="after")`
-  (`_require_skewed_lagging_signals_coherence`, `skew.py:75`) rejects both incoherent combinations
+  (`_require_skewed_lagging_signals_coherence`, `skew.py:76`) rejects both incoherent combinations
   (`skewed=True` with empty `lagging_signals`, and `skewed=False` with non-empty `lagging_signals`)
   with a `ValidationError`, mirroring `Verdict`'s `_require_maintenance_health_coherence`
   (STORY-025) and `AntiFlapOutcome`'s `_require_status_warning_coherence` (STORY-028) — same
   pattern, same rationale (sprint-8 fix loop 1, quality MAJOR). The two coherent shapes `skew()`
   itself produces are unaffected.
-- `skew(feeders: Sequence[SignalFeeder]) -> SkewResult` (`skew.py:76`) — pure, no I/O. The
+- `skew(feeders: Sequence[SignalFeeder]) -> SkewResult` (`skew.py:94`) — pure, no I/O. The
   reference is the MOST-RECENT peer watermark (the MAX `watermark` across feeders that have one). A
   feeder is skewed when `reference - feeder.watermark > feeder.interval` — strict `>`, lagging by
   EXACTLY its interval is NOT skewed (AC1/AC4 boundary, tested at-boundary and one-second-over). Each
@@ -183,3 +183,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   tuple). Added `_require_skewed_lagging_signals_coherence` (a `model_validator(mode="after")`,
   same pattern as `Verdict` STORY-025 and `AntiFlapOutcome` STORY-028) to reject both incoherent
   shapes with a `ValidationError`; the two coherent shapes are unaffected. Verified at 9ab7dd2.
+- sprint-8 (compile pass): corrected stale `file:line` citations that had drifted as the module
+  grew (collapse 36→40, Streak 22→26, streak 88→100, anti_flap validator 171→172, anti_flap
+  181→199; AvailabilityCalculator 110→113, rollup_group 216→232; skew validator 75→76, skew
+  76→94). Code unchanged — addresses only; verified_sha stays 9ab7dd2.
