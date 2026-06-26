@@ -1,104 +1,58 @@
 # YourTeam active sprint board.
-sprint: 8
-status: closed           # none | active | review | closed | aborted
-closed: 2026-06-26
-# Sprint 8 closed: STORY-028 (3) + STORY-026 (3) both accepted at review (6/6 pts), merged to
-# main. Zone 4's pure-logic surface closes — anti-flap (injected thresholds) + the skew flag
-# (injected peers). Each needed one fix loop for the SAME value-object-coherence MAJOR (a third
-# sprint running) — PO directed a proactive audit follow-up (STORY-029). Next: planning Sprint 9
-# (STORY-012 proposal lifecycle unblocks STORY-024 decide; plus the carried 1-pt chores).
-started: 2026-06-25
-goal: "Zone 4's pure-logic surface closes — anti-flap (stage 3: streak length + injected
-  thresholds -> proposed status) and the per-component skew flag (cross-signal watermark lag),
-  both pure and injectable, no config-loading or proposal-persistence dependency."
-branch: sprint-8
-start_tag: sprint-8-start
-# Capacity: velocity history (8,6,6,6,5,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
-# STORY-024 was SPLIT AGAIN at refinement: anti-flap (stage 3) shipped here as STORY-028 with
-# INJECTED thresholds; decide (stage 4) stays STORY-024 (draft, blocked on STORY-012 proposals).
-# STORY-026 (skew) refined: injected peers + a separate result type. Both pure Zone 4, both 3 pts.
-# Order: STORY-028 FIRST (anti-flap is on the critical path -> decide), then STORY-026 (Tier-2).
-# Green DoD baseline re-verified on main @ 019ec3f before lock: pytest 191, lint-imports
-# 3 kept/0 broken, alembic upgrade head exit 0 (Dockerized postgres:16), check_fk_direction
-# 10 checked/0 violations. (A leftover uptime_pg_pytest container was holding port 55432 and was
-# removed before the baseline DB run.)
-# Model assignment (PO rule, mandatory): implementers -> Sonnet, reviewers -> Opus.
+sprint: 9
+status: active           # none | active | review | closed | aborted
+started: 2026-06-26
+goal: "Zone 5's two foundations land — the proposal substrate (StatusProposal types + state machine
+  + ProposalRepository port + Postgres adapter with one-open-per-component) and the Statuspage
+  publish adapter (StatusPublisherPort impl + best-effort no-rollback publish) — setting up decide
+  (STORY-024) to tie proposals + publishing together next."
+branch: sprint-9
+start_tag: sprint-9-start
+# Capacity: velocity history (8,6,6,6,5,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
+# STORY-012 SPLIT at refinement to substrate-only (reconciliation rule -> STORY-024). STORY-013
+# API surface resolved (component-status update). Both pure-ish Zone 5 foundations, both 3 pts,
+# independent of each other.
+# Order: STORY-012 first (proposal substrate), then STORY-013 (publish adapter).
+#
+# WORKFLOW CHANGE (PO-directed 2026-06-26, recorded in working-agreements.md): from this sprint on,
+# the PO implements the plan externally (Antigravity / Gemini), committing onto this branch; the
+# orchestrator does NOT dispatch implementer subagents. The PO triggers the review ("do your review");
+# the orchestrator then runs the FULL DoD gate + spec/quality reviewers (Opus) + wiki blast radius +
+# review/retro/merge. Mechanical floor unchanged: a story is Done only when all four DoD commands
+# exit 0 AND both reviews pass. Fix-loop findings route back to the PO/Gemini unless the PO asks the
+# orchestrator to fix inline.
+#
+# Baseline at lock: non-DB gates green on main @ e1ca578 (pytest 195 passed / 46 DB-gated skipped,
+# lint-imports 3 kept/0 broken). DB-gated gates (alembic, check_fk_direction) were green at the
+# sprint-8 merge with NO code/schema change since; could not be re-run at lock because Docker Desktop
+# was down. No migration is expected this sprint (both stories use existing tables / no schema).
+# Model assignment: reviewers -> Opus (PO rule). Implementation -> PO/Gemini (external).
 stories:
-  - id: STORY-028
+  - id: STORY-012
     points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — severity-ordered failing ladder, internal-warning
-                            # distinct + never published, boundary + degenerate inputs tested, injected thresholds.
-    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — AntiFlapOutcome could construct
-                            # an incoherent shape (proposed_status + internal_warning together). Fix loop 1
-                            # (fresh agent) added a model_validator(mode="after") rejecting it (mirroring
-                            # STORY-025's Verdict validator) + tests for the rejection and the 3 valid shapes.
-                            # Re-review (Opus) confirmed the validator catches exactly the incoherent shape,
-                            # 28 anti-flap tests pass, zero new issues. 2 minors noted (closed-enum UP
-                            # fall-through; _propose helper sound — no action).
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1             # one fix loop (fresh agent)
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "219 passed (orchestrator-verified at HEAD); 191 baseline + 28 anti-flap tests"
-        commit: 5389c4c
-        at: 2026-06-25T20:30:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken. (AC3: pure core, imports only src.core.*)"
-        commit: 5389c4c
-        at: 2026-06-25T20:30:00+05:30
-      - command: "check_fk_direction.py + alembic upgrade head"
-        exit_code: 0
-        output_tail: "green at fix-loop implementer run (pure-core, no schema); re-confirmed in sprint-8 consolidated DB gate"
-        commit: 5389c4c
-        at: 2026-06-25T20:30:00+05:30
-    blast_radius_resolved: true   # core-pipeline-and-availability.md updated (anti-flap Facts +
-                                  # AntiFlapOutcome coherence note); verified_sha -> 767fbae. Re-stamped
-                                  # to main at merge. (NB: pre-existing collapse/streak line-citation
-                                  # drift in that article flagged by the implementer -> fix at compile pass.)
-  - id: STORY-026
+    dod_evidence: []
+    blast_radius_resolved: false   # at review: adds StatusProposal/ProposalState (core/domain) +
+                                   # ProposalRepository port (core/ports) -> canonical-types-and-ports.md;
+                                   # PostgresProposalRepository (persistence) -> persistence-adapters.md.
+  - id: STORY-013
     points: 3
-    board: done
-    pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — skewed iff lag > own interval vs MAX peer watermark
-                            # (strict > boundary), separate result type diverging from completeness,
-                            # injected peers (pure), empty/single/None-watermark degenerate cases tested.
-    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — SkewResult lacked a coherence
-                            # model_validator (skewed must equal bool(lagging_signals)) — the same pattern
-                            # STORY-025 (Verdict) + STORY-028 (AntiFlapOutcome) enforced. Fix loop 1 (fresh
-                            # agent) added model_validator(mode="after") rejecting it + tests; re-review
-                            # (Opus) confirmed exact logic, 22 skew tests pass, zero new issues. Also fixed
-                            # the stale wiki verified_sha. 1 minor (naive datetime, consistent w/ availability.py).
+    board: todo
+    pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
+    spec_review: null
+    quality_review: null
     blocked_question: null
-    attempts: 1             # one fix loop (fresh agent)
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "241 passed (orchestrator-verified at HEAD); 219 + 22 skew tests (incl. coherence)"
-        commit: 22796a6
-        at: 2026-06-25T21:15:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken. (AC3: skew.py pure — stdlib + pydantic only)"
-        commit: 22796a6
-        at: 2026-06-25T21:15:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations. (consolidated sprint-8 DB gate)"
-        commit: 22796a6
-        at: 2026-06-25T21:15:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration (pure-core sprint)"
-        exit_code: 0
-        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
-        commit: 22796a6
-        at: 2026-06-25T21:15:00+05:30
-    blast_radius_resolved: true   # core-pipeline-and-availability.md updated: skew.py + test_skew.py added
-                                  # to code_refs (sprint-7 agreement honored), skew Facts + SkewResult
-                                  # coherence note; verified_sha -> 9ab7dd2. Re-stamped to main at merge.
+    dod_evidence: []
+    blast_radius_resolved: false   # at review: first adapters/outbound/ impl (statuspage) + a
+                                   # composition best-effort publish helper. A NEW wiki article for the
+                                   # publish path may be created at the compile pass (with its code_refs).
 hotfixes: []
 interrupts: []
