@@ -30,29 +30,69 @@ start_tag: sprint-9-start
 stories:
   - id: STORY-012
     points: 3
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done — fix loop 1 routed to PO/Gemini
     pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 4 AC MET — coherence validator (resolved_at IFF terminal) with
+                            # both rejected+valid shapes tested; create_open ON CONFLICT DO NOTHING returns
+                            # None on the partial-unique; resolve frees the slot; approval_event written.
+                            # Reconciliation correctly OUT of scope.
+    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — PostgresProposalRepository.resolve
+                            # (proposal_repository.py ~:135) does `UPDATE ... WHERE id=:id` with NO
+                            # `AND state='open'` guard and ignores rowcount: it silently re-resolves an
+                            # already-terminal proposal (clobbering its state/reason/resolved_at) and
+                            # silently no-ops on an unknown id. Contradicts the port docstring ("move an
+                            # OPEN proposal") AND diverges from FakeProposalRepository (which raises on an
+                            # unknown id) — so a fake-backed test would not catch the adapter's silent
+                            # success. Fix: `WHERE id=:id AND state='open'` and assert exactly one row
+                            # updated (raise if not). Minors (non-blocking notes): in-function import of
+                            # ComponentStatus in get_open (hoist to module top); enum truthiness vs
+                            # `is not None`; missing `from __future__ import annotations`; stale line
+                            # citations in persistence-adapters.md (file IS code_ref-covered; fix at compile pass).
     blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at review: adds StatusProposal/ProposalState (core/domain) +
-                                   # ProposalRepository port (core/ports) -> canonical-types-and-ports.md;
-                                   # PostgresProposalRepository (persistence) -> persistence-adapters.md.
+    attempts: 1             # fix loop 1 — routed to PO/Gemini (external impl) per the sprint-9 workflow agreement
+    paused_at_commit: 3ad6a78
+    dod_evidence: []        # re-run the full gate after the fix-loop commit
+    blast_radius_resolved: false   # canonical-types-and-ports.md + persistence-adapters.md updated by Gemini;
+                                   # re-verify (and fix the stale line citations) at the post-fix compile pass.
   - id: STORY-013
     points: 3
-    board: todo
+    board: done
     pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 4 AC MET — injected mapping + executor seam, request asserted,
+                            # exhaustive ComponentStatus->Statuspage mapping (DEGRADED->degraded_performance)
+                            # raising on unknown, UnmappedComponentIdError on unknown id, publish_best_effort
+                            # swallows+logs a raising publisher (caplog), no live HTTP, boundary clean.
+    quality_review: APPROVE # Opus: zero Critical, zero Major. publish_best_effort catches `Exception`
+                            # (not BaseException) + logger.exception, no re-raise; mapping named-raises like
+                            # health_mapping; statuspage-publish.md code_refs cover the adapter+helper+test.
+                            # Minors (notes): leftover import-smoke test, an unused degraded.json fixture
+                            # (the executor return is discarded), cosmetic import placement.
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # at review: first adapters/outbound/ impl (statuspage) + a
-                                   # composition best-effort publish helper. A NEW wiki article for the
-                                   # publish path may be created at the compile pass (with its code_refs).
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "261 passed in 14.31s (orchestrator-verified, with DB)"
+        commit: dceecdf
+        at: 2026-06-26T12:00:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: dceecdf
+        at: 2026-06-26T12:00:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: dceecdf
+        at: 2026-06-26T12:00:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
+        exit_code: 0
+        output_tail: "exit 0 (no-op upgrade)"
+        commit: dceecdf
+        at: 2026-06-26T12:00:00+05:30
+    blast_radius_resolved: true   # new statuspage-publish.md created with code_refs covering the
+                                  # outbound/statuspage package + composition publish helper + test
+                                  # (sprint-7 agreement honored). canonical-types-and-ports unaffected.
 hotfixes: []
 interrupts: []
