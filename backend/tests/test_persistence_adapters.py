@@ -21,7 +21,7 @@ import psycopg
 import pytest
 import sqlalchemy as sa
 
-from src.core.domain import Health, Provenance, SignalObservation
+from src.core.domain import ComponentStatus, Health, Provenance, SignalObservation
 
 
 def _engine_url(database_url: str) -> str:
@@ -377,3 +377,245 @@ def test_rejected_observation_save_allows_null_signal_key(migrated_db, engine):
     assert signal_key is None
     assert reason == "missing required field"
     assert stored_payload == {"raw": "malformed"}
+
+
+# --- ProposalRepository (STORY-012, Postgres adapter) -------------------------
+
+
+def seed_component(database_url: str, component_id: str, app_id: str = "app-1") -> None:
+    """Insert a minimal `apps` row + `components` row so FK-constrained inserts
+    against `status_proposals` succeed.
+    """
+    with psycopg.connect(database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO apps (id, name, config)
+                VALUES (%s, %s, '{}'::jsonb)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (app_id, app_id),
+            )
+            cur.execute(
+                """
+                INSERT INTO components (id, app_id, name, status)
+                VALUES (%s, %s, %s, 'operational')
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (component_id, app_id, component_id),
+            )
+        conn.commit()
+
+
+def test_postgres_proposal_repository_enforces_one_open_proposal_per_component(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "checkout-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop1 = StatusProposal(
+        component_id="checkout-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    # First succeeds and returns StatusProposal with id populated
+    saved1 = repo.create_open(prop1)
+    assert saved1 is not None
+    assert saved1.id is not None
+    assert saved1.state == ProposalState.OPEN
+
+    # Second open proposal for same component returns None (ON CONFLICT DO NOTHING)
+    prop2 = StatusProposal(
+        component_id="checkout-comp",
+        from_status=ComponentStatus.DEGRADED,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 1, 0, tzinfo=timezone.utc),
+    )
+    saved2 = repo.create_open(prop2)
+    assert saved2 is None
+
+
+def test_postgres_proposal_repository_get_open(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "get-open-comp")
+    repo = PostgresProposalRepository(engine)
+
+    # get_open returns None when no open proposal exists
+    assert repo.get_open("get-open-comp") is None
+
+    prop = StatusProposal(
+        component_id="get-open-comp",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    # get_open returns the open proposal
+    fetched = repo.get_open("get-open-comp")
+    assert fetched is not None
+    assert fetched.id == saved.id
+    assert fetched.component_id == "get-open-comp"
+    assert fetched.from_status == ComponentStatus.OPERATIONAL
+    assert fetched.to_status == ComponentStatus.DEGRADED
+    assert fetched.state == ProposalState.OPEN
+    assert fetched.proposed_at == datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc)
+    assert fetched.resolved_at is None
+
+
+def test_postgres_proposal_repository_resolve(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "resolve-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="resolve-comp",
+        from_status=None,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="Incident verified",
+        resolved_at=resolved_time,
+    )
+
+    # get_open returns None because it is now terminal
+    assert repo.get_open("resolve-comp") is None
+
+    # We can create a new open proposal for the component now
+    new_prop = StatusProposal(
+        component_id="resolve-comp",
+        from_status=ComponentStatus.MAJOR_OUTAGE,
+        to_status=ComponentStatus.OPERATIONAL,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 15, 0, tzinfo=timezone.utc),
+    )
+    new_saved = repo.create_open(new_prop)
+    assert new_saved is not None
+    assert new_saved.id != saved.id
+
+
+def test_postgres_proposal_repository_record_approval_event(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "event-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="event-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    occurred_time = datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc)
+    repo.record_approval_event(
+        saved.id,
+        actor="ops-admin",
+        action="approved",
+        notes="Checked dashboard, confirmed",
+        occurred_at=occurred_time,
+    )
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT proposal_id, actor, action, notes, occurred_at FROM approval_events "
+                "WHERE proposal_id = %s",
+                (saved.id,),
+            )
+            rows = cur.fetchall()
+
+    assert len(rows) == 1
+    proposal_id, actor, action, notes, occurred_at = rows[0]
+    assert proposal_id == saved.id
+    assert actor == "ops-admin"
+    assert action == "approved"
+    assert notes == "Checked dashboard, confirmed"
+    assert occurred_at == occurred_time
+
+
+def test_postgres_proposal_repository_resolve_unknown_raises(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState
+
+    repo = PostgresProposalRepository(engine)
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+
+    # Resolving unknown proposal ID raises
+    with pytest.raises(ValueError):
+        repo.resolve(
+            9999,
+            to_state=ProposalState.APPROVED,
+            reason="Will fail",
+            resolved_at=resolved_time,
+        )
+
+
+def test_postgres_proposal_repository_resolve_already_terminal_raises(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "resolve-terminal-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop = StatusProposal(
+        component_id="resolve-terminal-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    resolved_time = datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc)
+    # First resolve succeeds
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="first",
+        resolved_at=resolved_time,
+    )
+
+    # Resolving again raises ValueError and doesn't change stored row
+    with pytest.raises(ValueError):
+        repo.resolve(
+            saved.id,
+            to_state=ProposalState.SUPERSEDED,
+            reason="second",
+            resolved_at=resolved_time + timedelta(minutes=5),
+        )
+
+    # Verify that it remains APPROVED in the DB, not SUPERSEDED
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT state, reason FROM status_proposals WHERE id = %s", (saved.id,))
+            state, reason = cur.fetchone()
+    assert state == "approved"
+    assert reason == "first"
+
+
+

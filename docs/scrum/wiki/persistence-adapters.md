@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/tests/test_persistence_adapters.py]
-verified_sha: 205e1fe
-verified_sprint: sprint-7
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/tests/test_persistence_adapters.py]
+verified_sha: 2d42c60
+verified_sprint: sprint-9
 status: verified
 ---
 
@@ -77,16 +77,30 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   enums as their `.value`) — the adapter does no serialization of its own beyond the `JSONB`
   column typing.
 
+### `PostgresProposalRepository` — workflow persistence (STORY-012, dossier §12)
+- Implements `ProposalRepository` port against `status_proposals` and `approval_events` tables.
+- `create_open` (`proposal_repository.py:46`) inserts a proposal via `ON CONFLICT (component_id) DO
+  NOTHING` on the partial unique index active when `state = 'open'`. Returns `None` (with a debug
+  log) if a conflict occurs (a concurrent open already exists), else the new proposal.
+- `get_open` SELECTs the single open proposal for `component_id` (`proposal_repository.py:85`).
+- `resolve` (`proposal_repository.py:128`) UPDATEs `state`/`reason`/`resolved_at` only `WHERE id =
+  :id AND state = 'open'`, and raises `ValueError` if `rowcount != 1` — so re-resolving an
+  already-terminal proposal or an unknown id fails loudly rather than silently clobbering (STORY-012
+  fix loop 1). `FakeProposalRepository.resolve` raises the same way, so fake and adapter agree.
+- `record_approval_event` INSERTs a new record into `approval_events` (`proposal_repository.py:156`).
+
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
   `ON DELETE RESTRICT`, and `signals.app_id` FKs into `apps`. Topology seeding (apps/signals
   from config) is a later story, so integration tests **hand-seed** a parent `apps`+`signals`
   row via raw psycopg (test arrangement) before exercising a repo
-  (`test_persistence_adapters.py`, `seed_signal` helper). `rejected_observations` has no FK,
-  so its tests skip `seed_signal` entirely — including a test that asserts `signal_key=None`
-  round-trips.
+  (`test_persistence_adapters.py`, `seed_signal` helper).
+- `status_proposals.component_id` FKs into `components.id`, which FKs into `apps.id`. Integration
+  tests hand-seed parent `apps` + `components` rows via a raw psycopg helper `seed_component` before
+  exercising the proposal repo adapter.
+- `rejected_observations` has no FK, so its tests skip seeding entirely.
 - The `migrated_db` fixture is **session-scoped and shared** across the module, so tests use a
-  per-test `signal_key` namespace to avoid cross-test row collisions/order-dependence.
+  per-test `signal_key` and `component_id` namespace to avoid cross-test row collisions/order-dependence.
 
 ## Inference (synthesis, not verified)
 - `watermarks.updated_at` is set once at first insert and not refreshed by `advance`'s
@@ -102,3 +116,5 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - sprint-7: STORY-011 adds `PostgresObservationRepository.in_window` — the half-open-range
   `SELECT` the new availability engine (`core/services/availability.py`) reads through; no
   schema change, no new migration.
+- sprint-9: STORY-012 adds `PostgresProposalRepository` for workflow proposal storage and resolution.
+

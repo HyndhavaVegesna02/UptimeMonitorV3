@@ -11,13 +11,16 @@ from collections.abc import Sequence
 from datetime import datetime
 
 from src.core.domain import IngestResult, SignalObservation, StatusChange
+from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.ports import (
     ClockPort,
     ObservationRepository,
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
+    ProposalRepository,
 )
+
 
 
 class FakeClock(ClockPort):
@@ -90,3 +93,78 @@ class FakeSignalIngestPort(SignalIngestPort):
     ) -> IngestResult:
         self.received.extend(batch)
         return IngestResult(accepted=len(batch), rejected=0)
+
+
+class FakeProposalRepository(ProposalRepository):
+    """An in-memory dictionary-backed proposal repository for testing."""
+
+    def __init__(self) -> None:
+        self.proposals: dict[int, StatusProposal] = {}
+        self.approval_events: list[dict] = []
+        self._next_id: int = 1
+
+    def create_open(self, proposal: StatusProposal) -> StatusProposal | None:
+        # Check if an open proposal already exists for this component
+        for existing in self.proposals.values():
+            if (
+                existing.component_id == proposal.component_id
+                and existing.state == ProposalState.OPEN
+            ):
+                return None
+
+        # Assign an ID and persist
+        assigned_id = self._next_id
+        self._next_id += 1
+        persisted = proposal.model_copy(update={"id": assigned_id})
+        self.proposals[assigned_id] = persisted
+        return persisted
+
+    def get_open(self, component_id: str) -> StatusProposal | None:
+        for existing in self.proposals.values():
+            if (
+                existing.component_id == component_id
+                and existing.state == ProposalState.OPEN
+            ):
+                return existing
+        return None
+    def resolve(
+        self,
+        proposal_id: int,
+        *,
+        to_state: ProposalState,
+        reason: str | None,
+        resolved_at: datetime,
+    ) -> None:
+        if proposal_id not in self.proposals:
+            raise ValueError(f"Proposal {proposal_id} not found")
+        existing = self.proposals[proposal_id]
+        if existing.state != ProposalState.OPEN:
+            raise ValueError(f"Proposal {proposal_id} is not open (current state: {existing.state.value})")
+        updated = existing.model_copy(
+            update={
+                "state": to_state,
+                "reason": reason,
+                "resolved_at": resolved_at,
+            }
+        )
+        self.proposals[proposal_id] = updated
+
+    def record_approval_event(
+        self,
+        proposal_id: int,
+        *,
+        actor: str,
+        action: str,
+        notes: str | None,
+        occurred_at: datetime,
+    ) -> None:
+        self.approval_events.append(
+            {
+                "proposal_id": proposal_id,
+                "actor": actor,
+                "action": action,
+                "notes": notes,
+                "occurred_at": occurred_at,
+            }
+        )
+

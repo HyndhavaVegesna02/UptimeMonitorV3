@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: a6c6d0d
+verified_sha: 2d42c60
 verified_sprint: sprint-5
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -79,3 +79,10 @@ status: verified
   zone-tree / contract Fact changed; the full `core.services→ports→domain` layering chain is
   now exercised and `composition` gained its first both-sides importer. `lint-imports` stayed
   `3 kept, 0 broken`; FK-direction `10 checked, 0 violations`. verified_sha → cca043f.
+- sprint-9: re-verified after STORY-013 added the FIRST `adapters/outbound/` impl
+  (`outbound/statuspage/`) + a second `composition` both-sides importer
+  (`composition/publish_helper.py`), and STORY-012 added `core/domain/proposal.py`,
+  `core/ports/proposal_repository.py`, and `adapters/persistence/proposal_repository.py`. No
+  zone-tree / contract Fact changed — `outbound` is a real package now, `core-independence` +
+  `adapters-independence` stayed KEPT (`3 kept, 0 broken`), FK-direction `10 checked, 0 violations`.
+  verified_sha → 2d42c60.

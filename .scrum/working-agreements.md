@@ -168,4 +168,19 @@
   `not(proposed_status and internal_warning)`), `SkewResult` (STORY-026, `skewed == bool(lagging_signals)`)
   — each documented the invariant in its docstring but left it unenforced, and each cost a fix-loop
   dispatch to add the validator after the fact. STORY-029 audits existing types for the same gap.)
+- 2026-06-26 — **External implementation: from Sprint 9 on, the PO implements the plan (Antigravity
+  / Gemini); the orchestrator does NOT dispatch implementer subagents.** Division of labor: the
+  orchestrator still runs standup → refinement → planning → lock (creates the `sprint-N` branch +
+  start tag, writes `sprint-current.yaml` + a DETAILED `plan.md` whose per-story TDD steps + AC are
+  the contract). The PO then implements externally, committing onto the sprint branch. The PO
+  triggers the back half by saying "do your review"; the orchestrator then diffs `sprint-N-start..HEAD`,
+  runs the FULL mechanical DoD gate itself, runs the spec + quality reviewers (Opus), resolves the
+  wiki forward-blast-radius, and runs review/verdict/merge/retro. The mechanical floor is UNCHANGED
+  and non-negotiable: a story is Done only when all four DoD commands exit 0 AND both reviews pass —
+  regardless of who wrote the code. Fix-loop findings (CRITICAL/MAJOR) route BACK to the PO/Gemini to
+  fix and re-trigger the review by default; the orchestrator may fix a trivial finding inline only if
+  the PO asks. `plan.md` must therefore be self-contained (signatures, file locations, conventions,
+  DoD) since there is no implementer-subagent brief. (Motivated by a PO token-budget constraint,
+  2026-06-26 — the orchestrator's review/ceremony role is preserved; only the implement step moves
+  out-of-process.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
