@@ -56,24 +56,43 @@ stories:
                                   # drift in that article flagged by the implementer -> fix at compile pass.)
   - id: STORY-026
     points: 3
-    board: in-progress
+    board: done
     pipeline: full         # 3 pts -> implementer + spec reviewer + quality reviewer + DoD gate
     spec_review: PASS       # Opus: all 4 AC MET — skewed iff lag > own interval vs MAX peer watermark
                             # (strict > boundary), separate result type diverging from completeness,
                             # injected peers (pure), empty/single/None-watermark degenerate cases tested.
-    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — SkewResult has no model_validator for its
-                            # coherence invariant (skewed must equal bool(lagging_signals)); the SAME
-                            # latent-incoherence pattern STORY-025 (Verdict) + STORY-028 (AntiFlapOutcome)
-                            # already enforced. Fix = model_validator(mode="after") rejecting
-                            # skewed != bool(lagging_signals) + a test. 2 minors: wiki verified_sha points
-                            # to the step-4 commit not HEAD (fix at re-stamp); naive datetime (consistent
-                            # with availability.py — no action).
+    quality_review: APPROVE # Opus, after fix loop 1. Original: 1 MAJOR — SkewResult lacked a coherence
+                            # model_validator (skewed must equal bool(lagging_signals)) — the same pattern
+                            # STORY-025 (Verdict) + STORY-028 (AntiFlapOutcome) enforced. Fix loop 1 (fresh
+                            # agent) added model_validator(mode="after") rejecting it + tests; re-review
+                            # (Opus) confirmed exact logic, 22 skew tests pass, zero new issues. Also fixed
+                            # the stale wiki verified_sha. 1 minor (naive datetime, consistent w/ availability.py).
     blocked_question: null
-    attempts: 1             # fix loop 1 (fresh agent per working agreement)
-    paused_at_commit: 3ba187d
-    dod_evidence: []        # cleared — re-run the full gate after the fix-loop commit
-    blast_radius_resolved: false   # re-resolve at the post-fix DoD gate. core-pipeline-and-availability.md
-                                   # was updated (skew Facts + skew.py added to code_refs); re-verify +
-                                   # re-stamp to the final fix commit (fixing the stale verified_sha).
+    attempts: 1             # one fix loop (fresh agent)
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "241 passed (orchestrator-verified at HEAD); 219 + 22 skew tests (incl. coherence)"
+        commit: 22796a6
+        at: 2026-06-25T21:15:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken. (AC3: skew.py pure — stdlib + pydantic only)"
+        commit: 22796a6
+        at: 2026-06-25T21:15:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations. (consolidated sprint-8 DB gate)"
+        commit: 22796a6
+        at: 2026-06-25T21:15:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration (pure-core sprint)"
+        exit_code: 0
+        output_tail: "(no-op upgrade; head already at 3a8254bcfe59)"
+        commit: 22796a6
+        at: 2026-06-25T21:15:00+05:30
+    blast_radius_resolved: true   # core-pipeline-and-availability.md updated: skew.py + test_skew.py added
+                                  # to code_refs (sprint-7 agreement honored), skew Facts + SkewResult
+                                  # coherence note; verified_sha -> 9ab7dd2. Re-stamped to main at merge.
 hotfixes: []
 interrupts: []
