@@ -2,7 +2,7 @@
 
 from datetime import datetime, timedelta
 from enum import Enum
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from src.core.domain.status import ComponentStatus
 
@@ -62,3 +62,14 @@ class StatusProposal(BaseModel):
             if value.tzinfo is None or value.utcoffset() != timedelta(0):
                 raise ValueError("resolved_at must be a tz-aware UTC datetime")
         return value
+
+    @model_validator(mode="after")
+    def _require_resolved_at_coherence(self) -> "StatusProposal":
+        """Enforce that resolved_at is set iff state is terminal."""
+        if self.state == ProposalState.OPEN:
+            if self.resolved_at is not None:
+                raise ValueError("open state requires resolved_at to be None")
+        else:
+            if self.resolved_at is None:
+                raise ValueError(f"{self.state.value} state requires resolved_at to be set")
+        return self

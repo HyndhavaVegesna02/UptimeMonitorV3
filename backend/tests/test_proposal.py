@@ -66,3 +66,37 @@ def test_status_proposal_is_frozen():
     )
     with pytest.raises(ValidationError):
         proposal.component_id = "new-id"
+
+
+def test_open_proposal_with_resolved_at_raises():
+    with pytest.raises(ValidationError) as exc_info:
+        StatusProposal(
+            component_id="checkout",
+            from_status=None,
+            to_status=ComponentStatus.DEGRADED,
+            state=ProposalState.OPEN,
+            reason=None,
+            proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+            resolved_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+        )
+    assert "open state requires resolved_at to be None" in str(exc_info.value)
+
+
+def test_terminal_proposal_without_resolved_at_raises():
+    for terminal_state in [
+        ProposalState.APPROVED,
+        ProposalState.REJECTED,
+        ProposalState.SUPERSEDED,
+        ProposalState.OBSOLETED,
+    ]:
+        with pytest.raises(ValidationError) as exc_info:
+            StatusProposal(
+                component_id="checkout",
+                from_status=None,
+                to_status=ComponentStatus.DEGRADED,
+                state=terminal_state,
+                reason=None,
+                proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+                resolved_at=None,
+            )
+        assert f"{terminal_state.value} state requires resolved_at to be set" in str(exc_info.value)
