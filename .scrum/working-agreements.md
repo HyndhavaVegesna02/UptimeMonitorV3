@@ -156,4 +156,16 @@
   tail of a non-divisible window; every test used an exact-multiple window, so a quality-review
   CRITICAL — `gap_verdicts` going negative / completeness >100% on a realistic "last 24h from now"
   window — slipped all the way to review and cost a fix-loop dispatch.)
+- 2026-06-26 — **A frozen value/result type with a cross-field coherence invariant must ENFORCE it
+  at construction, when the type is created.** If a type's fields carry an invariant — mutually-
+  exclusive fields, a boolean that must agree with a payload (`flag == bool(items)`), an `Optional`
+  that must be set/unset based on another field — add a Pydantic `model_validator(mode="after")`
+  that rejects the incoherent shapes (raise a clear `ValueError`) plus a test covering BOTH the
+  rejected and the valid shapes, in the SAME story that introduces the type. The implementer brief
+  must call this out for any new value/result type (not just the reviewer brief). A documented-but-
+  unenforced invariant is a quality-review finding. (Motivated by THREE consecutive sprints of the
+  identical MAJOR: `Verdict` (STORY-025, maintenance↔health-is-None), `AntiFlapOutcome` (STORY-028,
+  `not(proposed_status and internal_warning)`), `SkewResult` (STORY-026, `skewed == bool(lagging_signals)`)
+  — each documented the invariant in its docstring but left it unenforced, and each cost a fix-loop
+  dispatch to add the validator after the fact. STORY-029 audits existing types for the same gap.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
