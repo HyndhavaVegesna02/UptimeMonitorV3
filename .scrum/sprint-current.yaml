@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 9
-status: active           # none | active | review | closed | aborted
+status: review          # none | active | review | closed | aborted
 started: 2026-06-26
 goal: "Zone 5's two foundations land — the proposal substrate (StatusProposal types + state machine
   + ProposalRepository port + Postgres adapter with one-open-per-component) and the Statuspage
