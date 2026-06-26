@@ -194,3 +194,78 @@ def test_fake_signal_ingest_returns_ingest_result_over_canonical_batch():
     assert result.accepted == 2
     assert result.rejected == 0
     assert port.received == batch
+
+
+# --- ProposalRepository --------------------------------------------------------
+
+
+def test_proposal_repository_is_abstract_and_cannot_be_instantiated():
+    from src.core.ports import ProposalRepository
+
+    with pytest.raises(TypeError):
+        ProposalRepository()  # type: ignore[abstract]
+
+
+def test_fake_proposal_repository_create_and_get():
+    from fakes import FakeProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    repo = FakeProposalRepository()
+    prop1 = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    # First open proposal succeeds
+    saved = repo.create_open(prop1)
+    assert saved is not None
+    assert saved.id is not None
+    assert saved.component_id == "checkout"
+
+    # Second open proposal for same component returns None (honors one-open-per-component)
+    prop2 = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 1, 0, tzinfo=timezone.utc),
+    )
+    assert repo.create_open(prop2) is None
+
+    # Get open returns the active open proposal
+    open_prop = repo.get_open("checkout")
+    assert open_prop is not None
+    assert open_prop.id == saved.id
+    assert open_prop.state == ProposalState.OPEN
+
+    # Resolve transitions the proposal to a terminal state
+    resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
+    repo.resolve(saved.id, to_state=ProposalState.APPROVED, reason="Manual approve", resolved_at=resolved_time)
+
+    # Now get_open returns None
+    assert repo.get_open("checkout") is None
+
+    # And a new open proposal can now be created
+    saved2 = repo.create_open(prop2)
+    assert saved2 is not None
+    assert saved2.id != saved.id
+
+    # Record approval event writes to approval events
+    repo.record_approval_event(
+        saved.id,
+        actor="ops-1",
+        action="approved",
+        notes="Checked logs, all good",
+        occurred_at=resolved_time,
+    )
+    assert len(repo.approval_events) == 1
+    evt = repo.approval_events[0]
+    assert evt["proposal_id"] == saved.id
+    assert evt["actor"] == "ops-1"
+    assert evt["action"] == "approved"
+    assert evt["notes"] == "Checked logs, all good"
+    assert evt["occurred_at"] == resolved_time
+
