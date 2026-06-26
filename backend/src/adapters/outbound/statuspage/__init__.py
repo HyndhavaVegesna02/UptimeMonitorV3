@@ -3,10 +3,15 @@
 from collections.abc import Callable
 from src.core.ports import StatusPublisherPort
 from src.core.domain.status import StatusChange
+from src.adapters.outbound.statuspage.status_mapping import (
+    map_component_status,
+    UnknownComponentStatusError,
+)
 
 #: Seam type for executing HTTP requests against Statuspage API.
 #: Takes (method, url, headers, json_body) and returns the parsed response dict.
 Executor = Callable[[str, str, dict[str, str], dict], dict]
+
 
 
 class StatuspagePublisher(StatusPublisherPort):
