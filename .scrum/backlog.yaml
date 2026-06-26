@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 29
+next_story_id: 30
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -93,7 +93,7 @@ stories:
   - id: STORY-028
     title: Core pipeline stage 3 — anti-flap
     file: docs/scrum/stories/STORY-028-pipeline-antiflap.md
-    status: ready   # split from STORY-024 (sprint-8); pure threshold lookup, injected thresholds
+    status: done    # accepted at Sprint 8 review (2026-06-26)
     points: 3
     priority: 11
     type: feature
@@ -117,7 +117,7 @@ stories:
   - id: STORY-026
     title: Per-component skew flag (Tier-2)
     file: docs/scrum/stories/STORY-026-skew-flag.md
-    status: ready   # refined sprint-8: injected peers + separate result type; open Qs resolved
+    status: done    # accepted at Sprint 8 review (2026-06-26)
     points: 3
     priority: 13
     type: feature
@@ -237,5 +237,13 @@ stories:
     status: ready   # follow-up from Sprint 7 review; test-only cosmetic tidy-up, no open questions
     points: 1
     priority: 24
+    type: chore
+    sprint: null
+  - id: STORY-029
+    title: Audit frozen value/result types for unenforced coherence invariants
+    file: docs/scrum/stories/STORY-029-value-type-coherence-audit.md
+    status: ready   # follow-up from Sprint 8 review; bounded audit of core value types, no open Qs
+    points: 1
+    priority: 25
     type: chore
     sprint: null

@@ -1,6 +1,12 @@
 # YourTeam active sprint board.
 sprint: 8
-status: review           # none | active | review | closed | aborted
+status: closed           # none | active | review | closed | aborted
+closed: 2026-06-26
+# Sprint 8 closed: STORY-028 (3) + STORY-026 (3) both accepted at review (6/6 pts), merged to
+# main. Zone 4's pure-logic surface closes — anti-flap (injected thresholds) + the skew flag
+# (injected peers). Each needed one fix loop for the SAME value-object-coherence MAJOR (a third
+# sprint running) — PO directed a proactive audit follow-up (STORY-029). Next: planning Sprint 9
+# (STORY-012 proposal lifecycle unblocks STORY-024 decide; plus the carried 1-pt chores).
 started: 2026-06-25
 goal: "Zone 4's pure-logic surface closes — anti-flap (stage 3: streak length + injected
   thresholds -> proposed status) and the per-component skew flag (cross-signal watermark lag),

@@ -7,6 +7,7 @@
     {"sprint": 4, "committed": 5, "accepted": 5},
     {"sprint": 5, "committed": 6, "accepted": 6},
     {"sprint": 6, "committed": 6, "accepted": 6},
-    {"sprint": 7, "committed": 6, "accepted": 6}
+    {"sprint": 7, "committed": 6, "accepted": 6},
+    {"sprint": 8, "committed": 6, "accepted": 6}
   ]
 }

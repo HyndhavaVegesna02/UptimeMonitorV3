@@ -78,5 +78,7 @@ Facts (with `skew.py`/`test_skew.py` added to `code_refs` per the sprint-7 agree
 - STORY-027 (lazy-import cleanup, 1, ready).
 
 ## PO verdict
-- [ ] STORY-028 — accept / reject
-- [ ] STORY-026 — accept / reject
+- [x] STORY-028 — **ACCEPTED** (2026-06-26). 3 pts. Merged to main.
+- [x] STORY-026 — **ACCEPTED** (2026-06-26). 3 pts. Merged to main.
+- PO directed a follow-up: **STORY-029** (audit frozen value/result types for unenforced coherence
+  invariants) added to the backlog as `ready` — to close the recurring value-object MAJOR proactively.
