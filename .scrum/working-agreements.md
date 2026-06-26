@@ -183,4 +183,22 @@
   DoD) since there is no implementer-subagent brief. (Motivated by a PO token-budget constraint,
   2026-06-26 — the orchestrator's review/ceremony role is preserved; only the implement step moves
   out-of-process.)
+- 2026-06-26 — **A port's in-memory fake and its real adapter must AGREE on edge-case behavior.**
+  When a core port has both a test fake and a real (e.g. Postgres) adapter, they must behave
+  identically on the edge cases — not-found, conflict, invalid-state, empty — i.e. both raise (the
+  same kind of error) or both return the same sentinel. Verify it by running the SAME contract test
+  against both implementations (a fake more lenient than the adapter, or vice-versa, gives false
+  confidence — a fake-backed unit test passes while the real adapter misbehaves). (Motivated by
+  Sprint 9, STORY-012: `PostgresProposalRepository.resolve` silently no-oped on an unknown / already-
+  terminal proposal while `FakeProposalRepository.resolve` RAISED — so the fake-backed tests couldn't
+  catch the adapter's silent-success bug; the quality reviewer caught it instead. The fix made both
+  raise and added DB-gated tests for the edges.)
+- 2026-06-26 — **When the plan specifies a port/repository method, it must state the edge/error
+  behavior explicitly.** Each method's `plan.md` / story-AC description must say what happens on
+  not-found, wrong-state, conflict, and empty input (raise which error vs return what) — not just the
+  happy path. This matters most now that implementation is external (the PO/Gemini builds LITERALLY to
+  the plan): an under-specified edge becomes a silent bug. (Motivated by Sprint 9, STORY-012: the plan
+  said `resolve` "moves an open proposal to a terminal state" without "raise if it is not open" — so
+  the implementer wrote a guard-less `UPDATE ... WHERE id=:id`. Pairs with the fake/adapter-parity
+  agreement above.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
