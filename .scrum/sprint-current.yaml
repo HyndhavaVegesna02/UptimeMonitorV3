@@ -30,30 +30,47 @@ start_tag: sprint-9-start
 stories:
   - id: STORY-012
     points: 3
-    board: in-progress     # todo | in-progress | blocked | review | done — fix loop 1 routed to PO/Gemini
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
     spec_review: PASS       # Opus: all 4 AC MET — coherence validator (resolved_at IFF terminal) with
                             # both rejected+valid shapes tested; create_open ON CONFLICT DO NOTHING returns
                             # None on the partial-unique; resolve frees the slot; approval_event written.
-                            # Reconciliation correctly OUT of scope.
-    quality_review: FIX_REQUIRED  # Opus, fix loop 1: 1 MAJOR — PostgresProposalRepository.resolve
-                            # (proposal_repository.py ~:135) does `UPDATE ... WHERE id=:id` with NO
-                            # `AND state='open'` guard and ignores rowcount: it silently re-resolves an
-                            # already-terminal proposal (clobbering its state/reason/resolved_at) and
-                            # silently no-ops on an unknown id. Contradicts the port docstring ("move an
-                            # OPEN proposal") AND diverges from FakeProposalRepository (which raises on an
-                            # unknown id) — so a fake-backed test would not catch the adapter's silent
-                            # success. Fix: `WHERE id=:id AND state='open'` and assert exactly one row
-                            # updated (raise if not). Minors (non-blocking notes): in-function import of
-                            # ComponentStatus in get_open (hoist to module top); enum truthiness vs
-                            # `is not None`; missing `from __future__ import annotations`; stale line
-                            # citations in persistence-adapters.md (file IS code_ref-covered; fix at compile pass).
+    quality_review: APPROVE # Opus quality returned 1 MAJOR — PostgresProposalRepository.resolve did
+                            # `UPDATE ... WHERE id=:id` with no state guard / no rowcount check (silently
+                            # re-resolved a terminal proposal, no-oped on unknown id; diverged from the fake).
+                            # Fix loop 1 (Gemini, external) added `WHERE id=:id AND state='open'` + raises on
+                            # rowcount!=1, made the fake raise to match, and folded the 3 minors (from __future__,
+                            # hoisted import, `is not None`). Orchestrator verified the fix by direct diff
+                            # inspection (491cd67) — exactly the prescribed change, correct — + green gate.
+                            # One cosmetic nit remains (missing blank line between fake methods) -> compile pass.
     blocked_question: null
-    attempts: 1             # fix loop 1 — routed to PO/Gemini (external impl) per the sprint-9 workflow agreement
-    paused_at_commit: 3ad6a78
-    dod_evidence: []        # re-run the full gate after the fix-loop commit
-    blast_radius_resolved: false   # canonical-types-and-ports.md + persistence-adapters.md updated by Gemini;
-                                   # re-verify (and fix the stale line citations) at the post-fix compile pass.
+    attempts: 1             # one fix loop (Gemini, external) — routed per the sprint-9 workflow agreement
+    paused_at_commit: null
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "264 passed in 14.96s (orchestrator-verified, with DB); +3 resolve-guard tests"
+        commit: 491cd67
+        at: 2026-06-26T17:20:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: 491cd67
+        at: 2026-06-26T17:20:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: 491cd67
+        at: 2026-06-26T17:20:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
+        exit_code: 0
+        output_tail: "exit 0 (no-op upgrade)"
+        commit: 491cd67
+        at: 2026-06-26T17:20:00+05:30
+    blast_radius_resolved: true   # canonical-types-and-ports.md (StatusProposal/ProposalState +
+                                  # ProposalRepository) + persistence-adapters.md (PostgresProposalRepository)
+                                  # updated by Gemini. Stale line citations in persistence-adapters.md fixed
+                                  # at the sprint-9 compile pass.
   - id: STORY-013
     points: 3
     board: done
