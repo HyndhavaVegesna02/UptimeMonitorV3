@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/ports/]
-verified_sha: 205e1fe
-verified_sprint: sprint-7
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/]
+verified_sha: ab99cd4
+verified_sprint: sprint-9
 status: verified          # verified | stale | archived
 ---
 
@@ -46,10 +46,23 @@ status: verified          # verified | stale | archived
   Mirrors `signal.py`'s `_require_utc` validate-at-construction pattern. `collapse`
   (`pipeline.py:37`) already only ever builds the two coherent shapes, so this is
   unreachable from the existing pipeline today — it guards future hand-built `Verdict`s.
+- `ProposalState(str, Enum)` is a closed enum representing the workflow states of a status
+  proposal: `open` / `approved` / `rejected` / `superseded` / `obsoleted` (`proposal.py:10`).
+- `StatusProposal` (frozen) models a proposal to transition a component's status (`proposal.py:20`).
+  Fields: `component_id:str`, `from_status:ComponentStatus|None`, `to_status:ComponentStatus`,
+  `state:ProposalState`, `reason:str|None=None`, `proposed_at:datetime`, `resolved_at:datetime|None=None`,
+  `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py:49-64`).
+- STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
+  `model_validator(mode="after")` (`proposal.py:66`, `_require_resolved_at_coherence`)
+  enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
+  Raises `ValueError` (wrapped as `ValidationError`) if violated.
+- A transition rule helper `is_valid_transition(from_state, to_state) -> bool` (`proposal.py:80`)
+  and `StatusProposal.terminal` property (`proposal.py:75`) define allowed transitions:
+  from `open` to any terminal state only; terminal states are final and cannot transition.
 
-### The six core ports (`core/ports/`, ABCs)
+### The seven core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All six are `abc.ABC` with `@abstractmethod`,
+them, the composition root injects them. All seven are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py:17-22`).
@@ -72,6 +85,11 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py:17-33`).
+- `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py:8-46`).
+  Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
+  one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`, `resolve(proposal_id,
+  *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal state), and
+  `record_approval_event(proposal_id, *, actor, action, notes, occurred_at) -> None`.
 
 ### Zone 4 core logic — moved
 - The pipeline (`collapse`/`streak`, STORY-010) and the availability engine
@@ -134,3 +152,6 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - sprint-7: STORY-025 (Sprint 6 review follow-up) adds a `model_validator(mode="after")`
   to `Verdict` enforcing the maintenance<->health invariant at construction (previously
   documented only); see Fact above.
+- sprint-9: STORY-012 adds `ProposalState` and `StatusProposal` canonical domain types,
+  the `ProposalRepository` port, and enforces proposal resolved_at coherence at construction.
+
