@@ -21,7 +21,7 @@ import psycopg
 import pytest
 import sqlalchemy as sa
 
-from src.core.domain import Health, Provenance, SignalObservation
+from src.core.domain import ComponentStatus, Health, Provenance, SignalObservation
 
 
 def _engine_url(database_url: str) -> str:
@@ -377,3 +377,65 @@ def test_rejected_observation_save_allows_null_signal_key(migrated_db, engine):
     assert signal_key is None
     assert reason == "missing required field"
     assert stored_payload == {"raw": "malformed"}
+
+
+# --- ProposalRepository (STORY-012, Postgres adapter) -------------------------
+
+
+def seed_component(database_url: str, component_id: str, app_id: str = "app-1") -> None:
+    """Insert a minimal `apps` row + `components` row so FK-constrained inserts
+    against `status_proposals` succeed.
+    """
+    with psycopg.connect(database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO apps (id, name, config)
+                VALUES (%s, %s, '{}'::jsonb)
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (app_id, app_id),
+            )
+            cur.execute(
+                """
+                INSERT INTO components (id, app_id, name, status)
+                VALUES (%s, %s, %s, 'operational')
+                ON CONFLICT (id) DO NOTHING
+                """,
+                (component_id, app_id, component_id),
+            )
+        conn.commit()
+
+
+def test_postgres_proposal_repository_enforces_one_open_proposal_per_component(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "checkout-comp")
+    repo = PostgresProposalRepository(engine)
+
+    prop1 = StatusProposal(
+        component_id="checkout-comp",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+
+    # First succeeds and returns StatusProposal with id populated
+    saved1 = repo.create_open(prop1)
+    assert saved1 is not None
+    assert saved1.id is not None
+    assert saved1.state == ProposalState.OPEN
+
+    # Second open proposal for same component returns None (ON CONFLICT DO NOTHING)
+    prop2 = StatusProposal(
+        component_id="checkout-comp",
+        from_status=ComponentStatus.DEGRADED,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 1, 0, tzinfo=timezone.utc),
+    )
+    saved2 = repo.create_open(prop2)
+    assert saved2 is None
+
