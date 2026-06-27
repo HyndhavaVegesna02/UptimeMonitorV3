@@ -201,4 +201,30 @@
   said `resolve` "moves an open proposal to a terminal state" without "raise if it is not open" — so
   the implementer wrote a guard-less `UPDATE ... WHERE id=:id`. Pairs with the fake/adapter-parity
   agreement above.)
+- 2026-06-27 — **Under external implementation, plan.md carries a self-contained CONVENTIONS
+  CHECKLIST.** Because plan.md is the ONLY contract the external implementer (PO/Gemini) builds to —
+  there is no implementer-subagent brief carrying the working agreements + wiki conventions — every
+  sprint plan MUST include a standing conventions checklist that all new code is held to at quality
+  review, and any per-story step that introduces a NEW module / public class / public function must
+  name the docstring deliverable explicitly. The checklist: (a) **module + public class/function
+  docstrings citing the relevant dossier §**, mirroring the peer modules (`ingest_service.py`,
+  `pipeline.py`, `status.py`, `proposal.py`); (b) frozen value/result types enforce cross-field
+  coherence invariants with a `model_validator(mode="after")` + test; (c) empty-input AND non-aligned
+  boundary tests where applicable; (d) scoped staging (never `git add -A`); (e) follow existing
+  import/naming/structure patterns rather than introducing a new style. (Motivated by Sprint 10,
+  STORY-024: `decide.py` shipped with NO docstrings — the sprint's only blocking quality finding —
+  because the plan specified the algorithm in exhaustive detail but never required the docstring
+  convention every peer core service follows; the external implementer builds literally to the plan
+  and does not infer unstated conventions. Fixed inline, but predictable and preventable from the plan.
+  Generalizes the sprint-9 "plan.md must be self-contained" agreement into a concrete checklist.)
+- 2026-06-27 — **`ruff` (format + import-sort) is being added as a mechanical DoD gate** (retro
+  tooling decision — one of the two allowed moments to change tooling). A recurring class of
+  non-blocking cosmetic minors — trailing blank lines, unsorted/mixed imports — reaches code review
+  most sprints and accumulates into follow-up chores (STORY-031, STORY-032). A formatter + import
+  sorter catches them mechanically so they never reach a reviewer (and frees the quality reviewer for
+  substance). **STORY-033** implements it: add ruff to the dev extras + config, format the existing
+  tree in one pass, and wire `ruff check` + `ruff format --check` into `.scrum/definition-of-done.md`
+  + CLAUDE.md (the command-sync agreement applies — doc update in the same commit). Until STORY-033
+  lands, the DoD stays the current four commands. (Motivated by Sprint 10 review: STORY-024's minors
+  were entirely ruff-fixable — trailing blanks, mixed import source, unsorted imports.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
