@@ -262,7 +262,7 @@ stories:
     points: 1
     priority: 27
     type: chore
-    sprint: null
+    sprint: 11
   - id: STORY-032
     title: decide.py quality minors � DRY, import style, opened.id guard, trailing blanks
     file: docs/scrum/stories/STORY-032-decide-quality-minors.md
@@ -270,12 +270,12 @@ stories:
     points: 1
     priority: 28
     type: chore
-    sprint: null
+    sprint: 11
   - id: STORY-033
     title: Add ruff (format + import-sort) as a mechanical DoD gate
     file: docs/scrum/stories/STORY-033-ruff-format-import-sort-dod.md
-    status: draft   # from Sprint 10 retro (tooling); one open Q (ruleset breadth, default=minimal) + estimate to confirm at planning
+    status: ready   # sprint-11 planning: ruleset resolved to minimal; committed to Sprint 11 (sequenced first)
     points: 2
     priority: 29
     type: chore
-    sprint: null
+    sprint: 11
