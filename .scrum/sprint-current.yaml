@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 10
-status: active          # none | active | review | closed | aborted
+status: review         # none | active | review | closed | aborted
 started: 2026-06-27
 goal: "Close out Zone 4 — the pipeline's final stage, decide, compares anti-flap's proposed status to
   the component's current published status and reconciles: worse -> a human-gate degradation proposal
@@ -34,43 +34,94 @@ start_tag: sprint-10-start
 stories:
   - id: STORY-024
     points: 3
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: null
-    quality_review: null
+    spec_review: PASS       # Opus: all 3 AC MET — §10 direction (worse->create_open/no-publish,
+                            # better->publish, same->nothing) + §12 reconciliation (supersede-vs-leave,
+                            # recovered->obsoleted/nothing-published distinct from better->auto-publish),
+                            # commit-first verified via FailingStatusPublisher. Tests exercise every branch.
+    quality_review: APPROVE # Opus quality returned 1 MAJOR — decide.py shipped with NO docstrings
+                            # (module/class/method), violating the core-service docstring convention
+                            # (ingest_service.py/pipeline.py cite the dossier + explain the why). Fix loop 1
+                            # (orchestrator, inline at PO request): added a module docstring (§10 decide +
+                            # §12 reconciliation, the two comparisons, commit-first) + docstrings on
+                            # DecideAction/DecideService/__init__/decide; logic untouched (ed87055). All
+                            # other findings non-blocking minors (trailing blank lines, import style, a DRY
+                            # nit in the two degradation branches, opened.id typing hole) -> STORY-031-style
+                            # follow-up if the PO wants them.
     blocked_question: null
-    attempts: 0
+    attempts: 1             # one fix loop (orchestrator inline, docstrings) per PO choice
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # expected: core-pipeline-and-availability.md (decide joins
-                                   # collapse/streak/anti_flap) + canonical-types-and-ports.md if a new
-                                   # Decision/result type lands. Verify at the DoD step.
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "275 passed in 37.72s (orchestrator-verified, with DB @ ed87055)"
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "Contracts: 3 kept, 0 broken."
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
+        exit_code: 0
+        output_tail: "exit 0 (no-op upgrade)"
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+    blast_radius_resolved: true   # core-pipeline-and-availability.md (decide joins collapse/streak/
+                                  # anti_flap; decide.py + test_decide.py in code_refs) + canonical-types-
+                                  # and-ports.md (severity helpers in status.py). verified_sha to be
+                                  # re-stamped to the merge commit (docstring commit ed87055 is no-Fact).
   - id: STORY-029
     points: 1
-    board: todo
+    board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
+        exit_code: 0
+        output_tail: "all four exit 0 at ed87055 (gate run over full tree). Audit of 12 frozen core
+          types recorded in the story file; found + fixed the AvailabilityResult gap with a
+          model_validator(mode=after) + tests for valid/invalid shapes."
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+    blast_radius_resolved: true   # AvailabilityResult validator -> core-pipeline-and-availability.md updated
   - id: STORY-027
     points: 1
-    board: todo
+    board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # test-only; no src change expected -> no wiki impact
+    dod_evidence:
+      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
+        exit_code: 0
+        output_tail: "all four exit 0 at ed87055. AvailabilityCalculator import hoisted to module top
+          in test_availability.py; availability tests pass unchanged."
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+    blast_radius_resolved: true   # test-only; no src change -> no wiki impact
   - id: STORY-030
     points: 1
-    board: todo
+    board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # scripts/dev_db.py -> dev-setup-and-dod.md may need a re-verify
+    dod_evidence:
+      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
+        exit_code: 0
+        output_tail: "all four exit 0 at ed87055. dev_db.py up force-removes its own leftover container
+          before docker run; integration test test_up_idempotent_against_leftover_container added."
+        commit: ed87055
+        at: 2026-06-27T16:10:00+05:30
+    blast_radius_resolved: true   # scripts/dev_db.py -> dev-setup-and-dod.md re-verified
 hotfixes: []
 interrupts: []
