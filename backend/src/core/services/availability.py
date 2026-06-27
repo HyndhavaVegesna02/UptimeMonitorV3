@@ -27,7 +27,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from datetime import datetime, timedelta
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, model_validator
 
 from src.core.domain import Health, SignalObservation
 from src.core.ports import ObservationRepository
@@ -76,6 +76,50 @@ class AvailabilityResult(BaseModel):
 
     computed_at: datetime
     """The instant this result was derived — always "now", since nothing is cached or stored."""
+
+    @model_validator(mode="after")
+    def _require_coherence(self) -> "AvailabilityResult":
+        """Enforce coherence invariants for availability and completeness."""
+        if self.total_verdicts < 0:
+            raise ValueError("total_verdicts must be non-negative")
+        if self.passing_verdicts < 0:
+            raise ValueError("passing_verdicts must be non-negative")
+        if self.maintenance_verdicts < 0:
+            raise ValueError("maintenance_verdicts must be non-negative")
+        if self.gap_verdicts < 0:
+            raise ValueError("gap_verdicts must be non-negative")
+        if self.distinct_locations < 0:
+            raise ValueError("distinct_locations must be non-negative")
+
+        # Invariant 1: availability_pct is None iff availability denominator is 0
+        availability_denom = self.total_verdicts - self.maintenance_verdicts
+        if availability_denom == 0:
+            if self.availability_pct is not None:
+                raise ValueError(
+                    "availability_pct must be None when the availability denominator is 0"
+                )
+        else:
+            if self.availability_pct is None:
+                raise ValueError(
+                    "availability_pct must not be None when the availability denominator is greater than 0"
+                )
+
+        # Invariant 2: If distinct_locations > 0, completeness_pct must not be None
+        if self.distinct_locations > 0 and self.completeness_pct is None:
+            raise ValueError(
+                "completeness_pct must not be None when the completeness denominator is greater than 0"
+            )
+
+        # Invariant 3: If not a rollup and completeness denominator is 0, completeness_pct must be None
+        is_rollup = self.distinct_locations == 0 and self.total_verdicts > 0
+        if not is_rollup:
+            completeness_denom = (self.total_verdicts + self.gap_verdicts) * self.distinct_locations
+            if completeness_denom == 0 and self.completeness_pct is not None:
+                raise ValueError(
+                    "completeness_pct must be None when the completeness denominator is 0"
+                )
+
+        return self
 
 
 def _bucket_into_cycles(

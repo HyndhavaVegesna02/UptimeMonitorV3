@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: 08917c0
-verified_sprint: sprint-3
+verified_sha: 70622a1
+verified_sprint: sprint-10
 status: verified
 ---
 
@@ -26,6 +26,9 @@ status: verified
   `python scripts/dev_db.py down` removes the container. This replaces
   hand-rolling commands 3 & 4's setup (the manual `docker run` one-liner below
   is now a documented fallback, not the standard path).
+  `python scripts/dev_db.py up` is idempotent: it force-removes any pre-existing
+  container of the same name before attempting `docker run`, so a leftover/stuck
+  container no longer blocks startup (STORY-030).
 - Under `pytest`, the same logic is the session-scoped `migrated_db` fixture
   (`backend/tests/conftest.py`, via `dev_db.resolve_db()`): reuses
   `DATABASE_URL`/`DATABASE_URL_DIRECT` if both are already set externally
@@ -68,3 +71,5 @@ status: verified
   fixture's reuse/spawn/skip decision logic; the prior hand-rolled `docker run`
   one-liner is now documented as a fallback, not the standard path.
   `verified_sha` re-stamped accordingly.
+- sprint-10: updated to note the idempotency behavior of `dev_db.py up` (STORY-030).
+  Verified at 70622a1.

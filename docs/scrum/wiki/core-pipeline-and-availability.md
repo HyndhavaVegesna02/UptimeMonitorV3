@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
-code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py]
-verified_sha: a5b7f7e
-verified_sprint: sprint-8
+code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py]
+verified_sha: 32e24de
+verified_sprint: sprint-10
 status: verified          # verified | stale | archived
 ---
 
@@ -153,6 +153,19 @@ boundary CI floors are catalogued in [[architecture-boundary]].
 - Imports ONLY stdlib (`collections.abc`, `datetime`) + `pydantic` — no `src.core.*` import at all,
   let alone vendor/HTTP/SQL (AC3, the strictest purity bar in this module so far).
 
+### Core pipeline stage 4 — decide (`core/services/decide.py`, STORY-024, dossier §10 / §12)
+- `DecideAction(str, Enum)` (`decide.py:9`) — the primary outcome returned by `decide`: `noop`, `proposed`, `superseded`, `obsoleted`, or `published_recovery`.
+- `DecideService` (`decide.py:17`) — concrete service that reconciles proposed status against published status and open proposals. Constructed with injected `proposal_repo: ProposalRepository` and `publisher: StatusPublisherPort`.
+- **Decision & Reconciliation Logic (AC1/AC2)**:
+  - If `proposed_status` is worse than `current_status` (a degradation):
+    - If no open proposal exists, calls `proposal_repo.create_open`, returns `PROPOSED`.
+    - If an open proposal exists but its `to_status` differs from `proposed_status`, resolves the old one as `SUPERSEDED` and creates a new open proposal for the worst, returning `SUPERSEDED`.
+    - If the open proposal is already for `proposed_status`, leaves it and returns `NOOP`.
+  - Else (operational or equal):
+    - If an open proposal exists, resolves it to `OBSOLETED` and returns `OBSOLETED` (§12 "Recovered -> obsoleted, nothing published").
+  - If `proposed_status` improves `current_status` (recovery), publishes a `StatusChange` to `StatusPublisherPort` and returns `PUBLISHED_RECOVERY` (§10 "better -> recovery auto-publishes").
+  - Repository writes are committed BEFORE the publisher is called (commit-first; publish failure doesn't lose proposal updates).
+
 ## Inference (synthesis, not verified)
 - Cycle-bucketing-by-`observed_at` (rather than a stored cycle key) was chosen because it needs no
   new schema field and falls out of the `in_window` read; a future per-cycle identity would only
@@ -187,3 +200,5 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   grew (collapse 36→40, Streak 22→26, streak 88→100, anti_flap validator 171→172, anti_flap
   181→199; AvailabilityCalculator 110→113, rollup_group 216→232; skew validator 75→76, skew
   76→94). Code unchanged — addresses only; verified_sha stays 9ab7dd2.
+- sprint-10: added core pipeline stage 4 — decide (STORY-024, dossier §10 / §12). Verified at 75674b7.
+- sprint-10 (STORY-029): enforced AvailabilityResult cross-field coherence validator. Verified at 32e24de.

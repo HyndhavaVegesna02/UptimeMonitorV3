@@ -19,13 +19,35 @@ to the component's current published status: same → nothing; worse → a degra
 (the human-approval gate); better → a **recovery** (auto-publishes). Also reconciles open proposals
 and (later) carries the per-component skew annotation (STORY-026).
 
-## Acceptance Criteria (draft — confirm at refinement)
-- [ ] AC1: Severity-ordered direction: proposed worse than current → a degradation proposal (human
-      gate); better → a recovery (auto-publish); same → nothing. Unit-tested with fixtures.
-- [ ] AC2: Open-proposal reconciliation behaves per §10/§12 (e.g. a new proposal supersedes/obsoletes
-      a stale open one; the partial-unique "one open proposal per component" invariant is honored).
-- [ ] AC3: Pure and provider-blind — no vendor/HTTP/SQL imports; `lint-imports` green; tests use
-      in-memory canonical fixtures; proposal domain types + persistence are consumed through a port.
+## Acceptance Criteria (refined — PO-approved 2026-06-27, sprint-10 planning)
+- [ ] AC1: Severity-ordered direction vs the component's CURRENT PUBLISHED status (dossier §10): proposed
+      worse than current → a degradation `create_open` proposal (the human gate), NO publish; better than
+      current → an auto-published recovery via `StatusPublisherPort.publish`; same → nothing. Unit-tested
+      with in-memory fakes. Severity rank: `operational < degraded < partial_outage < major_outage`.
+- [ ] AC2: Open-proposal reconciliation per §12, comparing the freshly computed status to the open
+      proposal: worse than the open proposal (and differing) → `resolve(SUPERSEDED)` the lesser + a new
+      `create_open` for the worst (the human always sees the current worst); recovered (computed no longer
+      a degradation while a pending degradation is open) → `resolve(OBSOLETED)`, **nothing published**
+      (§12: the customer was never shown the outage); same as the open proposal → leave it. The
+      partial-unique "one open proposal per component" invariant is honored throughout. Repo writes are
+      committed BEFORE the best-effort publish (commit-first; a publish failure never loses the decision).
+- [ ] AC3: Pure and provider-blind — `decide` lives in `core/services/decide.py`, imports only
+      `src.core.*` (no vendor/HTTP/SQL); `lint-imports` green; a core SERVICE with injected ports
+      (mirrors `IngestService`); proposals consumed through `ProposalRepository`, recovery published
+      through `StatusPublisherPort`; tests use the existing `FakeProposalRepository` /
+      `RecordingStatusPublisher` (no DB).
+
+## Resolved Questions (sprint-10 refinement, 2026-06-27)
+- **"Current published status" read seam → RESOLVED:** it is `components.status` (the single
+  current-status column; `publications` is the append-only audit log, not the read source). `decide`
+  does NOT get a new read port this sprint — `current_status: ComponentStatus` is an **injected
+  parameter** (precedent: `collapse`'s `under_maintenance`, `anti_flap`'s `thresholds`). The
+  composition layer / first end-to-end thread (STORY-016) reads `components.status` and supplies it.
+- **Updating `components.status` + writing a `publications` row are OUT OF SCOPE** (no port for them
+  here) — that persistence is STORY-016's end-to-end wiring. `decide`'s publish responsibility is
+  exactly `StatusPublisherPort.publish(StatusChange(...))`.
+- Full integrated §10+§12 algorithm + edge/error behavior: see
+  `docs/scrum/sprints/2026-06-27-sprint-10/plan.md` (STORY-024 section) — the build contract.
 
 ## Scope note (sprint-9 refinement)
 This story now ALSO owns the **reconciliation rule** (dossier §12: worse computed → supersede the
@@ -48,3 +70,8 @@ canonical `StatusChange` to the `StatusPublisherPort` (STORY-013), committed-the
   injected thresholds; this story is now **decide** (stage 4) ALONE, re-estimated 5 → 3 (less work
   without anti-flap, but still blocked on the proposal seam). Status: draft — depends on STORY-012
   (proposals); resolve the seam at refinement. Proposed estimate: 3.
+- 2026-06-27 (sprint-10 refinement + planning): deps all Done (STORY-028/012/013). Open question
+  RESOLVED — current published status = `components.status`, injected as a `current_status` parameter;
+  read wiring deferred to STORY-016. AC finalized against dossier §10 + §12 (two comparisons: vs
+  published drives the publish, vs the open proposal drives supersede/obsolete). Estimate held at 3.
+  Status: ready → committed to Sprint 10 (the headline). Build contract: the sprint-10 plan.md.

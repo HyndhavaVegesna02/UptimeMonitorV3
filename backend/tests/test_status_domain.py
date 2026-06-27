@@ -63,3 +63,28 @@ def test_ingest_result_is_frozen():
     result = IngestResult(accepted=7, rejected=2)
     with pytest.raises(ValidationError):
         result.accepted = 0
+
+
+# --- Status Severity Helpers (STORY-024) -----------------------------------------
+
+
+def test_status_severity_exhaustiveness_and_ordering():
+    from src.core.domain import STATUS_SEVERITY, severity_rank, is_worse
+
+    # Assert every member of ComponentStatus is in STATUS_SEVERITY
+    for member in ComponentStatus:
+        assert member in STATUS_SEVERITY
+        assert isinstance(severity_rank(member), int)
+
+    # Assert ordering: operational < degraded < partial_outage < major_outage
+    assert severity_rank(ComponentStatus.OPERATIONAL) < severity_rank(ComponentStatus.DEGRADED)
+    assert severity_rank(ComponentStatus.DEGRADED) < severity_rank(ComponentStatus.PARTIAL_OUTAGE)
+    assert severity_rank(ComponentStatus.PARTIAL_OUTAGE) < severity_rank(ComponentStatus.MAJOR_OUTAGE)
+
+    # Test is_worse
+    assert is_worse(ComponentStatus.MAJOR_OUTAGE, ComponentStatus.PARTIAL_OUTAGE) is True
+    assert is_worse(ComponentStatus.PARTIAL_OUTAGE, ComponentStatus.DEGRADED) is True
+    assert is_worse(ComponentStatus.DEGRADED, ComponentStatus.OPERATIONAL) is True
+    assert is_worse(ComponentStatus.OPERATIONAL, ComponentStatus.MAJOR_OUTAGE) is False
+    assert is_worse(ComponentStatus.OPERATIONAL, ComponentStatus.OPERATIONAL) is False
+

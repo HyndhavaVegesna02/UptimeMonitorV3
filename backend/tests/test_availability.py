@@ -12,9 +12,14 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+import pytest
 
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.services.availability import AvailabilityResult, rollup_group
+from src.core.services.availability import (
+    AvailabilityCalculator,
+    AvailabilityResult,
+    rollup_group,
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fakes import FakeObservationRepository  # noqa: E402  (after sys.path setup above)
@@ -117,6 +122,120 @@ def test_availability_result_allows_none_percentages():
     assert result.completeness_pct is None
 
 
+def test_availability_result_validation_coherence():
+    from pydantic import ValidationError
+
+    # Valid shapes
+    # 1. Non-degenerate: all values set
+    AvailabilityResult(
+        availability_pct=1.0,
+        completeness_pct=1.0,
+        total_verdicts=1,
+        passing_verdicts=1,
+        maintenance_verdicts=0,
+        gap_verdicts=0,
+        distinct_locations=1,
+        window="24h",
+        computed_at=_COMPUTED_AT,
+    )
+
+    # 2. Degenerate availability (denominator total - gap - maintenance == 0 -> availability_pct is None)
+    AvailabilityResult(
+        availability_pct=None,
+        completeness_pct=1.0,
+        total_verdicts=1,
+        passing_verdicts=0,
+        maintenance_verdicts=1,
+        gap_verdicts=0,
+        distinct_locations=1,
+        window="24h",
+        computed_at=_COMPUTED_AT,
+    )
+
+    # 3. Degenerate completeness (total_verdicts == 0 -> completeness_pct is None)
+    AvailabilityResult(
+        availability_pct=None,
+        completeness_pct=None,
+        total_verdicts=0,
+        passing_verdicts=0,
+        maintenance_verdicts=0,
+        gap_verdicts=0,
+        distinct_locations=0,
+        window="24h",
+        computed_at=_COMPUTED_AT,
+    )
+
+    # 4. Degenerate completeness (distinct_locations == 0 -> completeness_pct is None)
+    AvailabilityResult(
+        availability_pct=None,
+        completeness_pct=None,
+        total_verdicts=0,
+        passing_verdicts=0,
+        maintenance_verdicts=0,
+        gap_verdicts=1,
+        distinct_locations=0,
+        window="24h",
+        computed_at=_COMPUTED_AT,
+    )
+
+    # Invalid shapes:
+    # 1. availability_pct is set but denominator is 0 (total - gap - maintenance == 0)
+    with pytest.raises(ValidationError, match="availability_pct must be None when the availability denominator is 0"):
+        AvailabilityResult(
+            availability_pct=1.0,
+            completeness_pct=1.0,
+            total_verdicts=1,
+            passing_verdicts=0,
+            maintenance_verdicts=1,
+            gap_verdicts=0,
+            distinct_locations=1,
+            window="24h",
+            computed_at=_COMPUTED_AT,
+        )
+
+    # 2. availability_pct is None but denominator > 0 (total - gap - maintenance > 0)
+    with pytest.raises(ValidationError, match="availability_pct must not be None when the availability denominator is greater than 0"):
+        AvailabilityResult(
+            availability_pct=None,
+            completeness_pct=1.0,
+            total_verdicts=1,
+            passing_verdicts=1,
+            maintenance_verdicts=0,
+            gap_verdicts=0,
+            distinct_locations=1,
+            window="24h",
+            computed_at=_COMPUTED_AT,
+        )
+
+    # 3. completeness_pct is set but denominator is 0 (total_verdicts * distinct_locations == 0)
+    with pytest.raises(ValidationError, match="completeness_pct must be None when the completeness denominator is 0"):
+        AvailabilityResult(
+            availability_pct=None,
+            completeness_pct=1.0,
+            total_verdicts=0,
+            passing_verdicts=0,
+            maintenance_verdicts=0,
+            gap_verdicts=0,
+            distinct_locations=1,
+            window="24h",
+            computed_at=_COMPUTED_AT,
+        )
+
+    # 4. completeness_pct is None but denominator > 0 (total_verdicts * distinct_locations > 0)
+    with pytest.raises(ValidationError, match="completeness_pct must not be None when the completeness denominator is greater than 0"):
+        AvailabilityResult(
+            availability_pct=1.0,
+            completeness_pct=None,
+            total_verdicts=1,
+            passing_verdicts=1,
+            maintenance_verdicts=0,
+            gap_verdicts=0,
+            distinct_locations=1,
+            window="24h",
+            computed_at=_COMPUTED_AT,
+        )
+
+
 # --- AC1: availability% over collapsed verdicts (dossier §11) ---------------
 #
 # Cycle bucketing: the window [since, until) is sliced into consecutive
@@ -133,8 +252,6 @@ def test_availability_result_allows_none_percentages():
 
 
 def _calculator(repo):
-    from src.core.services.availability import AvailabilityCalculator
-
     return AvailabilityCalculator(observation_repo=repo)
 
 
@@ -469,6 +586,21 @@ def _result(
     distinct_locations: int = 0,
     window: str = "20m",
 ) -> AvailabilityResult:
+    # Auto-adjust counts for tests that construct dummy results with default counts
+    if availability_pct is not None and total_verdicts == 0:
+        total_verdicts = 10
+        passing_verdicts = int(10 * availability_pct)
+    elif availability_pct is None and total_verdicts > 0 and (total_verdicts - gap_verdicts - maintenance_verdicts) > 0:
+        # If availability_pct is None, availability denominator must be 0
+        gap_verdicts = total_verdicts - maintenance_verdicts
+
+    if completeness_pct is not None and distinct_locations == 0:
+        distinct_locations = 2
+        total_verdicts = total_verdicts or 10
+    elif completeness_pct is None and distinct_locations > 0 and total_verdicts > 0:
+        # If completeness_pct is None, completeness denominator must be 0
+        total_verdicts = 0
+
     return AvailabilityResult(
         availability_pct=availability_pct,
         completeness_pct=completeness_pct,
