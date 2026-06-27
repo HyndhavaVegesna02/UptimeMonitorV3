@@ -49,6 +49,28 @@ class DecideService:
                 if persisted is None:
                     return DecideAction.NOOP
                 return DecideAction.PROPOSED
+            elif opened.to_status != proposed_status:
+                self._proposal_repo.resolve(
+                    opened.id,
+                    to_state=ProposalState.SUPERSEDED,
+                    reason=reason,
+                    resolved_at=now,
+                )
+                prop = StatusProposal(
+                    component_id=component_id,
+                    from_status=current_status,
+                    to_status=proposed_status,
+                    state=ProposalState.OPEN,
+                    proposed_at=now,
+                )
+                persisted = self._proposal_repo.create_open(prop)
+                if persisted is None:
+                    return DecideAction.NOOP
+                return DecideAction.SUPERSEDED
+            else:
+                # open.to_status == proposed_status -> leave it
+                return DecideAction.NOOP
 
         return DecideAction.NOOP
+
 
