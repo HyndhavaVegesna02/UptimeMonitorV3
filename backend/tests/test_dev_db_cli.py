@@ -86,3 +86,36 @@ def test_up_then_check_fk_direction_then_down():
         text=True,
     )
     assert leftover.stdout.strip() == ""
+
+
+def test_up_idempotent_against_leftover_container():
+    # Ensure no leftover from a prior run
+    subprocess.run(["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True)
+
+    # 1. Start a container manually with the target name
+    result = subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            _TEST_CONTAINER,
+            "-p",
+            f"{_TEST_PORT}:5432",
+            "postgres:16",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+
+    try:
+        # 2. Run our CLI up command while the container is running.
+        # It should force-remove it and recreate/migrate it without error.
+        up_result = _run_cli("up", "--name", _TEST_CONTAINER, "--port", str(_TEST_PORT))
+        assert up_result.returncode == 0, up_result.stdout + up_result.stderr
+        assert "DB is up and migrated" in up_result.stdout
+    finally:
+        # Cleanup
+        _run_cli("down", "--name", _TEST_CONTAINER)
+
