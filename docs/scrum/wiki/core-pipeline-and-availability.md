@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py]
-verified_sha: 75674b7
+verified_sha: 32e24de
 verified_sprint: sprint-10
 status: verified          # verified | stale | archived
 ---
@@ -201,3 +201,4 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   181→199; AvailabilityCalculator 110→113, rollup_group 216→232; skew validator 75→76, skew
   76→94). Code unchanged — addresses only; verified_sha stays 9ab7dd2.
 - sprint-10: added core pipeline stage 4 — decide (STORY-024, dossier §10 / §12). Verified at 75674b7.
+- sprint-10 (STORY-029): enforced AvailabilityResult cross-field coherence validator. Verified at 32e24de.
