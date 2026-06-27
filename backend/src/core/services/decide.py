@@ -127,43 +127,39 @@ class DecideService:
 
         if proposed_is_degradation:
             if opened is None:
-                prop = StatusProposal(
+                action = self._open_proposal(
                     component_id=component_id,
                     from_status=current_status,
                     to_status=proposed_status,
-                    state=ProposalState.OPEN,
                     proposed_at=now,
+                    success_action=DecideAction.PROPOSED,
                 )
-                persisted = self._proposal_repo.create_open(prop)
-                if persisted is None:
-                    action = DecideAction.NOOP
-                else:
-                    action = DecideAction.PROPOSED
             elif opened.to_status != proposed_status:
+                assert opened.id is not None, (
+                    f"Open proposal for component {component_id!r} has no ID"
+                )
                 self._proposal_repo.resolve(
                     opened.id,
                     to_state=ProposalState.SUPERSEDED,
                     reason=reason,
                     resolved_at=now,
                 )
-                prop = StatusProposal(
+                action = self._open_proposal(
                     component_id=component_id,
                     from_status=current_status,
                     to_status=proposed_status,
-                    state=ProposalState.OPEN,
                     proposed_at=now,
+                    success_action=DecideAction.SUPERSEDED,
                 )
-                persisted = self._proposal_repo.create_open(prop)
-                if persisted is None:
-                    action = DecideAction.NOOP
-                else:
-                    action = DecideAction.SUPERSEDED
             else:
                 # open.to_status == proposed_status -> leave it
                 action = DecideAction.NOOP
         else:
             # proposed is operational-or-equal vs published -> no human gate
             if opened is not None:
+                assert opened.id is not None, (
+                    f"Open proposal for component {component_id!r} has no ID"
+                )
                 self._proposal_repo.resolve(
                     opened.id,
                     to_state=ProposalState.OBSOLETED,
@@ -176,3 +172,29 @@ class DecideService:
             self._publisher.publish(publish_change)
 
         return action
+
+    def _open_proposal(
+        self,
+        *,
+        component_id: str,
+        from_status: ComponentStatus,
+        to_status: ComponentStatus,
+        proposed_at: datetime,
+        success_action: DecideAction,
+    ) -> DecideAction:
+        """Create a new open StatusProposal and return the correct DecideAction.
+
+        Encapsulates the assembly and persistence check for opening a
+        degradation proposal (dossier §12).
+        """
+        prop = StatusProposal(
+            component_id=component_id,
+            from_status=from_status,
+            to_status=to_status,
+            state=ProposalState.OPEN,
+            proposed_at=proposed_at,
+        )
+        persisted = self._proposal_repo.create_open(prop)
+        if persisted is None:
+            return DecideAction.NOOP
+        return success_action
