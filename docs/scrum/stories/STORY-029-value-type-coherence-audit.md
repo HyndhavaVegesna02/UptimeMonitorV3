@@ -19,11 +19,11 @@ sprint-8 working agreement that requires such invariants be enforced + tested go
       cross-field coherence invariant (mutually-exclusive fields; a flag that must agree with a
       payload; an Optional that must be set/unset based on another field). The audit list + finding
       per type is recorded in this story file.
-- [ ] AC2: Any type found with an unenforced invariant gains a `model_validator(mode="after")`
+- [x] AC2: Any type found with an unenforced invariant gains a `model_validator(mode="after")`
       enforcing it + a test for both the rejected and the valid shapes (mirroring `Verdict` /
       `AntiFlapOutcome` / `SkewResult`). If NONE are found, that is a valid outcome — record "no
       further gaps" with the audited list.
-- [ ] AC3: `lint-imports` green; all existing tests pass unchanged; `pytest` green.
+- [x] AC3: `lint-imports` green; all existing tests pass unchanged; `pytest` green.
 
 ## Audit Findings
 
