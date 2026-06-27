@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/]
-verified_sha: f5efa16
-verified_sprint: sprint-9
+verified_sha: 75674b7
+verified_sprint: sprint-10
 status: verified          # verified | stale | archived
 ---
 
@@ -30,6 +30,7 @@ status: verified          # verified | stale | archived
   (`status.py:32`).
 - `IngestResult` (frozen) `{accepted:int, rejected:int}` (`status.py:46-59`) — the outcome
   of ingesting one batch.
+- `STATUS_SEVERITY` severity-ordering helpers (`status.py:61-80`): mapping and comparison functions (`severity_rank(s)`, `is_worse(a, b)`) to order and compare component status severity (operational < degraded < partial_outage < major_outage) (STORY-024).
 - `Verdict` (frozen, `verdict.py:14`) — STORY-010's pipeline output type: one cycle's
   collapsed verdict for one signal. Fields: `signal_key:str`, `observed_at:datetime`
   (the cycle instant — `max(observed_at)` across the cycle's observations, tz-aware
@@ -154,4 +155,5 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   documented only); see Fact above.
 - sprint-9: STORY-012 adds `ProposalState` and `StatusProposal` canonical domain types,
   the `ProposalRepository` port, and enforces proposal resolved_at coherence at construction.
+- sprint-10: added STATUS_SEVERITY helpers to status.py (STORY-024). Verified at 75674b7.
 
