@@ -197,4 +197,44 @@ def test_decide_recovery_open_proposal_exists_obsoletes_and_nothing_published():
     assert resolved.reason == "Recovered before approval"
 
 
+class FailingStatusPublisher(RecordingStatusPublisher):
+    def publish(self, change: StatusChange) -> None:
+        raise RuntimeError("Publish failed")
+
+
+def test_decide_commit_first_publish_failure_propagates_but_repo_write_committed():
+    proposal_repo = FakeProposalRepository()
+    publisher = FailingStatusPublisher()
+    service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    now = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
+    # Pre-create open proposal (partial outage)
+    open_prop = StatusProposal(
+        component_id="checkout",
+        from_status=ComponentStatus.DEGRADED,
+        to_status=ComponentStatus.PARTIAL_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=now,
+    )
+    open_prop = proposal_repo.create_open(open_prop)
+
+    later = datetime(2026, 6, 27, 12, 5, 0, tzinfo=timezone.utc)
+    # Recovery (proposed operational vs current degraded) -> publishes recovery, and obsoletes open
+    with pytest.raises(RuntimeError, match="Publish failed"):
+        service.decide(
+            component_id="checkout",
+            proposed_status=ComponentStatus.OPERATIONAL,
+            current_status=ComponentStatus.DEGRADED,
+            now=later,
+            reason="Recovered",
+        )
+
+    # Repository resolve should be committed despite publish failure
+    resolved = proposal_repo.proposals[open_prop.id]
+    assert resolved.state == ProposalState.OBSOLETED
+    assert resolved.resolved_at == later
+    assert resolved.reason == "Recovered"
+
+
+
 
