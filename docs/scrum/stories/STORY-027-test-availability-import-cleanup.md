@@ -11,9 +11,9 @@ In `backend/tests/test_availability.py`, a test helper imports `AvailabilityCalc
 imported at module top. Cosmetic inconsistency, no functional impact — purely a tidy-up.
 
 ## Acceptance Criteria (refined — PO-approved 2026-06-25)
-- [ ] AC1: `AvailabilityCalculator` is imported at module top in `backend/tests/test_availability.py`,
+- [x] AC1: `AvailabilityCalculator` is imported at module top in `backend/tests/test_availability.py`,
       alongside `AvailabilityResult` / `rollup_group`; the in-function lazy import is removed.
-- [ ] AC2: No behaviour change — all existing availability tests pass unchanged; `lint-imports`
+- [x] AC2: No behaviour change — all existing availability tests pass unchanged; `lint-imports`
       stays green. (Test-only change; nothing under `src/` is touched.)
 
 ## Resolved Questions

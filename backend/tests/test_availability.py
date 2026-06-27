@@ -15,7 +15,11 @@ from pathlib import Path
 import pytest
 
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.services.availability import AvailabilityResult, rollup_group
+from src.core.services.availability import (
+    AvailabilityCalculator,
+    AvailabilityResult,
+    rollup_group,
+)
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from fakes import FakeObservationRepository  # noqa: E402  (after sys.path setup above)
@@ -248,8 +252,6 @@ def test_availability_result_validation_coherence():
 
 
 def _calculator(repo):
-    from src.core.services.availability import AvailabilityCalculator
-
     return AvailabilityCalculator(observation_repo=repo)
 
 
