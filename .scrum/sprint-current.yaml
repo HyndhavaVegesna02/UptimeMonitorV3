@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 10
-status: review         # none | active | review | closed | aborted
+status: closed         # none | active | review | closed | aborted
+closed: 2026-06-27
 started: 2026-06-27
 goal: "Close out Zone 4 — the pipeline's final stage, decide, compares anti-flap's proposed status to
   the component's current published status and reconciles: worse -> a human-gate degradation proposal

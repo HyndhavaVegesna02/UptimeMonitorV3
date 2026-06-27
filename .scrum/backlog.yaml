@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 32
+next_story_id: 33
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -101,7 +101,7 @@ stories:
   - id: STORY-024
     title: Core pipeline stage 4 — decide
     file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
-    status: ready   # sprint-10 refinement: deps all Done; read seam resolved (components.status, injected). Committed to Sprint 10.
+    status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 3
     priority: 12
     type: feature
@@ -234,7 +234,7 @@ stories:
   - id: STORY-027
     title: Hoist the lazy AvailabilityCalculator import in test_availability.py
     file: docs/scrum/stories/STORY-027-test-availability-import-cleanup.md
-    status: ready   # follow-up from Sprint 7 review; test-only cosmetic tidy-up, no open questions
+    status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
     priority: 24
     type: chore
@@ -242,7 +242,7 @@ stories:
   - id: STORY-029
     title: Audit frozen value/result types for unenforced coherence invariants
     file: docs/scrum/stories/STORY-029-value-type-coherence-audit.md
-    status: ready   # follow-up from Sprint 8 review; bounded audit of core value types, no open Qs
+    status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
     priority: 25
     type: chore
@@ -250,7 +250,7 @@ stories:
   - id: STORY-030
     title: Make dev_db.py up idempotent against a leftover container
     file: docs/scrum/stories/STORY-030-dev-db-up-idempotent.md
-    status: ready   # follow-up from Sprint 8 retro; bounded tooling fix, no open questions
+    status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
     priority: 26
     type: chore
@@ -261,5 +261,13 @@ stories:
     status: ready   # follow-up from Sprint 9 review; cosmetic test/style only, no open questions
     points: 1
     priority: 27
+    type: chore
+    sprint: null
+  - id: STORY-032
+    title: decide.py quality minors � DRY, import style, opened.id guard, trailing blanks
+    file: docs/scrum/stories/STORY-032-decide-quality-minors.md
+    status: ready   # follow-up from Sprint 10 review; cosmetic/robustness in decide.py only, no open questions
+    points: 1
+    priority: 28
     type: chore
     sprint: null
