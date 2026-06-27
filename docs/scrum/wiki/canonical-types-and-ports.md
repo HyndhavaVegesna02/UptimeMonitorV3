@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/]
-verified_sha: 75674b7
+verified_sha: a93f91a
 verified_sprint: sprint-10
 status: verified          # verified | stale | archived
 ---
