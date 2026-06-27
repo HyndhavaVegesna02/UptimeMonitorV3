@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py]
-verified_sha: a93f91a
-verified_sprint: sprint-10
+verified_sha: a93341d
+verified_sprint: sprint-11
 status: verified          # verified | stale | archived
 ---
 
@@ -154,8 +154,8 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   let alone vendor/HTTP/SQL (AC3, the strictest purity bar in this module so far).
 
 ### Core pipeline stage 4 — decide (`core/services/decide.py`, STORY-024, dossier §10 / §12)
-- `DecideAction(str, Enum)` (`decide.py:9`) — the primary outcome returned by `decide`: `noop`, `proposed`, `superseded`, `obsoleted`, or `published_recovery`.
-- `DecideService` (`decide.py:17`) — concrete service that reconciles proposed status against published status and open proposals. Constructed with injected `proposal_repo: ProposalRepository` and `publisher: StatusPublisherPort`.
+- `DecideAction(str, Enum)` (`decide.py:43`) — the primary outcome returned by `decide`: `noop`, `proposed`, `superseded`, `obsoleted`, or `published_recovery`.
+- `DecideService` (`decide.py:61`) — concrete service that reconciles proposed status against published status and open proposals. Constructed with injected `proposal_repo: ProposalRepository` and `publisher: StatusPublisherPort`.
 - **Decision & Reconciliation Logic (AC1/AC2)**:
   - If `proposed_status` is worse than `current_status` (a degradation):
     - If no open proposal exists, calls `proposal_repo.create_open`, returns `PROPOSED`.
@@ -202,3 +202,4 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   76→94). Code unchanged — addresses only; verified_sha stays 9ab7dd2.
 - sprint-10: added core pipeline stage 4 — decide (STORY-024, dossier §10 / §12). Verified at 75674b7.
 - sprint-10 (STORY-029): enforced AvailabilityResult cross-field coherence validator. Verified at 32e24de.
+- sprint-11 (STORY-032): refactored DecideService to extract _open_proposal helper and add assertions on open proposal IDs. Verified at a93341d.
