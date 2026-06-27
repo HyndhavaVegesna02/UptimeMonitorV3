@@ -65,17 +65,20 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 | Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
 | Stop throwaway DB   | `python scripts/dev_db.py down` (removes the container) |
+| Lint code           | `ruff check .` (must exit 0)               |
+| Format check        | `ruff format --check .` (must exit 0)      |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
 
-The four DoD gate commands are `pytest`, `lint-imports`,
-`python scripts/check_fk_direction.py`, and `alembic upgrade head`. All four are
-live as of STORY-003. `lint-imports` enforces the three dossier §4 contracts
+The six DoD gate commands are `pytest`, `lint-imports`,
+`python scripts/check_fk_direction.py`, `alembic upgrade head`, `ruff check`, and `ruff format`. All six are
+live as of STORY-033. `lint-imports` enforces the three dossier §4 contracts
 (core-independence, core-internal-layering, adapters-independence);
 `check_fk_direction.py` enforces the dossier §9 schema spine boundary (no
 spine→feature foreign key) by reading `information_schema` over `DATABASE_URL`;
-`alembic upgrade head` applies the migrations at the repo top level.
+`alembic upgrade head` applies the migrations at the repo top level;
+`ruff check` and `ruff format` enforce the code style, import sorting, and formatting.
 
 ## Database & migrations (dossier §3, §4, §17)
 
@@ -156,6 +159,7 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 | SQLAlchemy 2 / Alembic | live (STORY-003); `alembic upgrade head` (DoD) | ORM + migrations at repo top level |
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
 | `scripts/dev_db.py` | live (STORY-019)            | shared throwaway-DB helper (CLI `up`/`down`) + the `migrated_db` pytest session fixture |
+| ruff              | live (STORY-033); `ruff check` + `ruff format` (DoD) | code style, sorting, and formatting |
 | git               | configured                    | version control                           |
 
 No `psql` client is installed. No Neon/Dynatrace/Statuspage credentials are
