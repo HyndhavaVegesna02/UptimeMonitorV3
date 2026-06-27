@@ -3,7 +3,7 @@ title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/tests/test_persistence_adapters.py]
 verified_sha: f5efa16
 verified_sprint: sprint-9
-status: verified
+status: stale
 ---
 
 ## Facts (verified against code)

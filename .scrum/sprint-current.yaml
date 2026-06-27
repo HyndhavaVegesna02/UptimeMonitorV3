@@ -1,84 +1,56 @@
 # YourTeam active sprint board.
-sprint: 10
+sprint: 11
 status: closed         # none | active | review | closed | aborted
 closed: 2026-06-27
 started: 2026-06-27
-goal: "Close out Zone 4 — the pipeline's final stage, decide, compares anti-flap's proposed status to
-  the component's current published status and reconciles: worse -> a human-gate degradation proposal
-  (no publish), better -> obsolete the open proposal + auto-publish a recovery, same -> nothing. Plus
-  three cosmetic cleanups carried from recent retros/reviews (value-type coherence audit, a test-import
-  tidy, dev_db.py idempotency)."
-branch: sprint-10
-start_tag: sprint-10-start
-# Capacity: velocity history (...,6,6,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
-# STORY-024 (decide, 3) is the headline — Zone 4 finale, unblocked now that STORY-028 (anti-flap),
-# STORY-012 (proposals) and STORY-013 (publish) are all Done. Refined at sprint-10 planning: the open
-# "current published status read" seam is resolved as components.status, INJECTED into decide as a
-# `current_status: ComponentStatus` parameter (precedent: collapse's under_maintenance, anti_flap's
-# thresholds); decide consumes the ProposalRepository + StatusPublisherPort ports it names; the
-# components.status read wiring is deferred to STORY-016 (first end-to-end thread). decide is a core
-# DecideService with injected ports (mirrors IngestService). Three 1-pt chores fill to 6.
-# Order: STORY-024 first (highest blast radius, full review pipeline), then 029 (core-domain adjacent),
-# 027 (test tidy), 030 (tooling).
+goal: "Tooling + cleanup consolidation — land the ruff DoD gate (format + import-sort, STORY-033) and
+  clear the carried review chores (STORY-032 decide minors, STORY-031 sprint-9 nits) before the Zone 6
+  API push. Deliberate under-commit (4 of 6 pts) chosen by the PO: solidify the floor and clear the
+  decks first. Ruff lands FIRST so its reformat subsumes the cosmetic parts of the two chores."
+branch: sprint-11
+start_tag: sprint-11-start
+# Capacity: velocity history (...,6,6,6,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 4 (DELIBERATE
+# under-commit, PO choice — "ruff + cleanup consolidation", not opening Zone 6 this sprint).
+# Order: STORY-033 FIRST (the ruff reformat pass touches the whole tree + adds 2 DoD commands; doing it
+# first means STORY-031/032 are auto-formatted and their cosmetic ACs are subsumed), then STORY-032
+# (decide residual = DRY helper + opened.id guard), then STORY-031 (test removal + fixture decision).
 #
-# WORKFLOW (PO-directed 2026-06-26, working-agreements.md): the PO implements the plan externally
-# (Antigravity / Gemini), committing onto this branch; the orchestrator does NOT dispatch implementer
-# subagents. The PO triggers the review ("do your review"); the orchestrator then runs the FULL DoD
-# gate + spec/quality reviewers (Opus, for the 3-pt story) + wiki blast radius + review/retro/merge.
-# A story is Done only when all four DoD commands exit 0 AND (for 3+ pts) both reviews pass. Fix-loop
-# findings route back to the PO/Gemini unless the PO asks the orchestrator to fix inline.
+# OVERLAP NOTE (carry into the plan): after STORY-033's `ruff format` + `ruff check --fix` pass,
+# STORY-032 AC3 (decide.py import style + trailing blanks) and STORY-031 AC3 (hoist mid-module imports
+# in test_statuspage_adapter.py; blank line between fakes.py methods) may already be satisfied — the
+# implementer VERIFIES rather than re-does, and must not fight the formatter.
 #
-# Baseline at lock: ALL gates green on main @ 299925b — pytest 264 passed (with DB; Docker up),
-# lint-imports 3 kept / 0 broken. No migration expected this sprint (decide is pure core; the chores
-# touch tests + a script + possibly a core validator — no schema change).
-# Model assignment: reviewers -> Opus (PO rule). Implementation -> PO/Gemini (external).
+# WORKFLOW (working-agreements.md 2026-06-26): PO implements the plan externally (Antigravity / Gemini)
+# onto this branch; orchestrator does NOT dispatch implementers. PO triggers the review ("do your
+# review"); orchestrator then runs the FULL DoD gate + (for 3+ pt stories) Opus reviewers + wiki blast
+# radius + review/retro/merge. All three stories here are <=2 pts -> GATE ONLY (no LLM reviewers).
+# NOTE: STORY-033 CHANGES THE DoD (adds `ruff check` + `ruff format --check`). From the commit that
+# lands STORY-033 onward, the gate is SIX commands, and the command-sync agreement requires the
+# .scrum/definition-of-done.md + CLAUDE.md update in that same commit.
+#
+# Baseline at lock: all gates green on main @ 5e35a01 — pytest 275 passed (throwaway DB), lint-imports
+# 3 kept / 0 broken. No migration this sprint (no schema change). Conventions checklist (working-
+# agreements.md 2026-06-27) applies; see plan.md header.
 stories:
-  - id: STORY-024
-    points: 3
+  - id: STORY-033
+    points: 2
     board: done            # todo | in-progress | blocked | review | done
-    pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 3 AC MET — §10 direction (worse->create_open/no-publish,
-                            # better->publish, same->nothing) + §12 reconciliation (supersede-vs-leave,
-                            # recovered->obsoleted/nothing-published distinct from better->auto-publish),
-                            # commit-first verified via FailingStatusPublisher. Tests exercise every branch.
-    quality_review: APPROVE # Opus quality returned 1 MAJOR — decide.py shipped with NO docstrings
-                            # (module/class/method), violating the core-service docstring convention
-                            # (ingest_service.py/pipeline.py cite the dossier + explain the why). Fix loop 1
-                            # (orchestrator, inline at PO request): added a module docstring (§10 decide +
-                            # §12 reconciliation, the two comparisons, commit-first) + docstrings on
-                            # DecideAction/DecideService/__init__/decide; logic untouched (ed87055). All
-                            # other findings non-blocking minors (trailing blank lines, import style, a DRY
-                            # nit in the two degradation branches, opened.id typing hole) -> STORY-031-style
-                            # follow-up if the PO wants them.
+    pipeline: gate         # 2 pts -> (external impl) + DoD gate only
     blocked_question: null
-    attempts: 1             # one fix loop (orchestrator inline, docstrings) per PO choice
+    attempts: 0
     paused_at_commit: null
     dod_evidence:
-      - command: "pytest"
+      - command: "all SIX commands (pytest / lint-imports / check_fk_direction / alembic / ruff check / ruff format --check)"
         exit_code: 0
-        output_tail: "275 passed in 37.72s (orchestrator-verified, with DB @ ed87055)"
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
-        exit_code: 0
-        output_tail: "exit 0 (no-op upgrade)"
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-    blast_radius_resolved: true   # core-pipeline-and-availability.md (decide joins collapse/streak/
-                                  # anti_flap; decide.py + test_decide.py in code_refs) + canonical-types-
-                                  # and-ports.md (severity helpers in status.py). verified_sha to be
-                                  # re-stamped to the merge commit (docstring commit ed87055 is no-Fact).
-  - id: STORY-029
+        output_tail: "orchestrator-verified at c577330 (with DB): pytest 275 passed; lint-imports 3/0;
+          fk 0 violations; alembic 0; ruff check 'All checks passed!'; ruff format '73 files already
+          formatted'. Reformat confirmed formatting-only (migration diff = exploded sa.Column calls +
+          quotes, no DDL change). ruleset minimal (E/W/F/I, E501 ignored), line-length 88."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # DoD changed -> definition-of-done.md + CLAUDE.md synced in the same
+                                  # commit (d557749); dev-setup-and-dod.md updated + verified.
+  - id: STORY-032
     points: 1
     board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
@@ -86,15 +58,15 @@ stories:
     attempts: 0
     paused_at_commit: null
     dod_evidence:
-      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
+      - command: "all SIX commands"
         exit_code: 0
-        output_tail: "all four exit 0 at ed87055 (gate run over full tree). Audit of 12 frozen core
-          types recorded in the story file; found + fixed the AvailabilityResult gap with a
-          model_validator(mode=after) + tests for valid/invalid shapes."
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-    blast_radius_resolved: true   # AvailabilityResult validator -> core-pipeline-and-availability.md updated
-  - id: STORY-027
+        output_tail: "verified at c577330 (see STORY-033 row). _open_proposal DRY helper extracted +
+          opened.id asserts added; cosmetic ACs (imports/blanks) handled by the ruff pass."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # core-pipeline-and-availability.md re-pinned (decide.py:43/61 verified
+                                  # current) by the implementer; stays verified.
+  - id: STORY-031
     points: 1
     board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
@@ -102,27 +74,17 @@ stories:
     attempts: 0
     paused_at_commit: null
     dod_evidence:
-      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
+      - command: "all SIX commands"
         exit_code: 0
-        output_tail: "all four exit 0 at ed87055. AvailabilityCalculator import hoisted to module top
-          in test_availability.py; availability tests pass unchanged."
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-    blast_radius_resolved: true   # test-only; no src change -> no wiki impact
-  - id: STORY-030
-    points: 1
-    board: done
-    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
-    blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest / lint-imports / check_fk_direction / alembic upgrade head"
-        exit_code: 0
-        output_tail: "all four exit 0 at ed87055. dev_db.py up force-removes its own leftover container
-          before docker run; integration test test_up_idempotent_against_leftover_container added."
-        commit: ed87055
-        at: 2026-06-27T16:10:00+05:30
-    blast_radius_resolved: true   # scripts/dev_db.py -> dev-setup-and-dod.md re-verified
+        output_tail: "verified at c577330. Smoke test removed; degraded-path publish test added
+          (exercises the unused fixture); mid-module imports hoisted (ruff)."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # test/fixture-only; no src Fact impact.
+# COMPILE PASS (sprint-11): STORY-033's tree-wide `ruff format` touched files referenced by 7 wiki
+# articles, drifting ~54 `file:line` citations (Facts still TRUE, only pointers moved). PO decision:
+# mark those 7 `status: stale` (honest/quarantined) rather than hand-patch brittle line refs; rehab via
+# STORY-034 under a symbol-based-citation policy adopted at retro. core-pipeline + dev-setup were
+# re-pinned in-sprint and stay verified.
 hotfixes: []
 interrupts: []

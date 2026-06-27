@@ -15,12 +15,11 @@ from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.ports import (
     ClockPort,
     ObservationRepository,
+    ProposalRepository,
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
-    ProposalRepository,
 )
-
 
 
 class FakeClock(ClockPort):
@@ -88,9 +87,7 @@ class FakeSignalIngestPort(SignalIngestPort):
     def __init__(self) -> None:
         self.received: list[SignalObservation] = []
 
-    def ingest_observations(
-        self, batch: Sequence[SignalObservation]
-    ) -> IngestResult:
+    def ingest_observations(self, batch: Sequence[SignalObservation]) -> IngestResult:
         self.received.extend(batch)
         return IngestResult(accepted=len(batch), rejected=0)
 
@@ -127,6 +124,7 @@ class FakeProposalRepository(ProposalRepository):
             ):
                 return existing
         return None
+
     def resolve(
         self,
         proposal_id: int,
@@ -139,7 +137,9 @@ class FakeProposalRepository(ProposalRepository):
             raise ValueError(f"Proposal {proposal_id} not found")
         existing = self.proposals[proposal_id]
         if existing.state != ProposalState.OPEN:
-            raise ValueError(f"Proposal {proposal_id} is not open (current state: {existing.state.value})")
+            raise ValueError(
+                f"Proposal {proposal_id} is not open (current state: {existing.state.value})"
+            )
         updated = existing.model_copy(
             update={
                 "state": to_state,
@@ -167,4 +167,3 @@ class FakeProposalRepository(ProposalRepository):
                 "occurred_at": occurred_at,
             }
         )
-

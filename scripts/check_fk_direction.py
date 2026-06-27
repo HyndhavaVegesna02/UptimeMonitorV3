@@ -24,19 +24,21 @@ from collections.abc import Iterable
 
 # Dossier §9 SPINE allowlist — the explicit set of constant-core tables.
 # Everything not in this set is a feature domain.
-SPINE: frozenset[str] = frozenset({
-    "apps",
-    "signals",
-    "components",
-    "observations",
-    "watermarks",
-    "rejected_observations",
-    "problem_signals",
-    "status_proposals",
-    "approval_events",
-    "publications",
-    "maintenance_windows",
-})
+SPINE: frozenset[str] = frozenset(
+    {
+        "apps",
+        "signals",
+        "components",
+        "observations",
+        "watermarks",
+        "rejected_observations",
+        "problem_signals",
+        "status_proposals",
+        "approval_events",
+        "publications",
+        "maintenance_windows",
+    }
+)
 
 # FK source/target table names in the public schema. Direction-only: a row exists
 # per FK constraint mapping the referencing (source) table to the referenced

@@ -20,7 +20,6 @@ from datetime import datetime, timedelta, timezone
 import psycopg
 import pytest
 import sqlalchemy as sa
-
 from src.core.domain import ComponentStatus, Health, Provenance, SignalObservation
 
 
@@ -115,7 +114,9 @@ def test_save_new_inserts_a_fresh_batch_and_reports_count(migrated_db, engine):
     assert rows == [("evt-1", "up", "us-east"), ("evt-2", "up", "us-east")]
 
 
-def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_db, engine):
+def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(
+    migrated_db, engine
+):
     """AC3: re-inserting a batch whose `source_event_id`s already exist must
     insert 0 new rows (`ON CONFLICT (source_event_id) DO NOTHING`), and the
     returned count must reflect only newly-inserted rows — proven by mixing
@@ -161,7 +162,9 @@ def test_save_new_reinserting_existing_event_ids_inserts_zero_new_rows(migrated_
     assert total == 3
 
 
-def test_in_window_returns_only_observations_inside_the_half_open_range(migrated_db, engine):
+def test_in_window_returns_only_observations_inside_the_half_open_range(
+    migrated_db, engine
+):
     """STORY-011 AC5: the read side of the persistence boundary the
     availability engine derives from. Half-open `[since, until)` — a row
     exactly AT `until` must be excluded, proving adjacent windows can never
@@ -407,7 +410,9 @@ def seed_component(database_url: str, component_id: str, app_id: str = "app-1") 
         conn.commit()
 
 
-def test_postgres_proposal_repository_enforces_one_open_proposal_per_component(migrated_db, engine):
+def test_postgres_proposal_repository_enforces_one_open_proposal_per_component(
+    migrated_db, engine
+):
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
     from src.core.domain.proposal import ProposalState, StatusProposal
 
@@ -574,7 +579,9 @@ def test_postgres_proposal_repository_resolve_unknown_raises(migrated_db, engine
         )
 
 
-def test_postgres_proposal_repository_resolve_already_terminal_raises(migrated_db, engine):
+def test_postgres_proposal_repository_resolve_already_terminal_raises(
+    migrated_db, engine
+):
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
     from src.core.domain.proposal import ProposalState, StatusProposal
 
@@ -612,10 +619,9 @@ def test_postgres_proposal_repository_resolve_already_terminal_raises(migrated_d
     # Verify that it remains APPROVED in the DB, not SUPERSEDED
     with psycopg.connect(migrated_db.database_url) as conn:
         with conn.cursor() as cur:
-            cur.execute("SELECT state, reason FROM status_proposals WHERE id = %s", (saved.id,))
+            cur.execute(
+                "SELECT state, reason FROM status_proposals WHERE id = %s", (saved.id,)
+            )
             state, reason = cur.fetchone()
     assert state == "approved"
     assert reason == "first"
-
-
-

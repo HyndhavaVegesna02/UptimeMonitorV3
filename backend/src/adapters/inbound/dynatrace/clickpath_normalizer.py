@@ -10,10 +10,9 @@ The raw row (steps included) is what an archived `raw_ref` would point at;
 the core never reads it.
 """
 
-from src.core.domain import SignalObservation
-
 from src.adapters.inbound.dynatrace._assembly import assemble_observation
 from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
+from src.core.domain import SignalObservation
 
 NATIVE_KIND = "clickpath"
 

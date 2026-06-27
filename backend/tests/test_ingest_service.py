@@ -15,10 +15,9 @@ shape), which this story's AC3 needs.
 from __future__ import annotations
 
 from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
 import pytest
-
 from src.core.domain import Health, IngestResult, Provenance, SignalObservation
 from src.core.ports import (
     ClockPort,
@@ -169,7 +168,9 @@ def test_ingest_service_is_a_signal_ingest_port():
 def test_all_valid_batch_is_accepted_and_advances_watermark_to_max_observed_at():
     observation_repo = DedupingObservationRepository()
     watermark_repo = FakeWatermarkRepository()
-    service = _make_service(observation_repo=observation_repo, watermark_repo=watermark_repo)
+    service = _make_service(
+        observation_repo=observation_repo, watermark_repo=watermark_repo
+    )
 
     earlier = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
     later = datetime(2026, 6, 24, 11, 0, 0, tzinfo=timezone.utc)
@@ -190,7 +191,9 @@ def test_all_valid_batch_is_accepted_and_advances_watermark_to_max_observed_at()
 def test_empty_batch_is_a_no_op():
     observation_repo = DedupingObservationRepository()
     watermark_repo = FakeWatermarkRepository()
-    service = _make_service(observation_repo=observation_repo, watermark_repo=watermark_repo)
+    service = _make_service(
+        observation_repo=observation_repo, watermark_repo=watermark_repo
+    )
 
     result = service.ingest_observations([])
 
@@ -248,7 +251,9 @@ def test_validate_happens_before_dedupe_so_a_bad_row_is_rejected_not_deduped():
     """
     observation_repo = DedupingObservationRepository()
     rejected_repo = FakeRejectedObservationRepository()
-    service = _make_service(observation_repo=observation_repo, rejected_repo=rejected_repo)
+    service = _make_service(
+        observation_repo=observation_repo, rejected_repo=rejected_repo
+    )
 
     future = _observation(
         event_id="evt-dup-future",
@@ -343,7 +348,9 @@ def test_watermark_is_not_advanced_when_save_new_raises():
     observation_repo = DedupingObservationRepository()
     observation_repo.raise_on_save = RuntimeError("simulated persist failure")
     watermark_repo = FakeWatermarkRepository()
-    service = _make_service(observation_repo=observation_repo, watermark_repo=watermark_repo)
+    service = _make_service(
+        observation_repo=observation_repo, watermark_repo=watermark_repo
+    )
 
     batch = [_observation(event_id="evt-1")]
 
@@ -401,7 +408,9 @@ def test_idempotent_replay_after_crash_loses_nothing_and_double_counts_nothing()
     """
     observation_repo = DedupingObservationRepository()
     watermark_repo = FakeWatermarkRepository()
-    service = _make_service(observation_repo=observation_repo, watermark_repo=watermark_repo)
+    service = _make_service(
+        observation_repo=observation_repo, watermark_repo=watermark_repo
+    )
 
     t1 = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
     t2 = datetime(2026, 6, 24, 10, 5, 0, tzinfo=timezone.utc)

@@ -9,21 +9,24 @@ in-memory canonical fixtures only — no DB, no vendor types, no I/O.
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
-from src.core.domain import Health, Provenance, SignalObservation, Verdict
+from src.core.domain import Health, Provenance, SignalObservation
 from src.core.services.pipeline import collapse
 
 _BASE_TIME = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
 
 
-def _observation(health: Health, location: str, *, offset_seconds: int = 0, **overrides):
+def _observation(
+    health: Health, location: str, *, offset_seconds: int = 0, **overrides
+):
     """A construction-ready `SignalObservation`; override one field to probe a rule."""
     fields = dict(
         signal_key="checkout-http",
         observed_at=_BASE_TIME + timedelta(seconds=offset_seconds),
         health=health,
         source_event_id=f"evt-{location}-{offset_seconds}",
-        source=Provenance(system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"),
+        source=Provenance(
+            system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"
+        ),
         location=location,
     )
     fields.update(overrides)
@@ -141,8 +144,12 @@ def test_collapse_under_maintenance_short_circuits_even_when_all_down():
 
 def test_collapse_under_maintenance_preserves_signal_key_and_cycle_instant():
     observations = [
-        _observation(Health.UP, "us-east", offset_seconds=0, signal_key="payments-http"),
-        _observation(Health.UP, "eu-west", offset_seconds=30, signal_key="payments-http"),
+        _observation(
+            Health.UP, "us-east", offset_seconds=0, signal_key="payments-http"
+        ),
+        _observation(
+            Health.UP, "eu-west", offset_seconds=30, signal_key="payments-http"
+        ),
     ]
     verdict = collapse(observations, under_maintenance=True)
     assert verdict.signal_key == "payments-http"

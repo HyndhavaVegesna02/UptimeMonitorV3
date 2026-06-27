@@ -9,7 +9,6 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import Health, Provenance, SignalObservation
 
 
@@ -140,9 +139,13 @@ def test_signal_observation_field_names_are_vendor_neutral():
 
 def test_vendor_id_appears_only_inside_source():
     vendor_id = "HTTP_CHECK-9F2A"
-    obs = SignalObservation(**_valid_observation(source=Provenance(
-        system="dynatrace", native_id=vendor_id, native_kind="http"
-    )))
+    obs = SignalObservation(
+        **_valid_observation(
+            source=Provenance(
+                system="dynatrace", native_id=vendor_id, native_kind="http"
+            )
+        )
+    )
 
     # The vendor id is reachable only via source.native_id...
     assert obs.source.native_id == vendor_id

@@ -22,11 +22,10 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 
-from src.core.domain import IngestResult
-from src.core.ports import SignalIngestPort, WatermarkRepository
-
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
+from src.core.domain import IngestResult
+from src.core.ports import SignalIngestPort, WatermarkRepository
 
 
 def run_cycle(

@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 34
+next_story_id: 35
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -258,24 +258,32 @@ stories:
   - id: STORY-031
     title: Sprint 9 review cleanups � test/fixture/style nits
     file: docs/scrum/stories/STORY-031-sprint9-review-cleanups.md
-    status: ready   # follow-up from Sprint 9 review; cosmetic test/style only, no open questions
+    status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1
     priority: 27
     type: chore
-    sprint: null
+    sprint: 11
   - id: STORY-032
     title: decide.py quality minors � DRY, import style, opened.id guard, trailing blanks
     file: docs/scrum/stories/STORY-032-decide-quality-minors.md
-    status: ready   # follow-up from Sprint 10 review; cosmetic/robustness in decide.py only, no open questions
+    status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1
     priority: 28
     type: chore
-    sprint: null
+    sprint: 11
   - id: STORY-033
     title: Add ruff (format + import-sort) as a mechanical DoD gate
     file: docs/scrum/stories/STORY-033-ruff-format-import-sort-dod.md
-    status: draft   # from Sprint 10 retro (tooling); one open Q (ruleset breadth, default=minimal) + estimate to confirm at planning
+    status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 2
     priority: 29
+    type: chore
+    sprint: 11
+  - id: STORY-034
+    title: Rehabilitate the 7 reformat-stale wiki articles with symbol-based citations
+    file: docs/scrum/stories/STORY-034-wiki-symbol-citations-rehab.md
+    status: draft   # from Sprint 11 review/retro; pending the symbol-citation syntax decision at retro
+    points: 2
+    priority: 30
     type: chore
     sprint: null

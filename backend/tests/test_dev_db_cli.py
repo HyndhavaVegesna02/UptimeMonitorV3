@@ -25,9 +25,7 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 pytestmark = pytest.mark.skipif(
-    subprocess.run(
-        ["docker", "version"], capture_output=True, text=True
-    ).returncode
+    subprocess.run(["docker", "version"], capture_output=True, text=True).returncode
     != 0,
     reason="requires Docker to exercise the dev_db.py CLI end-to-end",
 )
@@ -47,7 +45,9 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
 
 def test_up_then_check_fk_direction_then_down():
     # Ensure no leftover from a prior crashed run before we start.
-    subprocess.run(["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True)
+    subprocess.run(
+        ["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True
+    )
 
     try:
         up_result = _run_cli("up", "--name", _TEST_CONTAINER, "--port", str(_TEST_PORT))
@@ -56,7 +56,9 @@ def test_up_then_check_fk_direction_then_down():
         url_match = re.search(r"export DATABASE_URL=(\S+)", up_result.stdout)
         direct_match = re.search(r"export DATABASE_URL_DIRECT=(\S+)", up_result.stdout)
         assert url_match, f"up did not print DATABASE_URL:\n{up_result.stdout}"
-        assert direct_match, f"up did not print DATABASE_URL_DIRECT:\n{up_result.stdout}"
+        assert direct_match, (
+            f"up did not print DATABASE_URL_DIRECT:\n{up_result.stdout}"
+        )
 
         database_url = url_match.group(1)
         database_url_direct = direct_match.group(1)
@@ -81,7 +83,15 @@ def test_up_then_check_fk_direction_then_down():
         assert down_result.returncode == 0, down_result.stdout + down_result.stderr
 
     leftover = subprocess.run(
-        ["docker", "ps", "-a", "--filter", f"name={_TEST_CONTAINER}", "--format", "{{.Names}}"],
+        [
+            "docker",
+            "ps",
+            "-a",
+            "--filter",
+            f"name={_TEST_CONTAINER}",
+            "--format",
+            "{{.Names}}",
+        ],
         capture_output=True,
         text=True,
     )
@@ -90,7 +100,9 @@ def test_up_then_check_fk_direction_then_down():
 
 def test_up_idempotent_against_leftover_container():
     # Ensure no leftover from a prior run
-    subprocess.run(["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True)
+    subprocess.run(
+        ["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True
+    )
 
     # 1. Start a container manually with the target name
     result = subprocess.run(
@@ -118,4 +130,3 @@ def test_up_idempotent_against_leftover_container():
     finally:
         # Cleanup
         _run_cli("down", "--name", _TEST_CONTAINER)
-

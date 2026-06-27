@@ -113,7 +113,9 @@ class AvailabilityResult(BaseModel):
         # Invariant 3: If not a rollup and completeness denominator is 0, completeness_pct must be None
         is_rollup = self.distinct_locations == 0 and self.total_verdicts > 0
         if not is_rollup:
-            completeness_denom = (self.total_verdicts + self.gap_verdicts) * self.distinct_locations
+            completeness_denom = (
+                self.total_verdicts + self.gap_verdicts
+            ) * self.distinct_locations
             if completeness_denom == 0 and self.completeness_pct is not None:
                 raise ValueError(
                     "completeness_pct must be None when the completeness denominator is 0"
@@ -247,9 +249,7 @@ class AvailabilityCalculator:
                 passing_verdicts += 1
 
         denominator = total_verdicts - maintenance_verdicts
-        availability_pct = (
-            passing_verdicts / denominator if denominator > 0 else None
-        )
+        availability_pct = passing_verdicts / denominator if denominator > 0 else None
 
         distinct_locations = len({observation.location for observation in observations})
 
@@ -305,10 +305,14 @@ def rollup_group(
     compute`'s — the rollup itself derives nothing from a clock or config.
     """
     availability_values = [
-        child.availability_pct for child in children if child.availability_pct is not None
+        child.availability_pct
+        for child in children
+        if child.availability_pct is not None
     ]
     completeness_values = [
-        child.completeness_pct for child in children if child.completeness_pct is not None
+        child.completeness_pct
+        for child in children
+        if child.completeness_pct is not None
     ]
 
     return AvailabilityResult(

@@ -34,6 +34,8 @@
 - [ ] Migrations apply on a fresh DB: `alembic upgrade head` -> exit 0
       (uses the DIRECT connection; never create_all; Sprint 0 runs it against a
        throwaway Dockerized Postgres, real Neon DIRECT from the deploy zone)
+- [ ] Code linting check: `ruff check .` -> exit 0
+- [ ] Code formatting check: `ruff format --check .` -> exit 0
 
 ## Commands (frontend — activate from the frontend zone onward; placeholder until then)
 - [ ] Frontend tests pass: `npm test` -> exit 0

@@ -15,7 +15,6 @@ from pathlib import Path
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import Health, Provenance, SignalObservation
 from src.core.services.availability import AvailabilityCalculator
 from src.core.services.skew import SignalFeeder, SkewResult, skew
@@ -27,7 +26,9 @@ _NOW = datetime(2026, 6, 25, 12, 0, 0, tzinfo=timezone.utc)
 _INTERVAL = timedelta(minutes=5)
 
 
-def _feeder(signal_key: str, watermark: datetime | None, *, interval: timedelta = _INTERVAL) -> SignalFeeder:
+def _feeder(
+    signal_key: str, watermark: datetime | None, *, interval: timedelta = _INTERVAL
+) -> SignalFeeder:
     return SignalFeeder(signal_key=signal_key, watermark=watermark, interval=interval)
 
 
@@ -35,7 +36,9 @@ def _feeder(signal_key: str, watermark: datetime | None, *, interval: timedelta 
 
 
 def test_signal_feeder_constructs_with_all_fields():
-    feeder = SignalFeeder(signal_key="checkout-http", watermark=_NOW, interval=_INTERVAL)
+    feeder = SignalFeeder(
+        signal_key="checkout-http", watermark=_NOW, interval=_INTERVAL
+    )
 
     assert feeder.signal_key == "checkout-http"
     assert feeder.watermark == _NOW
@@ -44,13 +47,17 @@ def test_signal_feeder_constructs_with_all_fields():
 
 def test_signal_feeder_allows_a_none_watermark():
     # AC4: a signal that has never advanced has no watermark yet.
-    feeder = SignalFeeder(signal_key="checkout-http", watermark=None, interval=_INTERVAL)
+    feeder = SignalFeeder(
+        signal_key="checkout-http", watermark=None, interval=_INTERVAL
+    )
 
     assert feeder.watermark is None
 
 
 def test_signal_feeder_is_frozen():
-    feeder = SignalFeeder(signal_key="checkout-http", watermark=_NOW, interval=_INTERVAL)
+    feeder = SignalFeeder(
+        signal_key="checkout-http", watermark=_NOW, interval=_INTERVAL
+    )
 
     with pytest.raises(ValidationError):
         feeder.watermark = None  # type: ignore[misc]
@@ -180,8 +187,14 @@ def test_each_feeders_own_interval_governs_its_own_lag_tolerance():
     # interval tolerates the same lag.
     feeders = [
         _feeder("fresh", _NOW),
-        _feeder("tight-interval", _NOW - timedelta(minutes=6), interval=timedelta(minutes=5)),
-        _feeder("loose-interval", _NOW - timedelta(minutes=6), interval=timedelta(minutes=10)),
+        _feeder(
+            "tight-interval", _NOW - timedelta(minutes=6), interval=timedelta(minutes=5)
+        ),
+        _feeder(
+            "loose-interval",
+            _NOW - timedelta(minutes=6),
+            interval=timedelta(minutes=10),
+        ),
     ]
 
     result = skew(feeders)
@@ -250,7 +263,9 @@ def _full_completeness_repo() -> FakeObservationRepository:
             observed_at=_NOW - timedelta(minutes=offset),
             health=Health.UP,
             source_event_id=f"evt-{offset}",
-            source=Provenance(system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"),
+            source=Provenance(
+                system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"
+            ),
             location="us-east",
         )
         for offset in (20, 15, 10, 5)

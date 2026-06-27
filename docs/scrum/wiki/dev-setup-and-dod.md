@@ -1,24 +1,26 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: a93f91a
-verified_sprint: sprint-10
+verified_sha: d557749
+verified_sprint: sprint-11
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
   pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary] (`pyproject.toml:10-16`). Dev extras:
-  pytest, import-linter (`pyproject.toml:18-19`).
+  pytest, import-linter, ruff (`pyproject.toml:18-19`).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
-- **The DoD gate is four bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
+- **The DoD gate is six bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
   1. `pytest`
   2. `lint-imports` (3 import-linter contracts)
   3. `python scripts/check_fk_direction.py` (needs `DATABASE_URL` → migrated Postgres)
   4. `alembic upgrade head` (needs `DATABASE_URL_DIRECT`)
-  All four are live as of STORY-003. Commands 2–4 became real during Sprint 0 (bootstrap).
+  5. `ruff check .`
+  6. `ruff format --check .`
+  All six are live as of STORY-033. Commands 2–4 became real during Sprint 0 (bootstrap); commands 5 and 6 were added in Sprint 11.
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
   `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
@@ -73,3 +75,5 @@ status: verified
   `verified_sha` re-stamped accordingly.
 - sprint-10: updated to note the idempotency behavior of `dev_db.py up` (STORY-030).
   Verified at 70622a1.
+- sprint-11: updated to note the ruff lint and format check integration in the DoD gate (STORY-033).
+  Verified at d557749.

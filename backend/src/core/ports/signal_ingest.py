@@ -18,9 +18,7 @@ class SignalIngestPort(ABC):
     """Accepts batches of canonical observations into the core (dossier §6, §8)."""
 
     @abstractmethod
-    def ingest_observations(
-        self, batch: Sequence[SignalObservation]
-    ) -> IngestResult:
+    def ingest_observations(self, batch: Sequence[SignalObservation]) -> IngestResult:
         """Validate, deduplicate, and persist `batch`; advance the watermark.
 
         Returns an `IngestResult` with the accepted and rejected counts. Rejected

@@ -9,7 +9,6 @@ types, no I/O, no config read.
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import ComponentStatus, Health
 from src.core.services.pipeline import (
     AntiFlapOutcome,
@@ -44,7 +43,9 @@ def test_thresholds_are_frozen():
 
 
 def test_outcome_constructs_with_a_proposed_status():
-    outcome = AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    outcome = AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
     assert outcome.proposed_status is ComponentStatus.DEGRADED
     assert outcome.internal_warning is False
 
@@ -74,11 +75,15 @@ def test_outcome_rejects_a_proposed_status_paired_with_an_internal_warning():
     # the incoherent combination must be rejected at construction time, not
     # left to be silently constructible.
     with pytest.raises(ValidationError):
-        AntiFlapOutcome(proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=True)
+        AntiFlapOutcome(
+            proposed_status=ComponentStatus.MAJOR_OUTAGE, internal_warning=True
+        )
 
 
 def test_outcome_three_valid_shapes_still_construct():
-    proposed = AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    proposed = AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
     assert proposed.proposed_status is ComponentStatus.DEGRADED
     assert proposed.internal_warning is False
 
@@ -169,7 +174,9 @@ def test_internal_warning_still_applies_when_degraded_threshold_is_one():
     # genuinely BELOW the degraded threshold, never as a separate override.
     thresholds = AntiFlapThresholds(major=5, partial=3, degraded=1, recovery=2)
     outcome = anti_flap(_down(1), thresholds)
-    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
 
 
 # --- Step 4: sustained degraded / passing-recovered / below-all-thresholds (AC2) --
@@ -178,7 +185,9 @@ def test_internal_warning_still_applies_when_degraded_threshold_is_one():
 def test_sustained_degraded_streak_of_length_one_proposes_degraded():
     streak = Streak(health=Health.DEGRADED, length=1)
     outcome = anti_flap(streak, _THRESHOLDS)
-    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
 
 
 def test_sustained_degraded_streak_of_longer_length_still_proposes_degraded():
@@ -186,13 +195,17 @@ def test_sustained_degraded_streak_of_longer_length_still_proposes_degraded():
     # never escalates to partial/major the way a DOWN streak does.
     streak = Streak(health=Health.DEGRADED, length=10)
     outcome = anti_flap(streak, _THRESHOLDS)
-    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
 
 
 def test_passing_streak_at_recovery_threshold_proposes_operational():
     streak = Streak(health=Health.UP, length=_THRESHOLDS.recovery)
     outcome = anti_flap(streak, _THRESHOLDS)
-    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.OPERATIONAL, internal_warning=False)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.OPERATIONAL, internal_warning=False
+    )
 
 
 def test_passing_streak_above_recovery_threshold_proposes_operational():
@@ -230,7 +243,9 @@ def test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded():
     # silently mis-bucketing into nothing.
     streak = Streak(health=Health.DEGRADED, length=0)
     outcome = anti_flap(streak, _THRESHOLDS)
-    assert outcome == AntiFlapOutcome(proposed_status=ComponentStatus.DEGRADED, internal_warning=False)
+    assert outcome == AntiFlapOutcome(
+        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
+    )
 
 
 def test_degenerate_up_streak_of_length_zero_yields_nothing_not_a_crash():

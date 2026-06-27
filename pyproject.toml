@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "import-linter"]
+dev = ["pytest", "import-linter", "ruff"]
 
 [tool.setuptools]
 package-dir = {"" = "backend"}
@@ -52,3 +52,11 @@ layers = ["src.core.services", "src.core.ports", "src.core.domain"]
 name = "adapters-independence"
 type = "independence"
 modules = ["src.adapters.inbound", "src.adapters.outbound", "src.adapters.persistence"]
+
+[tool.ruff]
+target-version = "py313"
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+ignore = ["E501"]

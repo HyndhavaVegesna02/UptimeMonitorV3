@@ -1,17 +1,19 @@
 """Statuspage outbound adapter (dossier §6, §12)."""
 
 from collections.abc import Callable
-from src.core.ports import StatusPublisherPort
-from src.core.domain.status import StatusChange
+
+from src.adapters.outbound.statuspage.status_mapping import (
+    UnknownComponentStatusError as UnknownComponentStatusError,
+)
 from src.adapters.outbound.statuspage.status_mapping import (
     map_component_status,
-    UnknownComponentStatusError,
 )
+from src.core.domain.status import StatusChange
+from src.core.ports import StatusPublisherPort
 
 #: Seam type for executing HTTP requests against Statuspage API.
 #: Takes (method, url, headers, json_body) and returns the parsed response dict.
 Executor = Callable[[str, str, dict[str, str], dict], dict]
-
 
 
 class UnmappedComponentIdError(ValueError):
@@ -49,11 +51,6 @@ class StatuspagePublisher(StatusPublisherPort):
             "Authorization": f"OAuth {self._api_token}",
             "Content-Type": "application/json",
         }
-        json_body = {
-            "component": {
-                "status": vendor_status
-            }
-        }
+        json_body = {"component": {"status": vendor_status}}
 
         self._executor("PATCH", url, headers, json_body)
-

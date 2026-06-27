@@ -40,16 +40,16 @@ Revises: eda70ac11454
 Create Date: 2026-06-24 13:21:59.601511
 
 """
+
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+from alembic import op
 from sqlalchemy.dialects import postgresql
 
-
 # revision identifiers, used by Alembic.
-revision: str = '3a8254bcfe59'
-down_revision: Union[str, Sequence[str], None] = 'eda70ac11454'
+revision: str = "3a8254bcfe59"
+down_revision: Union[str, Sequence[str], None] = "eda70ac11454"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -68,11 +68,15 @@ def upgrade() -> None:
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column("config", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.Column(
-            "updated_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "updated_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
     )
@@ -81,17 +85,22 @@ def upgrade() -> None:
         "signals",
         sa.Column("signal_key", sa.Text(), primary_key=True),
         sa.Column(
-            "app_id", sa.Text(),
+            "app_id",
+            sa.Text(),
             sa.ForeignKey("apps.id", ondelete="RESTRICT"),
             nullable=False,
         ),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.Column(
-            "updated_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "updated_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
     )
@@ -101,20 +110,28 @@ def upgrade() -> None:
         "components",
         sa.Column("id", sa.Text(), primary_key=True),
         sa.Column(
-            "app_id", sa.Text(),
+            "app_id",
+            sa.Text(),
             sa.ForeignKey("apps.id", ondelete="RESTRICT"),
             nullable=False,
         ),
         sa.Column("name", sa.Text(), nullable=False),
         sa.Column(
-            "status", sa.Text(), nullable=False, server_default="operational",
+            "status",
+            sa.Text(),
+            nullable=False,
+            server_default="operational",
         ),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.Column(
-            "updated_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "updated_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.CheckConstraint(
@@ -132,7 +149,8 @@ def upgrade() -> None:
         "observations",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "signal_key", sa.Text(),
+            "signal_key",
+            sa.Text(),
             sa.ForeignKey("signals.signal_key", ondelete="RESTRICT"),
             nullable=False,
         ),
@@ -144,15 +162,20 @@ def upgrade() -> None:
         sa.Column("latency_ms", sa.Integer(), nullable=True),
         sa.Column("raw_ref", sa.Text(), nullable=True),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.CheckConstraint(
-            "health IN ('up', 'down', 'degraded')", name="ck_observations_health",
+            "health IN ('up', 'down', 'degraded')",
+            name="ck_observations_health",
         ),
     )
     op.create_unique_constraint(
-        "uq_observations_source_event_id", "observations", ["source_event_id"],
+        "uq_observations_source_event_id",
+        "observations",
+        ["source_event_id"],
     )
     op.create_index(
         "ix_observations_signal_key_observed_at",
@@ -164,7 +187,8 @@ def upgrade() -> None:
         "problem_signals",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "signal_key", sa.Text(),
+            "signal_key",
+            sa.Text(),
             sa.ForeignKey("signals.signal_key", ondelete="RESTRICT"),
             nullable=False,
         ),
@@ -172,7 +196,9 @@ def upgrade() -> None:
         sa.Column("ended_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("reason", sa.Text(), nullable=False),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
     )
@@ -181,13 +207,16 @@ def upgrade() -> None:
     op.create_table(
         "watermarks",
         sa.Column(
-            "signal_key", sa.Text(),
+            "signal_key",
+            sa.Text(),
             sa.ForeignKey("signals.signal_key", ondelete="RESTRICT"),
             primary_key=True,
         ),
         sa.Column("watermark", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column(
-            "updated_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "updated_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
     )
@@ -205,7 +234,9 @@ def upgrade() -> None:
         # itself be rejectable by a missing-FK error.
     )
     op.create_index(
-        "ix_rejected_observations_signal_key", "rejected_observations", ["signal_key"],
+        "ix_rejected_observations_signal_key",
+        "rejected_observations",
+        ["signal_key"],
     )
 
     # ---------------------------------------------------------------
@@ -216,7 +247,8 @@ def upgrade() -> None:
         "status_proposals",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "component_id", sa.Text(),
+            "component_id",
+            sa.Text(),
             sa.ForeignKey("components.id", ondelete="RESTRICT"),
             nullable=False,
         ),
@@ -225,12 +257,16 @@ def upgrade() -> None:
         sa.Column("state", sa.Text(), nullable=False, server_default="open"),
         sa.Column("reason", sa.Text(), nullable=True),
         sa.Column(
-            "proposed_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "proposed_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.Column("resolved_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
         sa.CheckConstraint(
@@ -258,14 +294,17 @@ def upgrade() -> None:
         postgresql_where=sa.text("state = 'open'"),
     )
     op.create_index(
-        "ix_status_proposals_component_id", "status_proposals", ["component_id"],
+        "ix_status_proposals_component_id",
+        "status_proposals",
+        ["component_id"],
     )
 
     op.create_table(
         "approval_events",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "proposal_id", sa.BigInteger(),
+            "proposal_id",
+            sa.BigInteger(),
             sa.ForeignKey("status_proposals.id", ondelete="CASCADE"),
             nullable=False,
         ),
@@ -274,21 +313,26 @@ def upgrade() -> None:
         sa.Column("notes", sa.Text(), nullable=True),
         sa.Column("occurred_at", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.CheckConstraint(
-            "action IN ('approved', 'rejected')", name="ck_approval_events_action",
+            "action IN ('approved', 'rejected')",
+            name="ck_approval_events_action",
         ),
     )
-    op.create_index("ix_approval_events_proposal_id", "approval_events", ["proposal_id"])
+    op.create_index(
+        "ix_approval_events_proposal_id", "approval_events", ["proposal_id"]
+    )
 
     op.create_table(
         "publications",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "component_id", sa.Text(),
+            "component_id",
+            sa.Text(),
             sa.ForeignKey("components.id", ondelete="RESTRICT"),
             nullable=False,
         ),
         sa.Column(
-            "proposal_id", sa.BigInteger(),
+            "proposal_id",
+            sa.BigInteger(),
             sa.ForeignKey("status_proposals.id", ondelete="CASCADE"),
             nullable=True,
         ),
@@ -305,7 +349,8 @@ def upgrade() -> None:
         "maintenance_windows",
         sa.Column("id", sa.BigInteger(), primary_key=True, autoincrement=True),
         sa.Column(
-            "component_id", sa.Text(),
+            "component_id",
+            sa.Text(),
             sa.ForeignKey("components.id", ondelete="RESTRICT"),
             nullable=False,
         ),
@@ -313,19 +358,25 @@ def upgrade() -> None:
         sa.Column("ends_at", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column("reason", sa.Text(), nullable=True),
         sa.Column(
-            "created_at", sa.TIMESTAMP(timezone=True), nullable=False,
+            "created_at",
+            sa.TIMESTAMP(timezone=True),
+            nullable=False,
             server_default=sa.text("now()"),
         ),
     )
     op.create_index(
-        "ix_maintenance_windows_component_id", "maintenance_windows", ["component_id"],
+        "ix_maintenance_windows_component_id",
+        "maintenance_windows",
+        ["component_id"],
     )
 
 
 def downgrade() -> None:
     """Drop every spine object cleanly, in reverse dependency order."""
 
-    op.drop_index("ix_maintenance_windows_component_id", table_name="maintenance_windows")
+    op.drop_index(
+        "ix_maintenance_windows_component_id", table_name="maintenance_windows"
+    )
     op.drop_table("maintenance_windows")
 
     op.drop_index("ix_publications_component_id", table_name="publications")
@@ -338,7 +389,9 @@ def downgrade() -> None:
     op.drop_index("uq_status_proposals_active_component", table_name="status_proposals")
     op.drop_table("status_proposals")
 
-    op.drop_index("ix_rejected_observations_signal_key", table_name="rejected_observations")
+    op.drop_index(
+        "ix_rejected_observations_signal_key", table_name="rejected_observations"
+    )
     op.drop_table("rejected_observations")
 
     op.drop_table("watermarks")
@@ -347,7 +400,9 @@ def downgrade() -> None:
     op.drop_table("problem_signals")
 
     op.drop_index("ix_observations_signal_key_observed_at", table_name="observations")
-    op.drop_constraint("uq_observations_source_event_id", "observations", type_="unique")
+    op.drop_constraint(
+        "uq_observations_source_event_id", "observations", type_="unique"
+    )
     op.drop_table("observations")
 
     op.drop_index("ix_components_app_id", table_name="components")

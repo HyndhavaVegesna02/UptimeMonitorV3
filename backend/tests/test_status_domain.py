@@ -7,9 +7,7 @@ mapping to any Statuspage string lives in the Zone 5 adapter, never here.
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import ComponentStatus, IngestResult, StatusChange
-
 
 # --- ComponentStatus: closed enum, canonical vocabulary only --------------------
 
@@ -69,7 +67,7 @@ def test_ingest_result_is_frozen():
 
 
 def test_status_severity_exhaustiveness_and_ordering():
-    from src.core.domain import STATUS_SEVERITY, severity_rank, is_worse
+    from src.core.domain import STATUS_SEVERITY, is_worse, severity_rank
 
     # Assert every member of ComponentStatus is in STATUS_SEVERITY
     for member in ComponentStatus:
@@ -77,14 +75,21 @@ def test_status_severity_exhaustiveness_and_ordering():
         assert isinstance(severity_rank(member), int)
 
     # Assert ordering: operational < degraded < partial_outage < major_outage
-    assert severity_rank(ComponentStatus.OPERATIONAL) < severity_rank(ComponentStatus.DEGRADED)
-    assert severity_rank(ComponentStatus.DEGRADED) < severity_rank(ComponentStatus.PARTIAL_OUTAGE)
-    assert severity_rank(ComponentStatus.PARTIAL_OUTAGE) < severity_rank(ComponentStatus.MAJOR_OUTAGE)
+    assert severity_rank(ComponentStatus.OPERATIONAL) < severity_rank(
+        ComponentStatus.DEGRADED
+    )
+    assert severity_rank(ComponentStatus.DEGRADED) < severity_rank(
+        ComponentStatus.PARTIAL_OUTAGE
+    )
+    assert severity_rank(ComponentStatus.PARTIAL_OUTAGE) < severity_rank(
+        ComponentStatus.MAJOR_OUTAGE
+    )
 
     # Test is_worse
-    assert is_worse(ComponentStatus.MAJOR_OUTAGE, ComponentStatus.PARTIAL_OUTAGE) is True
+    assert (
+        is_worse(ComponentStatus.MAJOR_OUTAGE, ComponentStatus.PARTIAL_OUTAGE) is True
+    )
     assert is_worse(ComponentStatus.PARTIAL_OUTAGE, ComponentStatus.DEGRADED) is True
     assert is_worse(ComponentStatus.DEGRADED, ComponentStatus.OPERATIONAL) is True
     assert is_worse(ComponentStatus.OPERATIONAL, ComponentStatus.MAJOR_OUTAGE) is False
     assert is_worse(ComponentStatus.OPERATIONAL, ComponentStatus.OPERATIONAL) is False
-

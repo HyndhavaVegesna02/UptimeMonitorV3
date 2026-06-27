@@ -12,8 +12,8 @@ from __future__ import annotations
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-import pytest
 
+import pytest
 from src.core.domain import Health, Provenance, SignalObservation
 from src.core.services.availability import (
     AvailabilityCalculator,
@@ -42,7 +42,9 @@ def _observation(
         observed_at=_SINCE + offset,
         health=health,
         source_event_id=event_id,
-        source=Provenance(system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"),
+        source=Provenance(
+            system="dynatrace", native_id="HTTP_CHECK-1", native_kind="http"
+        ),
         location=location,
     )
 
@@ -180,7 +182,10 @@ def test_availability_result_validation_coherence():
 
     # Invalid shapes:
     # 1. availability_pct is set but denominator is 0 (total - gap - maintenance == 0)
-    with pytest.raises(ValidationError, match="availability_pct must be None when the availability denominator is 0"):
+    with pytest.raises(
+        ValidationError,
+        match="availability_pct must be None when the availability denominator is 0",
+    ):
         AvailabilityResult(
             availability_pct=1.0,
             completeness_pct=1.0,
@@ -194,7 +199,10 @@ def test_availability_result_validation_coherence():
         )
 
     # 2. availability_pct is None but denominator > 0 (total - gap - maintenance > 0)
-    with pytest.raises(ValidationError, match="availability_pct must not be None when the availability denominator is greater than 0"):
+    with pytest.raises(
+        ValidationError,
+        match="availability_pct must not be None when the availability denominator is greater than 0",
+    ):
         AvailabilityResult(
             availability_pct=None,
             completeness_pct=1.0,
@@ -208,7 +216,10 @@ def test_availability_result_validation_coherence():
         )
 
     # 3. completeness_pct is set but denominator is 0 (total_verdicts * distinct_locations == 0)
-    with pytest.raises(ValidationError, match="completeness_pct must be None when the completeness denominator is 0"):
+    with pytest.raises(
+        ValidationError,
+        match="completeness_pct must be None when the completeness denominator is 0",
+    ):
         AvailabilityResult(
             availability_pct=None,
             completeness_pct=1.0,
@@ -222,7 +233,10 @@ def test_availability_result_validation_coherence():
         )
 
     # 4. completeness_pct is None but denominator > 0 (total_verdicts * distinct_locations > 0)
-    with pytest.raises(ValidationError, match="completeness_pct must not be None when the completeness denominator is greater than 0"):
+    with pytest.raises(
+        ValidationError,
+        match="completeness_pct must not be None when the completeness denominator is greater than 0",
+    ):
         AvailabilityResult(
             availability_pct=1.0,
             completeness_pct=None,
@@ -284,8 +298,12 @@ def test_availability_pct_all_up_cycles_is_one_hundred_percent():
 def test_availability_pct_down_and_degraded_cycles_do_not_pass():
     observations = [
         _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
-        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"),
-        _observation(Health.DEGRADED, "us-east", offset=timedelta(minutes=10), event_id="e3"),
+        _observation(
+            Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"
+        ),
+        _observation(
+            Health.DEGRADED, "us-east", offset=timedelta(minutes=10), event_id="e3"
+        ),
         _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
     ]
     repo = _repo_with(observations)
@@ -310,7 +328,9 @@ def test_availability_pct_down_and_degraded_cycles_do_not_pass():
 def test_availability_pct_excludes_maintenance_from_both_sides():
     observations = [
         _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
-        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"),
+        _observation(
+            Health.DOWN, "us-east", offset=timedelta(minutes=5), event_id="e2"
+        ),
         _observation(Health.UP, "us-east", offset=timedelta(minutes=10), event_id="e3"),
         _observation(Health.UP, "us-east", offset=timedelta(minutes=15), event_id="e4"),
     ]
@@ -345,7 +365,9 @@ def test_availability_pct_excludes_gaps_from_the_denominator():
     # other 2 are gaps and (default `exclude` policy) never enter total.
     observations = [
         _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
-        _observation(Health.DOWN, "us-east", offset=timedelta(minutes=15), event_id="e2"),
+        _observation(
+            Health.DOWN, "us-east", offset=timedelta(minutes=15), event_id="e2"
+        ),
     ]
     repo = _repo_with(observations)
     calculator = _calculator(repo)
@@ -422,7 +444,9 @@ def test_availability_pct_uses_collapse_rule_for_mixed_locations_in_one_cycle():
     # collapse's rule makes this DEGRADED, which does not pass.
     observations = [
         _observation(Health.UP, "us-east", offset=timedelta(minutes=0), event_id="e1"),
-        _observation(Health.DOWN, "eu-west", offset=timedelta(minutes=1), event_id="e2"),
+        _observation(
+            Health.DOWN, "eu-west", offset=timedelta(minutes=1), event_id="e2"
+        ),
     ]
     repo = _repo_with(observations)
     calculator = _calculator(repo)
@@ -590,7 +614,11 @@ def _result(
     if availability_pct is not None and total_verdicts == 0:
         total_verdicts = 10
         passing_verdicts = int(10 * availability_pct)
-    elif availability_pct is None and total_verdicts > 0 and (total_verdicts - gap_verdicts - maintenance_verdicts) > 0:
+    elif (
+        availability_pct is None
+        and total_verdicts > 0
+        and (total_verdicts - gap_verdicts - maintenance_verdicts) > 0
+    ):
         # If availability_pct is None, availability denominator must be 0
         gap_verdicts = total_verdicts - maintenance_verdicts
 
@@ -666,7 +694,12 @@ def test_rollup_group_excludes_no_data_children_from_the_min_but_sums_their_coun
     # can see the group includes a no-data member rather than it silently
     # disappearing.
     children = [
-        _result(availability_pct=1.0, completeness_pct=1.0, total_verdicts=4, passing_verdicts=4),
+        _result(
+            availability_pct=1.0,
+            completeness_pct=1.0,
+            total_verdicts=4,
+            passing_verdicts=4,
+        ),
         _result(
             availability_pct=None,
             completeness_pct=None,
