@@ -141,3 +141,60 @@ def test_decide_worse_open_proposal_exists_leave_when_equal():
     assert current_prop.resolved_at is None
 
 
+def test_decide_recovery_no_open_proposal_publishes_recovery():
+    proposal_repo = FakeProposalRepository()
+    publisher = RecordingStatusPublisher()
+    service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    now = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
+    result = service.decide(
+        component_id="checkout",
+        proposed_status=ComponentStatus.OPERATIONAL,
+        current_status=ComponentStatus.MAJOR_OUTAGE,
+        now=now,
+    )
+
+    assert result == DecideAction.PUBLISHED_RECOVERY
+    assert len(proposal_repo.proposals) == 0
+    assert len(publisher.published) == 1
+    assert publisher.published[0] == StatusChange(
+        component_id="checkout", status=ComponentStatus.OPERATIONAL
+    )
+
+
+def test_decide_recovery_open_proposal_exists_obsoletes_and_nothing_published():
+    proposal_repo = FakeProposalRepository()
+    publisher = RecordingStatusPublisher()
+    service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    now = datetime(2026, 6, 27, 12, 0, 0, tzinfo=timezone.utc)
+    # pre-create open proposal (major outage)
+    open_prop = StatusProposal(
+        component_id="checkout",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.MAJOR_OUTAGE,
+        state=ProposalState.OPEN,
+        proposed_at=now,
+    )
+    open_prop = proposal_repo.create_open(open_prop)
+
+    later = datetime(2026, 6, 27, 12, 5, 0, tzinfo=timezone.utc)
+    result = service.decide(
+        component_id="checkout",
+        proposed_status=ComponentStatus.OPERATIONAL,
+        current_status=ComponentStatus.OPERATIONAL,
+        now=later,
+        reason="Recovered before approval",
+    )
+
+    assert result == DecideAction.OBSOLETED
+    assert len(publisher.published) == 0
+    assert len(proposal_repo.proposals) == 1
+
+    resolved = proposal_repo.proposals[open_prop.id]
+    assert resolved.state == ProposalState.OBSOLETED
+    assert resolved.resolved_at == later
+    assert resolved.reason == "Recovered before approval"
+
+
+
