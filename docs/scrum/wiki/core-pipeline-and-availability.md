@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py]
-verified_sha: a93341d
+verified_sha: 48217d7
 verified_sprint: sprint-11
 status: verified          # verified | stale | archived
 ---
