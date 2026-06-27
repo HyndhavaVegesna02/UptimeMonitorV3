@@ -101,11 +101,11 @@ stories:
   - id: STORY-024
     title: Core pipeline stage 4 — decide
     file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
-    status: draft   # split again (sprint-8): anti-flap -> STORY-028; this is decide, blocked on STORY-012 proposals
+    status: ready   # sprint-10 refinement: deps all Done; read seam resolved (components.status, injected). Committed to Sprint 10.
     points: 3
     priority: 12
     type: feature
-    sprint: null
+    sprint: 10
   - id: STORY-011
     title: Availability calculator — two-grain math + group rollup
     file: docs/scrum/stories/STORY-011-availability-calculator.md
@@ -238,7 +238,7 @@ stories:
     points: 1
     priority: 24
     type: chore
-    sprint: null
+    sprint: 10
   - id: STORY-029
     title: Audit frozen value/result types for unenforced coherence invariants
     file: docs/scrum/stories/STORY-029-value-type-coherence-audit.md
@@ -246,7 +246,7 @@ stories:
     points: 1
     priority: 25
     type: chore
-    sprint: null
+    sprint: 10
   - id: STORY-030
     title: Make dev_db.py up idempotent against a leftover container
     file: docs/scrum/stories/STORY-030-dev-db-up-idempotent.md
@@ -254,9 +254,9 @@ stories:
     points: 1
     priority: 26
     type: chore
-    sprint: null
+    sprint: 10
   - id: STORY-031
-    title: Sprint 9 review cleanups � test/fixture/style nits
+    title: Sprint 9 review cleanups � test/fixture/style nits
     file: docs/scrum/stories/STORY-031-sprint9-review-cleanups.md
     status: ready   # follow-up from Sprint 9 review; cosmetic test/style only, no open questions
     points: 1

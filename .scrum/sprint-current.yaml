@@ -1,116 +1,76 @@
 # YourTeam active sprint board.
-sprint: 9
-status: closed          # none | active | review | closed | aborted
-closed: 2026-06-26
-started: 2026-06-26
-goal: "Zone 5's two foundations land — the proposal substrate (StatusProposal types + state machine
-  + ProposalRepository port + Postgres adapter with one-open-per-component) and the Statuspage
-  publish adapter (StatusPublisherPort impl + best-effort no-rollback publish) — setting up decide
-  (STORY-024) to tie proposals + publishing together next."
-branch: sprint-9
-start_tag: sprint-9-start
-# Capacity: velocity history (8,6,6,6,5,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
-# STORY-012 SPLIT at refinement to substrate-only (reconciliation rule -> STORY-024). STORY-013
-# API surface resolved (component-status update). Both pure-ish Zone 5 foundations, both 3 pts,
-# independent of each other.
-# Order: STORY-012 first (proposal substrate), then STORY-013 (publish adapter).
+sprint: 10
+status: active          # none | active | review | closed | aborted
+started: 2026-06-27
+goal: "Close out Zone 4 — the pipeline's final stage, decide, compares anti-flap's proposed status to
+  the component's current published status and reconciles: worse -> a human-gate degradation proposal
+  (no publish), better -> obsolete the open proposal + auto-publish a recovery, same -> nothing. Plus
+  three cosmetic cleanups carried from recent retros/reviews (value-type coherence audit, a test-import
+  tidy, dev_db.py idempotency)."
+branch: sprint-10
+start_tag: sprint-10-start
+# Capacity: velocity history (...,6,6,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 6.
+# STORY-024 (decide, 3) is the headline — Zone 4 finale, unblocked now that STORY-028 (anti-flap),
+# STORY-012 (proposals) and STORY-013 (publish) are all Done. Refined at sprint-10 planning: the open
+# "current published status read" seam is resolved as components.status, INJECTED into decide as a
+# `current_status: ComponentStatus` parameter (precedent: collapse's under_maintenance, anti_flap's
+# thresholds); decide consumes the ProposalRepository + StatusPublisherPort ports it names; the
+# components.status read wiring is deferred to STORY-016 (first end-to-end thread). decide is a core
+# DecideService with injected ports (mirrors IngestService). Three 1-pt chores fill to 6.
+# Order: STORY-024 first (highest blast radius, full review pipeline), then 029 (core-domain adjacent),
+# 027 (test tidy), 030 (tooling).
 #
-# WORKFLOW CHANGE (PO-directed 2026-06-26, recorded in working-agreements.md): from this sprint on,
-# the PO implements the plan externally (Antigravity / Gemini), committing onto this branch; the
-# orchestrator does NOT dispatch implementer subagents. The PO triggers the review ("do your review");
-# the orchestrator then runs the FULL DoD gate + spec/quality reviewers (Opus) + wiki blast radius +
-# review/retro/merge. Mechanical floor unchanged: a story is Done only when all four DoD commands
-# exit 0 AND both reviews pass. Fix-loop findings route back to the PO/Gemini unless the PO asks the
-# orchestrator to fix inline.
+# WORKFLOW (PO-directed 2026-06-26, working-agreements.md): the PO implements the plan externally
+# (Antigravity / Gemini), committing onto this branch; the orchestrator does NOT dispatch implementer
+# subagents. The PO triggers the review ("do your review"); the orchestrator then runs the FULL DoD
+# gate + spec/quality reviewers (Opus, for the 3-pt story) + wiki blast radius + review/retro/merge.
+# A story is Done only when all four DoD commands exit 0 AND (for 3+ pts) both reviews pass. Fix-loop
+# findings route back to the PO/Gemini unless the PO asks the orchestrator to fix inline.
 #
-# Baseline at lock: non-DB gates green on main @ e1ca578 (pytest 195 passed / 46 DB-gated skipped,
-# lint-imports 3 kept/0 broken). DB-gated gates (alembic, check_fk_direction) were green at the
-# sprint-8 merge with NO code/schema change since; could not be re-run at lock because Docker Desktop
-# was down. No migration is expected this sprint (both stories use existing tables / no schema).
+# Baseline at lock: ALL gates green on main @ 299925b — pytest 264 passed (with DB; Docker up),
+# lint-imports 3 kept / 0 broken. No migration expected this sprint (decide is pure core; the chores
+# touch tests + a script + possibly a core validator — no schema change).
 # Model assignment: reviewers -> Opus (PO rule). Implementation -> PO/Gemini (external).
 stories:
-  - id: STORY-012
+  - id: STORY-024
     points: 3
-    board: done            # todo | in-progress | blocked | review | done
+    board: todo            # todo | in-progress | blocked | review | done
     pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — coherence validator (resolved_at IFF terminal) with
-                            # both rejected+valid shapes tested; create_open ON CONFLICT DO NOTHING returns
-                            # None on the partial-unique; resolve frees the slot; approval_event written.
-    quality_review: APPROVE # Opus quality returned 1 MAJOR — PostgresProposalRepository.resolve did
-                            # `UPDATE ... WHERE id=:id` with no state guard / no rowcount check (silently
-                            # re-resolved a terminal proposal, no-oped on unknown id; diverged from the fake).
-                            # Fix loop 1 (Gemini, external) added `WHERE id=:id AND state='open'` + raises on
-                            # rowcount!=1, made the fake raise to match, and folded the 3 minors (from __future__,
-                            # hoisted import, `is not None`). Orchestrator verified the fix by direct diff
-                            # inspection (491cd67) — exactly the prescribed change, correct — + green gate.
-                            # One cosmetic nit remains (missing blank line between fake methods) -> compile pass.
-    blocked_question: null
-    attempts: 1             # one fix loop (Gemini, external) — routed per the sprint-9 workflow agreement
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "264 passed in 14.96s (orchestrator-verified, with DB); +3 resolve-guard tests"
-        commit: 491cd67
-        at: 2026-06-26T17:20:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: 491cd67
-        at: 2026-06-26T17:20:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: 491cd67
-        at: 2026-06-26T17:20:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
-        exit_code: 0
-        output_tail: "exit 0 (no-op upgrade)"
-        commit: 491cd67
-        at: 2026-06-26T17:20:00+05:30
-    blast_radius_resolved: true   # canonical-types-and-ports.md (StatusProposal/ProposalState +
-                                  # ProposalRepository) + persistence-adapters.md (PostgresProposalRepository)
-                                  # updated by Gemini. Stale line citations in persistence-adapters.md fixed
-                                  # at the sprint-9 compile pass.
-  - id: STORY-013
-    points: 3
-    board: done
-    pipeline: full         # 3 pts -> (external impl) + spec reviewer + quality reviewer + DoD gate
-    spec_review: PASS       # Opus: all 4 AC MET — injected mapping + executor seam, request asserted,
-                            # exhaustive ComponentStatus->Statuspage mapping (DEGRADED->degraded_performance)
-                            # raising on unknown, UnmappedComponentIdError on unknown id, publish_best_effort
-                            # swallows+logs a raising publisher (caplog), no live HTTP, boundary clean.
-    quality_review: APPROVE # Opus: zero Critical, zero Major. publish_best_effort catches `Exception`
-                            # (not BaseException) + logger.exception, no re-raise; mapping named-raises like
-                            # health_mapping; statuspage-publish.md code_refs cover the adapter+helper+test.
-                            # Minors (notes): leftover import-smoke test, an unused degraded.json fixture
-                            # (the executor return is discarded), cosmetic import placement.
+    spec_review: null
+    quality_review: null
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "261 passed in 14.31s (orchestrator-verified, with DB)"
-        commit: dceecdf
-        at: 2026-06-26T12:00:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 3 kept, 0 broken."
-        commit: dceecdf
-        at: 2026-06-26T12:00:00+05:30
-      - command: "python scripts/check_fk_direction.py  # throwaway postgres:16 via scripts/dev_db.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 10 foreign key(s) checked, 0 violations."
-        commit: dceecdf
-        at: 2026-06-26T12:00:00+05:30
-      - command: "alembic upgrade head  # same throwaway DB; no migration this sprint"
-        exit_code: 0
-        output_tail: "exit 0 (no-op upgrade)"
-        commit: dceecdf
-        at: 2026-06-26T12:00:00+05:30
-    blast_radius_resolved: true   # new statuspage-publish.md created with code_refs covering the
-                                  # outbound/statuspage package + composition publish helper + test
-                                  # (sprint-7 agreement honored). canonical-types-and-ports unaffected.
+    dod_evidence: []
+    blast_radius_resolved: false   # expected: core-pipeline-and-availability.md (decide joins
+                                   # collapse/streak/anti_flap) + canonical-types-and-ports.md if a new
+                                   # Decision/result type lands. Verify at the DoD step.
+  - id: STORY-029
+    points: 1
+    board: todo
+    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
+  - id: STORY-027
+    points: 1
+    board: todo
+    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # test-only; no src change expected -> no wiki impact
+  - id: STORY-030
+    points: 1
+    board: todo
+    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # scripts/dev_db.py -> dev-setup-and-dod.md may need a re-verify
 hotfixes: []
 interrupts: []
