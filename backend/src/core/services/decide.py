@@ -33,4 +33,22 @@ class DecideService:
         now: datetime,
         reason: str | None = None,
     ) -> DecideAction:
+        opened = self._proposal_repo.get_open(component_id)
+        proposed_is_degradation = is_worse(proposed_status, current_status)
+
+        if proposed_is_degradation:
+            if opened is None:
+                prop = StatusProposal(
+                    component_id=component_id,
+                    from_status=current_status,
+                    to_status=proposed_status,
+                    state=ProposalState.OPEN,
+                    proposed_at=now,
+                )
+                persisted = self._proposal_repo.create_open(prop)
+                if persisted is None:
+                    return DecideAction.NOOP
+                return DecideAction.PROPOSED
+
         return DecideAction.NOOP
+
