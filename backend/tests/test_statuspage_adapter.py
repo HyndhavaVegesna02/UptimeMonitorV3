@@ -4,8 +4,7 @@ import json
 from pathlib import Path
 
 import pytest
-from src.adapters.outbound.statuspage import Executor, StatuspagePublisher
-
+from src.adapters.outbound.statuspage import StatuspagePublisher
 
 
 def test_map_component_status_exhaustive():
@@ -35,7 +34,6 @@ def _load_fixture(name: str) -> dict:
 
 
 def test_publisher_publishes_status_change_correctly():
-    from src.adapters.outbound.statuspage import StatuspagePublisher
     from src.core.domain.status import ComponentStatus, StatusChange
 
     recorded_calls = []
@@ -67,9 +65,38 @@ def test_publisher_publishes_status_change_correctly():
     assert json_body == {"component": {"status": "operational"}}
 
 
+def test_publisher_publishes_degraded_status_change_correctly():
+    from src.core.domain.status import ComponentStatus, StatusChange
+
+    recorded_calls = []
+
+    def fake_executor(method: str, url: str, headers: dict, json_body: dict) -> dict:
+        recorded_calls.append((method, url, headers, json_body))
+        return _load_fixture("component_degraded")
+
+    publisher = StatuspagePublisher(
+        page_id="page-123",
+        api_token="token-abc",
+        component_mapping={"checkout": "comp-123"},
+        executor=fake_executor,
+    )
+
+    change = StatusChange(component_id="checkout", status=ComponentStatus.DEGRADED)
+    publisher.publish(change)
+
+    assert len(recorded_calls) == 1
+    method, url, headers, json_body = recorded_calls[0]
+    assert method == "PATCH"
+    assert url == "https://api.statuspage.io/v1/pages/page-123/components/comp-123"
+    assert headers == {
+        "Authorization": "OAuth token-abc",
+        "Content-Type": "application/json",
+    }
+    assert json_body == {"component": {"status": "degraded_performance"}}
+
+
 def test_publisher_raises_on_unmapped_component_id():
     from src.adapters.outbound.statuspage import (
-        StatuspagePublisher,
         UnmappedComponentIdError,
     )
     from src.core.domain.status import ComponentStatus, StatusChange
