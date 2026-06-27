@@ -282,7 +282,7 @@ stories:
   - id: STORY-034
     title: Rehabilitate the 7 reformat-stale wiki articles with symbol-based citations
     file: docs/scrum/stories/STORY-034-wiki-symbol-citations-rehab.md
-    status: draft   # from Sprint 11 review/retro; pending the symbol-citation syntax decision at retro
+    status: ready   # sprint-11 retro: symbol-citation syntax resolved (file.py::Symbol); rehab the 7 stale articles
     points: 2
     priority: 30
     type: chore

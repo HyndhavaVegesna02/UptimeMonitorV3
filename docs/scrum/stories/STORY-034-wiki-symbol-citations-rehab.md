@@ -31,12 +31,12 @@ in-sprint and stay `verified` — use them as the reference for the new citation
 - [ ] AC4: `pytest` + `lint-imports` + `ruff check` + `ruff format --check` green (doc-only change, but
       run the gate). No code under `src/` is touched.
 
-## Open Questions
-- Exact symbol-citation syntax — settle when the retro amendment's wording is finalized (e.g.
-  `` `status.py::ComponentStatus` `` vs `` `status.py` (ComponentStatus) ``). Pick one and apply it
-  uniformly; record the chosen form in the conventions checklist.
+## Resolved Questions
+- **Symbol-citation syntax → `` `file.py::Symbol` ``** (e.g. `` `status.py::ComponentStatus` ``,
+  `` `decide.py::DecideService.decide` ``), or `` `file.py` ("section") `` where no symbol applies, per
+  the Sprint 11 retro amendment (working-agreements.md 2026-06-27). Apply uniformly across the 7 articles.
 
 ## History
 - 2026-06-27: created from Sprint 11 review/retro (tree-wide reformat drifted ~54 line citations; 7
-  articles marked stale rather than hand-patched). Status: draft — pending the retro's symbol-citation
-  syntax decision. Estimate: 2 (7 articles, doc-only, mechanical once the syntax is fixed).
+  articles marked stale rather than hand-patched). Estimate: 2 (7 articles, doc-only, mechanical).
+- 2026-06-27 (retro): symbol-citation syntax resolved (`file.py::Symbol`). Status: draft → ready.

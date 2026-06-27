@@ -227,4 +227,19 @@
   + CLAUDE.md (the command-sync agreement applies — doc update in the same commit). Until STORY-033
   lands, the DoD stays the current four commands. (Motivated by Sprint 10 review: STORY-024's minors
   were entirely ruff-fixable — trailing blanks, mixed import source, unsorted imports.)
+- 2026-06-27 — **Wiki Facts cite SYMBOLS, not bare line numbers.** A Fact that points into code cites
+  the defining symbol — `` `file.py::ClassName` ``, `` `file.py::function` ``, `` `file.py::Class.method` ``,
+  or `` `file.py` ("section heading") `` — NOT a bare `file.py:NN`. Symbols survive formatting and most
+  refactors; line numbers rot on the next reformat. A bare line number is allowed ONLY where no symbol
+  applies (e.g. a specific constant block or a config key) and is flagged for re-pin on any touch. The
+  staleness mechanism is unchanged (still `git diff verified_sha..HEAD -- code_refs`); this only changes
+  how a Fact ADDRESSES its evidence so a formatting-only diff doesn't invalidate the address. STORY-034
+  migrates the 7 articles marked stale this sprint to this form; new/edited Facts use it from now on, and
+  it joins the plan.md conventions checklist. (Motivated by Sprint 11, STORY-033: introducing `ruff`
+  with a one-pass tree-wide `ruff format` shifted ~54 `file:line` citations across 7 wiki articles by
+  small amounts — e.g. a ruff-inserted blank line after a module docstring pushed every citation in that
+  file +1 — making them mechanically stale and imprecise despite ZERO change to the Facts themselves.
+  Hand-patching line numbers that will re-drift on the next format is low-value; symbol addresses are the
+  durable fix. The articles were marked `stale` (honest/quarantined) rather than mass-patched, and
+  rehabbed via STORY-034 under this policy.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
