@@ -70,10 +70,10 @@ def test_observations_source_event_id_has_unique_index(conn):
             """
         )
         indexdefs = [row[0] for row in cur.fetchall()]
-    matches = [
-        d for d in indexdefs if "UNIQUE" in d.upper() and "source_event_id" in d
-    ]
-    assert matches, f"no unique index on observations(source_event_id); indexes: {indexdefs}"
+    matches = [d for d in indexdefs if "UNIQUE" in d.upper() and "source_event_id" in d]
+    assert matches, (
+        f"no unique index on observations(source_event_id); indexes: {indexdefs}"
+    )
 
 
 def test_observations_has_composite_signal_key_observed_at_index(conn):
@@ -87,11 +87,15 @@ def test_observations_has_composite_signal_key_observed_at_index(conn):
         )
         indexdefs = [row[0] for row in cur.fetchall()]
     matches = [
-        d for d in indexdefs
-        if "signal_key" in d and "observed_at" in d
+        d
+        for d in indexdefs
+        if "signal_key" in d
+        and "observed_at" in d
         and d.index("signal_key") < d.index("observed_at")
     ]
-    assert matches, f"no composite (signal_key, observed_at) index; indexes: {indexdefs}"
+    assert matches, (
+        f"no composite (signal_key, observed_at) index; indexes: {indexdefs}"
+    )
 
 
 def test_status_proposals_has_partial_unique_active_index(conn):
@@ -108,10 +112,13 @@ def test_status_proposals_has_partial_unique_active_index(conn):
         )
         indexdefs = [row[0] for row in cur.fetchall()]
     matches = [
-        d for d in indexdefs
+        d
+        for d in indexdefs
         if "UNIQUE" in d.upper() and "component_id" in d and "WHERE" in d.upper()
     ]
-    assert matches, f"no partial unique index on status_proposals(component_id); indexes: {indexdefs}"
+    assert matches, (
+        f"no partial unique index on status_proposals(component_id); indexes: {indexdefs}"
+    )
 
 
 # AC4 — timestamptz, jsonb, NOT NULL.

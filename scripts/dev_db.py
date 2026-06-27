@@ -95,10 +95,17 @@ def start_container(
     subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
     result = subprocess.run(
         [
-            "docker", "run", "-d", "--name", name,
-            "-e", f"POSTGRES_PASSWORD={password}",
-            "-e", f"POSTGRES_DB={db}",
-            "-p", f"{host_port}:5432",
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            name,
+            "-e",
+            f"POSTGRES_PASSWORD={password}",
+            "-e",
+            f"POSTGRES_DB={db}",
+            "-p",
+            f"{host_port}:5432",
             "postgres:16",
         ],
         capture_output=True,
@@ -124,7 +131,9 @@ def wait_for_postgres(
         if result.returncode == 0:
             return
         time.sleep(poll_interval_seconds)
-    raise TimeoutError(f"Postgres in container {name!r} did not become ready within {timeout_seconds}s")
+    raise TimeoutError(
+        f"Postgres in container {name!r} did not become ready within {timeout_seconds}s"
+    )
 
 
 def stop_container(name: str = CONTAINER_NAME) -> None:
@@ -151,7 +160,9 @@ def run_migrations(database_url_direct: str) -> None:
         text=True,
     )
     if result.returncode != 0:
-        raise RuntimeError(f"alembic upgrade head failed:\n{result.stdout}\n{result.stderr}")
+        raise RuntimeError(
+            f"alembic upgrade head failed:\n{result.stdout}\n{result.stderr}"
+        )
 
 
 # --------------------------------------------------------------------------
@@ -224,10 +235,10 @@ def resolve_db(
         # bind the fixed default port, so report URLs at HOST_PORT.
         spawn_container()
         port = HOST_PORT
-    database_url = f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
-    database_url_direct = (
-        f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
+    database_url = (
+        f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
     )
+    database_url_direct = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
 
     return DbPlan(
         source="container",
@@ -246,9 +257,7 @@ def _spawn_default(container_name: str, migrate, port_box: list) -> None:
     start_container(name=container_name, host_port=port)
     try:
         wait_for_postgres(name=container_name)
-        direct_url = (
-            f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
-        )
+        direct_url = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
         migrate(direct_url)
     except BaseException:
         stop_container(name=container_name)
@@ -268,9 +277,7 @@ def cmd_up(args: argparse.Namespace) -> int:
     database_url = (
         f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
     )
-    database_url_direct = (
-        f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
-    )
+    database_url_direct = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
     try:
         print("Waiting for readiness...")
         wait_for_postgres(name=name)

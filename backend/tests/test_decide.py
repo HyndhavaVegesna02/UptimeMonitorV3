@@ -1,6 +1,7 @@
-import pytest
 from datetime import datetime, timezone
-from src.core.domain import ComponentStatus, StatusChange, ProposalState, StatusProposal
+
+import pytest
+from src.core.domain import ComponentStatus, ProposalState, StatusChange, StatusProposal
 from src.core.services.decide import DecideAction, DecideService
 from tests.fakes import FakeProposalRepository, RecordingStatusPublisher
 
@@ -234,7 +235,3 @@ def test_decide_commit_first_publish_failure_propagates_but_repo_write_committed
     assert resolved.state == ProposalState.OBSOLETED
     assert resolved.resolved_at == later
     assert resolved.reason == "Recovered"
-
-
-
-

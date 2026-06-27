@@ -24,10 +24,10 @@ def test_feature_to_spine_edge_is_not_flagged():
 
 def test_only_the_spine_to_feature_edge_is_flagged_in_a_mixed_set():
     foreign_keys = [
-        ("components", "incidents"),   # spine -> feature  : VIOLATION
-        ("incidents", "components"),   # feature -> spine  : ok
-        ("observations", "signals"),   # spine -> spine    : ok
-        ("incidents", "users"),        # feature -> feature: ok (not our concern)
+        ("components", "incidents"),  # spine -> feature  : VIOLATION
+        ("incidents", "components"),  # feature -> spine  : ok
+        ("observations", "signals"),  # spine -> spine    : ok
+        ("incidents", "users"),  # feature -> feature: ok (not our concern)
     ]
     violations = find_violations(foreign_keys, SPINE)
     assert violations == [("components", "incidents")]
@@ -39,7 +39,15 @@ def test_no_foreign_keys_means_no_violations():
 
 def test_spine_allowlist_matches_dossier_section_9():
     assert SPINE == {
-        "apps", "signals", "components", "observations", "watermarks",
-        "rejected_observations", "problem_signals", "status_proposals",
-        "approval_events", "publications", "maintenance_windows",
+        "apps",
+        "signals",
+        "components",
+        "observations",
+        "watermarks",
+        "rejected_observations",
+        "problem_signals",
+        "status_proposals",
+        "approval_events",
+        "publications",
+        "maintenance_windows",
     }

@@ -1,7 +1,10 @@
 """STORY-013: Statuspage publish adapter tests."""
 
+import json
+from pathlib import Path
+
 import pytest
-from src.adapters.outbound.statuspage import StatuspagePublisher, Executor
+from src.adapters.outbound.statuspage import Executor, StatuspagePublisher
 
 
 def test_publisher_can_be_imported():
@@ -11,8 +14,8 @@ def test_publisher_can_be_imported():
 
 
 def test_map_component_status_exhaustive():
-    from src.core.domain import ComponentStatus
     from src.adapters.outbound.statuspage import map_component_status
+    from src.core.domain import ComponentStatus
 
     assert map_component_status(ComponentStatus.OPERATIONAL) == "operational"
     assert map_component_status(ComponentStatus.DEGRADED) == "degraded_performance"
@@ -21,14 +24,13 @@ def test_map_component_status_exhaustive():
 
 
 def test_map_component_status_unknown_raises():
-    from src.adapters.outbound.statuspage import map_component_status, UnknownComponentStatusError
+    from src.adapters.outbound.statuspage import (
+        UnknownComponentStatusError,
+        map_component_status,
+    )
 
     with pytest.raises(UnknownComponentStatusError):
         map_component_status("on_fire")
-
-
-import json
-from pathlib import Path
 
 
 def _load_fixture(name: str) -> dict:
@@ -38,8 +40,8 @@ def _load_fixture(name: str) -> dict:
 
 
 def test_publisher_publishes_status_change_correctly():
-    from src.core.domain.status import StatusChange, ComponentStatus
     from src.adapters.outbound.statuspage import StatuspagePublisher
+    from src.core.domain.status import ComponentStatus, StatusChange
 
     recorded_calls = []
 
@@ -67,16 +69,15 @@ def test_publisher_publishes_status_change_correctly():
         "Authorization": "OAuth token-abc",
         "Content-Type": "application/json",
     }
-    assert json_body == {
-        "component": {
-            "status": "operational"
-        }
-    }
+    assert json_body == {"component": {"status": "operational"}}
 
 
 def test_publisher_raises_on_unmapped_component_id():
-    from src.core.domain.status import StatusChange, ComponentStatus
-    from src.adapters.outbound.statuspage import StatuspagePublisher, UnmappedComponentIdError
+    from src.adapters.outbound.statuspage import (
+        StatuspagePublisher,
+        UnmappedComponentIdError,
+    )
+    from src.core.domain.status import ComponentStatus, StatusChange
 
     def fake_executor(method: str, url: str, headers: dict, json_body: dict) -> dict:
         return {}
@@ -88,7 +89,9 @@ def test_publisher_raises_on_unmapped_component_id():
         executor=fake_executor,
     )
 
-    change = StatusChange(component_id="unknown_comp", status=ComponentStatus.OPERATIONAL)
+    change = StatusChange(
+        component_id="unknown_comp", status=ComponentStatus.OPERATIONAL
+    )
     with pytest.raises(UnmappedComponentIdError) as exc_info:
         publisher.publish(change)
 
@@ -96,9 +99,10 @@ def test_publisher_raises_on_unmapped_component_id():
 
 
 def test_publish_best_effort_catches_and_logs_error(caplog):
-    from src.core.domain.status import StatusChange, ComponentStatus
-    from src.composition import publish_best_effort
     import logging
+
+    from src.composition import publish_best_effort
+    from src.core.domain.status import ComponentStatus, StatusChange
 
     class RaisingPublisher:
         def publish(self, change: StatusChange) -> None:
@@ -113,6 +117,3 @@ def test_publish_best_effort_catches_and_logs_error(caplog):
 
     assert len(caplog.records) == 1
     assert "Failed to publish status change for checkout to Statuspage" in caplog.text
-
-
-

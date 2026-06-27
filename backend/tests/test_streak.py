@@ -14,7 +14,9 @@ from src.core.services.pipeline import Streak, streak
 _BASE_TIME = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
 
 
-def _verdict(health: Health | None, *, offset_minutes: int, under_maintenance: bool = False):
+def _verdict(
+    health: Health | None, *, offset_minutes: int, under_maintenance: bool = False
+):
     """A construction-ready `Verdict`; verdicts are passed oldest-to-newest."""
     return Verdict(
         signal_key="checkout-http",

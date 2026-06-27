@@ -12,7 +12,6 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from src.composition.settings import (
     APP_DATABASE_URL_VAR,
     Settings,

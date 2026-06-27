@@ -61,7 +61,9 @@ def test_resolve_db_reuses_external_urls_without_spawning(monkeypatch):
     from dev_db import resolve_db
 
     monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@external-host/db")
-    monkeypatch.setenv("DATABASE_URL_DIRECT", "postgresql+psycopg://u:p@external-host/db")
+    monkeypatch.setenv(
+        "DATABASE_URL_DIRECT", "postgresql+psycopg://u:p@external-host/db"
+    )
 
     spawned = []
 
@@ -96,10 +98,14 @@ def test_resolve_db_skips_cleanly_when_no_external_db_and_no_docker(monkeypatch)
 def _docker_unavailable() -> bool:
     import subprocess as _sp
 
-    return _sp.run(["docker", "version"], capture_output=True, text=True).returncode != 0
+    return (
+        _sp.run(["docker", "version"], capture_output=True, text=True).returncode != 0
+    )
 
 
-@pytest.mark.skipif(_docker_unavailable(), reason="requires Docker to spawn a real container")
+@pytest.mark.skipif(
+    _docker_unavailable(), reason="requires Docker to spawn a real container"
+)
 def test_spawn_failure_does_not_leak_a_container(monkeypatch):
     """MAJOR regression: if readiness or migration raises AFTER start_container
     has created the container, resolve_db must tear that container down before
@@ -118,7 +124,9 @@ def test_spawn_failure_does_not_leak_a_container(monkeypatch):
     name = dev_db.unique_container_name(prefix="uptime_pg_pytest_leaktest")
 
     def failing_migrate(_direct_url):
-        raise RuntimeError("simulated alembic upgrade head failure after container start")
+        raise RuntimeError(
+            "simulated alembic upgrade head failure after container start"
+        )
 
     with pytest.raises(RuntimeError, match="simulated alembic"):
         dev_db.resolve_db(migrate=failing_migrate, container_name=name)
@@ -138,7 +146,9 @@ def test_spawn_failure_does_not_leak_a_container(monkeypatch):
     )
 
 
-@pytest.mark.skipif(_docker_unavailable(), reason="requires Docker to spawn a real container")
+@pytest.mark.skipif(
+    _docker_unavailable(), reason="requires Docker to spawn a real container"
+)
 def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails(monkeypatch):
     """AC2: the finalizer runs on test FAILURE, not just happy-path cleanup.
 
@@ -171,7 +181,15 @@ def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails(monkeyp
     assert container_name
 
     running = subprocess.run(
-        ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+        [
+            "docker",
+            "ps",
+            "-a",
+            "--filter",
+            f"name={container_name}",
+            "--format",
+            "{{.Names}}",
+        ],
         capture_output=True,
         text=True,
     )
@@ -185,12 +203,22 @@ def test_container_is_torn_down_even_when_a_test_using_the_fixture_fails(monkeyp
     finally:
         # Defensive cleanup so a regression doesn't leak across runs while red.
         leftover = subprocess.run(
-            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+            [
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                f"name={container_name}",
+                "--format",
+                "{{.Names}}",
+            ],
             capture_output=True,
             text=True,
         )
         if leftover.stdout.strip():
-            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True, text=True)
+            subprocess.run(
+                ["docker", "rm", "-f", container_name], capture_output=True, text=True
+            )
 
     assert leftover.stdout.strip() == "", (
         f"container {container_name!r} left behind after the fixture-using test failed"

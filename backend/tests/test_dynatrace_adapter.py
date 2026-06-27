@@ -11,7 +11,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
-
 import src.adapters.inbound.dynatrace as dynatrace_adapter
 from src.core.domain import Health
 
@@ -139,7 +138,9 @@ def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
 
     rows = _load("clickpath_multi_location.json")["records"]
     obs = normalize_clickpath_row(
-        rows[0], signal_key="sockshop-purchase", raw_ref="s3://raw/evt-clickpath-journey-001.json"
+        rows[0],
+        signal_key="sockshop-purchase",
+        raw_ref="s3://raw/evt-clickpath-journey-001.json",
     )
 
     assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"
@@ -336,9 +337,7 @@ def test_build_query_rejects_native_id_with_breaking_quote():
     )
 
     with pytest.raises(InvalidNativeIdError):
-        build_dql_query(
-            native_id='a"b', watermark=None, overlap=timedelta(minutes=5)
-        )
+        build_dql_query(native_id='a"b', watermark=None, overlap=timedelta(minutes=5))
 
 
 def test_build_query_with_well_formed_native_id_is_unchanged():

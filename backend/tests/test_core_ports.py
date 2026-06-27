@@ -9,7 +9,6 @@ No Dynatrace, Statuspage, Neon, DB, or network anywhere here.
 from datetime import datetime, timedelta, timezone
 
 import pytest
-
 from src.core.domain import (
     ComponentStatus,
     Health,
@@ -164,9 +163,7 @@ def test_recording_status_publisher_records_each_canonical_change():
     from fakes import RecordingStatusPublisher
 
     publisher = RecordingStatusPublisher()
-    change = StatusChange(
-        component_id="checkout", status=ComponentStatus.MAJOR_OUTAGE
-    )
+    change = StatusChange(component_id="checkout", status=ComponentStatus.MAJOR_OUTAGE)
 
     result = publisher.publish(change)
 
@@ -243,7 +240,12 @@ def test_fake_proposal_repository_create_and_get():
 
     # Resolve transitions the proposal to a terminal state
     resolved_time = datetime(2026, 6, 26, 12, 10, 0, tzinfo=timezone.utc)
-    repo.resolve(saved.id, to_state=ProposalState.APPROVED, reason="Manual approve", resolved_at=resolved_time)
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="Manual approve",
+        resolved_at=resolved_time,
+    )
 
     # Now get_open returns None
     assert repo.get_open("checkout") is None
@@ -279,7 +281,12 @@ def test_fake_proposal_repository_resolve_non_open_or_unknown_raises():
 
     # Unknown ID raises
     with pytest.raises(ValueError):
-        repo.resolve(999, to_state=ProposalState.APPROVED, reason="test", resolved_at=resolved_time)
+        repo.resolve(
+            999,
+            to_state=ProposalState.APPROVED,
+            reason="test",
+            resolved_at=resolved_time,
+        )
 
     prop = StatusProposal(
         component_id="checkout",
@@ -292,10 +299,18 @@ def test_fake_proposal_repository_resolve_non_open_or_unknown_raises():
     assert saved is not None
 
     # First resolve succeeds
-    repo.resolve(saved.id, to_state=ProposalState.APPROVED, reason="first", resolved_at=resolved_time)
+    repo.resolve(
+        saved.id,
+        to_state=ProposalState.APPROVED,
+        reason="first",
+        resolved_at=resolved_time,
+    )
 
     # Resolving again (now terminal, not open) raises ValueError
     with pytest.raises(ValueError):
-        repo.resolve(saved.id, to_state=ProposalState.SUPERSEDED, reason="second", resolved_at=resolved_time)
-
-
+        repo.resolve(
+            saved.id,
+            to_state=ProposalState.SUPERSEDED,
+            reason="second",
+            resolved_at=resolved_time,
+        )

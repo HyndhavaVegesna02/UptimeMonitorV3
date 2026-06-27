@@ -12,11 +12,9 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Sequence
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 
-import pytest
-
-from src.core.domain import Health, IngestResult, Provenance, SignalObservation
+from src.core.domain import Health, IngestResult, SignalObservation
 from src.core.ports import SignalIngestPort, WatermarkRepository
 
 
@@ -39,9 +37,7 @@ class RecordingIngestPort(SignalIngestPort):
     def __init__(self) -> None:
         self.batches: list[Sequence[SignalObservation]] = []
 
-    def ingest_observations(
-        self, batch: Sequence[SignalObservation]
-    ) -> IngestResult:
+    def ingest_observations(self, batch: Sequence[SignalObservation]) -> IngestResult:
         self.batches.append(batch)
         return IngestResult(accepted=len(batch), rejected=0)
 
@@ -66,7 +62,9 @@ def test_single_cycle_reads_watermark_fetches_and_ingests_without_domain_logic()
     """
     from src.composition.pull_loop import run_cycle
 
-    watermark_repo = FakeWatermarkRepository({"checkout-http": None}.get("checkout-http"))
+    watermark_repo = FakeWatermarkRepository(
+        {"checkout-http": None}.get("checkout-http")
+    )
     ingest_port = RecordingIngestPort()
 
     captured_queries: list[str] = []

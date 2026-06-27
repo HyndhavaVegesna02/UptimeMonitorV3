@@ -1,9 +1,9 @@
 """STORY-012: status proposals domain types and state machine (dossier §12)."""
 
 from datetime import datetime, timezone
+
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import ComponentStatus
 from src.core.domain.proposal import ProposalState, StatusProposal
 
@@ -99,7 +99,9 @@ def test_terminal_proposal_without_resolved_at_raises():
                 proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
                 resolved_at=None,
             )
-        assert f"{terminal_state.value} state requires resolved_at to be set" in str(exc_info.value)
+        assert f"{terminal_state.value} state requires resolved_at to be set" in str(
+            exc_info.value
+        )
 
 
 def test_status_proposal_terminal_property():
@@ -156,4 +158,3 @@ def test_is_valid_transition():
     ]:
         for to_state in ProposalState:
             assert is_valid_transition(term_from, to_state) is False
-

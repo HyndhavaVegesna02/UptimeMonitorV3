@@ -10,7 +10,6 @@ from datetime import datetime, timezone
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain import Health, Verdict
 
 

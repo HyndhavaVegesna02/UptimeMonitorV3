@@ -12,10 +12,9 @@ to hand to `SignalIngestPort.ingest_observations` (dossier §6, §8).
 
 from datetime import datetime, timedelta
 
-from src.core.domain import SignalObservation
-
 from src.adapters.inbound.dynatrace.dispatch import normalize_rows
 from src.adapters.inbound.dynatrace.query import Executor, build_dql_query
+from src.core.domain import SignalObservation
 
 #: Default overlap window (dossier §8): re-read this much before the
 #: watermark on every pull so a slow-to-land row is never missed.

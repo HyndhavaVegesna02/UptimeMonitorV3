@@ -84,9 +84,7 @@ class IngestService(SignalIngestPort):
         self._rejected_repo = rejected_repo
         self._clock = clock
 
-    def ingest_observations(
-        self, batch: Sequence[SignalObservation]
-    ) -> IngestResult:
+    def ingest_observations(self, batch: Sequence[SignalObservation]) -> IngestResult:
         """Run the §8 ordering for one batch and return the accepted/rejected counts.
 
         Step order is significant for both AC1 and AC4:

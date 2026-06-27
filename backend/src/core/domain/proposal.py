@@ -2,6 +2,7 @@
 
 from datetime import datetime, timedelta
 from enum import Enum
+
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from src.core.domain.status import ComponentStatus
@@ -71,7 +72,9 @@ class StatusProposal(BaseModel):
                 raise ValueError("open state requires resolved_at to be None")
         else:
             if self.resolved_at is None:
-                raise ValueError(f"{self.state.value} state requires resolved_at to be set")
+                raise ValueError(
+                    f"{self.state.value} state requires resolved_at to be set"
+                )
         return self
 
     @property
@@ -89,4 +92,3 @@ def is_valid_transition(from_state: ProposalState, to_state: ProposalState) -> b
     if from_state == ProposalState.OPEN:
         return to_state != ProposalState.OPEN
     return False
-

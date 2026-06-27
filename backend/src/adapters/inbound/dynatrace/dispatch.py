@@ -11,16 +11,17 @@ in the same DQL response (dossier §5 normalization rules).
 
 from collections.abc import Callable, Sequence
 
-from src.core.domain import SignalObservation
-
 from src.adapters.inbound.dynatrace._assembly import (
-    MalformedDqlRowError,
+    MalformedDqlRowError as MalformedDqlRowError,
+)
+from src.adapters.inbound.dynatrace._assembly import (
     require_field,
 )
 from src.adapters.inbound.dynatrace.clickpath_normalizer import (
     normalize_clickpath_row,
 )
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
+from src.core.domain import SignalObservation
 
 #: Vendor `synthetic_test.type` -> normalizer for that monitor type.
 #: Adding a future type (single-browser, NAM) means adding one entry here and
@@ -57,9 +58,7 @@ def normalize_row(row: dict, *, signal_key: str) -> SignalObservation:
     return normalizer(row, signal_key=signal_key)
 
 
-def normalize_rows(
-    rows: Sequence[dict], *, signal_key: str
-) -> list[SignalObservation]:
+def normalize_rows(rows: Sequence[dict], *, signal_key: str) -> list[SignalObservation]:
     """Normalize a sequence of DQL rows into a flat list of observations.
 
     One observation per row (one per location execution); rows for different

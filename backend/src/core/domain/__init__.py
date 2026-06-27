@@ -1,16 +1,16 @@
 """core.domain — pure data; depends on nothing."""
 
+from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
 from src.core.domain.signal import Health, Provenance, SignalObservation
 from src.core.domain.status import (
+    STATUS_SEVERITY,
     ComponentStatus,
     IngestResult,
     StatusChange,
-    STATUS_SEVERITY,
-    severity_rank,
     is_worse,
+    severity_rank,
 )
 from src.core.domain.verdict import Verdict
-from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
 
 __all__ = [
     "ComponentStatus",
@@ -27,5 +27,3 @@ __all__ = [
     "severity_rank",
     "is_worse",
 ]
-
-

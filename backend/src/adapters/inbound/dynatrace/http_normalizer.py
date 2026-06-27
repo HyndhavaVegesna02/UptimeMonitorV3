@@ -7,10 +7,9 @@ normalization rules) — the caller (the adapter dispatch, see `adapter.py`)
 is responsible for iterating rows.
 """
 
-from src.core.domain import SignalObservation
-
 from src.adapters.inbound.dynatrace._assembly import assemble_observation
 from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
+from src.core.domain import SignalObservation
 
 NATIVE_KIND = "http"
 

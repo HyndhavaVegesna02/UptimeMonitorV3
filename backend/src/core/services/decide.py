@@ -35,7 +35,7 @@ with in-memory fakes (no DB, no Statuspage).
 from datetime import datetime
 from enum import Enum
 
-from src.core.domain import ComponentStatus, StatusChange, ProposalState, StatusProposal
+from src.core.domain import ComponentStatus, ProposalState, StatusChange, StatusProposal
 from src.core.domain.status import is_worse, severity_rank
 from src.core.ports import ProposalRepository, StatusPublisherPort
 
@@ -112,13 +112,17 @@ class DecideService:
         """
         opened = self._proposal_repo.get_open(component_id)
         proposed_is_degradation = is_worse(proposed_status, current_status)
-        proposed_is_better = severity_rank(proposed_status) < severity_rank(current_status)
+        proposed_is_better = severity_rank(proposed_status) < severity_rank(
+            current_status
+        )
 
         publish_change = None
         action = DecideAction.NOOP
 
         if proposed_is_better:
-            publish_change = StatusChange(component_id=component_id, status=proposed_status)
+            publish_change = StatusChange(
+                component_id=component_id, status=proposed_status
+            )
             action = DecideAction.PUBLISHED_RECOVERY
 
         if proposed_is_degradation:
@@ -172,6 +176,3 @@ class DecideService:
             self._publisher.publish(publish_change)
 
         return action
-
-
-

@@ -77,7 +77,5 @@ def build_dql_query(
 
     filter_expr = " AND ".join(clauses)
     return (
-        "fetch dt.synthetic.executions\n"
-        f"| filter {filter_expr}\n"
-        "| sort timestamp asc"
+        f"fetch dt.synthetic.executions\n| filter {filter_expr}\n| sort timestamp asc"
     )

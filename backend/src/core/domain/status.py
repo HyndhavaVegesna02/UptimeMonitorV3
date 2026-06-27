@@ -76,4 +76,3 @@ def severity_rank(status: ComponentStatus) -> int:
 def is_worse(a: ComponentStatus, b: ComponentStatus) -> bool:
     """Returns True if status 'a' is strictly worse than status 'b'."""
     return severity_rank(a) > severity_rank(b)
-
