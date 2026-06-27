@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 11
-status: active          # none | active | review | closed | aborted
+status: closed         # none | active | review | closed | aborted
+closed: 2026-06-27
 started: 2026-06-27
 goal: "Tooling + cleanup consolidation — land the ruff DoD gate (format + import-sort, STORY-033) and
   clear the carried review chores (STORY-032 decide minors, STORY-031 sprint-9 nits) before the Zone 6
@@ -33,32 +34,57 @@ start_tag: sprint-11-start
 stories:
   - id: STORY-033
     points: 2
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate         # 2 pts -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # CHANGES the DoD -> dev-setup-and-dod.md must be updated +
-                                   # re-verified (new ruff commands, pyproject config). CLAUDE.md too.
+    dod_evidence:
+      - command: "all SIX commands (pytest / lint-imports / check_fk_direction / alembic / ruff check / ruff format --check)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at c577330 (with DB): pytest 275 passed; lint-imports 3/0;
+          fk 0 violations; alembic 0; ruff check 'All checks passed!'; ruff format '73 files already
+          formatted'. Reformat confirmed formatting-only (migration diff = exploded sa.Column calls +
+          quotes, no DDL change). ruleset minimal (E/W/F/I, E501 ignored), line-length 88."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # DoD changed -> definition-of-done.md + CLAUDE.md synced in the same
+                                  # commit (d557749); dev-setup-and-dod.md updated + verified.
   - id: STORY-032
     points: 1
-    board: todo
+    board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # decide.py touched (DRY helper + opened.id guard) -> re-verify
-                                   # core-pipeline-and-availability.md (no Fact change expected).
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "verified at c577330 (see STORY-033 row). _open_proposal DRY helper extracted +
+          opened.id asserts added; cosmetic ACs (imports/blanks) handled by the ruff pass."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # core-pipeline-and-availability.md re-pinned (decide.py:43/61 verified
+                                  # current) by the implementer; stays verified.
   - id: STORY-031
     points: 1
-    board: todo
+    board: done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # test/fixture-only; no src change -> no wiki impact expected.
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "verified at c577330. Smoke test removed; degraded-path publish test added
+          (exercises the unused fixture); mid-module imports hoisted (ruff)."
+        commit: c577330
+        at: 2026-06-27T18:30:00+05:30
+    blast_radius_resolved: true   # test/fixture-only; no src Fact impact.
+# COMPILE PASS (sprint-11): STORY-033's tree-wide `ruff format` touched files referenced by 7 wiki
+# articles, drifting ~54 `file:line` citations (Facts still TRUE, only pointers moved). PO decision:
+# mark those 7 `status: stale` (honest/quarantined) rather than hand-patch brittle line refs; rehab via
+# STORY-034 under a symbol-based-citation policy adopted at retro. core-pipeline + dev-setup were
+# re-pinned in-sprint and stay verified.
 hotfixes: []
 interrupts: []
