@@ -58,3 +58,22 @@ class IngestResult(BaseModel):
 
     rejected: int
     """Count of observations the core refused (quarantined as rejections)."""
+
+
+STATUS_SEVERITY: dict[ComponentStatus, int] = {
+    ComponentStatus.OPERATIONAL: 0,
+    ComponentStatus.DEGRADED: 1,
+    ComponentStatus.PARTIAL_OUTAGE: 2,
+    ComponentStatus.MAJOR_OUTAGE: 3,
+}
+
+
+def severity_rank(status: ComponentStatus) -> int:
+    """Returns the severity rank of a ComponentStatus."""
+    return STATUS_SEVERITY[status]
+
+
+def is_worse(a: ComponentStatus, b: ComponentStatus) -> bool:
+    """Returns True if status 'a' is strictly worse than status 'b'."""
+    return severity_rank(a) > severity_rank(b)
+
