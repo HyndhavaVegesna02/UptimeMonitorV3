@@ -7,11 +7,6 @@ import pytest
 from src.adapters.outbound.statuspage import Executor, StatuspagePublisher
 
 
-def test_publisher_can_be_imported():
-    # Scaffolding test to watch import fail, then succeed.
-    assert StatuspagePublisher is not None
-    assert Executor is not None
-
 
 def test_map_component_status_exhaustive():
     from src.adapters.outbound.statuspage import map_component_status
