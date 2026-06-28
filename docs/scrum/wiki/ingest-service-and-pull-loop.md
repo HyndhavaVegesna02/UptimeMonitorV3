@@ -1,9 +1,9 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 205e1fe
-verified_sprint: sprint-7
-status: stale          # verified | stale | archived
+verified_sha: 5657757
+verified_sprint: sprint-12
+status: verified          # verified | stale | archived
 ---
 
 ## Facts (verified against code)
@@ -13,52 +13,52 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 [[dynatrace-adapter]]). The ports + canonical types it speaks are in [[canonical-types-and-ports]].
 
 ### The ingest service — `IngestService` (`core/services/ingest_service.py`)
-- `IngestService(SignalIngestPort)` (`ingest_service.py:43`) is the FIRST populated thing in
+- `IngestService(SignalIngestPort)` (`ingest_service.py::IngestService`) is the FIRST populated thing in
   `core/services/`; it owns the dossier §8 ordering so every adapter that feeds the core inherits
   it. It imports ONLY `src.core.*` (ports + domain) — no SQL, no vendor types, no globals.
-- Constructed with the four core ports injected (`__init__`, `ingest_service.py:52-63`):
+- Constructed with the four core ports injected (`ingest_service.py::IngestService.__init__`):
   `observation_repo`, `watermark_repo`, `rejected_repo`, `clock` — so it is fully exercised with
   in-memory fakes (no DB, no Dynatrace) per AC5.
-- `ingest_observations(batch) -> IngestResult` (`ingest_service.py:87-142`) runs the §8 order,
+- `ingest_observations(batch) -> IngestResult` (`ingest_service.py::IngestService.ingest_observations`) runs the §8 order,
   which is significant for AC1 + AC4:
-  1. **Validate then quarantine** (`:120-129`): each observation whose `observed_at` is implausibly
-     future (`_is_implausibly_future`, `:144-145`: `observed_at > now + FUTURE_TOLERANCE`, against
+  1. **Validate then quarantine** (`ingest_service.py::IngestService.ingest_observations`): each observation whose `observed_at` is implausibly
+     future (`ingest_service.py::IngestService._is_implausibly_future`: `observed_at > now + FUTURE_TOLERANCE`, against
      the injected `clock.now()`) is written to `rejected_repo.save(signal_key, reason, payload,
      rejected_at)` and EXCLUDED from the persist set; the rest proceeds (no poison pill). Validation
      happens BEFORE dedupe, so a bad row becomes a recorded rejection rather than being deduped away.
-  2. **Dedupe + persist** (`:136`): `observation_repo.save_new(valid)` — DB-level
+  2. **Dedupe + persist** (`ingest_service.py::IngestService.ingest_observations`): `observation_repo.save_new(valid)` — DB-level
      `ON CONFLICT (source_event_id) DO NOTHING`; its return is the TRUE newly-inserted count, which
      becomes `IngestResult.accepted` (NOT `len(valid)`, so a duplicate is a no-op — AC3).
-  3. **Advance watermark accepted-only, after persist** (`:138-140`): to
+  3. **Advance watermark accepted-only, after persist** (`ingest_service.py::IngestService.ingest_observations`): to
      `max(observed_at)` over the VALIDATED observations only, and only AFTER `save_new` returns — if
      it raises, the exception propagates and the watermark is left untouched (commit-before-advance,
      AC4). A future-timestamp reject therefore can never leap the cursor (AC2). If nothing is valid,
-     the watermark is not advanced (`:133-134`).
-- `FUTURE_TOLERANCE = timedelta(minutes=5)` (`ingest_service.py:37`) and
-  `FUTURE_TIMESTAMP_REASON` (`:40`) — the §14 T1.3 "year-2099" guard; the 5-min value is a judgment
+     the watermark is not advanced (`ingest_service.py::IngestService.ingest_observations`).
+- `FUTURE_TOLERANCE = timedelta(minutes=5)` (`ingest_service.py::FUTURE_TOLERANCE`) and
+  `FUTURE_TIMESTAMP_REASON` (`ingest_service.py::FUTURE_TIMESTAMP_REASON`) — the §14 T1.3 "year-2099" guard; the 5-min value is a judgment
   call (AC left the number open) to absorb source/process clock skew.
 - **Single-signal-batch assumption — now ENFORCED, not just documented** (STORY-022,
-  `ingest_service.py:43-62,111-116`): `signal_key = valid[0].signal_key` and one `max(observed_at)`
+  `ingest_service.py::MixedSignalBatchError` and `ingest_service.py::IngestService.ingest_observations`): `signal_key = valid[0].signal_key` and one `max(observed_at)`
   watermark still assume one signal per batch — which matches how the Dynatrace adapter's
   `fetch_observations` produces batches (one signal per cycle) — but the assumption is now GUARDED
   up front instead of trusted silently. `ingest_observations` collects the distinct `signal_key`s
   across the WHOLE input batch immediately after the empty-batch early return, and BEFORE any
   validation, persistence, or watermark work; if more than one distinct key is present it raises
-  `MixedSignalBatchError` (a `ValueError` subclass defined in this same core module, `:43-62`),
+  `MixedSignalBatchError` (a `ValueError` subclass defined in this same core module, `ingest_service.py::MixedSignalBatchError`),
   naming the offending keys (sorted, deduped, on `.signal_keys`). A single-signal batch and an
   empty batch behave exactly as before (STORY-009 unchanged). This closes the Sprint 5 review minor:
   a future mixed-signal batch (a push webhook batching several monitors, or a future "ingest
   everything newer" path) now fails loud instead of silently over-advancing one signal's watermark
   using another signal's timestamps.
-
+ 
 ### The pull loop — `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone — the one zone allowed to import BOTH `src.core` and
   `src.adapters` (dossier §4). It holds NO domain logic; it only wires three calls per cycle.
 - `run_cycle(*, signal_key, native_id, watermark_repo, ingest_port, executor, overlap=DEFAULT_OVERLAP)
-  -> IngestResult` (`pull_loop.py:32-57`): `watermark_repo.get(signal_key)` →
+  -> IngestResult` (`pull_loop.py::run_cycle`): `watermark_repo.get(signal_key)` →
   `dynatrace.fetch_observations(watermark=..., overlap=...)` → `ingest_port.ingest_observations(batch)`.
   It is synchronous (none of the three calls is async in this codebase).
-- `run_periodic(...)` (`pull_loop.py:60-95`) is the thin asyncio driver:
+- `run_periodic(...)` (`pull_loop.py::run_periodic`) is the thin asyncio driver:60-95`) is the thin asyncio driver:
   `while not stop_event.is_set(): run_cycle(); await asyncio.sleep(interval_seconds)`. Plain
   `asyncio` — NO APScheduler, NO new dependency in `pyproject.toml` (AC5). `stop_event`
   (`asyncio.Event`) makes the loop deterministically stoppable in tests / future graceful shutdown;
