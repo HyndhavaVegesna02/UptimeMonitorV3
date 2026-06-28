@@ -337,4 +337,15 @@
   propagation test; only the quality reviewer's "tests that lie = CRITICAL" rule caught the scratch.
   This closes the spec-side gap so a single reviewer is not the only line of defense against a
   test engineered to look green.)
+- 2026-06-29 — **Merge to main is the LAST step at sprint close — after the wiki compile pass + board
+  + review.md are committed on the sprint branch.** Once the PO accepts, the orchestrator (on the
+  sprint branch): (1) runs the blocking wiki compile pass — the mechanical staleness sweep over ALL
+  articles until ALL CURRENT at the branch HEAD + links resolve; (2) records DoD evidence + the board
+  transition in `sprint-current.yaml` and writes `review.md`; (3) commits those; and ONLY THEN (4)
+  fast-forward-merges the branch to main. The merge must never precede the compile pass — main must
+  never carry a stale/unverified wiki, even briefly, and the branch must hold the complete sprint
+  record before it lands. (Motivated by Sprint 18: the orchestrator merged STORY-040 right after the
+  minor-fix commits, then did the compile pass + board + review.md on main afterward — so main briefly
+  carried a wiki stale against the merge HEAD. No lasting harm (re-verified same session), but the
+  order is now explicit so it cannot recur.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
