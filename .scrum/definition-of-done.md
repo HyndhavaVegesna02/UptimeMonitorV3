@@ -26,9 +26,9 @@
 ## Commands (backend)
 - [ ] Tests pass: `pytest` -> exit 0
 - [ ] Import boundary holds: `lint-imports` -> exit 0
-      (import-linter; the three contracts from dossier §4:
+      (import-linter; the four contracts from dossier §4 and §13:
        core-independence, core-internal-layering [domain<-ports<-services],
-       adapter-independence)
+       adapter-independence, api-feature-independence)
 - [ ] Schema FK-direction holds: `python scripts/check_fk_direction.py` -> exit 0
       (the spine never references a feature table; dossier §9)
 - [ ] Migrations apply on a fresh DB: `alembic upgrade head` -> exit 0

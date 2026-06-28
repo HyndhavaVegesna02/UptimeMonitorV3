@@ -178,3 +178,13 @@ def test_decision_endpoint_commit_first_pure_repo_commit():
     assert response.status_code == 200
     assert response.json()["proposal_id"] == saved.id
     assert response.json()["state"] == "approved"
+
+
+def test_decisions_module_structure_and_dto_distinction():
+    from src.api.v1.decisions import models
+    from src.core.domain.proposal import StatusProposal
+
+    # Assert that DTO types are different from domain types
+    assert models.DecisionRequest is not StatusProposal
+    assert models.DecisionResponse is not StatusProposal
+

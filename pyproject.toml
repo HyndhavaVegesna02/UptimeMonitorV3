@@ -53,6 +53,12 @@ name = "adapters-independence"
 type = "independence"
 modules = ["src.adapters.inbound", "src.adapters.outbound", "src.adapters.persistence"]
 
+[[tool.importlinter.contracts]]
+name = "api-feature-independence"
+type = "independence"
+modules = ["src.api.v1.decisions", "src.api.v1.health"]
+
+
 [tool.ruff]
 target-version = "py313"
 line-length = 88
