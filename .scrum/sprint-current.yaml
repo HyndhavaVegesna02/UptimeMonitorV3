@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 14
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-28
 started: 2026-06-28
 goal: "Stand up the Maintenance feature module — a MaintenanceRepository over the EXISTING
   maintenance_windows table + a functional Maintenance tab (GET list + POST schedule at

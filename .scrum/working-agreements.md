@@ -287,4 +287,13 @@
   the AC-required shape test, both caught only in a fix loop. The per-story AC stated it and the
   external implementer missed it twice — so it joins the STANDING checklist rather than relying on
   per-story AC wording. Pairs with the forthcoming `src`->`tests` import contract, STORY-038.)
+- 2026-06-28 — **An edge DTO maps a persisted entity's id directly — no sentinel fallback.** When an
+  `api/v1` feature's `service.py` shapes a response DTO from a domain/persisted entity, map
+  `id=entity.id` directly; do NOT write `id=entity.id if entity.id is not None else 0` (or any
+  sentinel). A persisted entity returned by a repository read or `create` ALWAYS has its id set, so
+  the fallback is dead code that MASKS a would-be invariant violation (without it, Pydantic surfaces a
+  `None` loudly). Joins the plan's conventions checklist; checked at quality review. (Motivated by the
+  SAME dead coercion appearing twice: STORY-014b sprint 13 — `approvals/service.py`, removed in the
+  fix loop — and STORY-036 sprint 14 — `maintenance/service.py`, a quality-review minor the external
+  implementer reintroduced. Two strikes → a standing rule.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
