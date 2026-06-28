@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: a05a5e9
-verified_sprint: sprint-14
+verified_sha: e84ad46
+verified_sprint: sprint-17
 status: verified          # verified | stale | archived
 ---
 
@@ -95,8 +95,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py::RejectedObservationRepository.save`).
-- `ComponentRepository` — read persistence interface for listing components (`component_repository.py::ComponentRepository`).
-  Provides `list_components() -> list[Component]` (STORY-014b).
+- `ComponentRepository` — read persistence interface for listing and looking up components (`component_repository.py::ComponentRepository`).
+  Provides `list_components() -> list[Component]` (STORY-014b) and `get(component_id) -> Component | None` (STORY-016a: returns `None` on not-found).
 - `MaintenanceRepository` — persistence interface for managing maintenance windows (`maintenance_repository.py::MaintenanceRepository`).
   Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).

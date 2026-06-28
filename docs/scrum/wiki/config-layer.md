@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/sockshop.yaml, pyproject.toml]
-verified_sha: 93f1863
-verified_sprint: sprint-16
+verified_sha: e84ad46
+verified_sprint: sprint-17
 status: verified
 ---
 
@@ -34,9 +34,9 @@ app file (referential integrity enforced at load time).
 Three frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
 
 - `ComponentConfig{id: str, name: str}` — a single component declaration.
-- `SignalConfig{signal_key, native_id, name, component_id}` — the three §7
+- `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` — the three §7
   mapping arrows: native_id (provider key) → signal_key (canonical internal
-  key) → component_id.
+  key) → component_id, plus the expected monitor cadence `interval_seconds` (STORY-016a, validated `> 0`).
 - `AppConfig{id, name, monitor_provider, components, signals, thresholds}` —
   the full per-app config.  `thresholds` defaults to the §10 values
   (`AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)`) when
@@ -54,9 +54,10 @@ Symbol citations:
 
 ### Config aggregate (`backend/src/composition/config.py::Config`)
 `Config(apps: list[AppConfig])` is the runtime aggregate built by `load_config`.
-At `__init__` it builds two O(1) dict indexes:
+At `__init__` it builds three O(1) dict indexes:
 - `_signal_to_component: dict[str, str]` (signal_key → component_id)
 - `_component_to_thresholds: dict[str, AntiFlapThresholds]` (component_id → thresholds)
+- `_signal_key_to_signal: dict[str, SignalConfig]` (signal_key → SignalConfig)
 
 These are the indexes consumed by the two resolvers.
 
@@ -101,6 +102,12 @@ def thresholds_for(self, component_id: str) -> AntiFlapThresholds
 Returns the app's `AntiFlapThresholds` (or the §10 defaults when the app omitted
 the `thresholds` block — the default is baked in at `AppConfig` construction, so
 the index always has a value).  Raises `UnknownComponentError` on an unknown id.
+
+```python
+def signal(self, signal_key: str) -> SignalConfig
+```
+Returns the full `SignalConfig` for `signal_key` (STORY-016a). Raises `UnknownSignalError` on an unknown key.
+
 
 ### Composition-zone placement (dossier §4)
 `backend/src/composition/config.py` lives in the composition zone.  It imports

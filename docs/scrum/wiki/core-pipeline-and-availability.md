@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
-code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py]
-verified_sha: 48217d7
-verified_sprint: sprint-11
+code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
+verified_sha: e84ad46
+verified_sprint: sprint-17
 status: verified          # verified | stale | archived
 ---
 
@@ -81,11 +81,13 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   mirroring `collapse`'s `under_maintenance`), and `computed_at` are ALL injected parameters — no
   per-app config read, no wall-clock read, inside this service.
 - **Cycle bucketing** (a calculator design call, since §11 leaves the mechanism open):
-  `_bucket_into_cycles` (`availability.py:81`) slices `[since, until)` into consecutive
+  `bucket_into_cycles` (`availability.py:127`) slices `[since, until)` into consecutive
   `interval`-wide buckets keyed by their start instant (`since + k*interval`); every observation
   lands in exactly one bucket by `observed_at`. A bucket with zero observations never appears in
   the map — it is a gap. Each non-empty bucket is one cycle, collapsed via `collapse`, with
   `maintenance(cycle_start)` passed straight through as `collapse`'s `under_maintenance`.
+  This helper is promoted to a public function (`bucket_into_cycles`) to be reused by both the
+  availability engine and the orchestration logic.
 - **Availability% (AC1)**: `passing_verdicts / (total_verdicts - maintenance_verdicts)` if that
   denominator is `>0`, else `None`. `total_verdicts` counts EVERY non-gap cycle (maintenance
   included); `passing_verdicts` counts only non-maintenance `Health.UP` verdicts. Gaps never reach
@@ -165,6 +167,17 @@ boundary CI floors are catalogued in [[architecture-boundary]].
     - If an open proposal exists, resolves it to `OBSOLETED` and returns `OBSOLETED` (§12 "Recovered -> obsoleted, nothing published").
   - If `proposed_status` improves `current_status` (recovery), publishes a `StatusChange` to `StatusPublisherPort` and returns `PUBLISHED_RECOVERY` (§10 "better -> recovery auto-publishes").
   - Repository writes are committed BEFORE the publisher is called (commit-first; publish failure doesn't lose proposal updates).
+
+### The pipeline orchestration (`composition/orchestrate.py`, STORY-016a, dossier §8 step 5)
+- `orchestrate_signal(*, signal_key, config, observation_repo, maintenance_repo, component_repo, decide_service, clock) -> DecideAction` (`orchestrate.py::orchestrate_signal`) is the composition orchestrator. It executes the full pipeline for a signal:
+  1. Resolves `component_id`, `thresholds`, and the `interval` (cadence) for the signal (STORY-016a).
+  2. Determines the observation window: `until = clock.now()`, `since = until - (max(thresholds) + 2) * interval`.
+  3. Fetches observations in the window via `in_window`, buckets them using public `bucket_into_cycles` (`availability.py::bucket_into_cycles`), and collapses them with `collapse`, passing in `is_under_maintenance(component_id, cycle_start)`.
+  4. Runs `streak()` and `anti_flap()` on the collapsed verdicts.
+  5. Fetches the component's status using `ComponentRepository.get`.
+  6. Reconciles the proposed status against the current status using `DecideService.decide`.
+- If the component does not exist in topology (`component_repo.get` returns `None`), orchestration skips decision and returns `DecideAction.NOOP` (§8 step 5).
+
 
 ## Inference (synthesis, not verified)
 - Cycle-bucketing-by-`observed_at` (rather than a stored cycle key) was chosen because it needs no

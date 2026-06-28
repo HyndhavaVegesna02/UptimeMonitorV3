@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 5657757
-verified_sprint: sprint-12
+verified_sha: e84ad46
+verified_sprint: sprint-17
 status: verified          # verified | stale | archived
 ---
 
@@ -54,10 +54,9 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 ### The pull loop — `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone — the one zone allowed to import BOTH `src.core` and
   `src.adapters` (dossier §4). It holds NO domain logic; it only wires three calls per cycle.
-- `run_cycle(*, signal_key, native_id, watermark_repo, ingest_port, executor, overlap=DEFAULT_OVERLAP)
-  -> IngestResult` (`pull_loop.py::run_cycle`): `watermark_repo.get(signal_key)` →
-  `dynatrace.fetch_observations(watermark=..., overlap=...)` → `ingest_port.ingest_observations(batch)`.
-  It is synchronous (none of the three calls is async in this codebase).
+- `run_cycle(*, signal_key, native_id, watermark_repo, ingest_port, executor, overlap=DEFAULT_OVERLAP, ...) -> IngestResult | tuple[IngestResult, DecideAction]` (`pull_loop.py::run_cycle`): `watermark_repo.get(signal_key)` →
+  `dynatrace.fetch_observations(watermark=..., overlap=...)` → `ingest_port.ingest_observations(batch)`. When optional orchestration parameters are passed (config, observation_repo, maintenance_repo, component_repo, decide_service, clock), it calls `orchestrate_signal` after ingest and returns a tuple of `(IngestResult, DecideAction)` (STORY-016a).
+  It is synchronous (none of the calls are async in this codebase).
 - `run_periodic(...)` (`pull_loop.py::run_periodic`) is the thin asyncio driver:60-95`) is the thin asyncio driver:
   `while not stop_event.is_set(): run_cycle(); await asyncio.sleep(interval_seconds)`. Plain
   `asyncio` — NO APScheduler, NO new dependency in `pyproject.toml` (AC5). `stop_event`

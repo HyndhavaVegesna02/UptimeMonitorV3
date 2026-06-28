@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/composition/publish_helper.py, backend/tests/test_statuspage_adapter.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json]
-verified_sha: 94f620b
-verified_sprint: sprint-12
+verified_sha: e84ad46
+verified_sprint: sprint-17
 status: verified
 ---
 
