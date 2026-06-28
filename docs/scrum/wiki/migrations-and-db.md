@@ -1,14 +1,14 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py]
-verified_sha: 08917c0
-verified_sprint: sprint-3
-status: stale
+code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
+verified_sha: d900447
+verified_sprint: sprint-12
+status: verified
 ---
 
 ## Facts (verified against code)
 - Alembic is initialized at the **repo top level** (dossier §4): `alembic.ini` + `migrations/`
-  (with `env.py`, `versions/`, `script.py.mako`) — NOT under `backend/`.
+  (with `migrations/env.py`, versions, etc.) — NOT under `backend/`.
 - The baseline migration is `migrations/versions/eda70ac11454_baseline.py` — a real revision
   with `upgrade()`/`downgrade()` that creates NO tables. It is reversible: `downgrade base` →
   `upgrade head` round-trips to exit 0.
@@ -22,25 +22,25 @@ status: stale
     it was rejected).
   - **workflow** (runtime) — `status_proposals`, `approval_events`, `publications`,
     `maintenance_windows`.
-  Every timestamp column is `timestamptz`; `apps.config`, `observations.source`, and
-  `rejected_observations.payload` are `jsonb`. `health` / `status` / proposal `state` are
-  `text` + CHECK constraints mirroring the closed `Health` / `ComponentStatus` enums, not a
-  Postgres ENUM type, so the Python enums stay the single source of truth.
-  Three required indexes: `UNIQUE` on `observations(source_event_id)`; composite index on
-  `observations(signal_key, observed_at)`; and a **partial UNIQUE index**
-  `uq_status_proposals_active_component` on `status_proposals(component_id)` filtered
-  `WHERE state = 'open'` — enforcing at most one open ("active") proposal per component
-  (dossier §9 → §11). Every FK declares an explicit `ON DELETE`: `RESTRICT` for any FK
-  targeting seeded topology (`apps`, `signals`, `components`); `CASCADE` from
-  `approval_events`/`publications` into their owning `status_proposals` row (a child record
-  has no meaning once its proposal is gone). `downgrade()` drops every spine object; the
-  round-trip `upgrade head` → `downgrade base` → `upgrade head` is tested directly.
+  - Every timestamp column is `timestamptz`; `apps.config`, `observations.source`, and
+    `rejected_observations.payload` are `jsonb`. `health` / `status` / proposal `state` are
+    `text` + CHECK constraints mirroring the closed `Health` / `ComponentStatus` enums, not a
+    Postgres ENUM type, so the Python enums stay the single source of truth.
+  - Three required indexes: `UNIQUE` on `observations(source_event_id)`; composite index on
+    `observations(signal_key, observed_at)`; and a **partial UNIQUE index**
+    `uq_status_proposals_active_component` on `status_proposals(component_id)` filtered
+    `WHERE state = 'open'` — enforcing at most one open ("active") proposal per component
+    (dossier §9 → §11). Every FK declares an explicit `ON DELETE`: `RESTRICT` for any FK
+    targeting seeded topology (`apps`, `signals`, `components`); `CASCADE` from
+    `approval_events`/`publications` into their owning `status_proposals` row (a child record
+    has no meaning once its proposal is gone). `downgrade()` drops every spine object; the
+    round-trip `upgrade head` → `downgrade base` → `upgrade head` is tested directly.
 - **No `create_all` anywhere** — every table must arrive via an explicit migration. The only
   textual occurrences of `create_all` are comments in the baseline file forbidding it.
 - **Two distinct connection env vars, never mixed** (dossier §3, §17):
   - `DATABASE_URL` — Neon **pooled** (PgBouncer); read by app runtime
-    (`backend/src/composition/settings.py:20,36`, const `APP_DATABASE_URL_VAR`) and by
-    `scripts/check_fk_direction.py` (`:85`).
+    (`backend/src/composition/settings.py::APP_DATABASE_URL_VAR` / `backend/src/composition/settings.py::load_settings`) and by
+    `scripts/check_fk_direction.py` (`scripts/check_fk_direction.py::main`).
   - `DATABASE_URL_DIRECT` — Neon **direct** (non-pooled); read by Alembic
     (`migrations/env.py`). DDL misbehaves through transaction pooling, so migrations run as a
     separate release step on the direct connection.
@@ -49,7 +49,7 @@ status: stale
   forbids core importing infrastructure. `load_settings()` raises `KeyError` if `DATABASE_URL`
   is unset (the app must not start without a DB URL).
 - **URL dialect split (gotcha):** Alembic (SQLAlchemy 2) needs the psycopg3 dialect
-  `postgresql+psycopg://…` (env.py normalizes to it); `scripts/check_fk_direction.py` uses
+  `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
   raw psycopg raise). So against the same DB, set `DATABASE_URL_DIRECT` to the `+psycopg`
   form and `DATABASE_URL` to the plain form. (Documented in `CLAUDE.md`.)
