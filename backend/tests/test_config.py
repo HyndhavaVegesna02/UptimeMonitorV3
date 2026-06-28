@@ -196,12 +196,12 @@ class TestLoadConfigHappyPath:
         cfg = load_config(tmp_config_dir)
         assert cfg.apps == []
 
-    def test_loads_real_sockshop_yaml(self):
-        """load_config over the real config/apps/ (includes sockshop.yaml) succeeds."""
+    def test_loads_real_httpcheck_yaml(self):
+        """load_config over the real config/apps/ (includes httpcheck.yaml) succeeds."""
         repo_root = Path(__file__).parent.parent.parent
         cfg = load_config(repo_root / "config" / "apps")
         ids = [a.id for a in cfg.apps]
-        assert "sockshop" in ids
+        assert "httpcheck" in ids
 
     def test_loads_multiple_apps(self, tmp_config_dir: Path):
         _write_yaml(tmp_config_dir, "sockshop.yaml", SOCKSHOP_YAML)
@@ -417,12 +417,12 @@ class TestSignalConfigIntervalSeconds:
         with pytest.raises(UnknownSignalError):
             cfg.signal("does-not-exist")
 
-    def test_real_sockshop_yaml_has_interval_seconds(self):
-        """The real config/apps/sockshop.yaml has interval_seconds on every signal."""
+    def test_real_httpcheck_yaml_has_interval_seconds(self):
+        """The real config/apps/httpcheck.yaml has interval_seconds on every signal."""
         repo_root = Path(__file__).parent.parent.parent
         cfg = load_config(repo_root / "config" / "apps")
-        sockshop = next(a for a in cfg.apps if a.id == "sockshop")
-        for sig in sockshop.signals:
+        httpcheck = next(a for a in cfg.apps if a.id == "httpcheck")
+        for sig in httpcheck.signals:
             assert sig.interval_seconds > 0, (
-                f"Signal {sig.signal_key!r} missing interval_seconds in sockshop.yaml"
+                f"Signal {sig.signal_key!r} missing interval_seconds in httpcheck.yaml"
             )
