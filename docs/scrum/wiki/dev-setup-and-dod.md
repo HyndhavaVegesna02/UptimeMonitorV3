@@ -1,15 +1,16 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: 8305d4d
-verified_sprint: sprint-14
+verified_sha: 9b60fac
+verified_sprint: sprint-16
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary] (`pyproject.toml:10-16`). Dev extras:
-  pytest, import-linter, ruff (`pyproject.toml:18-19`).
+  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml (`pyproject.toml:10-17`;
+  pyyaml added sprint-16 STORY-040a for the config-layer loader). Dev extras:
+  pytest, import-linter, ruff (`pyproject.toml:19-20`).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
@@ -83,3 +84,4 @@ status: verified
 - sprint-11: updated to note the ruff lint and format check integration in the DoD gate (STORY-033).
   Verified at d557749.
 - sprint-14: STORY-038 added the 5th `lint-imports` contract (`src-no-tests`, forbidden: `src` may not import `tests`) to prevent production code importing fakes/mocks. The `lint-imports` command now enforces 5 contracts. Re-verified at fafdc4c.
+- sprint-16: STORY-040a added `pyyaml` to `[project.dependencies]` (runtime dep for the config-layer loader). Runtime-deps Fact updated; no contract or DoD command changed. Re-verified at 9b60fac.
