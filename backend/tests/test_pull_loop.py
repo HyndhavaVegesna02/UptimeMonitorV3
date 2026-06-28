@@ -213,3 +213,149 @@ def test_periodic_loop_is_plain_asyncio_no_new_dependency():
 
     assert "apscheduler" not in imported_modules
     assert "asyncio" in imported_modules
+
+
+# --- Phase C1 (STORY-016a): ingest + orchestrate in one cycle ----------------
+
+
+def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
+    """AC4: a single run_cycle invocation both ingests observations AND calls
+    orchestrate_signal, opening a degradation proposal when ≥ major DOWN
+    observations are present.
+
+    Uses all fakes — no DB, no Dynatrace, no Statuspage. This is the
+    composition wiring test for dossier §8 step 5.
+
+    PersistingIngestPort: a fake ingest port that writes to obs_repo,
+    mirroring how IngestService persists observations to the real Postgres
+    obs_repo that orchestrate_signal reads from.
+    """
+    from collections.abc import Sequence as Seq
+    from datetime import timezone
+
+    from fakes import (
+        FakeClock,
+        FakeComponentRepository,
+        FakeMaintenanceRepository,
+        FakeObservationRepository,
+        FakeProposalRepository,
+        RecordingStatusPublisher,
+    )
+    from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+    from src.composition.pull_loop import run_cycle
+    from src.core.domain import Component, ComponentStatus
+    from src.core.ports import SignalIngestPort
+    from src.core.services.decide import DecideAction, DecideService
+    from src.core.services.pipeline import AntiFlapThresholds
+
+    # An ingest port that ALSO writes to the shared obs_repo,
+    # mirroring IngestService's persist step (dossier §8 step 2).
+    class PersistingIngestPort(SignalIngestPort):
+        def __init__(self, obs_repo: FakeObservationRepository) -> None:
+            self._obs_repo = obs_repo
+            self.batches: list = []
+
+        def ingest_observations(self, batch: Seq[SignalObservation]) -> IngestResult:
+            self.batches.append(list(batch))
+            self._obs_repo.saved.extend(batch)
+            return IngestResult(accepted=len(batch), rejected=0)
+
+    signal_key = "checkout-http"
+    component_id = "checkout"
+    native_id = "HTTP_CHECK-9F2A"
+
+    # Build a minimal Config
+    thresholds = AntiFlapThresholds(major=3, partial=2, degraded=2, recovery=2)
+    sig = SignalConfig(
+        signal_key=signal_key,
+        native_id=native_id,
+        name="Checkout HTTP",
+        component_id=component_id,
+        interval_seconds=60,
+    )
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout")
+    app = AppConfig(
+        id="sockshop",
+        name="Sock Shop",
+        monitor_provider="dynatrace",
+        components=[comp_cfg],
+        signals=[sig],
+        thresholds=thresholds,
+    )
+    config = Config([app])
+
+    # The executor returns 3 DOWN rows (one per 60s cycle)
+    now_ts = datetime(2026, 6, 24, 10, 4, 0, tzinfo=timezone.utc)
+
+    def fake_executor(query: str) -> list[dict]:
+        return [
+            {
+                "timestamp": "2026-06-24T10:01:30Z",
+                "event.id": "evt-1",
+                "synthetic_test.id": native_id,
+                "synthetic_test.type": "HTTP_CHECK",
+                "synthetic_location.name": "us-east-1",
+                "execution.outcome": "failure",
+                "request.response_time_ms": 0,
+            },
+            {
+                "timestamp": "2026-06-24T10:02:30Z",
+                "event.id": "evt-2",
+                "synthetic_test.id": native_id,
+                "synthetic_test.type": "HTTP_CHECK",
+                "synthetic_location.name": "us-east-1",
+                "execution.outcome": "failure",
+                "request.response_time_ms": 0,
+            },
+            {
+                "timestamp": "2026-06-24T10:03:30Z",
+                "event.id": "evt-3",
+                "synthetic_test.id": native_id,
+                "synthetic_test.type": "HTTP_CHECK",
+                "synthetic_location.name": "us-east-1",
+                "execution.outcome": "failure",
+                "request.response_time_ms": 0,
+            },
+        ]
+
+    watermark_repo = FakeWatermarkRepository()
+
+    # Shared obs_repo: PersistingIngestPort writes here; orchestrate reads from here.
+    obs_repo = FakeObservationRepository()
+    ingest_port = PersistingIngestPort(obs_repo)
+
+    comp = Component(
+        id=component_id, name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+    )
+    component_repo = FakeComponentRepository(components=[comp])
+    maintenance_repo = FakeMaintenanceRepository()
+    proposal_repo = FakeProposalRepository()
+    publisher = RecordingStatusPublisher()
+    clock = FakeClock(now_ts)
+    decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    result, action = run_cycle(
+        signal_key=signal_key,
+        native_id=native_id,
+        watermark_repo=watermark_repo,
+        ingest_port=ingest_port,
+        executor=fake_executor,
+        # Orchestration extras (dossier §8 step 5)
+        config=config,
+        observation_repo=obs_repo,
+        maintenance_repo=maintenance_repo,
+        component_repo=component_repo,
+        decide_service=decide_service,
+        clock=clock,
+    )
+
+    # Ingest side: 3 observations accepted
+    assert isinstance(result, IngestResult)
+    assert result.accepted == 3
+
+    # Orchestration side: PROPOSED (3 DOWN in 3 cycles ≥ major=3 threshold)
+    assert action == DecideAction.PROPOSED
+    open_proposals = proposal_repo.list_open()
+    assert len(open_proposals) == 1
+    assert open_proposals[0].component_id == component_id
+
