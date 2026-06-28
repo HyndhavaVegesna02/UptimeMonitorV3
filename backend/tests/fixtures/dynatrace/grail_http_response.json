@@ -1,0 +1,13 @@
+{
+  "records": [
+    {
+      "timestamp": "2026-06-24T10:01:30Z",
+      "event.id": "evt-1",
+      "synthetic_test.id": "HTTP_CHECK-9F2A",
+      "synthetic_test.type": "HTTP_CHECK",
+      "synthetic_location.name": "us-east-1",
+      "execution.outcome": "success",
+      "request.response_time_ms": 125
+    }
+  ]
+}
