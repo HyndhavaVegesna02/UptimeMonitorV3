@@ -9,6 +9,7 @@ integrity (dossier §9, §17).
 from __future__ import annotations
 
 import logging
+
 import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, insert
 from sqlalchemy.engine import Engine

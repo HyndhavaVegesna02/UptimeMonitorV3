@@ -5,15 +5,10 @@ components, and signals are created/updated idempotently and that component
 runtime status is preserved.
 """
 
-import json
-from datetime import datetime, timezone
 import psycopg
 import pytest
-import sqlalchemy as sa
-
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
 from src.composition.seed import seed_topology
-from src.core.domain.status import ComponentStatus
 from src.core.services.pipeline import AntiFlapThresholds
 
 
@@ -94,10 +89,10 @@ def test_seed_topology_inserts_correctly(migrated_db, engine, clean_topology):
 def test_seed_topology_is_idempotent(migrated_db, engine, clean_topology):
     """B3: IDEMPOTENCY (AC2) — running seed_topology twice is a no-op (no duplicates or churn)."""
     config = _make_config()
-    
+
     # First seed
     seed_topology(config, engine)
-    
+
     # Capture state (created_at/updated_at/etc.)
     with psycopg.connect(migrated_db.database_url) as conn:
         with conn.cursor() as cur:
@@ -137,7 +132,9 @@ def test_seed_topology_preserves_status(migrated_db, engine, clean_topology):
     # Manually update component status to degraded (runtime change)
     with psycopg.connect(migrated_db.database_url) as conn:
         with conn.cursor() as cur:
-            cur.execute("UPDATE components SET status = 'degraded' WHERE id = 'checkout';")
+            cur.execute(
+                "UPDATE components SET status = 'degraded' WHERE id = 'checkout';"
+            )
         conn.commit()
 
     # Seed again (perhaps name changed in config)
@@ -254,7 +251,10 @@ def test_seed_topology_cli_invalid_config_fails(migrated_db, tmp_path):
     )
 
     assert result.returncode == 1
-    assert "Topology Config Load Failure" in result.stdout or "Topology Config Load Failure" in result.stderr
+    assert (
+        "Topology Config Load Failure" in result.stdout
+        or "Topology Config Load Failure" in result.stderr
+    )
 
 
 def test_create_app_seeds_on_lifespan_startup(migrated_db, clean_topology, tmp_path):
@@ -320,9 +320,9 @@ def test_create_app_fails_fast_on_invalid_config(tmp_path):
 
 def test_create_app_injected_branch_skips_seeding():
     """D2: create_app in the injected branch (fakes passed in) sets seed_config to None and does not seed."""
+    from fakes import FakeProposalRepository
     from fastapi.testclient import TestClient
     from src.composition.app import create_app
-    from fakes import FakeProposalRepository
 
     fake_repo = FakeProposalRepository()
     app = create_app(proposal_repo=fake_repo)
@@ -333,5 +333,3 @@ def test_create_app_injected_branch_skips_seeding():
     # lifespan should yield normally without attempting to seed or throwing errors
     with TestClient(app):
         pass
-
-

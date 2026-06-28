@@ -13,10 +13,13 @@ from __future__ import annotations
 
 import os
 import sys
+
 import sqlalchemy as sa
 
 # Ensure we can import from src/
-sys.path.insert(0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/backend"))
+sys.path.insert(
+    0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/backend")
+)
 
 from src.composition.config import load_config
 from src.composition.seed import seed_topology

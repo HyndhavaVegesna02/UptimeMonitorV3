@@ -19,6 +19,7 @@ async def lifespan(app: FastAPI):
     db_engine = getattr(app.state, "db_engine", None)
     if seed_config is not None and db_engine is not None:
         from src.composition.seed import seed_topology
+
         seed_topology(seed_config, db_engine)
     yield
     # Dispose of the DB engine on shutdown if it was constructed
@@ -58,8 +59,8 @@ def create_app(
         from src.adapters.persistence.proposal_repository import (
             PostgresProposalRepository,
         )
-        from src.composition.settings import load_settings
         from src.composition.config import load_config
+        from src.composition.settings import load_settings
 
         settings = load_settings()
         db_url = database_url or settings.database_url
