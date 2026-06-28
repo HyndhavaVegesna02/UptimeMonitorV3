@@ -20,11 +20,11 @@ STORY-014 (Zone 6 / FastAPI). Neither blocked the story; bundled here as a follo
    the current Starlette guidance) so the warning clears and the test client stays supported.
 
 ## Acceptance Criteria (draft — confirm at refinement)
-- [ ] AC1: `create_app` registers a shutdown/lifespan hook that disposes the engine; a test asserts
+- [x] AC1: `create_app` registers a shutdown/lifespan hook that disposes the engine; a test asserts
       dispose is invoked on app shutdown (or that no connections leak across app instances).
-- [ ] AC2: the `StarletteDeprecationWarning` no longer appears in the `pytest` run (e.g. `pytest -W error`
+- [x] AC2: the `StarletteDeprecationWarning` no longer appears in the `pytest` run (e.g. `pytest -W error`
       on that warning passes, or the warning count for it is 0).
-- [ ] AC3: full six-command DoD gate green; no behavior change to the decision/health endpoints.
+- [x] AC3: full six-command DoD gate green; no behavior change to the decision/health endpoints.
 
 ## Resolved Questions
 - **httpx mechanism → implementer's choice, sanctioned at planning.** The fix for minor 2 may pin
@@ -33,9 +33,12 @@ STORY-014 (Zone 6 / FastAPI). Neither blocked the story; bundled here as a follo
   Starlette `TestClient` working. A dependency pin/upgrade here is a sanctioned tooling change made at
   Sprint 13 planning (one of the two allowed moments). AC2 is the objective bar: the warning no
   longer appears in the `pytest` run and the endpoint tests still pass. (PO-approved 2026-06-28.)
+  **Implementation choice:** Added `httpx2` to dev dependencies to resolve the StarletteDeprecationWarning.
 - **Estimate: 2** (two small, independent backend cleanups; gate-only).
 
 ## History
 - 2026-06-28: created from the Sprint 12 retro (STORY-014 non-blocking quality minors).
 - 2026-06-28 (Sprint 13 refinement): httpx mechanism left to the implementer against AC2's objective
   bar; dependency change sanctioned at planning. Status: draft → ready.
+- 2026-06-28 (implementation): completed by Antigravity under sprint-13. Added FastAPI lifespan hook to dispose SQLAlchemy engine on shutdown. Added `httpx2` to dev dependencies in `pyproject.toml` to successfully clear the deprecation warning in pytest. Status: ready → done.
+
