@@ -296,4 +296,17 @@
   SAME dead coercion appearing twice: STORY-014b sprint 13 — `approvals/service.py`, removed in the
   fix loop — and STORY-036 sprint 14 — `maintenance/service.py`, a quality-review minor the external
   implementer reintroduced. Two strikes → a standing rule.)
+- 2026-06-28 — **API endpoints reject timezone-naive datetime inputs with a 422 at the edge.** Any
+  `api/v1` endpoint accepting a datetime/timestamp input (query param OR body field) MUST validate
+  that the value is timezone-AWARE and reject a naive value with a `SyntacticValidationError` → HTTP
+  422 in its `validation.py` (mirror `maintenance/validation.py` /
+  `availability/validation.py::validate_availability_request` / `history/validation.py`), with a
+  naive-input regression test. The system enforces UTC-aware datetimes everywhere (domain types reject
+  naive at construction); a naive value that slips past the edge reaches a tz-aware comparison in core
+  and raises `TypeError` → a 500 on realistic client input. Joins the plan's conventions checklist;
+  checked at quality review. (Motivated by Sprint 15, STORY-014c: the new availability + history
+  validators checked `since`/`until` parseability but NOT tz-awareness — so `until=2026-06-28` (a
+  bare date) passed validation then 500'd inside `AvailabilityCalculator`'s tz-aware compare; a
+  quality-review CRITICAL. The peer `maintenance` validator already enforced this — the implementer
+  did not mirror it. The fix added the tzinfo check + naive-input tests.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

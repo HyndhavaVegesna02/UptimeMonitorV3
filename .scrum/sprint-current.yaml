@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 15
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-28
 started: 2026-06-28
 goal: "Finish the ready backend — per-signal Availability + Check History read endpoints
   (GET /api/v1/availability, GET /api/v1/history; reuse AvailabilityCalculator + ObservationRepository)
