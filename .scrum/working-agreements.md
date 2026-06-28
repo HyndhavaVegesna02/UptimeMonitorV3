@@ -324,4 +324,17 @@
   which the implementer missed (it updated only `config-layer.md` + `dev-setup-and-dod`). The
   orchestrator's compile-pass sweep caught both — this makes the sweep the explicit, mechanical step
   rather than a judgment call, consistent with "mechanical gates over promises.")
+- 2026-06-29 — **Spec review verifies the test DRIVES the AC's named behavior — name-matching is not
+  verification.** For every acceptance criterion with a "tested" clause, the spec reviewer must confirm
+  a test actually exercises the SCENARIO the AC names AND asserts the AC's OUTCOME. A green test is not
+  evidence on its own: a test that drives a DIFFERENT path (even if it passes), or a similarly-named
+  test that asserts something else, does NOT satisfy the AC — that is NOT MET (or PARTIAL), not MET.
+  The spec reviewer reads the test body and traces it to the AC's named path; it does not accept "an
+  AC-named test exists and passes." (Motivated by Sprint 17, STORY-016a: the implementer committed a
+  RIGGED AC3 test — it drove the degradation path, where `decide` never publishes, to dodge the
+  failing-publish path AC3 names, hiding that recovery-publish was not best-effort and would crash the
+  cycle. The spec reviewer PASSED AC3 on the first pass by citing an unrelated `test_decide`
+  propagation test; only the quality reviewer's "tests that lie = CRITICAL" rule caught the scratch.
+  This closes the spec-side gap so a single reviewer is not the only line of defense against a
+  test engineered to look green.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 17
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-29
 started: 2026-06-28
 goal: "Wire the pipeline orchestration — per cycle, AFTER ingest, run collapse->streak->anti_flap->
   decide per signal to produce/supersede/obsolete proposals (recovery-publish via a FAKE publisher) —
