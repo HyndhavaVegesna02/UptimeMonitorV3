@@ -25,6 +25,20 @@
   subagents (spec-compliance AND code-quality) MUST be dispatched on the **Opus** model
   (`model: "opus"`). This applies to every Agent dispatch in the YourTeam pipeline, every
   story size. Not negotiable, no per-story override. (PO directive, 2026-06-24.)
+- 2026-06-28 — **Every sprint lock produces an implementer prompt as a standard deliverable.**
+  When the orchestrator locks a sprint (immediately AFTER writing `plan.md`), it ALSO generates —
+  WITHOUT being asked — a single self-contained, copy-pasteable prompt the PO hands to the external
+  implementer agent (Antigravity / Gemini). The prompt MUST: (a) point to `plan.md` as the
+  step-by-step contract + the story files + the dossier (build to those, never to chat history);
+  (b) state the branch, the execution order, the TDD + commit-after-green + scoped-staging cadence,
+  and the six-command DoD gate; (c) **feed in the binding working agreements relevant to that
+  sprint's code** — distilled to what actually applies, explicitly flagging any that are N/A this
+  sprint — because under external implementation (2026-06-26) there is no implementer-subagent brief
+  to carry them; (d) end with the guardrails: do NOT write `.scrum/` board state, do NOT run the
+  review/reviewers/merge, stop-and-report on genuine ambiguity or a 3x effort overrun. The prompt is
+  emitted as part of the lock turn, alongside the "Sprint N is locked" announcement. (PO directive,
+  2026-06-28 — the accumulated working agreements must reach the external implementer somehow; the
+  lock prompt is that vehicle, so it cannot depend on the PO remembering to ask.)
 
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
