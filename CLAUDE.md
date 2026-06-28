@@ -65,6 +65,7 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 | Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
 | Stop throwaway DB   | `python scripts/dev_db.py down` (removes the container) |
+| Run live loop       | `python -m src.composition.run` (reads `.env`, runs e2e loop) |
 | Lint code           | `ruff check .` (must exit 0)               |
 | Format check        | `ruff format --check .` (must exit 0)      |
 
@@ -160,7 +161,7 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
 | `scripts/dev_db.py` | live (STORY-019)            | shared throwaway-DB helper (CLI `up`/`down`) + the `migrated_db` pytest session fixture |
 | ruff              | live (STORY-033); `ruff check` + `ruff format` (DoD) | code style, sorting, and formatting |
+| httpx             | runtime dependency             | HTTP library for query and statuspage executors |
 | git               | configured                    | version control                           |
 
-No `psql` client is installed. No Neon/Dynatrace/Statuspage credentials are
-needed during Sprint 0.
+No `psql` client is installed. Neon/Dynatrace/Statuspage credentials are read from `.env` or environment variables for the live loop.

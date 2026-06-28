@@ -14,10 +14,11 @@ dependencies = [
     "alembic",
     "psycopg[binary]",
     "pyyaml",
+    "httpx",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "import-linter", "ruff", "httpx", "httpx2"]
+dev = ["pytest", "import-linter", "ruff", "httpx2"]
 
 [tool.setuptools]
 package-dir = {"" = "backend"}
