@@ -28,9 +28,7 @@ from src.core.services.pipeline import AntiFlapThresholds
 # Named resolver errors (dossier §7; named, not leaked KeyError)
 # ---------------------------------------------------------------------------
 
-_SECTION_10_DEFAULTS = AntiFlapThresholds(
-    major=5, partial=3, degraded=2, recovery=2
-)
+_SECTION_10_DEFAULTS = AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)
 
 
 class UnknownSignalError(ValueError):
@@ -281,9 +279,7 @@ def load_config(config_dir: str | Path) -> Config:
         try:
             raw = yaml.safe_load(yaml_path.read_text(encoding="utf-8"))
         except yaml.YAMLError as exc:
-            raise ValueError(
-                f"Malformed YAML in {yaml_path.name}: {exc}"
-            ) from exc
+            raise ValueError(f"Malformed YAML in {yaml_path.name}: {exc}") from exc
 
         if not isinstance(raw, dict):
             raise ValueError(
@@ -297,12 +293,8 @@ def load_config(config_dir: str | Path) -> Config:
             "id": app_block.get("id"),
             "name": app_block.get("name"),
             "monitor_provider": app_block.get("monitor_provider"),
-            "components": [
-                ComponentConfig(**c) for c in (raw.get("components") or [])
-            ],
-            "signals": [
-                SignalConfig(**s) for s in (raw.get("signals") or [])
-            ],
+            "components": [ComponentConfig(**c) for c in (raw.get("components") or [])],
+            "signals": [SignalConfig(**s) for s in (raw.get("signals") or [])],
         }
         if "thresholds" in raw and raw["thresholds"] is not None:
             app_kwargs["thresholds"] = AntiFlapThresholds(**raw["thresholds"])
@@ -311,9 +303,7 @@ def load_config(config_dir: str | Path) -> Config:
         try:
             app = AppConfig(**app_kwargs)
         except (TypeError, ValueError) as exc:
-            raise ValueError(
-                f"Invalid config in {yaml_path.name}: {exc}"
-            ) from exc
+            raise ValueError(f"Invalid config in {yaml_path.name}: {exc}") from exc
 
         # Global uniqueness checks across apps (dossier §7 — ids are globally stable)
         for sig in app.signals:

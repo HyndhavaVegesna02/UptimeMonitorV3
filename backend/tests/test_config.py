@@ -14,7 +14,6 @@ import textwrap
 from pathlib import Path
 
 import pytest
-
 from src.composition.config import (
     AppConfig,
     ComponentConfig,
@@ -332,9 +331,7 @@ class TestResolvers:
             "thresholds_for leaked a raw KeyError; must raise UnknownComponentError"
         )
 
-    def test_thresholds_defaults_when_app_omits_thresholds(
-        self, tmp_config_dir: Path
-    ):
+    def test_thresholds_defaults_when_app_omits_thresholds(self, tmp_config_dir: Path):
         """§10 defaults (5/3/2/2) returned when the app YAML omits the thresholds block."""
         yaml_no_thresholds = """\
 app:
