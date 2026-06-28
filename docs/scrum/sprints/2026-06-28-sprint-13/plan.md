@@ -50,42 +50,42 @@ adapters (2 Postgres impls + fakes), api (2 five-file features), composition (wi
 READS — no writes, so the 2026-06-28 TOCTOU agreement does not apply here.
 
 ### Phase A — `Component` domain read type (TDD)
-- [ ] **A1** Add `backend/src/core/domain/component.py::Component` — frozen pydantic read model:
+- [x] **A1** Add `backend/src/core/domain/component.py::Component` — frozen pydantic read model:
       `id: str`, `name: str`, `status: ComponentStatus`, `app_id: str`. Module + class docstring cite
       dossier §9 (spine topology) / §17. Export it from `core/domain/__init__.py` if peers are
       exported there. Test: constructs from valid fields; `status` accepts a `ComponentStatus`.
 
 ### Phase B — `ComponentRepository` port + adapter + fake (TDD)
-- [ ] **B1** Failing test (`backend/tests/test_core_ports.py`): `FakeComponentRepository.list_components()`
+- [x] **B1** Failing test (`backend/tests/test_core_ports.py`): `FakeComponentRepository.list_components()`
       returns the injected components, and returns `[]` when empty.
-- [ ] **B2** Add `backend/src/core/ports/component_repository.py::ComponentRepository` (abstract
+- [x] **B2** Add `backend/src/core/ports/component_repository.py::ComponentRepository` (abstract
       `list_components(self) -> list[Component]`, docstring: "all components from the spine; `[]` if
       none"); export from `core/ports/__init__.py`; implement `FakeComponentRepository` in
       `backend/tests/fakes.py`. Green. Commit.
-- [ ] **B3** Failing **DB-gated** test (`backend/tests/test_persistence_adapters.py`, `migrated_db`
+- [x] **B3** Failing **DB-gated** test (`backend/tests/test_persistence_adapters.py`, `migrated_db`
       fixture): `PostgresComponentRepository.list_components` returns mapped `Component`s for seeded
       rows and `[]` for an empty table. Fake/adapter parity (empty → `[]` for both).
-- [ ] **B4** Implement `backend/src/adapters/persistence/component_repository.py::PostgresComponentRepository(engine)`
+- [x] **B4** Implement `backend/src/adapters/persistence/component_repository.py::PostgresComponentRepository(engine)`
       — `SELECT id, name, status, app_id FROM components`, mapping `status` text →
       `ComponentStatus(...)`. Green. Commit.
 
 ### Phase C — `ProposalRepository.list_open` (TDD)
-- [ ] **C1** Failing test: `FakeProposalRepository.list_open()` returns all OPEN proposals; `[]` when
+- [x] **C1** Failing test: `FakeProposalRepository.list_open()` returns all OPEN proposals; `[]` when
       none.
-- [ ] **C2** Add abstract `list_open(self) -> list[StatusProposal]` to
+- [x] **C2** Add abstract `list_open(self) -> list[StatusProposal]` to
       `core/ports/proposal_repository.py::ProposalRepository` (docstring states the empty contract);
       implement on `FakeProposalRepository`. Green. Commit.
-- [ ] **C3** Failing DB-gated test: `PostgresProposalRepository.list_open` SELECTs
+- [x] **C3** Failing DB-gated test: `PostgresProposalRepository.list_open` SELECTs
       `WHERE state = 'open'`, returns mapped proposals; `[]` when none. Parity with fake.
-- [ ] **C4** Implement on `PostgresProposalRepository`. Green. Commit.
+- [x] **C4** Implement on `PostgresProposalRepository`. Green. Commit.
 
 ### Phase D — `api/v1/components/` five-file feature + wiring (TDD)
-- [ ] **D1** `models.py`: `ComponentDTO {id: str, name: str, status: str}` (DTO, NOT the `Component`
+- [x] **D1** `models.py`: `ComponentDTO {id: str, name: str, status: str}` (DTO, NOT the `Component`
       domain type). `validation.py`: present per the five-file convention; for a no-input GET it
       carries only a module docstring (no validators). Failing TestClient test
       (`backend/tests/test_components_endpoint.py`): `GET /api/v1/components` → 200 + list of DTOs;
       **empty case** → 200 + `[]`.
-- [ ] **D2** `service.py`: thin — resolve `ComponentRepository` via the container, `list_components()`,
+- [x] **D2** `service.py`: thin — resolve `ComponentRepository` via the container, `list_components()`,
       map → `ComponentDTO`s; plus the DI provider `get_components_service` (lives here, imports
       `get_component_repo` from `src.api.dependencies`). `controller.py`: `GET /components` route,
       imports only this feature's `models`+`service`. `__init__.py`: router re-export.
@@ -95,32 +95,32 @@ READS — no writes, so the 2026-06-28 TOCTOU agreement does not apply here.
       `src/api/v1/__init__.py` (same as `decisions`/`health`). Green. Commit. Docstrings cite §13/§17.
 
 ### Phase E — `api/v1/approvals/` five-file feature + wiring (TDD)
-- [ ] **E1** `models.py`: `ProposalDTO {id: int, component_id: str, from_status: str | None,
+- [x] **E1** `models.py`: `ProposalDTO {id: int, component_id: str, from_status: str | None,
       to_status: str, state: str, proposed_at: datetime}`. Failing TestClient test
       (`backend/tests/test_approvals_endpoint.py`): `GET /api/v1/approvals` → 200 + open proposals;
       a **mix of open + terminal** → only the open ones; **empty** → `[]`.
-- [ ] **E2** `service.py`: thin — resolve the proposal repo via the container, `list_open()`, map →
+- [x] **E2** `service.py`: thin — resolve the proposal repo via the container, `list_open()`, map →
       `ProposalDTO`s; DI provider `get_approvals_service` (uses `get_proposal_repo` from
       `src.api.dependencies`). `controller.py`: `GET /approvals`. Wire: add `get_proposal_repo(request)`
       → `request.app.state.proposal_repo` to `dependencies.py` (the repo is already in `app.state`
       from STORY-014); register the approvals router. Green. Commit.
 
 ### Phase F — 4th-contract module list
-- [ ] **F1** Add `"src.api.v1.components"` and `"src.api.v1.approvals"` to the
+- [x] **F1** Add `"src.api.v1.components"` and `"src.api.v1.approvals"` to the
       `api-feature-independence` contract's `modules` list in `pyproject.toml`. Run `lint-imports` →
       **4 kept / 0 broken**. (Contract COUNT unchanged → no DoD/CLAUDE command-sync needed.)
 
 ### Phase G — wiki forward-blast-radius (DoD)
-- [ ] **G1** `canonical-types-and-ports.md`: add Facts for the `Component` read type, the
+- [x] **G1** `canonical-types-and-ports.md`: add Facts for the `Component` read type, the
       `ComponentRepository` port, and `ProposalRepository.list_open`; bump `verified_sha`.
-- [ ] **G2** `persistence-adapters.md`: add Facts for `PostgresComponentRepository.list_components`
+- [x] **G2** `persistence-adapters.md`: add Facts for `PostgresComponentRepository.list_components`
       and `PostgresProposalRepository.list_open`; bump `verified_sha`.
-- [ ] **G3** `api-five-file-convention.md`: note `components`+`approvals` as the read-feature
+- [x] **G3** `api-five-file-convention.md`: note `components`+`approvals` as the read-feature
       instances in the independence list; bump `verified_sha`. (Use symbol citations
       `file.py::Symbol` — working-agreements.md 2026-06-27.)
 
 ### Phase H — full gate
-- [ ] **H** All SIX commands exit 0 (throwaway DB up for FK/alembic/DB-gated pytest). No migration.
+- [x] **H** All SIX commands exit 0 (throwaway DB up for FK/alembic/DB-gated pytest). No migration.
 
 **AC mapping:** AC1 ← D; AC2 ← E; AC3 ← B+C (+ DTO distinctness tests); AC4 ← D/E shape + F;
 AC5 ← H + G.
@@ -131,12 +131,12 @@ AC5 ← H + G.
 
 (After 014b, so engine-disposal is added to the final `app.py` that already wires the new repos.)
 
-- [ ] **035.1 — dispose the engine on shutdown.** Give `create_app` a FastAPI `lifespan` (or shutdown
+- [x] **035.1 — dispose the engine on shutdown.** Give `create_app` a FastAPI `lifespan` (or shutdown
       handler) that calls `app.state.db_engine.dispose()` on shutdown when `db_engine` is not `None`
       (it is `None` when repos were injected for tests). Test: drive the app through its lifespan
       (e.g. `with TestClient(app):` triggers startup/shutdown) and assert `dispose` is invoked
       (spy/patch on a fake engine, or assert no connection leak across instances). Commit.
-- [ ] **035.2 — clear the TestClient/httpx deprecation.** Resolve
+- [x] **035.2 — clear the TestClient/httpx deprecation.** Resolve
       `StarletteDeprecationWarning: Using httpx with starlette.testclient is deprecated; install
       httpx2 instead`. Pick the mechanism against current Starlette/FastAPI guidance — pin/upgrade
       `httpx` in `pyproject.toml`, adopt the recommended successor, or (last resort, with a written
@@ -145,17 +145,18 @@ AC5 ← H + G.
       (e.g. confirm with a focused `pytest -W error::DeprecationWarning backend/tests/test_decisions.py`
       or a clean warnings summary). A dependency change here is sanctioned (planning-time tooling
       decision). If it changes install/run commands, command-sync applies (it should not). Commit.
-- [ ] **035.3** Full SIX-command gate green.
+- [x] **035.3** Full SIX-command gate green.
 
 ---
 
 ## Standing conventions checklist (binds all new code — working-agreements.md 2026-06-27)
-- [ ] Module + public class/function docstrings citing the relevant dossier §.
-- [ ] Empty-input behavior tested for every new read method (`list_components`/`list_open` → `[]`).
-- [ ] Port fake and real adapter AGREE on edge cases (run the empty-case contract against both).
-- [ ] DTOs distinct from domain types; DI provider in the feature `service.py`; controller imports
+- [x] Module + public class/function docstrings citing the relevant dossier §.
+- [x] Empty-input behavior tested for every new read method (`list_components`/`list_open` → `[]`).
+- [x] Port fake and real adapter AGREE on edge cases (run the empty-case contract against both).
+- [x] DTOs distinct from domain types; DI provider in the feature `service.py`; controller imports
       only its models+service.
-- [ ] Scoped staging; follow existing import/naming/structure patterns.
+- [x] Scoped staging; follow existing import/naming/structure patterns.
+
 
 ## Notes / risks
 - 014b's two new read ports + two features are the bulk; if a phase balloons past its share, mark the
