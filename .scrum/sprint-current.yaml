@@ -35,21 +35,47 @@ start_tag: sprint-14-start
 stories:
   - id: STORY-038
     points: 1
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 83af36a with throwaway DB: pytest 317 passed;
+          lint-imports 5 kept / 0 broken (NEW src-no-tests forbidden contract live + non-vacuous
+          spike); fk 0; alembic 0; ruff clean. command-sync done (definition-of-done.md + CLAUDE.md
+          4->5 contracts; architecture-boundary + dev-setup-and-dod re-verified)."
+        commit: cf1532a
+        at: 2026-06-28T20:30:00+05:30
+    blast_radius_resolved: true   # architecture-boundary (5th contract) + dev-setup-and-dod synced.
   - id: STORY-036
     points: 5
-    board: todo
+    board: done
     pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # external impl interrupted at quota cutoff; finished by a Sonnet
+                          # implementer subagent (PO-authorized), then orchestrator review.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 83af36a with throwaway DB: pytest 317 passed;
+          lint-imports 5/0; fk 0; alembic 0; ruff clean. Opus spec reviewer: PASS (all 6 AC MET).
+          Opus quality reviewer: APPROVE (0 critical / 0 major)."
+        commit: 83af36a
+        at: 2026-06-28T20:30:00+05:30
+    review:
+      second_pass: "spec PASS; quality APPROVE."
+      open_minors:          # non-blocking -> retro / follow-up
+        - "maintenance/service.py id=w.id if ... else 0 dead coercion (the same pattern removed in
+          sprint 13 approvals; reintroduced by the Gemini implementer). Align to id=w.id."
+        - "POST /maintenance has no actor field (story text mentioned self-declared actor; AC4 did not
+          require it). Auth deferred anyway."
+      note: "Gemini implementer left ruff violations in ~7 files + a stale dev-setup-and-dod (missed in
+        STORY-038 blast radius); both caught + fixed by the Sonnet finisher before review."
+    blast_radius_resolved: true   # canonical-types-and-ports, persistence-adapters,
+                                  # api-five-file-convention, architecture-boundary re-verified @ 83af36a.
 hotfixes: []
 interrupts: []
