@@ -1,9 +1,21 @@
-"""Publish composition helpers (dossier §12, §14 T1.1)."""
+"""Publish composition helpers (dossier §12, §14 T1.1).
+
+Contains two complementary publisher decorators:
+- `BestEffortPublisher` — wraps a delegate and never lets publish failures escape.
+- `RecordingPublisher` — wraps a delegate and records each SUCCESSFUL publish.
+
+They compose naturally: `BestEffortPublisher(RecordingPublisher(real_publisher))`
+logs+swallows on failure and records only on success, matching the §12/T1.1
+commit-first/best-effort contract.
+"""
 
 import logging
 
+from src.core.domain.publication import Publication
 from src.core.domain.status import StatusChange
 from src.core.ports import StatusPublisherPort
+from src.core.ports.clock import ClockPort
+from src.core.ports.publication_repository import PublicationRepository
 
 _log = logging.getLogger(__name__)
 
@@ -46,3 +58,43 @@ class BestEffortPublisher(StatusPublisherPort):
 
     def publish(self, change: StatusChange) -> None:
         publish_best_effort(self._delegate, change, logger=_log)
+
+
+class RecordingPublisher(StatusPublisherPort):
+    """A `StatusPublisherPort` decorator that records each SUCCESSFUL publish.
+
+    Wraps a delegate publisher and a `PublicationRepository`. On each `publish`:
+      1. Calls `delegate.publish(change)`.
+      2. IF the delegate succeeds (no exception), records a `Publication` via
+         `publication_repo.record(...)` using `clock.now()` as the timestamp.
+      3. If the delegate RAISES, the error propagates BEFORE any recording —
+         nothing is written to the publications table (§12/T1.1: the table has
+         no error column; only successful publishes are recorded).
+
+    Composes inside `BestEffortPublisher` (assembled live in STORY-016):
+        `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))`.
+    The BestEffortPublisher outer layer logs+swallows delegate failures, so a
+    raising delegate leads to: error logged, nothing recorded, no crash.
+    """
+
+    def __init__(
+        self,
+        delegate: StatusPublisherPort,
+        publication_repo: PublicationRepository,
+        clock: ClockPort,
+    ) -> None:
+        self._delegate = delegate
+        self._publication_repo = publication_repo
+        self._clock = clock
+
+    def publish(self, change: StatusChange) -> None:
+        """Publish via delegate, then record success; propagate failures without recording."""
+        self._delegate.publish(change)
+        # Only reached on success — errors propagate before this line.
+        self._publication_repo.record(
+            Publication(
+                component_id=change.component_id,
+                status=change.status,
+                published_at=self._clock.now(),
+            )
+        )
