@@ -128,6 +128,48 @@ class PostgresProposalRepository(ProposalRepository):
             ),
         )
 
+    def get(self, proposal_id: int) -> StatusProposal | None:
+        """Retrieve the proposal with this id, or None if none exists."""
+        stmt = sa.select(
+            _STATUS_PROPOSALS.c.id,
+            _STATUS_PROPOSALS.c.component_id,
+            _STATUS_PROPOSALS.c.from_status,
+            _STATUS_PROPOSALS.c.to_status,
+            _STATUS_PROPOSALS.c.state,
+            _STATUS_PROPOSALS.c.reason,
+            _STATUS_PROPOSALS.c.proposed_at,
+            _STATUS_PROPOSALS.c.resolved_at,
+        ).where(
+            _STATUS_PROPOSALS.c.id == proposal_id,
+        )
+
+        with self._engine.connect() as conn:
+            row = conn.execute(stmt).fetchone()
+
+        if row is None:
+            return None
+
+        from_status = (
+            ComponentStatus(row.from_status) if row.from_status is not None else None
+        )
+        to_status = ComponentStatus(row.to_status)
+
+        return StatusProposal(
+            id=row.id,
+            component_id=row.component_id,
+            from_status=from_status,
+            to_status=to_status,
+            state=ProposalState(row.state),
+            reason=row.reason,
+            proposed_at=row.proposed_at.astimezone(timezone.utc),
+            resolved_at=(
+                row.resolved_at.astimezone(timezone.utc)
+                if row.resolved_at is not None
+                else None
+            ),
+        )
+
+
     def resolve(
         self,
         proposal_id: int,

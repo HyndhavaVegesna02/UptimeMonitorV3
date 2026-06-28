@@ -625,3 +625,37 @@ def test_postgres_proposal_repository_resolve_already_terminal_raises(
             state, reason = cur.fetchone()
     assert state == "approved"
     assert reason == "first"
+
+
+def test_postgres_proposal_repository_get(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    seed_component(migrated_db.database_url, "get-comp")
+    repo = PostgresProposalRepository(engine)
+
+    # get returns None for unknown id
+    assert repo.get(99999) is None
+
+    prop = StatusProposal(
+        component_id="get-comp",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+    assert saved.id is not None
+
+    # get returns the saved proposal
+    fetched = repo.get(saved.id)
+    assert fetched is not None
+    assert fetched.id == saved.id
+    assert fetched.component_id == "get-comp"
+    assert fetched.from_status == ComponentStatus.OPERATIONAL
+    assert fetched.to_status == ComponentStatus.DEGRADED
+    assert fetched.state == ProposalState.OPEN
+    assert fetched.proposed_at == datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc)
+    assert fetched.resolved_at is None
+
