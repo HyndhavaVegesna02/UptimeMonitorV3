@@ -40,21 +40,48 @@ start_tag: sprint-12-start
 stories:
   - id: STORY-034
     points: 2
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate         # 2 pts (doc-only) -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands (pytest / lint-imports / check_fk_direction / alembic / ruff check / ruff format --check)"
+        exit_code: 0
+        output_tail: "orchestrator-verified with throwaway DB: pytest 290 passed; lint-imports 4
+          kept / 0 broken; fk 0 violations (10 FKs); alembic 0; ruff check 'All checks passed!';
+          ruff format '88 files already formatted'. STORY-034 is doc-only (7 wiki articles); the
+          gate is shared with STORY-014 at HEAD eb147ef."
+        commit: 61f0b0a
+        at: 2026-06-28T16:30:00+05:30
+    blast_radius_resolved: true   # all 7 reformat-stale articles rehabbed to symbol citations +
+                                  # flipped status stale->verified (verified_sprint: sprint-12).
   - id: STORY-014
     points: 5
-    board: todo
+    board: done
     pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # external impl; one orchestrator inline fix-loop (PO-authorized) closed
+                          # the review findings (see review.md). Not an effort-cap attempt.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at eb147ef with throwaway DB: pytest 290 passed;
+          lint-imports 4 kept / 0 broken (NEW api-feature-independence contract live); fk 0
+          violations; alembic 0; ruff check + format clean. Opus spec reviewer: PASS (all AC MET,
+          no regression). Opus quality reviewer: APPROVE (0 critical / 0 major)."
+        commit: eb147ef
+        at: 2026-06-28T16:30:00+05:30
+    review:
+      first_pass: "spec FAIL (AC1: controller imported core + no five-file-shape test); quality
+        FIX REQUIRED (1 MAJOR: concurrent double-submit -> 500 instead of 409)."
+      fix_commit: eb147ef   # PO-authorized orchestrator inline fix (incl. the non-blocking minors)
+      second_pass: "spec PASS; quality APPROVE."
+      open_minors:          # non-blocking, pre-existing -> retro / follow-up chore candidates
+        - "composition app engine never disposed on shutdown (process-lifetime engine; low risk)."
+        - "httpx/starlette TestClient deprecation warning ('install httpx2') — dependency note."
+    blast_radius_resolved: true   # architecture-boundary.md updated for the 4th contract +
+                                  # api-five-file-convention.md seeded; both verified @ sprint-12.
 hotfixes: []
 interrupts: []

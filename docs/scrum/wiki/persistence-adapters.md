@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: a37e21e
+verified_sha: eb147ef
 verified_sprint: sprint-12
 status: verified
 ---
@@ -82,10 +82,14 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   NOTHING` on the partial unique index active when `state = 'open'`. Returns `None` (with a debug
   log) if a conflict occurs (a concurrent open already exists), else the new proposal.
 - `get_open` SELECTs the single open proposal for `component_id` (`proposal_repository.py::PostgresProposalRepository.get_open`).
+- `get` (`proposal_repository.py::PostgresProposalRepository.get`) SELECTs a proposal by `id`, returning
+  `None` if absent (STORY-014: the lookup `ApprovalService` uses before resolving).
 - `resolve` (`proposal_repository.py::PostgresProposalRepository.resolve`) UPDATEs `state`/`reason`/`resolved_at` only `WHERE id =
-  :id AND state = 'open'`, and raises `ValueError` if `rowcount != 1` — so re-resolving an
-  already-terminal proposal or an unknown id fails loudly rather than silently clobbering (STORY-012
-  fix loop 1). `FakeProposalRepository.resolve` raises the same way, so fake and adapter agree.
+  :id AND state = 'open'`, and raises `ProposalNotOpenError` (a domain error; STORY-014 — was a bare
+  `ValueError`) if `rowcount != 1` — so re-resolving an already-terminal proposal, an unknown id, or a
+  lost-race concurrent resolve fails loudly rather than silently clobbering (STORY-012 fix loop 1), and
+  the edge maps it to HTTP 409 rather than 500. `FakeProposalRepository.resolve` raises the same
+  `ProposalNotOpenError`, so fake and adapter agree (parity).
 - `record_approval_event` INSERTs a new record into `approval_events` (`proposal_repository.py::PostgresProposalRepository.record_approval_event`).
 
 ### Testing convention (FK seeding)
@@ -116,4 +120,7 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `SELECT` the new availability engine (`core/services/availability.py`) reads through; no
   schema change, no new migration.
 - sprint-9: STORY-012 adds `PostgresProposalRepository` for workflow proposal storage and resolution.
+- sprint-12: STORY-014 adds `PostgresProposalRepository.get(proposal_id)`; `resolve` now raises the
+  `ProposalNotOpenError` domain error (was a bare `ValueError`) so a lost-race resolve maps to HTTP 409.
+  Re-verified at eb147ef.
 

@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/services/pipeline.py]
-verified_sha: 0ba6f3e
+verified_sha: eb147ef
 verified_sprint: sprint-12
 status: verified          # verified | stale | archived
 ---
@@ -59,6 +59,12 @@ status: verified          # verified | stale | archived
 - A transition rule helper `is_valid_transition(from_state, to_state) -> bool` (`proposal.py::is_valid_transition`)
   and `StatusProposal.terminal` property (`proposal.py::StatusProposal.terminal`) define allowed transitions:
   from `open` to any terminal state only; terminal states are final and cannot transition.
+- STORY-014: two proposal-lifecycle domain errors live in the domain (both `ValueError` subclasses):
+  `ProposalNotFoundError` (`proposal.py::ProposalNotFoundError`) and `ProposalNotOpenError`
+  (`proposal.py::ProposalNotOpenError`, raised when a proposal is missing or no longer `open` and so
+  cannot be resolved — e.g. a lost-race concurrent resolve). `core/services/approval.py` re-exports
+  them for callers that import from the service. See [[persistence-adapters]] for the repository
+  contract that raises them.
 
 ### The seven core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
@@ -87,8 +93,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   (`rejected_observation_repository.py::RejectedObservationRepository.save`).
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
-  one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`, `resolve(proposal_id,
-  *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal state), and
+  one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`,
+  `get(proposal_id) -> StatusProposal | None` (STORY-014: lookup by id, returns None if absent),
+  `resolve(proposal_id, *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal
+  state; raises `ProposalNotOpenError` if it is missing or no longer open), and
   `record_approval_event(proposal_id, *, actor, action, notes, occurred_at) -> None`.
 
 ### Zone 4 core logic — moved
@@ -155,4 +163,6 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - sprint-9: STORY-012 adds `ProposalState` and `StatusProposal` canonical domain types,
   the `ProposalRepository` port, and enforces proposal resolved_at coherence at construction.
 - sprint-10: added STATUS_SEVERITY helpers to status.py (STORY-024). Verified at 75674b7.
+- sprint-12: STORY-014 adds the `ProposalRepository.get(proposal_id)` lookup and the
+  `ProposalNotFoundError`/`ProposalNotOpenError` domain errors to `proposal.py`. Re-verified at eb147ef.
 

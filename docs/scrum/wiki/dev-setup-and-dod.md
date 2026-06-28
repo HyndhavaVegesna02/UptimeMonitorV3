@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: 48217d7
+verified_sha: eb147ef
 verified_sprint: sprint-11
 status: verified
 ---
@@ -15,7 +15,7 @@ status: verified
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
 - **The DoD gate is six bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
   1. `pytest`
-  2. `lint-imports` (3 import-linter contracts)
+  2. `lint-imports` (4 import-linter contracts; the 4th, `api-feature-independence`, added STORY-014)
   3. `python scripts/check_fk_direction.py` (needs `DATABASE_URL` → migrated Postgres)
   4. `alembic upgrade head` (needs `DATABASE_URL_DIRECT`)
   5. `ruff check .`
@@ -74,6 +74,8 @@ status: verified
   one-liner is now documented as a fallback, not the standard path.
   `verified_sha` re-stamped accordingly.
 - sprint-10: updated to note the idempotency behavior of `dev_db.py up` (STORY-030).
+- sprint-12: STORY-014 added the 4th `lint-imports` contract (`api-feature-independence`); the
+  `lint-imports` command now enforces 4 contracts. Re-verified at eb147ef.
   Verified at 70622a1.
 - sprint-11: updated to note the ruff lint and format check integration in the DoD gate (STORY-033).
   Verified at d557749.
