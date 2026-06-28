@@ -1,61 +1,44 @@
 # YourTeam active sprint board.
-sprint: 16
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-28
+sprint: 17
+status: active        # none | active | review | closed | aborted
 started: 2026-06-28
-goal: "Build the config layer (dossier §7 Option C) — config/apps/*.yaml + a fail-fast
-  loader/validator + in-memory resolvers (signal_key->component_id, component->AntiFlapThresholds) —
-  the prerequisite that unblocks the pipeline orchestration (STORY-016a). Pure composition-zone code,
-  no DB, no migration. Single-story sprint (5 pts) by design: gnarliest unbuilt area, full reviewer
-  scrutiny."
-branch: sprint-16
-start_tag: sprint-16-start
-# Capacity: velocity last-3 (sprints 13,14,15) = 7,6,5 -> mean 6.0. Committed 5 (STORY-040a). A
-# deliberate single-story sprint (new config subsystem + format design; focused 5 over a padded mix).
+goal: "Wire the pipeline orchestration — per cycle, AFTER ingest, run collapse->streak->anti_flap->
+  decide per signal to produce/supersede/obsolete proposals (recovery-publish via a FAKE publisher) —
+  the step that finally turns observations into proposals. Fully fake-tested, no live creds (live
+  Statuspage/Dynatrace stays in STORY-016). Single story, 5 pts: the central design-heavy backend
+  piece, full reviewer scrutiny."
+branch: sprint-17
+start_tag: sprint-17-start
+# Capacity: velocity last-3 (sprints 14,15,16) = 6,5,5 -> mean 5.33. Committed 5 (STORY-016a).
 #
-# WORKFLOW (working-agreements.md 2026-06-26): PO implements externally OR (PO quota permitting) the
-# orchestrator finishes via a Sonnet implementer subagent (as in sprints 14/15). PO triggers the back
-# half ("do your review"); orchestrator diffs sprint-16-start..HEAD, runs the FULL six-command gate,
-# runs Opus spec + quality reviewers (STORY-040a is 5 pts -> reviewers), resolves wiki blast-radius,
-# then review/verdict/merge/retro. plan.md is the ONLY contract -> self-contained.
+# WORKFLOW (working-agreements.md 2026-06-26): PO implements externally OR (quota permitting) the
+# orchestrator finishes via a Sonnet implementer subagent (as in sprints 14-16). PO triggers the back
+# half ("do your review"); orchestrator diffs sprint-17-start..HEAD, runs the FULL six-command gate,
+# runs Opus spec + quality reviewers (5 pts), resolves wiki blast-radius (the MECHANICAL sweep,
+# 2026-06-28), then review/verdict/merge/retro. plan.md is the ONLY contract -> self-contained.
 #
-# PIPELINE: STORY-040a (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
+# PIPELINE: STORY-016a (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
 #
-# DEPENDENCY ADD: STORY-040a adds `pyyaml` to [project.dependencies] (config loads at boot) -> a
-# planning-sanctioned dependency change. Not a DoD-command change (no command-sync). NO migration, NO
-# new import-linter contract (config loader lives in composition, which may import core).
+# NO migration (proposals/observations/components/maintenance tables all exist). NO new lint contract
+# (the orchestrator is composition wiring; composition may import core+adapters). Folded-in prereqs:
+# promote bucket_into_cycles to public; add SignalConfig.interval_seconds (+ sample config); add
+# ComponentRepository.get (port+fake+adapter+DB test). The 2026-06-28 TOCTOU agreement is N/A-new:
+# decide's get_open->resolve/create_open is EXISTING behavior (handles the race via create_open->None).
 #
-# Baseline at lock: tree clean on main @ d1beb8f -> refined onto branch @ c797bb3. Cheap gates green
-# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-15 review (8305d4d)
+# Baseline at lock: tree clean on main @ e7e337d -> refined onto branch @ 07cf681. Cheap gates green
+# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-16 review (93f1863)
 # with no src/ change since. Conventions checklist (2026-06-27), frozen-type-invariant (2026-06-26),
-# named-error-on-unknown (2026-06-25), and tz-aware-param (2026-06-28, N/A here — no datetime params)
-# agreements apply; see plan.md.
+# named-error/empty (2026-06-25), fake/adapter parity (2026-06-26), DTO-no-sentinel (2026-06-28),
+# and mechanical-wiki-blast-radius (2026-06-28) agreements apply; see plan.md.
 stories:
-  - id: STORY-040a
+  - id: STORY-016a
     points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0            # implemented by a Sonnet subagent (PO quota); reviewers PASS/APPROVE first pass.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 93f1863 with throwaway DB: pytest 357 passed (26 new
-          config tests); lint-imports 5/0 (config loader in composition, no new contract); fk 0;
-          alembic 0; ruff clean. Opus spec reviewer: PASS (all 5 AC MET). Opus quality reviewer:
-          APPROVE (0 critical / 0 major; yaml.safe_load confirmed; validators + cross-app uniqueness real)."
-        commit: 93f1863
-        at: 2026-06-28T23:00:00+05:30
-    review:
-      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop needed)."
-      open_minors:          # non-blocking -> retro / follow-up
-        - "config.py: malformed component/signal SUB-entries are built before the try/except, so they
-          miss the 'Invalid config in {filename}' wrapper (still fail-fast + pydantic names the field)."
-        - "loader globs *.yaml only, not *.yml (matches convention)."
-        - "a few tests use broad pytest.raises(Exception); could narrow to the named errors."
-    blast_radius_resolved: true   # config-layer.md seeded (normalized to inline code_refs at compile
-                                  # pass); dev-setup-and-dod + api-five-file-convention + architecture-boundary
-                                  # re-verified for the pyyaml dep @ 93f1863.
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
