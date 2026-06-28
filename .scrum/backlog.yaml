@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 35
+next_story_id: 36   # STORY-035 reserved; STORY-014b is a split-child of 014 (not a new id slot)
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -141,9 +141,17 @@ stories:
     sprint: 9
   # ── Zone 6 — API ─────────────────────────────────────────────────
   - id: STORY-014
-    title: Five-file feature modules
+    title: Five-file API convention + 4th linter contract + decision exemplar
     file: docs/scrum/stories/STORY-014-five-file-api-modules.md
-    status: draft
+    status: ready   # refined 2026-06-28 (exemplar-first, PO); opens Zone 6 in Sprint 12
+    points: 5
+    priority: 14
+    type: feature
+    sprint: null
+  - id: STORY-014b
+    title: API read endpoints for the six dashboard tabs
+    file: docs/scrum/stories/STORY-014b-api-read-endpoints-six-tabs.md
+    status: draft   # split-child of STORY-014 (deferred read endpoints); refine with STORY-015
     points: 5
     priority: 14
     type: feature
