@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/services/pipeline.py]
-verified_sha: eb147ef
-verified_sprint: sprint-12
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/services/pipeline.py]
+verified_sha: 370d649
+verified_sprint: sprint-13
 status: verified          # verified | stale | archived
 ---
 
@@ -52,6 +52,8 @@ status: verified          # verified | stale | archived
   Fields: `component_id:str`, `from_status:ComponentStatus|None`, `to_status:ComponentStatus`,
   `state:ProposalState`, `reason:str|None=None`, `proposed_at:datetime`, `resolved_at:datetime|None=None`,
   `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py::StatusProposal`).
+- `Component` (frozen) models a component and its display status (`component.py::Component`).
+  Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b).
 - STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
   `model_validator(mode="after")` (`proposal.py::StatusProposal._require_resolved_at_coherence`)
   enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
@@ -66,9 +68,9 @@ status: verified          # verified | stale | archived
   them for callers that import from the service. See [[persistence-adapters]] for the repository
   contract that raises them.
 
-### The seven core ports (`core/ports/`, ABCs)
+### The eight core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All seven are `abc.ABC` with `@abstractmethod`,
+them, the composition root injects them. All eight are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py::SignalIngestPort.ingest_observations`).
@@ -91,13 +93,17 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py::RejectedObservationRepository.save`).
+- `ComponentRepository` — read persistence interface for listing components (`component_repository.py::ComponentRepository`).
+  Provides `list_components() -> list[Component]` (STORY-014b).
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
   one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`,
   `get(proposal_id) -> StatusProposal | None` (STORY-014: lookup by id, returns None if absent),
   `resolve(proposal_id, *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal
-  state; raises `ProposalNotOpenError` if it is missing or no longer open), and
-  `record_approval_event(proposal_id, *, actor, action, notes, occurred_at) -> None`.
+  state; raises `ProposalNotOpenError` if it is missing or no longer open),
+  `record_approval_event(proposal_id, *, actor, action, notes, occurred_at) -> None`, and
+  `list_open() -> list[StatusProposal]` (STORY-014b: returns all open proposals, or `[]` if none exist).
+
 
 ### Zone 4 core logic — moved
 - The pipeline (`collapse`/`streak`, STORY-010) and the availability engine

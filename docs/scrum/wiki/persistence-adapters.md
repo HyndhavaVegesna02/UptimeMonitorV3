@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: eb147ef
-verified_sprint: sprint-12
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
+verified_sha: 370d649
+verified_sprint: sprint-13
 status: verified
 ---
 
@@ -91,6 +91,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   the edge maps it to HTTP 409 rather than 500. `FakeProposalRepository.resolve` raises the same
   `ProposalNotOpenError`, so fake and adapter agree (parity).
 - `record_approval_event` INSERTs a new record into `approval_events` (`proposal_repository.py::PostgresProposalRepository.record_approval_event`).
+- `list_open` (`proposal_repository.py::PostgresProposalRepository.list_open`) SELECTs all open proposals `WHERE state = 'open'` (STORY-014b). Returns `[]` if none exist.
+
+### `PostgresComponentRepository` — components listing (STORY-014b)
+- Implements `ComponentRepository` port against `components` table (`component_repository.py::PostgresComponentRepository`).
+- `list_components` (`component_repository.py::PostgresComponentRepository.list_components`) SELECTs `id`, `name`, `status`, `app_id` and maps `status` text to `ComponentStatus`. Returns `[]` if none exist.
 
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
