@@ -575,9 +575,13 @@ class TestOrchestrateSignalAC2:
 class TestOrchestrateSignalAC3:
     """AC3: a raising publisher doesn't crash the cycle or roll back the proposal."""
 
-    def test_raising_publisher_does_not_crash_and_proposal_persists(self):
-        """T1.1 commit-first: DecideService writes the proposal BEFORE calling
-        publish; a raising publisher leaves the proposal intact (STORY-016a B4)."""
+    def test_raising_publisher_on_recovery_does_not_crash_cycle(self, caplog):
+        """AC3 / T1.1: the recovery-publish path is the one that calls the
+        publisher. With a `BestEffortPublisher`-wrapped raising delegate, a dead
+        Statuspage is LOGGED and SWALLOWED — `orchestrate_signal` returns
+        `PUBLISHED_RECOVERY` without crashing the cycle."""
+        import logging
+
         from fakes import (
             FakeClock,
             FakeComponentRepository,
@@ -586,93 +590,64 @@ class TestOrchestrateSignalAC3:
             FakeProposalRepository,
         )
         from src.composition.orchestrate import orchestrate_signal
+        from src.composition.publish_helper import BestEffortPublisher
         from src.core.ports import StatusPublisherPort
 
         class RaisingPublisher(StatusPublisherPort):
-            """Always raises RuntimeError on publish — simulates a dead Statuspage."""
+            """Always raises — simulates a dead Statuspage."""
 
             def publish(self, change):
                 raise RuntimeError("simulated statuspage failure")
 
         signal_key = "checkout-http"
         component_id = "checkout"
-        _build_config(signal_key=signal_key, component_id=component_id, recovery=2)
+        # recovery=2: two sustained UP cycles propose OPERATIONAL, which is BETTER
+        # than the component's current DEGRADED status -> the publish branch fires.
+        cfg = _build_config(
+            signal_key=signal_key, component_id=component_id, recovery=2
+        )
 
         now = _utc(10, 10, 0)
         obs_repo = FakeObservationRepository()
-        # ≥ recovery UP observations → PUBLISHED_RECOVERY branch hits the publisher
         obs_repo.saved = [
             _obs(signal_key, _utc(10, 8, 30), Health.UP),
             _obs(signal_key, _utc(10, 9, 30), Health.UP),
         ]
-
         comp = Component(
             id=component_id,
             name="Checkout",
-            status=ComponentStatus.DEGRADED,  # recovery scenario
+            status=ComponentStatus.DEGRADED,  # currently degraded -> recovery improves it
             app_id="sockshop",
         )
-        FakeComponentRepository(components=[comp])
+        component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
         proposal_repo = FakeProposalRepository()
         clock = FakeClock(now)
-        raising_publisher = RaisingPublisher()
-        DecideService(proposal_repo=proposal_repo, publisher=raising_publisher)
 
-        # The raising publisher propagates — cycle should NOT silently swallow it,
-        # but the orchestrator itself may catch at the publish boundary.
-        # Per DecideService: it writes BEFORE publishing, so the proposal (or the
-        # resolution in the PUBLISHED_RECOVERY path) is durable even if publish raises.
-        # The orchestrator should not crash the overall cycle (AC3).
-        #
-        # For the PUBLISHED_RECOVERY case: there's no open proposal to assert on,
-        # so we prove the orchestrator re-raises rather than silently swallowing.
-        # The key invariant is: a raising publisher for a DEGRADATION scenario
-        # (where a proposal is written THEN published) doesn't lose the proposal.
-        #
-        # Let's test the degradation path instead: open a proposal (written before
-        # publisher is called → publish is NOT called for degradations).
-        # For recovery: publish IS called first (there's nothing to write before it
-        # for PUBLISHED_RECOVERY in DecideService). So we use a degradation scenario.
-
-        # Reset: use degradation scenario with raising publisher
-        obs_repo2 = FakeObservationRepository()
-        obs_repo2.saved = [
-            _obs(signal_key, _utc(10, 7, 30), Health.DOWN),
-            _obs(signal_key, _utc(10, 8, 30), Health.DOWN),
-            _obs(signal_key, _utc(10, 9, 30), Health.DOWN),
-        ]
-
-        comp_operational = Component(
-            id=component_id,
-            name="Checkout",
-            status=ComponentStatus.OPERATIONAL,  # degradation scenario
-            app_id="sockshop",
-        )
-        component_repo2 = FakeComponentRepository(components=[comp_operational])
-        cfg2 = _build_config(signal_key=signal_key, component_id=component_id, major=3)
-        proposal_repo2 = FakeProposalRepository()
-        decide_service2 = DecideService(
-            proposal_repo=proposal_repo2, publisher=raising_publisher
+        # The orchestration's DecideService is wired with a BEST-EFFORT publisher
+        # (T1.1): a publish failure is logged, not raised.
+        decide_service = DecideService(
+            proposal_repo=proposal_repo,
+            publisher=BestEffortPublisher(RaisingPublisher()),
         )
 
-        # For PROPOSED: publisher is NOT called (degradations wait for human gate).
-        # So this should not raise and should produce a proposal.
-        action = orchestrate_signal(
-            signal_key=signal_key,
-            config=cfg2,
-            observation_repo=obs_repo2,
-            maintenance_repo=maintenance_repo,
-            component_repo=component_repo2,
-            decide_service=decide_service2,
-            clock=clock,
-        )
+        with caplog.at_level(logging.ERROR):
+            action = orchestrate_signal(
+                signal_key=signal_key,
+                config=cfg,
+                observation_repo=obs_repo,
+                maintenance_repo=maintenance_repo,
+                component_repo=component_repo,
+                decide_service=decide_service,
+                clock=clock,
+            )
 
-        assert action == DecideAction.PROPOSED
-        # Proposal persists — commit-first holds
-        open_proposals = proposal_repo2.list_open()
-        assert len(open_proposals) == 1
-        assert open_proposals[0].component_id == component_id
+        # The cycle did NOT crash, and decide reached the publish branch.
+        assert action == DecideAction.PUBLISHED_RECOVERY
+        # The Statuspage failure was logged best-effort, not raised.
+        assert any(
+            "Failed to publish status change" in rec.message for rec in caplog.records
+        )
 
 
 # ---------------------------------------------------------------------------

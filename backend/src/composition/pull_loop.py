@@ -31,9 +31,8 @@ from datetime import timedelta
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
 
-# Optional orchestration types (imported lazily to keep the no-orchestration
-# path decoupled; a static-analysis-friendly TYPE_CHECKING guard would work
-# too but runtime isinstance checks are cleaner here).
+# Optional orchestration types. `orchestrate_signal` itself is imported lazily
+# (inside run_cycle) to keep the no-orchestration path decoupled.
 from src.composition.config import Config
 from src.core.domain import IngestResult
 from src.core.ports import SignalIngestPort, WatermarkRepository
@@ -52,9 +51,12 @@ def run_cycle(
     ingest_port: SignalIngestPort,
     executor: Executor,
     overlap: timedelta = DEFAULT_OVERLAP,
-    # Orchestration extras (dossier §8 step 5 — optional; all must be supplied
-    # together or none at all; supplying some but not all is a programmer error
-    # caught at runtime by the inner isinstance checks).
+    # Orchestration extras (dossier §8 step 5 — optional). The guard below is
+    # `all(... is not None)`: supply ALL six to orchestrate after ingest, or
+    # none to keep the original ingest-only shape. Supplying SOME-but-not-all
+    # silently falls through to the ingest-only path (a known limitation; the
+    # async production driver `run_periodic` does not yet thread these — that
+    # wiring is deferred to the deployment/live story).
     config: Config | None = None,
     observation_repo: ObservationRepository | None = None,
     maintenance_repo: MaintenanceRepository | None = None,

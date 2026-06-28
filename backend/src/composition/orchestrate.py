@@ -64,6 +64,13 @@ def orchestrate_signal(
     own beyond routing to the services above. The commit-first guarantee
     (T1.1) lives inside ``DecideService``; this function does not repeat it.
 
+    **Best-effort publish (T1.1):** the recovery-publish branch of ``decide``
+    calls ``publisher.publish`` directly and lets a failure propagate. So the
+    ``decide_service`` injected here MUST be wired with a best-effort publisher
+    (``composition.publish_helper.BestEffortPublisher``) so a Statuspage outage
+    is logged and swallowed rather than crashing the pull cycle (AC3). The DB
+    write is already committed before the publish, so swallowing loses nothing.
+
     Args:
         signal_key: The canonical signal key (dossier §7).
         config: The loaded app config aggregate.
