@@ -124,10 +124,13 @@ class AvailabilityResult(BaseModel):
         return self
 
 
-def _bucket_into_cycles(
+def bucket_into_cycles(
     observations: list[SignalObservation], *, since: datetime, interval: timedelta
 ) -> dict[datetime, list[SignalObservation]]:
     """Slice `observations` into consecutive `interval`-wide cycles starting at `since`.
+
+    Public API — consumed by both the availability engine (dossier §11) and
+    the pipeline orchestrator (dossier §8 step 5: "hand rows to the pipeline").
 
     Cycle bucketing design (a calculator design call, dossier §11 leaves the
     mechanism open): bucket *k* covers `[since + k*interval, since +
@@ -218,7 +221,7 @@ class AvailabilityCalculator:
         """
         observations = list(self._observation_repo.in_window(signal_key, since, until))
 
-        buckets = _bucket_into_cycles(observations, since=since, interval=interval)
+        buckets = bucket_into_cycles(observations, since=since, interval=interval)
 
         # CEILING, not floor, of (until - since) / interval: a partial
         # trailing cycle (the window is not an exact multiple of the
