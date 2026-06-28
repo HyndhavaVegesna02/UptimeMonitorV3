@@ -870,3 +870,65 @@ def test_postgres_maintenance_repository(migrated_db, engine):
         )
         is False
     )
+
+
+def test_postgres_publication_repository(migrated_db, engine):
+    """DB-gated: PostgresPublicationRepository record + list_recent + fake parity.
+
+    STORY-037 AC1. Publications FK into components (RESTRICT), so we seed a
+    component first. The test cleans up publications before running to stay
+    order/reused-DB independent (working-agreements.md DB-test reused-DB isolation).
+    """
+    from src.adapters.persistence.publication_repository import (
+        PostgresPublicationRepository,
+    )
+    from src.core.domain.publication import Publication
+    from src.core.domain.status import ComponentStatus
+
+    # Isolation: truncate publications (FKs into components; clean it first)
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE publications;")
+        conn.commit()
+
+    # Seed the component FK parent
+    seed_component(migrated_db.database_url, "pub-comp", "pub-app")
+
+    repo = PostgresPublicationRepository(engine)
+
+    # Parity: empty → []
+    assert repo.list_recent() == []
+
+    # record() inserts + returns persisted row with id
+    pub1 = Publication(
+        component_id="pub-comp",
+        status=ComponentStatus.DEGRADED,
+        published_at=datetime(2026, 6, 29, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    saved1 = repo.record(pub1)
+    assert saved1.id is not None
+    assert saved1.component_id == "pub-comp"
+    assert saved1.status == ComponentStatus.DEGRADED
+    assert saved1.published_at == datetime(2026, 6, 29, 10, 0, 0, tzinfo=timezone.utc)
+    assert saved1.proposal_id is None
+
+    # Record a second, more recent publication
+    pub2 = Publication(
+        component_id="pub-comp",
+        status=ComponentStatus.OPERATIONAL,
+        published_at=datetime(2026, 6, 29, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved2 = repo.record(pub2)
+    assert saved2.id is not None
+    assert saved2.id != saved1.id
+
+    # list_recent returns most-recent-first
+    results = repo.list_recent()
+    assert len(results) == 2
+    assert results[0].id == saved2.id  # more recent first
+    assert results[1].id == saved1.id
+
+    # limit parameter is honoured
+    limited = repo.list_recent(limit=1)
+    assert len(limited) == 1
+    assert limited[0].id == saved2.id

@@ -14,6 +14,7 @@ from src.core.domain import (
     Component,
     IngestResult,
     MaintenanceWindow,
+    Publication,
     SignalObservation,
     StatusChange,
 )
@@ -28,6 +29,7 @@ from src.core.ports import (
     MaintenanceRepository,
     ObservationRepository,
     ProposalRepository,
+    PublicationRepository,
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
@@ -207,6 +209,35 @@ class FakeComponentRepository(ComponentRepository):
             if component.id == component_id:
                 return component
         return None
+
+
+class FakePublicationRepository(PublicationRepository):
+    """An in-memory publication repository for testing (STORY-037).
+
+    Fake/adapter parity (2026-06-26): empty → []; record returns a persisted
+    Publication with an id; list_recent returns most-recent-first.
+    """
+
+    def __init__(self) -> None:
+        self._publications: dict[int, Publication] = {}
+        self._next_id: int = 1
+
+    def record(self, publication: Publication) -> Publication:
+        """Persist a publication and return it with an assigned id."""
+        pub_id = self._next_id
+        self._next_id += 1
+        saved = publication.model_copy(update={"id": pub_id})
+        self._publications[pub_id] = saved
+        return saved
+
+    def list_recent(self, limit: int = 50) -> list[Publication]:
+        """Return up to `limit` publications ordered most-recent-first."""
+        pubs = sorted(
+            self._publications.values(),
+            key=lambda p: p.published_at,
+            reverse=True,
+        )
+        return pubs[:limit]
 
 
 class FakeMaintenanceRepository(MaintenanceRepository):

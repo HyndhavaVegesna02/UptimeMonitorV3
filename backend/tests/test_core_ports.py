@@ -529,3 +529,65 @@ def test_fake_maintenance_repository():
         )
         is False
     )
+
+
+# --- PublicationRepository (STORY-037, AC1) ------------------------------------
+
+
+def test_publication_repository_port_is_abstract():
+    """B1: PublicationRepository cannot be instantiated directly."""
+    from src.core.ports.publication_repository import PublicationRepository
+
+    with pytest.raises(TypeError):
+        PublicationRepository()  # type: ignore[abstract]
+
+
+def test_fake_publication_repository_empty_returns_empty_list():
+    """B1: list_recent() returns [] when no publications exist."""
+    from fakes import FakePublicationRepository
+
+    repo = FakePublicationRepository()
+    assert repo.list_recent() == []
+
+
+def test_fake_publication_repository_record_returns_publication_with_id():
+    """B1: record() returns the Publication with a database-assigned id."""
+    from fakes import FakePublicationRepository
+    from src.core.domain.publication import Publication
+    from src.core.domain.status import ComponentStatus
+
+    repo = FakePublicationRepository()
+    pub = Publication(
+        component_id="checkout",
+        status=ComponentStatus.OPERATIONAL,
+        published_at=datetime(2026, 6, 29, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.record(pub)
+    assert saved.id is not None
+    assert saved.component_id == "checkout"
+    assert saved.status == ComponentStatus.OPERATIONAL
+
+
+def test_fake_publication_repository_list_recent_most_recent_first():
+    """B1: list_recent() returns publications ordered most-recent-first."""
+    from fakes import FakePublicationRepository
+    from src.core.domain.publication import Publication
+    from src.core.domain.status import ComponentStatus
+
+    repo = FakePublicationRepository()
+    earlier = Publication(
+        component_id="checkout",
+        status=ComponentStatus.DEGRADED,
+        published_at=datetime(2026, 6, 29, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    later = Publication(
+        component_id="checkout",
+        status=ComponentStatus.OPERATIONAL,
+        published_at=datetime(2026, 6, 29, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    repo.record(earlier)
+    repo.record(later)
+
+    results = repo.list_recent()
+    assert len(results) == 2
+    assert results[0].published_at > results[1].published_at  # most-recent-first
