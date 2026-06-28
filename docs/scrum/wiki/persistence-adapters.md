@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: 19eefc8
-verified_sprint: sprint-18
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
+verified_sha: cc7f0ce
+verified_sprint: sprint-19
 status: verified
 ---
 
@@ -104,15 +104,21 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - `create` (`maintenance_repository.py::PostgresMaintenanceRepository.create`) INSERTs a new maintenance window and returns it with the database-assigned `id`.
 - `is_under_maintenance` (`maintenance_repository.py::PostgresMaintenanceRepository.is_under_maintenance`) checks if a component is active under maintenance at a given timestamp using inclusive start and exclusive end boundaries (`starts_at <= at < ends_at`).
 
+### `PostgresPublicationRepository` — successful publish recording (STORY-037)
+- Implements `PublicationRepository` port against the existing `publications` table (spine schema — no migration) (`publication_repository.py::PostgresPublicationRepository`).
+- `record` (`publication_repository.py::PostgresPublicationRepository.record`) INSERTs a new publication row via `INSERT … RETURNING` and returns the persisted `Publication` with the database-assigned `id`. Called ONLY after a successful Statuspage publish — the table has no error column (§12/T1.1: record successes only).
+- `list_recent` (`publication_repository.py::PostgresPublicationRepository.list_recent`) SELECTs up to `limit` (default 50) publications ordered by `published_at DESC` (most-recent-first). Returns `[]` when none exist. Used by the Publications tab (§17).
+- Fake/adapter parity (2026-06-26): `FakePublicationRepository` and `PostgresPublicationRepository` agree on: empty → `[]`, `record` returns a persisted row with `id`, `list_recent` is most-recent-first (ordered by `published_at DESC`).
+
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
   `ON DELETE RESTRICT`, and `signals.app_id` FKs into `apps`. Topology seeding (apps/signals
   from config) is implemented in sprint-18, so integration tests either use `seed_topology` or **hand-seed** a parent `apps`+`signals`
   row via raw psycopg (test arrangement) before exercising a repo
   (`test_persistence_adapters.py`, `seed_signal` helper).
-- `status_proposals.component_id` and `maintenance_windows.component_id` FK into `components.id`, which FKs into `apps.id`. Integration
+- `status_proposals.component_id`, `maintenance_windows.component_id`, and `publications.component_id` FK into `components.id`, which FKs into `apps.id`. Integration
   tests hand-seed parent `apps` + `components` rows via a raw psycopg helper `seed_component` before
-  exercising the proposal/maintenance repository adapters.
+  exercising the proposal/maintenance/publication repository adapters.
 - `rejected_observations` has no FK, so its tests skip seeding entirely.
 - The `migrated_db` fixture is **session-scoped and shared**, but a function-scoped
   `clean_runtime_tables` fixture (`backend/tests/conftest.py`, STORY-039) **truncates the runtime
@@ -140,4 +146,5 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   Re-verified at eb147ef.
 - sprint-14: STORY-036 adds `PostgresMaintenanceRepository` for scheduled maintenance windows. Re-verified at 8e15534.
 - sprint-18: updated (STORY-040 — added description of `seed_topology` idempotent seeding and the clean_topology testing convention). verified_sha = 19eefc8.
+- sprint-19: STORY-037 adds `PostgresPublicationRepository` against the existing `publications` table (no migration). `record` INSERTs + RETURNS; `list_recent` SELECTs ORDER BY `published_at DESC`. DB-gated test in `test_persistence_adapters.py::test_postgres_publication_repository` truncates `publications` for isolation. verified_sha → cc7f0ce.
 

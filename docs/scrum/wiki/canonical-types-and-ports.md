@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 19eefc8
-verified_sprint: sprint-18
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/services/pipeline.py]
+verified_sha: cc7f0ce
+verified_sprint: sprint-19
 status: verified          # verified | stale | archived
 ---
 
@@ -56,6 +56,8 @@ status: verified          # verified | stale | archived
   Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b).
 - `MaintenanceWindow` (frozen) models a scheduled maintenance window for a component (`maintenance.py::MaintenanceWindow`).
   Fields: `component_id:str`, `starts_at:datetime`, `ends_at:datetime`, `reason:str|None=None`, `id:int|None=None`. Timezones for starts_at and ends_at are validated to be UTC (`maintenance.py::MaintenanceWindow`). Enforces `ends_at > starts_at` invariant via a `model_validator(mode="after")` (`maintenance.py::MaintenanceWindow._require_ends_after_starts`) (STORY-036).
+- `Publication` (frozen) records a SUCCESSFUL Statuspage publish (§9, §12/T1.1, §17) (`publication.py::Publication`).
+  Fields: `component_id:str`, `status:ComponentStatus`, `published_at:datetime` (UTC-validated via `field_validator`, same pattern as `MaintenanceWindow`), `proposal_id:int|None=None`, `id:int|None=None`. The table has no error column — only successful publishes are recorded (STORY-037). Naive or non-UTC `published_at` is rejected at construction (`publication.py::Publication._require_published_at_utc`).
 - STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
   `model_validator(mode="after")` (`proposal.py::StatusProposal._require_resolved_at_coherence`)
   enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
@@ -99,6 +101,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   Provides `list_components() -> list[Component]` (STORY-014b) and `get(component_id) -> Component | None` (STORY-016a: returns `None` on not-found).
 - `MaintenanceRepository` — persistence interface for managing maintenance windows (`maintenance_repository.py::MaintenanceRepository`).
   Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
+- `PublicationRepository` — persistence interface for recording and listing Statuspage publications (`publication_repository.py::PublicationRepository`).
+  Provides `record(publication) -> Publication` (INSERTs a new row, returns it with the db-assigned id; called ONLY after a successful publish — table has no error column) and `list_recent(limit: int = 50) -> list[Publication]` (most-recent-first by `published_at DESC`; `[]` when none exist) (STORY-037).
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
   one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`,
@@ -122,7 +126,7 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   contract (`services → ports → domain`) now actually bites and is KEPT. `core-independence`
   KEPT (no adapter / sqlalchemy / httpx in core). See [[architecture-boundary]].
 - Fakes for every port live under `backend/tests/fakes.py` (FakeClock, FakeWatermarkRepository,
-  FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort) — never in
+  FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort, FakePublicationRepository) — never in
   `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
   (`backend/tests/test_ingest_service.py`) additionally defines its own local fakes
   (`DedupingObservationRepository`, `FakeWatermarkRepository`,
@@ -175,4 +179,4 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - sprint-10: added STATUS_SEVERITY helpers to status.py (STORY-024). Verified at 75674b7.
 - sprint-12: STORY-014 adds the `ProposalRepository.get(proposal_id)` lookup and the
   `ProposalNotFoundError`/`ProposalNotOpenError` domain errors to `proposal.py`. Re-verified at eb147ef.
-
+- sprint-19: STORY-037 adds `Publication` domain type (`core/domain/publication.py`, frozen, UTC-validated `published_at` via `field_validator`) and `PublicationRepository` port (`core/ports/publication_repository.py`, `record` + `list_recent`). `FakePublicationRepository` added to `backend/tests/fakes.py`. Both exported from their respective `__init__.py` modules. verified_sha → cc7f0ce.

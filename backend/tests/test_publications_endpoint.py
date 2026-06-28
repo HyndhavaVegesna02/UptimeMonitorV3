@@ -12,7 +12,7 @@ from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from src.core.domain.publication import Publication
 from src.core.domain.status import ComponentStatus
-from tests.fakes import FakePublicationRepository, FakeProposalRepository
+from tests.fakes import FakeProposalRepository, FakePublicationRepository
 
 
 def _utc(hour: int) -> datetime:

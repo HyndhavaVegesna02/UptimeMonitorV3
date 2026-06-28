@@ -66,7 +66,9 @@ def test_publication_naive_datetime_rejected():
     from src.core.domain.publication import Publication
     from src.core.domain.status import ComponentStatus
 
-    with pytest.raises(ValidationError, match="published_at must be a tz-aware UTC datetime"):
+    with pytest.raises(
+        ValidationError, match="published_at must be a tz-aware UTC datetime"
+    ):
         Publication(
             component_id="checkout",
             status=ComponentStatus.OPERATIONAL,
@@ -82,7 +84,9 @@ def test_publication_non_utc_datetime_rejected():
     from src.core.domain.status import ComponentStatus
 
     est = zoneinfo.ZoneInfo("America/New_York")
-    with pytest.raises(ValidationError, match="published_at must be a tz-aware UTC datetime"):
+    with pytest.raises(
+        ValidationError, match="published_at must be a tz-aware UTC datetime"
+    ):
         Publication(
             component_id="checkout",
             status=ComponentStatus.OPERATIONAL,

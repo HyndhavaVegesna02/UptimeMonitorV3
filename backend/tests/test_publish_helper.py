@@ -12,7 +12,6 @@ Tests cover:
 from datetime import datetime, timezone
 
 import pytest
-
 from src.core.domain.status import ComponentStatus, StatusChange
 from tests.fakes import (
     FakeClock,
