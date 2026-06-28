@@ -1,90 +1,60 @@
 # YourTeam active sprint board.
-sprint: 11
-status: closed         # none | active | review | closed | aborted
-closed: 2026-06-27
-started: 2026-06-27
-goal: "Tooling + cleanup consolidation — land the ruff DoD gate (format + import-sort, STORY-033) and
-  clear the carried review chores (STORY-032 decide minors, STORY-031 sprint-9 nits) before the Zone 6
-  API push. Deliberate under-commit (4 of 6 pts) chosen by the PO: solidify the floor and clear the
-  decks first. Ruff lands FIRST so its reformat subsumes the cosmetic parts of the two chores."
-branch: sprint-11
-start_tag: sprint-11-start
-# Capacity: velocity history (...,6,6,6,6,6,6,6), last-3 mean (6,6,6) = 6. Committed 4 (DELIBERATE
-# under-commit, PO choice — "ruff + cleanup consolidation", not opening Zone 6 this sprint).
-# Order: STORY-033 FIRST (the ruff reformat pass touches the whole tree + adds 2 DoD commands; doing it
-# first means STORY-031/032 are auto-formatted and their cosmetic ACs are subsumed), then STORY-032
-# (decide residual = DRY helper + opened.id guard), then STORY-031 (test removal + fixture decision).
+sprint: 12
+status: active        # none | active | review | closed | aborted
+started: 2026-06-28
+goal: "Open Zone 6 — establish the five-file API convention (dossier §13) and the 4th
+  import-linter contract (no horizontal feature imports) via the decision/approve exemplar
+  vertical slice, AFTER rehabilitating the 7 reformat-stale wiki articles so the architecture
+  article is verified for the API work to update. Order: STORY-034 (doc-only, un-stales the
+  wiki) FIRST, then STORY-014 (the Zone 6 exemplar). Committed 7 pts (above the 5.33 last-3
+  mean, PO-chosen: 034 is doc-only/low-risk, steady velocity is 6)."
+branch: sprint-12
+start_tag: sprint-12-start
+# Capacity: velocity last-3 (sprints 9,10,11) = 6,6,4 -> mean 5.33; steady-state 6 (S11 was a
+# deliberate under-commit). Committed 7 (STORY-034 2 + STORY-014 5).
 #
-# OVERLAP NOTE (carry into the plan): after STORY-033's `ruff format` + `ruff check --fix` pass,
-# STORY-032 AC3 (decide.py import style + trailing blanks) and STORY-031 AC3 (hoist mid-module imports
-# in test_statuspage_adapter.py; blank line between fakes.py methods) may already be satisfied — the
-# implementer VERIFIES rather than re-does, and must not fight the formatter.
+# WORKFLOW (working-agreements.md 2026-06-26): the PO implements the plan EXTERNALLY
+# (Antigravity / Gemini) onto this branch; the orchestrator does NOT dispatch implementers.
+# The PO triggers the back half ("do your review"); the orchestrator then diffs
+# sprint-12-start..HEAD, runs the FULL six-command DoD gate itself, runs the Opus spec +
+# quality reviewers for 3+ pt stories, resolves the wiki forward-blast-radius, then
+# review/verdict/merge/retro. plan.md is the ONLY contract the external implementer builds to,
+# so it is self-contained (signatures, file paths, edge behavior, conventions checklist, DoD).
 #
-# WORKFLOW (working-agreements.md 2026-06-26): PO implements the plan externally (Antigravity / Gemini)
-# onto this branch; orchestrator does NOT dispatch implementers. PO triggers the review ("do your
-# review"); orchestrator then runs the FULL DoD gate + (for 3+ pt stories) Opus reviewers + wiki blast
-# radius + review/retro/merge. All three stories here are <=2 pts -> GATE ONLY (no LLM reviewers).
-# NOTE: STORY-033 CHANGES THE DoD (adds `ruff check` + `ruff format --check`). From the commit that
-# lands STORY-033 onward, the gate is SIX commands, and the command-sync agreement requires the
-# .scrum/definition-of-done.md + CLAUDE.md update in that same commit.
+# PIPELINE: STORY-034 (2 pts, doc-only) -> GATE ONLY. STORY-014 (5 pts) -> GATE + Opus spec
+# reviewer (against AC) + Opus quality reviewer. Reviewer model assignment is mandatory
+# (working-agreements.md 2026-06-24): reviewers on Opus.
 #
-# Baseline at lock: all gates green on main @ 5e35a01 — pytest 275 passed (throwaway DB), lint-imports
-# 3 kept / 0 broken. No migration this sprint (no schema change). Conventions checklist (working-
-# agreements.md 2026-06-27) applies; see plan.md header.
+# DoD CHANGE NOTE: STORY-014 adds a 4TH import-linter contract (api.v1 feature independence).
+# This does NOT add a new gate COMMAND (lint-imports already runs) but it changes what that
+# command enforces, so the command-sync agreement applies: .scrum/definition-of-done.md (the
+# lint-imports line / contract count) + CLAUDE.md (§4 contract count) updated in the SAME
+# commit that lands the contract. After STORY-014, `lint-imports` must report 4 kept / 0 broken.
+#
+# Baseline at lock: tree clean on main @ a493a29 -> refined onto branch @ 2656416. Cheap gates
+# green at lock (ruff check 'All checks passed!'; ruff format '73 files already formatted';
+# lint-imports 3 kept / 0 broken). DB gates recorded green at sprint-11 close (c577330) with no
+# src/ change since. No migration expected this sprint (proposals/approval-events tables exist
+# from STORY-012; only a port METHOD `get(proposal_id)` is added, no schema change).
+# Conventions checklist (working-agreements.md 2026-06-27) applies; see plan.md per-story.
 stories:
-  - id: STORY-033
+  - id: STORY-034
     points: 2
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate         # 2 pts -> (external impl) + DoD gate only
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate         # 2 pts (doc-only) -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands (pytest / lint-imports / check_fk_direction / alembic / ruff check / ruff format --check)"
-        exit_code: 0
-        output_tail: "orchestrator-verified at c577330 (with DB): pytest 275 passed; lint-imports 3/0;
-          fk 0 violations; alembic 0; ruff check 'All checks passed!'; ruff format '73 files already
-          formatted'. Reformat confirmed formatting-only (migration diff = exploded sa.Column calls +
-          quotes, no DDL change). ruleset minimal (E/W/F/I, E501 ignored), line-length 88."
-        commit: c577330
-        at: 2026-06-27T18:30:00+05:30
-    blast_radius_resolved: true   # DoD changed -> definition-of-done.md + CLAUDE.md synced in the same
-                                  # commit (d557749); dev-setup-and-dod.md updated + verified.
-  - id: STORY-032
-    points: 1
-    board: done
-    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
+    dod_evidence: []
+    blast_radius_resolved: false
+  - id: STORY-014
+    points: 5
+    board: todo
+    pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "verified at c577330 (see STORY-033 row). _open_proposal DRY helper extracted +
-          opened.id asserts added; cosmetic ACs (imports/blanks) handled by the ruff pass."
-        commit: c577330
-        at: 2026-06-27T18:30:00+05:30
-    blast_radius_resolved: true   # core-pipeline-and-availability.md re-pinned (decide.py:43/61 verified
-                                  # current) by the implementer; stays verified.
-  - id: STORY-031
-    points: 1
-    board: done
-    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
-    blocked_question: null
-    attempts: 0
-    paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "verified at c577330. Smoke test removed; degraded-path publish test added
-          (exercises the unused fixture); mid-module imports hoisted (ruff)."
-        commit: c577330
-        at: 2026-06-27T18:30:00+05:30
-    blast_radius_resolved: true   # test/fixture-only; no src Fact impact.
-# COMPILE PASS (sprint-11): STORY-033's tree-wide `ruff format` touched files referenced by 7 wiki
-# articles, drifting ~54 `file:line` citations (Facts still TRUE, only pointers moved). PO decision:
-# mark those 7 `status: stale` (honest/quarantined) rather than hand-patch brittle line refs; rehab via
-# STORY-034 under a symbol-based-citation policy adopted at retro. core-pipeline + dev-setup were
-# re-pinned in-sprint and stay verified.
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
