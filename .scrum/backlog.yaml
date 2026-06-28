@@ -209,7 +209,7 @@ stories:
   - id: STORY-016a
     title: Pipeline orchestration — run the core per cycle to produce proposals (fake-testable)
     file: docs/scrum/stories/STORY-016a-pipeline-orchestration.md
-    status: draft   # split from STORY-016; BLOCKED on STORY-040a (config resolvers)
+    status: ready   # refined 2026-06-28 (Sprint 17): per-signal->decide MVP, fake publisher; 040a unblocked it
     points: 5
     priority: 18
     type: feature
