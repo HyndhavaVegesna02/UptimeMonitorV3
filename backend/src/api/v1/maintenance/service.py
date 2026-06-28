@@ -30,7 +30,7 @@ class MaintenanceService:
         windows = self._maintenance_repo.list_windows()
         return [
             MaintenanceWindowDTO(
-                id=w.id if w.id is not None else 0,
+                id=w.id,
                 component_id=w.component_id,
                 starts_at=w.starts_at,
                 ends_at=w.ends_at,
@@ -65,7 +65,7 @@ class MaintenanceService:
         # 3. Persist and return DTO
         saved = self._maintenance_repo.create(window)
         return MaintenanceWindowDTO(
-            id=saved.id if saved.id is not None else 0,
+            id=saved.id,
             component_id=saved.component_id,
             starts_at=saved.starts_at,
             ends_at=saved.ends_at,
