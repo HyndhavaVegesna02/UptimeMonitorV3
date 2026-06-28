@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 16
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-28
 started: 2026-06-28
 goal: "Build the config layer (dossier §7 Option C) — config/apps/*.yaml + a fail-fast
   loader/validator + in-memory resolvers (signal_key->component_id, component->AntiFlapThresholds) —

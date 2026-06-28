@@ -309,4 +309,19 @@
   bare date) passed validation then 500'd inside `AvailabilityCalculator`'s tz-aware compare; a
   quality-review CRITICAL. The peer `maintenance` validator already enforced this — the implementer
   did not mirror it. The fix added the tzinfo check + naive-input tests.)
+- 2026-06-28 — **The wiki blast-radius check is the MECHANICAL staleness sweep, not eyeballing.**
+  When resolving a story's forward blast radius (at DoD / the compile pass), do NOT hand-pick which
+  articles to update — run the staleness sweep across ALL articles
+  (`git diff <each article's verified_sha>..HEAD -- <its code_refs>`; a small script over
+  `docs/scrum/wiki/*.md`) and update or re-verify EVERY article it reports stale before the story is
+  Done. This matters most for SHARED files: `pyproject.toml`, `backend/tests/conftest.py`, `CLAUDE.md`,
+  `.scrum/definition-of-done.md` appear in several articles' `code_refs`, so touching one file drifts
+  multiple articles — the obvious one gets updated and the others are missed. Also: wiki frontmatter
+  `code_refs` use the inline `[file, file, ...]` style (not a YAML block list), so the sweep's
+  inline-list parse finds them. (Motivated by the SAME miss twice: Sprint 14 — STORY-038's
+  `conftest.py`/pyproject change drifted `dev-setup-and-dod` which the implementer missed; Sprint 16 —
+  STORY-040a's `pyyaml` add to `pyproject.toml` drifted `api-five-file-convention` + `architecture-boundary`
+  which the implementer missed (it updated only `config-layer.md` + `dev-setup-and-dod`). The
+  orchestrator's compile-pass sweep caught both — this makes the sweep the explicit, mechanical step
+  rather than a judgment call, consistent with "mechanical gates over promises.")
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
