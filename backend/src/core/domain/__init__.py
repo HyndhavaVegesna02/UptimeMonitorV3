@@ -3,6 +3,7 @@
 from src.core.domain.component import Component
 from src.core.domain.maintenance import MaintenanceWindow
 from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
+from src.core.domain.publication import Publication
 from src.core.domain.signal import Health, Provenance, SignalObservation
 from src.core.domain.status import (
     STATUS_SEVERITY,
@@ -19,6 +20,7 @@ __all__ = [
     "Health",
     "IngestResult",
     "Provenance",
+    "Publication",
     "SignalObservation",
     "StatusChange",
     "Verdict",
