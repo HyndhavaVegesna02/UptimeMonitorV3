@@ -162,3 +162,97 @@ def test_seed_topology_preserves_status(migrated_db, engine, clean_topology):
             assert row is not None
             assert row[0] == "New Checkout Component Name"
             assert row[1] == "degraded"  # preserved!
+
+
+def test_seed_topology_cli_success(migrated_db, clean_topology, tmp_path):
+    """C1: seed_topology.py CLI seeds correctly (exit 0) when valid env vars are present."""
+    import os
+    import subprocess
+    import sys
+
+    # Write a tiny valid yaml to a temp directory
+    config_dir = tmp_path / "apps"
+    config_dir.mkdir()
+    yaml_content = """
+app:
+  id: cli-app
+  name: CLI App
+  monitor_provider: dynatrace
+components:
+  - { id: cli-comp, name: CLI Comp }
+signals:
+  - { signal_key: cli-sig, native_id: N-1, name: CLI Sig, component_id: cli-comp, interval_seconds: 30 }
+"""
+    (config_dir / "cli_app.yaml").write_text(yaml_content, encoding="utf-8")
+
+    env = {
+        **os.environ,
+        "DATABASE_URL": migrated_db.database_url,
+        "CONFIG_DIR": str(config_dir),
+    }
+
+    result = subprocess.run(
+        [sys.executable, "scripts/seed_topology.py"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 0
+    assert "Seeding completed successfully" in result.stdout
+    assert "1 app(s)" in result.stdout
+
+    # Verify directly from database
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT name FROM apps WHERE id = 'cli-app';")
+            assert cur.fetchone() == ("CLI App",)
+
+
+def test_seed_topology_cli_no_db_url_fails():
+    """C1: CLI exits with code 2 when DATABASE_URL is missing."""
+    import os
+    import subprocess
+    import sys
+
+    env = {**os.environ}
+    env.pop("DATABASE_URL", None)
+
+    result = subprocess.run(
+        [sys.executable, "scripts/seed_topology.py"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 2
+    assert "ERROR: DATABASE_URL is not set" in result.stderr
+
+
+def test_seed_topology_cli_invalid_config_fails(migrated_db, tmp_path):
+    """C1: CLI exits with code 1 (AC5) when config validation fails."""
+    import os
+    import subprocess
+    import sys
+
+    # Write an invalid yaml (missing component name/id etc.)
+    config_dir = tmp_path / "bad_apps"
+    config_dir.mkdir()
+    (config_dir / "bad.yaml").write_text("invalid_yaml: [unclosed", encoding="utf-8")
+
+    env = {
+        **os.environ,
+        "DATABASE_URL": migrated_db.database_url,
+        "CONFIG_DIR": str(config_dir),
+    }
+
+    result = subprocess.run(
+        [sys.executable, "scripts/seed_topology.py"],
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+
+    assert result.returncode == 1
+    assert "Topology Config Load Failure" in result.stdout or "Topology Config Load Failure" in result.stderr
+
