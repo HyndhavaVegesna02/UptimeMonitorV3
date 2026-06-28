@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 09af7e1
+verified_sha: 08c4eba
 verified_sprint: sprint-12
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -26,8 +26,9 @@ status: verified
     `src.core.domain` (`pyproject.toml` ("core-internal-layering")).
   - `adapters-independence` (independence): `src.adapters.{inbound,outbound,persistence}`
     may not import one another (`pyproject.toml` ("adapters-independence")).
-  - `api-feature-independence` (independence): `src.api.v1.decisions` and `src.api.v1.health`
-    may not import one another (`pyproject.toml` ("api-feature-independence")).
+  - `api-feature-independence` (independence): `src.api.v1.decisions`, `src.api.v1.health`,
+    `src.api.v1.components`, and `src.api.v1.approvals` may not import one another
+    (`pyproject.toml` ("api-feature-independence")).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.

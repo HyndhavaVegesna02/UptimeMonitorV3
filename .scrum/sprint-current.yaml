@@ -38,21 +38,46 @@ start_tag: sprint-13-start
 stories:
   - id: STORY-014b
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # external impl; one orchestrator inline fix-loop (PO-authorized)
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 08c4eba with throwaway DB: pytest 305 passed;
+          lint-imports 4 kept / 0 broken (components+approvals added to api-feature-independence);
+          fk 0 violations; alembic 0; ruff check + format clean. Opus spec reviewer: PASS (all AC
+          MET, no regression). Opus quality reviewer: APPROVE (0 critical / 0 major)."
+        commit: 08c4eba
+        at: 2026-06-28T18:45:00+05:30
+    review:
+      first_pass: "spec FAIL (AC2 no multiple-open test; AC4 no five-file-shape test for the two new
+        features); quality FIX REQUIRED (1 MAJOR: composition/app.py imported tests.fakes into
+        production code — a src->tests boundary violation that slipped the gate, no contract forbids it)."
+      fix_commit: 08c4eba   # PO-authorized orchestrator inline fix (incl. the dead-coercion minor)
+      second_pass: "spec PASS; quality APPROVE."
+      retro_candidate: "add a 5th import-linter contract forbidding src -> tests (would have caught the MAJOR mechanically)."
+    blast_radius_resolved: true   # compile pass: architecture-boundary (independence module list),
+                                  # api-five-file-convention, canonical-types-and-ports,
+                                  # persistence-adapters, dev-setup-and-dod re-verified @ 08c4eba.
   - id: STORY-035
     points: 2
-    board: todo
+    board: done
     pipeline: gate         # 2 pts -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "verified at 08c4eba (shared gate run). pytest 305 passed with ZERO deprecation
+          warnings (035.2 AC2 confirmed — StarletteDeprecationWarning cleared). httpx2 (real package,
+          v2.5.0) added to dev extras; resolves cleanly. Engine dispose-on-shutdown via FastAPI
+          lifespan (035.1)."
+        commit: 08c4eba
+        at: 2026-06-28T18:45:00+05:30
+    blast_radius_resolved: true   # dev-setup-and-dod re-verified (pyproject dep change); no Fact change.
 hotfixes: []
 interrupts: []
