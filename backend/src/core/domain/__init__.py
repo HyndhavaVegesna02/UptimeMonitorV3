@@ -11,6 +11,7 @@ from src.core.domain.status import (
     severity_rank,
 )
 from src.core.domain.verdict import Verdict
+from src.core.domain.component import Component
 
 __all__ = [
     "ComponentStatus",
@@ -26,4 +27,5 @@ __all__ = [
     "STATUS_SEVERITY",
     "severity_rank",
     "is_worse",
+    "Component",
 ]
