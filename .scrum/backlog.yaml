@@ -295,3 +295,11 @@ stories:
     priority: 30
     type: chore
     sprint: 12
+  - id: STORY-035
+    title: API minors — dispose the app engine on shutdown + migrate off the deprecated TestClient path
+    file: docs/scrum/stories/STORY-035-api-minors-engine-dispose-testclient.md
+    status: draft   # Sprint 12 retro: bundle the two STORY-014 non-blocking quality minors
+    points: 2
+    priority: 31
+    type: chore
+    sprint: null

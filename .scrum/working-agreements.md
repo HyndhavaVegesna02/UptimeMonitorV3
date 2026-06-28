@@ -242,4 +242,24 @@
   Hand-patching line numbers that will re-drift on the next format is low-value; symbol addresses are the
   durable fix. The articles were marked `stale` (honest/quarantined) rather than mass-patched, and
   rehabbed via STORY-034 under this policy.)
+- 2026-06-28 — **Check-then-act across a port raises a mapped domain error, proven under a forced
+  race.** When a core service performs a check-then-act sequence across a port — verify a precondition
+  with one call (e.g. `get()` confirms a proposal is OPEN), then perform a conditional write
+  (e.g. `resolve(... WHERE state='open')`) — the write side MUST raise a NAMED DOMAIN error (never a
+  bare `ValueError` or a leaked stdlib error) when the conditional write affects 0 rows, because the
+  precondition can change between the check and the act (a concurrent request — TOCTOU). The edge/caller
+  MUST map that domain error to its proper result (e.g. HTTP 409), and a test MUST FORCE the race — a
+  fake whose precondition-check passes the guard but whose write raises — to prove the mapped outcome
+  rather than a 500/unhandled error. The port's fake and its real adapter MUST raise the SAME domain
+  error on that path (this extends the 2026-06-26 fake/adapter-parity agreement to the race path). The
+  plan must call this out for any new mutate endpoint / stateful write. (Motivated by Sprint 12,
+  STORY-014: `PostgresProposalRepository.resolve` raised a bare `ValueError` on a lost-race
+  double-submit — `get()` saw the proposal OPEN, a concurrent approve resolved it, then `resolve()`
+  found `rowcount==0` — and the edge service only caught the two named domain errors, so a concurrent
+  approve returned HTTP 500 instead of 409. A quality-review MAJOR; the guard caught the common case but
+  not the race. Fixed by making both `resolve()` impls raise `ProposalNotOpenError` (mapped to 409) with
+  a forced-race regression test. The five-file convention's own DI-placement lesson from the same story
+  — keep the controller import-clean by putting the DI provider in the feature `service.py` — is
+  captured in the `api-five-file-convention.md` wiki article instead of an agreement, since that article
+  is carried into every future five-file feature's brief.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

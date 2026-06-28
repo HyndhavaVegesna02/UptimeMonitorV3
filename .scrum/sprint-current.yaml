@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 12
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-28
 started: 2026-06-28
 goal: "Open Zone 6 — establish the five-file API convention (dossier §13) and the 4th
   import-linter contract (no horizontal feature imports) via the decision/approve exemplar
