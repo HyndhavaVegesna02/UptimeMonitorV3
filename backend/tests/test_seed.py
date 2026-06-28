@@ -93,7 +93,10 @@ def test_seed_topology_is_idempotent(migrated_db, engine, clean_topology):
     # First seed
     seed_topology(config, engine)
 
-    # Capture state (created_at/updated_at/etc.)
+    # Capture state. We compare id/name/created_at (stable across an idempotent
+    # re-seed) — NOT updated_at, which the ON CONFLICT DO UPDATE path legitimately
+    # bumps to now() every run. Equality of these columns proves no row churn and
+    # no value drift; do not "fix" this to also assert updated_at.
     with psycopg.connect(migrated_db.database_url) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT id, name, created_at FROM apps;")
