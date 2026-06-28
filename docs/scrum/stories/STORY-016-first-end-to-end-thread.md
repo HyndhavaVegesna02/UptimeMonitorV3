@@ -27,9 +27,28 @@ real services.
       observed end to end.
 - [ ] AC3: The thread runs against deployed/integrated components (not just unit mocks).
 
+## Credentials & setup (captured 2026-06-28 — PO has Dynatrace ready)
+The PO has a Dynatrace tenant with **one synthetic monitor** set up. Prerequisite (likely a small
+sub-story, "real Dynatrace Executor"): the production `Executor` is NOT built yet — today
+`adapters/inbound/dynatrace/query.py::Executor` is just a `Callable[[str], list[dict]]` seam injected
+with a fake in every test ("production wiring will inject a real HTTP-backed implementation"). The
+backend reads ZERO Dynatrace credentials today; `composition/settings.py` only knows `DATABASE_URL`.
+When the real Executor is built it needs:
+- **`DYNATRACE_ENV_URL`** (secret, env) — the tenant base URL (e.g. `https://<id>.apps.dynatrace.com`);
+  the Grail DQL execute endpoint lives under `…/platform/storage/query/v1/query:execute`.
+- **`DYNATRACE_API_TOKEN`** (secret, env) — a platform token with the Grail **synthetic-read** scope
+  (confirm the exact current scope name against Dynatrace docs before minting; do not over-scope).
+- The **monitor id** is CONFIG, not a secret — it goes in `config/apps/<app>.yaml` as the signal's
+  `native_id` (dossier §7: config holds the mapping, env holds secrets; config references env var
+  NAMES never values). Statuspage publish creds are the analogous pair for the publish side.
+Secrets go in the environment / a gitignored `.env`, never committed and never pasted into the
+transcript. Env-var names are finalized when the Executor + `settings.py` entry are written.
+
 ## Open Questions
 - Confirm which monitor/route is the headline thread and the live-credential plan at
   refinement (this is the first story needing live Dynatrace + Statuspage).
+- Build the "real Dynatrace Executor" (HTTP DQL client + settings + recorded-fixture test) as a
+  sub-story before/within this one? (It is the concrete piece the live thread needs.)
 
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §17. Status: draft — refine before its sprint.
