@@ -16,6 +16,7 @@ from src.core.ports.rejected_observation_repository import (
 from src.core.ports.signal_ingest import SignalIngestPort
 from src.core.ports.status_publisher import StatusPublisherPort
 from src.core.ports.watermark import WatermarkRepository
+from src.core.ports.component_repository import ComponentRepository
 
 __all__ = [
     "ClockPort",
@@ -25,4 +26,5 @@ __all__ = [
     "StatusPublisherPort",
     "WatermarkRepository",
     "ProposalRepository",
+    "ComponentRepository",
 ]

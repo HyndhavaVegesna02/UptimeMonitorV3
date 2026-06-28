@@ -10,7 +10,7 @@ inject in place of a real adapter.
 from collections.abc import Sequence
 from datetime import datetime
 
-from src.core.domain import IngestResult, SignalObservation, StatusChange
+from src.core.domain import IngestResult, SignalObservation, StatusChange, Component
 from src.core.domain.proposal import (
     ProposalNotOpenError,
     ProposalState,
@@ -23,6 +23,7 @@ from src.core.ports import (
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
+    ComponentRepository,
 )
 
 
@@ -175,3 +176,14 @@ class FakeProposalRepository(ProposalRepository):
 
     def get(self, proposal_id: int) -> StatusProposal | None:
         return self.proposals.get(proposal_id)
+
+
+class FakeComponentRepository(ComponentRepository):
+    """An in-memory component repository for testing."""
+
+    def __init__(self, components: list[Component] | None = None) -> None:
+        self._components = list(components) if components is not None else []
+
+    def list_components(self) -> list[Component]:
+        return self._components
+

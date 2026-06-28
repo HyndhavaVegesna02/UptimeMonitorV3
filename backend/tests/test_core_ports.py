@@ -341,3 +341,26 @@ def test_fake_proposal_repository_get():
     assert retrieved is not None
     assert retrieved.id == saved.id
     assert retrieved.component_id == "checkout"
+
+
+def test_component_repository_port_is_abstract():
+    from src.core.ports.component_repository import ComponentRepository
+    with pytest.raises(TypeError):
+        ComponentRepository()  # type: ignore[abstract]
+
+
+def test_fake_component_repository_list():
+    from fakes import FakeComponentRepository
+    from src.core.domain.component import Component
+    from src.core.domain.status import ComponentStatus
+
+    repo = FakeComponentRepository()
+    # Empty case returns []
+    assert repo.list_components() == []
+
+    # Injected components case
+    comp1 = Component(id="c1", name="Comp 1", status=ComponentStatus.OPERATIONAL, app_id="app-1")
+    comp2 = Component(id="c2", name="Comp 2", status=ComponentStatus.DEGRADED, app_id="app-1")
+    repo = FakeComponentRepository(components=[comp1, comp2])
+    assert repo.list_components() == [comp1, comp2]
+
