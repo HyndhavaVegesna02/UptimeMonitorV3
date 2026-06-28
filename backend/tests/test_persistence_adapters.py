@@ -751,3 +751,101 @@ def test_postgres_proposal_repository_list_open(migrated_db, engine):
 
     # Empty case again because the proposal is terminal
     assert repo.list_open() == []
+
+
+def test_postgres_maintenance_repository(migrated_db, engine):
+    from src.adapters.persistence.maintenance_repository import (
+        PostgresMaintenanceRepository,
+    )
+    from src.core.domain.maintenance import MaintenanceWindow
+
+    # Clear tables for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    repo = PostgresMaintenanceRepository(engine)
+
+    # Empty case parity
+    assert repo.list_windows() == []
+    at_time = datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc)
+    assert repo.is_under_maintenance("checkout", at_time) is False
+
+    # Seed component
+    seed_component(migrated_db.database_url, "checkout", "app-1")
+
+    # Create window
+    w1 = MaintenanceWindow(
+        component_id="checkout",
+        starts_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+        ends_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+        reason="Update 1",
+    )
+    saved1 = repo.create(w1)
+    assert saved1.id is not None
+    assert saved1.component_id == "checkout"
+    assert saved1.reason == "Update 1"
+
+    # Create another window, starts earlier so we test ordering
+    w2 = MaintenanceWindow(
+        component_id="checkout",
+        starts_at=datetime(2026, 6, 28, 10, 0, 0, tzinfo=timezone.utc),
+        ends_at=datetime(2026, 6, 28, 11, 0, 0, tzinfo=timezone.utc),
+        reason="Update 2",
+    )
+    saved2 = repo.create(w2)
+    assert saved2.id is not None
+
+    # list_windows returns all ordered by starts_at
+    windows = repo.list_windows()
+    assert len(windows) == 2
+    assert windows[0].id == saved2.id
+    assert windows[1].id == saved1.id
+
+    # Test is_under_maintenance boundaries (inclusive start / exclusive end)
+    # 1. Exact start of w1 (inclusive)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc)
+        )
+        is True
+    )
+    # 2. Inside w1
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 13, 0, 0, tzinfo=timezone.utc)
+        )
+        is True
+    )
+    # 3. Exact end of w1 (exclusive)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+    # 4. Outside w1 (before)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 11, 30, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+    # 5. Outside w1 (after)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 15, 0, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+
+    # Test different component_id
+    assert (
+        repo.is_under_maintenance(
+            "other-component",
+            datetime(2026, 6, 28, 12, 30, 0, tzinfo=timezone.utc),
+        )
+        is False
+    )
+
