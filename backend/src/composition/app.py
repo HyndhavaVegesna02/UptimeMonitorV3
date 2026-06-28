@@ -6,6 +6,7 @@ from src.core.ports import (
     ClockPort,
     ComponentRepository,
     MaintenanceRepository,
+    ObservationRepository,
     ProposalRepository,
 )
 
@@ -25,6 +26,7 @@ def create_app(
     proposal_repo: ProposalRepository | None = None,
     component_repo: ComponentRepository | None = None,
     maintenance_repo: MaintenanceRepository | None = None,
+    observation_repo: ObservationRepository | None = None,
     clock: ClockPort | None = None,
 ) -> FastAPI:
     """Create and wire the FastAPI application (composition root).
@@ -43,6 +45,9 @@ def create_app(
         from src.adapters.persistence.maintenance_repository import (
             PostgresMaintenanceRepository,
         )
+        from src.adapters.persistence.observation_repository import (
+            PostgresObservationRepository,
+        )
         from src.adapters.persistence.proposal_repository import (
             PostgresProposalRepository,
         )
@@ -55,12 +60,15 @@ def create_app(
             component_repo = PostgresComponentRepository(engine)
         if maintenance_repo is None:
             maintenance_repo = PostgresMaintenanceRepository(engine)
+        if observation_repo is None:
+            observation_repo = PostgresObservationRepository(engine)
         app.state.db_engine = engine
     else:
-        # Repos were injected (e.g. fakes in tests). Leave component_repo and
-        # maintenance_repo as-passed — possibly None — symmetric with
-        # proposal_repo. Production code never imports the tests package;
-        # callers that exercise /components or /maintenance inject them explicitly.
+        # Repos were injected (e.g. fakes in tests). Leave component_repo,
+        # maintenance_repo, and observation_repo as-passed — possibly None —
+        # symmetric with proposal_repo. Production code never imports the tests
+        # package; callers that exercise /components, /maintenance,
+        # /availability, or /history inject them explicitly.
         app.state.db_engine = None
 
     # Wire clock
@@ -78,6 +86,7 @@ def create_app(
     app.state.proposal_repo = proposal_repo
     app.state.component_repo = component_repo
     app.state.maintenance_repo = maintenance_repo
+    app.state.observation_repo = observation_repo
     app.state.clock = clock
     app.state.approval_service = approval_service
 

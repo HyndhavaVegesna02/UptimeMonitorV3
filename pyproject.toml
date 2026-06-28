@@ -62,6 +62,8 @@ modules = [
     "src.api.v1.components",
     "src.api.v1.approvals",
     "src.api.v1.maintenance",
+    "src.api.v1.availability",
+    "src.api.v1.history",
 ]
 
 [[tool.importlinter.contracts]]

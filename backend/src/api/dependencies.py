@@ -1,8 +1,10 @@
 from fastapi import Request
 
 from src.core.ports import (
+    ClockPort,
     ComponentRepository,
     MaintenanceRepository,
+    ObservationRepository,
     ProposalRepository,
 )
 from src.core.services.approval import ApprovalService
@@ -26,3 +28,13 @@ def get_proposal_repo(request: Request) -> ProposalRepository:
 def get_maintenance_repo(request: Request) -> MaintenanceRepository:
     """FastAPI dependency to retrieve the MaintenanceRepository from app state."""
     return request.app.state.maintenance_repo
+
+
+def get_observation_repo(request: Request) -> ObservationRepository:
+    """FastAPI dependency to retrieve the ObservationRepository from app state."""
+    return request.app.state.observation_repo
+
+
+def get_clock(request: Request) -> ClockPort:
+    """FastAPI dependency to retrieve the ClockPort from app state."""
+    return request.app.state.clock
