@@ -343,6 +343,43 @@ def test_fake_proposal_repository_get():
     assert retrieved.component_id == "checkout"
 
 
+def test_fake_proposal_repository_list_open():
+    from datetime import timezone
+
+    from fakes import FakeProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.domain.status import ComponentStatus
+
+    repo = FakeProposalRepository()
+    # Empty case returns []
+    assert repo.list_open() == []
+
+    prop1 = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved1 = repo.create_open(prop1)
+    assert saved1 is not None
+
+    # Retrieve when one open proposal exists
+    assert repo.list_open() == [saved1]
+
+    # Resolve proposal (move to terminal APPROVED state)
+    repo.resolve(
+        saved1.id,
+        to_state=ProposalState.APPROVED,
+        reason="Approved",
+        resolved_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+    )
+
+    # Empty case again because the proposal is terminal
+    assert repo.list_open() == []
+
+
+
 def test_component_repository_port_is_abstract():
     from src.core.ports.component_repository import ComponentRepository
     with pytest.raises(TypeError):

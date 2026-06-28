@@ -177,6 +177,12 @@ class FakeProposalRepository(ProposalRepository):
     def get(self, proposal_id: int) -> StatusProposal | None:
         return self.proposals.get(proposal_id)
 
+    def list_open(self) -> list[StatusProposal]:
+        return [
+            p for p in self.proposals.values() if p.state == ProposalState.OPEN
+        ]
+
+
 
 class FakeComponentRepository(ComponentRepository):
     """An in-memory component repository for testing."""

@@ -53,3 +53,13 @@ class ProposalRepository(ABC):
     def get(self, proposal_id: int) -> StatusProposal | None:
         """Return the proposal with this id, or None if none exists."""
         raise NotImplementedError
+
+    @abstractmethod
+    def list_open(self) -> list[StatusProposal]:
+        """Retrieve all OPEN status proposals from the repository.
+
+        Returns:
+            list[StatusProposal]: A list of all open proposals. Returns `[]` if none exist.
+        """
+        raise NotImplementedError
+
