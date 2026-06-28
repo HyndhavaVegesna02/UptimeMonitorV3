@@ -1,6 +1,10 @@
 from fastapi import Request
 
-from src.core.ports import ComponentRepository, ProposalRepository
+from src.core.ports import (
+    ComponentRepository,
+    MaintenanceRepository,
+    ProposalRepository,
+)
 from src.core.services.approval import ApprovalService
 
 
@@ -17,3 +21,9 @@ def get_component_repo(request: Request) -> ComponentRepository:
 def get_proposal_repo(request: Request) -> ProposalRepository:
     """FastAPI dependency to retrieve the ProposalRepository from app state."""
     return request.app.state.proposal_repo
+
+
+def get_maintenance_repo(request: Request) -> MaintenanceRepository:
+    """FastAPI dependency to retrieve the MaintenanceRepository from app state."""
+    return request.app.state.maintenance_repo
+
