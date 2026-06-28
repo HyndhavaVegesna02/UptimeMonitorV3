@@ -54,3 +54,50 @@ def load_settings() -> Settings:
         database_url=os.environ[APP_DATABASE_URL_VAR],
         config_dir=os.environ.get("CONFIG_DIR", "config/apps"),
     )
+
+
+class MissingLiveSecretError(ValueError):
+    """Raised when one or more required live loop secrets are missing from the environment (dossier §17)."""
+
+
+@dataclass(frozen=True)
+class LiveSecrets:
+    """Immutable live secrets resolved from the environment (dossier §17)."""
+
+    dynatrace_env_url: str
+    dynatrace_api_token: str
+    statuspage_page_id: str
+    statuspage_api_token: str
+
+
+def load_live_secrets() -> LiveSecrets:
+    """Load live secrets from the environment (dossier §17).
+
+    Reads DYNATRACE_ENV_URL, DYNATRACE_API_TOKEN, STATUSPAGE_PAGE_ID, STATUSPAGE_API_KEY.
+    Raises MissingLiveSecretError if any are missing.
+    """
+    missing = []
+    env_url = os.environ.get("DYNATRACE_ENV_URL")
+    if not env_url:
+        missing.append("DYNATRACE_ENV_URL")
+    dt_token = os.environ.get("DYNATRACE_API_TOKEN")
+    if not dt_token:
+        missing.append("DYNATRACE_API_TOKEN")
+    page_id = os.environ.get("STATUSPAGE_PAGE_ID")
+    if not page_id:
+        missing.append("STATUSPAGE_PAGE_ID")
+    sp_token = os.environ.get("STATUSPAGE_API_KEY")
+    if not sp_token:
+        missing.append("STATUSPAGE_API_KEY")
+
+    if missing:
+        raise MissingLiveSecretError(
+            f"Missing required live secrets: {', '.join(missing)}"
+        )
+
+    return LiveSecrets(
+        dynatrace_env_url=env_url,
+        dynatrace_api_token=dt_token,
+        statuspage_page_id=page_id,
+        statuspage_api_token=sp_token,
+    )

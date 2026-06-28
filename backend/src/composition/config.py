@@ -69,6 +69,9 @@ class ComponentConfig(BaseModel):
     name: str
     """Human-readable display name."""
 
+    statuspage_component_id: str | None = None
+    """Statuspage component ID (optional mapping, dossier §6)."""
+
 
 class SignalConfig(BaseModel):
     """A single signal (native monitor) declared in an app's config file (dossier §7).
@@ -282,6 +285,18 @@ class Config:
                 f"Signal key {signal_key!r} is not registered in any loaded app config. "
                 "Check config/apps/*.yaml for the correct signal_key."
             ) from None
+
+    def statuspage_mapping(self) -> dict[str, str]:
+        """Return a mapping of internal component IDs to Statuspage component IDs (dossier §6).
+
+        Only includes components that declare a non-None ``statuspage_component_id``.
+        """
+        mapping = {}
+        for app in self.apps:
+            for comp in app.components:
+                if comp.statuspage_component_id is not None:
+                    mapping[comp.id] = comp.statuspage_component_id
+        return mapping
 
 
 def load_config(config_dir: str | Path) -> Config:

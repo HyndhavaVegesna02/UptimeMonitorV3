@@ -426,3 +426,31 @@ class TestSignalConfigIntervalSeconds:
             assert sig.interval_seconds > 0, (
                 f"Signal {sig.signal_key!r} missing interval_seconds in httpcheck.yaml"
             )
+
+    def test_config_statuspage_mapping(self):
+        """Verify that statuspage_mapping returns a dict of id to statuspage_component_id, skipping None."""
+        apps = [
+            AppConfig(
+                id="app-1",
+                name="App 1",
+                monitor_provider="dynatrace",
+                components=[
+                    ComponentConfig(
+                        id="comp-1", name="Comp 1", statuspage_component_id="sp-1"
+                    ),
+                    ComponentConfig(
+                        id="comp-2", name="Comp 2", statuspage_component_id=None
+                    ),
+                ],
+                signals=[],
+            )
+        ]
+        cfg = Config(apps)
+        assert cfg.statuspage_mapping() == {"comp-1": "sp-1"}
+
+    def test_real_httpcheck_yaml_has_statuspage_mapping(self):
+        """The real config/apps/httpcheck.yaml maps components to statuspage component IDs."""
+        repo_root = Path(__file__).parent.parent.parent
+        cfg = load_config(repo_root / "config" / "apps")
+        mapping = cfg.statuspage_mapping()
+        assert mapping == {"http-check": "xdnywbx77npw"}
