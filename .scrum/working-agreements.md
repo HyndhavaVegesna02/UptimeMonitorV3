@@ -348,4 +348,15 @@
   minor-fix commits, then did the compile pass + board + review.md on main afterward — so main briefly
   carried a wiki stale against the merge HEAD. No lasting harm (re-verified same session), but the
   order is now explicit so it cannot recur.)
+- 2026-06-29 — **The DoD gate counts only on a CLEAN, committed tree — committed HEAD must BE the
+  gate-green state.** A gate run against a working tree with uncommitted changes does not count: the
+  implementer leaves the tree clean (every change committed) when reporting green, and the orchestrator
+  runs the six-command gate only after `git status` shows no uncommitted changes — committing or
+  discarding any leftover FIRST (preserve a coherent leftover, e.g. a format fix; discard a scrap). The
+  evidence recorded in `sprint-current.yaml` is the gate result at a specific committed SHA, so that SHA
+  must reproduce it. (Motivated by Sprint 19, STORY-037: the implementer ran `ruff format` but left the
+  reflow UNCOMMITTED, so the committed HEAD would have failed `ruff format --check` — only the dirty
+  working tree passed, and the implementer's "ruff clean" report was true only for the uncommitted
+  state. The orchestrator's tree inspection caught it and committed the fix. A variant of Sprint 14's
+  "implementer green ≠ committed-tree green"; this makes the clean-tree requirement explicit.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
