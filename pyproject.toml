@@ -61,6 +61,7 @@ modules = [
     "src.api.v1.health",
     "src.api.v1.components",
     "src.api.v1.approvals",
+    "src.api.v1.maintenance",
 ]
 
 [[tool.importlinter.contracts]]
