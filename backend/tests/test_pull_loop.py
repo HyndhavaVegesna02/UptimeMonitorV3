@@ -361,3 +361,105 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
     open_proposals = proposal_repo.list_open()
     assert len(open_proposals) == 1
     assert open_proposals[0].component_id == component_id
+
+
+def test_run_periodic_with_orchestration_passes_extras():
+    """Verify that run_periodic accepts all six orchestration extras, passes them to run_cycle,
+    and returns (IngestResult, DecideAction) to on_cycle (STORY-016 T4).
+    """
+    from datetime import datetime, timezone
+
+    from fakes import (
+        FakeClock,
+        FakeComponentRepository,
+        FakeMaintenanceRepository,
+        FakeObservationRepository,
+        FakeProposalRepository,
+        RecordingStatusPublisher,
+    )
+    from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+    from src.composition.pull_loop import run_periodic
+    from src.core.domain import Component, ComponentStatus
+    from src.core.services.decide import DecideAction, DecideService
+    from src.core.services.pipeline import AntiFlapThresholds
+
+    signal_key = "checkout-http"
+    native_id = "HTTP_CHECK-1"
+    component_id = "checkout"
+    now_ts = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+
+    # Config setup
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout")
+    sig_cfg = SignalConfig(
+        signal_key=signal_key,
+        native_id=native_id,
+        name="Checkout Link",
+        component_id=component_id,
+        interval_seconds=60,
+    )
+    app_cfg = AppConfig(
+        id="sockshop",
+        name="Sock Shop",
+        monitor_provider="dynatrace",
+        components=[comp_cfg],
+        signals=[sig_cfg],
+        thresholds=AntiFlapThresholds(major=3, partial=2, degraded=1, recovery=1),
+    )
+    config = Config([app_cfg])
+
+    # Fakes
+    watermark_repo = FakeWatermarkRepository()
+    obs_repo = FakeObservationRepository()
+    ingest_port = RecordingIngestPort()
+
+    def fake_executor(query: str) -> list[dict]:
+        return []
+
+    comp = Component(
+        id=component_id,
+        name="Checkout",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="sockshop",
+    )
+    component_repo = FakeComponentRepository(components=[comp])
+    maintenance_repo = FakeMaintenanceRepository()
+    proposal_repo = FakeProposalRepository()
+    publisher = RecordingStatusPublisher()
+    clock = FakeClock(now_ts)
+    decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    called_results = []
+
+    async def run_under_asyncio():
+        stop_event = asyncio.Event()
+
+        async def on_cycle(res):
+            called_results.append(res)
+            stop_event.set()
+
+        await run_periodic(
+            signal_key=signal_key,
+            native_id=native_id,
+            watermark_repo=watermark_repo,
+            ingest_port=ingest_port,
+            executor=fake_executor,
+            interval_seconds=0.01,
+            stop_event=stop_event,
+            on_cycle=on_cycle,
+            # Orchestration extras
+            config=config,
+            observation_repo=obs_repo,
+            maintenance_repo=maintenance_repo,
+            component_repo=component_repo,
+            decide_service=decide_service,
+            clock=clock,
+        )
+
+    asyncio.run(asyncio.wait_for(run_under_asyncio(), timeout=5))
+
+    assert len(called_results) == 1
+    # Verify that the result is a tuple (IngestResult, DecideAction)
+    res = called_results[0]
+    assert isinstance(res, tuple)
+    assert isinstance(res[0], IngestResult)
+    assert res[1] == DecideAction.NOOP

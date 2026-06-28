@@ -128,17 +128,25 @@ async def run_periodic(
     interval_seconds: float,
     overlap: timedelta = DEFAULT_OVERLAP,
     stop_event: asyncio.Event | None = None,
-    on_cycle: Callable[[IngestResult], Awaitable[None]] | None = None,
+    on_cycle: Callable[
+        [IngestResult | tuple[IngestResult, DecideAction]], Awaitable[None]
+    ]
+    | None = None,
+    config: Config | None = None,
+    observation_repo: ObservationRepository | None = None,
+    maintenance_repo: MaintenanceRepository | None = None,
+    component_repo: ComponentRepository | None = None,
+    decide_service: DecideService | None = None,
+    clock: ClockPort | None = None,
 ) -> None:
-    """Drive `run_cycle` on a plain `asyncio` periodic loop.
+    """Drive `run_cycle` on a plain `asyncio` periodic loop (dossier §8).
 
     `while True: run_cycle(); await asyncio.sleep(interval)` is the whole
     shape (dossier §8: "... -> commit -> sleep"); `stop_event` lets a test (or
     a future graceful-shutdown hook) end the loop deterministically instead of
     running forever, and `on_cycle` is an optional hook invoked with each
-    cycle's `IngestResult` (e.g. for tests to observe progress, or later for
-    logging/metrics) — neither parameter carries domain logic, they only
-    control the loop's own lifecycle.
+    cycle's result (e.g. for tests to observe progress, or later for
+    logging/metrics).
     """
     while stop_event is None or not stop_event.is_set():
         result = run_cycle(
@@ -148,6 +156,12 @@ async def run_periodic(
             ingest_port=ingest_port,
             executor=executor,
             overlap=overlap,
+            config=config,
+            observation_repo=observation_repo,
+            maintenance_repo=maintenance_repo,
+            component_repo=component_repo,
+            decide_service=decide_service,
+            clock=clock,
         )
         if on_cycle is not None:
             await on_cycle(result)
