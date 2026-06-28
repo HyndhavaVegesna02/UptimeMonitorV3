@@ -21,7 +21,7 @@ class ApprovalsService:
         proposals = self._proposal_repo.list_open()
         return [
             ProposalDTO(
-                id=p.id if p.id is not None else 0,
+                id=p.id,
                 component_id=p.component_id,
                 from_status=p.from_status.value if p.from_status is not None else None,
                 to_status=p.to_status.value,

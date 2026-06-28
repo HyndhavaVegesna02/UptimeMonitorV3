@@ -34,3 +34,20 @@ def test_get_components_populated():
     assert len(data) == 2
     assert data[0] == {"id": "c1", "name": "Comp 1", "status": "operational"}
     assert data[1] == {"id": "c2", "name": "Comp 2", "status": "degraded"}
+
+
+def test_components_module_five_file_shape():
+    # AC4: the feature follows the five-file convention exactly.
+    from pathlib import Path
+
+    from src.api.v1 import components
+
+    pkg_dir = Path(components.__file__).parent
+    py_files = {p.name for p in pkg_dir.glob("*.py")}
+    assert py_files == {
+        "__init__.py",
+        "controller.py",
+        "models.py",
+        "validation.py",
+        "service.py",
+    }

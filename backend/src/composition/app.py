@@ -46,11 +46,11 @@ def create_app(
             component_repo = PostgresComponentRepository(engine)
         app.state.db_engine = engine
     else:
+        # Repos were injected (e.g. fakes in tests). Leave component_repo as
+        # passed — possibly None — symmetric with proposal_repo. Production code
+        # never imports the tests package; callers that exercise /components
+        # inject a component_repo explicitly.
         app.state.db_engine = None
-        if component_repo is None:
-            from tests.fakes import FakeComponentRepository
-
-            component_repo = FakeComponentRepository()
 
     # Wire clock
     if clock is None:
