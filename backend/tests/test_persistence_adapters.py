@@ -658,3 +658,47 @@ def test_postgres_proposal_repository_get(migrated_db, engine):
     assert fetched.state == ProposalState.OPEN
     assert fetched.proposed_at == datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc)
     assert fetched.resolved_at is None
+
+
+def test_postgres_component_repository_list_components(migrated_db, engine):
+    from src.adapters.persistence.component_repository import PostgresComponentRepository
+    from src.core.domain.status import ComponentStatus
+
+    # Clear components table for isolation in this test
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    repo = PostgresComponentRepository(engine)
+    # Empty case
+    assert repo.list_components() == []
+
+    # Seed some components
+    seed_component(migrated_db.database_url, "comp-a", "app-a")
+    seed_component(migrated_db.database_url, "comp-b", "app-a")
+
+    # Update status of one component to degraded to verify status mapping
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "UPDATE components SET status = 'degraded' WHERE id = 'comp-b';"
+            )
+        conn.commit()
+
+    components = repo.list_components()
+    assert len(components) == 2
+
+    # Sort by ID to assert safely
+    components_sorted = sorted(components, key=lambda c: c.id)
+
+    assert components_sorted[0].id == "comp-a"
+    assert components_sorted[0].name == "comp-a"
+    assert components_sorted[0].status == ComponentStatus.OPERATIONAL
+    assert components_sorted[0].app_id == "app-a"
+
+    assert components_sorted[1].id == "comp-b"
+    assert components_sorted[1].name == "comp-b"
+    assert components_sorted[1].status == ComponentStatus.DEGRADED
+    assert components_sorted[1].app_id == "app-a"
+
