@@ -1,76 +1,43 @@
 # YourTeam active sprint board.
-sprint: 15
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-28
+sprint: 16
+status: active        # none | active | review | closed | aborted
 started: 2026-06-28
-goal: "Finish the ready backend — per-signal Availability + Check History read endpoints
-  (GET /api/v1/availability, GET /api/v1/history; reuse AvailabilityCalculator + ObservationRepository)
-  completing the Zone 6 read API — and make the DB-gated test suite robust on a reused DB. Order:
-  STORY-014c (3) FIRST, then STORY-039 (2). Committed 5 pts (deliberate slight under-commit vs the
-  6.67 mean: these are the two ready backend stories; the config/orchestration arc needs refinement
-  for Sprint 16)."
-branch: sprint-15
-start_tag: sprint-15-start
-# Capacity: velocity last-3 (sprints 12,13,14) = 7,7,6 -> mean 6.67. Committed 5 (014c 3 + 039 2).
+goal: "Build the config layer (dossier §7 Option C) — config/apps/*.yaml + a fail-fast
+  loader/validator + in-memory resolvers (signal_key->component_id, component->AntiFlapThresholds) —
+  the prerequisite that unblocks the pipeline orchestration (STORY-016a). Pure composition-zone code,
+  no DB, no migration. Single-story sprint (5 pts) by design: gnarliest unbuilt area, full reviewer
+  scrutiny."
+branch: sprint-16
+start_tag: sprint-16-start
+# Capacity: velocity last-3 (sprints 13,14,15) = 7,6,5 -> mean 6.0. Committed 5 (STORY-040a). A
+# deliberate single-story sprint (new config subsystem + format design; focused 5 over a padded mix).
 #
-# WORKFLOW (working-agreements.md 2026-06-26): PO implements externally; orchestrator does NOT
-# dispatch implementers. NOTE: the PO's external (Antigravity/Gemini) quota may be constrained (it ran
-# out mid-Sprint 14) — if so, the orchestrator finishes via a Sonnet implementer subagent
-# (implementer-on-Sonnet, 2026-06-24). PO triggers the back half ("do your review"); orchestrator then
-# diffs sprint-15-start..HEAD, runs the FULL six-command gate, runs Opus spec + quality reviewers for
-# STORY-014c (3+ pts), resolves the wiki blast-radius, then review/verdict/merge/retro.
+# WORKFLOW (working-agreements.md 2026-06-26): PO implements externally OR (PO quota permitting) the
+# orchestrator finishes via a Sonnet implementer subagent (as in sprints 14/15). PO triggers the back
+# half ("do your review"); orchestrator diffs sprint-16-start..HEAD, runs the FULL six-command gate,
+# runs Opus spec + quality reviewers (STORY-040a is 5 pts -> reviewers), resolves wiki blast-radius,
+# then review/verdict/merge/retro. plan.md is the ONLY contract -> self-contained.
 #
-# PIPELINE: STORY-014c (3) -> GATE + Opus spec & quality reviewers. STORY-039 (2) -> GATE ONLY.
+# PIPELINE: STORY-040a (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
 #
-# NO DoD-COMMAND CHANGE: 014c adds `availability`+`history` to the EXISTING api-feature-independence
-# contract module list (count stays 5 -> no command-sync). No new migration (014c reuses existing
-# repos; 039 is test/fixture-only). The 2026-06-28 TOCTOU agreement is N/A (014c is pure reads).
+# DEPENDENCY ADD: STORY-040a adds `pyyaml` to [project.dependencies] (config loads at boot) -> a
+# planning-sanctioned dependency change. Not a DoD-command change (no command-sync). NO migration, NO
+# new import-linter contract (config loader lives in composition, which may import core).
 #
-# Baseline at lock: tree clean on main @ 37c7dd5 -> refined onto branch @ b665c6b. Cheap gates green
-# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-14 review (25a7590)
-# with no src/ change since. Conventions checklist (2026-06-27), five-file-shape-test (2026-06-28),
-# and edge-DTO-id-mapping (2026-06-28) agreements apply; see plan.md per-story.
+# Baseline at lock: tree clean on main @ d1beb8f -> refined onto branch @ c797bb3. Cheap gates green
+# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-15 review (8305d4d)
+# with no src/ change since. Conventions checklist (2026-06-27), frozen-type-invariant (2026-06-26),
+# named-error-on-unknown (2026-06-25), and tz-aware-param (2026-06-28, N/A here — no datetime params)
+# agreements apply; see plan.md.
 stories:
-  - id: STORY-014c
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 3 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
-    blocked_question: null
-    attempts: 0            # implemented by a Sonnet subagent (PO quota out); one orchestrator
-                          # inline fix-loop closed the quality CRITICAL.
-    paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 8305d4d with throwaway DB: pytest 331 passed;
-          lint-imports 5/0; fk 0; alembic 0; ruff clean. Opus spec reviewer: PASS (all 5 AC, no
-          regression). Opus quality reviewer: APPROVE (0 critical / 0 major after fix)."
-        commit: 8305d4d
-        at: 2026-06-28T22:15:00+05:30
-    review:
-      first_pass: "spec PASS; quality FIX REQUIRED (1 CRITICAL: naive since/until -> HTTP 500 instead
-        of 422 — validators checked parseability but not tz-awareness)."
-      fix_commit: 8305d4d   # orchestrator inline: mirror maintenance validator (tzinfo None -> 422) +
-                            # regression tests; minors (datetime import hoist, lambda->def).
-      second_pass: "spec PASS (no regression); quality APPROVE."
-    blast_radius_resolved: true   # api-five-file-convention, dev-setup-and-dod, migrations-and-db,
-                                  # persistence-adapters re-verified @ 8305d4d (incl. STORY-039 truncate-isolation Fact).
-  - id: STORY-039
-    points: 2
-    board: done
-    pipeline: gate         # 2 pts -> (Sonnet impl) + DoD gate only
+  - id: STORY-040a
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands + two-run reused-DB proof"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 8305d4d: full suite ran TWICE against the same
-          un-torn-down container -> 331 passed BOTH runs (the AC1 reused-DB property). Fix is a
-          function-scoped clean_runtime_tables truncate fixture in conftest.py (no production src/
-          change). lint-imports 5/0; ruff clean."
-        commit: aca44e3
-        at: 2026-06-28T22:15:00+05:30
-    blast_radius_resolved: true   # dev-setup-and-dod + persistence-adapters Facts updated for the truncate fixture.
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
