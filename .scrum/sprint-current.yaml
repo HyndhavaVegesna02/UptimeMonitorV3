@@ -31,12 +31,32 @@ start_tag: sprint-19-start
 stories:
   - id: STORY-037
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # Sonnet impl; both reviewers passed FIRST pass; orchestrator committed one
+                          # leftover ruff-format fix the implementer left uncommitted.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at b80552d (committed tree): pytest 404 passed;
+          lint-imports 5/0 (publications joined api-feature-independence; no new contract); fk 11/0;
+          alembic no-op (no migration — publications table exists); ruff check + format clean. Opus
+          spec reviewer: PASS (all 4 AC, each test traced to its named path). Opus quality reviewer:
+          APPROVE (0 critical / 0 major; RecordingPublisher semantics correct, parity, DB-isolation
+          confirmed on a reused DB)."
+        commit: b80552d
+        at: 2026-06-29T06:30:00+05:30
+    review:
+      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop)."
+      open_minors:          # non-blocking, reviewers said 'leave it'
+        - "publication_repository.py: assert row is not None (stripped under -O; mirrors sibling adapters)."
+        - "app.py: lazy import of PostgresPublicationRepository (matches the file's DB-branch convention)."
+      note: "the implementer left a ruff-format import-wrap uncommitted (committed HEAD would have
+        failed ruff format --check); the orchestrator committed it (b80552d) so the committed tree is
+        genuinely gate-green."
+    blast_radius_resolved: true   # compile pass @ b80552d: architecture-boundary (+publications module),
+                                  # api-five-file-convention, statuspage-publish, config-layer, dev-setup-and-dod re-verified. All current.
 hotfixes: []
 interrupts: []
