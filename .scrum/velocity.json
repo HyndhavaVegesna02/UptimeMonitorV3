@@ -14,6 +14,7 @@
     {"sprint": 11, "committed": 4, "accepted": 4},
     {"sprint": 12, "committed": 7, "accepted": 7},
     {"sprint": 13, "committed": 7, "accepted": 7},
-    {"sprint": 14, "committed": 6, "accepted": 6}
+    {"sprint": 14, "committed": 6, "accepted": 6},
+    {"sprint": 15, "committed": 5, "accepted": 5}
   ]
 }

@@ -159,11 +159,11 @@ stories:
   - id: STORY-014c
     title: API read endpoints — Availability + Check History
     file: docs/scrum/stories/STORY-014c-api-read-endpoints-availability-history.md
-    status: ready   # refined 2026-06-28 (Sprint 15): per-signal Availability + Check History
+    status: done    # accepted at Sprint 15 review (2026-06-28)
     points: 3
     priority: 15
     type: feature
-    sprint: null
+    sprint: 15
   - id: STORY-036
     title: Maintenance feature module — schedule + window state for the Maintenance tab
     file: docs/scrum/stories/STORY-036-maintenance-feature-module.md
@@ -355,8 +355,8 @@ stories:
   - id: STORY-039
     title: Isolate DB-gated tests so the suite is order/state-independent on a reused DB
     file: docs/scrum/stories/STORY-039-db-test-isolation.md
-    status: ready   # refined 2026-06-28 (Sprint 15): approach = implementer's choice vs AC1 bar
+    status: done    # accepted at Sprint 15 review (2026-06-28)
     points: 2
     priority: 33
     type: chore
-    sprint: null
+    sprint: 15
