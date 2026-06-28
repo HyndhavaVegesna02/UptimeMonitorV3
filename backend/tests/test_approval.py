@@ -1,13 +1,14 @@
 from datetime import datetime, timezone
+
 import pytest
-from tests.fakes import FakeClock, FakeProposalRepository
-from src.core.domain.status import ComponentStatus
 from src.core.domain.proposal import ProposalState, StatusProposal
+from src.core.domain.status import ComponentStatus
 from src.core.services.approval import (
     ApprovalService,
     ProposalNotFoundError,
     ProposalNotOpenError,
 )
+from tests.fakes import FakeClock, FakeProposalRepository
 
 
 def test_approval_service_approve_success():
@@ -130,4 +131,3 @@ def test_approval_service_already_terminal_raises():
 
     # Assert that no new events are added (remains exactly 1 event from the first approve)
     assert len(repo.approval_events) == 1
-

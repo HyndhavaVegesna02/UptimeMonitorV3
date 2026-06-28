@@ -1,6 +1,7 @@
 """App factory and composition root (composition zone)."""
 
 from fastapi import FastAPI
+
 from src.core.ports import ClockPort, ProposalRepository
 
 
@@ -19,6 +20,7 @@ def create_app(
     # Wire database engine and repository
     if proposal_repo is None:
         import sqlalchemy as sa
+
         from src.adapters.persistence.proposal_repository import (
             PostgresProposalRepository,
         )

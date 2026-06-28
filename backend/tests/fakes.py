@@ -170,4 +170,3 @@ class FakeProposalRepository(ProposalRepository):
 
     def get(self, proposal_id: int) -> StatusProposal | None:
         return self.proposals.get(proposal_id)
-

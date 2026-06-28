@@ -1,6 +1,7 @@
 """API dependencies (api zone)."""
 
 from fastapi import Request
+
 from src.core.services.approval import ApprovalService
 
 

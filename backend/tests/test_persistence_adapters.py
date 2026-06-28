@@ -658,4 +658,3 @@ def test_postgres_proposal_repository_get(migrated_db, engine):
     assert fetched.state == ProposalState.OPEN
     assert fetched.proposed_at == datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc)
     assert fetched.resolved_at is None
-

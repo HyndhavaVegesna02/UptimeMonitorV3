@@ -169,7 +169,6 @@ class PostgresProposalRepository(ProposalRepository):
             ),
         )
 
-
     def resolve(
         self,
         proposal_id: int,

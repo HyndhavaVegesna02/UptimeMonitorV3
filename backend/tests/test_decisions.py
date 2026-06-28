@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
-import pytest
 from src.composition.app import create_app
 from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.domain.status import ComponentStatus
@@ -149,7 +149,6 @@ def test_decision_endpoint_proposal_already_terminal_conflict():
     assert "cannot transition" in response2.json()["detail"].lower()
 
 
-
 def test_decision_endpoint_commit_first_pure_repo_commit():
     """Assert that the decision endpoint returns success purely from the repository commit
 
@@ -187,4 +186,3 @@ def test_decisions_module_structure_and_dto_distinction():
     # Assert that DTO types are different from domain types
     assert models.DecisionRequest is not StatusProposal
     assert models.DecisionResponse is not StatusProposal
-

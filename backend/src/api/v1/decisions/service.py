@@ -4,6 +4,7 @@ Cites dossier §13.
 """
 
 from fastapi import HTTPException
+
 from src.api.v1.decisions.models import DecisionRequest, DecisionResponse
 from src.api.v1.decisions.validation import (
     SyntacticValidationError,

@@ -5,8 +5,6 @@ Cites dossier §12 (proposal lifecycle) and §T1.1 (commit-first / best-effort s
 
 from __future__ import annotations
 
-from datetime import datetime
-
 from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
 from src.core.ports import ClockPort, ProposalRepository
 
@@ -100,4 +98,3 @@ class ApprovalService:
                 f"Proposal {proposal_id} disappeared after resolution."
             )
         return updated
-

@@ -318,9 +318,10 @@ def test_fake_proposal_repository_resolve_non_open_or_unknown_raises():
 
 def test_fake_proposal_repository_get():
     from datetime import timezone
+
     from fakes import FakeProposalRepository
-    from src.core.domain.status import ComponentStatus
     from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.domain.status import ComponentStatus
 
     repo = FakeProposalRepository()
     assert repo.get(999) is None
@@ -340,4 +341,3 @@ def test_fake_proposal_repository_get():
     assert retrieved is not None
     assert retrieved.id == saved.id
     assert retrieved.component_id == "checkout"
-

@@ -4,6 +4,7 @@ Cites dossier §13.
 """
 
 from fastapi import APIRouter, Depends
+
 from src.api.dependencies import get_approval_service
 from src.api.v1.decisions.models import DecisionRequest, DecisionResponse
 from src.api.v1.decisions.service import DecisionService

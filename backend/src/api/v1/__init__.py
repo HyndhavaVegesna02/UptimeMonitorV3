@@ -1,4 +1,5 @@
 from fastapi import APIRouter
+
 from src.api.v1.decisions import router as decisions_router
 from src.api.v1.health import router as health_router
 
