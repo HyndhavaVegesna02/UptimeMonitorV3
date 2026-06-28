@@ -26,10 +26,16 @@ STORY-014 (Zone 6 / FastAPI). Neither blocked the story; bundled here as a follo
       on that warning passes, or the warning count for it is 0).
 - [ ] AC3: full six-command DoD gate green; no behavior change to the decision/health endpoints.
 
-## Open Questions
-- For minor 2: pin/upgrade `httpx`, adopt `httpx2`, or switch the test client approach? Decide at
-  refinement against the then-current Starlette/FastAPI guidance (tooling decision — raise at planning).
-- Estimate at refinement (likely 1–2).
+## Resolved Questions
+- **httpx mechanism → implementer's choice, sanctioned at planning.** The fix for minor 2 may pin
+  or upgrade `httpx`, adopt the recommended successor, or (last resort, with a written justification
+  in the story) scope a targeted warning filter — whatever clears the warning while keeping the
+  Starlette `TestClient` working. A dependency pin/upgrade here is a sanctioned tooling change made at
+  Sprint 13 planning (one of the two allowed moments). AC2 is the objective bar: the warning no
+  longer appears in the `pytest` run and the endpoint tests still pass. (PO-approved 2026-06-28.)
+- **Estimate: 2** (two small, independent backend cleanups; gate-only).
 
 ## History
-- 2026-06-28: created from the Sprint 12 retro (STORY-014 non-blocking quality minors). Status: draft.
+- 2026-06-28: created from the Sprint 12 retro (STORY-014 non-blocking quality minors).
+- 2026-06-28 (Sprint 13 refinement): httpx mechanism left to the implementer against AC2's objective
+  bar; dependency change sanctioned at planning. Status: draft → ready.

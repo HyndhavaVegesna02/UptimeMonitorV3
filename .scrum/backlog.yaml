@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 36   # STORY-035 reserved; STORY-014b is a split-child of 014 (not a new id slot)
+next_story_id: 38   # 035 (minors), 036 (maintenance), 037 (publications) used; 014b/014c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -149,11 +149,35 @@ stories:
     type: feature
     sprint: 12
   - id: STORY-014b
-    title: API read endpoints for the six dashboard tabs
+    title: API read endpoints — Dashboard (component statuses) + Approvals list
     file: docs/scrum/stories/STORY-014b-api-read-endpoints-six-tabs.md
-    status: draft   # split-child of STORY-014 (deferred read endpoints); refine with STORY-015
+    status: ready   # refined 2026-06-28 (Dashboard + Approvals-list, 2 new read ports); Sprint 13
     points: 5
     priority: 14
+    type: feature
+    sprint: null
+  - id: STORY-014c
+    title: API read endpoints — Availability + Check History
+    file: docs/scrum/stories/STORY-014c-api-read-endpoints-availability-history.md
+    status: draft   # split-child of STORY-014b (reuse-existing-backing tabs); refine with STORY-015
+    points: 3
+    priority: 15
+    type: feature
+    sprint: null
+  - id: STORY-036
+    title: Maintenance feature module — schedule + window state for the Maintenance tab
+    file: docs/scrum/stories/STORY-036-maintenance-feature-module.md
+    status: draft   # Sprint 13 planning: Maintenance tab has no backing state -> needs a feature module
+    points: 5
+    priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-037
+    title: Publications feature module — record Statuspage publish history for the Publications tab
+    file: docs/scrum/stories/STORY-037-publications-feature-module.md
+    status: draft   # Sprint 13 planning: Publications tab has no backing state -> needs a feature module
+    points: 5
+    priority: 17
     type: feature
     sprint: null
   # ── Zone 7 — Frontend ────────────────────────────────────────────
@@ -298,7 +322,7 @@ stories:
   - id: STORY-035
     title: API minors — dispose the app engine on shutdown + migrate off the deprecated TestClient path
     file: docs/scrum/stories/STORY-035-api-minors-engine-dispose-testclient.md
-    status: draft   # Sprint 12 retro: bundle the two STORY-014 non-blocking quality minors
+    status: ready   # refined 2026-06-28 (Sprint 13); httpx mechanism = implementer's call per AC2
     points: 2
     priority: 31
     type: chore
