@@ -47,23 +47,23 @@ and Approvals reads open `status_proposals`. No business logic at the edge.
    COUNT is unchanged at 4 -> no DoD/CLAUDE command-sync needed; just keep the module list current.)
 
 ## Acceptance Criteria (refined — PO-approved 2026-06-28)
-- [ ] **AC1 (Dashboard read):** `GET /api/v1/components` returns 200 with a list of components, each
+- [x] **AC1 (Dashboard read):** `GET /api/v1/components` returns 200 with a list of components, each
       carrying its id, display name, and current `status` read from `components.status` (the displayed
       status, per P4 — NOT availability %). Tested (TestClient, repository faked) with: several
       components, and the **empty case** (no components -> 200 + `[]`, not 500).
-- [ ] **AC2 (Approvals list read):** `GET /api/v1/approvals` returns 200 with the list of OPEN
+- [x] **AC2 (Approvals list read):** `GET /api/v1/approvals` returns 200 with the list of OPEN
       status proposals (id, component, from/to status, proposed_at). Tested with: multiple open
       proposals, a mix of open + terminal (only open returned), and the **empty case** (-> 200 + `[]`).
-- [ ] **AC3 (new read ports + parity):** `ComponentRepository.list_components()` and
+- [x] **AC3 (new read ports + parity):** `ComponentRepository.list_components()` and
       `ProposalRepository.list_open()` exist on the ports with Postgres adapters + fakes; a DB-gated
       test exercises each adapter, and the fake and adapter AGREE on the empty case (both `[]`). DTOs
       are distinct from the `Component`/`StatusProposal` domain types (no domain leak to the client).
-- [ ] **AC4 (five-file shape + boundary):** each new feature has exactly the five files with the §13
+- [x] **AC4 (five-file shape + boundary):** each new feature has exactly the five files with the §13
       import rules (controller imports only its models + service; service may import core + container;
       validation stdlib-only); `lint-imports` reports **4 kept / 0 broken** with
       `components` + `approvals` added to the `api-feature-independence` module list; a test asserts
       each feature's five-file shape.
-- [ ] **AC5 (full DoD gate green):** all SIX commands exit 0. No new migration (reads existing spine
+- [x] **AC5 (full DoD gate green):** all SIX commands exit 0. No new migration (reads existing spine
       tables). Forward blast radius: `canonical-types-and-ports.md` (new ports + `Component` type),
       `persistence-adapters.md` (new adapters), `api-five-file-convention.md` (new features) updated
       + re-verified.
@@ -89,3 +89,5 @@ and Approvals reads open `status_proposals`. No business logic at the edge.
   Dashboard + Approvals-list with the two new read ports. Estimate **5** (2 read features + 2 new
   ports + adapters + a read domain type + tests; patterns established by STORY-014). Status: draft
   → ready.
+- 2026-06-28 (implementation): completed by Antigravity under sprint-13. Added Component domain type, ComponentRepository, and ProposalRepository.list_open with fakes, Postgres adapters, and corresponding v1 API features (components and approvals). All tests, linters, and Wiki updates are complete. Status: ready → done.
+
