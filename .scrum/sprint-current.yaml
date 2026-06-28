@@ -1,58 +1,42 @@
 # YourTeam active sprint board.
-sprint: 18
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-29
+sprint: 19
+status: active        # none | active | review | closed | aborted
 started: 2026-06-29
-goal: "Make Neon the seeded read model (dossier §7 Option C): add the signals.component_id
-  migration, an idempotent seed_topology upsert (apps/components/signals; preserves runtime
-  components.status), a scripts/seed_topology.py CLI, and app-startup (lifespan) seed wiring — so the
-  spine is populated from config/apps and GET /api/v1/components shows real components. Single story,
-  5 pts (top of range; boot wiring included per PO)."
-branch: sprint-18
-start_tag: sprint-18-start
-# Capacity: velocity last-3 (sprints 15,16,17) = 5,5,5 -> mean 5.0. Committed 5 (STORY-040).
+goal: "Publications feature module (the last pure-backend feature): a PublicationRepository over the
+  EXISTING publications table, a RecordingPublisher decorator that records each SUCCESSFUL publish, and
+  GET /api/v1/publications. No migration (table exists); record successes only (no error column).
+  Single story, 5 pts. PO asked to finish it in-sprint (orchestrator implements via a Sonnet
+  implementer, then reviews + merges)."
+branch: sprint-19
+start_tag: sprint-19-start
+# Capacity: velocity last-3 (sprints 16,17,18) = 5,5,5 -> mean 5.0. Committed 5 (STORY-037).
 #
-# WORKFLOW (working-agreements.md 2026-06-26): PO implements externally OR (quota permitting) the
-# orchestrator finishes via a Sonnet implementer subagent (sprints 14-17). PO triggers the back half
-# ("do your review"); orchestrator diffs sprint-18-start..HEAD, runs the FULL six-command gate, runs
-# the Opus spec + quality reviewers (5 pts), resolves the wiki blast-radius (MECHANICAL sweep,
-# 2026-06-28), then review/verdict/merge/retro. plan.md is the ONLY contract -> self-contained.
+# WORKFLOW: PO asked the orchestrator to finish STORY-037 this sprint -> a Sonnet implementer subagent
+# (implementer-on-Sonnet, 2026-06-24) builds it; the orchestrator then runs the FULL six-command gate,
+# the Opus spec + quality reviewers (5 pts), the wiki blast-radius sweep, review/verdict/merge/retro.
+# plan.md is the contract for the implementer.
 #
-# PIPELINE: STORY-040 (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
+# PIPELINE: STORY-037 (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
 #
-# DoD: ONE NEW MIGRATION this sprint (signals.component_id FK; spine->spine, so check_fk_direction
-# stays green) -> `alembic upgrade head` does real work; the round-trip must reverse cleanly. NO new
-# lint contract (seed is composition wiring). The 2026-06-28 TOCTOU agreement is N/A (upserts are
-# ON CONFLICT DO UPDATE, not check-then-act).
+# DoD: NO new migration (publications table exists from the spine schema). NO new lint contract
+# (RecordingPublisher is composition; the publications API feature joins the EXISTING
+# api-feature-independence contract module list -> count stays 5). Pure reads on the endpoint (TOCTOU
+# N/A); record() is a plain INSERT.
 #
-# Baseline at lock: tree clean on main @ 9aed7b2 -> refined onto branch @ 44eaf43. Cheap gates green
-# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-17 review (b062132).
-# Agreements in force incl. spec-review-verifies-AC-test-drives-behavior (2026-06-29) and the
-# mechanical wiki blast-radius sweep (2026-06-28). See plan.md.
+# Baseline at lock: tree clean on main @ 1d53f39 -> refined onto branch @ e95bc6b. Cheap gates green
+# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-18 review (82bcbc7).
+# Agreements in force: spec-review-verifies-AC-test-drives-behavior (2026-06-29), mechanical wiki
+# blast-radius sweep (2026-06-28), merge-is-last-step (2026-06-29), DB-test reused-DB isolation
+# (STORY-039 + clean_topology). See plan.md.
 stories:
-  - id: STORY-040
+  - id: STORY-037
     points: 5
-    board: done            # todo | in-progress | blocked | review | done
+    board: todo            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0            # external impl; both reviewers passed first pass; one orchestrator inline minor-cleanup.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified: pytest 385 passed; lint-imports 5/0; fk 11 checked / 0
-          violations (new spine->spine signals.component_id FK counted); alembic round-trip exit 0
-          (migration eec78d2e8cbe reverses cleanly); ruff check + format clean. Opus spec reviewer:
-          PASS (all 6 AC, each test traced to drive its named path per the 2026-06-29 rigor). Opus
-          quality reviewer: APPROVE (0 critical / 0 major; idempotency genuine, status never clobbered,
-          reversible migration, fail-fast boot; two consecutive reused-DB suite runs both green)."
-        commit: 82bcbc7
-        at: 2026-06-29T03:00:00+05:30
-    review:
-      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop)."
-      minors_fixed: "extracted settings.py::to_psycopg_url (was duplicated 3x); tidied seed CLI path;
-        commented the idempotency test's updated_at omission (PO chose accept+fix-minors)."
-    blast_radius_resolved: true   # compile pass @ 82bcbc7: migrations-and-db (+to_psycopg_url note),
-                                  # api-five-file-convention, dev-setup-and-dod re-verified. All current.
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
