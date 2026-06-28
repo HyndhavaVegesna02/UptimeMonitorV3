@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: b062132
-verified_sprint: sprint-17
+verified_sha: 19eefc8
+verified_sprint: sprint-18
 status: verified
 ---
 
@@ -107,7 +107,7 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
   `ON DELETE RESTRICT`, and `signals.app_id` FKs into `apps`. Topology seeding (apps/signals
-  from config) is a later story, so integration tests **hand-seed** a parent `apps`+`signals`
+  from config) is implemented in sprint-18, so integration tests either use `seed_topology` or **hand-seed** a parent `apps`+`signals`
   row via raw psycopg (test arrangement) before exercising a repo
   (`test_persistence_adapters.py`, `seed_signal` helper).
 - `status_proposals.component_id` and `maintenance_windows.component_id` FK into `components.id`, which FKs into `apps.id`. Integration
@@ -117,8 +117,8 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - The `migrated_db` fixture is **session-scoped and shared**, but a function-scoped
   `clean_runtime_tables` fixture (`backend/tests/conftest.py`, STORY-039) **truncates the runtime
   tables** (`rejected_observations`, `observations`, `watermarks`, `problem_signals`) before each
-  DB-gated test, so the suite is order- and reused-DB-independent (the `engine` fixture lives in
-  `conftest.py` and depends on it). Tests still use per-test `signal_key`/`component_id` namespaces.
+  DB-gated test, so the suite is order- and reused-DB-independent.
+- Tests specifically verifying `seed_topology` or CLI execution clean up the topology tables (`apps`, `components`, `signals`) before and after each test run using a cascaded truncation (`TRUNCATE TABLE apps, components, signals CASCADE;`) to keep the shared database clean.
 
 ## Inference (synthesis, not verified)
 - `watermarks.updated_at` is set once at first insert and not refreshed by `advance`'s
@@ -139,4 +139,5 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `ProposalNotOpenError` domain error (was a bare `ValueError`) so a lost-race resolve maps to HTTP 409.
   Re-verified at eb147ef.
 - sprint-14: STORY-036 adds `PostgresMaintenanceRepository` for scheduled maintenance windows. Re-verified at 8e15534.
+- sprint-18: updated (STORY-040 — added description of `seed_topology` idempotent seeding and the clean_topology testing convention). verified_sha = 19eefc8.
 

@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/sockshop.yaml, pyproject.toml]
-verified_sha: b062132
-verified_sprint: sprint-17
+verified_sha: 19eefc8
+verified_sprint: sprint-18
 status: verified
 ---
 
@@ -126,7 +126,10 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - The §10 defaults (`5/3/2/2`) are baked into `AppConfig.thresholds` as a
   pydantic field default, not as a runtime fallback in the resolver — so the
   index always has a value and `thresholds_for` never needs to fall back.
+- `create_app` (`app.py::create_app`) triggers fail-fast config loading at construction time from `CONFIG_DIR` (default: `"config/apps"`). If configuration is invalid, it raises `ValueError` immediately, blocking server boot (dossier §17).
 
 ## History
 - sprint-16: created (STORY-040a — config layer bootstrap: models + loader +
   resolvers + sample config/apps/sockshop.yaml). verified_sha = 9b60fac.
+- sprint-17: updated (STORY-016a — config layer updated to support `interval_seconds` for signal cadences). verified_sha = b062132.
+- sprint-18: updated (STORY-040 — config is loaded fail-fast in `create_app` and stored in `app.state.seed_config` for database seeding at lifespan startup). verified_sha = 19eefc8.

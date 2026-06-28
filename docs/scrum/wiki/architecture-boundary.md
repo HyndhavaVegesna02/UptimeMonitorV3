@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: e84ad46
-verified_sprint: sprint-17
+verified_sha: 19eefc8
+verified_sprint: sprint-18
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -94,3 +94,4 @@ status: verified
 - sprint-14: re-verified after adding the 5th contract (`src-no-tests`, forbidden, `src` may not import `tests`) to prevent leaks of fakes/mocks into production. verified_sha → bbc324e.
 - sprint-14: `src.api.v1.maintenance` added to the `api-feature-independence` contract (STORY-038) — the maintenance feature is now isolated from all other feature modules. verified_sha → 8e15534.
 - sprint-15: `src.api.v1.availability` and `src.api.v1.history` added to the `api-feature-independence` contract (STORY-014c) — availability + history read features are now isolated from all other feature modules. `lint-imports`: 5 kept / 0 broken. verified_sha → 7efe64c.
+- sprint-18: re-verified after adding `seed.py` to composition zone and the new database migration to link signals to components. No import-linter contracts violated (`5 kept / 0 broken`); FK check verified 11 foreign keys with 0 violations (stays green since the FK is spine->spine). verified_sha → 19eefc8.

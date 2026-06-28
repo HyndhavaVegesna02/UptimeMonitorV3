@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: e84ad46
-verified_sprint: sprint-17
+code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
+verified_sha: 19eefc8
+verified_sprint: sprint-18
 status: verified
 ---
 
@@ -35,6 +35,7 @@ status: verified
     `approval_events`/`publications` into their owning `status_proposals` row (a child record
     has no meaning once its proposal is gone). `downgrade()` drops every spine object; the
     round-trip `upgrade head` → `downgrade base` → `upgrade head` is tested directly.
+- **The signals.component_id migration** (STORY-040) is `migrations/versions/eec78d2e8cbe_add_signals_component_id.py` (`down_revision = "3a8254bcfe59"`). One reversible migration adding a nullable `signals.component_id` column referencing `components.id` (with `ON DELETE RESTRICT`) and an index `ix_signals_component_id`. This allows signals to link to components in the database read model.
 - **No `create_all` anywhere** — every table must arrive via an explicit migration. The only
   textual occurrences of `create_all` are comments in the baseline file forbidding it.
 - **Two distinct connection env vars, never mixed** (dossier §3, §17):
@@ -84,3 +85,4 @@ status: verified
   Fact superseding the hand-rolled-per-brief one-liner this article's URL-dialect-split gotcha
   used to require, plus the `migrated_db` pytest fixture's reuse/spawn/skip decision logic.
   `verified_sha` re-stamped accordingly.
+- sprint-18: updated (STORY-040 config topology boot seeding) — added `eec78d2e8cbe_add_signals_component_id.py` migration to link signals to components. `verified_sha` re-stamped to `19eefc8`.
