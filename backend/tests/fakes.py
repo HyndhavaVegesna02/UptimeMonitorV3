@@ -197,6 +197,17 @@ class FakeComponentRepository(ComponentRepository):
     def list_components(self) -> list[Component]:
         return self._components
 
+    def get(self, component_id: str) -> Component | None:
+        """Return the component with the given id, or None if not found.
+
+        Parity with PostgresComponentRepository.get (2026-06-26 fake/adapter
+        parity agreement): both return None on not-found, never raise.
+        """
+        for component in self._components:
+            if component.id == component_id:
+                return component
+        return None
+
 
 class FakeMaintenanceRepository(MaintenanceRepository):
     """An in-memory maintenance repository for testing."""

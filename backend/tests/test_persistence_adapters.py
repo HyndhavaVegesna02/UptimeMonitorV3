@@ -690,6 +690,44 @@ def test_postgres_component_repository_list_components(migrated_db, engine):
     assert components_sorted[1].app_id == "app-a"
 
 
+def test_postgres_component_repository_get(migrated_db, engine):
+    """DB-gated: PostgresComponentRepository.get() returns Component or None.
+
+    Fake/adapter parity (working-agreements.md 2026-06-26): same None-on-not-found
+    behaviour as FakeComponentRepository.get. STORY-016a A3.
+    """
+    from src.adapters.persistence.component_repository import (
+        PostgresComponentRepository,
+    )
+    from src.core.domain.status import ComponentStatus
+
+    # Clear components for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    repo = PostgresComponentRepository(engine)
+
+    # not-found → None (before seeding)
+    assert repo.get("get-by-id-comp") is None
+
+    # seed a component
+    seed_component(migrated_db.database_url, "get-by-id-comp", "app-1")
+
+    # found → Component
+    result = repo.get("get-by-id-comp")
+    assert result is not None
+    assert result.id == "get-by-id-comp"
+    assert result.name == "get-by-id-comp"
+    assert result.status == ComponentStatus.OPERATIONAL
+    assert result.app_id == "app-1"
+
+    # absent component_id → None even when other components exist
+    assert repo.get("other-comp-does-not-exist") is None
+
+
+
 def test_postgres_proposal_repository_list_open(migrated_db, engine):
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
     from src.core.domain.proposal import ProposalState, StatusProposal

@@ -406,6 +406,33 @@ def test_fake_component_repository_list():
     assert repo.list_components() == [comp1, comp2]
 
 
+def test_fake_component_repository_get():
+    """FakeComponentRepository.get returns the component by id, None when absent.
+
+    Fake/adapter parity contract (working-agreements.md 2026-06-26):
+    same None-on-not-found behaviour as PostgresComponentRepository.get (A3).
+    """
+    from fakes import FakeComponentRepository
+    from src.core.domain.component import Component
+    from src.core.domain.status import ComponentStatus
+
+    comp = Component(
+        id="checkout", name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+    )
+    repo = FakeComponentRepository(components=[comp])
+
+    # found
+    result = repo.get("checkout")
+    assert result == comp
+
+    # not found → None, never raises
+    assert repo.get("does-not-exist") is None
+
+    # empty repo → None
+    empty_repo = FakeComponentRepository()
+    assert empty_repo.get("checkout") is None
+
+
 def test_maintenance_repository_port_is_abstract():
     from src.core.ports.maintenance_repository import MaintenanceRepository
 
