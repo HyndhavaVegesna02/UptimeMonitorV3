@@ -6,6 +6,7 @@ from src.core.ports import (
     MaintenanceRepository,
     ObservationRepository,
     ProposalRepository,
+    PublicationRepository,
 )
 from src.core.services.approval import ApprovalService
 
@@ -38,3 +39,8 @@ def get_observation_repo(request: Request) -> ObservationRepository:
 def get_clock(request: Request) -> ClockPort:
     """FastAPI dependency to retrieve the ClockPort from app state."""
     return request.app.state.clock
+
+
+def get_publication_repo(request: Request) -> PublicationRepository:
+    """FastAPI dependency to retrieve the PublicationRepository from app state."""
+    return request.app.state.publication_repo

@@ -8,6 +8,7 @@ from src.core.ports import (
     MaintenanceRepository,
     ObservationRepository,
     ProposalRepository,
+    PublicationRepository,
 )
 
 
@@ -34,6 +35,7 @@ def create_app(
     component_repo: ComponentRepository | None = None,
     maintenance_repo: MaintenanceRepository | None = None,
     observation_repo: ObservationRepository | None = None,
+    publication_repo: PublicationRepository | None = None,
     clock: ClockPort | None = None,
     config_dir: str | None = None,
 ) -> FastAPI:
@@ -72,6 +74,12 @@ def create_app(
             maintenance_repo = PostgresMaintenanceRepository(engine)
         if observation_repo is None:
             observation_repo = PostgresObservationRepository(engine)
+        if publication_repo is None:
+            from src.adapters.persistence.publication_repository import (
+                PostgresPublicationRepository,
+            )
+
+            publication_repo = PostgresPublicationRepository(engine)
         app.state.db_engine = engine
 
         # Load and validate config (fail-fast: raises if invalid)
@@ -102,6 +110,7 @@ def create_app(
     app.state.component_repo = component_repo
     app.state.maintenance_repo = maintenance_repo
     app.state.observation_repo = observation_repo
+    app.state.publication_repo = publication_repo
     app.state.clock = clock
     app.state.approval_service = approval_service
 
