@@ -6,6 +6,6 @@ components:
   - { id: checkout, name: Checkout }
   - { id: catalogue, name: Catalogue }
 signals:
-  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout }
-  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue }
+  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout, interval_seconds: 60 }
+  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue, interval_seconds: 60 }
 thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }

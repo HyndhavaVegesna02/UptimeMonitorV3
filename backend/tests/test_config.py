@@ -40,12 +40,14 @@ _VALID_SIGNALS = [
         native_id="SYNTHETIC_TEST-ABC",
         name="Checkout HTTP",
         component_id="checkout",
+        interval_seconds=60,
     ),
     SignalConfig(
         signal_key="catalogue-http",
         native_id="SYNTHETIC_TEST-DEF",
         name="Catalogue HTTP",
         component_id="catalogue",
+        interval_seconds=60,
     ),
 ]
 
@@ -113,6 +115,7 @@ class TestAppConfigValidationRejects:
             native_id="SYNTHETIC_TEST-XYZ",
             name="Orphan",
             component_id="does-not-exist",
+            interval_seconds=60,
         )
         with pytest.raises(ValueError, match="component_id"):
             _valid_app(signals=[bad_signal])
@@ -123,6 +126,7 @@ class TestAppConfigValidationRejects:
             native_id="SYNTHETIC_TEST-DUP",
             name="Dup Signal",
             component_id="checkout",
+            interval_seconds=60,
         )
         with pytest.raises(ValueError, match="signal_key"):
             _valid_app(signals=[*_VALID_SIGNALS, dup])
@@ -175,8 +179,8 @@ components:
   - { id: checkout, name: Checkout }
   - { id: catalogue, name: Catalogue }
 signals:
-  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout }
-  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue }
+  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout, interval_seconds: 60 }
+  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue, interval_seconds: 60 }
 thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
 """
 
@@ -209,7 +213,7 @@ app:
 components:
   - { id: frontend, name: Frontend }
 signals:
-  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend }
+  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "other.yaml", other_yaml)
         cfg = load_config(tmp_config_dir)
@@ -251,7 +255,7 @@ app:
 components:
   - { id: checkout, name: Checkout }
 signals:
-  - { signal_key: orphan-http, native_id: SYNTHETIC_TEST-X, name: Orphan, component_id: does-not-exist }
+  - { signal_key: orphan-http, native_id: SYNTHETIC_TEST-X, name: Orphan, component_id: does-not-exist, interval_seconds: 60 }
 """,
         )
         with pytest.raises(Exception, match="component_id"):
@@ -267,7 +271,7 @@ app:
 components:
   - { id: some-component, name: Some Component }
 signals:
-  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-DUP, name: Dup, component_id: some-component }
+  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-DUP, name: Dup, component_id: some-component, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "another.yaml", dup_yaml)
         with pytest.raises(ValueError, match="signal_key"):
@@ -341,7 +345,7 @@ app:
 components:
   - { id: frontend, name: Frontend }
 signals:
-  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend }
+  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "bare.yaml", yaml_no_thresholds)
         cfg = load_config(tmp_config_dir)
@@ -355,3 +359,68 @@ signals:
             cfg.component_for_signal("anything")
         with pytest.raises(UnknownComponentError):
             cfg.thresholds_for("anything")
+
+
+# ---------------------------------------------------------------------------
+# Phase A2 (STORY-016a) — SignalConfig.interval_seconds
+# ---------------------------------------------------------------------------
+
+
+class TestSignalConfigIntervalSeconds:
+    """STORY-016a A2: interval_seconds field on SignalConfig (frozen-type invariant > 0)."""
+
+    def test_signal_config_accepts_positive_interval_seconds(self):
+        sig = SignalConfig(
+            signal_key="checkout-http",
+            native_id="SYNTHETIC_TEST-ABC",
+            name="Checkout HTTP",
+            component_id="checkout",
+            interval_seconds=60,
+        )
+        assert sig.interval_seconds == 60
+
+    def test_signal_config_zero_interval_raises(self):
+        """interval_seconds=0 is non-positive and must be rejected (frozen-type invariant)."""
+        with pytest.raises(ValueError, match="interval_seconds"):
+            SignalConfig(
+                signal_key="checkout-http",
+                native_id="SYNTHETIC_TEST-ABC",
+                name="Checkout HTTP",
+                component_id="checkout",
+                interval_seconds=0,
+            )
+
+    def test_signal_config_negative_interval_raises(self):
+        """interval_seconds=-1 must be rejected (frozen-type invariant > 0)."""
+        with pytest.raises(ValueError, match="interval_seconds"):
+            SignalConfig(
+                signal_key="checkout-http",
+                native_id="SYNTHETIC_TEST-ABC",
+                name="Checkout HTTP",
+                component_id="checkout",
+                interval_seconds=-1,
+            )
+
+    def test_config_signal_resolver_returns_interval_seconds(self, tmp_config_dir: Path):
+        """Config.signal(signal_key) returns the SignalConfig with interval_seconds."""
+        _write_yaml(tmp_config_dir, "sockshop.yaml", SOCKSHOP_YAML)
+        cfg = load_config(tmp_config_dir)
+        sig = cfg.signal("checkout-http")
+        assert sig.interval_seconds == 60
+
+    def test_config_signal_resolver_unknown_key_raises(self, tmp_config_dir: Path):
+        """Config.signal raises UnknownSignalError for an unregistered key."""
+        _write_yaml(tmp_config_dir, "sockshop.yaml", SOCKSHOP_YAML)
+        cfg = load_config(tmp_config_dir)
+        with pytest.raises(UnknownSignalError):
+            cfg.signal("does-not-exist")
+
+    def test_real_sockshop_yaml_has_interval_seconds(self):
+        """The real config/apps/sockshop.yaml has interval_seconds on every signal."""
+        repo_root = Path(__file__).parent.parent.parent
+        cfg = load_config(repo_root / "config" / "apps")
+        sockshop = next(a for a in cfg.apps if a.id == "sockshop")
+        for sig in sockshop.signals:
+            assert sig.interval_seconds > 0, (
+                f"Signal {sig.signal_key!r} missing interval_seconds in sockshop.yaml"
+            )

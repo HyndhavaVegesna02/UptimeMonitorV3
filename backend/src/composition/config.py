@@ -77,6 +77,9 @@ class SignalConfig(BaseModel):
     (canonical internal key) → ``component_id`` (component this signal feeds).
     ``component_id`` MUST reference a component declared in the same ``AppConfig``;
     this is enforced by ``AppConfig``'s ``model_validator``.
+    ``interval_seconds`` is the signal's expected cadence in seconds (positive int,
+    frozen-type invariant > 0 — working-agreements.md 2026-06-26); consumed by the
+    pipeline orchestrator (dossier §8 step 5) to size the observation window.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -93,6 +96,18 @@ class SignalConfig(BaseModel):
     component_id: str
     """The component this signal feeds; must be a declared component id."""
 
+    interval_seconds: int
+    """Expected cadence in seconds (positive int, > 0; dossier §8 / §10 window math)."""
+
+    @model_validator(mode="after")
+    def _require_positive_interval(self) -> "SignalConfig":
+        """Enforce the interval_seconds > 0 frozen-type invariant (2026-06-26)."""
+        if self.interval_seconds <= 0:
+            raise ValueError(
+                f"interval_seconds must be a positive integer (got {self.interval_seconds!r}). "
+                "See dossier §8 and the 2026-06-26 frozen-type invariant agreement."
+            )
+        return self
 
 class AppConfig(BaseModel):
     """Per-app config: components, signals, and anti-flap thresholds (dossier §7/§10).
@@ -211,10 +226,12 @@ class Config:
         # Build O(1) indexes
         self._signal_to_component: dict[str, str] = {}
         self._component_to_thresholds: dict[str, AntiFlapThresholds] = {}
+        self._signal_key_to_signal: dict[str, SignalConfig] = {}
 
         for app in apps:
             for sig in app.signals:
                 self._signal_to_component[sig.signal_key] = sig.component_id
+                self._signal_key_to_signal[sig.signal_key] = sig
             for comp in app.components:
                 self._component_to_thresholds[comp.id] = app.thresholds
 
@@ -248,6 +265,21 @@ class Config:
             raise UnknownComponentError(
                 f"Component id {component_id!r} is not registered in any loaded app config. "
                 "Check config/apps/*.yaml for the correct component id."
+            ) from None
+
+    def signal(self, signal_key: str) -> SignalConfig:
+        """Return the full ``SignalConfig`` for ``signal_key`` (dossier §7 / §8).
+
+        Exposes ``interval_seconds`` (and the other §7 fields) to the pipeline
+        orchestrator (dossier §8 step 5) without changing the existing resolver
+        signatures. Raises ``UnknownSignalError`` when the key is not registered.
+        """
+        try:
+            return self._signal_key_to_signal[signal_key]
+        except KeyError:
+            raise UnknownSignalError(
+                f"Signal key {signal_key!r} is not registered in any loaded app config. "
+                "Check config/apps/*.yaml for the correct signal_key."
             ) from None
 
 
