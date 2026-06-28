@@ -287,20 +287,23 @@ def load_config(config_dir: str | Path) -> Config:
                 f"got {type(raw).__name__!r}."
             )
 
-        # Flatten the nested YAML structure into AppConfig kwargs
+        # Build AppConfig — pydantic validates intra-app invariants here. The
+        # sub-entry construction (components/signals/thresholds) is INSIDE the
+        # try too, so a malformed sub-entry also gets the filename-prefixed
+        # error rather than a bare pydantic/TypeError.
         app_block: dict[str, Any] = raw.get("app", {})
-        app_kwargs: dict[str, Any] = {
-            "id": app_block.get("id"),
-            "name": app_block.get("name"),
-            "monitor_provider": app_block.get("monitor_provider"),
-            "components": [ComponentConfig(**c) for c in (raw.get("components") or [])],
-            "signals": [SignalConfig(**s) for s in (raw.get("signals") or [])],
-        }
-        if "thresholds" in raw and raw["thresholds"] is not None:
-            app_kwargs["thresholds"] = AntiFlapThresholds(**raw["thresholds"])
-
-        # Build AppConfig — pydantic validates intra-app invariants here
         try:
+            app_kwargs: dict[str, Any] = {
+                "id": app_block.get("id"),
+                "name": app_block.get("name"),
+                "monitor_provider": app_block.get("monitor_provider"),
+                "components": [
+                    ComponentConfig(**c) for c in (raw.get("components") or [])
+                ],
+                "signals": [SignalConfig(**s) for s in (raw.get("signals") or [])],
+            }
+            if "thresholds" in raw and raw["thresholds"] is not None:
+                app_kwargs["thresholds"] = AntiFlapThresholds(**raw["thresholds"])
             app = AppConfig(**app_kwargs)
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Invalid config in {yaml_path.name}: {exc}") from exc

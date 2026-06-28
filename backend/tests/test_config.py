@@ -78,7 +78,7 @@ class TestAppConfigHappyPath:
 
     def test_frozen(self):
         app = _valid_app()
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             app.id = "changed"  # type: ignore[misc]
 
     def test_thresholds_default_to_section_10_values(self):
@@ -219,7 +219,7 @@ signals:
 class TestLoadConfigFailFast:
     def test_malformed_yaml_raises(self, tmp_config_dir: Path):
         _write_yaml(tmp_config_dir, "bad.yaml", "app: {id: [unclosed")
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             load_config(tmp_config_dir)
 
     def test_missing_required_field_raises(self, tmp_config_dir: Path):
@@ -234,7 +234,7 @@ components: []
 signals: []
 """,
         )
-        with pytest.raises(Exception):
+        with pytest.raises(ValueError):
             load_config(tmp_config_dir)
 
     def test_signal_referencing_undeclared_component_raises_at_load(
