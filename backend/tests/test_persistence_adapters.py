@@ -702,3 +702,52 @@ def test_postgres_component_repository_list_components(migrated_db, engine):
     assert components_sorted[1].status == ComponentStatus.DEGRADED
     assert components_sorted[1].app_id == "app-a"
 
+
+def test_postgres_proposal_repository_list_open(migrated_db, engine):
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.domain.status import ComponentStatus
+
+    # Clear status_proposals and components for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    repo = PostgresProposalRepository(engine)
+    # Empty case
+    assert repo.list_open() == []
+
+    # Seed component so we can insert proposals
+    seed_component(migrated_db.database_url, "comp-a", "app-a")
+
+    # Create an open proposal
+    prop1 = StatusProposal(
+        component_id="comp-a",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved1 = repo.create_open(prop1)
+    assert saved1 is not None
+
+    # Retrieve when one open proposal exists
+    open_proposals = repo.list_open()
+    assert len(open_proposals) == 1
+    assert open_proposals[0].id == saved1.id
+    assert open_proposals[0].component_id == "comp-a"
+    assert open_proposals[0].state == ProposalState.OPEN
+
+    # Resolve proposal (move to terminal APPROVED state)
+    repo.resolve(
+        saved1.id,
+        to_state=ProposalState.APPROVED,
+        reason="Approved",
+        resolved_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+    )
+
+    # Empty case again because the proposal is terminal
+    assert repo.list_open() == []
+
+
