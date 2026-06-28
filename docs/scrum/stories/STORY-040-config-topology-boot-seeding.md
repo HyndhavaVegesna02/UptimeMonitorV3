@@ -1,47 +1,89 @@
 ---
 id: STORY-040
-title: Topology seed + signal→component migration — Neon as the read model
+title: Topology seed + signal→component migration — Neon as the read model (incl. boot wiring)
 type: feature
 ---
 
 ## Context
 Spec: dossier §7 (Option C / D6 — Neon is a **read model** seeded from Git-versioned config at boot,
-via fail-fast validation + idempotent upsert keyed on stable ids) + §9 (spine) + §17 (boot). This is
-the **DB-seed half** of the original STORY-040; the config-reading half (file format, loader,
-validation, in-memory resolvers) is **STORY-040a** and is a prerequisite for this story.
+via fail-fast validation + idempotent upsert keyed on stable ids) + §9 (spine) + §17 (boot:
+migrate → seed → serve). The DB-seed half of the original STORY-040; the config-reading half is
+**STORY-040a** (the `Config` aggregate + `load_config` + resolvers), a prerequisite — DONE.
 
-**Why separate from the orchestration's needs:** STORY-016a (orchestration) resolves signal→component
-+ thresholds from the in-memory config (STORY-040a) and does NOT require the DB seed. THIS story
-exists so the **spine read-model is populated** — so the dashboard (`GET /api/v1/components`) shows
-real components and the spine matches the config. It also adds the spine's missing signal→component
-link (the schema has `signals.app_id` + `components.app_id` but NO signal→component column).
+**Why this story:** today nothing populates the spine, so `GET /api/v1/components` returns `[]` and the
+orchestration's `ComponentRepository.get` finds nothing. This seeds apps/components/signals from config
+into Neon and adds the spine's missing signal→component link, so the dashboard shows real components
+and the orchestration can resolve current status. **PO chose to include the app-startup wiring** (the
+booting app self-seeds), not just the seed function/CLI.
 
-## Description (to refine before its sprint)
-- **Migration:** add the signal→component link to the spine (likely a `component_id` FK on `signals`,
-  or a `mappings` table) — a real Alembic migration; FK-direction must hold (spine boundary).
-- **Boot seed:** a composition boot step that takes the `Config` from STORY-040a and performs an
-  **idempotent upsert** of apps / components / signals (+ the signal→component link) into Neon, keyed
-  on stable ids — re-running boot on unchanged config is a no-op. Strict fail-fast on validation
-  failure (no partial seed).
-- Optionally a spine-backed topology read (signals/components from Neon) if a consumer needs it beyond
-  the in-memory resolver.
+## Refinement decisions (grounded in the schema + config layer, 2026-06-28)
+- **signal→component link = a nullable `component_id` FK on `signals`** → `components.id`
+  (`ON DELETE RESTRICT`). Both `signals` and `components` are in the `check_fk_direction.py` SPINE
+  allowlist, so this spine→spine FK does NOT trip the FK-direction gate. Nullable for migration safety
+  (the table may have rows; the config layer already guarantees every seeded signal has a component).
+- **The seed must NOT clobber `components.status`** — status is RUNTIME state (owned by the
+  approve/publish flow). The component upsert updates `name`/`app_id`/`updated_at` only; `status` is
+  left alone (new rows take the schema default `operational`). Re-seeding never resets a live status.
+- **`apps.config` is `jsonb NOT NULL`** — the seed writes the app's behavioral config (its
+  `AntiFlapThresholds` as JSON, e.g. `{"thresholds": {...}}`) into it.
+- **`load_config(config_dir)` globs `config_dir/*.yaml`** — point it at `config/apps`. `create_app`'s
+  default `config_dir` is `config/apps` (overridable via a `CONFIG_DIR` setting).
+- **Seed uses the pooled `DATABASE_URL`** (it is DML, not DDL — unlike Alembic which needs DIRECT).
 
-## Acceptance Criteria (draft — refine before its sprint)
-- [ ] AC1: a migration adds the signal→component link; `check_fk_direction.py` stays green (the spine
-      never FKs into a feature; the new link is spine-internal).
-- [ ] AC2: the boot seed idempotently upserts apps/components/signals from the loaded config; a second
-      run on unchanged config changes nothing (asserted against a throwaway DB).
-- [ ] AC3: invalid config halts the seed fail-fast with a clear error (no partial write).
-- [ ] AC4: `GET /api/v1/components` returns the seeded components after a boot seed (end-to-end on the
-      throwaway DB).
-- [ ] AC5: full SIX-command DoD gate green; blast radius resolved.
+## Description
+1. **Migration** (new Alembic revision, `down_revision` = the spine schema): add nullable
+   `signals.component_id` `ForeignKey(components.id, ondelete="RESTRICT")` + index. Reversible
+   (`downgrade` drops it). `check_fk_direction.py` stays green (spine→spine).
+2. **`composition/seed.py::seed_topology(config: Config, engine: Engine) -> None`**: idempotent upsert,
+   in FK order apps → components → signals:
+   - `apps`: `INSERT (id, config) ON CONFLICT (id) DO UPDATE SET config=…, updated_at=now()`.
+   - `components`: `INSERT (id, app_id, name) ON CONFLICT (id) DO UPDATE SET name=…, app_id=…,
+     updated_at=now()` — **never `status`**.
+   - `signals`: `INSERT (signal_key, app_id, name, component_id) ON CONFLICT (signal_key) DO UPDATE
+     SET app_id=…, name=…, component_id=…, updated_at=now()`.
+   Composition-zone (imports core/adapters/config); no business logic.
+3. **`scripts/seed_topology.py`** CLI (mirrors `scripts/check_fk_direction.py` / `dev_db.py`):
+   `load_config(CONFIG_DIR or config/apps)` + build an `Engine` from `DATABASE_URL` + `seed_topology`;
+   clear errors + nonzero exit on failure.
+4. **App-startup wiring:** `create_app(config_dir=None, …)` — in the real (non-injected) branch,
+   `load_config(config_dir or <CONFIG_DIR/"config/apps">)` and store `app.state.seed_config` (fail-fast:
+   a bad config raises at construction); the `lifespan` STARTUP (before `yield`) calls
+   `seed_topology(app.state.seed_config, app.state.db_engine)` when both are present. Injected/test
+   branch sets `seed_config=None` → no seed. A `CONFIG_DIR` setting is added to `composition/settings.py`
+   (optional, default `config/apps`).
+
+## Acceptance Criteria (refined — PO-approved 2026-06-28)
+- [ ] AC1 (migration): a reversible Alembic migration adds nullable `signals.component_id`
+      FK→`components.id`; `alembic upgrade head` + `downgrade` round-trip exit 0;
+      `python scripts/check_fk_direction.py` stays green (spine→spine, not flagged).
+- [ ] AC2 (idempotent seed): `seed_topology(config, engine)` upserts apps/components/signals from a
+      `Config`; running it TWICE on unchanged config is a no-op (asserted against a throwaway DB —
+      row counts + values stable). Signals get their `component_id`. (DB-gated.)
+- [ ] AC3 (status preserved): set a seeded component's `status` to `degraded`, re-run `seed_topology`
+      on unchanged config → the component's `status` is STILL `degraded` (topology re-seed never resets
+      runtime status). (DB-gated.)
+- [ ] AC4 (boot wiring + dashboard): `create_app` with a real engine + a `config_dir` seeds on startup;
+      after startup, `GET /api/v1/components` returns the seeded components (TestClient over a migrated
+      throwaway DB). A bad/invalid config dir makes `create_app` (or startup) fail FAST.
+- [ ] AC5 (CLI): `scripts/seed_topology.py` seeds a throwaway DB from `config/apps` and exits 0; a
+      load/validation failure exits nonzero with a clear message.
+- [ ] AC6 (full SIX-command DoD gate green). Forward blast radius (the MECHANICAL sweep): migrations
+      article (new revision + the signal→component link), config-layer (the seed consumer),
+      persistence/architecture as flagged — updated + re-verified.
+
+## Conventions checklist
+- Docstrings cite §7/§9/§17; `seed.py` is composition wiring (no domain logic); core untouched.
+- Idempotency + status-preservation + fail-fast tested; DB-gated tests isolate (STORY-039 truncate
+  fixture covers runtime tables; this story's tests must also clean apps/components/signals or use the
+  throwaway-DB so a reused DB stays green — extend the cleanup to topology tables it seeds).
+- `src` never imports `tests`; scoped staging; no sentinel mappings.
 
 ## Open Questions
-- signal→component link shape: `component_id` FK on `signals` (1 signal → 1 component) vs a `mappings`
-  table (confirm cardinality at refinement; the dossier implies one component per signal).
-- Where the boot seed is invoked (app startup lifespan vs a separate release step like migrations).
-- Estimate (likely 5).
+- Whether `CONFIG_DIR` defaults to `config/apps` (loader globs that dir) or `config` (loader would need
+  to recurse) — RESOLVED: `config/apps` (loader globs `config_dir/*.yaml`). Confirm at implementation.
+- Estimate: **5** (migration + seed + CLI + startup wiring + settings + DB tests; top of range).
 
 ## History
-- 2026-06-28: created from Sprint 15 planning; reframed at Sprint 16 planning to the DB-seed half after
-  STORY-040a (config layer) was split off. Depends on STORY-040a. Status: draft.
+- 2026-06-28: created (Sprint 15) then reframed (Sprint 16) to the DB-seed half. Refined at Sprint 18
+  planning: nullable component_id FK (spine→spine), status-preservation on re-seed, apps.config JSON,
+  config_dir=config/apps, app-startup wiring INCLUDED (PO). Estimate 5. Status: draft → ready.

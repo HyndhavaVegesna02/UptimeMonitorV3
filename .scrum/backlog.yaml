@@ -201,7 +201,7 @@ stories:
   - id: STORY-040
     title: Topology seed + signal→component migration — Neon as the read model
     file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
-    status: draft   # DB-seed half (reframed); depends on STORY-040a; refine for a later sprint
+    status: ready   # refined 2026-06-28 (Sprint 18): migration + seed + CLI + boot wiring (PO incl. startup)
     points: 5
     priority: 17
     type: feature
