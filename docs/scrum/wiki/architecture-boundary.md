@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 7efe64c
-verified_sprint: sprint-15
+verified_sha: 93f1863
+verified_sprint: sprint-16
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package

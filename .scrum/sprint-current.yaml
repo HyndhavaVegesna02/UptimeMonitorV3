@@ -32,12 +32,29 @@ start_tag: sprint-16-start
 stories:
   - id: STORY-040a
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # implemented by a Sonnet subagent (PO quota); reviewers PASS/APPROVE first pass.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 93f1863 with throwaway DB: pytest 357 passed (26 new
+          config tests); lint-imports 5/0 (config loader in composition, no new contract); fk 0;
+          alembic 0; ruff clean. Opus spec reviewer: PASS (all 5 AC MET). Opus quality reviewer:
+          APPROVE (0 critical / 0 major; yaml.safe_load confirmed; validators + cross-app uniqueness real)."
+        commit: 93f1863
+        at: 2026-06-28T23:00:00+05:30
+    review:
+      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop needed)."
+      open_minors:          # non-blocking -> retro / follow-up
+        - "config.py: malformed component/signal SUB-entries are built before the try/except, so they
+          miss the 'Invalid config in {filename}' wrapper (still fail-fast + pydantic names the field)."
+        - "loader globs *.yaml only, not *.yml (matches convention)."
+        - "a few tests use broad pytest.raises(Exception); could narrow to the named errors."
+    blast_radius_resolved: true   # config-layer.md seeded (normalized to inline code_refs at compile
+                                  # pass); dev-setup-and-dod + api-five-file-convention + architecture-boundary
+                                  # re-verified for the pyyaml dep @ 93f1863.
 hotfixes: []
 interrupts: []
