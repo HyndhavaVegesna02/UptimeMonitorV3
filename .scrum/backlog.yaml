@@ -167,7 +167,7 @@ stories:
   - id: STORY-036
     title: Maintenance feature module — schedule + window state for the Maintenance tab
     file: docs/scrum/stories/STORY-036-maintenance-feature-module.md
-    status: draft   # Sprint 13 planning: Maintenance tab has no backing state -> needs a feature module
+    status: ready   # refined 2026-06-28 (Sprint 14): table exists, read+create scope (PO)
     points: 5
     priority: 16
     type: feature
@@ -330,7 +330,7 @@ stories:
   - id: STORY-038
     title: 5th import-linter contract — production src must not import tests
     file: docs/scrum/stories/STORY-038-src-no-tests-import-contract.md
-    status: draft   # Sprint 13 retro: mechanize the src->tests boundary the STORY-014b MAJOR exposed
+    status: ready   # refined 2026-06-28 (Sprint 14): forbidden src->tests contract shape resolved
     points: 1
     priority: 32
     type: chore

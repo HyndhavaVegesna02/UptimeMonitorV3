@@ -32,11 +32,15 @@ AND `CLAUDE.md` (the §4 contract count + the contract list) in the SAME commit.
       (contract count 4 -> 5); `architecture-boundary.md` updated + re-verified.
 - [ ] AC4: full SIX-command DoD gate green.
 
-## Open Questions
-- Exact import-linter contract type/shape for "src must not import tests" (forbidden vs a dedicated
-  rule) — confirm against the import-linter version in use at refinement.
-- Estimate at refinement (likely 1).
+## Resolved Questions
+- **Contract shape → a `forbidden` contract** with `source_modules = ["src"]` and
+  `forbidden_modules = ["tests"]` in `[tool.importlinter]` (mirrors the existing `core-independence`
+  forbidden contract). The implementer VERIFIES this resolves and reports KEPT against the current
+  tree; if the installed import-linter needs `tests` to be an importable package, it already is under
+  the editable install. AC2's non-vacuous spike is the proof the shape works. (Resolved 2026-06-28.)
+- **Estimate: 1** (one contract block + command-sync doc updates; gate-only).
 
 ## History
 - 2026-06-28: created from the Sprint 13 retro (the STORY-014b `src->tests` MAJOR slipped the gate
-  because no contract forbids it). Status: draft.
+  because no contract forbids it).
+- 2026-06-28 (Sprint 14 refinement): contract shape resolved (forbidden src→tests). Status: draft → ready.
