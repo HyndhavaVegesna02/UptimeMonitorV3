@@ -11,7 +11,11 @@ from collections.abc import Sequence
 from datetime import datetime
 
 from src.core.domain import IngestResult, SignalObservation, StatusChange
-from src.core.domain.proposal import ProposalState, StatusProposal
+from src.core.domain.proposal import (
+    ProposalNotOpenError,
+    ProposalState,
+    StatusProposal,
+)
 from src.core.ports import (
     ClockPort,
     ObservationRepository,
@@ -133,12 +137,13 @@ class FakeProposalRepository(ProposalRepository):
         reason: str | None,
         resolved_at: datetime,
     ) -> None:
-        if proposal_id not in self.proposals:
-            raise ValueError(f"Proposal {proposal_id} not found")
-        existing = self.proposals[proposal_id]
-        if existing.state != ProposalState.OPEN:
-            raise ValueError(
-                f"Proposal {proposal_id} is not open (current state: {existing.state.value})"
+        # Mirror PostgresProposalRepository.resolve: a missing or no-longer-OPEN
+        # proposal cannot be resolved and raises ProposalNotOpenError (a single
+        # conditional UPDATE in the real adapter cannot distinguish the two).
+        existing = self.proposals.get(proposal_id)
+        if existing is None or existing.state != ProposalState.OPEN:
+            raise ProposalNotOpenError(
+                f"Proposal {proposal_id} not found or not in open state."
             )
         updated = existing.model_copy(
             update={

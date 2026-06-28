@@ -1,23 +1,15 @@
 """HTTP controller for decisions (api/v1/decisions zone).
 
-Cites dossier §13.
+Cites dossier §13: routes and status codes only, no business logic. Imports only
+this feature's models and service (the service owns the container wiring).
 """
 
 from fastapi import APIRouter, Depends
 
-from src.api.dependencies import get_approval_service
 from src.api.v1.decisions.models import DecisionRequest, DecisionResponse
-from src.api.v1.decisions.service import DecisionService
-from src.core.services.approval import ApprovalService
+from src.api.v1.decisions.service import DecisionService, get_decision_service
 
 router = APIRouter()
-
-
-def get_decision_service(
-    approval_service: ApprovalService = Depends(get_approval_service),
-) -> DecisionService:
-    """Dependency to instantiate the DecisionService."""
-    return DecisionService(approval_service)
 
 
 @router.post(

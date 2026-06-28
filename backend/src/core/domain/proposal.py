@@ -8,6 +8,19 @@ from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 from src.core.domain.status import ComponentStatus
 
 
+class ProposalNotFoundError(ValueError):
+    """Raised when a proposal cannot be found by its ID (dossier §12)."""
+
+
+class ProposalNotOpenError(ValueError):
+    """Raised when a proposal is not OPEN and so cannot be resolved (dossier §12).
+
+    The proposal lifecycle only permits resolving an OPEN proposal to a terminal
+    state; attempting to resolve a missing or already-terminal proposal (e.g. a
+    lost race where a concurrent request resolved it first) raises this.
+    """
+
+
 class ProposalState(str, Enum):
     """Actionable and terminal states for a status proposal (dossier §12)."""
 

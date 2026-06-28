@@ -180,9 +180,60 @@ def test_decision_endpoint_commit_first_pure_repo_commit():
 
 
 def test_decisions_module_structure_and_dto_distinction():
+    from pathlib import Path
+
+    from src.api.v1 import decisions
     from src.api.v1.decisions import models
     from src.core.domain.proposal import StatusProposal
 
-    # Assert that DTO types are different from domain types
+    # AC1: the feature follows the five-file shape exactly.
+    pkg_dir = Path(decisions.__file__).parent
+    py_files = {p.name for p in pkg_dir.glob("*.py")}
+    assert py_files == {
+        "__init__.py",
+        "controller.py",
+        "models.py",
+        "validation.py",
+        "service.py",
+    }
+
+    # AC1: DTO types are distinct from canonical domain types (no domain leak).
     assert models.DecisionRequest is not StatusProposal
     assert models.DecisionResponse is not StatusProposal
+
+
+def test_decision_endpoint_lost_race_returns_409():
+    """A concurrent double-submit (proposal resolved between get and resolve) maps
+    to 409, not 500. The repository's resolve() raises ProposalNotOpenError when the
+    row is no longer OPEN; the edge service maps that to 409."""
+    from src.core.domain.proposal import ProposalNotOpenError
+
+    class LostRaceRepo(FakeProposalRepository):
+        # get() still reports the proposal OPEN (the request passed the guard),
+        # but resolve() fails as a concurrent request already resolved it.
+        def resolve(self, proposal_id, *, to_state, reason, resolved_at) -> None:
+            raise ProposalNotOpenError(
+                f"Proposal {proposal_id} not found or not in open state."
+            )
+
+    repo = LostRaceRepo()
+    app = create_app(proposal_repo=repo)
+    client = TestClient(app)
+
+    prop = StatusProposal(
+        component_id="checkout",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 28, 11, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    response = client.post(
+        f"/api/v1/decisions/{saved.id}",
+        json={"action": "approve", "actor": "ops-1"},
+    )
+    assert response.status_code == 409
+    # No approval event recorded on the lost-race path.
+    assert repo.approval_events == []

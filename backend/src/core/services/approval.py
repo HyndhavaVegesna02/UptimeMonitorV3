@@ -5,16 +5,22 @@ Cites dossier §12 (proposal lifecycle) and §T1.1 (commit-first / best-effort s
 
 from __future__ import annotations
 
-from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
+from src.core.domain.proposal import (
+    ProposalNotFoundError,
+    ProposalNotOpenError,
+    ProposalState,
+    StatusProposal,
+    is_valid_transition,
+)
 from src.core.ports import ClockPort, ProposalRepository
 
-
-class ProposalNotFoundError(ValueError):
-    """Raised when a proposal cannot be found by its ID."""
-
-
-class ProposalNotOpenError(ValueError):
-    """Raised when a proposal is not in the open state and cannot be resolved."""
+# Re-exported for callers that import the proposal errors from this service
+# (the domain owns them; see src.core.domain.proposal).
+__all__ = [
+    "ApprovalService",
+    "ProposalNotFoundError",
+    "ProposalNotOpenError",
+]
 
 
 class ApprovalService:

@@ -9,7 +9,11 @@ import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.engine import Engine
 
-from src.core.domain.proposal import ProposalState, StatusProposal
+from src.core.domain.proposal import (
+    ProposalNotOpenError,
+    ProposalState,
+    StatusProposal,
+)
 from src.core.domain.status import ComponentStatus
 from src.core.ports.proposal_repository import ProposalRepository
 
@@ -193,7 +197,11 @@ class PostgresProposalRepository(ProposalRepository):
         with self._engine.begin() as conn:
             result = conn.execute(stmt)
             if result.rowcount != 1:
-                raise ValueError(
+                # 0 rows updated => the proposal is missing or no longer OPEN
+                # (e.g. a concurrent request resolved it first). The conditional
+                # UPDATE prevents double-resolution; surface it as a domain error
+                # the edge maps to 409 rather than a bare ValueError -> 500.
+                raise ProposalNotOpenError(
                     f"Proposal {proposal_id} not found or not in open state."
                 )
 
