@@ -1,84 +1,55 @@
 # YourTeam active sprint board.
-sprint: 13
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-28
+sprint: 14
+status: active        # none | active | review | closed | aborted
 started: 2026-06-28
-goal: "Extend Zone 6 with the two headline read surfaces — GET /api/v1/components (dashboard
-  component statuses, the displayed status per P4) and GET /api/v1/approvals (open proposals
-  awaiting a decision) — adding the two new read ports they need (ComponentRepository,
-  ProposalRepository.list_open), and clear the two STORY-014 API minors (engine dispose +
-  TestClient deprecation). Order: STORY-014b (5) FIRST, then STORY-035 (2). Committed 7 pts."
-branch: sprint-13
-start_tag: sprint-13-start
-# Capacity: velocity last-3 (sprints 10,11,12) = 6,4,7 -> mean 5.67. Committed 7 (014b 5 + 035 2).
+goal: "Stand up the Maintenance feature module — a MaintenanceRepository over the EXISTING
+  maintenance_windows table + a functional Maintenance tab (GET list + POST schedule at
+  /api/v1/maintenance) — and harden the import floor with the 5th src->tests linter contract.
+  Order: STORY-038 (1) FIRST (so its new contract immediately guards STORY-036's new code), then
+  STORY-036 (5). Committed 6 pts (= the 6.0 last-3 mean)."
+branch: sprint-14
+start_tag: sprint-14-start
+# Capacity: velocity last-3 (sprints 11,12,13) = 4,7,7 -> mean 6.0. Committed 6 (038 1 + 036 5).
 #
-# WORKFLOW (working-agreements.md 2026-06-26): the PO implements the plan EXTERNALLY
-# (Antigravity / Gemini) onto this branch; the orchestrator does NOT dispatch implementers. The PO
-# triggers the back half ("do your review"); the orchestrator then diffs sprint-13-start..HEAD,
-# runs the FULL six-command DoD gate itself, runs the Opus spec + quality reviewers for the 3+ pt
-# story (STORY-014b), resolves the wiki forward-blast-radius, then review/verdict/merge/retro.
-# plan.md is the ONLY contract the external implementer builds to -> it is self-contained.
+# WORKFLOW (working-agreements.md 2026-06-26): the PO implements the plan EXTERNALLY onto this
+# branch; the orchestrator does NOT dispatch implementers. The PO triggers the back half ("do your
+# review"); the orchestrator then diffs sprint-14-start..HEAD, runs the FULL DoD gate itself, runs
+# the Opus spec + quality reviewers for the 3+ pt story (STORY-036), resolves the wiki forward-blast
+# radius, then review/verdict/merge/retro. plan.md is the ONLY contract the implementer builds to.
 #
-# PIPELINE: STORY-014b (5 pts) -> GATE + Opus spec & quality reviewers. STORY-035 (2 pts) -> GATE
-# ONLY. Reviewer model assignment is mandatory (working-agreements.md 2026-06-24): reviewers on Opus.
+# PIPELINE: STORY-038 (1 pt) -> GATE ONLY. STORY-036 (5 pts) -> GATE + Opus spec & quality reviewers
+# (reviewers on Opus, working-agreements.md 2026-06-24).
 #
-# ORDER REASONING: 014b first (high blast radius — 2 new read ports + 2 features; risk-early, most
-# runway). Both stories touch composition/app.py, so 014b lands the read features first, then 035
-# adds engine-disposal to the final app.py -> avoids churn/conflict.
+# DoD CHANGE: STORY-038 adds a 5TH import-linter contract (src must not import tests) -> the
+# command-sync agreement applies: .scrum/definition-of-done.md (lint-imports now 5 contracts) +
+# CLAUDE.md (§4 contract count/list) updated in the SAME commit that lands it. From that commit on,
+# `lint-imports` must report 5 kept / 0 broken. STORY-036 then EXTENDS the api-feature-independence
+# module list (+ src.api.v1.maintenance) -> count stays 5, no further command-sync.
+# NO new migration this sprint (maintenance_windows table exists from the spine schema, STORY-006).
 #
-# NO DoD-COMMAND CHANGE this sprint: 014b adds `components`+`approvals` to the EXISTING
-# api-feature-independence contract's module list (count stays 4 -> no command-sync). 035 may
-# pin/upgrade httpx (sanctioned tooling change at planning). No new migration (014b reads existing
-# spine tables; 035 is test/composition cleanup).
-#
-# Baseline at lock: tree clean on main @ c0ad76c -> refined onto branch @ 31d6e57. Cheap gates green
-# at lock (ruff check 'All checks passed!'; ruff format '88 files already formatted'; lint-imports 4
-# kept / 0 broken). DB gates recorded green at sprint-12 review (eb147ef) with no src/ change since.
-# Conventions checklist (working-agreements.md 2026-06-27) + the 2026-06-28 TOCTOU agreement apply;
-# see plan.md per-story (TOCTOU N/A to 014b — pure reads).
+# Baseline at lock: tree clean on main @ 0dc1d75 -> refined onto branch @ 03a3931. Cheap gates green
+# at lock (ruff check + format clean; lint-imports 4 kept / 0 broken). DB gates recorded green at
+# sprint-13 review (08c4eba) with no src/ change since. Conventions checklist (2026-06-27) + the
+# five-file-shape-test agreement (2026-06-28) apply; the TOCTOU agreement (2026-06-28) is N/A
+# (maintenance create is an INSERT, not a guarded conditional write). See plan.md per-story.
 stories:
-  - id: STORY-014b
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
-    blocked_question: null
-    attempts: 0            # external impl; one orchestrator inline fix-loop (PO-authorized)
-    paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 08c4eba with throwaway DB: pytest 305 passed;
-          lint-imports 4 kept / 0 broken (components+approvals added to api-feature-independence);
-          fk 0 violations; alembic 0; ruff check + format clean. Opus spec reviewer: PASS (all AC
-          MET, no regression). Opus quality reviewer: APPROVE (0 critical / 0 major)."
-        commit: 08c4eba
-        at: 2026-06-28T18:45:00+05:30
-    review:
-      first_pass: "spec FAIL (AC2 no multiple-open test; AC4 no five-file-shape test for the two new
-        features); quality FIX REQUIRED (1 MAJOR: composition/app.py imported tests.fakes into
-        production code — a src->tests boundary violation that slipped the gate, no contract forbids it)."
-      fix_commit: 08c4eba   # PO-authorized orchestrator inline fix (incl. the dead-coercion minor)
-      second_pass: "spec PASS; quality APPROVE."
-      retro_candidate: "add a 5th import-linter contract forbidding src -> tests (would have caught the MAJOR mechanically)."
-    blast_radius_resolved: true   # compile pass: architecture-boundary (independence module list),
-                                  # api-five-file-convention, canonical-types-and-ports,
-                                  # persistence-adapters, dev-setup-and-dod re-verified @ 08c4eba.
-  - id: STORY-035
-    points: 2
-    board: done
-    pipeline: gate         # 2 pts -> (external impl) + DoD gate only
+  - id: STORY-038
+    points: 1
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate         # 1 pt -> (external impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "verified at 08c4eba (shared gate run). pytest 305 passed with ZERO deprecation
-          warnings (035.2 AC2 confirmed — StarletteDeprecationWarning cleared). httpx2 (real package,
-          v2.5.0) added to dev extras; resolves cleanly. Engine dispose-on-shutdown via FastAPI
-          lifespan (035.1)."
-        commit: 08c4eba
-        at: 2026-06-28T18:45:00+05:30
-    blast_radius_resolved: true   # dev-setup-and-dod re-verified (pyproject dep change); no Fact change.
+    dod_evidence: []
+    blast_radius_resolved: false
+  - id: STORY-036
+    points: 5
+    board: todo
+    pipeline: gate+reviewers   # 5 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
