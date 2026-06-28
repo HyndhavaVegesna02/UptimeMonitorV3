@@ -1,6 +1,16 @@
+from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from src.core.ports import ClockPort, ComponentRepository, ProposalRepository
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for resource setup and teardown (STORY-035.1)."""
+    yield
+    # Dispose of the DB engine on shutdown if it was constructed
+    if hasattr(app.state, "db_engine") and app.state.db_engine is not None:
+        app.state.db_engine.dispose()
 
 
 def create_app(
@@ -14,7 +24,8 @@ def create_app(
 
     Accepts optional injected dependencies (like a FakeProposalRepository) for testing.
     """
-    app = FastAPI(title="Uptime Monitor V3 API")
+    app = FastAPI(title="Uptime Monitor V3 API", lifespan=lifespan)
+
 
     # Wire database engine and repositories
     if proposal_repo is None:
