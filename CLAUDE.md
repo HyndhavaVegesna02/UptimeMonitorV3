@@ -60,7 +60,7 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Install (editable)  | `.venv/Scripts/python.exe -m pip install -e ".[dev]"` |
 | Run tests           | `pytest`                                  |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
-| Import boundary     | `lint-imports` (4 contracts; must exit 0) |
+| Import boundary     | `lint-imports` (5 contracts; must exit 0) |
 | Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 | Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
@@ -73,8 +73,8 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 
 The six DoD gate commands are `pytest`, `lint-imports`,
 `python scripts/check_fk_direction.py`, `alembic upgrade head`, `ruff check`, and `ruff format`. All six are
-live as of STORY-033. `lint-imports` enforces the four contracts
-(core-independence, core-internal-layering, adapters-independence, api-feature-independence);
+live as of STORY-033. `lint-imports` enforces the five contracts
+(core-independence, core-internal-layering, adapters-independence, api-feature-independence, src-no-tests);
 `check_fk_direction.py` enforces the dossier §9 schema spine boundary (no
 spine→feature foreign key) by reading `information_schema` over `DATABASE_URL`;
 `alembic upgrade head` applies the migrations at the repo top level;

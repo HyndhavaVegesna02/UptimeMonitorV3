@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 08c4eba
-verified_sprint: sprint-12
+verified_sha: bbc324e
+verified_sprint: sprint-14
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -19,7 +19,7 @@ status: verified
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
 - **Import boundary (dossier §4)** is enforced by import-linter, run as the bare command
-  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with four contracts:
+  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with five contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
     `src.composition`, `src.api`, `sqlalchemy`, or `httpx` (`pyproject.toml` ("core-independence")).
   - `core-internal-layering` (layers): `src.core.services` → `src.core.ports` →
@@ -29,6 +29,7 @@ status: verified
   - `api-feature-independence` (independence): `src.api.v1.decisions`, `src.api.v1.health`,
     `src.api.v1.components`, and `src.api.v1.approvals` may not import one another
     (`pyproject.toml` ("api-feature-independence")).
+  - `src-no-tests` (forbidden): `src` may not import `tests` (`pyproject.toml` ("src-no-tests")).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.
@@ -89,3 +90,4 @@ status: verified
   zone-tree / contract Fact changed — `outbound` is a real package now, `core-independence` +
   `adapters-independence` stayed KEPT (`3 kept, 0 broken`), FK-direction `10 checked, 0 violations`.
   verified_sha → 2d42c60.
+- sprint-14: re-verified after adding the 5th contract (`src-no-tests`, forbidden, `src` may not import `tests`) to prevent leaks of fakes/mocks into production. verified_sha → bbc324e.

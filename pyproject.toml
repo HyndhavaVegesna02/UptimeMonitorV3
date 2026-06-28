@@ -63,6 +63,13 @@ modules = [
     "src.api.v1.approvals",
 ]
 
+[[tool.importlinter.contracts]]
+name = "src-no-tests"
+type = "forbidden"
+source_modules = ["src"]
+forbidden_modules = ["tests"]
+
+
 
 [tool.ruff]
 target-version = "py313"
