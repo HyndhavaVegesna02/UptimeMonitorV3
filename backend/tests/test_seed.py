@@ -256,3 +256,82 @@ def test_seed_topology_cli_invalid_config_fails(migrated_db, tmp_path):
     assert result.returncode == 1
     assert "Topology Config Load Failure" in result.stdout or "Topology Config Load Failure" in result.stderr
 
+
+def test_create_app_seeds_on_lifespan_startup(migrated_db, clean_topology, tmp_path):
+    """D2: lifespan startup triggers seed_topology when seed_config and db_engine are present.
+
+    And GET /api/v1/components returns the newly-seeded components.
+    """
+    from fastapi.testclient import TestClient
+    from src.composition.app import create_app
+
+    # Create a valid config in a temp dir
+    config_dir = tmp_path / "apps"
+    config_dir.mkdir()
+    yaml_content = """
+app:
+  id: startup-app
+  name: Startup App
+  monitor_provider: dynatrace
+components:
+  - { id: startup-comp, name: Startup Comp }
+signals:
+  - { signal_key: startup-sig, native_id: N-2, name: Startup Sig, component_id: startup-comp, interval_seconds: 45 }
+"""
+    (config_dir / "startup_app.yaml").write_text(yaml_content, encoding="utf-8")
+
+    app = create_app(
+        database_url=migrated_db.database_url,
+        config_dir=str(config_dir),
+    )
+
+    # Before lifespan, DB should not have the components
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("SELECT COUNT(*) FROM components WHERE id = 'startup-comp';")
+            assert cur.fetchone()[0] == 0
+
+    # Entering TestClient context manager triggers lifespan events
+    with TestClient(app) as client:
+        # After lifespan startup, DB should have the components seeded
+        response = client.get("/api/v1/components")
+        assert response.status_code == 200
+        data = response.json()
+        assert len(data) == 1
+        assert data[0]["id"] == "startup-comp"
+        assert data[0]["name"] == "Startup Comp"
+        assert data[0]["status"] == "operational"
+
+
+def test_create_app_fails_fast_on_invalid_config(tmp_path):
+    """D2: create_app fails fast (raises ValueError) if configuration load/validation fails."""
+    from src.composition.app import create_app
+
+    config_dir = tmp_path / "bad_apps"
+    config_dir.mkdir()
+    (config_dir / "bad.yaml").write_text("invalid_yaml: [unclosed", encoding="utf-8")
+
+    with pytest.raises(ValueError):
+        create_app(
+            database_url="postgresql://postgres:postgres@localhost:55432/uptime",
+            config_dir=str(config_dir),
+        )
+
+
+def test_create_app_injected_branch_skips_seeding():
+    """D2: create_app in the injected branch (fakes passed in) sets seed_config to None and does not seed."""
+    from fastapi.testclient import TestClient
+    from src.composition.app import create_app
+    from fakes import FakeProposalRepository
+
+    fake_repo = FakeProposalRepository()
+    app = create_app(proposal_repo=fake_repo)
+
+    assert app.state.seed_config is None
+    assert app.state.db_engine is None
+
+    # lifespan should yield normally without attempting to seed or throwing errors
+    with TestClient(app):
+        pass
+
+

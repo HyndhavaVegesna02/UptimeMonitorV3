@@ -25,6 +25,7 @@ class Settings:
     """Immutable app settings resolved from the environment."""
 
     database_url: str
+    config_dir: str
 
 
 def load_settings() -> Settings:
@@ -32,5 +33,9 @@ def load_settings() -> Settings:
 
     Reads the POOLED connection string from ``DATABASE_URL``. Raises
     ``KeyError`` if it is unset — the app must not start without a database URL.
+    Also reads config_dir from ``CONFIG_DIR`` env var, defaulting to ``"config/apps"``.
     """
-    return Settings(database_url=os.environ[APP_DATABASE_URL_VAR])
+    return Settings(
+        database_url=os.environ[APP_DATABASE_URL_VAR],
+        config_dir=os.environ.get("CONFIG_DIR", "config/apps"),
+    )
