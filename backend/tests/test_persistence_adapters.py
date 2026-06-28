@@ -848,4 +848,3 @@ def test_postgres_maintenance_repository(migrated_db, engine):
         )
         is False
     )
-

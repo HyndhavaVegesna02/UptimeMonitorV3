@@ -26,4 +26,3 @@ def get_proposal_repo(request: Request) -> ProposalRepository:
 def get_maintenance_repo(request: Request) -> MaintenanceRepository:
     """FastAPI dependency to retrieve the MaintenanceRepository from app state."""
     return request.app.state.maintenance_repo
-

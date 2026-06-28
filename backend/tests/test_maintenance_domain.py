@@ -1,9 +1,9 @@
 """Tests for the MaintenanceWindow domain type (dossier §9, §10, §17)."""
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain.maintenance import MaintenanceWindow
 
 

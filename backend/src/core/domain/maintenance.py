@@ -1,6 +1,7 @@
 """Maintenance window domain models (dossier §9, §10, §17)."""
 
 from datetime import datetime, timedelta
+
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 

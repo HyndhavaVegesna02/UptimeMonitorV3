@@ -12,4 +12,3 @@ router.include_router(decisions_router)
 router.include_router(components_router)
 router.include_router(approvals_router)
 router.include_router(maintenance_router)
-

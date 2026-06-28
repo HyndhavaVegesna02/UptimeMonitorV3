@@ -39,9 +39,7 @@ class MaintenanceService:
             for w in windows
         ]
 
-    def create_window(
-        self, request: CreateMaintenanceRequest
-    ) -> MaintenanceWindowDTO:
+    def create_window(self, request: CreateMaintenanceRequest) -> MaintenanceWindowDTO:
         """Validate, construct domain model, and persist the maintenance window."""
         # 1. Syntactic validation
         try:

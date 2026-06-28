@@ -1,12 +1,15 @@
 """Tests for the maintenance API feature (dossier §13, §17)."""
 
 from datetime import datetime, timezone
-from fastapi.testclient import TestClient
-import pytest
 
+from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from src.core.domain.maintenance import MaintenanceWindow
-from tests.fakes import FakeMaintenanceRepository, FakeProposalRepository, FakeComponentRepository
+from tests.fakes import (
+    FakeComponentRepository,
+    FakeMaintenanceRepository,
+    FakeProposalRepository,
+)
 
 
 def test_get_maintenance_empty():
@@ -133,4 +136,3 @@ def test_maintenance_module_five_file_shape():
         "validation.py",
         "service.py",
     }
-

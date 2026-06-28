@@ -10,7 +10,13 @@ inject in place of a real adapter.
 from collections.abc import Sequence
 from datetime import datetime
 
-from src.core.domain import Component, IngestResult, SignalObservation, StatusChange, MaintenanceWindow
+from src.core.domain import (
+    Component,
+    IngestResult,
+    MaintenanceWindow,
+    SignalObservation,
+    StatusChange,
+)
 from src.core.domain.proposal import (
     ProposalNotOpenError,
     ProposalState,
@@ -19,12 +25,12 @@ from src.core.domain.proposal import (
 from src.core.ports import (
     ClockPort,
     ComponentRepository,
+    MaintenanceRepository,
     ObservationRepository,
     ProposalRepository,
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
-    MaintenanceRepository,
 )
 
 
@@ -225,4 +231,3 @@ class FakeMaintenanceRepository(MaintenanceRepository):
                 if w.starts_at <= at < w.ends_at:
                     return True
         return False
-

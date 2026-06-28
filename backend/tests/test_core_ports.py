@@ -499,4 +499,3 @@ def test_fake_maintenance_repository():
         )
         is False
     )
-
