@@ -167,3 +167,7 @@ class FakeProposalRepository(ProposalRepository):
                 "occurred_at": occurred_at,
             }
         )
+
+    def get(self, proposal_id: int) -> StatusProposal | None:
+        return self.proposals.get(proposal_id)
+

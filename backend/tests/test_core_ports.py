@@ -314,3 +314,30 @@ def test_fake_proposal_repository_resolve_non_open_or_unknown_raises():
             reason="second",
             resolved_at=resolved_time,
         )
+
+
+def test_fake_proposal_repository_get():
+    from datetime import timezone
+    from fakes import FakeProposalRepository
+    from src.core.domain.status import ComponentStatus
+    from src.core.domain.proposal import ProposalState, StatusProposal
+
+    repo = FakeProposalRepository()
+    assert repo.get(999) is None
+
+    prop = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+    assert saved.id is not None
+
+    retrieved = repo.get(saved.id)
+    assert retrieved is not None
+    assert retrieved.id == saved.id
+    assert retrieved.component_id == "checkout"
+

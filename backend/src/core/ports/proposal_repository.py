@@ -48,3 +48,9 @@ class ProposalRepository(ABC):
     ) -> None:
         """Record an approval or rejection event for a proposal."""
         raise NotImplementedError
+
+    @abstractmethod
+    def get(self, proposal_id: int) -> StatusProposal | None:
+        """Return the proposal with this id, or None if none exists."""
+        raise NotImplementedError
+
