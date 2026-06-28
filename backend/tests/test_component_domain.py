@@ -2,7 +2,6 @@
 
 import pytest
 from pydantic import ValidationError
-
 from src.core.domain.component import Component
 from src.core.domain.status import ComponentStatus
 

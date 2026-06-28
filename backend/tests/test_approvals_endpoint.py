@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from src.core.domain.proposal import ProposalState, StatusProposal

@@ -198,7 +198,9 @@ class PostgresProposalRepository(ProposalRepository):
         results = []
         for row in rows:
             from_status = (
-                ComponentStatus(row.from_status) if row.from_status is not None else None
+                ComponentStatus(row.from_status)
+                if row.from_status is not None
+                else None
             )
             to_status = ComponentStatus(row.to_status)
             results.append(
@@ -218,7 +220,6 @@ class PostgresProposalRepository(ProposalRepository):
                 )
             )
         return results
-
 
     def resolve(
         self,

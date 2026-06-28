@@ -661,7 +661,9 @@ def test_postgres_proposal_repository_get(migrated_db, engine):
 
 
 def test_postgres_component_repository_list_components(migrated_db, engine):
-    from src.adapters.persistence.component_repository import PostgresComponentRepository
+    from src.adapters.persistence.component_repository import (
+        PostgresComponentRepository,
+    )
     from src.core.domain.status import ComponentStatus
 
     # Clear components table for isolation in this test
@@ -749,5 +751,3 @@ def test_postgres_proposal_repository_list_open(migrated_db, engine):
 
     # Empty case again because the proposal is terminal
     assert repo.list_open() == []
-
-

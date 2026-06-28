@@ -17,4 +17,3 @@ def get_component_repo(request: Request) -> ComponentRepository:
 def get_proposal_repo(request: Request) -> ProposalRepository:
     """FastAPI dependency to retrieve the ProposalRepository from app state."""
     return request.app.state.proposal_repo
-

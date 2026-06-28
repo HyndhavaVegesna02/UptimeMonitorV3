@@ -21,7 +21,6 @@ def test_app_lifespan_disposes_engine():
     from unittest.mock import MagicMock
 
     from fastapi.testclient import TestClient
-
     from src.composition.app import create_app
     from tests.fakes import FakeProposalRepository
 
@@ -40,4 +39,3 @@ def test_app_lifespan_disposes_engine():
 
     # Verify that dispose was called
     mock_engine.dispose.assert_called_once()
-

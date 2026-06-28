@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 
 from src.core.ports import ClockPort, ComponentRepository, ProposalRepository
@@ -25,7 +26,6 @@ def create_app(
     Accepts optional injected dependencies (like a FakeProposalRepository) for testing.
     """
     app = FastAPI(title="Uptime Monitor V3 API", lifespan=lifespan)
-
 
     # Wire database engine and repositories
     if proposal_repo is None:
@@ -75,4 +75,3 @@ def create_app(
     app.include_router(v1_router, prefix="/api/v1")
 
     return app
-

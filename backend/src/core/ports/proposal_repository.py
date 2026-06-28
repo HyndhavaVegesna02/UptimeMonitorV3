@@ -62,4 +62,3 @@ class ProposalRepository(ABC):
             list[StatusProposal]: A list of all open proposals. Returns `[]` if none exist.
         """
         raise NotImplementedError
-
