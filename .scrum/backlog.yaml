@@ -175,11 +175,11 @@ stories:
   - id: STORY-037
     title: Publications feature module — record Statuspage publish history for the Publications tab
     file: docs/scrum/stories/STORY-037-publications-feature-module.md
-    status: ready   # refined 2026-06-29 (Sprint 19): table exists; record successes; RecordingPublisher + GET endpoint
+    status: done    # accepted at Sprint 19 review (2026-06-29)
     points: 5
     priority: 17
     type: feature
-    sprint: null
+    sprint: 19
   # ── Zone 7 — Frontend ────────────────────────────────────────────
   - id: STORY-015
     title: Dashboard shell + six tabs (redesigned)

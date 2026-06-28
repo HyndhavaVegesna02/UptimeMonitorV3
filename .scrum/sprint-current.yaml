@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 19
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-29
 started: 2026-06-29
 goal: "Publications feature module (the last pure-backend feature): a PublicationRepository over the
   EXISTING publications table, a RecordingPublisher decorator that records each SUCCESSFUL publish, and

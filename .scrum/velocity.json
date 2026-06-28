@@ -1,23 +1,104 @@
 {
   "sprints": [
-    {"sprint": 0, "committed": 8, "accepted": 8},
-    {"sprint": 1, "committed": 6, "accepted": 6},
-    {"sprint": 2, "committed": 6, "accepted": 6},
-    {"sprint": 3, "committed": 6, "accepted": 6},
-    {"sprint": 4, "committed": 5, "accepted": 5},
-    {"sprint": 5, "committed": 6, "accepted": 6},
-    {"sprint": 6, "committed": 6, "accepted": 6},
-    {"sprint": 7, "committed": 6, "accepted": 6},
-    {"sprint": 8, "committed": 6, "accepted": 6},
-    {"sprint": 9, "committed": 6, "accepted": 6},
-    {"sprint": 10, "committed": 6, "accepted": 6},
-    {"sprint": 11, "committed": 4, "accepted": 4},
-    {"sprint": 12, "committed": 7, "accepted": 7},
-    {"sprint": 13, "committed": 7, "accepted": 7},
-    {"sprint": 14, "committed": 6, "accepted": 6},
-    {"sprint": 15, "committed": 5, "accepted": 5},
-    {"sprint": 16, "committed": 5, "accepted": 5},
-    {"sprint": 17, "committed": 5, "accepted": 5},
-    {"sprint": 18, "committed": 5, "accepted": 5}
+    {
+      "sprint": 0,
+      "committed": 8,
+      "accepted": 8
+    },
+    {
+      "sprint": 1,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 2,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 3,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 4,
+      "committed": 5,
+      "accepted": 5
+    },
+    {
+      "sprint": 5,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 6,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 7,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 8,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 9,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 10,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 11,
+      "committed": 4,
+      "accepted": 4
+    },
+    {
+      "sprint": 12,
+      "committed": 7,
+      "accepted": 7
+    },
+    {
+      "sprint": 13,
+      "committed": 7,
+      "accepted": 7
+    },
+    {
+      "sprint": 14,
+      "committed": 6,
+      "accepted": 6
+    },
+    {
+      "sprint": 15,
+      "committed": 5,
+      "accepted": 5
+    },
+    {
+      "sprint": 16,
+      "committed": 5,
+      "accepted": 5
+    },
+    {
+      "sprint": 17,
+      "committed": 5,
+      "accepted": 5
+    },
+    {
+      "sprint": 18,
+      "committed": 5,
+      "accepted": 5
+    },
+    {
+      "sprint": 19,
+      "committed": 5,
+      "accepted": 5
+    }
   ]
 }
