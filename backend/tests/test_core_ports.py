@@ -417,7 +417,10 @@ def test_fake_component_repository_get():
     from src.core.domain.status import ComponentStatus
 
     comp = Component(
-        id="checkout", name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+        id="checkout",
+        name="Checkout",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="sockshop",
     )
     repo = FakeComponentRepository(components=[comp])
 

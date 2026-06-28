@@ -109,6 +109,7 @@ class SignalConfig(BaseModel):
             )
         return self
 
+
 class AppConfig(BaseModel):
     """Per-app config: components, signals, and anti-flap thresholds (dossier §7/§10).
 

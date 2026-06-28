@@ -727,7 +727,6 @@ def test_postgres_component_repository_get(migrated_db, engine):
     assert repo.get("other-comp-does-not-exist") is None
 
 
-
 def test_postgres_proposal_repository_list_open(migrated_db, engine):
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
     from src.core.domain.proposal import ProposalState, StatusProposal

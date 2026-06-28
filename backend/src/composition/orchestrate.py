@@ -107,7 +107,10 @@ def orchestrate_signal(
     # ── 4. Streak + anti-flap (§10 stages 2-3) ──────────────────────────────
     s = streak(verdicts)
     if s is None:
-        _log.debug("orchestrate_signal(%s): streak is None (no non-maintenance cycles) → NOOP", signal_key)
+        _log.debug(
+            "orchestrate_signal(%s): streak is None (no non-maintenance cycles) → NOOP",
+            signal_key,
+        )
         return DecideAction.NOOP
 
     outcome = anti_flap(s, thresholds)

@@ -325,7 +325,10 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
     ingest_port = PersistingIngestPort(obs_repo)
 
     comp = Component(
-        id=component_id, name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+        id=component_id,
+        name="Checkout",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="sockshop",
     )
     component_repo = FakeComponentRepository(components=[comp])
     maintenance_repo = FakeMaintenanceRepository()
@@ -358,4 +361,3 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
     open_proposals = proposal_repo.list_open()
     assert len(open_proposals) == 1
     assert open_proposals[0].component_id == component_id
-

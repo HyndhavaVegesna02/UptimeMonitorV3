@@ -9,17 +9,21 @@ The orchestrator is composition wiring; no domain logic lives here.
 
 from __future__ import annotations
 
-import logging
 from datetime import datetime, timedelta, timezone
 
-import pytest
 from src.composition.config import (
     AppConfig,
     ComponentConfig,
     Config,
     SignalConfig,
 )
-from src.core.domain import Component, ComponentStatus, Health, Provenance, SignalObservation
+from src.core.domain import (
+    Component,
+    ComponentStatus,
+    Health,
+    Provenance,
+    SignalObservation,
+)
 from src.core.domain.proposal import ProposalState
 from src.core.services.decide import DecideAction, DecideService
 from src.core.services.pipeline import AntiFlapThresholds
@@ -58,7 +62,9 @@ def _build_config(
     recovery: int = 2,
 ) -> Config:
     """Build an in-test Config with one signal/component/app."""
-    thresholds = AntiFlapThresholds(major=major, partial=partial, degraded=degraded, recovery=recovery)
+    thresholds = AntiFlapThresholds(
+        major=major, partial=partial, degraded=degraded, recovery=recovery
+    )
     sig = SignalConfig(
         signal_key=signal_key,
         native_id="SYNTHETIC_TEST-X",
@@ -109,18 +115,27 @@ class TestOrchestrateSignalAC1:
 
         # Place one DOWN observation per 60s cycle; need ≥ major=3 consecutive
         now = _utc(10, 4, 0)  # T=10:04:00
-        interval = timedelta(seconds=60)
+        timedelta(seconds=60)
         # Buckets start at: now - (3+2)*60s = 10:04:00 - 300s = 09:59:00
         # We need ≥ 3 cycles of DOWN — put them in cycles 2, 3, 4 (at 10:01, 10:02, 10:03)
         obs_repo = FakeObservationRepository()
         obs_repo.saved = [
-            _obs(signal_key, _utc(10, 1, 30), Health.DOWN),  # bucket [10:01:00, 10:02:00)
-            _obs(signal_key, _utc(10, 2, 30), Health.DOWN),  # bucket [10:02:00, 10:03:00)
-            _obs(signal_key, _utc(10, 3, 30), Health.DOWN),  # bucket [10:03:00, 10:04:00)
+            _obs(
+                signal_key, _utc(10, 1, 30), Health.DOWN
+            ),  # bucket [10:01:00, 10:02:00)
+            _obs(
+                signal_key, _utc(10, 2, 30), Health.DOWN
+            ),  # bucket [10:02:00, 10:03:00)
+            _obs(
+                signal_key, _utc(10, 3, 30), Health.DOWN
+            ),  # bucket [10:03:00, 10:04:00)
         ]
 
         comp = Component(
-            id=component_id, name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+            id=component_id,
+            name="Checkout",
+            status=ComponentStatus.OPERATIONAL,
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -162,7 +177,13 @@ class TestOrchestrateSignalAC1:
         signal_key = "checkout-http"
         component_id = "checkout"
         # major=3, partial=2, degraded=2, recovery=2 — need ≥2 for anything
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, major=3, partial=2, degraded=2)
+        cfg = _build_config(
+            signal_key=signal_key,
+            component_id=component_id,
+            major=3,
+            partial=2,
+            degraded=2,
+        )
 
         now = _utc(10, 4, 0)
         obs_repo = FakeObservationRepository()
@@ -172,7 +193,10 @@ class TestOrchestrateSignalAC1:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+            id=component_id,
+            name="Checkout",
+            status=ComponentStatus.OPERATIONAL,
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -217,7 +241,10 @@ class TestOrchestrateSignalAC1:
         obs_repo.saved = []
 
         comp = Component(
-            id=component_id, name="Checkout", status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+            id=component_id,
+            name="Checkout",
+            status=ComponentStatus.OPERATIONAL,
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -274,7 +301,16 @@ class TestOrchestrateSignalAC2:
         component_repo = FakeComponentRepository(components=[comp_degraded])
         maintenance_repo = FakeMaintenanceRepository()
         decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
-        return obs_repo, component_repo, maintenance_repo, proposal_repo, publisher, clock, decide_service, now
+        return (
+            obs_repo,
+            component_repo,
+            maintenance_repo,
+            proposal_repo,
+            publisher,
+            clock,
+            decide_service,
+            now,
+        )
 
     def test_sustained_recovery_publishes_recovery(self):
         """≥ recovery UP observations while current_status is degraded → PUBLISHED_RECOVERY."""
@@ -290,7 +326,9 @@ class TestOrchestrateSignalAC2:
 
         signal_key = "checkout-http"
         component_id = "checkout"
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, recovery=2)
+        cfg = _build_config(
+            signal_key=signal_key, component_id=component_id, recovery=2
+        )
 
         now = _utc(10, 10, 0)
         obs_repo = FakeObservationRepository()
@@ -301,9 +339,10 @@ class TestOrchestrateSignalAC2:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout",
+            id=component_id,
+            name="Checkout",
             status=ComponentStatus.DEGRADED,  # current is degraded → UP improves it
-            app_id="sockshop"
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -338,11 +377,13 @@ class TestOrchestrateSignalAC2:
             RecordingStatusPublisher,
         )
         from src.composition.orchestrate import orchestrate_signal
-        from src.core.domain.proposal import ProposalState, StatusProposal
+        from src.core.domain.proposal import StatusProposal
 
         signal_key = "checkout-http"
         component_id = "checkout"
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, recovery=2)
+        cfg = _build_config(
+            signal_key=signal_key, component_id=component_id, recovery=2
+        )
 
         now = _utc(10, 10, 0)
         obs_repo = FakeObservationRepository()
@@ -353,9 +394,10 @@ class TestOrchestrateSignalAC2:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout",
+            id=component_id,
+            name="Checkout",
             status=ComponentStatus.OPERATIONAL,  # current_status = operational
-            app_id="sockshop"
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -399,12 +441,18 @@ class TestOrchestrateSignalAC2:
             RecordingStatusPublisher,
         )
         from src.composition.orchestrate import orchestrate_signal
-        from src.core.domain.proposal import ProposalState, StatusProposal
+        from src.core.domain.proposal import StatusProposal
 
         signal_key = "checkout-http"
         component_id = "checkout"
         # major=3 → major_outage proposed after ≥3 DOWN
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, major=3, partial=2, degraded=2)
+        cfg = _build_config(
+            signal_key=signal_key,
+            component_id=component_id,
+            major=3,
+            partial=2,
+            degraded=2,
+        )
 
         now = _utc(10, 10, 0)
         obs_repo = FakeObservationRepository()
@@ -416,9 +464,10 @@ class TestOrchestrateSignalAC2:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout",
+            id=component_id,
+            name="Checkout",
             status=ComponentStatus.OPERATIONAL,
-            app_id="sockshop"
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
@@ -468,7 +517,9 @@ class TestOrchestrateSignalAC2:
 
         signal_key = "checkout-http"
         component_id = "checkout"
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, major=2, degraded=2)
+        cfg = _build_config(
+            signal_key=signal_key, component_id=component_id, major=2, degraded=2
+        )
 
         now = _utc(10, 4, 0)
         obs_repo = FakeObservationRepository()
@@ -479,8 +530,10 @@ class TestOrchestrateSignalAC2:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout",
-            status=ComponentStatus.OPERATIONAL, app_id="sockshop"
+            id=component_id,
+            name="Checkout",
+            status=ComponentStatus.OPERATIONAL,
+            app_id="sockshop",
         )
         component_repo = FakeComponentRepository(components=[comp])
 
@@ -537,12 +590,13 @@ class TestOrchestrateSignalAC3:
 
         class RaisingPublisher(StatusPublisherPort):
             """Always raises RuntimeError on publish — simulates a dead Statuspage."""
+
             def publish(self, change):
                 raise RuntimeError("simulated statuspage failure")
 
         signal_key = "checkout-http"
         component_id = "checkout"
-        cfg = _build_config(signal_key=signal_key, component_id=component_id, recovery=2)
+        _build_config(signal_key=signal_key, component_id=component_id, recovery=2)
 
         now = _utc(10, 10, 0)
         obs_repo = FakeObservationRepository()
@@ -553,16 +607,17 @@ class TestOrchestrateSignalAC3:
         ]
 
         comp = Component(
-            id=component_id, name="Checkout",
+            id=component_id,
+            name="Checkout",
             status=ComponentStatus.DEGRADED,  # recovery scenario
-            app_id="sockshop"
+            app_id="sockshop",
         )
-        component_repo = FakeComponentRepository(components=[comp])
+        FakeComponentRepository(components=[comp])
         maintenance_repo = FakeMaintenanceRepository()
         proposal_repo = FakeProposalRepository()
         clock = FakeClock(now)
         raising_publisher = RaisingPublisher()
-        decide_service = DecideService(proposal_repo=proposal_repo, publisher=raising_publisher)
+        DecideService(proposal_repo=proposal_repo, publisher=raising_publisher)
 
         # The raising publisher propagates — cycle should NOT silently swallow it,
         # but the orchestrator itself may catch at the publish boundary.
@@ -589,14 +644,17 @@ class TestOrchestrateSignalAC3:
         ]
 
         comp_operational = Component(
-            id=component_id, name="Checkout",
+            id=component_id,
+            name="Checkout",
             status=ComponentStatus.OPERATIONAL,  # degradation scenario
-            app_id="sockshop"
+            app_id="sockshop",
         )
         component_repo2 = FakeComponentRepository(components=[comp_operational])
         cfg2 = _build_config(signal_key=signal_key, component_id=component_id, major=3)
         proposal_repo2 = FakeProposalRepository()
-        decide_service2 = DecideService(proposal_repo=proposal_repo2, publisher=raising_publisher)
+        decide_service2 = DecideService(
+            proposal_repo=proposal_repo2, publisher=raising_publisher
+        )
 
         # For PROPOSED: publisher is NOT called (degradations wait for human gate).
         # So this should not raise and should produce a proposal.

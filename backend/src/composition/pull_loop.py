@@ -27,17 +27,16 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
-from typing import overload
 
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
-from src.core.domain import IngestResult
-from src.core.ports import SignalIngestPort, WatermarkRepository
 
 # Optional orchestration types (imported lazily to keep the no-orchestration
 # path decoupled; a static-analysis-friendly TYPE_CHECKING guard would work
 # too but runtime isinstance checks are cleaner here).
 from src.composition.config import Config
+from src.core.domain import IngestResult
+from src.core.ports import SignalIngestPort, WatermarkRepository
 from src.core.ports.clock import ClockPort
 from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.maintenance_repository import MaintenanceRepository
@@ -92,7 +91,14 @@ def run_cycle(
     ingest_result = ingest_port.ingest_observations(batch)
 
     # Orchestration step (dossier §8 step 5 — only when all six extras supplied)
-    orch_params = (config, observation_repo, maintenance_repo, component_repo, decide_service, clock)
+    orch_params = (
+        config,
+        observation_repo,
+        maintenance_repo,
+        component_repo,
+        decide_service,
+        clock,
+    )
     if all(p is not None for p in orch_params):
         from src.composition.orchestrate import orchestrate_signal
 

@@ -5,14 +5,18 @@ Postgres DB, runs orchestrate_signal against Postgres-backed repository adapters
 reconciled via DecideService, and asserts a real status_proposals row is opened.
 """
 
-from datetime import datetime, timezone
 import json
-import psycopg
-import pytest
+from datetime import datetime, timezone
 
+import psycopg
+from fakes import RecordingStatusPublisher
 from src.adapters.persistence.component_repository import PostgresComponentRepository
-from src.adapters.persistence.maintenance_repository import PostgresMaintenanceRepository
-from src.adapters.persistence.observation_repository import PostgresObservationRepository
+from src.adapters.persistence.maintenance_repository import (
+    PostgresMaintenanceRepository,
+)
+from src.adapters.persistence.observation_repository import (
+    PostgresObservationRepository,
+)
 from src.adapters.persistence.proposal_repository import PostgresProposalRepository
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
 from src.composition.orchestrate import orchestrate_signal
@@ -20,7 +24,6 @@ from src.core.domain import ComponentStatus, Health, Provenance, SignalObservati
 from src.core.domain.proposal import ProposalState
 from src.core.services.decide import DecideAction, DecideService
 from src.core.services.pipeline import AntiFlapThresholds
-from fakes import RecordingStatusPublisher
 
 
 class FakeClock:
@@ -31,7 +34,9 @@ class FakeClock:
         return self._now
 
 
-def seed_db_topology(database_url: str, app_id: str, component_id: str, signal_key: str) -> None:
+def seed_db_topology(
+    database_url: str, app_id: str, component_id: str, signal_key: str
+) -> None:
     """Helper to seed app, component, and signal topology into the database."""
     with psycopg.connect(database_url) as conn:
         with conn.cursor() as cur:

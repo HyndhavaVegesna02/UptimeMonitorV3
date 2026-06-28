@@ -401,7 +401,9 @@ class TestSignalConfigIntervalSeconds:
                 interval_seconds=-1,
             )
 
-    def test_config_signal_resolver_returns_interval_seconds(self, tmp_config_dir: Path):
+    def test_config_signal_resolver_returns_interval_seconds(
+        self, tmp_config_dir: Path
+    ):
         """Config.signal(signal_key) returns the SignalConfig with interval_seconds."""
         _write_yaml(tmp_config_dir, "sockshop.yaml", SOCKSHOP_YAML)
         cfg = load_config(tmp_config_dir)
