@@ -16,7 +16,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "import-linter", "ruff", "httpx"]
+dev = ["pytest", "import-linter", "ruff", "httpx", "httpx2"]
 
 [tool.setuptools]
 package-dir = {"" = "backend"}
