@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: 08c4eba
-verified_sprint: sprint-11
+verified_sha: fafdc4c
+verified_sprint: sprint-14
 status: verified
 ---
 
@@ -15,7 +15,7 @@ status: verified
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
 - **The DoD gate is six bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
   1. `pytest`
-  2. `lint-imports` (4 import-linter contracts; the 4th, `api-feature-independence`, added STORY-014)
+  2. `lint-imports` (5 import-linter contracts; the 4th, `api-feature-independence`, added STORY-014; the 5th, `src-no-tests`, added STORY-038 to forbid `src` importing `tests`)
   3. `python scripts/check_fk_direction.py` (needs `DATABASE_URL` → migrated Postgres)
   4. `alembic upgrade head` (needs `DATABASE_URL_DIRECT`)
   5. `ruff check .`
@@ -79,3 +79,4 @@ status: verified
   Verified at 70622a1.
 - sprint-11: updated to note the ruff lint and format check integration in the DoD gate (STORY-033).
   Verified at d557749.
+- sprint-14: STORY-038 added the 5th `lint-imports` contract (`src-no-tests`, forbidden: `src` may not import `tests`) to prevent production code importing fakes/mocks. The `lint-imports` command now enforces 5 contracts. Re-verified at fafdc4c.
