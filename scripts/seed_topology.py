@@ -13,23 +13,16 @@ from __future__ import annotations
 
 import os
 import sys
+from pathlib import Path
 
 import sqlalchemy as sa
 
-# Ensure we can import from src/
-sys.path.insert(
-    0, str(os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/backend")
-)
+# Ensure we can import the `src` package (it lives at <repo>/backend).
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 
 from src.composition.config import load_config
 from src.composition.seed import seed_topology
-
-
-def _engine_url(database_url: str) -> str:
-    """Format plain postgresql:// URL to postgresql+psycopg:// dialect for SQLAlchemy 2."""
-    if database_url.startswith("postgresql://"):
-        return "postgresql+psycopg://" + database_url[len("postgresql://") :]
-    return database_url
+from src.composition.settings import to_psycopg_url
 
 
 def main() -> int:
@@ -52,8 +45,7 @@ def main() -> int:
         return 2
 
     # 3. Create engine and seed
-    engine_url = _engine_url(database_url)
-    engine = sa.create_engine(engine_url, future=True)
+    engine = sa.create_engine(to_psycopg_url(database_url), future=True)
     try:
         seed_topology(config, engine)
     except Exception as exc:

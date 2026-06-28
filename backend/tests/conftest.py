@@ -118,12 +118,9 @@ def engine(migrated_db, clean_runtime_tables):  # noqa: F811
     order/state-independent on a reused DB without editing each test individually.
     """
     import sqlalchemy as sa
+    from src.composition.settings import to_psycopg_url
 
-    def _engine_url(database_url: str) -> str:
-        assert database_url.startswith("postgresql://"), database_url
-        return "postgresql+psycopg://" + database_url[len("postgresql://") :]
-
-    eng = sa.create_engine(_engine_url(migrated_db.database_url), future=True)
+    eng = sa.create_engine(to_psycopg_url(migrated_db.database_url), future=True)
     try:
         yield eng
     finally:

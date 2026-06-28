@@ -20,6 +20,21 @@ from dataclasses import dataclass
 APP_DATABASE_URL_VAR = "DATABASE_URL"
 
 
+def to_psycopg_url(database_url: str) -> str:
+    """Normalize a plain libpq ``postgresql://`` URL to the psycopg3 dialect
+    ``postgresql+psycopg://`` that SQLAlchemy 2 requires.
+
+    A URL that already carries an explicit ``+driver`` (or any non-plain scheme)
+    is returned unchanged. This is the ONE home for the dialect fix — the app
+    factory, the seed CLI, and the test DB fixture all route through it rather
+    than re-implementing the prefix swap (dossier §3 URL-dialect note).
+    """
+    prefix = "postgresql://"
+    if database_url.startswith(prefix):
+        return "postgresql+psycopg://" + database_url[len(prefix) :]
+    return database_url
+
+
 @dataclass(frozen=True)
 class Settings:
     """Immutable app settings resolved from the environment."""

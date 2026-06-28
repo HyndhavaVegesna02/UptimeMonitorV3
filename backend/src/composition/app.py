@@ -60,12 +60,10 @@ def create_app(
             PostgresProposalRepository,
         )
         from src.composition.config import load_config
-        from src.composition.settings import load_settings
+        from src.composition.settings import load_settings, to_psycopg_url
 
         settings = load_settings()
-        db_url = database_url or settings.database_url
-        if db_url.startswith("postgresql://"):
-            db_url = "postgresql+psycopg://" + db_url[len("postgresql://") :]
+        db_url = to_psycopg_url(database_url or settings.database_url)
         engine = sa.create_engine(db_url)
         proposal_repo = PostgresProposalRepository(engine)
         if component_repo is None:
