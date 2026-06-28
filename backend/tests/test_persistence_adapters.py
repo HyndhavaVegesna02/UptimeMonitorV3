@@ -19,25 +19,10 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg
 import pytest
-import sqlalchemy as sa
 from src.core.domain import ComponentStatus, Health, Provenance, SignalObservation
 
-
-def _engine_url(database_url: str) -> str:
-    """Convert the plain libpq URL (`migrated_db.database_url`) into the
-    `postgresql+psycopg://` form SQLAlchemy 2 needs for the psycopg3 driver.
-    """
-    assert database_url.startswith("postgresql://"), database_url
-    return "postgresql+psycopg://" + database_url[len("postgresql://") :]
-
-
-@pytest.fixture
-def engine(migrated_db):
-    eng = sa.create_engine(_engine_url(migrated_db.database_url), future=True)
-    try:
-        yield eng
-    finally:
-        eng.dispose()
+# The `engine` fixture is provided by conftest.py (STORY-039: includes
+# clean_runtime_tables for per-test isolation on a reused DB).
 
 
 def seed_signal(database_url: str, signal_key: str, app_id: str = "app-1") -> None:

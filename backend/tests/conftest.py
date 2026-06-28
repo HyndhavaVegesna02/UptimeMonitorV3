@@ -76,3 +76,55 @@ def provide_migrated_db():
 def migrated_db():
     """Session-scoped throwaway-DB fixture; see provide_migrated_db()."""
     yield from provide_migrated_db()
+
+
+@pytest.fixture
+def clean_runtime_tables(migrated_db):
+    """Function-scoped fixture: truncate runtime tables before each DB test.
+
+    Ensures DB-gated tests are order/state-independent on a reused DB (STORY-039).
+    Truncates the runtime tables that accumulate data across test runs:
+      - rejected_observations (no FK, can be truncated directly)
+      - observations (FK→signals; CASCADE to no dependents)
+      - watermarks (FK→signals; CASCADE to no dependents)
+      - problem_signals (FK→signals; CASCADE to no dependents)
+    Leaves topology tables (apps, signals, components) intact so tests that
+    call seed_signal/seed_component still work with ON CONFLICT DO NOTHING.
+    Workflow tables (status_proposals etc.) are NOT truncated here — tests that
+    need them clean already perform their own TRUNCATE components CASCADE.
+
+    Any DB-gated test that makes count/existence assertions about rows IT created
+    should request this fixture (or use the shared `engine` fixture which depends
+    on it — defined in conftest so all persistence adapter tests get isolation
+    without individual test edits).
+    """
+    import psycopg
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "TRUNCATE TABLE rejected_observations, observations, watermarks, problem_signals"
+            )
+        conn.commit()
+    yield
+
+
+@pytest.fixture
+def engine(migrated_db, clean_runtime_tables):  # noqa: F811
+    """Function-scoped SQLAlchemy engine for DB-gated tests (STORY-039).
+
+    Moved here from test_persistence_adapters.py so clean_runtime_tables runs
+    before every test that requests `engine` — making the full suite
+    order/state-independent on a reused DB without editing each test individually.
+    """
+    import sqlalchemy as sa
+
+    def _engine_url(database_url: str) -> str:
+        assert database_url.startswith("postgresql://"), database_url
+        return "postgresql+psycopg://" + database_url[len("postgresql://") :]
+
+    eng = sa.create_engine(_engine_url(migrated_db.database_url), future=True)
+    try:
+        yield eng
+    finally:
+        eng.dispose()
