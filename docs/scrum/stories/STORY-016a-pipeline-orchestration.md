@@ -14,8 +14,10 @@ live-credential demo on top.
 `DecideService.decide`) and `publish_best_effort` all exist, but nothing in `composition/` calls them
 — the pull loop only ingests observations into the DB. This story wires the per-cycle flow.
 
-**Depends on STORY-040** (config+topology): the orchestration needs the signal→component mapping and
-per-app `AntiFlapThresholds`, which do not exist yet. This story cannot start until STORY-040 lands.
+**Depends on STORY-040a** (config layer): the orchestration needs to resolve `signal_key→component_id`
+and `component→AntiFlapThresholds`, which STORY-040a provides as in-memory config resolvers. This story
+cannot start until STORY-040a lands. (It does NOT need the DB seed, STORY-040 — it reads the resolvers
+from config directly.)
 
 ## Description (to refine before its sprint)
 A composition orchestration that, per cycle / per component, drives:

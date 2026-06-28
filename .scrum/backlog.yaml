@@ -190,20 +190,28 @@ stories:
     type: feature
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
-  - id: STORY-040
-    title: §7/§17 config + boot seeding — signal→component topology + per-app thresholds
-    file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
-    status: draft   # Sprint 15: the orchestration's unbuilt prerequisite; refine (+ likely split) for Sprint 16
+  - id: STORY-040a
+    title: Config layer — per-app config files + fail-fast loader + in-memory resolvers
+    file: docs/scrum/stories/STORY-040a-config-layer-loader-resolvers.md
+    status: ready   # refined 2026-06-28 (Sprint 16): config-reading half; unblocks STORY-016a
     points: 5
     priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-040
+    title: Topology seed + signal→component migration — Neon as the read model
+    file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
+    status: draft   # DB-seed half (reframed); depends on STORY-040a; refine for a later sprint
+    points: 5
+    priority: 17
     type: feature
     sprint: null
   - id: STORY-016a
     title: Pipeline orchestration — run the core per cycle to produce proposals (fake-testable)
     file: docs/scrum/stories/STORY-016a-pipeline-orchestration.md
-    status: draft   # split from STORY-016; BLOCKED on STORY-040 (config/topology)
+    status: draft   # split from STORY-016; BLOCKED on STORY-040a (config resolvers)
     points: 5
-    priority: 17
+    priority: 18
     type: feature
     sprint: null
   # ── Integration + Deployment (live-credential / account gated) ────
