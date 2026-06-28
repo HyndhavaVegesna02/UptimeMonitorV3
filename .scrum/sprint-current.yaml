@@ -1,63 +1,48 @@
 # YourTeam active sprint board.
-sprint: 19
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-29
+sprint: 20
+status: active        # none | active | review | closed | aborted
 started: 2026-06-29
-goal: "Publications feature module (the last pure-backend feature): a PublicationRepository over the
-  EXISTING publications table, a RecordingPublisher decorator that records each SUCCESSFUL publish, and
-  GET /api/v1/publications. No migration (table exists); record successes only (no error column).
-  Single story, 5 pts. PO asked to finish it in-sprint (orchestrator implements via a Sonnet
-  implementer, then reviews + merges)."
-branch: sprint-19
-start_tag: sprint-19-start
-# Capacity: velocity last-3 (sprints 16,17,18) = 5,5,5 -> mean 5.0. Committed 5 (STORY-037).
+goal: "Make the first thread LIVE (dossier §8/§12/§17). Build the two real HTTP Executors (Dynatrace
+  Grail DQL + Statuspage PATCH) left as injected seams, add their credentials to settings, carry the
+  Statuspage component mapping in config, thread orchestration through run_periodic, and assemble a
+  composition entrypoint that runs the live loop with BestEffortPublisher(RecordingPublisher(
+  StatuspagePublisher)). Gate-green via recorded fixtures (no live call in any test); the live
+  observation against the real SaaS is a manual post-merge smoke (plan.md T5), not a gated AC. Single
+  story, 5 pts."
+branch: sprint-20
+start_tag: sprint-20-start
+# Capacity: velocity last-3 (sprints 17,18,19) = 5,5,5 -> mean 5.0. Committed 5 (STORY-016).
 #
-# WORKFLOW: PO asked the orchestrator to finish STORY-037 this sprint -> a Sonnet implementer subagent
-# (implementer-on-Sonnet, 2026-06-24) builds it; the orchestrator then runs the FULL six-command gate,
-# the Opus spec + quality reviewers (5 pts), the wiki blast-radius sweep, review/verdict/merge/retro.
-# plan.md is the contract for the implementer.
+# WORKFLOW: external implementation (2026-06-26) OR a Sonnet implementer if the PO asks (as in sprints
+# 15/16/17/19). plan.md is the self-contained contract. The orchestrator runs the FULL six-command gate,
+# the Opus spec + quality reviewers (5 pts), the mechanical wiki blast-radius sweep, then
+# review/verdict/merge/retro. The PO triggers the back half with "do your review".
 #
-# PIPELINE: STORY-037 (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
+# PIPELINE: STORY-016 (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
 #
-# DoD: NO new migration (publications table exists from the spine schema). NO new lint contract
-# (RecordingPublisher is composition; the publications API feature joins the EXISTING
-# api-feature-independence contract module list -> count stays 5). Pure reads on the endpoint (TOCTOU
-# N/A); record() is a plain INSERT.
+# DoD: NO new migration (statuspage_component_id is read-only config, never persisted). NO new lint
+# contract (the executors live in adapters/ and may import httpx; composition/run.py imports both sides
+# — allowed). lint-imports count stays 5.
 #
-# Baseline at lock: tree clean on main @ 1d53f39 -> refined onto branch @ e95bc6b. Cheap gates green
-# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-18 review (82bcbc7).
-# Agreements in force: spec-review-verifies-AC-test-drives-behavior (2026-06-29), mechanical wiki
-# blast-radius sweep (2026-06-28), merge-is-last-step (2026-06-29), DB-test reused-DB isolation
-# (STORY-039 + clean_topology). See plan.md.
+# SCOPE NOTE (PO decision 2026-06-29): PO has BOTH Dynatrace + Statuspage creds and chose "build both
+# Executors now". AC5 (live observation on the real SaaS) is a MANUAL post-merge smoke, not gate-verified
+# — the pure-core/mockable-edges agreement holds, so every test uses recorded fixtures.
+#
+# Baseline at lock: branch sprint-20 cut from main @ 994b637. Topology prep committed @ 58b4072 (live
+# httpcheck config, sockshop dropped, two real-config tests repointed; ruff clean, lint-imports 5/0,
+# 404 passed there). Agreements in force: clean-committed-tree-gate (2026-06-29), merge-is-last-step
+# (2026-06-29), mechanical wiki blast-radius sweep (2026-06-28), resource-lifecycle teardown-on-failure
+# (2026-06-25), command-sync (2026-06-23), conventions checklist (2026-06-27). See plan.md.
 stories:
-  - id: STORY-037
+  - id: STORY-016
     points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0            # Sonnet impl; both reviewers passed FIRST pass; orchestrator committed one
-                          # leftover ruff-format fix the implementer left uncommitted.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at b80552d (committed tree): pytest 404 passed;
-          lint-imports 5/0 (publications joined api-feature-independence; no new contract); fk 11/0;
-          alembic no-op (no migration — publications table exists); ruff check + format clean. Opus
-          spec reviewer: PASS (all 4 AC, each test traced to its named path). Opus quality reviewer:
-          APPROVE (0 critical / 0 major; RecordingPublisher semantics correct, parity, DB-isolation
-          confirmed on a reused DB)."
-        commit: b80552d
-        at: 2026-06-29T06:30:00+05:30
-    review:
-      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop)."
-      open_minors:          # non-blocking, reviewers said 'leave it'
-        - "publication_repository.py: assert row is not None (stripped under -O; mirrors sibling adapters)."
-        - "app.py: lazy import of PostgresPublicationRepository (matches the file's DB-branch convention)."
-      note: "the implementer left a ruff-format import-wrap uncommitted (committed HEAD would have
-        failed ruff format --check); the orchestrator committed it (b80552d) so the committed tree is
-        genuinely gate-green."
-    blast_radius_resolved: true   # compile pass @ b80552d: architecture-boundary (+publications module),
-                                  # api-five-file-convention, statuspage-publish, config-layer, dev-setup-and-dod re-verified. All current.
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
