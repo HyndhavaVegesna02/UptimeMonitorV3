@@ -6,7 +6,10 @@ Cites dossier §9, §12/T1.1, §17.
 from fastapi import APIRouter, Depends
 
 from src.api.v1.publications.models import PublicationDTO
-from src.api.v1.publications.service import PublicationsService, get_publications_service
+from src.api.v1.publications.service import (
+    PublicationsService,
+    get_publications_service,
+)
 
 router = APIRouter()
 
