@@ -1,14 +1,13 @@
-"""App factory and composition root (composition zone)."""
-
 from fastapi import FastAPI
 
-from src.core.ports import ClockPort, ProposalRepository
+from src.core.ports import ClockPort, ComponentRepository, ProposalRepository
 
 
 def create_app(
     *,
     database_url: str | None = None,
     proposal_repo: ProposalRepository | None = None,
+    component_repo: ComponentRepository | None = None,
     clock: ClockPort | None = None,
 ) -> FastAPI:
     """Create and wire the FastAPI application (composition root).
@@ -17,10 +16,13 @@ def create_app(
     """
     app = FastAPI(title="Uptime Monitor V3 API")
 
-    # Wire database engine and repository
+    # Wire database engine and repositories
     if proposal_repo is None:
         import sqlalchemy as sa
 
+        from src.adapters.persistence.component_repository import (
+            PostgresComponentRepository,
+        )
         from src.adapters.persistence.proposal_repository import (
             PostgresProposalRepository,
         )
@@ -29,9 +31,15 @@ def create_app(
         db_url = database_url or load_settings().database_url
         engine = sa.create_engine(db_url)
         proposal_repo = PostgresProposalRepository(engine)
+        if component_repo is None:
+            component_repo = PostgresComponentRepository(engine)
         app.state.db_engine = engine
     else:
         app.state.db_engine = None
+        if component_repo is None:
+            from tests.fakes import FakeComponentRepository
+
+            component_repo = FakeComponentRepository()
 
     # Wire clock
     if clock is None:
@@ -46,6 +54,7 @@ def create_app(
 
     # Store in app state for dependencies to resolve
     app.state.proposal_repo = proposal_repo
+    app.state.component_repo = component_repo
     app.state.clock = clock
     app.state.approval_service = approval_service
 
@@ -55,3 +64,4 @@ def create_app(
     app.include_router(v1_router, prefix="/api/v1")
 
     return app
+
