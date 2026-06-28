@@ -56,7 +56,12 @@ modules = ["src.adapters.inbound", "src.adapters.outbound", "src.adapters.persis
 [[tool.importlinter.contracts]]
 name = "api-feature-independence"
 type = "independence"
-modules = ["src.api.v1.decisions", "src.api.v1.health"]
+modules = [
+    "src.api.v1.decisions",
+    "src.api.v1.health",
+    "src.api.v1.components",
+    "src.api.v1.approvals",
+]
 
 
 [tool.ruff]
