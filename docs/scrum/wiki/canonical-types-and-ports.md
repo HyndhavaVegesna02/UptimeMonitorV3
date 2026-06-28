@@ -1,37 +1,37 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/]
-verified_sha: a93f91a
-verified_sprint: sprint-10
-status: stale          # verified | stale | archived
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/services/pipeline.py]
+verified_sha: 0ba6f3e
+verified_sprint: sprint-12
+status: verified          # verified | stale | archived
 ---
 
 ## Facts (verified against code)
 
 ### Canonical domain types (`core/domain/`, frozen Pydantic v2)
 - `SignalObservation` is the vendor-neutral spine — one synthetic monitor execution
-  from one location (`signal.py:42`). Frozen via `model_config = ConfigDict(frozen=True)`
-  (`signal.py:51`). Fields: `signal_key:str` (`:53`), `observed_at:datetime` (`:56`),
-  `health:Health` (`:59`), `source_event_id:str` (`:62`), `source:Provenance` (`:65`),
-  `location:str` (`:68`), `latency_ms:int|None=None` (`:71`), `raw_ref:str|None=None` (`:74`).
+  from one location (`signal.py::SignalObservation`). Frozen via `model_config = ConfigDict(frozen=True)`
+  (`signal.py::SignalObservation`). Fields: `signal_key:str`, `observed_at:datetime`,
+  `health:Health`, `source_event_id:str`, `source:Provenance`,
+  `location:str`, `latency_ms:int|None=None`, `raw_ref:str|None=None` (`signal.py::SignalObservation`).
 - `observed_at` is validated to be tz-aware **UTC** — a naive datetime AND any non-zero
-  UTC offset are both rejected (`_require_utc`, `signal.py:79`). Strict reading of §5
+  UTC offset are both rejected (`signal.py::SignalObservation._require_utc`). Strict reading of §5
   "UTC run time"; keeps unnormalized wall-clock values out of the core.
-- `Health(str, Enum)` is a closed enum: exactly `up` / `down` / `degraded` (`signal.py:15`).
+- `Health(str, Enum)` is a closed enum: exactly `up` / `down` / `degraded` (`signal.py::Health`).
   Not pass/fail — so a partial outage is expressible.
 - `Provenance` (frozen) is the SOLE home of vendor identifiers: `{system, native_id,
-  native_kind}` (`signal.py:26-39`). `native_id`/`native_kind` are the vendor's own id and
+  native_kind}` (`signal.py::Provenance`). `native_id`/`native_kind` are the vendor's own id and
   monitor type. No vendor id appears anywhere else on `SignalObservation`.
 - `ComponentStatus(str, Enum)` closed enum: `operational` / `degraded` / `partial_outage`
-  / `major_outage` (`status.py:15`). The canonical component status; the
+  / `major_outage` (`status.py::ComponentStatus`). The canonical component status; the
   ComponentStatus→Statuspage-string mapping is a Zone 5 adapter concern, not here.
-- `StatusChange` (frozen) `{component_id:str, status:ComponentStatus}` (`status.py:29-42`).
+- `StatusChange` (frozen) `{component_id:str, status:ComponentStatus}` (`status.py::StatusChange`).
   `component_id` is the canonical component id the core owns — never a Statuspage id
-  (`status.py:32`).
-- `IngestResult` (frozen) `{accepted:int, rejected:int}` (`status.py:46-59`) — the outcome
+  (`status.py::StatusChange`).
+- `IngestResult` (frozen) `{accepted:int, rejected:int}` (`status.py::IngestResult`) — the outcome
   of ingesting one batch.
-- `STATUS_SEVERITY` severity-ordering helpers (`status.py:61-80`): mapping and comparison functions (`severity_rank(s)`, `is_worse(a, b)`) to order and compare component status severity (operational < degraded < partial_outage < major_outage) (STORY-024).
-- `Verdict` (frozen, `verdict.py:14`) — STORY-010's pipeline output type: one cycle's
+- `STATUS_SEVERITY` severity-ordering helpers (`status.py::STATUS_SEVERITY`): mapping and comparison functions (`status.py::severity_rank`, `status.py::is_worse`) to order and compare component status severity (operational < degraded < partial_outage < major_outage) (STORY-024).
+- `Verdict` (frozen, `verdict.py::Verdict`) — STORY-010's pipeline output type: one cycle's
   collapsed verdict for one signal. Fields: `signal_key:str`, `observed_at:datetime`
   (the cycle instant — `max(observed_at)` across the cycle's observations, tz-aware
   UTC via the same `_require_utc` validator pattern as `SignalObservation`),
@@ -40,25 +40,24 @@ status: stale          # verified | stale | archived
   (`under_maintenance=True`, `health=None`) in one type, so `streak` can skip
   maintenance verdicts without a second type.
 - STORY-025: that maintenance<->health shape is now ENFORCED, not just documented — a
-  `model_validator(mode="after")` (`verdict.py:54`,
-  `_require_maintenance_health_coherence`) rejects both incoherent shapes at
-  construction (`under_maintenance=True` with a set `health`; `under_maintenance=False`
-  with `health=None`), raising `ValueError` (wrapped as Pydantic `ValidationError`).
+  `model_validator(mode="after")` (`verdict.py::Verdict._require_maintenance_health_coherence`)
+  rejects both incoherent shapes at construction (`under_maintenance=True` with a set `health`;
+  `under_maintenance=False` with `health=None`), raising `ValueError` (wrapped as Pydantic `ValidationError`).
   Mirrors `signal.py`'s `_require_utc` validate-at-construction pattern. `collapse`
-  (`pipeline.py:37`) already only ever builds the two coherent shapes, so this is
+  (`pipeline.py::collapse`) already only ever builds the two coherent shapes, so this is
   unreachable from the existing pipeline today — it guards future hand-built `Verdict`s.
 - `ProposalState(str, Enum)` is a closed enum representing the workflow states of a status
-  proposal: `open` / `approved` / `rejected` / `superseded` / `obsoleted` (`proposal.py:10`).
-- `StatusProposal` (frozen) models a proposal to transition a component's status (`proposal.py:20`).
+  proposal: `open` / `approved` / `rejected` / `superseded` / `obsoleted` (`proposal.py::ProposalState`).
+- `StatusProposal` (frozen) models a proposal to transition a component's status (`proposal.py::StatusProposal`).
   Fields: `component_id:str`, `from_status:ComponentStatus|None`, `to_status:ComponentStatus`,
   `state:ProposalState`, `reason:str|None=None`, `proposed_at:datetime`, `resolved_at:datetime|None=None`,
-  `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py:49-64`).
+  `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py::StatusProposal`).
 - STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
-  `model_validator(mode="after")` (`proposal.py:66`, `_require_resolved_at_coherence`)
+  `model_validator(mode="after")` (`proposal.py::StatusProposal._require_resolved_at_coherence`)
   enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
   Raises `ValueError` (wrapped as `ValidationError`) if violated.
-- A transition rule helper `is_valid_transition(from_state, to_state) -> bool` (`proposal.py:80`)
-  and `StatusProposal.terminal` property (`proposal.py:75`) define allowed transitions:
+- A transition rule helper `is_valid_transition(from_state, to_state) -> bool` (`proposal.py::is_valid_transition`)
+  and `StatusProposal.terminal` property (`proposal.py::StatusProposal.terminal`) define allowed transitions:
   from `open` to any terminal state only; terminal states are final and cannot transition.
 
 ### The seven core ports (`core/ports/`, ABCs)
@@ -66,27 +65,27 @@ Ports are interfaces the core OWNS but does not implement (dossier §6); adapter
 them, the composition root injects them. All seven are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
-  — inbound front door (`signal_ingest.py:17-22`).
+  — inbound front door (`signal_ingest.py::SignalIngestPort.ingest_observations`).
 - `StatusPublisherPort.publish(change: StatusChange) -> None` — outbound
-  (`status_publisher.py:14-18`).
+  (`status_publisher.py::StatusPublisherPort.publish`).
 - `ObservationRepository.save_new(batch: Sequence[SignalObservation]) -> int` — outbound
-  persistence; returns insert count (ON CONFLICT DO NOTHING semantics) (`observation_repository.py:16-20`).
+  persistence; returns insert count (ON CONFLICT DO NOTHING semantics) (`observation_repository.py::ObservationRepository.save_new`).
   STORY-011 adds `ObservationRepository.in_window(signal_key: str, since: datetime, until:
-  datetime) -> Sequence[SignalObservation]` (`observation_repository.py:29-39`) — the READ
+  datetime) -> Sequence[SignalObservation]` (`observation_repository.py::ObservationRepository.in_window`) — the READ
   side: returns `signal_key`'s observations with `observed_at` in the half-open range
   `[since, until)`, so adjacent windows never double-count the boundary instant. This is the
   only read path the availability engine uses; ALL SQL for it stays behind the Postgres
   adapter (see [[persistence-adapters]]).
 - `WatermarkRepository.get(signal_key: str) -> datetime | None` + `advance(signal_key: str,
-  to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py:15-24`).
+  to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py::WatermarkRepository.get` / `watermark.py::WatermarkRepository.advance`).
 - `ClockPort.now() -> datetime` — injected, returns tz-aware UTC, so time is controllable
-  in tests (`clock.py:12-21`).
+  in tests (`clock.py::ClockPort.now`).
 - `RejectedObservationRepository.save(*, signal_key: str | None, reason: str, payload: dict,
   rejected_at: datetime) -> None` — the quarantine sink for observations the ingest
   validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
   an unknown/absent signal_key is often exactly *why* a row was rejected
-  (`rejected_observation_repository.py:17-33`).
-- `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py:8-46`).
+  (`rejected_observation_repository.py::RejectedObservationRepository.save`).
+- `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
   one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`, `resolve(proposal_id,
   *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal state), and
