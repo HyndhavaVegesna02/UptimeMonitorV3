@@ -151,11 +151,11 @@ stories:
   - id: STORY-014b
     title: API read endpoints — Dashboard (component statuses) + Approvals list
     file: docs/scrum/stories/STORY-014b-api-read-endpoints-six-tabs.md
-    status: ready   # refined 2026-06-28 (Dashboard + Approvals-list, 2 new read ports); Sprint 13
+    status: done    # accepted at Sprint 13 review (2026-06-28)
     points: 5
     priority: 14
     type: feature
-    sprint: null
+    sprint: 13
   - id: STORY-014c
     title: API read endpoints — Availability + Check History
     file: docs/scrum/stories/STORY-014c-api-read-endpoints-availability-history.md
@@ -322,8 +322,8 @@ stories:
   - id: STORY-035
     title: API minors — dispose the app engine on shutdown + migrate off the deprecated TestClient path
     file: docs/scrum/stories/STORY-035-api-minors-engine-dispose-testclient.md
-    status: ready   # refined 2026-06-28 (Sprint 13); httpx mechanism = implementer's call per AC2
+    status: done    # accepted at Sprint 13 review (2026-06-28)
     points: 2
     priority: 31
     type: chore
-    sprint: null
+    sprint: 13
