@@ -31,11 +31,16 @@ modules), not just the `rejected_observation` ones, for the same clean-table ass
 - [ ] AC3: full SIX-command DoD gate green; no production `src/` change (test-only, or a conftest
       fixture change).
 
-## Open Questions
-- Transactional-rollback vs truncate vs scoped-assertions — choose the lowest-friction approach that
-  fits the session-scoped `migrated_db` fixture.
-- Estimate at refinement (likely 2).
+## Resolved Questions
+- **Approach → implementer's choice against AC1's objective bar.** Transactional-rollback,
+  truncate-between-tests, or scoped-assertions — whichever is lowest-friction with the session-scoped
+  `migrated_db` fixture; AC1 (suite green twice in a row against the same un-torn-down container) is
+  the bar. Prefer a fixture-level fix in `backend/tests/conftest.py` over editing every test if it
+  cleanly covers all DB-gated tests. (Resolved 2026-06-28.)
+- **Estimate: 2** (test/fixture-only; gate-only pipeline; no production `src/` change).
 
 ## History
 - 2026-06-28: created from the Sprint 14 retro (rejected_observation DB tests fail on a reused DB —
-  latent test-isolation weakness; CI unaffected today). Status: draft.
+  latent test-isolation weakness; CI unaffected today).
+- 2026-06-28 (Sprint 15 refinement): approach left to the implementer against AC1's objective bar.
+  Status: draft → ready.

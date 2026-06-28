@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 40   # 039 (db test isolation) used; 014b/014c are split-children
+next_story_id: 41   # 040 (config/topology) used; 014b/014c + 016a are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -159,7 +159,7 @@ stories:
   - id: STORY-014c
     title: API read endpoints — Availability + Check History
     file: docs/scrum/stories/STORY-014c-api-read-endpoints-availability-history.md
-    status: draft   # split-child of STORY-014b (reuse-existing-backing tabs); refine with STORY-015
+    status: ready   # refined 2026-06-28 (Sprint 15): per-signal Availability + Check History
     points: 3
     priority: 15
     type: feature
@@ -189,13 +189,30 @@ stories:
     priority: 15
     type: feature
     sprint: null
-  # ── Integration + Deployment ─────────────────────────────────────
-  - id: STORY-016
-    title: First end-to-end thread
-    file: docs/scrum/stories/STORY-016-first-end-to-end-thread.md
-    status: draft
+  # ── Config / Topology / Orchestration (backend; pre-frontend) ────
+  - id: STORY-040
+    title: §7/§17 config + boot seeding — signal→component topology + per-app thresholds
+    file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
+    status: draft   # Sprint 15: the orchestration's unbuilt prerequisite; refine (+ likely split) for Sprint 16
     points: 5
     priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-016a
+    title: Pipeline orchestration — run the core per cycle to produce proposals (fake-testable)
+    file: docs/scrum/stories/STORY-016a-pipeline-orchestration.md
+    status: draft   # split from STORY-016; BLOCKED on STORY-040 (config/topology)
+    points: 5
+    priority: 17
+    type: feature
+    sprint: null
+  # ── Integration + Deployment (live-credential / account gated) ────
+  - id: STORY-016
+    title: First end-to-end thread (live demo)
+    file: docs/scrum/stories/STORY-016-first-end-to-end-thread.md
+    status: draft   # now the LIVE e2e demo (orchestration logic split to STORY-016a); gated on live creds
+    points: 3
+    priority: 18
     type: feature
     sprint: null
   - id: STORY-017
@@ -338,7 +355,7 @@ stories:
   - id: STORY-039
     title: Isolate DB-gated tests so the suite is order/state-independent on a reused DB
     file: docs/scrum/stories/STORY-039-db-test-isolation.md
-    status: draft   # Sprint 14 retro: rejected_observation tests fail on a reused DB (assume empty tables)
+    status: ready   # refined 2026-06-28 (Sprint 15): approach = implementer's choice vs AC1 bar
     points: 2
     priority: 33
     type: chore
