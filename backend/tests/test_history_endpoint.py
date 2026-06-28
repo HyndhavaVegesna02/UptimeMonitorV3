@@ -105,6 +105,23 @@ def test_history_missing_signal_key_returns_422():
     assert response.status_code == 422
 
 
+def test_history_naive_timestamp_returns_422():
+    """Regression: a timezone-naive since/until → 422 (not a 500 from tz-aware compare in core)."""
+    obs_repo = FakeObservationRepository()
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    naive_until = client.get(
+        "/api/v1/history?signal_key=checkout-http&until=2026-06-28T10:00:00"
+    )
+    assert naive_until.status_code == 422
+
+    naive_since = client.get(
+        "/api/v1/history?signal_key=checkout-http&since=2026-06-28"
+    )
+    assert naive_since.status_code == 422
+
+
 def test_history_explicit_since_until_honored():
     """AC3: explicit since/until overrides the 24h default window."""
     since = datetime(2026, 6, 28, 8, 0, 0, tzinfo=timezone.utc)

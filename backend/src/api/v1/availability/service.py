@@ -12,7 +12,7 @@ Per-signal stopgaps (documented, not silently hardcoded):
     composition root will resolve the real maintenance predicate per signal key.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import Depends
 
@@ -55,8 +55,6 @@ class AvailabilityService:
           interval ← timedelta(seconds=interval_seconds) [default 60]
           maintenance ← lambda _at: False (no signal→component mapping yet)
         """
-        from datetime import datetime
-
         now = self._clock.now()
 
         # Resolve until / since
@@ -80,7 +78,8 @@ class AvailabilityService:
         interval = timedelta(seconds=interval_seconds)
 
         # Stopgap: maintenance no-op (STORY-040 will wire signal→component mapping)
-        maintenance = lambda _at: False  # noqa: E731
+        def maintenance(_at: datetime) -> bool:
+            return False
 
         calculator = AvailabilityCalculator(observation_repo=self._observation_repo)
         result = calculator.compute(

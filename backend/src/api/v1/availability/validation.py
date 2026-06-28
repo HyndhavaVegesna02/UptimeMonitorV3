@@ -29,19 +29,23 @@ def validate_availability_request(
 
     if since is not None:
         try:
-            datetime.fromisoformat(since)
+            parsed_since = datetime.fromisoformat(since)
         except ValueError as e:
             raise SyntacticValidationError(
                 f"since must be a parseable ISO-8601 datetime string: {e}"
             ) from e
+        if parsed_since.tzinfo is None:
+            raise SyntacticValidationError("since must be timezone-aware.")
 
     if until is not None:
         try:
-            datetime.fromisoformat(until)
+            parsed_until = datetime.fromisoformat(until)
         except ValueError as e:
             raise SyntacticValidationError(
                 f"until must be a parseable ISO-8601 datetime string: {e}"
             ) from e
+        if parsed_until.tzinfo is None:
+            raise SyntacticValidationError("until must be timezone-aware.")
 
     if interval_seconds is not None and interval_seconds <= 0:
         raise SyntacticValidationError("interval_seconds must be a positive integer.")

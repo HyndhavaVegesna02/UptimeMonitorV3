@@ -5,7 +5,7 @@ app.state), applies window defaulting, calls in_window, maps domain types →
 ObservationDTOs sorted most-recent first. No business logic here.
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from fastapi import Depends
 
@@ -40,8 +40,6 @@ class HistoryService:
           until = clock.now() if not supplied
           since = until − 24 h if not supplied
         """
-        from datetime import datetime
-
         now = self._clock.now()
 
         if until_str is not None:
