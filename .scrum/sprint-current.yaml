@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 13
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-28
 started: 2026-06-28
 goal: "Extend Zone 6 with the two headline read surfaces — GET /api/v1/components (dashboard
   component statuses, the displayed status per P4) and GET /api/v1/approvals (open proposals

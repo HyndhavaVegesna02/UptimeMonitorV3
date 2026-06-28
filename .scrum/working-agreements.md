@@ -276,4 +276,15 @@
   — keep the controller import-clean by putting the DI provider in the feature `service.py` — is
   captured in the `api-five-file-convention.md` wiki article instead of an agreement, since that article
   is carried into every future five-file feature's brief.)
+- 2026-06-28 — **Every new five-file API feature ships its five-file-shape test in the same story.**
+  A new `api/v1/<feature>/` must include a test asserting its directory contains EXACTLY the five
+  files `{__init__, controller, models, validation, service}.py` (set equality — mirror
+  `test_decisions.py::test_decisions_module_structure_and_dto_distinction`,
+  `test_components_endpoint.py::test_components_module_five_file_shape`,
+  `test_approvals_endpoint.py::test_approvals_module_five_file_shape`). It is a NAMED deliverable in
+  the plan's conventions checklist, checked at review. (Motivated by the SAME omission two sprints
+  running: STORY-014 (sprint 12) and STORY-014b (sprint 13) each shipped five-file features without
+  the AC-required shape test, both caught only in a fix loop. The per-story AC stated it and the
+  external implementer missed it twice — so it joins the STANDING checklist rather than relying on
+  per-story AC wording. Pairs with the forthcoming `src`->`tests` import contract, STORY-038.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
