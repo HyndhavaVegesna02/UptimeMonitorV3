@@ -1,6 +1,7 @@
 """core.domain — pure data; depends on nothing."""
 
 from src.core.domain.component import Component
+from src.core.domain.maintenance import MaintenanceWindow
 from src.core.domain.proposal import ProposalState, StatusProposal, is_valid_transition
 from src.core.domain.signal import Health, Provenance, SignalObservation
 from src.core.domain.status import (
@@ -28,4 +29,5 @@ __all__ = [
     "severity_rank",
     "is_worse",
     "Component",
+    "MaintenanceWindow",
 ]
