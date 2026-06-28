@@ -1,0 +1,11 @@
+app:
+  id: sockshop
+  name: Sock Shop
+  monitor_provider: dynatrace
+components:
+  - { id: checkout, name: Checkout }
+  - { id: catalogue, name: Catalogue }
+signals:
+  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout }
+  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue }
+thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
