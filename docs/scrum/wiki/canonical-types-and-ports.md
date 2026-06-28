@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 08c4eba
-verified_sprint: sprint-13
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/services/pipeline.py]
+verified_sha: 8e15534
+verified_sprint: sprint-14
 status: verified          # verified | stale | archived
 ---
 
@@ -54,6 +54,8 @@ status: verified          # verified | stale | archived
   `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py::StatusProposal`).
 - `Component` (frozen) models a component and its display status (`component.py::Component`).
   Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b).
+- `MaintenanceWindow` (frozen) models a scheduled maintenance window for a component (`maintenance.py::MaintenanceWindow`).
+  Fields: `component_id:str`, `starts_at:datetime`, `ends_at:datetime`, `reason:str|None=None`, `id:int|None=None`. Timezones for starts_at and ends_at are validated to be UTC (`maintenance.py::MaintenanceWindow`). Enforces `ends_at > starts_at` invariant via a `model_validator(mode="after")` (`maintenance.py::MaintenanceWindow._require_ends_after_starts`) (STORY-036).
 - STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
   `model_validator(mode="after")` (`proposal.py::StatusProposal._require_resolved_at_coherence`)
   enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
@@ -68,9 +70,9 @@ status: verified          # verified | stale | archived
   them for callers that import from the service. See [[persistence-adapters]] for the repository
   contract that raises them.
 
-### The eight core ports (`core/ports/`, ABCs)
+### The nine core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All eight are `abc.ABC` with `@abstractmethod`,
+them, the composition root injects them. All nine are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py::SignalIngestPort.ingest_observations`).
@@ -95,6 +97,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   (`rejected_observation_repository.py::RejectedObservationRepository.save`).
 - `ComponentRepository` — read persistence interface for listing components (`component_repository.py::ComponentRepository`).
   Provides `list_components() -> list[Component]` (STORY-014b).
+- `MaintenanceRepository` — persistence interface for managing maintenance windows (`maintenance_repository.py::MaintenanceRepository`).
+  Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
   one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`,

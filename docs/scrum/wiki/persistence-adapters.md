@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: 08c4eba
-verified_sprint: sprint-13
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
+verified_sha: 8e15534
+verified_sprint: sprint-14
 status: verified
 ---
 
@@ -97,15 +97,21 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - Implements `ComponentRepository` port against `components` table (`component_repository.py::PostgresComponentRepository`).
 - `list_components` (`component_repository.py::PostgresComponentRepository.list_components`) SELECTs `id`, `name`, `status`, `app_id` and maps `status` text to `ComponentStatus`. Returns `[]` if none exist.
 
+### `PostgresMaintenanceRepository` — maintenance scheduling (STORY-036)
+- Implements `MaintenanceRepository` port against `maintenance_windows` table (`maintenance_repository.py::PostgresMaintenanceRepository`).
+- `list_windows` (`maintenance_repository.py::PostgresMaintenanceRepository.list_windows`) SELECTs scheduled windows ordered by `starts_at` and maps them to `MaintenanceWindow` domain objects. Returns `[]` if none exist.
+- `create` (`maintenance_repository.py::PostgresMaintenanceRepository.create`) INSERTs a new maintenance window and returns it with the database-assigned `id`.
+- `is_under_maintenance` (`maintenance_repository.py::PostgresMaintenanceRepository.is_under_maintenance`) checks if a component is active under maintenance at a given timestamp using inclusive start and exclusive end boundaries (`starts_at <= at < ends_at`).
+
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
   `ON DELETE RESTRICT`, and `signals.app_id` FKs into `apps`. Topology seeding (apps/signals
   from config) is a later story, so integration tests **hand-seed** a parent `apps`+`signals`
   row via raw psycopg (test arrangement) before exercising a repo
   (`test_persistence_adapters.py`, `seed_signal` helper).
-- `status_proposals.component_id` FKs into `components.id`, which FKs into `apps.id`. Integration
+- `status_proposals.component_id` and `maintenance_windows.component_id` FK into `components.id`, which FKs into `apps.id`. Integration
   tests hand-seed parent `apps` + `components` rows via a raw psycopg helper `seed_component` before
-  exercising the proposal repo adapter.
+  exercising the proposal/maintenance repository adapters.
 - `rejected_observations` has no FK, so its tests skip seeding entirely.
 - The `migrated_db` fixture is **session-scoped and shared** across the module, so tests use a
   per-test `signal_key` and `component_id` namespace to avoid cross-test row collisions/order-dependence.
@@ -128,4 +134,5 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - sprint-12: STORY-014 adds `PostgresProposalRepository.get(proposal_id)`; `resolve` now raises the
   `ProposalNotOpenError` domain error (was a bare `ValueError`) so a lost-race resolve maps to HTTP 409.
   Re-verified at eb147ef.
+- sprint-14: STORY-036 adds `PostgresMaintenanceRepository` for scheduled maintenance windows. Re-verified at 8e15534.
 
