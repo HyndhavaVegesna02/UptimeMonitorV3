@@ -201,11 +201,11 @@ stories:
   - id: STORY-040
     title: Topology seed + signal→component migration — Neon as the read model
     file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
-    status: ready   # refined 2026-06-28 (Sprint 18): migration + seed + CLI + boot wiring (PO incl. startup)
+    status: done    # accepted at Sprint 18 review (2026-06-29)
     points: 5
     priority: 17
     type: feature
-    sprint: null
+    sprint: 18
   - id: STORY-016a
     title: Pipeline orchestration — run the core per cycle to produce proposals (fake-testable)
     file: docs/scrum/stories/STORY-016a-pipeline-orchestration.md

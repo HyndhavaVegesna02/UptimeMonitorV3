@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 18
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-06-29
 started: 2026-06-29
 goal: "Make Neon the seeded read model (dossier §7 Option C): add the signals.component_id
   migration, an idempotent seed_topology upsert (apps/components/signals; preserves runtime
@@ -31,12 +32,27 @@ start_tag: sprint-18-start
 stories:
   - id: STORY-040
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # external impl; both reviewers passed first pass; one orchestrator inline minor-cleanup.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified: pytest 385 passed; lint-imports 5/0; fk 11 checked / 0
+          violations (new spine->spine signals.component_id FK counted); alembic round-trip exit 0
+          (migration eec78d2e8cbe reverses cleanly); ruff check + format clean. Opus spec reviewer:
+          PASS (all 6 AC, each test traced to drive its named path per the 2026-06-29 rigor). Opus
+          quality reviewer: APPROVE (0 critical / 0 major; idempotency genuine, status never clobbered,
+          reversible migration, fail-fast boot; two consecutive reused-DB suite runs both green)."
+        commit: 82bcbc7
+        at: 2026-06-29T03:00:00+05:30
+    review:
+      second_pass: "spec PASS; quality APPROVE (first pass — no fix loop)."
+      minors_fixed: "extracted settings.py::to_psycopg_url (was duplicated 3x); tidied seed CLI path;
+        commented the idempotency test's updated_at omission (PO chose accept+fix-minors)."
+    blast_radius_resolved: true   # compile pass @ 82bcbc7: migrations-and-db (+to_psycopg_url note),
+                                  # api-five-file-convention, dev-setup-and-dod re-verified. All current.
 hotfixes: []
 interrupts: []

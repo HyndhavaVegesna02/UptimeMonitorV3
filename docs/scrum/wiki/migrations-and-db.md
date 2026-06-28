@@ -1,7 +1,7 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 19eefc8
+verified_sha: 82bcbc7
 verified_sprint: sprint-18
 status: verified
 ---
@@ -53,7 +53,10 @@ status: verified
   `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
   raw psycopg raise). So against the same DB, set `DATABASE_URL_DIRECT` to the `+psycopg`
-  form and `DATABASE_URL` to the plain form. (Documented in `CLAUDE.md`.)
+  form and `DATABASE_URL` to the plain form. (Documented in `CLAUDE.md`.) The plain→`+psycopg`
+  normalization for the SQLAlchemy-2 runtime engine has ONE home: `settings.py::to_psycopg_url`
+  (STORY-040) — the app factory, the `seed_topology` CLI, and the test `engine` fixture all route
+  through it instead of re-implementing the prefix swap.
 - Sprint-0 / CI runs against a throwaway Dockerized `postgres:16` (host port 55432 for the
   manual one-liner / `scripts/dev_db.py up` CLI; an OS-assigned free port for the pytest
   fixture's spawned containers, see below); real Neon connection strings are deferred to the
