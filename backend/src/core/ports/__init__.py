@@ -9,6 +9,7 @@ or Neon must understand it (dossier §6).
 
 from src.core.ports.clock import ClockPort
 from src.core.ports.component_repository import ComponentRepository
+from src.core.ports.maintenance_repository import MaintenanceRepository
 from src.core.ports.observation_repository import ObservationRepository
 from src.core.ports.proposal_repository import ProposalRepository
 from src.core.ports.rejected_observation_repository import (
@@ -27,4 +28,5 @@ __all__ = [
     "WatermarkRepository",
     "ProposalRepository",
     "ComponentRepository",
+    "MaintenanceRepository",
 ]

@@ -10,7 +10,7 @@ inject in place of a real adapter.
 from collections.abc import Sequence
 from datetime import datetime
 
-from src.core.domain import Component, IngestResult, SignalObservation, StatusChange
+from src.core.domain import Component, IngestResult, SignalObservation, StatusChange, MaintenanceWindow
 from src.core.domain.proposal import (
     ProposalNotOpenError,
     ProposalState,
@@ -24,6 +24,7 @@ from src.core.ports import (
     SignalIngestPort,
     StatusPublisherPort,
     WatermarkRepository,
+    MaintenanceRepository,
 )
 
 
@@ -189,3 +190,39 @@ class FakeComponentRepository(ComponentRepository):
 
     def list_components(self) -> list[Component]:
         return self._components
+
+
+class FakeMaintenanceRepository(MaintenanceRepository):
+    """An in-memory maintenance repository for testing."""
+
+    def __init__(self, windows: list[MaintenanceWindow] | None = None) -> None:
+        self._windows = {}
+        self._next_id = 1
+        if windows is not None:
+            for w in windows:
+                w_id = w.id if w.id is not None else self._next_id
+                if w.id is None:
+                    self._next_id += 1
+                self._windows[w_id] = w.model_copy(update={"id": w_id})
+
+    def list_windows(self) -> list[MaintenanceWindow]:
+        """Retrieve all scheduled maintenance windows ordered by starts_at."""
+        return sorted(self._windows.values(), key=lambda w: w.starts_at)
+
+    def create(self, window: MaintenanceWindow) -> MaintenanceWindow:
+        """Persist a new maintenance window."""
+        w_id = window.id if window.id is not None else self._next_id
+        if window.id is None:
+            self._next_id += 1
+        saved = window.model_copy(update={"id": w_id})
+        self._windows[w_id] = saved
+        return saved
+
+    def is_under_maintenance(self, component_id: str, at: datetime) -> bool:
+        """Check if a component is under active maintenance at a given timestamp."""
+        for w in self._windows.values():
+            if w.component_id == component_id:
+                if w.starts_at <= at < w.ends_at:
+                    return True
+        return False
+

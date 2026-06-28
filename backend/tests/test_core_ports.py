@@ -404,3 +404,99 @@ def test_fake_component_repository_list():
     )
     repo = FakeComponentRepository(components=[comp1, comp2])
     assert repo.list_components() == [comp1, comp2]
+
+
+def test_maintenance_repository_port_is_abstract():
+    from src.core.ports.maintenance_repository import MaintenanceRepository
+
+    with pytest.raises(TypeError):
+        MaintenanceRepository()  # type: ignore[abstract]
+
+
+def test_fake_maintenance_repository():
+    from datetime import datetime, timezone
+
+    from fakes import FakeMaintenanceRepository
+    from src.core.domain.maintenance import MaintenanceWindow
+
+    repo = FakeMaintenanceRepository()
+    # Empty case returns []
+    assert repo.list_windows() == []
+    # Empty case is not under maintenance
+    at_time = datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc)
+    assert repo.is_under_maintenance("checkout", at_time) is False
+
+    # Create window
+    w1 = MaintenanceWindow(
+        component_id="checkout",
+        starts_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+        ends_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+        reason="Update 1",
+    )
+    saved1 = repo.create(w1)
+    assert saved1.id is not None
+    assert saved1.component_id == "checkout"
+    assert saved1.reason == "Update 1"
+
+    # Create another window, starts earlier so we test ordering
+    w2 = MaintenanceWindow(
+        component_id="checkout",
+        starts_at=datetime(2026, 6, 28, 10, 0, 0, tzinfo=timezone.utc),
+        ends_at=datetime(2026, 6, 28, 11, 0, 0, tzinfo=timezone.utc),
+        reason="Update 2",
+    )
+    saved2 = repo.create(w2)
+    assert saved2.id is not None
+
+    # list_windows returns all ordered by starts_at
+    windows = repo.list_windows()
+    assert len(windows) == 2
+    assert windows[0].id == saved2.id
+    assert windows[1].id == saved1.id
+
+    # Test is_under_maintenance boundaries (inclusive start / exclusive end)
+    # 1. Exact start of w1 (inclusive)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc)
+        )
+        is True
+    )
+    # 2. Inside w1
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 13, 0, 0, tzinfo=timezone.utc)
+        )
+        is True
+    )
+    # 3. Exact end of w1 (exclusive)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+    # 4. Outside w1 (before)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 11, 30, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+    # 5. Outside w1 (after)
+    assert (
+        repo.is_under_maintenance(
+            "checkout", datetime(2026, 6, 28, 15, 0, 0, tzinfo=timezone.utc)
+        )
+        is False
+    )
+
+    # Test different component_id
+    assert (
+        repo.is_under_maintenance(
+            "other-component",
+            datetime(2026, 6, 28, 12, 30, 0, tzinfo=timezone.utc),
+        )
+        is False
+    )
+
