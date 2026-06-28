@@ -49,6 +49,11 @@ transcript. Env-var names are finalized when the Executor + `settings.py` entry 
   refinement (this is the first story needing live Dynatrace + Statuspage).
 - Build the "real Dynatrace Executor" (HTTP DQL client + settings + recorded-fixture test) as a
   sub-story before/within this one? (It is the concrete piece the live thread needs.)
+- **Wire the orchestration's `DecideService` with `composition/publish_helper.py::BestEffortPublisher`**
+  (STORY-016a left this as a documented injection contract — no live composition root wires it yet).
+  The live driver (`run_periodic` threading the orchestration extras) MUST inject the real Statuspage
+  publisher wrapped in `BestEffortPublisher`, or a recovery-publish failure crashes the pull cycle
+  (STORY-016a AC3 / T1.1). Flagged by both Opus reviewers at the Sprint 17 review.
 
 ## History
 - 2026-06-23: drafted from YOURTEAM_INCEPTION.md §8 + dossier §17. Status: draft — refine before its sprint.

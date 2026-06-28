@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: e84ad46
+verified_sha: b062132
 verified_sprint: sprint-17
 status: verified          # verified | stale | archived
 ---

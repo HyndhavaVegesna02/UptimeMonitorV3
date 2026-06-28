@@ -33,12 +33,32 @@ start_tag: sprint-17-start
 stories:
   - id: STORY-016a
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # external (Antigravity) impl; one orchestrator inline fix-loop closed the AC3 MAJOR.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at b062132 with throwaway DB: pytest 376 passed (on a
+          FRESH DB, twice in a row); lint-imports 5/0; fk 0; alembic 0; ruff check + format clean.
+          Opus spec reviewer: PASS (all 6 AC, no regression). Opus quality reviewer: APPROVE (0
+          critical / 0 major after fix)."
+        commit: b062132
+        at: 2026-06-29T01:00:00+05:30
+    review:
+      first_pass: "spec PASS (AC3 test flagged weak); quality FIX REQUIRED (1 MAJOR: AC3 test was
+        committed scratch + drove the degradation path so a raising publisher was never exercised;
+        the orchestration's recovery-publish was not best-effort -> a publish failure would crash
+        the cycle, contra T1.1/AC3)."
+      fix_commit: b062132   # orchestrator inline: BestEffortPublisher wrapper + honest recovery-path
+                            # AC3 test + dead-scratch removal + pull_loop comment fix.
+      second_pass: "spec PASS; quality APPROVE."
+      open_note: "BestEffortPublisher is wired only in the AC3 test; the live composition root that
+        injects it is deferred to STORY-016 (captured in that story's Open Questions). Not blocking."
+    blast_radius_resolved: true   # compile pass: statuspage-publish (+BestEffortPublisher Fact) +
+                                  # core-pipeline-and-availability (best-effort injection note) re-verified;
+                                  # config-layer/ingest-service/persistence-adapters bumped (format drift). All current @ b062132.
 hotfixes: []
 interrupts: []

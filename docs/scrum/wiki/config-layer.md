@@ -1,7 +1,7 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/sockshop.yaml, pyproject.toml]
-verified_sha: e84ad46
+verified_sha: b062132
 verified_sprint: sprint-17
 status: verified
 ---

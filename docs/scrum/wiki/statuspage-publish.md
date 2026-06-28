@@ -1,7 +1,7 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/composition/publish_helper.py, backend/tests/test_statuspage_adapter.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json]
-verified_sha: e84ad46
+verified_sha: b062132
 verified_sprint: sprint-17
 status: verified
 ---
@@ -19,6 +19,7 @@ status: verified
 ### Composition Best-effort helper (`composition/publish_helper.py`, Zone 5)
 - `publish_best_effort` wraps the publisher's `publish` call in a try/except (`backend/src/composition/publish_helper.py::publish_best_effort`).
 - Catches any publish failure, logs it, and returns normally, ensuring Statuspage failures never roll back/crash the already-committed DB decision (`backend/src/composition/publish_helper.py::publish_best_effort`).
+- `BestEffortPublisher` (`backend/src/composition/publish_helper.py::BestEffortPublisher`, STORY-016a) is a `StatusPublisherPort` that wraps a delegate publisher and routes every `publish` through `publish_best_effort`. `DecideService` calls `publisher.publish` directly and lets a failure PROPAGATE (its core contract), so the orchestration's `DecideService` is wired with this wrapper — a Statuspage outage on the recovery-publish path is logged + swallowed instead of crashing the pull cycle (AC3). NOTE: only the orchestration's `DecideService` should be wired with it; the live composition root that does so is deferred to STORY-016 (no shipping path injects it yet — it is currently proven only by the AC3 test).
 
 ### Testing and Fixtures
 - No live Statuspage/HTTP connections. Testing uses recorded JSON fixtures under `backend/tests/fixtures/statuspage/`:
