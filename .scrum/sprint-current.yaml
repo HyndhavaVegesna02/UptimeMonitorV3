@@ -1,65 +1,42 @@
 # YourTeam active sprint board.
-sprint: 17
-status: closed        # none | active | review | closed | aborted
-closed: 2026-06-29
-started: 2026-06-28
-goal: "Wire the pipeline orchestration — per cycle, AFTER ingest, run collapse->streak->anti_flap->
-  decide per signal to produce/supersede/obsolete proposals (recovery-publish via a FAKE publisher) —
-  the step that finally turns observations into proposals. Fully fake-tested, no live creds (live
-  Statuspage/Dynatrace stays in STORY-016). Single story, 5 pts: the central design-heavy backend
-  piece, full reviewer scrutiny."
-branch: sprint-17
-start_tag: sprint-17-start
-# Capacity: velocity last-3 (sprints 14,15,16) = 6,5,5 -> mean 5.33. Committed 5 (STORY-016a).
+sprint: 18
+status: active        # none | active | review | closed | aborted
+started: 2026-06-29
+goal: "Make Neon the seeded read model (dossier §7 Option C): add the signals.component_id
+  migration, an idempotent seed_topology upsert (apps/components/signals; preserves runtime
+  components.status), a scripts/seed_topology.py CLI, and app-startup (lifespan) seed wiring — so the
+  spine is populated from config/apps and GET /api/v1/components shows real components. Single story,
+  5 pts (top of range; boot wiring included per PO)."
+branch: sprint-18
+start_tag: sprint-18-start
+# Capacity: velocity last-3 (sprints 15,16,17) = 5,5,5 -> mean 5.0. Committed 5 (STORY-040).
 #
 # WORKFLOW (working-agreements.md 2026-06-26): PO implements externally OR (quota permitting) the
-# orchestrator finishes via a Sonnet implementer subagent (as in sprints 14-16). PO triggers the back
-# half ("do your review"); orchestrator diffs sprint-17-start..HEAD, runs the FULL six-command gate,
-# runs Opus spec + quality reviewers (5 pts), resolves wiki blast-radius (the MECHANICAL sweep,
+# orchestrator finishes via a Sonnet implementer subagent (sprints 14-17). PO triggers the back half
+# ("do your review"); orchestrator diffs sprint-18-start..HEAD, runs the FULL six-command gate, runs
+# the Opus spec + quality reviewers (5 pts), resolves the wiki blast-radius (MECHANICAL sweep,
 # 2026-06-28), then review/verdict/merge/retro. plan.md is the ONLY contract -> self-contained.
 #
-# PIPELINE: STORY-016a (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
+# PIPELINE: STORY-040 (5) -> GATE + Opus spec & quality reviewers (reviewers on Opus, 2026-06-24).
 #
-# NO migration (proposals/observations/components/maintenance tables all exist). NO new lint contract
-# (the orchestrator is composition wiring; composition may import core+adapters). Folded-in prereqs:
-# promote bucket_into_cycles to public; add SignalConfig.interval_seconds (+ sample config); add
-# ComponentRepository.get (port+fake+adapter+DB test). The 2026-06-28 TOCTOU agreement is N/A-new:
-# decide's get_open->resolve/create_open is EXISTING behavior (handles the race via create_open->None).
+# DoD: ONE NEW MIGRATION this sprint (signals.component_id FK; spine->spine, so check_fk_direction
+# stays green) -> `alembic upgrade head` does real work; the round-trip must reverse cleanly. NO new
+# lint contract (seed is composition wiring). The 2026-06-28 TOCTOU agreement is N/A (upserts are
+# ON CONFLICT DO UPDATE, not check-then-act).
 #
-# Baseline at lock: tree clean on main @ e7e337d -> refined onto branch @ 07cf681. Cheap gates green
-# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-16 review (93f1863)
-# with no src/ change since. Conventions checklist (2026-06-27), frozen-type-invariant (2026-06-26),
-# named-error/empty (2026-06-25), fake/adapter parity (2026-06-26), DTO-no-sentinel (2026-06-28),
-# and mechanical-wiki-blast-radius (2026-06-28) agreements apply; see plan.md.
+# Baseline at lock: tree clean on main @ 9aed7b2 -> refined onto branch @ 44eaf43. Cheap gates green
+# at lock (ruff clean; lint-imports 5 kept / 0 broken). DB gates green at sprint-17 review (b062132).
+# Agreements in force incl. spec-review-verifies-AC-test-drives-behavior (2026-06-29) and the
+# mechanical wiki blast-radius sweep (2026-06-28). See plan.md.
 stories:
-  - id: STORY-016a
+  - id: STORY-040
     points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> (impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0            # external (Antigravity) impl; one orchestrator inline fix-loop closed the AC3 MAJOR.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at b062132 with throwaway DB: pytest 376 passed (on a
-          FRESH DB, twice in a row); lint-imports 5/0; fk 0; alembic 0; ruff check + format clean.
-          Opus spec reviewer: PASS (all 6 AC, no regression). Opus quality reviewer: APPROVE (0
-          critical / 0 major after fix)."
-        commit: b062132
-        at: 2026-06-29T01:00:00+05:30
-    review:
-      first_pass: "spec PASS (AC3 test flagged weak); quality FIX REQUIRED (1 MAJOR: AC3 test was
-        committed scratch + drove the degradation path so a raising publisher was never exercised;
-        the orchestration's recovery-publish was not best-effort -> a publish failure would crash
-        the cycle, contra T1.1/AC3)."
-      fix_commit: b062132   # orchestrator inline: BestEffortPublisher wrapper + honest recovery-path
-                            # AC3 test + dead-scratch removal + pull_loop comment fix.
-      second_pass: "spec PASS; quality APPROVE."
-      open_note: "BestEffortPublisher is wired only in the AC3 test; the live composition root that
-        injects it is deferred to STORY-016 (captured in that story's Open Questions). Not blocking."
-    blast_radius_resolved: true   # compile pass: statuspage-publish (+BestEffortPublisher Fact) +
-                                  # core-pipeline-and-availability (best-effort injection note) re-verified;
-                                  # config-layer/ingest-service/persistence-adapters bumped (format drift). All current @ b062132.
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
