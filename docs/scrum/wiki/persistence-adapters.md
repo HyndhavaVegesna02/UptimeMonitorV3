@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: a05a5e9
-verified_sprint: sprint-14
+verified_sha: 8305d4d
+verified_sprint: sprint-15
 status: verified
 ---
 
@@ -113,8 +113,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   tests hand-seed parent `apps` + `components` rows via a raw psycopg helper `seed_component` before
   exercising the proposal/maintenance repository adapters.
 - `rejected_observations` has no FK, so its tests skip seeding entirely.
-- The `migrated_db` fixture is **session-scoped and shared** across the module, so tests use a
-  per-test `signal_key` and `component_id` namespace to avoid cross-test row collisions/order-dependence.
+- The `migrated_db` fixture is **session-scoped and shared**, but a function-scoped
+  `clean_runtime_tables` fixture (`backend/tests/conftest.py`, STORY-039) **truncates the runtime
+  tables** (`rejected_observations`, `observations`, `watermarks`, `problem_signals`) before each
+  DB-gated test, so the suite is order- and reused-DB-independent (the `engine` fixture lives in
+  `conftest.py` and depends on it). Tests still use per-test `signal_key`/`component_id` namespaces.
 
 ## Inference (synthesis, not verified)
 - `watermarks.updated_at` is set once at first insert and not refreshed by `advance`'s

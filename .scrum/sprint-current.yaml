@@ -32,21 +32,44 @@ start_tag: sprint-15-start
 stories:
   - id: STORY-014c
     points: 3
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 3 pts -> (external impl) + Opus spec & quality reviewers + DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 3 pts -> (Sonnet impl) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 0            # implemented by a Sonnet subagent (PO quota out); one orchestrator
+                          # inline fix-loop closed the quality CRITICAL.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 8305d4d with throwaway DB: pytest 331 passed;
+          lint-imports 5/0; fk 0; alembic 0; ruff clean. Opus spec reviewer: PASS (all 5 AC, no
+          regression). Opus quality reviewer: APPROVE (0 critical / 0 major after fix)."
+        commit: 8305d4d
+        at: 2026-06-28T22:15:00+05:30
+    review:
+      first_pass: "spec PASS; quality FIX REQUIRED (1 CRITICAL: naive since/until -> HTTP 500 instead
+        of 422 — validators checked parseability but not tz-awareness)."
+      fix_commit: 8305d4d   # orchestrator inline: mirror maintenance validator (tzinfo None -> 422) +
+                            # regression tests; minors (datetime import hoist, lambda->def).
+      second_pass: "spec PASS (no regression); quality APPROVE."
+    blast_radius_resolved: true   # api-five-file-convention, dev-setup-and-dod, migrations-and-db,
+                                  # persistence-adapters re-verified @ 8305d4d (incl. STORY-039 truncate-isolation Fact).
   - id: STORY-039
     points: 2
-    board: todo
-    pipeline: gate         # 2 pts -> (external impl) + DoD gate only
+    board: done
+    pipeline: gate         # 2 pts -> (Sonnet impl) + DoD gate only
     blocked_question: null
     attempts: 0
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands + two-run reused-DB proof"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 8305d4d: full suite ran TWICE against the same
+          un-torn-down container -> 331 passed BOTH runs (the AC1 reused-DB property). Fix is a
+          function-scoped clean_runtime_tables truncate fixture in conftest.py (no production src/
+          change). lint-imports 5/0; ruff clean."
+        commit: aca44e3
+        at: 2026-06-28T22:15:00+05:30
+    blast_radius_resolved: true   # dev-setup-and-dod + persistence-adapters Facts updated for the truncate fixture.
 hotfixes: []
 interrupts: []

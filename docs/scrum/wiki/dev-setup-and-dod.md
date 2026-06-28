@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: fafdc4c
+verified_sha: 8305d4d
 verified_sprint: sprint-14
 status: verified
 ---
@@ -40,7 +40,10 @@ status: verified
   pytest runs), tearing it down in a `finally`-block finalizer that runs even
   if a test fails; else skips the DB-gated tests cleanly (no error). DB-gated
   tests (e.g. `backend/tests/test_spine_schema.py`) depend on this fixture
-  instead of each rolling its own `skipif` + connection setup.
+  instead of each rolling its own `skipif` + connection setup. A function-scoped
+  `clean_runtime_tables` fixture (STORY-039) truncates the runtime tables before
+  each DB-gated test, so the suite passes even against a reused, already-populated
+  DB (the session-scoped DB is shared; per-test isolation comes from the truncate).
 - Manual fallback one-liner for commands 3 & 4 (Docker 28.x), if not using
   `scripts/dev_db.py`:
   `docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16`
