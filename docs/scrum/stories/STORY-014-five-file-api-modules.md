@@ -52,24 +52,24 @@ orchestration that sits above them.
    so no new gate line, just the contract count.)
 
 ## Acceptance Criteria (refined — PO-approved 2026-06-28)
-- [ ] **AC1 (five-file shape, §13):** `api/v1/decisions/` contains exactly the five files with
+- [x] **AC1 (five-file shape, §13):** `api/v1/decisions/` contains exactly the five files with
       the dossier-§13 responsibilities and import rules: `controller.py` imports only
       models/validation/service; `models.py` pydantic DTOs only (no canonical domain types
       leak to the client); `validation.py` stdlib only (no services); `service.py` imports core
       + the container, never another feature. A test asserts the module shape + that DTOs are
       distinct from domain types.
-- [ ] **AC2 (4th contract — no horizontal feature imports):** a 4th `independence` import-linter
+- [x] **AC2 (4th contract — no horizontal feature imports):** a 4th `independence` import-linter
       contract over the `api.v1` feature packages is live and `lint-imports` reports **4 contracts
       kept, 0 broken**. A regression test (or a deliberately-reverted spike noted in the story)
       confirms the contract BREAKS if `decisions/service.py` imports `health` (proving it is not
       vacuous). `.scrum/definition-of-done.md` + CLAUDE.md updated in the same commit
       (command-sync agreement).
-- [ ] **AC3 (thin edge, logic in core):** the approve/reject business logic lives in
+- [x] **AC3 (thin edge, logic in core):** the approve/reject business logic lives in
       `core/services/approval.py::ApprovalService`; `decisions/service.py` holds only
       validate→delegate→shape. `lint-imports` core-independence stays KEPT (core imports no
       FastAPI/adapter). A unit test exercises `ApprovalService` directly with a fake
       `ProposalRepository` + a fixed `Clock` — no HTTP, no DB.
-- [ ] **AC4 (decision endpoint — happy + edge paths):** the approve/reject endpoint(s) under
+- [x] **AC4 (decision endpoint — happy + edge paths):** the approve/reject endpoint(s) under
       `/api/v1/decisions/...` are served by the app factory and tested (FastAPI `TestClient`,
       repository faked):
       - approve an OPEN proposal → 200, proposal resolves to `APPROVED`, an approval event is
@@ -80,13 +80,13 @@ orchestration that sits above them.
         no event recorded;
       - malformed body (missing `actor`, unknown `action`) → **422** from `validation.py`
         BEFORE any core/DB call.
-- [ ] **AC5 (best-effort side effects, T1.1):** the approval path commits the DB resolution
+- [x] **AC5 (best-effort side effects, T1.1):** the approval path commits the DB resolution
       FIRST; any post-commit publish/notify is best-effort (a failure there is logged, not
       raised — the proposal is already resolved). Tested: a failing publisher does not 500 the
       approve call nor un-resolve the proposal. *(If publish-on-approve is out of this exemplar's
       wiring, AC5 reduces to "the endpoint commits via the repository before returning"; the plan
       states which.)*
-- [ ] **AC6 (full DoD gate green):** all SIX DoD commands exit 0 (`pytest`, `lint-imports` [now
+- [x] **AC6 (full DoD gate green):** all SIX DoD commands exit 0 (`pytest`, `lint-imports` [now
       4/0], `check_fk_direction.py`, `alembic upgrade head`, `ruff check`, `ruff format --check`).
       No new migration unless a schema gap is found (none expected — proposals/approval-events
       tables exist from STORY-012). Forward blast radius: `architecture-boundary.md` (the import
@@ -123,3 +123,4 @@ orchestration that sits above them.
   port gap and folded it in. Estimate held at **5** (meaty: app factory + provider + new core
   service + one five-file feature + 4th contract + tests; patterns are well-established). Read
   endpoints split out to STORY-014b. Status: draft → ready.
+- 2026-06-28 (implementation): completed by Antigravity under sprint-12. Verified that the fourth contract breaks when `decisions/service.py` imports `health` (reverted). All six DoD gate checks pass. Status: ready → done.
