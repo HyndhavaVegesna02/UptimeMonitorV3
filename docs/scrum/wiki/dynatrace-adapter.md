@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json]
-verified_sha: 4c62c38
+verified_sha: ed19084
 verified_sprint: sprint-22
 status: verified          # verified | stale | archived
 ---
@@ -161,4 +161,8 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   "http_monitor_execution"` filter to `build_dql_query` to exclude the same-`event.id`
   `http_step_execution` companion at source; reconciled `grail_synthetic_events.json` to real probe
   values; added `grail_dual_event_types.json` for AC5 dedup demonstration; ruff exclude for `.agents/`
-  (pre-existing DoD gate fix). Re-verified at 4c62c38.
+  (pre-existing DoD gate fix). The AC6 live verification PASSED (loop ran against the live tenant: 119
+  real observations ingested, health UP, two locations, ns→ms latency, `distinct source_event_id ==
+  total` so no `UNIQUE(source_event_id)` collision — the dedup works end to end). The real failure
+  `result.status` code remains TBD (no failing run could be induced this sprint; `map_synthetic_status`
+  stays fail-loud). Re-verified at ed19084.

@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: ed19084
+verified_sprint: sprint-22
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -100,3 +100,6 @@ status: verified
   used by the two adapter HTTP executors — `core-independence` still forbids `core` importing it
   (the forbidden-module Fact is reaffirmed, not changed). No zone/contract change; `lint-imports`
   5 kept / 0 broken, FK 11/0. verified_sha → d9c2a77.
+- sprint-22: re-verified (STORY-016c). The only `pyproject.toml` change was `[tool.ruff] exclude =
+  [".agents", ".venv"]` — a ruff-scope tweak unrelated to the import-linter contracts or zone structure
+  this article describes. 5 contracts kept / 0 broken, FK 11/0, unchanged. verified_sha → ed19084.

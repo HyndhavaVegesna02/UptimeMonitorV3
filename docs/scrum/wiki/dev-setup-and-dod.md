@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: ed19084
+verified_sprint: sprint-22
 status: verified
 ---
 
@@ -23,6 +23,11 @@ status: verified
   5. `ruff check .`
   6. `ruff format --check .`
   All six are live as of STORY-033. Commands 2–4 became real during Sprint 0 (bootstrap); commands 5 and 6 were added in Sprint 11.
+  - `[tool.ruff]` carries `exclude = [".agents", ".venv"]` (`pyproject.toml`, STORY-016c): `.agents/` is
+    untracked third-party skills tooling (not project code) that otherwise makes `ruff check .` /
+    `ruff format --check .` exit non-zero; the exclude scopes ruff to project code without affecting
+    `backend/`/`migrations/`. `.venv` is already gitignored and conventionally skipped — listed for
+    defensiveness.
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
   `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
@@ -93,3 +98,7 @@ status: verified
 - sprint-20: STORY-016 promoted `httpx` from a dev extra to a runtime dep (Grail + Statuspage HTTP
   executors) and removed a stray `httpx2`; added the `python -m src.composition.run` live-loop command
   + its four env secrets to CLAUDE.md. No contract or DoD command changed (still six). Re-verified at d9c2a77.
+- sprint-22: STORY-016c added `[tool.ruff] exclude = [".agents", ".venv"]` so `ruff check .` /
+  `ruff format --check .` stay green against untracked third-party skills tooling under `.agents/`
+  (84 ruff errors there, none in project code). No contract or DoD command changed (still six).
+  Re-verified at ed19084.

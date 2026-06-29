@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: ed19084
+verified_sprint: sprint-22
 status: verified
 ---
 
@@ -149,3 +149,5 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - sprint-17: updated (STORY-016a — config layer updated to support `interval_seconds` for signal cadences). verified_sha = b062132.
 - sprint-18: updated (STORY-040 — config is loaded fail-fast in `create_app` and stored in `app.state.seed_config` for database seeding at lifespan startup). verified_sha = 19eefc8.
 - sprint-20: updated (STORY-016 — `ComponentConfig.statuspage_component_id` + `Config.statuspage_mapping()` for the live publish chain; sample config is now `config/apps/httpcheck.yaml` (sockshop dropped)). verified_sha = d9c2a77.
+- sprint-22: re-verified (STORY-016c). No config-layer change; the only `pyproject.toml` edit was a ruff
+  `.agents/` exclude unrelated to the config loader/resolvers. verified_sha = ed19084.

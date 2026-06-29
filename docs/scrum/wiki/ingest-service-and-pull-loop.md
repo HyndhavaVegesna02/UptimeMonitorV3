@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 213034b
-verified_sprint: sprint-21
+verified_sha: ed19084
+verified_sprint: sprint-22
 status: verified          # verified | stale | archived
 ---
 
@@ -128,3 +128,6 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - sprint-21: updated (STORY-016b). `build_live_loop` now selects the Statuspage chain vs a no-op
   `LoggingPublisher` based on whether Statuspage is configured (Dynatrace-only internal verification);
   the failing-row pull_loop tests mock the vendor-mapping edge (production is fail-loud). Verified at 213034b.
+- sprint-22: re-verified (STORY-016c). No pull-loop source change; `test_pull_loop.py` rows were flipped
+  from `event.type: http_step_execution` to `http_monitor_execution` (the canonical row the live loop now
+  ingests — see [[dynatrace-adapter]]). Verified at ed19084.
