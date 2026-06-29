@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import json
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 import pytest
@@ -340,6 +340,90 @@ def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
     assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
     assert obs.latency_ms == 787
     assert obs.raw_ref is None
+
+
+# --- build_dql_query: real Grail schema (AC1, STORY-016b) ---
+
+
+def test_build_dql_query_targets_real_object_and_filter_field():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    q = build_dql_query(
+        native_id="HTTP_CHECK-DB5792CB88D14CF4",
+        watermark=None,
+        overlap=timedelta(minutes=5),
+    )
+    # AC1: the real data object + the real filter field.
+    assert "fetch dt.synthetic.events" in q
+    assert 'dt.synthetic.monitor.id == "HTTP_CHECK-DB5792CB88D14CF4"' in q
+    # The retired placeholder names must be gone.
+    assert "dt.synthetic.executions" not in q
+    assert "synthetic_test.id" not in q
+    # No watermark -> no lower time bound.
+    assert "timestamp >=" not in q
+
+
+def test_build_dql_query_with_watermark_adds_overlap_lower_bound():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    watermark = datetime(2026, 6, 29, 6, 0, 0, tzinfo=timezone.utc)
+    q = build_dql_query(
+        native_id="HTTP_CHECK-DB5792CB88D14CF4",
+        watermark=watermark,
+        overlap=timedelta(minutes=5),
+    )
+    # since = watermark - overlap = 05:55:00Z (never the bare watermark).
+    assert 'timestamp >= "2026-06-29T05:55:00Z"' in q
+
+
+def test_build_dql_query_rejects_naive_watermark():
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    with pytest.raises(ValueError, match="tz-aware UTC"):
+        build_dql_query(
+            native_id="HTTP_CHECK-DB5792CB88D14CF4",
+            watermark=datetime(2026, 6, 29, 6, 0, 0),  # naive
+            overlap=timedelta(minutes=5),
+        )
+
+
+def test_build_dql_query_rejects_native_id_with_dql_breaking_char():
+    from src.adapters.inbound.dynatrace.query import (
+        InvalidNativeIdError,
+        build_dql_query,
+    )
+
+    with pytest.raises(InvalidNativeIdError):
+        build_dql_query(
+            native_id='HTTP_CHECK-"; drop',  # contains a quote
+            watermark=None,
+            overlap=timedelta(minutes=5),
+        )
+
+
+# --- parse_ns_timestamp edge cases (precision-boundary, STORY-016b) ---
+
+
+def test_parse_ns_timestamp_truncates_nanoseconds_to_microseconds():
+    from src.adapters.inbound.dynatrace._assembly import parse_ns_timestamp
+
+    # 9 fractional digits -> µs (6 digits); fromisoformat would otherwise reject it.
+    assert parse_ns_timestamp("2026-06-29T06:45:40.742000000Z") == datetime(
+        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+    )
+
+
+def test_parse_ns_timestamp_handles_no_fractional_and_explicit_offset():
+    from src.adapters.inbound.dynatrace._assembly import parse_ns_timestamp
+
+    # No fractional part, Z suffix.
+    assert parse_ns_timestamp("2026-06-29T06:45:40Z") == datetime(
+        2026, 6, 29, 6, 45, 40, tzinfo=timezone.utc
+    )
+    # Explicit +00:00 offset with ns fractional.
+    assert parse_ns_timestamp("2026-06-29T06:45:40.742000000+00:00") == datetime(
+        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+    )
 
 
 def test_assemble_observation_attaches_optional_raw_ref():

@@ -32,7 +32,11 @@ from src.adapters.persistence.rejected_observation_repository import (
 )
 from src.adapters.persistence.watermark_repository import PostgresWatermarkRepository
 from src.composition.config import Config, load_config
-from src.composition.publish_helper import BestEffortPublisher, RecordingPublisher
+from src.composition.publish_helper import (
+    BestEffortPublisher,
+    LoggingPublisher,
+    RecordingPublisher,
+)
 from src.composition.pull_loop import run_periodic
 from src.composition.seed import seed_topology
 from src.composition.settings import (
@@ -84,8 +88,6 @@ def build_live_loop(
         env_url=secrets.dynatrace_env_url,
         api_token=secrets.dynatrace_api_token,
     )
-
-    from src.composition.publish_helper import LoggingPublisher
 
     # 4. Statuspage Publisher or Logging Fallback
     if (

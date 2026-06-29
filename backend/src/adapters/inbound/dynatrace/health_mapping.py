@@ -1,12 +1,21 @@
-"""Vendor health mapping (dossier §5, §7) — the ONLY place vendor outcome words
+"""Vendor health mapping (dossier §5, §7) — the ONLY place vendor status words
 are read.
 
-Dynatrace synthetic executions report an `execution.outcome` of `success`,
-`failure`, or `partial`. The canonical `Health` enum (dossier §5) is closed
-and not pass/fail, so a partial outage is expressible. This module is the
-single explicit, unit-tested translation from vendor outcome to canonical
-`Health`; every normalizer in this package calls through it rather than
-re-deriving the mapping.
+Two explicit, unit-tested translations to the canonical `Health` enum (dossier
+§5, closed + not pass/fail so a partial outage is expressible):
+
+- `map_synthetic_status(code, message)` — the LIVE HTTP path (STORY-016b). Real
+  `dt.synthetic.events` rows carry `result.status.code` / `result.status.message`
+  (e.g. `"0"` / `"HEALTHY"`). Only the healthy value is mapped today; failure /
+  degraded codes are added once observed live (the loop fails LOUD on an
+  unrecognized value rather than guessing, so the real code surfaces — see the
+  STORY-016b plan T6/AC6).
+- `map_execution_outcome(outcome)` — the legacy `execution.outcome`
+  (`success`/`failure`/`partial`) path, still used by `clickpath_normalizer`
+  (browser clickpath is out of the live HTTP scope; retained, not exercised by
+  the live dispatch).
+
+Every normalizer calls through here rather than re-deriving a mapping.
 """
 
 from src.core.domain import Health
@@ -43,16 +52,18 @@ class UnknownVendorStatusError(ValueError):
 
 
 def map_synthetic_status(*, code: str, message: str) -> Health:
-    """Translate a Dynatrace synthetic status code and message to canonical Health (STORY-016b).
+    """Translate a Dynatrace synthetic `result.status` code/message to canonical Health (STORY-016b).
 
-    Unrecognized code/message raises UnknownVendorStatusError rather than silently defaulting.
+    Only the known-good value is mapped: `code == "0"` (or `message == "HEALTHY"`)
+    -> `Health.UP`. Any other value raises `UnknownVendorStatusError` rather than
+    guessing — the live verification (plan T6/AC6) forces the monitor to fail and
+    reads the real DOWN/DEGRADED code from this error, and the mapping is extended
+    with the observed value(s) THEN. Inventing failure codes here would silently
+    mis-map (or mask) the real failure value during that verification, so it is
+    deliberately NOT done.
     """
     if code == "0" or message == "HEALTHY":
         return Health.UP
-    elif code == "1" or message in ("ERROR", "DOWN", "failure", "FAILED"):
-        return Health.DOWN
-    elif code == "2" or message in ("DEGRADED", "partial"):
-        return Health.DEGRADED
 
     raise UnknownVendorStatusError(
         f"unknown Dynatrace synthetic status: code={code!r}, message={message!r}"

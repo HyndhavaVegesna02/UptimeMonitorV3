@@ -2,7 +2,7 @@
 normalizer and flattens the results.
 
 This is the seam that keeps adding a future normalizer purely additive (AC5):
-the registry maps a vendor `synthetic_test.type` string to the normalizer
+the registry maps a vendor `event.type` string to the normalizer
 function for that type. Dispatch never aggregates — the output is one
 canonical `SignalObservation` per input row (per location execution), in
 input order, regardless of how many distinct monitors or locations are mixed

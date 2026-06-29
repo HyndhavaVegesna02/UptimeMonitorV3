@@ -24,12 +24,20 @@ def make_grail_executor(
     api_token: str,
     http_post: Callable = httpx.post,
     http_get: Callable = httpx.get,
-    poll_attempts: int = 30,
+    poll_attempts: int = 60,
+    poll_interval_seconds: float = 1.0,
     sleep_func: Callable = time.sleep,
 ) -> Executor:
     """Factory to create a Grail DQL executor closure (dossier §8).
 
-    Accepts an optional `http_post`, `http_get`, and `sleep_func` seam to
+    The Grail query API is asynchronous: `query:execute` returns a 202 +
+    `requestToken`, which is polled at `query:poll` until a terminal state. The
+    poll budget is `poll_attempts` × `poll_interval_seconds` (default 60 × 1.0s =
+    60s); a query slower than that raises `GrailQueryError`. The defaults give the
+    live loop real headroom (Grail advertises a ~400s result TTL); tests inject a
+    no-op `sleep_func` so they never actually wait.
+
+    Accepts optional `http_post`, `http_get`, and `sleep_func` seams to
     facilitate unit testing without making live HTTP calls or sleeping.
     """
     execute_endpoint = f"{env_url.rstrip('/')}/platform/storage/query/v1/query:execute"
@@ -91,7 +99,7 @@ def make_grail_executor(
         # Poll loop
         for attempt in range(poll_attempts):
             if attempt > 0:
-                sleep_func(0.1)
+                sleep_func(poll_interval_seconds)
 
             try:
                 poll_resp = http_get(
