@@ -218,8 +218,8 @@ stories:
   - id: STORY-016
     title: First end-to-end thread (live demo)
     file: docs/scrum/stories/STORY-016-first-end-to-end-thread.md
-    status: ready   # refined + scoped for Sprint 20 (2026-06-29); both creds present, build both Executors
-    points: 5       # was 3; rescoped to build BOTH real Executors + live driver (PO chose "build both now")
+    status: done    # accepted at Sprint 20 review (2026-06-29) — both real Executors + live driver, 5/5
+    points: 5       # rescoped from 3 to build BOTH real Executors + live driver (PO chose "build both now")
     priority: 18
     type: feature
     sprint: 20

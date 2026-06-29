@@ -359,4 +359,20 @@
   working tree passed, and the implementer's "ruff clean" report was true only for the uncommitted
   state. The orchestrator's tree inspection caught it and committed the fix. A variant of Sprint 14's
   "implementer green ≠ committed-tree green"; this makes the clean-tree requirement explicit.)
+- 2026-06-29 — **A composition/assembly test constructs the REAL wired objects — it must NOT patch the
+  `__init__` of the components whose wiring it asserts.** When a test verifies that a composition root
+  assembles a graph (a publisher/decorator chain, a service with injected ports, a driver that fans out
+  loops), it must build those objects for real and assert the ACTUAL result — the `isinstance` nesting /
+  `_delegate` references, and the kwargs threaded onward — mocking ONLY the genuine I/O edges (the HTTP
+  seam, the DB engine, `run_periodic`/`asyncio.sleep`). Stubbing the constructor of a thing under
+  assembly makes a wrong constructor kwarg (or a swapped argument) pass silently, so the test proves
+  nothing about the wiring it names. Checked at quality review for any wiring/assembly test; the plan's
+  conventions checklist names it for stories that add a composition root. (Motivated by Sprint 20,
+  STORY-016: `composition/run.py` built the publisher chain with `RecordingPublisher(publisher=...)` /
+  `BestEffortPublisher(publisher=...)` but the constructors take `delegate=`, so `build_live_loop` raised
+  `TypeError` on startup — the live loop could never run. All six DoD gates were GREEN because
+  `test_run_live_loop.py` patched every constructor `__init__` to a no-op and asserted only call-counts;
+  both Opus reviewers caught it by reading the test body, not the gate. The third "green test, wrong path"
+  incident — Sprint 14 committed-tree, Sprint 17 rigged AC3, now Sprint 20 over-mock — each the same lie
+  in a new disguise; this closes the assembly-test variant.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->

@@ -1,7 +1,8 @@
 # YourTeam active sprint board.
 sprint: 20
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-06-29
+closed: 2026-06-29
 goal: "Make the first thread LIVE (dossier §8/§12/§17). Build the two real HTTP Executors (Dynatrace
   Grail DQL + Statuspage PATCH) left as injected seams, add their credentials to settings, carry the
   Statuspage component mapping in config, thread orchestration through run_periodic, and assemble a
@@ -36,13 +37,39 @@ start_tag: sprint-20-start
 stories:
   - id: STORY-016
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> impl + Opus spec & quality reviewers + DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> impl (external) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1            # one fix loop: both Opus reviewers flagged the same blocking defect;
+                          # PO authorized orchestrator inline fix (d9c2a77).
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX commands"
+        exit_code: 0
+        output_tail: "orchestrator-verified at d9c2a77 (committed tree, post-fix): pytest 419 passed;
+          lint-imports 5/0 (no new contract); fk 11/0; alembic up-to-date (no new migration —
+          statuspage_component_id is read-only config); ruff check + format (153 files) clean."
+        commit: d9c2a77
+        at: 2026-06-29T07:30:00+05:30
+    review:
+      first_pass: "spec FAIL / quality REQUEST-CHANGES. Both Opus reviewers independently found the
+        SAME blocking pair: run.py built the publisher chain with RecordingPublisher(publisher=...)/
+        BestEffortPublisher(publisher=...) but the ctors take delegate= -> build_live_loop raised
+        TypeError on startup (live loop could never run); and the assembly test
+        (test_run_live_loop.py) over-mocked every constructor __init__, so the green gate was blind to
+        it (the 'test that lies' pattern the spec-rigor agreements target). Quality also: MAJOR stray
+        httpx2 in dev extra; MINOR CLAUDE.md missing the four live-secret env vars."
+      fix: "PO authorized orchestrator inline fix (d9c2a77): run.py publisher= -> delegate=; assembly
+        test rewritten to build the REAL objects (only run_periodic patched) and assert the
+        BestEffort->Recording->Statuspage isinstance nesting + the six orchestration extras on each
+        run_periodic call (now errors under the old wiring — guards the regression); dropped httpx2;
+        documented the four live-loop secrets in CLAUDE.md."
+      second_pass: "orchestrator re-verified: TypeError reproduced then closed; rewritten test passes
+        and genuinely exercises the real ctors; all six gates green on the clean committed tree
+        d9c2a77. AC1-AC4 MET; AC5 (live SaaS observation) is the manual post-merge smoke by design."
+      open_minors:
+        - "grail_executor/http_executor http_post/http_request seams typed as bare Callable (cosmetic; reviewers said leave)."
+    blast_radius_resolved: true   # compile pass @ 0648cff: 8 articles updated/re-verified; sweep
+                                  # 0 stale / 0 missing refs / 0 bad links across all 11.
 hotfixes: []
 interrupts: []
