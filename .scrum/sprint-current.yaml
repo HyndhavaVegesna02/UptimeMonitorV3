@@ -44,10 +44,10 @@ start_tag: sprint-23-start
 stories:
   - id: STORY-015a
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> impl (Sonnet) + Opus spec & quality reviewers + frontend DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null
