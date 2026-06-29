@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
-code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json]
+verified_sha: 213034b
+verified_sprint: sprint-21
 status: verified          # verified | stale | archived
 ---
 
@@ -21,11 +21,13 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `DEFAULT_OVERLAP = timedelta(minutes=5)` (`adapter.py::DEFAULT_OVERLAP`) — the dossier §8 overlap window.
 
 ### DQL query builder + the executor seam (`query.py`)
-- `build_dql_query(*, native_id, watermark, overlap)` (`query.py::build_dql_query`) is a pure function. It
-  always scopes to `synthetic_test.id == "<native_id>"`; when `watermark` is set it adds a
-  lower bound at `watermark - overlap` (never the bare watermark, so late-landing rows are not
+- `build_dql_query(*, native_id, watermark, overlap)` (`query.py::build_dql_query`) is a pure function.
+  **It fetches the REAL Grail data object `dt.synthetic.events`** (STORY-016b — reconciled to the live
+  tenant; the earlier `dt.synthetic.executions` was an invalid placeholder) and scopes to
+  `dt.synthetic.monitor.id == "<native_id>"`; when `watermark` is set it adds a lower bound at
+  `watermark - overlap` on `timestamp` (never the bare watermark, so late-landing rows are not
   missed — dossier §8); when `watermark is None` (never ingested) it adds no time bound and the
-  first pull reads everything (`query.py::build_dql_query`).
+  first pull reads everything; `| sort timestamp asc`.
 - `watermark` must be tz-aware UTC — a naive datetime is rejected (`query.py::build_dql_query`), mirroring
   the core's own `observed_at` validator (`core/domain/signal.py::SignalObservation._require_utc`).
 - `native_id` is interpolated unescaped into the query string (`query.py::build_dql_query`); a comment
@@ -38,27 +40,33 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
 
-### Real Grail DQL executor (`grail_executor.py`, STORY-016)
-- `make_grail_executor(*, env_url, api_token, http_post=httpx.post) -> Executor`
-  (`grail_executor.py::make_grail_executor`) returns the real `Executor` closure: POSTs the built DQL
-  to `{env_url}/platform/storage/query/v1/query:execute` with headers
-  `Authorization: Api-Token <token>` + `Content-Type: application/json` and body `{"query": <dql>}`,
-  then returns `response.json()["records"]` (`[]` when absent) — the flat row-dict list the
-  normalizers consume. A non-2xx response (or a failed request / unparseable body) raises the named
-  `GrailQueryError` (`grail_executor.py::GrailQueryError`, a `RuntimeError`). The `http_post` seam
-  (default `httpx.post`) keeps it unit-testable with NO live call; it never leaks `httpx.Response`
-  across the boundary. Wired by `composition/run.py::build_live_loop` (see
-  [[ingest-service-and-pull-loop]]). Tested in `backend/tests/test_grail_executor.py` against the
-  recorded fixture `grail_http_response.json`, including piping the returned records through
-  `normalize_rows` to confirm the executor→normalizer contract.
+### Real Grail DQL executor (`grail_executor.py`, STORY-016 → reconciled STORY-016b)
+- `make_grail_executor(*, env_url, api_token, http_post=httpx.post, http_get=httpx.get,
+  poll_attempts=60, poll_interval_seconds=1.0, sleep_func=time.sleep) -> Executor`
+  (`grail_executor.py::make_grail_executor`) returns the real `Executor` closure.
+- **The Grail query API is ASYNCHRONOUS** (STORY-016b, proven by a live probe): POST the DQL to
+  `{env_url}/platform/storage/query/v1/query:execute` (`Authorization: Api-Token <token>`, body
+  `{"query": <dql>}`). It returns HTTP **202** `{"state":"RUNNING","requestToken":"…"}`; the executor
+  then polls `…/query:poll?request-token=…` (`http_get`) until a terminal state — `SUCCEEDED` →
+  return `result.records` (`[]` if absent); `FAILED`/`CANCELLED`/unknown state → raise `GrailQueryError`;
+  poll budget `poll_attempts × poll_interval_seconds` (default 60s) exhausted → raise. A synchronous
+  200-with-records response is still handled (`_extract_records` reads `result.records` or `records`).
+  Non-2xx on execute or poll, an unparseable body, or a 202 without a token all raise the named
+  `GrailQueryError` (`grail_executor.py::GrailQueryError`, a `RuntimeError`).
+- The `http_post`/`http_get`/`sleep_func` seams keep it unit-testable with NO live call and NO real
+  waiting; it never leaks `httpx.Response` across the boundary (returns `list[dict]`). Wired by
+  `composition/run.py::build_live_loop` (see [[ingest-service-and-pull-loop]]). Tested in
+  `backend/tests/test_grail_executor.py` driving execute→202→poll→SUCCEEDED, FAILED-state,
+  poll-exhaustion, sync-fallback, and empty-records, all against fakes.
 
 ### Normalizer dispatch (`dispatch.py`) — the additive seam
-- `_NORMALIZERS` (`dispatch.py::_NORMALIZERS`) maps a vendor `synthetic_test.type` string to a normalizer:
-  `"HTTP_CHECK" -> normalize_http_row`, `"BROWSER_CLICKPATH" -> normalize_clickpath_row`. Adding
-  a future type (single-browser, NAM) is one registry entry + one normalizer module — no existing
-  normalizer or call site changes (AC5).
+- `_NORMALIZERS` (`dispatch.py::_NORMALIZERS`) maps a vendor **`event.type`** string (STORY-016b — the
+  real Grail dispatch key; the earlier `synthetic_test.type` does not exist in live data) to a
+  normalizer: `"http_step_execution" -> normalize_http_row`. Clickpath's real `event.type` is unknown
+  / out of the live HTTP scope, so it is NOT registered (a comment marks it; do not guess it). Adding a
+  future type is one registry entry + one normalizer module — no existing call site changes (AC5).
 - `normalize_row` raises `UnsupportedMonitorTypeError` (`dispatch.py::UnsupportedMonitorTypeError` and `dispatch.py::normalize_row`) for any unmapped
-  type rather than mis-normalizing. `normalize_rows` (`dispatch.py::normalize_rows`) maps it over a sequence,
+  `event.type` rather than mis-normalizing. `normalize_rows` (`dispatch.py::normalize_rows`) maps it over a sequence,
   one observation per row, in input order, mixed monitor types/locations normalized independently.
 
 ### Per-type normalizers + shared assembly
@@ -69,26 +77,37 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   already collapsed the per-step journey into; it ignores the `steps` array entirely — step
   detail is never modelled on the canonical shape (`clickpath_normalizer.py` ("Browser-clickpath synthetic monitor normalizer"), AC3).
 - `assemble_observation(row, *, signal_key, health, native_kind, raw_ref=None)` (`_assembly.py::assemble_observation`)
-  is the single home of the `timestamp` parse (`datetime.fromisoformat(row["timestamp"].replace("Z","+00:00"))`)
-  and the `SignalObservation`/`Provenance` construction (`_assembly.py::assemble_observation`). Extracted in
-  STORY-008 fix loop 1 to kill duplication between the two normalizers. The vendor monitor type
-  lives only in `Provenance.native_kind`; `system="dynatrace"`, `native_id=row["synthetic_test.id"]`.
-- Row field shape (the fixtures): `timestamp`, `event.id` (→ `source_event_id`),
-  `synthetic_test.id` (→ `native_id`), `synthetic_test.type` (dispatch key),
-  `synthetic_location.name` (→ `location`), `execution.outcome` (→ health),
-  `request.response_time_ms` (→ optional `latency_ms`), and clickpath's unread `steps`.
-- A missing REQUIRED field surfaces as a named `MalformedDqlRowError` (`_assembly.py::MalformedDqlRowError`), not a
-  bare `KeyError` (STORY-020). Both `dispatch.normalize_row` (the `synthetic_test.type` dispatch
-  key) and `assemble_observation` (the other four required fields) read through one
-  `require_field(row, name)` helper (`_assembly.py::require_field`) so the error message is uniform.
-  `request.response_time_ms` stays optional (read via `.get`) — its absence is NOT malformed.
+  is the single home of the timestamp parse + the `SignalObservation`/`Provenance` construction. The
+  vendor monitor type lives only in `Provenance.native_kind`; `system="dynatrace"`,
+  `native_id=row["dt.synthetic.monitor.id"]`.
+- **Real Grail row field shape (STORY-016b, fixture `grail_synthetic_events.json`):** `timestamp`
+  (9-digit **nanosecond** ISO → `observed_at`), `event.id` (→ `source_event_id`),
+  `dt.synthetic.monitor.id` (→ `native_id`), `event.type` (dispatch key), `dt.entity.synthetic_location`
+  (a location ENTITY id → `location`; display-name resolution is out of scope, needs
+  `storage:entities:read`), `result.status.code`/`result.status.message` (→ health), and
+  `result.statistics.duration` (**nanoseconds** → optional `latency_ms`, `int(ns)//1_000_000`).
+- **Nanosecond-timestamp parse:** `parse_ns_timestamp` (`_assembly.py::parse_ns_timestamp`) truncates
+  fractional seconds to 6 digits (µs) before `datetime.fromisoformat`, because Grail emits 9-digit ns
+  precision (`…742000000Z`) which `fromisoformat` would otherwise reject. Handles a `Z` or explicit
+  `+00:00` suffix and a no-fractional timestamp.
+- A missing REQUIRED field (`timestamp`, `event.id`, `dt.synthetic.monitor.id`, `event.type`,
+  `dt.entity.synthetic_location`) surfaces as a named `MalformedDqlRowError`
+  (`_assembly.py::MalformedDqlRowError`), not a bare `KeyError` (STORY-020), via the shared
+  `require_field` helper (`_assembly.py::require_field`). `result.statistics.duration` stays optional
+  (read via `.get`) — its absence is NOT malformed.
 
-### Health mapping (`health_mapping.py`) — the only place vendor outcome words are read
-- `map_execution_outcome(outcome)` (`health_mapping.py::map_execution_outcome`) is the single explicit, unit-tested
-  translation: `success→UP`, `failure→DOWN`, `partial→DEGRADED` (`health_mapping.py` ("outcome mapping")). It is
-  total over the three documented outcomes and raises `UnknownVendorOutcomeError`
-  (`health_mapping.py::UnknownVendorOutcomeError`) on anything else — a vendor change surfaces immediately rather
-  than silently mis-mapping.
+### Health mapping (`health_mapping.py`) — the only place vendor status words are read
+- **Live HTTP path (STORY-016b):** `map_synthetic_status(*, code, message)`
+  (`health_mapping.py::map_synthetic_status`) maps the real `result.status` fields: `code == "0"` (or
+  `message == "HEALTHY"`) → `Health.UP`. Any other value raises the named `UnknownVendorStatusError`
+  (`health_mapping.py::UnknownVendorStatusError`) — it is **fail-loud, NOT guessed**: only the healthy
+  value is known today; the real DOWN/DEGRADED code(s) are captured during the live verification
+  (STORY-016b plan T6/AC6) and the mapping is extended THEN. Inventing failure codes was explicitly
+  rejected at review (it would silently mask the real failure value the live run is meant to observe).
+- **Legacy clickpath path:** `map_execution_outcome(outcome)` (`health_mapping.py::map_execution_outcome`,
+  `success→UP`/`failure→DOWN`/`partial→DEGRADED`, raises `UnknownVendorOutcomeError`) is still used by
+  `clickpath_normalizer` against the old `execution.outcome` field. Browser clickpath is out of the
+  live HTTP scope (not in the live dispatch registry), so this path is retained but not exercised live.
 
 ### Tests + fixtures
 - `backend/tests/test_dynatrace_adapter.py` (22 tests) runs entirely off committed JSON fixtures
@@ -98,10 +117,11 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   authored from the dossier §8 row shape (sanctioned by the recorded-fixtures working agreement).
 
 ## Inference (synthesis, not verified)
-- The `synthetic_test.type` registry values (`HTTP_CHECK`, `BROWSER_CLICKPATH`) and the exact DQL
-  field names are representative; the real Grail/DQL identifiers should be reconciled against a
-  live Dynatrace tenant when credentials exist (the implementer flagged the DQL string syntax as
-  illustrative). The canonical output contract is stable regardless.
+- The HTTP path's data object (`dt.synthetic.events`), field names, async query shape, and ns timestamps
+  are now RECONCILED to the PO's live tenant (STORY-016b probe, 2026-06-29). The one value still
+  unverified is the real failure `result.status.code`/`message` for a DOWN/DEGRADED execution — captured
+  in the AC6 live verification (the loop fails loud until then). The clickpath path remains on the old
+  illustrative `execution.outcome` shape (out of live scope).
 
 ## History
 - sprint-4: created (STORY-008). Documents the Dynatrace inbound adapter as built + the STORY-008
@@ -114,3 +134,9 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - sprint-20: STORY-016 — added the real `grail_executor.py` (`make_grail_executor` + `GrailQueryError`)
   behind the `query.py::Executor` seam: the HTTP-backed DQL executor the live loop injects. The
   field-name reconciliation note below still stands (confirm against the live tenant). Re-verified at d9c2a77.
+- sprint-21: STORY-016b — RECONCILED the HTTP path to the live tenant (probe 2026-06-29): query targets
+  `dt.synthetic.events` filtered on `dt.synthetic.monitor.id`; the executor handles the ASYNC query
+  (202 → poll `query:poll` until SUCCEEDED) with a real poll budget; dispatch keys on `event.type`
+  (`http_step_execution`); the assembler maps the real fields incl. ns-timestamp truncation + ns→ms
+  latency; health via the fail-loud `map_synthetic_status` (HEALTHY/0→UP, no invented failure codes).
+  Re-verified at 213034b.

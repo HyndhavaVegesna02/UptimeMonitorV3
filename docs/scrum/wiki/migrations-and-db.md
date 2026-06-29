@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: 213034b
+verified_sprint: sprint-21
 status: verified
 ---
 
@@ -49,8 +49,8 @@ status: verified
   (`backend/src/composition/settings.py`), never in `core/` — the import-linter boundary
   forbids core importing infrastructure. `load_settings()` raises `KeyError` if `DATABASE_URL`
   is unset (the app must not start without a DB URL). (The same module also hosts
-  `load_live_secrets()` / `LiveSecrets` for the live loop's Dynatrace + Statuspage secrets,
-  STORY-016 — unrelated to the DB split; see [[dev-setup-and-dod]].)
+  `load_live_secrets()` / `LiveSecrets` for the live loop's secrets — Dynatrace REQUIRED,
+  Statuspage OPTIONAL since STORY-016b — unrelated to the DB split; see [[dev-setup-and-dod]].)
 - **URL dialect split (gotcha):** Alembic (SQLAlchemy 2) needs the psycopg3 dialect
   `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
@@ -94,3 +94,5 @@ status: verified
 - sprint-20: re-verified (STORY-016). No migration or DB-split change; `settings.py` gained
   `load_live_secrets`/`LiveSecrets` (live-loop secrets, unrelated to the DB connection split).
   `verified_sha` re-stamped to `d9c2a77`.
+- sprint-21: re-verified (STORY-016b). No migration or DB-split change; `load_live_secrets` now requires
+  only the two Dynatrace vars (Statuspage optional). `verified_sha` re-stamped to `213034b`.

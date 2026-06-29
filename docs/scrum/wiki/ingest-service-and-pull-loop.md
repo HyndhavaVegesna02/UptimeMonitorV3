@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: 213034b
+verified_sprint: sprint-21
 status: verified          # verified | stale | archived
 ---
 
@@ -72,9 +72,14 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - `build_live_loop(*, settings, secrets, config, engine, clock) -> list[Coroutine]`
   (`run.py::build_live_loop`) is the production assembly: it mirrors `create_app`'s Postgres repo
   wiring on one `engine`, builds the Dynatrace Grail executor (see [[dynatrace-adapter]]) and the
-  publish chain `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` (see
-  [[statuspage-publish]]), constructs `DecideService(proposal_repo, publisher=...)`, and returns one
+  publisher, constructs `DecideService(proposal_repo, publisher=...)`, and returns one
   `run_periodic(...)` coroutine per configured signal (with the six orchestration extras threaded).
+- **Publisher selection (STORY-016b):** the publish chain
+  `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` (see [[statuspage-publish]]) is built
+  ONLY when the Statuspage secrets AND `config.statuspage_mapping()` are present; otherwise
+  `build_live_loop` injects a no-op `LoggingPublisher` so the loop runs **Dynatrace-only** (the PO can
+  verify ingest→pipeline→proposal internally without Statuspage creds). The `LoggingPublisher` path
+  builds no `RecordingPublisher`, so no publication rows are written on the no-op path.
 - `main()` (`run.py::main`, entrypoint `python -m src.composition.run`) loads settings + live secrets
   + config, seeds topology once, `asyncio.gather`s the loops, and disposes the engine in a `finally`
   on EVERY exit path (resource-lifecycle agreement; proven by `test_main_resource_lifecycle_failure_during_seeding`).
@@ -120,3 +125,6 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `run_cycle` (live loop runs the pipeline after ingest); added the live driver `composition/run.py`
   (`build_live_loop` + `main`) that assembles the full chain and runs one loop per signal.
   Verified at d9c2a77.
+- sprint-21: updated (STORY-016b). `build_live_loop` now selects the Statuspage chain vs a no-op
+  `LoggingPublisher` based on whether Statuspage is configured (Dynatrace-only internal verification);
+  the failing-row pull_loop tests mock the vendor-mapping edge (production is fail-loud). Verified at 213034b.

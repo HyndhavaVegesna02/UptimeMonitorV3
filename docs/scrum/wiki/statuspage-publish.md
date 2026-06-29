@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json]
-verified_sha: d9c2a77
-verified_sprint: sprint-20
+verified_sha: 213034b
+verified_sprint: sprint-21
 status: verified
 ---
 
@@ -31,6 +31,7 @@ status: verified
 - Catches any publish failure, logs it, and returns normally, ensuring Statuspage failures never roll back/crash the already-committed DB decision (`backend/src/composition/publish_helper.py::publish_best_effort`).
 - `BestEffortPublisher` (`backend/src/composition/publish_helper.py::BestEffortPublisher`, STORY-016a) is a `StatusPublisherPort` that wraps a delegate publisher and routes every `publish` through `publish_best_effort`. `DecideService` calls `publisher.publish` directly and lets a failure PROPAGATE (its core contract), so the orchestration's `DecideService` is wired with this wrapper — a Statuspage outage on the recovery-publish path is logged + swallowed instead of crashing the pull cycle (AC3). The live composition root that injects it is now `composition/run.py::build_live_loop` (STORY-016): `DecideService(proposal_repo, publisher=BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))` — see [[ingest-service-and-pull-loop]].
 - `RecordingPublisher` (`backend/src/composition/publish_helper.py::RecordingPublisher`, STORY-037) is a `StatusPublisherPort` decorator that wraps a delegate publisher, a `PublicationRepository`, and a `ClockPort`. On each `publish`: (1) calls `delegate.publish(change)`; (2) IF the delegate succeeds, records a `Publication(component_id, status, published_at=clock.now())` via `publication_repo.record`. A raising delegate propagates BEFORE recording — nothing is written to the publications table (§12/T1.1: the table has no error column; record successes only). Composes inside `BestEffortPublisher`: `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` — a publish failure is logged+swallowed and nothing recorded; a success is both published and recorded. The live chain is assembled in `composition/run.py::build_live_loop` (STORY-016), with `StatuspagePublisher`'s `component_mapping` supplied by `Config.statuspage_mapping()` (see [[config-layer]]).
+- `LoggingPublisher` (`backend/src/composition/publish_helper.py::LoggingPublisher`, STORY-016b) is a no-op `StatusPublisherPort` that logs the change and does nothing. `build_live_loop` injects it (in place of the whole `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` chain) when Statuspage is NOT configured — i.e. the Statuspage secrets or `Config.statuspage_mapping()` are absent — so the live loop runs **Dynatrace-only** for the internal verification (STORY-016b: "verify internally; external is bound to work"). It wraps no `RecordingPublisher`, so nothing is written to the publications table on the no-op path.
 
 ### Testing and Fixtures
 - No live Statuspage/HTTP connections. Testing uses recorded JSON fixtures under `backend/tests/fixtures/statuspage/`:
