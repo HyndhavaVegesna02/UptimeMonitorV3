@@ -47,22 +47,22 @@ def test_http_normalizer_maps_one_location_execution_row():
     from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 
     rows = _load("grail_synthetic_events.json")["records"]
-    row = rows[0]  # TodoMVC Homepage Monitor, HEALTHY/0
+    row = rows[0]  # TodoMVC Homepage Monitor, http_monitor_execution, HEALTHY/0
 
     obs = normalize_http_row(row, signal_key="checkout-http")
 
     assert obs.signal_key == "checkout-http"
     assert obs.observed_at == datetime(
-        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+        2026, 6, 29, 8, 30, 40, 746000, tzinfo=timezone.utc
     )
     assert obs.observed_at.tzinfo is not None
     assert obs.health is Health.UP
-    assert obs.source_event_id == "156340723200"
+    assert obs.source_event_id == "156345503298"
     assert obs.source.system == "dynatrace"
     assert obs.source.native_id == "HTTP_CHECK-DB5792CB88D14CF4"
     assert obs.source.native_kind == "http"
     assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
-    assert obs.latency_ms == 787
+    assert obs.latency_ms == 755
 
 
 # --- HTTP health mapping success/failure/partial -> up/down/degraded ---
@@ -167,8 +167,89 @@ def test_dispatch_normalizes_to_flat_observation_list():
 
     assert len(observations) == 2
     assert all(obs.health is Health.UP for obs in observations)
-    assert observations[0].source_event_id == "156340723200"
-    assert observations[1].source_event_id == "156340723201"
+    assert observations[0].source_event_id == "156345503298"
+    assert observations[1].source_event_id == "156345503299"
+
+
+# --- STORY-016c AC2: real-object normalize drives canonical http_monitor_execution row ---
+
+
+def test_normalize_rows_canonical_http_monitor_execution_row():
+    """AC2 (STORY-016c): a recorded http_monitor_execution row from the live probe
+    drives through normalize_rows and produces a correct SignalObservation.
+
+    Asserts: health==UP (HEALTHY/code==0), latency_ms==755 (755000000 ns),
+    location==SYNTHETIC_LOCATION-…, source_event_id==156345503298,
+    Provenance.native_id==HTTP_CHECK-DB5792CB88D14CF4 (dossier §5).
+    """
+    from src.adapters.inbound.dynatrace.dispatch import normalize_rows
+
+    rows = _load("grail_synthetic_events.json")["records"]
+    row = rows[0]  # canonical live-probe record
+
+    observations = normalize_rows([row], signal_key="checkout-http")
+
+    assert len(observations) == 1
+    obs = observations[0]
+    assert obs.health is Health.UP
+    assert obs.latency_ms == 755
+    assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
+    assert obs.source_event_id == "156345503298"
+    assert obs.source.native_id == "HTTP_CHECK-DB5792CB88D14CF4"
+    assert obs.observed_at == datetime(
+        2026, 6, 29, 8, 30, 40, 746000, tzinfo=timezone.utc
+    )
+
+
+# --- STORY-016c AC5: one observation per execution (dedup mechanism explicit) ---
+
+
+def test_ac5_single_observation_per_execution_from_canonical_row():
+    """AC5 (STORY-016c): feeding only the canonical http_monitor_execution row
+    (the one the query filter selects) produces exactly one observation for that
+    execution. The step-row companion (same event.id) is excluded at the source
+    by the query filter asserted in AC1 — it is never dispatched.
+
+    The dedup mechanism: build_dql_query scopes to
+    ``event.type == "http_monitor_execution"`` (proven in
+    test_build_dql_query_targets_real_object_and_filter_field); the dispatch
+    registry maps only that type; the step row would raise
+    UnsupportedMonitorTypeError if it ever reached dispatch (fail-loud,
+    defense-in-depth).
+    """
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+        normalize_rows,
+    )
+    from src.adapters.inbound.dynatrace.query import build_dql_query
+
+    both_rows = _load("grail_dual_event_types.json")["records"]
+    monitor_execution_row = both_rows[0]
+    step_execution_row = both_rows[1]
+
+    # Both rows share the same event.id (same execution).
+    assert monitor_execution_row["event.id"] == step_execution_row["event.id"]
+    assert monitor_execution_row["event.type"] == "http_monitor_execution"
+    assert step_execution_row["event.type"] == "http_step_execution"
+
+    # AC1: the query filter targets only the canonical type.
+    q = build_dql_query(
+        native_id="HTTP_CHECK-DB5792CB88D14CF4",
+        watermark=None,
+        overlap=__import__("datetime").timedelta(minutes=5),
+    )
+    assert 'event.type == "http_monitor_execution"' in q
+
+    # Feeding only the canonical row yields exactly one observation.
+    observations = normalize_rows([monitor_execution_row], signal_key="checkout-http")
+    assert len(observations) == 1
+    assert observations[0].source_event_id == "156345503298"
+
+    # The step-execution companion is not independently ingested: if it somehow
+    # reached dispatch (past the query filter), it raises UnsupportedMonitorTypeError
+    # (fail-loud defense-in-depth, AC3).
+    with pytest.raises(UnsupportedMonitorTypeError):
+        normalize_rows([step_execution_row], signal_key="checkout-http")
 
 
 # --- out-of-scope monitor type surfaced as unsupported (AC5) ----------
@@ -323,7 +404,7 @@ def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
     from src.adapters.inbound.dynatrace._assembly import assemble_observation
 
     rows = _load("grail_synthetic_events.json")["records"]
-    row = rows[0]
+    row = rows[0]  # canonical http_monitor_execution row from the live probe
 
     obs = assemble_observation(
         row, signal_key="checkout-http", health=Health.UP, native_kind="http"
@@ -331,14 +412,14 @@ def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
 
     assert obs.signal_key == "checkout-http"
     assert obs.observed_at == datetime(
-        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+        2026, 6, 29, 8, 30, 40, 746000, tzinfo=timezone.utc
     )
     assert obs.health is Health.UP
-    assert obs.source_event_id == "156340723200"
+    assert obs.source_event_id == "156345503298"
     assert obs.source.native_id == "HTTP_CHECK-DB5792CB88D14CF4"
     assert obs.source.native_kind == "http"
     assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
-    assert obs.latency_ms == 787
+    assert obs.latency_ms == 755
     assert obs.raw_ref is None
 
 
@@ -356,6 +437,9 @@ def test_build_dql_query_targets_real_object_and_filter_field():
     # AC1: the real data object + the real filter field.
     assert "fetch dt.synthetic.events" in q
     assert 'dt.synthetic.monitor.id == "HTTP_CHECK-DB5792CB88D14CF4"' in q
+    # AC1 (STORY-016c): canonical event type scoped at the source so the
+    # http_step_execution companion row is never ingested.
+    assert 'event.type == "http_monitor_execution"' in q
     # The retired placeholder names must be gone.
     assert "dt.synthetic.executions" not in q
     assert "synthetic_test.id" not in q
@@ -374,6 +458,8 @@ def test_build_dql_query_with_watermark_adds_overlap_lower_bound():
     )
     # since = watermark - overlap = 05:55:00Z (never the bare watermark).
     assert 'timestamp >= "2026-06-29T05:55:00Z"' in q
+    # AC1 (STORY-016c): event.type filter is present even with a watermark.
+    assert 'event.type == "http_monitor_execution"' in q
 
 
 def test_build_dql_query_rejects_naive_watermark():
