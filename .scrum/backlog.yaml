@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 41   # 040 (config/topology) used; 014b/014c + 016a are split-children
+next_story_id: 42   # 041 = frontend pattern hardening (Sprint 24 retro); 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -201,11 +201,11 @@ stories:
   - id: STORY-015b
     title: Dashboard tab — component statuses
     file: docs/scrum/stories/STORY-015b-dashboard-tab.md
-    status: ready
+    status: done    # accepted at Sprint 24 review (2026-06-29), 3/3. Sets the per-tab pattern.
     points: 3
     priority: 16
     type: feature
-    sprint: null
+    sprint: 24
   - id: STORY-015c
     title: Approvals tab — pending proposals list + approve/reject
     file: docs/scrum/stories/STORY-015c-approvals-tab.md
@@ -245,6 +245,14 @@ stories:
     points: 2
     priority: 21
     type: feature
+    sprint: null
+  - id: STORY-041
+    title: Frontend pattern hardening — shared tab components + token/grid cleanups
+    file: docs/scrum/stories/STORY-041-frontend-pattern-hardening.md
+    status: ready   # from Sprint 24 review; land with/before the 2nd tab (015c) to avoid 6x copy-paste drift
+    points: 2
+    priority: 16
+    type: chore
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a

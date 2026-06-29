@@ -1,8 +1,8 @@
 # YourTeam active sprint board.
 sprint: 24
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-06-29
-closed: null
+closed: 2026-06-29
 goal: "Ship the first REAL frontend tab — the Dashboard (component statuses) — on the STORY-015a shell.
   This SETS the per-tab pattern (a dedicated page component + a data hook + a DESIGN-airtable.md-styled
   layout + loading/empty/error states + MSW-backed Vitest tests) that every later tab (015c–015g) copies.
@@ -41,13 +41,47 @@ start_tag: sprint-24-start
 stories:
   - id: STORY-015b
     points: 3
-    board: in-progress     # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 3 pts -> external impl + Opus spec & quality reviewers + frontend DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # external impl (PO handoff) + Opus spec & quality reviewers + frontend DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend gate (4) + backend gate (6)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at cef0f82 (clean committed tree). FRONTEND (from frontend/):
+          typecheck 0; lint 0; test -> 19 passed (2 files: 4 shell + 15 dashboard); build 0. BACKEND:
+          byte-identical to ad7d8f2 (frontend-only commits) -> Python six-command gate unaffected;
+          implementer reported all 6 green (pytest 424 + 2 known dev_db container-race flakes that pass in
+          isolation = 426)."
+        commit: cef0f82
+        at: 2026-06-29T20:25:00+05:30
+    review:
+      first_pass: "spec PASS + quality APPROVE, ZERO blocking (both Opus, first-pass). Spec verified AC1-AC3:
+        status->badge asserted via accessible TEXT (not color), real MSW empty + 500->retry round-trips, the
+        shell eslint-disable set-state-in-effect GONE (hook owns the effect), other five tabs still
+        placeholders. Quality verified: useComponents hook clean (cancelled-flag guard, counter-retrigger),
+        no components-in-components (sub-components module-scope), real <table>/<th scope>, appended CSS is
+        token-only, tests genuinely drive behavior. Non-blocking: degraded-badge label contrast ~2.2:1
+        (mustard-as-text, inherited from the shell), role=status on static badges (SR live-region spam),
+        redundant mountedRef, dead <tr> key, empty .dashboard-error rule, off-grid 10px paddings, untested
+        Refresh click; + a pattern note to extract StatusBadge/LoadingSkeleton/ErrorPanel into a shared
+        components/ layer by tab 2-3."
+      fix: "PO authorized orchestrator inline fix (A-E). A: health-badge variants tint border/bg + color the
+        ICON only, label text stays --colors-ink (degraded now >=4.5:1) — fixes the inherited shell contrast
+        across the app. B: role=status -> role=img on static badges. C: dropped redundant mountedRef (the
+        cancelled closure flag suffices). D: removed dead <tr> key + moved ErrorPanel coral border/tint into
+        .dashboard-error. E: added a behavioral Refresh-click re-fetch test (-> 19 tests). Gate re-run green.
+        Commit cef0f82. The bigger refactors (data-driven badge, shared components/ extraction, off-grid
+        padding, shell .health-badge--* rgba tokenization) deferred to STORY-041 (frontend pattern hardening)."
+      second_pass: "orchestrator re-verified all 4 frontend gates green on the clean committed tree cef0f82;
+        role=status + mountedRef confirmed removed; no raw hex/rgba in components. AC1-AC3 MET."
+      open_minors:
+        - "Deferred to STORY-041 (frontend pattern hardening): extract shared StatusBadge/LoadingSkeleton/ErrorPanel; data-drive getStatusBadge; fix off-grid 10px paddings; tokenize the shell .health-badge--* rgba border/bg."
+        - "Inter still via a runtime Google Fonts @import (shell-level) — self-host follow-up."
+        - "External implementer landed the story in ONE commit (5aaa4ea) despite commit-after-green cadence — retro note (external, can't enforce)."
+    blast_radius_resolved: true   # compile pass @ 4e8ecfd: frontend-zone.md updated (Dashboard tab + per-tab
+                                  # pattern + the resolved eslint-disable + badge-contrast note) + re-stamped
+                                  # to cef0f82; 3 new files added to its code_refs. Sweep: 0 stale / 0 broken.
 hotfixes: []
 interrupts: []
