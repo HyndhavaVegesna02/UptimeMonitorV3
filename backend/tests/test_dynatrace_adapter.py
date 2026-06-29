@@ -236,7 +236,7 @@ def test_ac5_single_observation_per_execution_from_canonical_row():
     q = build_dql_query(
         native_id="HTTP_CHECK-DB5792CB88D14CF4",
         watermark=None,
-        overlap=__import__("datetime").timedelta(minutes=5),
+        overlap=timedelta(minutes=5),
     )
     assert 'event.type == "http_monitor_execution"' in q
 
