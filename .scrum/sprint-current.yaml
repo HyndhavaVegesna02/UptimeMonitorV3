@@ -1,85 +1,56 @@
 # YourTeam active sprint board.
-sprint: 22
-status: closed        # none | active | review | closed | aborted
+sprint: 23
+status: active        # none | active | review | closed | aborted
 started: 2026-06-29
-closed: 2026-06-29
-goal: "Close the live ingest gap surfaced by STORY-016b's AC6 run: the PO's monitor emits TWO event types
-  per execution — http_monitor_execution (the canonical per-run verdict) + http_step_execution (the per-step
-  row), sharing the same event.id. The dispatch registry only knew http_step_execution, so the live loop
-  crashed with UnsupportedMonitorTypeError on the monitor_execution row; and normalizing both would collide
-  on UNIQUE(observations.source_event_id). Reconcile the adapter to ingest exactly ONE canonical observation
-  per execution: build_dql_query filters event.type == http_monitor_execution (excludes the duplicate step
-  row at source); dispatch registers http_monitor_execution -> normalize_http_row (the row carries every
-  field the normalizer already reads, so no normalizer-body change). Reconcile the recorded fixture + the 3
-  consuming test files to the canonical type. Then re-run the loop against the live tenant to confirm green
-  (AC6, the manual internal verification STORY-016b deferred). Single story, 3 pts."
-branch: sprint-22
-start_tag: sprint-22-start
-# Capacity: velocity last-3 (sprints 19,20,21) = 5,5,5 -> mean 5.0. Committed 3 (STORY-016c) — a deliberate
-# under-commit: focused single-fix reconciliation sprint, as the PO scoped it.
+closed: null
+goal: "Stand up the frontend (Zone 7) — the operator cockpit's foundation. STORY-015 (an 8) was split at
+  refinement into a shell + six per-tab stories; this sprint delivers the SHELL (015a): a Vite + React +
+  TypeScript SPA under frontend/, six-tab navigation + routing (Dashboard/Availability/Approvals/Check
+  History/Maintenance/Publications, placeholder panels), a typed API client with ONE endpoint wired end to
+  end as the proving example (MSW-mocked in tests), a design system generated + persisted from the
+  ui-ux-pro-max skill (frontend/design-system/MASTER.md as the design source of truth), and a real frontend
+  DoD gate (typecheck + lint + vitest + build). Dev talks to the API via Vite's proxy, so NO backend change
+  and NO CORS work (CORS stays deferred to STORY-017). No tab renders real data yet (015b–015g). Single
+  story, 5 pts."
+branch: sprint-23
+start_tag: sprint-23-start
+# Capacity: velocity last-3 (sprints 20,21,22) = 5,5,3 -> mean ~4.3. Committed 5 (STORY-015a) — top of
+# range, justified: a foundational shell is one indivisible unit (scaffold + nav + client + design system +
+# gate). PO chose shell-only (derisk a brand-new toolchain + language) over shell+dashboard (8, stretch).
 #
-# WORKFLOW: Sonnet implementer (2026-06-24 model rule) drives plan.md as the self-contained contract. The
-# orchestrator then runs the FULL six-command gate, the Opus spec + quality reviewers (3 pts -> full
-# reviewer pipeline), the mechanical wiki blast-radius sweep, then review/verdict/merge/retro. The live
-# AC6 re-run is a manual PO-observed step in the back half.
+# TOOLING (introduced at planning, per the freeze rule; PO-approved 2026-06-29): Node v24 + npm v11 (present);
+# Vite + React 18 + TypeScript (strict); Vitest + React Testing Library + MSW for component tests (no live
+# API in tests). E2E = Playwright, DEFERRED to a later integration story (orchestrator chose Playwright over
+# Chrome DevTools MCP for the committed/CI-runnable E2E layer; Chrome DevTools MCP retained as an
+# agent-driven dev/verification aid). The shell installs only Vite/Vitest/RTL/MSW this sprint.
 #
-# PIPELINE: STORY-016c (3) -> impl (Sonnet) + Opus spec & quality reviewers + DoD gate.
+# WORKFLOW: Sonnet implementer (2026-06-24 model rule) drives plan.md. The orchestrator then runs the
+# FRONTEND DoD gate (npm: typecheck/lint/test/build) AND confirms the Python six-command gate still green
+# (the shell touches no backend code), the Opus spec + quality reviewers (5 pts -> full reviewer pipeline;
+# quality reviewer uses the vercel-react-best-practices checklist), the wiki blast-radius sweep, then
+# review/verdict/merge/retro.
 #
-# DoD: NO new migration. NO new lint contract (executor/normalizer/dispatch stay in adapters). lint-imports
-# count stays 5. All six gates green on a CLEAN committed tree.
+# PIPELINE: STORY-015a (5) -> impl (Sonnet) + Opus spec & quality reviewers + DoD gate.
 #
-# PROVENANCE: scope derived from the 2026-06-29 STORY-016b AC6 live run + a read-only re-probe of the PO's
-# tenant (https://bqm75769.apps.dynatrace.com, monitor HTTP_CHECK-DB5792CB88D14CF4 "TodoMVC Homepage
-# Monitor"): 50 records = 26 http_monitor_execution + 24 http_step_execution, sharing event.id/timestamp.
-# Real shape saved to memory `dynatrace-grail-real-schema` (CORRECTION/EXPANSION section).
+# DoD: this is the FIRST frontend story, so it ESTABLISHES the frontend gate (4 npm scripts) and documents
+# it in CLAUDE.md IN-STORY (command-sync agreement). NO new Python lint contract / migration. The Python
+# six-command gate must stay green (expected: trivially, no backend change).
 #
-# Baseline at lock: branch sprint-22 cut from main @ 654829c (sprint-21 merged). Cheap gates green there.
-# Agreements in force: composition/assembly-tests-build-real-objects (2026-06-29), clean-committed-tree
-# (2026-06-29), merge-is-last-step (2026-06-29), mechanical wiki sweep (2026-06-28), named-domain-errors,
-# empty+boundary tests (2026-06-25), DB-gated work uses the shared harness (2026-06-24). See plan.md.
+# Baseline at lock: branch sprint-23 cut from main @ 69a85bc (sprint-22 merged). Cheap gates green there.
+# Agreements in force: pure-core/mockable-edges (frontend edition: MSW, no live API in tests), command-sync
+# (CLAUDE.md frontend section + gate), CORS-from-deployment-onward (Vite proxy in dev), clean-committed-tree,
+# merge-is-last-step, mechanical wiki sweep, real-object tests (RTL drives real components, not shallow
+# mocks of the unit under test). See plan.md.
 stories:
-  - id: STORY-016c
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 3 pts -> impl (Sonnet) + Opus spec & quality reviewers + DoD gate
+  - id: STORY-015a
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> impl (Sonnet) + Opus spec & quality reviewers + frontend DoD gate
     blocked_question: null
-    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX commands"
-        exit_code: 0
-        output_tail: "orchestrator-verified at ed19084 (clean committed tree): pytest 426 passed;
-          lint-imports 5 kept / 0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head
-          exit 0 (no new migration); ruff check 'All checks passed!'; ruff format --check '153 files already
-          formatted'. DB-gated gates ran against the shared throwaway postgres:16 harness."
-        commit: ed19084
-        at: 2026-06-29T11:45:00+05:30
-    review:
-      first_pass: "spec PASS (no blocking) / quality APPROVE (no blocking). Spec re-ran the 44 consuming
-        tests and confirmed AC1-AC5 are genuinely satisfied by behavior-driving tests (AC5 dedup chain is
-        not a tautology: query-filter assertion + single-observation + step-row-raises). Quality confirmed
-        the fix is surgical (executor/normalizer/_assembly/health_mapping UNTOUCHED — zero diff), tests
-        build real objects, and explicitly blessed the pyproject `[tool.ruff] exclude=['.agents','.venv']`
-        as the correct DoD-gate fix (.agents = untracked third-party skills tooling, 84 ruff errors, none
-        in project code). KEEP recommendation. http_step_execution registry removal endorsed by both as
-        the right call (states intent; fail-loud defense-in-depth behind the query filter)."
-      fix: "One cosmetic nit folded in (both reviewers): replaced `__import__('datetime').timedelta` with
-        the module-level `timedelta` import in the AC5 test. Commit ed19084. No behavioral change."
-      second_pass: "orchestrator re-verified all six gates green on the clean committed tree ed19084;
-        AC1-AC5 MET; AC6 (manual live verification) PASSED in-session."
-      ac6_live: "PASSED. `python -m src.composition.run` against the live tenant
-        (https://bqm75769.apps.dynatrace.com, monitor HTTP_CHECK-DB5792CB88D14CF4) ingested 119 real
-        observations with NO UnsupportedMonitorTypeError; health UP, two synthetic locations (…005C/…0060),
-        ns->ms latency (~600-920ms); distinct source_event_id (119) == total (119) -> no
-        UNIQUE(source_event_id) collision, proving the query-filter dedup works end to end. The real failure
-        result.status code/message remains TBD (no failing run could be induced this sprint) -> the health
-        mapping stays fail-loud (UnknownVendorStatusError) until observed."
-      open_minors:
-        - "No empty-`records` -> [] explicit test (pre-existing gap, not introduced by 016c; normalize_rows([]) is trivially [] via map). Candidate one-line follow-up chore."
-        - "Real DOWN/DEGRADED result.status mapping still TBD — needs an induced failing run on the live monitor; map_synthetic_status stays fail-loud until then."
-    blast_radius_resolved: true   # compile pass @ 61f4eca: 6 articles re-verified at ed19084
-                                  # (dynatrace-adapter content + AC6 note; dev-setup-and-dod ruff-exclude
-                                  # note; ingest/architecture-boundary/config-layer/api-five-file re-verify).
-                                  # Mechanical sweep: 0 stale / 0 broken links across all 11.
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

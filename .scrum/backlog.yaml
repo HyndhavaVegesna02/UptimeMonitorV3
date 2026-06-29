@@ -184,9 +184,66 @@ stories:
   - id: STORY-015
     title: Dashboard shell + six tabs (redesigned)
     file: docs/scrum/stories/STORY-015-frontend-dashboard-six-tabs.md
-    status: draft   # likely an 8 — MUST be split before it can enter a sprint
+    status: split   # was an 8 — SPLIT at refinement 2026-06-29 into 015a (shell) + 015b–015g (six tabs)
     points: 5
     priority: 15
+    type: feature
+    sprint: null
+  # ── Zone 7 — Frontend split (STORY-015 → shell + six per-tab stories, 2026-06-29) ──
+  - id: STORY-015a
+    title: Frontend shell — Vite/React/TS scaffold, six-tab nav, typed API client, design system, test harness
+    file: docs/scrum/stories/STORY-015a-frontend-shell.md
+    status: ready   # toolchain + scope approved at Sprint 23 planning (2026-06-29)
+    points: 5
+    priority: 15
+    type: feature
+    sprint: null
+  - id: STORY-015b
+    title: Dashboard tab — component statuses
+    file: docs/scrum/stories/STORY-015b-dashboard-tab.md
+    status: ready
+    points: 3
+    priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-015c
+    title: Approvals tab — pending proposals list + approve/reject
+    file: docs/scrum/stories/STORY-015c-approvals-tab.md
+    status: ready
+    points: 5
+    priority: 17
+    type: feature
+    sprint: null
+  - id: STORY-015d
+    title: Availability tab — two-grain availability + group rollup
+    file: docs/scrum/stories/STORY-015d-availability-tab.md
+    status: ready
+    points: 3
+    priority: 18
+    type: feature
+    sprint: null
+  - id: STORY-015e
+    title: Check History tab — per-signal observation history
+    file: docs/scrum/stories/STORY-015e-check-history-tab.md
+    status: ready
+    points: 3
+    priority: 19
+    type: feature
+    sprint: null
+  - id: STORY-015f
+    title: Maintenance tab — schedule + window state
+    file: docs/scrum/stories/STORY-015f-maintenance-tab.md
+    status: ready
+    points: 3
+    priority: 20
+    type: feature
+    sprint: null
+  - id: STORY-015g
+    title: Publications tab — Statuspage publish history
+    file: docs/scrum/stories/STORY-015g-publications-tab.md
+    status: ready
+    points: 2
+    priority: 21
     type: feature
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
