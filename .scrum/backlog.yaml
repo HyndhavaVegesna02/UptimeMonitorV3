@@ -231,6 +231,14 @@ stories:
     priority: 18
     type: feature
     sprint: 21
+  - id: STORY-016c
+    title: Live reconciliation — dispatch + query the canonical http_monitor_execution row
+    file: docs/scrum/stories/STORY-016c-canonical-http-monitor-execution.md
+    status: ready   # refined 2026-06-29 from the STORY-016b AC6 live run; AC + 3-pt estimate set
+    points: 3
+    priority: 18
+    type: feature
+    sprint: null
   - id: STORY-017
     title: Deployment topology
     file: docs/scrum/stories/STORY-017-deployment-topology.md
