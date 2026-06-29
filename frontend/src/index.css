@@ -36,6 +36,8 @@
   --colors-health-down: var(--colors-signature-coral);
   --colors-health-degraded: var(--colors-signature-mustard);
   --colors-health-maintenance: var(--colors-info);
+  /* Subtle down-surface tint for error panels (the signature-coral at 4% alpha). */
+  --colors-health-down-surface: rgba(170, 45, 0, 0.04);
 
   /* Spacing Scale (4px base) */
   --spacing-xxs: 4px;
@@ -298,10 +300,7 @@ a:active {
   cursor: pointer;
 }
 
-.nav-link:hover {
-  color: var(--colors-ink);
-  background-color: var(--colors-surface-soft);
-}
+/* No :hover state — DESIGN-airtable.md documents Default and Active/Pressed only (no-hover policy). */
 
 .nav-link.nav-state-active {
   color: var(--colors-ink);

@@ -164,7 +164,7 @@ function App() {
                 <span className="body-md" style={{ color: 'var(--colors-muted)' }}>Loading components...</span>
               </div>
             ) : error ? (
-              <div className="panel" style={{ borderColor: 'var(--colors-signature-coral)', backgroundColor: 'rgba(170, 45, 0, 0.04)' }} data-testid="error-message">
+              <div className="panel" style={{ borderColor: 'var(--colors-signature-coral)', backgroundColor: 'var(--colors-health-down-surface)' }} data-testid="error-message">
                 <h2 className="title-sm" style={{ color: 'var(--colors-signature-coral)' }}>Failed to Load Components</h2>
                 <p className="body-md" style={{ marginTop: 'var(--spacing-xs)', color: 'var(--colors-body)' }}>{error}</p>
                 <button onClick={handleRefresh} className="btn-primary" style={{ marginTop: 'var(--spacing-md)', padding: '10px 16px', fontSize: '14px' }}>
