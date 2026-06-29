@@ -230,5 +230,28 @@ describe('Dashboard tab', () => {
         screen.getByRole('button', { name: /refresh/i })
       ).toBeInTheDocument();
     });
+
+    it('re-fetches when clicked (new data replaces the old)', async () => {
+      render(<Dashboard />);
+      await waitFor(() =>
+        expect(screen.getByText('Payment Gateway')).toBeInTheDocument()
+      );
+
+      // Point the endpoint at a different payload, then click Refresh.
+      const refreshed: ComponentDTO[] = [
+        { id: 'refreshed-svc', name: 'Refreshed Service', status: 'up' },
+      ];
+      server.use(
+        http.get('/api/v1/components', () => HttpResponse.json(refreshed))
+      );
+
+      fireEvent.click(screen.getByRole('button', { name: /refresh/i }));
+
+      // The new data appears and the old data is gone — proving a real re-fetch.
+      await waitFor(() =>
+        expect(screen.getByText('Refreshed Service')).toBeInTheDocument()
+      );
+      expect(screen.queryByText('Payment Gateway')).not.toBeInTheDocument();
+    });
   });
 });

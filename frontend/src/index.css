@@ -359,27 +359,38 @@ a:active {
   flex-shrink: 0;
 }
 
+/* Variants tint only the border/background and color the ICON — the label text
+   stays --colors-ink (base .health-badge) so it always meets the 4.5:1 WCAG floor
+   (the mustard "degraded" hue is ~2.2:1 as text). Icons are aria-hidden + shape-distinct. */
 .health-badge--up {
   border-color: rgba(0, 100, 0, 0.3);
   background-color: rgba(0, 100, 0, 0.04);
+}
+.health-badge--up .health-badge-icon {
   color: var(--colors-health-up);
 }
 
 .health-badge--down {
   border-color: rgba(170, 45, 0, 0.3);
   background-color: rgba(170, 45, 0, 0.04);
+}
+.health-badge--down .health-badge-icon {
   color: var(--colors-health-down);
 }
 
 .health-badge--degraded {
   border-color: rgba(217, 164, 65, 0.4);
   background-color: rgba(217, 164, 65, 0.06);
+}
+.health-badge--degraded .health-badge-icon {
   color: var(--colors-health-degraded);
 }
 
 .health-badge--maintenance {
   border-color: rgba(37, 79, 173, 0.3);
   background-color: rgba(37, 79, 173, 0.04);
+}
+.health-badge--maintenance .health-badge-icon {
   color: var(--colors-health-maintenance);
 }
 
@@ -491,9 +502,11 @@ a:active {
   padding: var(--spacing-xxl) var(--spacing-xl);
 }
 
-/* Error panel — inherits .panel; border + bg set inline via tokens */
+/* Error panel — inherits .panel; coral border + down-surface tint live here (the
+   class layer is the only home for literals). */
 .dashboard-error {
-  /* Layout only here; colors applied inline via CSS var refs */
+  border-color: var(--colors-signature-coral);
+  background-color: var(--colors-health-down-surface);
 }
 
 /* Responsive — no horizontal scroll at 375px (the wrapper scrolls, not the viewport) */

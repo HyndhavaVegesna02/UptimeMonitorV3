@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchComponents, type ComponentDTO } from '../apiClient';
 
 export interface UseComponentsResult {
@@ -14,29 +14,22 @@ export function useComponents(): UseComponentsResult {
   const [error, setError] = useState<string | null>(null);
   // Incrementing this counter triggers a re-fetch.
   const [fetchCount, setFetchCount] = useState<number>(0);
-  // Track mount status to skip state updates on unmounted components.
-  const mountedRef = useRef<boolean>(true);
 
   useEffect(() => {
-    mountedRef.current = true;
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
-
-  useEffect(() => {
+    // The `cancelled` closure flag (flipped in cleanup on unmount/re-run) is the
+    // canonical guard against post-unmount setState — no separate mounted ref needed.
     let cancelled = false;
 
     fetchComponents()
       .then((result) => {
-        if (!cancelled && mountedRef.current) {
+        if (!cancelled) {
           setData(result);
           setError(null);
           setLoading(false);
         }
       })
       .catch((err: unknown) => {
-        if (!cancelled && mountedRef.current) {
+        if (!cancelled) {
           setError(
             err instanceof Error ? err.message : 'An unknown error occurred'
           );

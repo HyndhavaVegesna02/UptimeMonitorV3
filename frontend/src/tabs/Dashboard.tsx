@@ -13,7 +13,7 @@ function getStatusBadge(status: string) {
         <span
           className="health-badge health-badge--up"
           data-testid="status-badge-up"
-          role="status"
+          role="img"
           aria-label="Operational"
         >
           <svg
@@ -36,7 +36,7 @@ function getStatusBadge(status: string) {
         <span
           className="health-badge health-badge--down"
           data-testid="status-badge-down"
-          role="status"
+          role="img"
           aria-label="Outage"
         >
           <svg
@@ -62,7 +62,7 @@ function getStatusBadge(status: string) {
         <span
           className="health-badge health-badge--degraded"
           data-testid="status-badge-degraded"
-          role="status"
+          role="img"
           aria-label="Degraded"
         >
           <svg
@@ -89,7 +89,7 @@ function getStatusBadge(status: string) {
         <span
           className="health-badge health-badge--maintenance"
           data-testid="status-badge-maintenance"
-          role="status"
+          role="img"
           aria-label="Maintenance"
         >
           <svg
@@ -116,7 +116,7 @@ function getStatusBadge(status: string) {
         <span
           className="health-badge"
           data-testid="status-badge-unknown"
-          role="status"
+          role="img"
           aria-label={status}
         >
           <span>{status}</span>
@@ -131,7 +131,7 @@ function getStatusBadge(status: string) {
    ───────────────────────────────────────────────────────────────────────────── */
 function ComponentRow({ component }: { component: ComponentDTO }) {
   return (
-    <tr className="dashboard-table-row" key={component.id}>
+    <tr className="dashboard-table-row">
       <td className="dashboard-table-cell dashboard-table-cell--name">
         <span className="label-md" style={{ color: 'var(--colors-ink)' }}>
           {component.name}
@@ -207,14 +207,7 @@ function ErrorPanel({
   onRetry: () => void;
 }) {
   return (
-    <div
-      className="panel dashboard-error"
-      data-testid="error-message"
-      style={{
-        borderColor: 'var(--colors-signature-coral)',
-        backgroundColor: 'var(--colors-health-down-surface)',
-      }}
-    >
+    <div className="panel dashboard-error" data-testid="error-message">
       <h2
         className="title-sm"
         style={{ color: 'var(--colors-signature-coral)' }}
