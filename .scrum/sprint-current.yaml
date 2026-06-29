@@ -41,7 +41,7 @@ start_tag: sprint-24-start
 stories:
   - id: STORY-015b
     points: 3
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 3 pts -> external impl + Opus spec & quality reviewers + frontend DoD gate
     blocked_question: null
     attempts: 0
