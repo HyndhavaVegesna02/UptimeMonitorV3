@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
-code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json]
-verified_sha: 19eefc8
-verified_sprint: sprint-18
+code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json]
+verified_sha: d9c2a77
+verified_sprint: sprint-20
 status: verified          # verified | stale | archived
 ---
 
@@ -37,7 +37,20 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `Executor = Callable[[str], list[dict]]` (`query.py::Executor`) is the injected live-DQL seam.
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
-  No concrete network executor exists yet (deferred to STORY-009 wiring).
+
+### Real Grail DQL executor (`grail_executor.py`, STORY-016)
+- `make_grail_executor(*, env_url, api_token, http_post=httpx.post) -> Executor`
+  (`grail_executor.py::make_grail_executor`) returns the real `Executor` closure: POSTs the built DQL
+  to `{env_url}/platform/storage/query/v1/query:execute` with headers
+  `Authorization: Api-Token <token>` + `Content-Type: application/json` and body `{"query": <dql>}`,
+  then returns `response.json()["records"]` (`[]` when absent) — the flat row-dict list the
+  normalizers consume. A non-2xx response (or a failed request / unparseable body) raises the named
+  `GrailQueryError` (`grail_executor.py::GrailQueryError`, a `RuntimeError`). The `http_post` seam
+  (default `httpx.post`) keeps it unit-testable with NO live call; it never leaks `httpx.Response`
+  across the boundary. Wired by `composition/run.py::build_live_loop` (see
+  [[ingest-service-and-pull-loop]]). Tested in `backend/tests/test_grail_executor.py` against the
+  recorded fixture `grail_http_response.json`, including piping the returned records through
+  `normalize_rows` to confirm the executor→normalizer contract.
 
 ### Normalizer dispatch (`dispatch.py`) — the additive seam
 - `_NORMALIZERS` (`dispatch.py::_NORMALIZERS`) maps a vendor `synthetic_test.type` string to a normalizer:
@@ -98,3 +111,6 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - sprint-6: STORY-021 — `build_dql_query` now rejects a `native_id` containing a DQL-breaking
   character (`"`, backslash, newline) via the named `InvalidNativeIdError`, instead of silently
   interpolating it unescaped. Re-verified at ae5f880.
+- sprint-20: STORY-016 — added the real `grail_executor.py` (`make_grail_executor` + `GrailQueryError`)
+  behind the `query.py::Executor` seam: the HTTP-backed DQL executor the live loop injects. The
+  field-name reconciliation note below still stands (confirm against the live tenant). Re-verified at d9c2a77.

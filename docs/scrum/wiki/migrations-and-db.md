@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 82bcbc7
-verified_sprint: sprint-18
+verified_sha: d9c2a77
+verified_sprint: sprint-20
 status: verified
 ---
 
@@ -48,7 +48,9 @@ status: verified
 - App config / env-var reading lives in the **composition** zone
   (`backend/src/composition/settings.py`), never in `core/` — the import-linter boundary
   forbids core importing infrastructure. `load_settings()` raises `KeyError` if `DATABASE_URL`
-  is unset (the app must not start without a DB URL).
+  is unset (the app must not start without a DB URL). (The same module also hosts
+  `load_live_secrets()` / `LiveSecrets` for the live loop's Dynatrace + Statuspage secrets,
+  STORY-016 — unrelated to the DB split; see [[dev-setup-and-dod]].)
 - **URL dialect split (gotcha):** Alembic (SQLAlchemy 2) needs the psycopg3 dialect
   `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
@@ -89,3 +91,6 @@ status: verified
   used to require, plus the `migrated_db` pytest fixture's reuse/spawn/skip decision logic.
   `verified_sha` re-stamped accordingly.
 - sprint-18: updated (STORY-040 config topology boot seeding) — added `eec78d2e8cbe_add_signals_component_id.py` migration to link signals to components. `verified_sha` re-stamped to `19eefc8`.
+- sprint-20: re-verified (STORY-016). No migration or DB-split change; `settings.py` gained
+  `load_live_secrets`/`LiveSecrets` (live-loop secrets, unrelated to the DB connection split).
+  `verified_sha` re-stamped to `d9c2a77`.

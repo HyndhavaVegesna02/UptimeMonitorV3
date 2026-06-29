@@ -1,16 +1,17 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: b80552d
-verified_sprint: sprint-19
+verified_sha: d9c2a77
+verified_sprint: sprint-20
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml (`pyproject.toml:10-17`;
-  pyyaml added sprint-16 STORY-040a for the config-layer loader). Dev extras:
-  pytest, import-linter, ruff (`pyproject.toml:19-20`).
+  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx (`pyproject.toml` —
+  `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config loader, httpx
+  promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP executors).
+  Dev extras: pytest, import-linter, ruff (`pyproject.toml` — `[project.optional-dependencies] dev`).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
@@ -56,7 +57,11 @@ status: verified
   `.venv/Scripts/python.exe -m pip install --force-reinstall --no-deps import-linter` and re-run;
   to confirm the contracts independently of the launcher,
   `.venv/Scripts/python.exe -c "import sys; from importlinter.cli import lint_imports; sys.exit(lint_imports())"`.
-- No `psql` client installed; no Neon/Dynatrace/Statuspage credentials needed in Sprint 0.
+- No `psql` client installed. Neon/Dynatrace/Statuspage credentials were not needed through the
+  pure-backend sprints; the live loop (`python -m src.composition.run`, STORY-016) reads four secrets
+  from the environment / a gitignored `.env` (`DYNATRACE_ENV_URL`, `DYNATRACE_API_TOKEN`,
+  `STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY` — see CLAUDE.md "Live-loop secrets"). They are NOT part
+  of the six-command DoD gate (every test uses recorded fixtures).
 - **Line endings are normalized to LF in the repo** via `.gitattributes` (`* text=auto eol=lf`
   + `binary` rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). Gotcha: the index
   blobs were already LF, so `git add --renormalize .` stages nothing — the CRLF a Windows
@@ -85,3 +90,6 @@ status: verified
   Verified at d557749.
 - sprint-14: STORY-038 added the 5th `lint-imports` contract (`src-no-tests`, forbidden: `src` may not import `tests`) to prevent production code importing fakes/mocks. The `lint-imports` command now enforces 5 contracts. Re-verified at fafdc4c.
 - sprint-16: STORY-040a added `pyyaml` to `[project.dependencies]` (runtime dep for the config-layer loader). Runtime-deps Fact updated; no contract or DoD command changed. Re-verified at 9b60fac.
+- sprint-20: STORY-016 promoted `httpx` from a dev extra to a runtime dep (Grail + Statuspage HTTP
+  executors) and removed a stray `httpx2`; added the `python -m src.composition.run` live-loop command
+  + its four env secrets to CLAUDE.md. No contract or DoD command changed (still six). Re-verified at d9c2a77.

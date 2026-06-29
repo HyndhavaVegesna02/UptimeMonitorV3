@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 19eefc8
-verified_sprint: sprint-18
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
+verified_sha: d9c2a77
+verified_sprint: sprint-20
 status: verified          # verified | stale | archived
 ---
 
@@ -57,12 +57,27 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - `run_cycle(*, signal_key, native_id, watermark_repo, ingest_port, executor, overlap=DEFAULT_OVERLAP, ...) -> IngestResult | tuple[IngestResult, DecideAction]` (`pull_loop.py::run_cycle`): `watermark_repo.get(signal_key)` →
   `dynatrace.fetch_observations(watermark=..., overlap=...)` → `ingest_port.ingest_observations(batch)`. When optional orchestration parameters are passed (config, observation_repo, maintenance_repo, component_repo, decide_service, clock), it calls `orchestrate_signal` after ingest and returns a tuple of `(IngestResult, DecideAction)` (STORY-016a).
   It is synchronous (none of the calls are async in this codebase).
-- `run_periodic(...)` (`pull_loop.py::run_periodic`) is the thin asyncio driver:60-95`) is the thin asyncio driver:
+- `run_periodic(...)` (`pull_loop.py::run_periodic`) is the thin asyncio driver:
   `while not stop_event.is_set(): run_cycle(); await asyncio.sleep(interval_seconds)`. Plain
   `asyncio` — NO APScheduler, NO new dependency in `pyproject.toml` (AC5). `stop_event`
   (`asyncio.Event`) makes the loop deterministically stoppable in tests / future graceful shutdown;
-  `on_cycle` is an optional hook for observing each `IngestResult` (test progress, later
-  logging/metrics). Neither carries domain logic.
+  `on_cycle` is an optional hook for observing each cycle result. Neither carries domain logic.
+- **Orchestration threading (STORY-016 T4):** `run_periodic` accepts the same six optional
+  orchestration extras as `run_cycle` (`config`, `observation_repo`, `maintenance_repo`,
+  `component_repo`, `decide_service`, `clock`) and passes them straight through, so the LIVE loop runs
+  the pipeline after ingest (all-or-none guard preserved). `on_cycle`'s type widens to
+  `IngestResult | tuple[IngestResult, DecideAction]` accordingly.
+
+### The live driver — `build_live_loop` / `main` (`composition/run.py`, STORY-016 T5)
+- `build_live_loop(*, settings, secrets, config, engine, clock) -> list[Coroutine]`
+  (`run.py::build_live_loop`) is the production assembly: it mirrors `create_app`'s Postgres repo
+  wiring on one `engine`, builds the Dynatrace Grail executor (see [[dynatrace-adapter]]) and the
+  publish chain `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` (see
+  [[statuspage-publish]]), constructs `DecideService(proposal_repo, publisher=...)`, and returns one
+  `run_periodic(...)` coroutine per configured signal (with the six orchestration extras threaded).
+- `main()` (`run.py::main`, entrypoint `python -m src.composition.run`) loads settings + live secrets
+  + config, seeds topology once, `asyncio.gather`s the loops, and disposes the engine in a `finally`
+  on EVERY exit path (resource-lifecycle agreement; proven by `test_main_resource_lifecycle_failure_during_seeding`).
 
 ### Tests
 - `backend/tests/test_ingest_service.py` exercises the real `IngestService` through in-memory fake
@@ -74,7 +89,12 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   asserts zero calls reached `save_new`, `watermark_repo.advance`, or `rejected_repo.save` — proving
   the guard runs up front, before any work.
 - `backend/tests/test_pull_loop.py` covers AC5: plain-asyncio (AST-asserts no `apscheduler` import),
-  no-domain-logic pass-through, one-cycle-per-tick + stoppable.
+  no-domain-logic pass-through, one-cycle-per-tick + stoppable; plus STORY-016 the orchestration-
+  threading path (`run_periodic` with all six extras yields a `(IngestResult, DecideAction)` tuple to
+  `on_cycle`).
+- `backend/tests/test_run_live_loop.py` (STORY-016) builds the REAL chain via `build_live_loop` (only
+  `run_periodic` patched) and asserts the `BestEffort→Recording→Statuspage` nesting + the six extras on
+  each call, plus `main()` engine-dispose on success AND on a seeding failure.
 - The DB-gated persistence side (the actual `rejected_observations` row write) is covered in
   `backend/tests/test_persistence_adapters.py` — see [[persistence-adapters]].
 
@@ -96,3 +116,7 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   satisfy the `ObservationRepository` ABC after STORY-011 added the read method) — a fixture-
   compliance stub, no behavior change; the ingest-service/pull-loop Facts are unchanged.
   Verified at 98bebe9.
+- sprint-20: updated (STORY-016). `run_periodic` now threads the six orchestration extras through to
+  `run_cycle` (live loop runs the pipeline after ingest); added the live driver `composition/run.py`
+  (`build_live_loop` + `main`) that assembles the full chain and runs one loop per signal.
+  Verified at d9c2a77.

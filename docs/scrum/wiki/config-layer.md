@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
-code_refs: [backend/src/composition/config.py, config/apps/sockshop.yaml, pyproject.toml]
-verified_sha: b80552d
-verified_sprint: sprint-19
+code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
+verified_sha: d9c2a77
+verified_sprint: sprint-20
 status: verified
 ---
 
@@ -15,15 +15,19 @@ file, not a code file per dossier §4).  The loader reads the whole directory
 at boot and builds in-memory indexes.  No DB read; the config is the source of
 truth for the mapping.
 
-### File format (`config/apps/sockshop.yaml`)
+### File format (`config/apps/httpcheck.yaml`)
 Each file is a YAML document with four top-level keys:
 
 ```yaml
 app:          # id, name, monitor_provider
-components:   # list of {id, name}
-signals:      # list of {signal_key, native_id, name, component_id}
+components:   # list of {id, name, statuspage_component_id?}
+signals:      # list of {signal_key, native_id, name, component_id, interval_seconds}
 thresholds:   # optional {major, partial, degraded, recovery} — dossier §10 defaults 5/3/2/2
 ```
+
+`statuspage_component_id` (optional, STORY-016) is the non-secret Statuspage
+component id this component publishes to — topology, not a secret (the live
+publish chain reads it via `Config.statuspage_mapping()`).
 
 `signal_key` and `component.id` must be **globally unique** across all app
 files (ids are stable references used by the pipeline + dashboard).
@@ -33,7 +37,10 @@ app file (referential integrity enforced at load time).
 ### Config models (`backend/src/composition/config.py`)
 Three frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
 
-- `ComponentConfig{id: str, name: str}` — a single component declaration.
+- `ComponentConfig{id: str, name: str, statuspage_component_id: str | None}` — a
+  single component declaration. `statuspage_component_id` (optional, default
+  `None`, STORY-016) carries the Statuspage component id for the live publish
+  mapping.
 - `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` — the three §7
   mapping arrows: native_id (provider key) → signal_key (canonical internal
   key) → component_id, plus the expected monitor cadence `interval_seconds` (STORY-016a, validated `> 0`).
@@ -108,6 +115,14 @@ def signal(self, signal_key: str) -> SignalConfig
 ```
 Returns the full `SignalConfig` for `signal_key` (STORY-016a). Raises `UnknownSignalError` on an unknown key.
 
+```python
+def statuspage_mapping(self) -> dict[str, str]
+```
+Returns `{component_id: statuspage_component_id}` for every component (across all
+apps) that declares one; components without a `statuspage_component_id` are
+skipped (STORY-016). The live publish chain feeds this to `StatuspagePublisher`
+as its `component_mapping`. Symbol: `backend/src/composition/config.py::Config.statuspage_mapping`.
+
 
 ### Composition-zone placement (dossier §4)
 `backend/src/composition/config.py` lives in the composition zone.  It imports
@@ -133,3 +148,4 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   resolvers + sample config/apps/sockshop.yaml). verified_sha = 9b60fac.
 - sprint-17: updated (STORY-016a — config layer updated to support `interval_seconds` for signal cadences). verified_sha = b062132.
 - sprint-18: updated (STORY-040 — config is loaded fail-fast in `create_app` and stored in `app.state.seed_config` for database seeding at lifespan startup). verified_sha = 19eefc8.
+- sprint-20: updated (STORY-016 — `ComponentConfig.statuspage_component_id` + `Config.statuspage_mapping()` for the live publish chain; sample config is now `config/apps/httpcheck.yaml` (sockshop dropped)). verified_sha = d9c2a77.
