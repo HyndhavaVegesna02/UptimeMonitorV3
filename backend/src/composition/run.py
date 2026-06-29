@@ -95,11 +95,11 @@ def build_live_loop(
 
     # 5. BestEffort + Recording Publisher
     recording_publisher = RecordingPublisher(
-        publisher=statuspage_publisher,
+        delegate=statuspage_publisher,
         publication_repo=publication_repo,
         clock=clock,
     )
-    publisher = BestEffortPublisher(publisher=recording_publisher)
+    publisher = BestEffortPublisher(delegate=recording_publisher)
 
     # 6. Decide Service
     decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)

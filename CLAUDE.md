@@ -90,6 +90,18 @@ Two distinct connection strings, two distinct env vars — never mix them:
 | `DATABASE_URL`        | Neon **pooled** (PgBouncer) | app runtime (`src.composition.settings`) and `scripts/check_fk_direction.py` |
 | `DATABASE_URL_DIRECT` | Neon **direct** (non-pooled) | Alembic migrations (`migrations/env.py`) — DDL misbehaves through transaction pooling |
 
+### Live-loop secrets (STORY-016 — read by `python -m src.composition.run`)
+
+Read from the environment / a gitignored `.env` via `composition/settings.py::load_live_secrets()`
+(never committed; config holds the non-secret monitor id + Statuspage component id, never these values):
+
+| Env var               | Used for                                                          |
+| --------------------- | ---------------------------------------------------------------- |
+| `DYNATRACE_ENV_URL`   | Dynatrace tenant base URL (Grail DQL execute endpoint)           |
+| `DYNATRACE_API_TOKEN` | Dynatrace platform token (scopes `storage:buckets:read storage:events:read`) |
+| `STATUSPAGE_PAGE_ID`  | Statuspage page id                                               |
+| `STATUSPAGE_API_KEY`  | Statuspage API token (→ `Settings.statuspage_api_token`)         |
+
 Migrations are real, versioned from day one, and live at the **repo top level**
 (`alembic.ini` + `migrations/`), NOT under `backend/`. Never `create_all`. They
 run as a **separate release step** on the DIRECT connection; the app runtime uses

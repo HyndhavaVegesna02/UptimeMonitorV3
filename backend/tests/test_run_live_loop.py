@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -14,12 +15,18 @@ from src.composition.publish_helper import BestEffortPublisher, RecordingPublish
 from src.composition.run import build_live_loop, main
 from src.composition.settings import LiveSecrets, Settings
 from src.core.services.decide import DecideService
-from src.core.services.ingest_service import IngestService
 from src.core.services.pipeline import AntiFlapThresholds
 
 
 def test_build_live_loop_assembly():
-    """Verify that build_live_loop correctly assembles the publishing and decide chain (T5)."""
+    """build_live_loop assembles the REAL publisher chain + threads orchestration (T5).
+
+    Builds genuine objects (only ``run_periodic`` is patched, to avoid creating
+    live coroutines) and asserts the actual nesting + the orchestration extras
+    on each ``run_periodic`` call. Constructing the real publishers is what makes
+    this test able to catch a mis-wired constructor kwarg — the earlier version
+    stubbed every ``__init__`` to a no-op and so green-lit a broken assembly.
+    """
     settings = Settings(
         database_url="postgresql://user:pass@host/db", config_dir="config"
     )
@@ -63,32 +70,13 @@ def test_build_live_loop_assembly():
             )
         ]
     )
-    from datetime import datetime, timezone
 
     engine = MagicMock(spec=sa.Engine)
     clock = FakeClock(datetime(2026, 6, 29, 0, 0, tzinfo=timezone.utc))
 
-    # Track constructor calls via mocking
-    with (
-        patch.object(
-            StatuspagePublisher, "__init__", return_value=None
-        ) as mock_sp_init,
-        patch.object(
-            RecordingPublisher, "__init__", return_value=None
-        ) as mock_rec_init,
-        patch.object(
-            BestEffortPublisher, "__init__", return_value=None
-        ) as mock_be_init,
-        patch.object(DecideService, "__init__", return_value=None) as mock_decide_init,
-        patch.object(IngestService, "__init__", return_value=None) as mock_ingest_init,
-        patch("src.composition.run.run_periodic") as mock_run_periodic,
-    ):
-
-        async def dummy_coro():
-            pass
-
-        mock_run_periodic.side_effect = lambda *args, **kwargs: dummy_coro()
-
+    # Only run_periodic is patched — every publisher / service / repo is real,
+    # so the real constructors run and the nesting below is genuinely exercised.
+    with patch("src.composition.run.run_periodic") as mock_run_periodic:
         loops = build_live_loop(
             settings=settings,
             secrets=secrets,
@@ -97,32 +85,46 @@ def test_build_live_loop_assembly():
             clock=clock,
         )
 
-        for coro in loops:
-            coro.close()
+    # One run_periodic per signal (2 signals)
+    assert len(loops) == 2
+    assert mock_run_periodic.call_count == 2
 
-        # One run_periodic per signal (2 signals)
-        assert len(loops) == 2
-        assert mock_run_periodic.call_count == 2
+    # Every call carries the six orchestration extras (so the loop actually
+    # orchestrates after ingest — not the ingest-only fall-through path).
+    for call in mock_run_periodic.call_args_list:
+        for extra in (
+            "config",
+            "observation_repo",
+            "maintenance_repo",
+            "component_repo",
+            "decide_service",
+            "clock",
+        ):
+            assert extra in call.kwargs, f"run_periodic missing extra {extra!r}"
+        assert call.kwargs["clock"] is clock
+        assert call.kwargs["config"] is config
 
-        # Verify correct wiring arguments
-        # IngestService wiring
-        mock_ingest_init.assert_called_once()
-        _, ingest_kwargs = mock_ingest_init.call_args
-        assert ingest_kwargs["clock"] is clock
+    # The publisher chain reaches DecideService correctly nested:
+    # DecideService(publisher=BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))
+    decide_service = mock_run_periodic.call_args_list[0].kwargs["decide_service"]
+    assert isinstance(decide_service, DecideService)
+    best_effort = decide_service._publisher
+    assert isinstance(best_effort, BestEffortPublisher)
+    recording = best_effort._delegate
+    assert isinstance(recording, RecordingPublisher)
+    statuspage = recording._delegate
+    assert isinstance(statuspage, StatuspagePublisher)
 
-        # StatuspagePublisher wiring
-        mock_sp_init.assert_called_once()
-        _, sp_kwargs = mock_sp_init.call_args
-        assert sp_kwargs["page_id"] == "page-sp"
-        assert sp_kwargs["api_token"] == "token-sp"
-        assert sp_kwargs["component_mapping"] == {"comp-1": "sp-1"}
+    # StatuspagePublisher built from the secrets + the config-derived mapping.
+    assert statuspage._page_id == "page-sp"
+    assert statuspage._api_token == "token-sp"
+    assert statuspage._component_mapping == {"comp-1": "sp-1"}
 
-        # RecordingPublisher wraps StatuspagePublisher
-        mock_rec_init.assert_called_once()
-        # BestEffortPublisher wraps RecordingPublisher
-        mock_be_init.assert_called_once()
-        # DecideService wraps BestEffortPublisher
-        mock_decide_init.assert_called_once()
+    # Per-signal identity threaded through (one loop per configured signal).
+    signal_keys = {
+        call.kwargs["signal_key"] for call in mock_run_periodic.call_args_list
+    }
+    assert signal_keys == {"sig-1", "sig-2"}
 
 
 @patch("src.composition.run.load_settings")
