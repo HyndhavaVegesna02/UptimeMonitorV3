@@ -412,4 +412,15 @@
   verdict) AND `http_step_execution` (a per-step companion sharing the same `event.id`). Building to the
   wrong type caused the Sprint-22 live crash and a `UNIQUE(source_event_id)` collision hazard — both
   avoidable had the probe enumerated the type distribution up front.)
+- 2026-06-29 — **A story that runs a project generator prunes the generator's boilerplate before the
+  gate — committed scaffold residue is a review-blocking finding.** When a story scaffolds with a project
+  generator (`npm create vite`, CRA, `create-next-app`, cookiecutter, etc.), removing the generator's
+  boilerplate is part of that story's DoD: delete unused demo assets, replace the placeholder favicon /
+  `<title>` / app name with real on-design values, and trim the default README to project content. Any
+  committed generator residue — especially an asset that contradicts the binding design — is a
+  review-blocking finding, not a nit. (Motivated by Sprint 23, STORY-015a: `npm create vite` left
+  `src/assets/{hero.png,react.svg,vite.svg}` + `public/icons.svg` + a purple template `favicon.svg` +
+  `<title>frontend</title>` + the default README in the commit; `hero.png` is marketing-hero chrome the
+  binding `DESIGN-airtable.md` explicitly forbids. The Opus quality reviewer caught it as a blocker and the
+  orchestrator purged it inline — exactly the cleanup the scaffolding story should have done itself.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
