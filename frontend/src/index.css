@@ -399,3 +399,109 @@ a:active {
     padding: var(--spacing-md) var(--spacing-sm);
   }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   Dashboard tab — T2 layout, T3 states, T5 a11y
+   All color values reference CSS custom properties — no raw hex.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Header row: space-between layout with 4px-rhythm gap */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--spacing-lg);
+  flex-wrap: wrap;
+  gap: var(--spacing-md);
+}
+
+/* Status table — real <table> for screen-reader semantics */
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  min-width: 460px; /* triggers overflow-x: auto on its wrapper below 460px */
+}
+
+.dashboard-table-header-row {
+  border-bottom: 1px solid var(--colors-hairline);
+  background-color: var(--colors-surface-soft);
+}
+
+.dashboard-table-header {
+  padding: var(--spacing-md);
+  color: var(--colors-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.dashboard-table-row {
+  border-bottom: 1px solid var(--colors-hairline);
+}
+
+.dashboard-table-row:last-child {
+  border-bottom: none;
+}
+
+.dashboard-table-cell {
+  padding: var(--spacing-md);
+  vertical-align: middle;
+}
+
+/* Skeleton loader — calm pulse, no jarring spinner */
+@keyframes dashboard-skeleton-pulse {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+.dashboard-loading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-sm);
+}
+
+.dashboard-skeleton-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xs);
+}
+
+.dashboard-skeleton-row {
+  display: flex;
+  gap: var(--spacing-md);
+  padding: var(--spacing-sm) 0;
+  border-bottom: 1px solid var(--colors-hairline);
+  animation: dashboard-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.dashboard-skeleton-cell {
+  height: 16px;
+  border-radius: var(--rounded-sm);
+  background-color: var(--colors-surface-strong);
+}
+
+.dashboard-skeleton-cell--name  { width: 40%; }
+.dashboard-skeleton-cell--id    { width: 25%; }
+.dashboard-skeleton-cell--status { width: 20%; }
+
+/* Empty state */
+.dashboard-empty {
+  text-align: center;
+  padding: var(--spacing-xxl) var(--spacing-xl);
+}
+
+/* Error panel — inherits .panel; border + bg set inline via tokens */
+.dashboard-error {
+  /* Layout only here; colors applied inline via CSS var refs */
+}
+
+/* Responsive — no horizontal scroll at 375px (the wrapper scrolls, not the viewport) */
+@media (max-width: 767px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-sm);
+  }
+}
+
