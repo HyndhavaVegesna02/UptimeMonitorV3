@@ -43,14 +43,17 @@ class RecordingIngestPort(SignalIngestPort):
 
 
 def _row(event_id: str, ts: str, outcome: str = "success") -> dict:
+    status_code = "0" if outcome == "success" else "1"
+    status_msg = "HEALTHY" if outcome == "success" else "ERROR"
     return {
         "timestamp": ts,
         "event.id": event_id,
-        "synthetic_test.id": "HTTP_CHECK-9F2A",
-        "synthetic_test.type": "HTTP_CHECK",
-        "synthetic_location.name": "us-east-1",
-        "execution.outcome": outcome,
-        "request.response_time_ms": 100,
+        "dt.synthetic.monitor.id": "HTTP_CHECK-9F2A",
+        "event.type": "http_step_execution",
+        "dt.entity.synthetic_location": "us-east-1",
+        "result.status.code": status_code,
+        "result.status.message": status_msg,
+        "result.statistics.duration": "100000000",
     }
 
 
@@ -292,29 +295,32 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
             {
                 "timestamp": "2026-06-24T10:01:30Z",
                 "event.id": "evt-1",
-                "synthetic_test.id": native_id,
-                "synthetic_test.type": "HTTP_CHECK",
-                "synthetic_location.name": "us-east-1",
-                "execution.outcome": "failure",
-                "request.response_time_ms": 0,
+                "dt.synthetic.monitor.id": native_id,
+                "event.type": "http_step_execution",
+                "dt.entity.synthetic_location": "us-east-1",
+                "result.status.code": "1",
+                "result.status.message": "ERROR",
+                "result.statistics.duration": "0",
             },
             {
                 "timestamp": "2026-06-24T10:02:30Z",
                 "event.id": "evt-2",
-                "synthetic_test.id": native_id,
-                "synthetic_test.type": "HTTP_CHECK",
-                "synthetic_location.name": "us-east-1",
-                "execution.outcome": "failure",
-                "request.response_time_ms": 0,
+                "dt.synthetic.monitor.id": native_id,
+                "event.type": "http_step_execution",
+                "dt.entity.synthetic_location": "us-east-1",
+                "result.status.code": "1",
+                "result.status.message": "ERROR",
+                "result.statistics.duration": "0",
             },
             {
                 "timestamp": "2026-06-24T10:03:30Z",
                 "event.id": "evt-3",
-                "synthetic_test.id": native_id,
-                "synthetic_test.type": "HTTP_CHECK",
-                "synthetic_location.name": "us-east-1",
-                "execution.outcome": "failure",
-                "request.response_time_ms": 0,
+                "dt.synthetic.monitor.id": native_id,
+                "event.type": "http_step_execution",
+                "dt.entity.synthetic_location": "us-east-1",
+                "result.status.code": "1",
+                "result.status.message": "ERROR",
+                "result.statistics.duration": "0",
             },
         ]
 

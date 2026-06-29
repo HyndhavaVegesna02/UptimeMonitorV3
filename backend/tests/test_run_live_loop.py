@@ -76,7 +76,11 @@ def test_build_live_loop_assembly():
 
     # Only run_periodic is patched — every publisher / service / repo is real,
     # so the real constructors run and the nesting below is genuinely exercised.
+    async def dummy_coro():
+        pass
+
     with patch("src.composition.run.run_periodic") as mock_run_periodic:
+        mock_run_periodic.side_effect = lambda *args, **kwargs: dummy_coro()
         loops = build_live_loop(
             settings=settings,
             secrets=secrets,
@@ -84,6 +88,9 @@ def test_build_live_loop_assembly():
             engine=engine,
             clock=clock,
         )
+
+    for coro in loops:
+        coro.close()
 
     # One run_periodic per signal (2 signals)
     assert len(loops) == 2
@@ -125,6 +132,71 @@ def test_build_live_loop_assembly():
         call.kwargs["signal_key"] for call in mock_run_periodic.call_args_list
     }
     assert signal_keys == {"sig-1", "sig-2"}
+
+
+def test_build_live_loop_assembly_statuspage_absent():
+    """Verify that when Statuspage secrets are absent, build_live_loop wires LoggingPublisher directly (AC5)."""
+    settings = Settings(
+        database_url="postgresql://user:pass@host/db", config_dir="config"
+    )
+    # Statuspage secrets are None
+    secrets = LiveSecrets(
+        dynatrace_env_url="https://dt.example.com",
+        dynatrace_api_token="token-dt",
+        statuspage_page_id=None,
+        statuspage_api_token=None,
+    )
+    config = Config(
+        [
+            AppConfig(
+                id="app-1",
+                name="App 1",
+                monitor_provider="dynatrace",
+                components=[
+                    ComponentConfig(
+                        id="comp-1", name="Comp 1", statuspage_component_id="sp-1"
+                    )
+                ],
+                signals=[
+                    SignalConfig(
+                        signal_key="sig-1",
+                        native_id="N-1",
+                        name="Sig 1",
+                        component_id="comp-1",
+                        interval_seconds=30,
+                    )
+                ],
+                thresholds=AntiFlapThresholds(
+                    major=3, partial=2, degraded=1, recovery=1
+                ),
+            )
+        ]
+    )
+
+    engine = MagicMock(spec=sa.Engine)
+    clock = FakeClock(datetime(2026, 6, 29, 0, 0, tzinfo=timezone.utc))
+
+    from src.composition.publish_helper import LoggingPublisher
+
+    async def dummy_coro():
+        pass
+
+    with patch("src.composition.run.run_periodic") as mock_run_periodic:
+        mock_run_periodic.side_effect = lambda *args, **kwargs: dummy_coro()
+        loops = build_live_loop(
+            settings=settings,
+            secrets=secrets,
+            config=config,
+            engine=engine,
+            clock=clock,
+        )
+
+    for coro in loops:
+        coro.close()
+
+    decide_service = mock_run_periodic.call_args_list[0].kwargs["decide_service"]
+    assert isinstance(decide_service, DecideService)
+    assert isinstance(decide_service._publisher, LoggingPublisher)
 
 
 @patch("src.composition.run.load_settings")

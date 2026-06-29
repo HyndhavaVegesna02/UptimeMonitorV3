@@ -104,9 +104,9 @@ def test_health_mapping_synthetic_status_rejects_unknown():
     )
 
     with pytest.raises(UnknownVendorStatusError) as exc_info:
-        map_synthetic_status(code="-1", message="ERROR")
+        map_synthetic_status(code="-1", message="UNRECOGNIZED_OUTCOME")
     assert "code='-1'" in str(exc_info.value)
-    assert "message='ERROR'" in str(exc_info.value)
+    assert "message='UNRECOGNIZED_OUTCOME'" in str(exc_info.value)
 
 
 # --- clickpath normalizer collapses multi-step to ONE verdict ---------

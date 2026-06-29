@@ -85,21 +85,30 @@ def build_live_loop(
         api_token=secrets.dynatrace_api_token,
     )
 
-    # 4. Statuspage Publisher
-    statuspage_publisher = StatuspagePublisher(
-        page_id=secrets.statuspage_page_id,
-        api_token=secrets.statuspage_api_token,
-        component_mapping=config.statuspage_mapping(),
-        executor=make_statuspage_executor(),
-    )
+    from src.composition.publish_helper import LoggingPublisher
 
-    # 5. BestEffort + Recording Publisher
-    recording_publisher = RecordingPublisher(
-        delegate=statuspage_publisher,
-        publication_repo=publication_repo,
-        clock=clock,
-    )
-    publisher = BestEffortPublisher(delegate=recording_publisher)
+    # 4. Statuspage Publisher or Logging Fallback
+    if (
+        secrets.statuspage_page_id
+        and secrets.statuspage_api_token
+        and config.statuspage_mapping()
+    ):
+        statuspage_publisher = StatuspagePublisher(
+            page_id=secrets.statuspage_page_id,
+            api_token=secrets.statuspage_api_token,
+            component_mapping=config.statuspage_mapping(),
+            executor=make_statuspage_executor(),
+        )
+
+        # 5. BestEffort + Recording Publisher
+        recording_publisher = RecordingPublisher(
+            delegate=statuspage_publisher,
+            publication_repo=publication_repo,
+            clock=clock,
+        )
+        publisher = BestEffortPublisher(delegate=recording_publisher)
+    else:
+        publisher = LoggingPublisher()
 
     # 6. Decide Service
     decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)

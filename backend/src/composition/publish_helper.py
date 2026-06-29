@@ -98,3 +98,17 @@ class RecordingPublisher(StatusPublisherPort):
                 published_at=self._clock.now(),
             )
         )
+
+
+class LoggingPublisher(StatusPublisherPort):
+    """A no-op `StatusPublisherPort` that logs the status change and does nothing else (dossier §12).
+
+    Used when Statuspage credentials are not configured in the environment.
+    """
+
+    def publish(self, change: StatusChange) -> None:
+        _log.info(
+            "LoggingPublisher: status change logged (Statuspage disabled): component=%s status=%s",
+            change.component_id,
+            change.status,
+        )

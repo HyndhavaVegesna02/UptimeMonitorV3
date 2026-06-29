@@ -49,6 +49,10 @@ def map_synthetic_status(*, code: str, message: str) -> Health:
     """
     if code == "0" or message == "HEALTHY":
         return Health.UP
+    elif code == "1" or message in ("ERROR", "DOWN", "failure", "FAILED"):
+        return Health.DOWN
+    elif code == "2" or message in ("DEGRADED", "partial"):
+        return Health.DEGRADED
 
     raise UnknownVendorStatusError(
         f"unknown Dynatrace synthetic status: code={code!r}, message={message!r}"

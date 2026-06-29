@@ -66,15 +66,15 @@ class LiveSecrets:
 
     dynatrace_env_url: str
     dynatrace_api_token: str
-    statuspage_page_id: str
-    statuspage_api_token: str
+    statuspage_page_id: str | None
+    statuspage_api_token: str | None
 
 
 def load_live_secrets() -> LiveSecrets:
-    """Load live secrets from the environment (dossier §17).
+    """Load live secrets from the environment (dossier §17, STORY-016b).
 
-    Reads DYNATRACE_ENV_URL, DYNATRACE_API_TOKEN, STATUSPAGE_PAGE_ID, STATUSPAGE_API_KEY.
-    Raises MissingLiveSecretError if any are missing.
+    Requires DYNATRACE_ENV_URL and DYNATRACE_API_TOKEN. Statuspage secrets are optional.
+    Raises MissingLiveSecretError if required Dynatrace secrets are missing.
     """
     missing = []
     env_url = os.environ.get("DYNATRACE_ENV_URL")
@@ -83,17 +83,14 @@ def load_live_secrets() -> LiveSecrets:
     dt_token = os.environ.get("DYNATRACE_API_TOKEN")
     if not dt_token:
         missing.append("DYNATRACE_API_TOKEN")
-    page_id = os.environ.get("STATUSPAGE_PAGE_ID")
-    if not page_id:
-        missing.append("STATUSPAGE_PAGE_ID")
-    sp_token = os.environ.get("STATUSPAGE_API_KEY")
-    if not sp_token:
-        missing.append("STATUSPAGE_API_KEY")
 
     if missing:
         raise MissingLiveSecretError(
             f"Missing required live secrets: {', '.join(missing)}"
         )
+
+    page_id = os.environ.get("STATUSPAGE_PAGE_ID")
+    sp_token = os.environ.get("STATUSPAGE_API_KEY")
 
     return LiveSecrets(
         dynatrace_env_url=env_url,
