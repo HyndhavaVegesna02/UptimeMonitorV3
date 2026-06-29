@@ -1,0 +1,30 @@
+{
+  "records": [
+    {
+      "timestamp": "2026-06-29T06:45:40.742000000Z",
+      "event.id": "156340723200",
+      "event.kind": "SYNTHETIC_EVENT",
+      "event.type": "http_step_execution",
+      "dt.synthetic.monitor.id": "HTTP_CHECK-DB5792CB88D14CF4",
+      "dt.entity.synthetic_location": "SYNTHETIC_LOCATION-000000000000005C",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "787000000",
+      "result.statistics.response_status_code": 200,
+      "monitor.name": "TodoMVC Homepage Monitor"
+    },
+    {
+      "timestamp": "2026-06-29T06:47:40.742000000Z",
+      "event.id": "156340723201",
+      "event.kind": "SYNTHETIC_EVENT",
+      "event.type": "http_step_execution",
+      "dt.synthetic.monitor.id": "HTTP_CHECK-DB5792CB88D14CF4",
+      "dt.entity.synthetic_location": "SYNTHETIC_LOCATION-000000000000005C",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "820000000",
+      "result.statistics.response_status_code": 200,
+      "monitor.name": "TodoMVC Homepage Monitor"
+    }
+  ]
+}
