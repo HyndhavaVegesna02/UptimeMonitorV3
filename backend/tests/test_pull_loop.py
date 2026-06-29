@@ -126,13 +126,21 @@ def test_single_cycle_uses_existing_watermark_with_overlap():
     assert ingest_port.batches == [[]]
 
 
-def test_run_cycle_holds_no_domain_logic_it_only_wires_the_calls():
+def test_run_cycle_holds_no_domain_logic_it_only_wires_the_calls(monkeypatch):
     """A loop with domain logic would branch on health/observed_at; this test
     proves the wiring is content-agnostic by feeding it a DOWN observation
     and asserting it still simply passes through to the ingest port
     unmodified (no filtering, no re-interpretation).
     """
     from src.composition.pull_loop import run_cycle
+
+    # Production `map_synthetic_status` is fail-loud on any non-healthy code (the
+    # real failure code is captured live in STORY-016b AC6, not guessed). Mock the
+    # vendor-mapping edge so this wiring test can drive a DOWN through run_cycle.
+    monkeypatch.setattr(
+        "src.adapters.inbound.dynatrace.http_normalizer.map_synthetic_status",
+        lambda *, code, message: Health.DOWN if message == "ERROR" else Health.UP,
+    )
 
     watermark_repo = FakeWatermarkRepository()
     ingest_port = RecordingIngestPort()
@@ -221,7 +229,7 @@ def test_periodic_loop_is_plain_asyncio_no_new_dependency():
 # --- Phase C1 (STORY-016a): ingest + orchestrate in one cycle ----------------
 
 
-def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
+def test_run_cycle_with_orchestration_ingests_and_produces_proposal(monkeypatch):
     """AC4: a single run_cycle invocation both ingests observations AND calls
     orchestrate_signal, opening a degradation proposal when ≥ major DOWN
     observations are present.
@@ -235,6 +243,14 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal():
     """
     from collections.abc import Sequence as Seq
     from datetime import timezone
+
+    # Production `map_synthetic_status` is fail-loud on any non-healthy code (the
+    # real failure code is captured live in STORY-016b AC6, not guessed). Mock the
+    # vendor-mapping edge so this orchestration test can drive DOWN observations.
+    monkeypatch.setattr(
+        "src.adapters.inbound.dynatrace.http_normalizer.map_synthetic_status",
+        lambda *, code, message: Health.DOWN if message == "ERROR" else Health.UP,
+    )
 
     from fakes import (
         FakeClock,
