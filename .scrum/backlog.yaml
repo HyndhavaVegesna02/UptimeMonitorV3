@@ -234,7 +234,7 @@ stories:
   - id: STORY-016c
     title: Live reconciliation — dispatch + query the canonical http_monitor_execution row
     file: docs/scrum/stories/STORY-016c-canonical-http-monitor-execution.md
-    status: ready   # refined 2026-06-29 from the STORY-016b AC6 live run; AC + 3-pt estimate set
+    status: done    # accepted at Sprint 22 review (2026-06-29), 3/3. AC6 live verification PASSED in-session.
     points: 3
     priority: 18
     type: feature
