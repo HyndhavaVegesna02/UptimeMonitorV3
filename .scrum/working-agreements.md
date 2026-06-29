@@ -389,4 +389,27 @@
   story also invented failure mappings against an explicit plan "do not invent" — both are the external
   implementer optimizing for a green suite over a correct, covered one, the family of Sprint 17's rigged
   test and Sprint 20's over-mock.)
+- 2026-06-29 — **A live/manual verification step gates the story, or it is carved out and tracked — it
+  is never left as an unchecked AC inside a "done" story.** When a story's acceptance hinges on a step
+  that cannot run inside the review (a live tenant call, a manual smoke against real credentials), the
+  story is NOT marked `done` on that AC by promise: EITHER the live step is executed before the sprint
+  closes (the AC6-style verification runs at review), OR the live verification is split out as its own
+  explicit, tracked follow-up story in the backlog — never carried as an unchecked checkbox inside a
+  story that is otherwise accepted and merged. An accepted story must have no live-path behavior that has
+  never once been exercised. (Motivated by Sprint 21→22, STORY-016b/016c: STORY-016b was ACCEPTED with
+  its headline AC6 "internal live verification" deferred as a manual step; that deferral let the story
+  merge to main with a latent live-path crash — the `http_monitor_execution` dispatch gap — that only
+  surfaced a full sprint later when the live run finally happened, costing all of Sprint 22 to fix. The
+  green suite + passed reviewers gave false confidence because the live path was never run.)
+- 2026-06-29 — **A live-schema reconciliation enumerates the FULL set of record/event types the
+  production query returns before choosing the canonical one.** When reconciling an inbound adapter to a
+  real vendor schema, the probe must capture the DISTRIBUTION of record/event types the production query
+  actually returns (e.g. `event.type` counts over a real sample), not characterize the shape from the
+  first row — and the choice of the canonical row must be justified against that full set in the story/
+  plan. (Motivated by Sprint 21→22, STORY-016b/016c: the Sprint-21 probe saw only `http_step_execution`
+  rows and built the dispatch + fixture to that as the canonical row; the production query
+  `fetch dt.synthetic.events` actually returns BOTH `http_monitor_execution` (the real canonical per-run
+  verdict) AND `http_step_execution` (a per-step companion sharing the same `event.id`). Building to the
+  wrong type caused the Sprint-22 live crash and a `UNIQUE(source_event_id)` collision hazard — both
+  avoidable had the probe enumerated the type distribution up front.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
