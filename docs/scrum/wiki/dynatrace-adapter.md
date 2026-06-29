@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
-code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json]
-verified_sha: 213034b
-verified_sprint: sprint-21
+code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json]
+verified_sha: 4c62c38
+verified_sprint: sprint-22
 status: verified          # verified | stale | archived
 ---
 
@@ -24,10 +24,13 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `build_dql_query(*, native_id, watermark, overlap)` (`query.py::build_dql_query`) is a pure function.
   **It fetches the REAL Grail data object `dt.synthetic.events`** (STORY-016b — reconciled to the live
   tenant; the earlier `dt.synthetic.executions` was an invalid placeholder) and scopes to
-  `dt.synthetic.monitor.id == "<native_id>"`; when `watermark` is set it adds a lower bound at
-  `watermark - overlap` on `timestamp` (never the bare watermark, so late-landing rows are not
-  missed — dossier §8); when `watermark is None` (never ingested) it adds no time bound and the
-  first pull reads everything; `| sort timestamp asc`.
+  `dt.synthetic.monitor.id == "<native_id>" AND event.type == "http_monitor_execution"`
+  (STORY-016c — the canonical per-run verdict row; the `http_step_execution` companion that shares
+  the same `event.id` and `timestamp` is excluded at the source so `UNIQUE(observations.source_event_id)`
+  can never collide; parameterizing `event.type` per monitor type is out of scope). When `watermark` is
+  set it adds a lower bound at `watermark - overlap` on `timestamp` (never the bare watermark, so
+  late-landing rows are not missed — dossier §8); when `watermark is None` (never ingested) it adds no
+  time bound and the first pull reads everything; `| sort timestamp asc`.
 - `watermark` must be tz-aware UTC — a naive datetime is rejected (`query.py::build_dql_query`), mirroring
   the core's own `observed_at` validator (`core/domain/signal.py::SignalObservation._require_utc`).
 - `native_id` is interpolated unescaped into the query string (`query.py::build_dql_query`); a comment
@@ -62,9 +65,15 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 ### Normalizer dispatch (`dispatch.py`) — the additive seam
 - `_NORMALIZERS` (`dispatch.py::_NORMALIZERS`) maps a vendor **`event.type`** string (STORY-016b — the
   real Grail dispatch key; the earlier `synthetic_test.type` does not exist in live data) to a
-  normalizer: `"http_step_execution" -> normalize_http_row`. Clickpath's real `event.type` is unknown
-  / out of the live HTTP scope, so it is NOT registered (a comment marks it; do not guess it). Adding a
-  future type is one registry entry + one normalizer module — no existing call site changes (AC5).
+  normalizer: `"http_monitor_execution" -> normalize_http_row` (STORY-016c — changed from the
+  previous `http_step_execution` which was the wrong canonical row). Each HTTP monitor execution emits
+  TWO event types sharing the same `event.id` and `timestamp`: `http_monitor_execution` (the canonical
+  per-run overall verdict — the one we ingest) and `http_step_execution` (the per-step companion — the
+  one we exclude at the source via the query filter in `build_dql_query`). The step row is intentionally
+  absent from the registry to state intent clearly; if it somehow reached dispatch (past the query
+  filter) it would raise `UnsupportedMonitorTypeError` — fail-loud, defense-in-depth (AC3, STORY-016c).
+  Clickpath's real `event.type` is unknown / out of scope; do not guess it. Adding a future type is
+  one registry entry + one normalizer module — no existing call site changes.
 - `normalize_row` raises `UnsupportedMonitorTypeError` (`dispatch.py::UnsupportedMonitorTypeError` and `dispatch.py::normalize_row`) for any unmapped
   `event.type` rather than mis-normalizing. `normalize_rows` (`dispatch.py::normalize_rows`) maps it over a sequence,
   one observation per row, in input order, mixed monitor types/locations normalized independently.
@@ -110,17 +119,24 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   live HTTP scope (not in the live dispatch registry), so this path is retained but not exercised live.
 
 ### Tests + fixtures
-- `backend/tests/test_dynatrace_adapter.py` (22 tests) runs entirely off committed JSON fixtures
+- `backend/tests/test_dynatrace_adapter.py` (31 tests) runs entirely off committed JSON fixtures
   under `backend/tests/fixtures/dynatrace/` (`http_multi_location.json`,
-  `clickpath_multi_location.json`, `mixed_monitor_types.json`, `unsupported_monitor_type.json`).
-  No real recorded DQL exists yet (no live Dynatrace this sprint) — fixtures are representative,
-  authored from the dossier §8 row shape (sanctioned by the recorded-fixtures working agreement).
+  `clickpath_multi_location.json`, `mixed_monitor_types.json`, `unsupported_monitor_type.json`,
+  `grail_synthetic_events.json`, `grail_dual_event_types.json`).
+- `grail_synthetic_events.json` (STORY-016c): reconciled to the real live probe
+  (2026-06-29) — two distinct `http_monitor_execution` records (event.id 156345503298/156345503299,
+  ns timestamp, ns duration, `result.state` present).
+- `grail_dual_event_types.json` (STORY-016c): AC5 sibling fixture — one execution represented as
+  BOTH its `http_monitor_execution` row AND its same-`event.id` `http_step_execution` companion.
+  Used by the dedup demonstration test to prove exactly one observation results when the canonical
+  row is fed to dispatch and the companion would raise if it reached dispatch.
 
 ## Inference (synthesis, not verified)
-- The HTTP path's data object (`dt.synthetic.events`), field names, async query shape, and ns timestamps
-  are now RECONCILED to the PO's live tenant (STORY-016b probe, 2026-06-29). The one value still
-  unverified is the real failure `result.status.code`/`message` for a DOWN/DEGRADED execution — captured
-  in the AC6 live verification (the loop fails loud until then). The clickpath path remains on the old
+- The HTTP path's data object (`dt.synthetic.events`), field names, async query shape, ns timestamps,
+  and the canonical `event.type` (`http_monitor_execution`) are now RECONCILED to the PO's live tenant
+  (STORY-016b probe + STORY-016c reconciliation, 2026-06-29). The one value still unverified is the
+  real failure `result.status.code`/`message` for a DOWN/DEGRADED execution — captured in the AC6
+  live verification (the loop fails loud until then). The clickpath path remains on the old
   illustrative `execution.outcome` shape (out of live scope).
 
 ## History
@@ -137,6 +153,12 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - sprint-21: STORY-016b — RECONCILED the HTTP path to the live tenant (probe 2026-06-29): query targets
   `dt.synthetic.events` filtered on `dt.synthetic.monitor.id`; the executor handles the ASYNC query
   (202 → poll `query:poll` until SUCCEEDED) with a real poll budget; dispatch keys on `event.type`
-  (`http_step_execution`); the assembler maps the real fields incl. ns-timestamp truncation + ns→ms
-  latency; health via the fail-loud `map_synthetic_status` (HEALTHY/0→UP, no invented failure codes).
-  Re-verified at 213034b.
+  (`http_step_execution` at the time — wrong, fixed in STORY-016c); the assembler maps the real fields
+  incl. ns-timestamp truncation + ns→ms latency; health via the fail-loud `map_synthetic_status`
+  (HEALTHY/0→UP, no invented failure codes). Re-verified at 213034b.
+- sprint-22: STORY-016c — Fixed the dispatch registry key from `http_step_execution` to
+  `http_monitor_execution` (the canonical per-run verdict row); added `event.type ==
+  "http_monitor_execution"` filter to `build_dql_query` to exclude the same-`event.id`
+  `http_step_execution` companion at source; reconciled `grail_synthetic_events.json` to real probe
+  values; added `grail_dual_event_types.json` for AC5 dedup demonstration; ruff exclude for `.agents/`
+  (pre-existing DoD gate fix). Re-verified at 4c62c38.
