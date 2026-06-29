@@ -226,7 +226,7 @@ stories:
   - id: STORY-016b
     title: Live Dynatrace reconciliation — real Grail schema + async query, verified internally
     file: docs/scrum/stories/STORY-016b-live-dynatrace-reconciliation.md
-    status: ready   # split-child of STORY-016; scoped for Sprint 21 (2026-06-29). Statuspage out of scope.
+    status: done    # accepted at Sprint 21 review (2026-06-29), 5/5. AC6 live internal verification pending (manual).
     points: 5       # real data object + async poll + field remap + ns-timestamp + Dynatrace-only driver + internal verify
     priority: 18
     type: feature

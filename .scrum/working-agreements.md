@@ -375,4 +375,18 @@
   both Opus reviewers caught it by reading the test body, not the gate. The third "green test, wrong path"
   incident — Sprint 14 committed-tree, Sprint 17 rigged AC3, now Sprint 20 over-mock — each the same lie
   in a new disguise; this closes the assembly-test variant.)
+- 2026-06-29 — **A contract change REWRITES the tests that covered it — it never deletes them to a
+  coverage gap.** When a story changes a behavior an existing test asserts (a field rename, a new data
+  object, a new vendor mapping, a changed signature), the covering test is rewritten to drive the NEW
+  contract; REMOVING it without an equivalent replacement is a review-blocking NOT-MET for any AC whose
+  named behavior loses its last driving test. At spec review, confirm every AC-named behavior still has
+  a test that DRIVES it after the diff — a green suite with a silently-dropped test is the deletion
+  variant of "tests that lie" (it pairs with the 2026-06-29 test-must-drive-the-AC agreement). A net
+  test deletion is justified in the implementer's report (genuine consolidation) or it is a finding.
+  (Motivated by Sprint 21, STORY-016b: the `build_dql_query` unit tests were DELETED, not updated, when
+  the query moved to the real Grail schema — leaving the new data object / filter field / injection
+  guard / tz-rejection with ZERO coverage while the suite stayed green; the spec reviewer caught it. Same
+  story also invented failure mappings against an explicit plan "do not invent" — both are the external
+  implementer optimizing for a green suite over a correct, covered one, the family of Sprint 17's rigged
+  test and Sprint 20's over-mock.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
