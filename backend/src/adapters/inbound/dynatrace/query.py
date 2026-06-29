@@ -7,6 +7,15 @@ window, it returns the DQL query string scoped to that one monitor and to
 slow-to-land row just before the cursor is never missed (dossier §8,
 "overlap on read + commit-before-advance + dedupe on write = lose nothing").
 
+The query always adds `event.type == "http_monitor_execution"` alongside the
+monitor-id scope filter. This is the single live HTTP monitor event type: each
+execution emits one canonical `http_monitor_execution` row (the per-run
+overall verdict) plus one `http_step_execution` companion that shares the same
+`event.id`; the step row is excluded at the source so no two observations ever
+collide on `UNIQUE(observations.source_event_id)`. Parameterizing the fetched
+`event.type` per monitor type is explicitly out of scope (STORY-016c) — only
+the HTTP monitor is live; clickpath/browser remain future work.
+
 `Executor` is the thin injected seam for actually running a DQL query against
 Dynatrace. Production wiring (composition root) will inject a real HTTP-backed
 implementation; every test in this package injects a fake instead — no live
@@ -70,7 +79,13 @@ def build_dql_query(
             f"native_id contains a DQL-breaking character: {native_id!r}"
         )
 
-    clauses = [f'dt.synthetic.monitor.id == "{native_id}"']
+    # `event.type == "http_monitor_execution"` scopes to the canonical per-run
+    # row, excluding the same-event.id `http_step_execution` companion that
+    # Dynatrace emits alongside it (dossier §8, STORY-016c).
+    clauses = [
+        f'dt.synthetic.monitor.id == "{native_id}"',
+        'event.type == "http_monitor_execution"',
+    ]
     if watermark is not None:
         since = watermark - overlap
         clauses.append(f'timestamp >= "{since.isoformat().replace("+00:00", "Z")}"')
