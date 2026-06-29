@@ -193,7 +193,7 @@ stories:
   - id: STORY-015a
     title: Frontend shell — Vite/React/TS scaffold, six-tab nav, typed API client, design system, test harness
     file: docs/scrum/stories/STORY-015a-frontend-shell.md
-    status: ready   # toolchain + scope approved at Sprint 23 planning (2026-06-29)
+    status: done    # accepted at Sprint 23 review (2026-06-29), 5/5. Built against DESIGN-airtable.md.
     points: 5
     priority: 15
     type: feature

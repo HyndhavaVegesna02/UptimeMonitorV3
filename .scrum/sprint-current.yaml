@@ -1,8 +1,8 @@
 # YourTeam active sprint board.
 sprint: 23
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-06-29
-closed: null
+closed: 2026-06-29
 goal: "Stand up the frontend (Zone 7) — the operator cockpit's foundation. STORY-015 (an 8) was split at
   refinement into a shell + six per-tab stories; this sprint delivers the SHELL (015a): a Vite + React +
   TypeScript SPA under frontend/, six-tab navigation + routing (Dashboard/Availability/Approvals/Check
@@ -46,13 +46,47 @@ start_tag: sprint-23-start
 stories:
   - id: STORY-015a
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> impl (Sonnet) + Opus spec & quality reviewers + frontend DoD gate
+    board: done            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # external impl (PO handed off) + Opus spec & quality reviewers + frontend DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # external implementer (PO-driven); 2 earlier Sonnet dispatches killed by PO before any code
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend gate (4) + backend gate (6)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at ad7d8f2 (clean committed tree). FRONTEND (from frontend/):
+          npm run typecheck exit 0; npm run lint exit 0; npm run test -> 4 passed (1 file); npm run build
+          exit 0 (dist 147.6kB js / 8kB css). BACKEND: byte-identical to ed19084 (35acaba+fixes touched
+          only CLAUDE.md + frontend/) -> Python six-command gate unaffected; spot-confirmed lint-imports
+          5/0, ruff check + format clean. Implementer also reported all 6 backend gates green (pytest 426)."
+        commit: ad7d8f2
+        at: 2026-06-29T18:35:00+05:30
+    review:
+      first_pass: "spec PASS (orchestrator-verified AC1-AC6 after the spec Opus reviewer hit the ACCOUNT
+        session limit and returned nothing); quality REQUEST-CHANGES (Opus). Quality verified the core is
+        genuinely sound: token layer mirrors DESIGN-airtable.md verbatim, the 4 health tokens correct,
+        status is icon+label (SVG, not color-alone), MSW tests drive a real success+error+retry path (not
+        rigged). Blocking: dead Vite-scaffold assets committed (src/assets/{hero.png,react.svg,vite.svg},
+        public/icons.svg — hero.png is design-forbidden marketing chrome) + a generic purple template
+        favicon. Should-fix: .nav-link:hover violates DESIGN-airtable.md's no-hover policy; a raw
+        rgba(170,45,0,...) coral literal in App.tsx (no raw hex in components)."
+      fix: "PO authorized orchestrator inline fix. Deleted the 4 dead assets + replaced the template favicon
+        with a neutral on-palette mark; removed .nav-link:hover (added a no-hover note); tokenized the
+        error-panel coral tint via a new --colors-health-down-surface var; index.html title frontend ->
+        Uptime Monitor. Re-ran the frontend gate green. Commit ad7d8f2."
+      second_pass: "orchestrator re-verified all 4 frontend gates green on the clean committed tree ad7d8f2;
+        no raw coral literal remains in any component (only in the index.css token/class layer). AC1-AC6 MET."
+      open_minors:
+        - "Inter loaded via a runtime Google Fonts @import (index.css:1) — self-hosting is a follow-up; system-font fallback degrades gracefully (non-license issue: Haas is the paid font, not Inter)."
+        - "App.tsx Dashboard fetch split across an effect + the refresh handler with an eslint-disable react-hooks/set-state-in-effect (App.tsx:59) — candidate cleanup when a router/data-hook lands with the tabs."
+        - "README.md is still the default Vite template (mentions Oxlint, unused) — cosmetic scaffold residue."
+        - "External implementer landed the whole story in ONE commit (35acaba) despite the brief's commit-after-green cadence — retro note (external implementation can't be enforced)."
+    blast_radius_resolved: true   # compile pass @ f34b07b: NEW frontend-zone.md article; dev-setup-and-dod
+                                  # updated (frontend 4-command gate) + re-stamped to ad7d8f2. Sweep: 0 stale
+                                  # / 0 broken links across 12 articles.
 hotfixes: []
-interrupts: []
+interrupts:
+  - "PO stopped two Sonnet implementer dispatches mid-start (no code written, tree clean each time) to
+    (a) hand implementation to an external agent and (b) supply DESIGN-airtable.md as the binding design;
+    the design reference was threaded into the shell story AC4 + plan T2 + all six tab stories before
+    re-handoff. No scope change."
