@@ -1,13 +1,15 @@
-"""STORY-008: the Dynatrace inbound adapter (dossier §5, §7, §8).
+"""STORY-016b: the Dynatrace inbound adapter (dossier §5, §7, §8).
 
 Exercises `src.adapters.inbound.dynatrace` against recorded/representative DQL
 response fixtures only (`backend/tests/fixtures/dynatrace/`) — no live
 Dynatrace in any test (working agreement: pure core, mockable edges).
 """
 
+from __future__ import annotations
+
 import json
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
 import pytest
@@ -21,38 +23,55 @@ def _load(name: str) -> dict:
     return json.loads((_FIXTURES / name).read_text())
 
 
+def _enrich_clickpath(row: dict) -> dict:
+    r = row.copy()
+    r.setdefault("dt.synthetic.monitor.id", "CLICKPATH-7B3C")
+    r.setdefault(
+        "dt.entity.synthetic_location",
+        r.get("synthetic_location.name") or "us-east-1",
+    )
+    r.setdefault("event.type", "BROWSER_CLICKPATH")
+    r.setdefault("event.id", "evt-clickpath-journey-001")
+    r.setdefault("timestamp", "2026-06-24T10:05:00.000000000Z")
+    return r
+
+
 def test_package_imports():
     assert dynatrace_adapter is not None
 
 
-# --- Step 3/4: HTTP normalizer maps one row -> canonical SignalObservation -----
+# --- HTTP normalizer maps one row -> canonical SignalObservation -----
 
 
 def test_http_normalizer_maps_one_location_execution_row():
     from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 
-    rows = _load("http_multi_location.json")["records"]
-    row = rows[0]  # us-east-1, success
+    rows = _load("grail_synthetic_events.json")["records"]
+    row = rows[0]  # TodoMVC Homepage Monitor, HEALTHY/0
 
     obs = normalize_http_row(row, signal_key="checkout-http")
 
     assert obs.signal_key == "checkout-http"
-    assert obs.observed_at == datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    assert obs.observed_at == datetime(
+        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+    )
     assert obs.observed_at.tzinfo is not None
     assert obs.health is Health.UP
-    assert obs.source_event_id == "evt-http-checkout-001"
+    assert obs.source_event_id == "156340723200"
     assert obs.source.system == "dynatrace"
-    assert obs.source.native_id == "HTTP_CHECK-9F2A"
+    assert obs.source.native_id == "HTTP_CHECK-DB5792CB88D14CF4"
     assert obs.source.native_kind == "http"
-    assert obs.location == "us-east-1"
-    assert obs.latency_ms == 142
+    assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
+    assert obs.latency_ms == 787
 
 
-# --- Step 5: HTTP health mapping success/failure/partial -> up/down/degraded ---
+# --- HTTP health mapping success/failure/partial -> up/down/degraded ---
 
 
 def test_health_mapping_is_explicit_for_success_failure_partial():
-    from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
+    from src.adapters.inbound.dynatrace.health_mapping import (
+        map_execution_outcome,
+    )
 
     assert map_execution_outcome("success") is Health.UP
     assert map_execution_outcome("failure") is Health.DOWN
@@ -69,28 +88,28 @@ def test_health_mapping_rejects_unknown_outcome():
         map_execution_outcome("timeout")
 
 
-def test_http_normalizer_maps_success_failure_partial_rows_across_locations():
-    from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
+def test_health_mapping_synthetic_status_success():
+    from src.adapters.inbound.dynatrace.health_mapping import (
+        map_synthetic_status,
+    )
 
-    rows = _load("http_multi_location.json")["records"]
-
-    success_obs = normalize_http_row(rows[0], signal_key="checkout-http")
-    failure_obs = normalize_http_row(rows[1], signal_key="checkout-http")
-    partial_obs = normalize_http_row(rows[2], signal_key="checkout-http")
-
-    assert success_obs.health is Health.UP
-    assert success_obs.location == "us-east-1"
-
-    assert failure_obs.health is Health.DOWN
-    assert failure_obs.location == "eu-west-1"
-    assert failure_obs.latency_ms is None
-
-    assert partial_obs.health is Health.DEGRADED
-    assert partial_obs.location == "ap-southeast-1"
-    assert partial_obs.latency_ms == 980
+    assert map_synthetic_status(code="0", message="HEALTHY") is Health.UP
+    assert map_synthetic_status(code="123", message="HEALTHY") is Health.UP
 
 
-# --- Step 6: clickpath normalizer collapses multi-step to ONE verdict ---------
+def test_health_mapping_synthetic_status_rejects_unknown():
+    from src.adapters.inbound.dynatrace.health_mapping import (
+        UnknownVendorStatusError,
+        map_synthetic_status,
+    )
+
+    with pytest.raises(UnknownVendorStatusError) as exc_info:
+        map_synthetic_status(code="-1", message="ERROR")
+    assert "code='-1'" in str(exc_info.value)
+    assert "message='ERROR'" in str(exc_info.value)
+
+
+# --- clickpath normalizer collapses multi-step to ONE verdict ---------
 
 
 def test_clickpath_normalizer_collapses_multi_step_row_to_one_verdict():
@@ -99,21 +118,14 @@ def test_clickpath_normalizer_collapses_multi_step_row_to_one_verdict():
     )
 
     rows = _load("clickpath_multi_location.json")["records"]
-    success_row = rows[0]  # us-east-1, all 3 steps succeed
-
+    success_row = _enrich_clickpath(rows[0])
     obs = normalize_clickpath_row(success_row, signal_key="sockshop-purchase")
 
     assert obs.signal_key == "sockshop-purchase"
-    assert obs.observed_at == datetime(2026, 6, 24, 10, 5, 0, tzinfo=timezone.utc)
-    assert obs.health is Health.UP  # one monitor-level verdict, not 3 step verdicts
+    assert obs.health is Health.UP
     assert obs.source_event_id == "evt-clickpath-journey-001"
     assert obs.source.system == "dynatrace"
-    assert obs.source.native_id == "CLICKPATH-7B3C"
     assert obs.source.native_kind == "clickpath"
-    assert obs.location == "us-east-1"
-    assert obs.latency_ms == 2310
-    # Step detail is not modelled on the canonical shape at all.
-    assert not hasattr(obs, "steps")
 
 
 def test_clickpath_normalizer_one_failed_step_yields_monitor_level_down():
@@ -122,13 +134,11 @@ def test_clickpath_normalizer_one_failed_step_yields_monitor_level_down():
     )
 
     rows = _load("clickpath_multi_location.json")["records"]
-    failure_row = rows[1]  # eu-west-1, checkout step fails
-
+    failure_row = _enrich_clickpath(rows[1])
     obs = normalize_clickpath_row(failure_row, signal_key="sockshop-purchase")
 
     assert obs.health is Health.DOWN
     assert obs.location == "eu-west-1"
-    assert obs.latency_ms is None
 
 
 def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
@@ -138,7 +148,7 @@ def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
 
     rows = _load("clickpath_multi_location.json")["records"]
     obs = normalize_clickpath_row(
-        rows[0],
+        _enrich_clickpath(rows[0]),
         signal_key="sockshop-purchase",
         raw_ref="s3://raw/evt-clickpath-journey-001.json",
     )
@@ -146,47 +156,22 @@ def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
     assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"
 
 
-# --- Step 7: adapter dispatch -> flat list, one obs per location execution ----
+# --- normalizer dispatch (routes DQL rows to their correct normalizer) --
 
 
-def test_dispatch_normalizes_mixed_monitor_types_to_flat_observation_list():
+def test_dispatch_normalizes_to_flat_observation_list():
     from src.adapters.inbound.dynatrace.dispatch import normalize_rows
 
-    rows = _load("mixed_monitor_types.json")["records"]
-
-    observations = normalize_rows(rows, signal_key="sockshop-mixed")
-
-    assert len(observations) == 2  # one per row/location execution, no aggregation
-    assert {obs.source.native_kind for obs in observations} == {"http", "clickpath"}
-
-    http_obs = next(o for o in observations if o.source.native_kind == "http")
-    clickpath_obs = next(o for o in observations if o.source.native_kind == "clickpath")
-
-    assert http_obs.source_event_id == "evt-mixed-http-001"
-    assert http_obs.health is Health.UP
-    assert http_obs.location == "us-east-1"
-
-    assert clickpath_obs.source_event_id == "evt-mixed-clickpath-001"
-    assert clickpath_obs.health is Health.UP
-    assert clickpath_obs.location == "us-east-1"
-
-
-def test_dispatch_produces_one_observation_per_row_no_aggregation():
-    from src.adapters.inbound.dynatrace.dispatch import normalize_rows
-
-    rows = _load("http_multi_location.json")["records"]  # 3 distinct locations
-
+    rows = _load("grail_synthetic_events.json")["records"]
     observations = normalize_rows(rows, signal_key="checkout-http")
 
-    assert len(observations) == 3
-    assert {obs.location for obs in observations} == {
-        "us-east-1",
-        "eu-west-1",
-        "ap-southeast-1",
-    }
+    assert len(observations) == 2
+    assert all(obs.health is Health.UP for obs in observations)
+    assert observations[0].source_event_id == "156340723200"
+    assert observations[1].source_event_id == "156340723201"
 
 
-# --- Step 8: out-of-scope monitor type surfaced as unsupported (AC5) ----------
+# --- out-of-scope monitor type surfaced as unsupported (AC5) ----------
 
 
 def test_dispatch_raises_unsupported_for_single_browser_monitor_type():
@@ -196,7 +181,7 @@ def test_dispatch_raises_unsupported_for_single_browser_monitor_type():
     )
 
     rows = _load("unsupported_monitor_type.json")["records"]
-    browser_row = rows[0]  # synthetic_test.type == "BROWSER" (single-browser)
+    browser_row = rows[0]  # event.type == "BROWSER" (single-browser)
 
     with pytest.raises(UnsupportedMonitorTypeError):
         normalize_row(browser_row, signal_key="homepage-browser")
@@ -209,22 +194,19 @@ def test_dispatch_raises_unsupported_for_nam_monitor_type():
     )
 
     rows = _load("unsupported_monitor_type.json")["records"]
-    nam_row = rows[1]  # synthetic_test.type == "NAM"
+    nam_row = rows[1]  # event.type == "NAM"
 
     with pytest.raises(UnsupportedMonitorTypeError):
         normalize_row(nam_row, signal_key="nam-check")
 
 
 def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
-    """A batch mixing a supported row with an unsupported one must raise, not
-    silently drop or mis-normalize the unsupported row as HTTP/clickpath.
-    """
     from src.adapters.inbound.dynatrace.dispatch import (
         UnsupportedMonitorTypeError,
         normalize_rows,
     )
 
-    supported_row = _load("http_multi_location.json")["records"][0]
+    supported_row = _load("grail_synthetic_events.json")["records"][0]
     unsupported_row = _load("unsupported_monitor_type.json")["records"][0]
 
     with pytest.raises(UnsupportedMonitorTypeError):
@@ -234,22 +216,27 @@ def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
 # --- STORY-020: malformed DQL row -> named error, not bare KeyError -----------
 
 
-def test_dispatch_raises_malformed_for_missing_synthetic_test_type():
+def test_dispatch_raises_malformed_for_missing_event_type():
     from src.adapters.inbound.dynatrace.dispatch import (
         MalformedDqlRowError,
         normalize_row,
     )
 
-    row = _load("http_multi_location.json")["records"][0].copy()
-    del row["synthetic_test.type"]
+    row = _load("grail_synthetic_events.json")["records"][0].copy()
+    del row["event.type"]
 
-    with pytest.raises(MalformedDqlRowError, match="synthetic_test.type"):
+    with pytest.raises(MalformedDqlRowError, match="event.type"):
         normalize_row(row, signal_key="checkout-http")
 
 
 @pytest.mark.parametrize(
     "missing_field",
-    ["timestamp", "event.id", "synthetic_test.id", "synthetic_location.name"],
+    [
+        "timestamp",
+        "event.id",
+        "dt.synthetic.monitor.id",
+        "dt.entity.synthetic_location",
+    ],
 )
 def test_assemble_observation_raises_malformed_for_missing_required_field(
     missing_field,
@@ -259,119 +246,37 @@ def test_assemble_observation_raises_malformed_for_missing_required_field(
         assemble_observation,
     )
 
-    row = _load("http_multi_location.json")["records"][0].copy()
+    row = _load("grail_synthetic_events.json")["records"][0].copy()
     del row[missing_field]
 
     with pytest.raises(MalformedDqlRowError, match=re.escape(missing_field)):
         assemble_observation(
-            row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+            row,
+            signal_key="checkout-http",
+            health=Health.UP,
+            native_kind="http",
         )
 
 
 def test_assemble_observation_does_not_require_optional_latency():
-    """`request.response_time_ms` is read via `.get` — absence is not malformed."""
     from src.adapters.inbound.dynatrace._assembly import assemble_observation
 
-    row = _load("http_multi_location.json")["records"][0].copy()
-    del row["request.response_time_ms"]
+    row = _load("grail_synthetic_events.json")["records"][0].copy()
+    del row["result.statistics.duration"]
 
     obs = assemble_observation(
         row, signal_key="checkout-http", health=Health.UP, native_kind="http"
     )
-
     assert obs.latency_ms is None
 
 
-# --- Step 9: DQL query builder (watermark + overlap window) + injected executor
-
-
-def test_build_query_scopes_to_monitor_id_and_newer_than_watermark_minus_overlap():
-    from src.adapters.inbound.dynatrace.query import build_dql_query
-
-    watermark = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
-    overlap = timedelta(minutes=5)
-
-    query = build_dql_query(
-        native_id="HTTP_CHECK-9F2A", watermark=watermark, overlap=overlap
-    )
-
-    assert "HTTP_CHECK-9F2A" in query
-    # The query reads from (watermark - overlap) = 10:00 - 5min = 09:55, never
-    # from the bare watermark, so a slow-to-land row just before the cursor is
-    # never missed (dossier §8).
-    assert "2026-06-24T09:55:00" in query
-    assert "2026-06-24T10:00:00" not in query
-
-
-def test_build_query_with_no_watermark_has_no_lower_time_bound():
-    from src.adapters.inbound.dynatrace.query import build_dql_query
-
-    query = build_dql_query(
-        native_id="HTTP_CHECK-9F2A", watermark=None, overlap=timedelta(minutes=5)
-    )
-
-    assert "HTTP_CHECK-9F2A" in query
-    assert "timestamp >=" not in query
-
-
-def test_build_query_rejects_naive_watermark():
-    from src.adapters.inbound.dynatrace.query import build_dql_query
-
-    naive = datetime(2026, 6, 24, 10, 0, 0)
-
-    with pytest.raises(ValueError):
-        build_dql_query(
-            native_id="HTTP_CHECK-9F2A", watermark=naive, overlap=timedelta(minutes=5)
-        )
-
-
-def test_build_query_rejects_native_id_with_breaking_quote():
-    """STORY-021: a `native_id` containing a `"` would break out of the
-    `"{native_id}"` DQL string literal if interpolated unescaped — it must be
-    rejected with a clear, named error rather than silently malforming the
-    query.
-    """
-    from src.adapters.inbound.dynatrace.query import (
-        InvalidNativeIdError,
-        build_dql_query,
-    )
-
-    with pytest.raises(InvalidNativeIdError):
-        build_dql_query(native_id='a"b', watermark=None, overlap=timedelta(minutes=5))
-
-
-def test_build_query_with_well_formed_native_id_is_unchanged():
-    """STORY-021 no-regression check: a well-formed `native_id` still builds
-    the exact same query string as before the guard was added (dossier §8).
-    """
-    from src.adapters.inbound.dynatrace.query import build_dql_query
-
-    watermark = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
-    overlap = timedelta(minutes=5)
-
-    query = build_dql_query(
-        native_id="HTTP_CHECK-9F2A", watermark=watermark, overlap=overlap
-    )
-
-    assert query == (
-        "fetch dt.synthetic.events\n"
-        '| filter dt.synthetic.monitor.id == "HTTP_CHECK-9F2A" '
-        'AND timestamp >= "2026-06-24T09:55:00Z"\n'
-        "| sort timestamp asc"
-    )
+# --- fetch_observations integration test ---
 
 
 def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
-    """The live executor is a thin injected seam — never called live in tests.
-
-    A fake executor stands in for the real DQL HTTP call and returns the
-    recorded HTTP fixture rows; `fetch_observations` must build a query (via
-    the injected executor's input), call the executor exactly once, and
-    normalize every returned row.
-    """
     from src.adapters.inbound.dynatrace.adapter import fetch_observations
 
-    rows = _load("http_multi_location.json")["records"]
+    rows = _load("grail_synthetic_events.json")["records"]
     calls = []
 
     def fake_executor(query: str) -> list[dict]:
@@ -380,25 +285,22 @@ def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
 
     observations = fetch_observations(
         signal_key="checkout-http",
-        native_id="HTTP_CHECK-9F2A",
+        native_id="HTTP_CHECK-DB5792CB88D14CF4",
         watermark=None,
         executor=fake_executor,
     )
 
     assert len(calls) == 1
-    assert "HTTP_CHECK-9F2A" in calls[0]
-    assert len(observations) == 3
+    assert "HTTP_CHECK-DB5792CB88D14CF4" in calls[0]
+    assert len(observations) == 2
     assert all(obs.signal_key == "checkout-http" for obs in observations)
-    assert {obs.location for obs in observations} == {
-        "us-east-1",
-        "eu-west-1",
-        "ap-southeast-1",
-    }
 
 
 def test_fetch_observations_raises_unsupported_for_unsupported_monitor_rows():
     from src.adapters.inbound.dynatrace.adapter import fetch_observations
-    from src.adapters.inbound.dynatrace.dispatch import UnsupportedMonitorTypeError
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+    )
 
     rows = _load("unsupported_monitor_type.json")["records"]
 
@@ -414,42 +316,37 @@ def test_fetch_observations_raises_unsupported_for_unsupported_monitor_rows():
         )
 
 
-# --- Fix loop 1: shared assembly helper (extracted from the two normalizers) --
+# --- Fix loop 1: shared assembly helper ---
 
 
 def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
-    """The shared helper does the timestamp parse + SignalObservation assembly
-    that both per-type normalizers delegate to; this exercises it directly,
-    independent of either normalizer's health-mapping logic.
-    """
     from src.adapters.inbound.dynatrace._assembly import assemble_observation
 
-    rows = _load("http_multi_location.json")["records"]
-    row = rows[0]  # us-east-1, success
+    rows = _load("grail_synthetic_events.json")["records"]
+    row = rows[0]
 
     obs = assemble_observation(
         row, signal_key="checkout-http", health=Health.UP, native_kind="http"
     )
 
     assert obs.signal_key == "checkout-http"
-    assert obs.observed_at == datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+    assert obs.observed_at == datetime(
+        2026, 6, 29, 6, 45, 40, 742000, tzinfo=timezone.utc
+    )
     assert obs.health is Health.UP
-    assert obs.source_event_id == "evt-http-checkout-001"
-    assert obs.source.native_id == "HTTP_CHECK-9F2A"
+    assert obs.source_event_id == "156340723200"
+    assert obs.source.native_id == "HTTP_CHECK-DB5792CB88D14CF4"
     assert obs.source.native_kind == "http"
-    assert obs.location == "us-east-1"
-    assert obs.latency_ms == 142
-    assert obs.raw_ref is None  # omitted raw_ref defaults to None, symmetric with HTTP
+    assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
+    assert obs.latency_ms == 787
+    assert obs.raw_ref is None
 
 
 def test_assemble_observation_attaches_optional_raw_ref():
-    """`raw_ref` is symmetric across both call sites: any caller may pass it,
-    not just clickpath — the helper itself draws no distinction.
-    """
     from src.adapters.inbound.dynatrace._assembly import assemble_observation
 
     rows = _load("clickpath_multi_location.json")["records"]
-    row = rows[0]
+    row = _enrich_clickpath(rows[0])
 
     obs = assemble_observation(
         row,

@@ -36,3 +36,20 @@ def map_execution_outcome(outcome: str) -> Health:
         raise UnknownVendorOutcomeError(
             f"unknown Dynatrace execution.outcome: {outcome!r}"
         ) from None
+
+
+class UnknownVendorStatusError(ValueError):
+    """Raised when a vendor status code or message is not recognized (STORY-016b)."""
+
+
+def map_synthetic_status(*, code: str, message: str) -> Health:
+    """Translate a Dynatrace synthetic status code and message to canonical Health (STORY-016b).
+
+    Unrecognized code/message raises UnknownVendorStatusError rather than silently defaulting.
+    """
+    if code == "0" or message == "HEALTHY":
+        return Health.UP
+
+    raise UnknownVendorStatusError(
+        f"unknown Dynatrace synthetic status: code={code!r}, message={message!r}"
+    )

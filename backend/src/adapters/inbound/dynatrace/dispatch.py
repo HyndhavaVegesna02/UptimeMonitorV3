@@ -17,43 +17,36 @@ from src.adapters.inbound.dynatrace._assembly import (
 from src.adapters.inbound.dynatrace._assembly import (
     require_field,
 )
-from src.adapters.inbound.dynatrace.clickpath_normalizer import (
-    normalize_clickpath_row,
-)
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 from src.core.domain import SignalObservation
 
-#: Vendor `synthetic_test.type` -> normalizer for that monitor type.
-#: Adding a future type (single-browser, NAM) means adding one entry here and
-#: its own normalizer module — no existing normalizer or call site changes.
+#: Vendor `event.type` -> normalizer for that monitor type.
+#: Clickpath's real `event.type` is unknown/out of scope (STORY-016b) — do not guess it.
 _NORMALIZERS: dict[str, Callable[..., SignalObservation]] = {
-    "HTTP_CHECK": normalize_http_row,
-    "BROWSER_CLICKPATH": normalize_clickpath_row,
+    "http_step_execution": normalize_http_row,
 }
 
 
 class UnsupportedMonitorTypeError(ValueError):
-    """Raised when a DQL row's `synthetic_test.type` has no registered normalizer.
+    """Raised when a DQL row's `event.type` has no registered normalizer.
 
-    Out-of-scope monitor types (single-browser, NAM) surface here rather than
-    being silently mis-normalized by the wrong normalizer (AC5).
+    Out-of-scope monitor types surface here rather than being silently mis-normalized (AC3).
     """
 
 
 def normalize_row(row: dict, *, signal_key: str) -> SignalObservation:
     """Dispatch one DQL row to its monitor-type normalizer.
 
-    Raises `UnsupportedMonitorTypeError` for any `synthetic_test.type` not in
-    `_NORMALIZERS` (e.g. `BROWSER`, `NAM`) instead of guessing, and
-    `MalformedDqlRowError` (STORY-020) if the dispatch key itself is missing
-    from the row.
+    Raises `UnsupportedMonitorTypeError` for any `event.type` not in
+    `_NORMALIZERS` instead of guessing, and `MalformedDqlRowError`
+    if the dispatch key itself is missing from the row.
     """
-    monitor_type = require_field(row, "synthetic_test.type")
+    monitor_type = require_field(row, "event.type")
     try:
         normalizer = _NORMALIZERS[monitor_type]
     except KeyError:
         raise UnsupportedMonitorTypeError(
-            f"unsupported Dynatrace synthetic_test.type: {monitor_type!r}"
+            f"unsupported Dynatrace event.type: {monitor_type!r}"
         ) from None
     return normalizer(row, signal_key=signal_key)
 

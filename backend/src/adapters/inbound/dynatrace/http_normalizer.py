@@ -7,27 +7,25 @@ normalization rules) — the caller (the adapter dispatch, see `adapter.py`)
 is responsible for iterating rows.
 """
 
-from src.adapters.inbound.dynatrace._assembly import assemble_observation
-from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
+from src.adapters.inbound.dynatrace._assembly import (
+    assemble_observation,
+    require_field,
+)
+from src.adapters.inbound.dynatrace.health_mapping import map_synthetic_status
 from src.core.domain import SignalObservation
 
 NATIVE_KIND = "http"
 
 
 def normalize_http_row(row: dict, *, signal_key: str) -> SignalObservation:
-    """Normalize one HTTP synthetic-execution DQL row into a `SignalObservation`.
+    """Normalize one HTTP synthetic-execution DQL row into a `SignalObservation` (STORY-016b)."""
+    code = str(require_field(row, "result.status.code"))
+    message = str(require_field(row, "result.status.message"))
+    health = map_synthetic_status(code=code, message=message)
 
-    `row` is the flat dict shape documented in dossier §8 / the recorded
-    fixtures (`backend/tests/fixtures/dynatrace/http_multi_location.json`):
-    `timestamp`, `event.id`, `synthetic_test.id`, `synthetic_location.name`,
-    `execution.outcome`, and `request.response_time_ms`. The timestamp parse
-    and `SignalObservation`/`Provenance` assembly are shared with the
-    clickpath normalizer via `_assembly.assemble_observation`; only the health
-    mapping (a single vendor outcome here) is HTTP-specific.
-    """
     return assemble_observation(
         row,
         signal_key=signal_key,
-        health=map_execution_outcome(row["execution.outcome"]),
+        health=health,
         native_kind=NATIVE_KIND,
     )

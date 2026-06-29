@@ -1,25 +1,25 @@
 {
-  "_comment": "A DQL pull-cycle response (dossier §8) containing an OUT-OF-SCOPE monitor type for STORY-008 (single-browser, no clickpath steps). Used by AC5: the adapter must surface this as unsupported rather than silently mis-normalizing it as HTTP or clickpath -- proving a future single-browser normalizer would be purely additive. A NAM row is included too, since both single-browser and NAM are named as out-of-scope examples in the AC.",
+  "_comment": "A DQL pull-cycle response containing an OUT-OF-SCOPE monitor type.",
   "records": [
     {
       "timestamp": "2026-06-24T10:15:00.000Z",
       "event.id": "evt-browser-001",
-      "synthetic_test.id": "BROWSER-4D1E",
-      "synthetic_test.name": "homepage-single-browser-check",
-      "synthetic_test.type": "BROWSER",
-      "synthetic_location.name": "us-east-1",
-      "execution.outcome": "success",
-      "request.response_time_ms": 880
+      "dt.synthetic.monitor.id": "BROWSER-4D1E",
+      "event.type": "BROWSER",
+      "dt.entity.synthetic_location": "us-east-1",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "880000000"
     },
     {
       "timestamp": "2026-06-24T10:15:05.000Z",
       "event.id": "evt-nam-001",
-      "synthetic_test.id": "NAM-1122",
-      "synthetic_test.name": "network-availability-monitor",
-      "synthetic_test.type": "NAM",
-      "synthetic_location.name": "us-east-1",
-      "execution.outcome": "success",
-      "request.response_time_ms": 12
+      "dt.synthetic.monitor.id": "NAM-1122",
+      "event.type": "NAM",
+      "dt.entity.synthetic_location": "us-east-1",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "12000000"
     }
   ]
 }
