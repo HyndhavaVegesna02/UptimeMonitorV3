@@ -76,6 +76,4 @@ def build_dql_query(
         clauses.append(f'timestamp >= "{since.isoformat().replace("+00:00", "Z")}"')
 
     filter_expr = " AND ".join(clauses)
-    return (
-        f"fetch dt.synthetic.events\n| filter {filter_expr}\n| sort timestamp asc"
-    )
+    return f"fetch dt.synthetic.events\n| filter {filter_expr}\n| sort timestamp asc"
