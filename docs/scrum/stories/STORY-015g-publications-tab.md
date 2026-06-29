@@ -15,6 +15,8 @@ history of status changes published to Statuspage.
 - [ ] AC3: a11y + responsive floor met.
 
 ## Skills to use
+Design source: `DESIGN-airtable.md` (reuse the shell's token layer; publish-history list uses hairline
+dividers + `body-md` rows).
 `ui-ux-pro-max` (data lists), `vercel-react-best-practices`, `design-taste-frontend`.
 
 ## History

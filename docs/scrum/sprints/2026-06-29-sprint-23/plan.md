@@ -30,14 +30,22 @@ renders real data yet (015b–015g).
   `migrations/`, `scripts/`, or the Python `pyproject.toml`.
 - Confirm `npm install` + `npm run build` exit 0.
 
-### T2 — Generate + persist the design system  *(AC4)*
-- Run `python .agents/skills/ui-ux-pro-max/scripts/search.py "operator monitoring status dashboard dark
-  data-dense" --design-system --persist -p "Uptime Monitor"` and commit the resulting
-  `frontend/design-system/MASTER.md` (move/point it under `frontend/` if the script writes elsewhere).
-- Implement a small token layer (CSS variables or a Tailwind config) FROM the MASTER: typography scale,
-  spacing rhythm, and SEMANTIC color tokens including health states (up / degraded / down / maintenance) +
-  dark mode. No raw hex in components (`color-semantic`). MASTER.md is the design source of truth every
-  later tab story reads.
+### T2 — Implement the token layer FROM `DESIGN-airtable.md`  *(AC4)*
+- `DESIGN-airtable.md` (repo root, tracked) is THE design source of truth — an Airtable-style editorial
+  system with a full token set. Do NOT run `ui-ux-pro-max --design-system` (that step is removed).
+- Implement a token layer (CSS variables or a Tailwind theme config) that mirrors its front-matter tokens
+  VERBATIM: `colors` (incl. `primary` #181d26, `canvas`, `body`, `muted`, `hairline`, `link`, `info`,
+  `success`, and the signature palette), `typography` scale (use the documented **Inter / Inter Display**
+  substitute — Haas is licensed; self-host or system-fallback, do NOT fetch a paid font), `rounded`,
+  `spacing` (4px base, 96px section). No raw hex in components (`color-semantic`).
+- **Add the health-state semantic tokens the spec lacks** (operator cockpit needs them): `up`→`success`
+  (#006400), `down`→`signature-coral` (#aa2d00), `degraded`→`signature-mustard` (#d9a441),
+  `maintenance`→`info` (#254fad). Status never by color alone (icon+label too).
+- **Editorial→dashboard adaptation:** adopt the LANGUAGE (palette, type, spacing, radii,
+  `button-primary`/`button-secondary`, `text-input`, card/hairline surfaces, white-canvas calm, modest
+  weights) — NOT the marketing-only chrome (hero-band, full-bleed signature cards, pricing pills, logo
+  strips). The cockpit is tables/badges/lists; marketing patterns may only inspire empty/section states.
+- `DESIGN-airtable.md` is the design source every later tab story (015b–015g) reads.
 
 ### T3 — App shell: six-tab nav + routing  *(AC2, AC6)*
 - A persistent nav with all six tabs (Dashboard · Availability · Approvals · Check History · Maintenance ·
@@ -84,8 +92,9 @@ renders real data yet (015b–015g).
   exclude IF (and only if) `ruff` starts scanning it (it shouldn't — different tree; confirm, don't assume).
 
 ## Guardrails for the implementer
-Build to THIS plan + the STORY-015a AC + dossier §17 + the named skills (`ui-ux-pro-max` for the design
-system, `vercel-react-best-practices` for code quality). This is the FRONTEND SPRINT 0 — the shell, not the
+Build to THIS plan + the STORY-015a AC + dossier §17 + **`DESIGN-airtable.md` (repo root) as the binding
+visual design** (token layer mirrors it; T2) + `vercel-react-best-practices` for code quality.
+`ui-ux-pro-max` is used ONLY for its UX/accessibility floor, NOT to generate a design system. This is the FRONTEND SPRINT 0 — the shell, not the
 tabs: wire exactly ONE endpoint as the proving example; the six tab bodies are 015b–015g and must stay
 placeholders. Do NOT touch the Python backend (use the Vite dev proxy). Do NOT install Playwright (E2E is
 deferred). Do NOT write `.scrum/` board state. Do NOT run the reviewers or merge. Stop-and-report on genuine

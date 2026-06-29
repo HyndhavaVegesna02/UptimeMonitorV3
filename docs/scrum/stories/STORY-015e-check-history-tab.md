@@ -16,6 +16,8 @@ selected signal (location, health, latency, timestamp) — the raw checks behind
 - [ ] AC3: Table is sortable with `aria-sort` where applicable (`sortable-table`); a11y + responsive floor met.
 
 ## Skills to use
+Design source: `DESIGN-airtable.md` (reuse the shell's token layer; tables use hairline dividers +
+`body-md` rows + tabular figures per the spec).
 `ui-ux-pro-max` (data tables, virtualization), `vercel-react-best-practices`, `design-taste-frontend`.
 
 ## History

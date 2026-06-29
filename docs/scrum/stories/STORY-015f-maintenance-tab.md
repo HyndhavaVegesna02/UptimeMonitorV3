@@ -16,6 +16,8 @@ maintenance windows (scheduled/active/past) and their effect on component status
 - [ ] AC3: a11y + responsive floor met; state not conveyed by color alone.
 
 ## Skills to use
+Design source: `DESIGN-airtable.md` (reuse the shell's token layer; window state badges use the health/
+semantic tokens, not new colors).
 `ui-ux-pro-max` (status/badges, forms if a mutation lands), `vercel-react-best-practices`, `design-taste-frontend`.
 
 ## History

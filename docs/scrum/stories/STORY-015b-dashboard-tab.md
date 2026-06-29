@@ -10,7 +10,8 @@ every component. Consumes the existing API (see `api-five-file-convention` wiki)
 
 ## Acceptance Criteria
 - [ ] AC1: The Dashboard tab renders each component with its current status (up / degraded / down /
-      maintenance), using the design-system health tokens from `frontend/design-system/MASTER.md`.
+      maintenance), using the health semantic tokens defined in the shell from `DESIGN-airtable.md`
+      (up→success, down→signature-coral, degraded→signature-mustard, maintenance→info).
 - [ ] AC2: Data comes from the typed API client against `GET /api/v1/components` (the real status read);
       loading (skeleton) + error + empty states handled; MSW-backed Vitest tests cover success/empty/error.
 - [ ] AC3: Accessibility floor met (status not conveyed by color alone — icon/label too; keyboard order;

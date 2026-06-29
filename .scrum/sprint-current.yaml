@@ -7,9 +7,11 @@ goal: "Stand up the frontend (Zone 7) — the operator cockpit's foundation. STO
   refinement into a shell + six per-tab stories; this sprint delivers the SHELL (015a): a Vite + React +
   TypeScript SPA under frontend/, six-tab navigation + routing (Dashboard/Availability/Approvals/Check
   History/Maintenance/Publications, placeholder panels), a typed API client with ONE endpoint wired end to
-  end as the proving example (MSW-mocked in tests), a design system generated + persisted from the
-  ui-ux-pro-max skill (frontend/design-system/MASTER.md as the design source of truth), and a real frontend
-  DoD gate (typecheck + lint + vitest + build). Dev talks to the API via Vite's proxy, so NO backend change
+  end as the proving example (MSW-mocked in tests), a token layer implemented FROM the PO-supplied reference
+  design DESIGN-airtable.md (repo root; Airtable-style editorial system — the binding design source of
+  truth, NOT a ui-ux-pro-max-generated one; ui-ux-pro-max used only for its UX/accessibility floor; health
+  tokens up->success/down->signature-coral/degraded->signature-mustard/maintenance->info), and a real
+  frontend DoD gate (typecheck + lint + vitest + build). Dev talks to the API via Vite's proxy, so NO backend change
   and NO CORS work (CORS stays deferred to STORY-017). No tab renders real data yet (015b–015g). Single
   story, 5 pts."
 branch: sprint-23

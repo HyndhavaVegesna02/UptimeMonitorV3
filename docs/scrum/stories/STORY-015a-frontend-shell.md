@@ -38,13 +38,27 @@ trivially-wired example.
       end to end as the proving example (e.g. the Dashboard's `GET /api/v1/components` or `/health`), shown
       in a placeholder, with loading + error states. MSW handlers back the tests so no live API is hit; a
       Vitest test drives the client against an MSW-mocked response (success + error path).
-- [ ] **AC4 — Design system seeded from `ui-ux-pro-max`.** Run
-      `python .agents/skills/ui-ux-pro-max/scripts/search.py "<operator monitoring dashboard dark data-dense>"
-      --design-system --persist -p "Uptime Monitor"` to generate `frontend/design-system/MASTER.md`
-      (committed). The shell's base layout (typography scale, semantic color tokens incl. health
-      up/degraded/down, spacing rhythm, dark mode) is implemented FROM that MASTER, applied via a small
-      token layer (CSS variables / Tailwind config) — no raw hex in components (`color-semantic`). The
-      MASTER file is the design source of truth referenced by every later tab story.
+- [ ] **AC4 — Design system implemented from `DESIGN-airtable.md` (the reference design, PO-supplied).**
+      `DESIGN-airtable.md` (repo root, tracked) is THE design source of truth — an Airtable-style editorial
+      system with a full token set (colors, Haas/Inter-Display typography scale, 4px/96px spacing, radii,
+      and component specs). The shell implements a token layer (CSS variables / Tailwind config) that
+      mirrors its `colors` / `typography` / `rounded` / `spacing` / `components` tokens verbatim — no raw
+      hex in components (`color-semantic`); every value references a token. Do NOT generate a design system
+      with `ui-ux-pro-max` (that step is removed); `ui-ux-pro-max` is used ONLY for its UX/accessibility
+      floor (AC6).
+      - **Editorial→dashboard adaptation:** the spec is a marketing/editorial language; this app is a
+        data-dense operator cockpit. Adopt the LANGUAGE — palette, type scale, spacing rhythm, radii,
+        `button-primary`/`button-secondary`, `text-input`, card surfaces, hairline borders, white-canvas
+        calm, modest type weights (400 display, 500 labels/buttons; never bold-for-its-own-sake). Do NOT
+        import the marketing-only patterns (hero-band, signature full-bleed cards as primary chrome,
+        pricing pills, logo strips) as app chrome — they may inspire empty/section states but the cockpit
+        is tables/badges/lists.
+      - **Health-state semantic tokens (define these — the spec has no down/degraded/maintenance):**
+        `up`→`success` (#006400), `down`→`signature-coral` (#aa2d00), `degraded`→`signature-mustard`
+        (#d9a441), `maintenance`→`info` (#254fad). Status must never be conveyed by color alone (icon+label
+        too). These four health tokens are part of the committed token layer and are reused by every tab.
+      - **Fonts:** Haas is licensed/unavailable — use the spec's documented substitute **Inter / Inter
+        Display** (variable) via a self-hosted or system fallback chain; do not fetch a paid font.
 - [ ] **AC5 — Frontend DoD gate is real and green, and documented.** Four npm scripts exist and exit 0 on
       a clean tree: `typecheck` (`tsc --noEmit`), `lint` (eslint, TS + react-hooks rules), `test`
       (`vitest run`), `build` (`vite build`). These four constitute the **frontend DoD gate** (parallel to,
@@ -63,9 +77,11 @@ trivially-wired example.
 - Playwright/E2E (deferred), and production CORS / Vercel deploy (STORY-017).
 
 ## Skills to use
-- `ui-ux-pro-max` — generate + persist the design system (AC4) and apply its CRITICAL UX floor.
+- **`DESIGN-airtable.md` (repo root) — the design source of truth (AC4).** Token layer mirrors it.
+- `ui-ux-pro-max` — UX/accessibility floor ONLY (AC6); do NOT use it to generate a design system.
 - `vercel-react-best-practices` — the code-quality reviewer's checklist for this and every frontend story.
-- `design-taste-frontend` / `web-design-guidelines` — visual polish of the shell layout.
+- `design-taste-frontend` / `web-design-guidelines` — visual polish of the shell layout, within the
+  `DESIGN-airtable.md` language.
 
 ## History
 - 2026-06-29: created as the shell split-child of STORY-015 (an 8, split into shell + six tabs). Toolchain

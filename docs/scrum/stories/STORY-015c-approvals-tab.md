@@ -21,6 +21,8 @@ interactive tab: an operator reviews pending status proposals and approves or re
 - [ ] AC5: Accessibility floor met (focus management after action, aria-live for result, keyboard).
 
 ## Skills to use
+Design source: `DESIGN-airtable.md` (reuse the shell's token layer; approve = `button-primary`, reject =
+secondary/destructive emphasis per the spec's button pair).
 `ui-ux-pro-max` (forms & feedback, confirmation patterns), `vercel-react-best-practices` (mutation/state),
 `design-taste-frontend`.
 

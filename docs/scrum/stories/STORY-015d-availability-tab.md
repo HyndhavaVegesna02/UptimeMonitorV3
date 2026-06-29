@@ -16,6 +16,8 @@ Shows availability percentages per component and the group rollup over a window.
       empty-data state, text alternative). Responsive + a11y floor met.
 
 ## Skills to use
+Design source: `DESIGN-airtable.md` (reuse the shell's token layer; charts use the signature palette + the
+health tokens, not new accent colors).
 `ui-ux-pro-max` (charts & data, number formatting), `vercel-react-best-practices`, `design-taste-frontend`.
 
 ## History
