@@ -17,18 +17,19 @@
       "monitor.name": "TodoMVC Homepage Monitor"
     },
     {
-      "timestamp": "2026-06-29T08:32:40.746000000Z",
-      "event.id": "156345503299",
+      "timestamp": "2026-06-29T08:30:40.746000000Z",
+      "event.id": "156345503298",
       "event.kind": "SYNTHETIC_EVENT",
-      "event.type": "http_monitor_execution",
-      "result.state": "SUCCESS",
-      "result.executed_steps_count": 1,
-      "dt.entity.http_check": "HTTP_CHECK-DB5792CB88D14CF4",
+      "event.type": "http_step_execution",
       "dt.synthetic.monitor.id": "HTTP_CHECK-DB5792CB88D14CF4",
+      "dt.synthetic.step.id": "HTTP_CHECK_STEP-0001",
+      "dt.entity.http_check_step": "HTTP_CHECK_STEP-0001",
       "dt.entity.synthetic_location": "SYNTHETIC_LOCATION-000000000000005C",
+      "step.name": "Load homepage",
+      "step.sequence_number": 1,
       "result.status.message": "HEALTHY",
       "result.status.code": "0",
-      "result.statistics.duration": "820000000",
+      "result.statistics.duration": "755000000",
       "result.statistics.response_status_code": 200,
       "monitor.name": "TodoMVC Homepage Monitor"
     }

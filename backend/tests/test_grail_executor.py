@@ -37,7 +37,7 @@ def test_grail_executor_sync_fallback():
 
     records = executor("fetch dt.synthetic.events")
     assert len(records) == 2
-    assert records[0]["event.id"] == "156340723200"
+    assert records[0]["event.id"] == "156345503298"
 
 
 def test_grail_executor_async_polling_success():
