@@ -354,8 +354,8 @@ def test_build_query_with_well_formed_native_id_is_unchanged():
     )
 
     assert query == (
-        "fetch dt.synthetic.executions\n"
-        '| filter synthetic_test.id == "HTTP_CHECK-9F2A" '
+        "fetch dt.synthetic.events\n"
+        '| filter dt.synthetic.monitor.id == "HTTP_CHECK-9F2A" '
         'AND timestamp >= "2026-06-24T09:55:00Z"\n'
         "| sort timestamp asc"
     )

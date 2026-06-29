@@ -70,12 +70,12 @@ def build_dql_query(
             f"native_id contains a DQL-breaking character: {native_id!r}"
         )
 
-    clauses = [f'synthetic_test.id == "{native_id}"']
+    clauses = [f'dt.synthetic.monitor.id == "{native_id}"']
     if watermark is not None:
         since = watermark - overlap
         clauses.append(f'timestamp >= "{since.isoformat().replace("+00:00", "Z")}"')
 
     filter_expr = " AND ".join(clauses)
     return (
-        f"fetch dt.synthetic.executions\n| filter {filter_expr}\n| sort timestamp asc"
+        f"fetch dt.synthetic.events\n| filter {filter_expr}\n| sort timestamp asc"
     )
