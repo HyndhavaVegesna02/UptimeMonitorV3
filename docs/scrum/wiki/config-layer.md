@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 08d91e7
-verified_sprint: sprint-25
+verified_sha: 6303247
+verified_sprint: sprint-28
 status: verified
 ---
 
@@ -154,3 +154,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - sprint-25: re-verified (STORY-015a). No config-layer change; the only `pyproject.toml` edit was adding
   `"frontend"` to the ruff exclude for the new SPA, unrelated to the config loader/resolvers.
   verified_sha = 08d91e7.
+- sprint-28: re-verified (STORY-042). No config-layer change; the only `pyproject.toml` edit was
+  adding `uvicorn[standard]` to the dev extras. The new `composition/asgi.py` entrypoint reads the
+  same `config_dir` (default `config/apps`) via `create_app()`/`load_config` — no change to the
+  loader/resolvers this article describes. verified_sha = 6303247.

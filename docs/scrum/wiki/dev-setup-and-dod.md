@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json]
-verified_sha: 08d91e7
-verified_sprint: sprint-25
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py]
+verified_sha: 6303247
+verified_sprint: sprint-28
 status: verified
 ---
 
@@ -11,7 +11,9 @@ status: verified
   pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx (`pyproject.toml` —
   `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config loader, httpx
   promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP executors).
-  Dev extras: pytest, import-linter, ruff (`pyproject.toml` — `[project.optional-dependencies] dev`).
+  Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
+  `[project.optional-dependencies] dev`; `uvicorn` added sprint-28 STORY-042 as the local ASGI dev
+  server — see "Run the app locally" below).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
@@ -40,6 +42,15 @@ status: verified
   commands + `frontend/` layout in CLAUDE.md (command-sync agreement). Toolchain: Vite + React +
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
   npm on Node 24. Playwright/E2E is deferred to a later integration story.
+- **Running the app locally (STORY-042):** the FastAPI API is served via the ASGI entrypoint
+  `backend/src/composition/asgi.py` (`app = create_app()` — reads `DATABASE_URL` + the topology config,
+  default `config/apps`, so the boot-time seed runs), launched with
+  `uvicorn src.composition.asgi:app --port 8000`. The Vite dev proxy (`/api` → `:8000`) then reaches it.
+  Full local stack (CLAUDE.md "Run the app locally"): `dev_db.py up` → export `DATABASE_URL` → the
+  uvicorn command → a 2nd terminal running the live loop `python -m src.composition.run` (populates
+  proposals/observations/publications) → `npm run dev`. Two processes share one `DATABASE_URL`; no CORS
+  locally (same-origin via the proxy — real CORS is STORY-017). Before STORY-042 the API had only ever
+  run in-process via `TestClient` (no ASGI server, no module-level app).
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
   `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
@@ -119,3 +130,9 @@ status: verified
   `.scrum/definition-of-done.md` (replacing the placeholder note), documented in CLAUDE.md + added
   `"frontend"` to the ruff `exclude` in the same commit (`08d91e7`). The six backend commands are
   unchanged and untouched by frontend work. verified_sha → 08d91e7.
+- sprint-28: STORY-042 made the API HTTP-servable for local dev — added `uvicorn[standard]` to the dev
+  extras and `backend/src/composition/asgi.py` (`app = create_app()`, served by
+  `uvicorn src.composition.asgi:app --port 8000`). CLAUDE.md gained a "Run the app locally" recipe
+  (throwaway DB → export `DATABASE_URL` → uvicorn on :8000 → 2nd terminal `python -m src.composition.run`
+  live loop → `npm run dev`). No DoD command changed (still six backend + three frontend); CORS stays
+  deferred to STORY-017 (the Vite proxy makes dev same-origin). verified_sha → 6303247.

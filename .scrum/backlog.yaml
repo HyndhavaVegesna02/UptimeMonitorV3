@@ -259,7 +259,7 @@ stories:
   - id: STORY-042
     title: Serve the API over HTTP + documented end-to-end local dev stack
     file: docs/scrum/stories/STORY-042-serve-api-locally-dev-stack.md
-    status: ready   # refined 2026-07-02; adds uvicorn + ASGI entrypoint + local-stack docs. PO-approved scope.
+    status: done    # accepted at Sprint 28 review (2026-07-02), 3/3. API now HTTP-servable (uvicorn + asgi.py). AC5 = manual PO e2e.
     points: 3
     priority: 19
     type: chore

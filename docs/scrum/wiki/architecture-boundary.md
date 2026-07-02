@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 08d91e7
-verified_sprint: sprint-25
+verified_sha: 6303247
+verified_sprint: sprint-28
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -108,3 +108,8 @@ status: verified
   frontend is a separate zone with no import into `backend/src` and no bearing on the five import-linter
   contracts or the FK-direction boundary. 5 contracts kept / 0 broken, FK 11/0, unchanged.
   verified_sha → 08d91e7.
+- sprint-28: re-verified (STORY-042). The only `pyproject.toml` change was adding `uvicorn[standard]`
+  to the dev extras. STORY-042 also added `backend/src/composition/asgi.py` (an ASGI entrypoint —
+  `app = create_app()`); it lives in `composition`, the zone permitted to import both the api surface
+  and the wiring, so it introduces no contract break. 5 contracts kept / 0 broken, FK 11/0.
+  verified_sha → 6303247.
