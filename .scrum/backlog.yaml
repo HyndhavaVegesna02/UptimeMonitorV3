@@ -211,7 +211,7 @@ stories:
   - id: STORY-015c
     title: Approvals tab — pending proposals list + approve/reject
     file: docs/scrum/stories/STORY-015c-approvals-tab.md
-    status: ready
+    status: done    # accepted at Sprint 27 review (2026-07-02), 5/5. First mutating tab; shared useFetch<T> landed.
     points: 5
     priority: 17
     type: feature

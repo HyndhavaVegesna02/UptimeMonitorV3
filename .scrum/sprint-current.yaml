@@ -1,8 +1,8 @@
 # YourTeam active sprint board.
 sprint: 27
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: null
+closed: 2026-07-02
 goal: "Build the Approvals tab (STORY-015c) — the product's reason to exist: a degradation reaches
   the public Statuspage only after a human approves it here. Lists open proposals (GET
   /api/v1/approvals) and performs approve/reject (POST /api/v1/decisions/{id}) with a confirmation
@@ -41,13 +41,64 @@ start_tag: sprint-27-start
 stories:
   - id: STORY-015c
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 50bf57b (clean committed tree, diff frontend-only).
+          FRONTEND (from frontend/): npm test 96 passed / 18 files; npm run build (tsc -b && vite
+          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
+          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
+          (implementer-run — diff touches zero backend files). DB-gated pair NOT re-run: no
+          backend/migration/pyproject diff, so sprint-25's 11 FKs / 0 violations + alembic exit 0
+          still hold. (Gates re-run after the 50bf57b readOkJson dedup nit; 96 tests green.)"
+        commit: 50bf57b
+        at: 2026-07-02T17:32:00+05:30
+    review:
+      first_pass: "spec PASS (all 5 AC MET) / quality APPROVE (0 Critical, 0 Major). BOTH Opus
+        reviewers ran the frontend gates (96 tests). Spec traced each AC to a driving test: AC2 the
+        POST is gated by the confirm (postedBody undefined after first click; equals
+        {action, actor: getActor()} after confirm) + list refresh (callCount==2), both approve AND
+        reject; AC3 all three POST-failure paths MSW-driven with distinct outcomes (409 'already
+        resolved'+refresh, 404 'no longer exists'+refresh, 500 -> ErrorState+retry); AC5 useEffect
+        lives ONLY in lib/useFetch.ts (grep-confirmed no copy-pasted effect body), useComponents
+        tests unchanged+green, generic has its own test. Quality scrutinized the mutate path: no
+        double-submit (confirm control UNMOUNTS on submit, discrete events flush sync), no
+        stale-closure, list refresh fires on success+409+404; useFetch cancelled-guard + attempt
+        retry intact after extraction; postJson mirrors getJson's error contract with readable
+        .status; tokens-only CSS; status never color-alone (ink label, health on dot/bg only);
+        MSW-only mocking. KEEP."
+      fix: "One quality-review minor folded in inline (commit 50bf57b): getJson/postJson shared ~15
+        duplicated lines (non-2xx + parse-or-malformed tail) -> extracted a shared readOkJson so
+        015d-g inherit ONE parse-error contract. Behavior identical; client.test.ts (success / 404 /
+        409 / network / malformed) stays green. Gates re-run green."
+      second_pass: null
+      open_minors:
+        - "actor.test asserts only 'non-empty string', not the exact placeholder value — acceptable
+          for a deliberately-swappable seam (STORY-017 replaces the impl), won't catch an accidental
+          value change."
+        - "PATTERN (both reviewers, for 015d-g): the two real tabs now set the template — read tab =
+          thin useFetch(getX) wrapper (stable module-scoped fetcher, never inline); mutating tab =
+          local idle->confirming->submitting->failed machine SEPARATE from useFetch state,
+          double-submit guarded by UNMOUNTING the confirm control, branch on ApiError.status, always
+          retry() the list after a resolved decision. Captured in frontend-zone.md."
+      ac_note: "No live/manual-only AC: all five mechanically verifiable, verified in-session (both
+        reviewers ran the gates). AC reconciled to the real ProposalDTO/decision contracts at
+        planning (the 2026-07-02 tab-AC-vs-DTO agreement's first application): dropped the
+        nonexistent reason/evidence field; actor via a swappable getActor() seam (fixed placeholder,
+        PO)."
+      notes_omission: "The optional `notes` field is deliberately not surfaced (no AC requires it;
+        notes is Optional in DecisionRequest) — flagged as a candidate backlog item if an
+        operator-notes UI is later wanted. Both reviewers confirmed this is not silent scope loss."
+    blast_radius_resolved: true    # sprint-end compile pass @ 50bf57b: frontend-zone.md updated for
+                                   # 015c (shared useFetch<T>; postJson/readOkJson uniform error
+                                   # contract; actor seam; ProposalDTO/decision types; approvals
+                                   # handler/hook/page; read + mutate per-tab patterns). code_refs +=
+                                   # actor.ts, useFetch.ts, approvals handler/hook, ApprovalsPage.
+                                   # Sweep: 0 stale / 0 broken across 12 articles.
 hotfixes: []
 interrupts: []

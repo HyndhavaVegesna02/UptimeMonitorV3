@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/pages/DashboardPage.tsx]
-verified_sha: 6d44c22
-verified_sprint: sprint-26
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx]
+verified_sha: 50bf57b
+verified_sprint: sprint-27
 status: verified
 ---
 
@@ -52,43 +52,66 @@ status: verified
   defaulting to `h2`), `LoadingState`, `ErrorState` (retry callback), `EmptyState`. These ship
   with the shell so per-tab stories don't copy-paste. Classnames are composed with the shared
   `cx(...)` helper (`frontend/src/lib/cx.ts`, STORY-041) — filters falsy, joins on a space.
-- **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single `/api` base-URL seam,
-  wraps EVERY failure into a typed `ApiError`: network rejection, non-2xx status, AND a
-  malformed-body `SyntaxError` on a 2xx (the last hardened in STORY-041). DTO types in
-  `frontend/src/api/types.ts` mirror the backend `api/v1/*/models.py` shapes.
-  `frontend/src/api/statusMapping.ts::toHealthStatus` is the authoritative map from the backend
-  `ComponentStatus` vocabulary (operational / degraded / partial_outage / major_outage) onto the
-  health tokens (operational→up, degraded→degraded, partial_outage→degraded, major_outage→down,
-  else→unknown); consumed by the Dashboard tab.
+- **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single `/api` base-URL seam.
+  Both `getJson` (GET) and `postJson` (POST — JSON body, `Content-Type: application/json`) funnel
+  their response through a shared `readOkJson(response, path)` that gives ONE uniform error
+  contract (STORY-015c): EVERY failure is a typed `ApiError` — network rejection (no status),
+  non-2xx (`.status` carried), and a malformed-body `SyntaxError` on a 2xx (with status). The
+  readable `.status` is what lets a mutating tab branch on 404/409. Endpoint fns: `getComponents`,
+  `getApprovals`, `postDecision(proposalId, body)`. DTO types in `frontend/src/api/types.ts`
+  (`ComponentDTO`, `ProposalDTO`, `DecisionRequest`, `DecisionResponse`) mirror the backend
+  `api/v1/*/models.py` shapes. `frontend/src/api/statusMapping.ts::toHealthStatus` is the
+  authoritative map from the backend `ComponentStatus` vocabulary (operational / degraded /
+  partial_outage / major_outage) onto the health tokens (operational→up, degraded→degraded,
+  partial_outage→degraded, major_outage→down, else→unknown).
+- **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
+  placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity when STORY-017
+  auth + scopes land. Every decision POST reads the actor from here; the value is not scattered.
+  (STORY-015c; PO decision 2026-07-02.)
 - **Test I/O boundary:** MSW is the ONLY mocked edge. Handlers are modularized per feature
   (`frontend/src/mocks/handlers/<feature>.ts`, e.g. `components.ts` exporting its handlers +
   fixtures) composed into the `handlers` array in `frontend/src/mocks/handlers/index.ts`, which
   `mocks/server.ts` registers (wired in `frontend/src/test/setup.ts`). A tab story adds its own
   `handlers/<feature>.ts` and spreads it in — touching no other feature's handlers (STORY-041
   refactor). Tests assert via accessible roles/text and drive real behavior (success + empty +
-  error→retry against MSW); no component/hook under assertion is mocked. 71 tests at STORY-015b.
-- **The per-tab pattern to copy (015c–015g)** — established real by the Dashboard tab (STORY-015b):
-  a page in `pages/<Tab>Page.tsx` + a data-fetch hook in `features/<tab>/use<Tab>.ts`. The
-  canonical example is `features/dashboard/useComponents.ts` (returns `{ state, retry }` over a
-  discriminated-union `FetchState` = loading|error|success, a cancelled-guarded effect, an
-  `attempt`-keyed `retry`) consumed by `pages/DashboardPage.tsx`, which renders a four-state view
-  (loading / error+retry / empty / success) — the success branch a semantic `<table>` with
-  `<th scope="col">` and one row per item, from the shared primitives. A tab story touches only its
-  own `pages/` + `features/<tab>/` files, appends a `mocks/handlers/<feature>.ts`, and adds its
-  DTO + `getX()` to `api/types.ts` / `api/client.ts`; the routing table `tabs.ts` is already fully
-  populated. (STORY-015a's throwaway `ComponentsProbe` proving example was absorbed into
-  `useComponents` + `DashboardPage` and deleted in 015b.)
+  error→retry against MSW; for a mutating tab, the actual POST body MSW received); no component/hook
+  under assertion is mocked. 96 tests at STORY-015c.
+- **Shared fetch machinery:** `frontend/src/lib/useFetch.ts::useFetch<T>(fetcher)` is the single
+  home of the read-fetch state machine (STORY-015c, extracted from 015b's `useComponents` — the
+  parallel-shape agreement): returns `{ state, retry }` over a discriminated-union `FetchState<T>`
+  (loading|error|success), a cancelled-guarded effect (no set-state after stale/unmount), and an
+  `attempt`-keyed `retry`. **Sharp edge:** `fetcher` MUST be a STABLE reference (module-scoped fn),
+  never an inline closure, or the effect refetches every render — documented in the JSDoc and
+  honored at both call sites. `features/dashboard/useComponents.ts` = `useFetch(getComponents)` and
+  `features/approvals/useApprovals.ts` = `useFetch(getApprovals)` are thin wrappers with zero
+  duplicated effect body.
+- **The per-tab pattern to copy (015d–015g)** — two real tabs now set it:
+  - **Read tab (Dashboard, 015b):** a page in `pages/<Tab>Page.tsx` + a one-line
+    `features/<tab>/use<Tab>.ts` = `useFetch(<moduleScopedFetcher>)`, rendering a four-state view
+    (loading / error+retry / empty / success) from the shared primitives — success branch a
+    semantic `<table>` (`<th scope="col">`, one row per item).
+  - **Mutating tab (Approvals, 015c):** on top of the read pattern, a per-page local UI state
+    machine (`idle → confirming → submitting → failed`) kept SEPARATE from the list's `useFetch`
+    state; double-submit guarded by UNMOUNTING the confirm control (not merely disabling); on
+    confirm, POST via the typed client reading `getActor()`; branch on `ApiError.status` for domain
+    outcomes (409 lost-race / 404 gone → inline notice; else → `ErrorState`); always call the list's
+    `retry()` after a resolved decision (success OR terminal conflict) so the view reconciles with
+    the server. See `pages/ApprovalsPage.tsx`.
+  - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
+    `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
+    `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
+    `ComponentsProbe` was absorbed into `useComponents` + `DashboardPage` and deleted in 015b.)
 
 ## Inference (synthesis, not verified)
 - The shared append-points a tab story still edits are `api/types.ts` + `api/client.ts` (its DTO +
-  `getX()`) and a new `mocks/handlers/<feature>.ts`; the routing table and MSW composition are
-  already structured for additive-only edits, so sequential tab stories don't collide.
-- **`useComponents` is a `ComponentDTO`-specialized instance of an obvious `useFetch<T>(fetcher)`.**
-  Correctly NOT abstracted yet (one hook is not duplication — YAGNI), but the quality reviewer
-  flagged 015c as the moment the parallel-shape trigger fires: when the second near-identical fetch
-  hook lands, lift the discriminated-union + cancelled-guard + attempt-keyed-retry machinery into a
-  shared `useFetch<T>` so each feature hook is a thin `useFetch(getX)` rather than a copy-pasted
-  effect body. Flag at 015c planning.
+  `getX()`/`postX()`) and a new `mocks/handlers/<feature>.ts`; the routing table, MSW composition,
+  and the shared `useFetch<T>` are structured for additive-only edits, so sequential tab stories
+  don't collide.
+- **The shared `useFetch<T>` (done in 015c) is now the foundation for 015d–015g** — the
+  parallel-shape trigger the Sprint-26 retro flagged has been discharged. Each remaining read tab is
+  a thin `useFetch(getX)`; the one sharp edge to watch is the stable-`fetcher`-reference rule (a
+  module-scoped fn, never an inline closure). A future mutating tab reuses the Approvals
+  local-state-machine + `ApiError.status`-branching pattern rather than re-inventing it.
 
 ## History
 - sprint-25: created (STORY-015a — the frontend shell, second attempt, built guided by
@@ -102,3 +125,13 @@ status: verified
   deleted; `statusMapping.ts` is now the authoritative health map). Both frontend-only; the six
   backend gates untouched-green. `code_refs` re-scoped (dead `mocks/handlers.ts` → `handlers/`;
   added `lib/cx.ts`, `useComponents.ts`, `DashboardPage.tsx`, `statusMapping.ts`). verified_sha = 6d44c22.
+- sprint-27: updated for STORY-015c (the Approvals tab — the human approval gate, and the first
+  MUTATING tab). Landed the shared `lib/useFetch.ts::useFetch<T>` (extracted from `useComponents`,
+  which + the new `useApprovals` are now thin wrappers — parallel-shape agreement discharged); a
+  `postJson` client helper + `getApprovals`/`postDecision` funneling through a shared `readOkJson`
+  (one uniform `ApiError` contract with readable `.status` for 409/404 branching); the `api/actor.ts`
+  swappable placeholder seam (auth deferred to STORY-017); `ProposalDTO`/decision types;
+  `mocks/handlers/approvals.ts`; and `pages/ApprovalsPage.tsx` (confirm → POST → 409/404/error
+  branch → list refresh). Both Opus reviewers first-pass; frontend-only; six backend gates
+  untouched-green. `code_refs` += actor.ts, useFetch.ts, approvals handler/hook, ApprovalsPage.
+  verified_sha = 50bf57b.
