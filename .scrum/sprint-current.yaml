@@ -42,20 +42,38 @@ start_tag: sprint-26-start
 stories:
   - id: STORY-041
     points: 2
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate         # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at 1-2 pts)
     blocked_question: null
-    attempts: 1
+    attempts: 1            # first-pass clean
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 4489f9d (clean committed tree, diff frontend-only).
+          FRONTEND (from frontend/): npm test 68 passed / 14 files; npm run build (tsc -b && vite
+          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
+          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
+          (implementer-run — diff touches zero backend files so pytest is unaffected). DB-gated pair
+          (check_fk_direction / alembic upgrade head) NOT re-run: the diff touches no
+          backend/migration/pyproject file, so the sprint-25 result (11 FKs / 0 violations, alembic
+          exit 0 at the same schema) still holds — no schema change is possible from a frontend-only
+          diff."
+        commit: 4489f9d
+        at: 2026-07-02T14:52:00+05:30
+    review: null            # 2 pts -> no spec/quality reviewers per the size rule
+    blast_radius_resolved: false   # DEFERRED to the sprint-end compile pass: 041 touched
+                                   # client.ts / AppShell.tsx / mocks/handlers.ts, all in
+                                   # frontend-zone.md code_refs — but 015b (next, same sprint) touches
+                                   # the same files, so the article is updated ONCE at close reflecting
+                                   # both stories' diff (established multi-story pattern; the compile
+                                   # pass is the blocking gate before review).
   - id: STORY-015b
     points: 3
-    board: todo
+    board: in-progress
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null
