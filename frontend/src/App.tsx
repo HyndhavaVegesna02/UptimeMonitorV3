@@ -1,8 +1,11 @@
+import { BrowserRouter } from 'react-router-dom'
+import { AppShell } from './AppShell'
+
 function App() {
   return (
-    <main>
-      <h1>Uptime Monitor</h1>
-    </main>
+    <BrowserRouter>
+      <AppShell />
+    </BrowserRouter>
   )
 }
 
