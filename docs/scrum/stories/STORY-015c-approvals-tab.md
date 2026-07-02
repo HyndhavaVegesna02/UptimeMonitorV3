@@ -33,22 +33,22 @@ placeholder for now — but supplied through a SINGLE swappable seam (one module
 replaced in exactly one place. The placeholder value is NOT scattered across call sites.
 
 ## Acceptance Criteria
-- [ ] AC1: Open proposals render from `GET /api/v1/approvals`: `component_id`, the
+- [x] AC1: Open proposals render from `GET /api/v1/approvals`: `component_id`, the
       `from_status → to_status` transition (StatusBadges; handle null `from_status`), and
       `proposed_at` (mono). Empty state: "nothing pending approval". Uses the shared fetch hook
       (see AC5). Semantic, keyboard/reader-accessible markup.
-- [ ] AC2: Approve and Reject each POST `/api/v1/decisions/{proposal_id}` with
+- [x] AC2: Approve and Reject each POST `/api/v1/decisions/{proposal_id}` with
       `{action, actor, notes?}` where `action` is exactly `"approve"`/`"reject"` and `actor` comes
       from the swappable `getActor()` seam; a confirmation step precedes the POST; success refreshes
       the list. MSW tests drive both approve and reject end to end (assert the POSTed body shape +
       the list refresh).
-- [ ] AC3: A **409** (proposal no longer open — lost race) shows an inline "already resolved"
+- [x] AC3: A **409** (proposal no longer open — lost race) shows an inline "already resolved"
       message and refreshes the list; a **404** is handled likewise (gone → refresh); any other
       error shows the shell `ErrorState` with retry. All three POST-failure paths tested via MSW.
-- [ ] AC4: Loading / empty / list-load-error+retry states via the shell primitives; the action
+- [x] AC4: Loading / empty / list-load-error+retry states via the shell primitives; the action
       buttons are keyboard-operable (≥40px targets, visible accent focus ring), and the confirmation
       step is dismissable. Tested.
-- [ ] AC5: **Shared `useFetch<T>` established** (parallel-shape agreement — 015c is the 2nd fetch
+- [x] AC5: **Shared `useFetch<T>` established** (parallel-shape agreement — 015c is the 2nd fetch
       hook). Extract a generic `useFetch<T>(fetcher)` (discriminated-union state + cancelled-guard +
       attempt-keyed retry) from 015b's `useComponents`; refactor `useComponents` onto it; build
       `useApprovals` (or the approvals fetch) on it. No copy-pasted effect body. `useComponents`'s

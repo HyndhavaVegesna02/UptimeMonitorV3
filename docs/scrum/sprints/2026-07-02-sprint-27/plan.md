@@ -30,7 +30,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-27` bef
 
 ## STORY-015c — Approvals tab (5 pts) — AC1–AC5
 
-- [ ] **T1 — Shared `useFetch<T>` (AC5).** Extract a generic
+- [x] **T1 — Shared `useFetch<T>` (AC5).** Extract a generic
       `frontend/src/features/lib/useFetch.ts` (or `src/lib/useFetch.ts` — match where shared hooks
       sit) from 015b's `useComponents`: `useFetch<T>(fetcher: () => Promise<T>)` returning
       `{ state, retry }` over a discriminated-union `FetchState<T>` (loading | error | success), the
@@ -39,11 +39,11 @@ staging only touched files (never `git add -A`), branch verified `sprint-27` bef
       fetcher / MSW). Then refactor `features/dashboard/useComponents.ts` to
       `useFetch(getComponents)` — its existing tests must stay green (behavior identical; rewrite,
       don't delete). No `eslint-disable`.
-- [ ] **T2 — Actor seam (AC2).** Add `frontend/src/api/actor.ts` exporting `getActor(): string`
+- [x] **T2 — Actor seam (AC2).** Add `frontend/src/api/actor.ts` exporting `getActor(): string`
       returning a FIXED placeholder (e.g. `"dashboard-operator"`) with a doc-comment stating this is
       the single swap-point for STORY-017 auth. This is the ONLY place the placeholder lives. Unit
       test asserts it returns a non-empty string.
-- [ ] **T3 — Types + client + MSW handler (AC1, AC2).** Add `ProposalDTO` +
+- [x] **T3 — Types + client + MSW handler (AC1, AC2).** Add `ProposalDTO` +
       `DecisionRequest`/`DecisionResponse` to `frontend/src/api/types.ts` (mirror the verified
       shapes). Add to `frontend/src/api/client.ts`: `getApprovals(): Promise<ProposalDTO[]>` (GET
       `/v1/approvals`) and `postDecision(proposalId, body): Promise<DecisionResponse>` (POST
@@ -52,14 +52,14 @@ staging only touched files (never `git add -A`), branch verified `sprint-27` bef
       readable so the tab can branch on 409/404). Add `mocks/handlers/approvals.ts` (GET handler +
       `FIXTURE_PROPOSALS` incl. a null-`from_status` case; a POST handler) composed into
       `mocks/handlers/index.ts`.
-- [ ] **T4 — `useApprovals` + list render (AC1, AC4).** `features/approvals/useApprovals.ts` =
+- [x] **T4 — `useApprovals` + list render (AC1, AC4).** `features/approvals/useApprovals.ts` =
       `useFetch(getApprovals)`. `pages/ApprovalsPage.tsx` renders the open proposals via the hook:
       per proposal, `component_id`, the `from_status → to_status` transition (two `StatusBadge`s via
       `toHealthStatus`; render null `from_status` as e.g. an em-dash / "new"), `proposed_at` (mono),
       and Approve/Reject action buttons. Loading (`LoadingState`), empty ("nothing pending approval",
       `EmptyState`), and list-load-error+retry (`ErrorState`). Panel `headingLevel="h1"`. MSW-driven
       tests for success (incl. the null-from case), empty, and load-error+retry.
-- [ ] **T5 — Approve/Reject + confirmation + failure handling (AC2, AC3).** A confirmation step
+- [x] **T5 — Approve/Reject + confirmation + failure handling (AC2, AC3).** A confirmation step
       precedes each POST (a dismissable confirm — inline confirm row or dialog; keyboard-operable,
       ≥40px targets, visible accent focus). On confirm, POST `{action, actor: getActor(), notes?}`.
       Success → refresh the list (re-run the hook's fetch). **Failure branches** (read the `ApiError`
@@ -68,7 +68,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-27` bef
       the ability to retry the decision. MSW tests drive: approve success (+ assert POSTed body =
       `{action:"approve", actor:<placeholder>, notes?}`), reject success, 409, 404, and a generic
       500 — each asserting the named outcome (message + refresh vs error state).
-- [ ] **T6 — Gates + blast radius.** All three frontend gates exit 0 on a clean committed tree. No
+- [x] **T6 — Gates + blast radius.** All three frontend gates exit 0 on a clean committed tree. No
       CLAUDE.md/DoD change (no new command). Blast radius: this touches `frontend-zone.md` code_refs
       (client.ts, types.ts, mocks/handlers/, and adds useFetch/useApprovals/actor) — the orchestrator
       folds the article update into the sprint-end compile pass; flag any other article if touched.
