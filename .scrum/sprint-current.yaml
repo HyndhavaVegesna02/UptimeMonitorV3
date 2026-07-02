@@ -1,93 +1,49 @@
 # YourTeam active sprint board.
-sprint: 28
-status: closed        # none | active | review | closed | aborted
+sprint: 29
+status: active        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: 2026-07-02
-goal: "Make the FastAPI backend HTTP-servable so the frontend dev stack works end to end
-  (STORY-042). Today `npm run dev` floods ECONNREFUSED because the API has only ever run in-process
-  via TestClient — no uvicorn, no ASGI entrypoint. Add uvicorn + a composition/asgi.py entrypoint
-  (app = create_app(), reads DATABASE_URL + config/apps → boot-time topology seed), a DB-gated
-  servability test, and document the full local stack (throwaway Docker Postgres + API server + the
-  live pull-loop + npm run dev) so every tab shows genuine live data. CORS stays deferred to
-  STORY-017."
-branch: sprint-28
-start_tag: sprint-28-start
-# Capacity: velocity last-3 (sprints 25,26,27) = 5,5,5 -> mean 5.0. Committed 3 (STORY-042) — a
-# deliberate under-commit: a focused mostly-backend chore with a manual PO-observed end-to-end tail;
-# it unblocks *seeing/using* the whole app locally.
+closed: null
+goal: "Close the product's core-loop dead end (STORY-045): an approved degradation actually
+  reaches Statuspage through the Recording->BestEffort chain, is recorded in `publications`,
+  and writes `components.status` back — so the Dashboard reflects reality, the next decide
+  cycle compares against the truth (no approval whack-a-mole), and the recovery auto-publish
+  branch becomes reachable for the first time."
+branch: sprint-29
+start_tag: sprint-29-start
+# Capacity: velocity last-3 (sprints 26,27,28) = 5,5,3 -> mean 4.3. Committed 5 (STORY-045) —
+# the 28 entry was a deliberate under-commit, not a miss; sprints 25-27 each delivered 5/5 and
+# the PO approved the single-5 commitment at planning ("Start with story 45", 2026-07-02).
 #
 # WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds to
-# plan.md; Opus spec & quality reviewers (3 pts -> full pipeline); orchestrator runs the full
-# six-command backend DoD gate (+ the frontend 3 gates are untouched — this is a backend story),
+# plan.md; Opus spec & quality reviewers (5 pts -> full pipeline); orchestrator runs the full
+# six-command backend DoD gate as a SINGLE non-concurrent DB-gated run (2026-07-02 agreement),
 # wiki blast-radius sweep, then review/verdict/merge/retro.
 #
-# TOOLING: adds `uvicorn[standard]` to dev deps — surfaced at planning per the tooling-change
-# agreement. It is a runtime/dev server, not touched by ruff/lint-imports (a dep, not code).
+# TOOLING: none — pure backend against existing infra. No frontend change.
 #
-# DoD: the six backend commands must stay green (pyproject changes with the uvicorn add + the new
-# asgi.py + a DB-gated test — all must pass). No frontend source change. AC5 is a MANUAL PO-observed
-# end-to-end step (needs the PO's live .env creds) — run at review or carved out as a tracked
-# follow-up per the 2026-06-29 live-verification agreement; AC1-AC4 are the mechanical gate.
+# DoD: the six backend commands must stay green. AC4's write-back-vs-publish ordering is PINNED
+# in plan.md (commit-first: DB writes durable BEFORE the best-effort external call) per the
+# 2026-06-26 plan-edge-behavior agreement. No live-credential AC — the whole story is provable
+# with fakes + the throwaway DB, so nothing is carved out as manual.
 #
-# BASELINE at lock: sprint-28 cut from main @ 5172156 (sprint-27 merged + STORY-042 refinement).
-# Backend gates green at the sprint-27 code state (50bf57b, preserved on main); 5172156 adds only
-# docs/scrum (the story file + backlog), no code change.
+# BASELINE at lock: sprint-29 cut from main @ 162783d (docs + .gitignore housekeeping only since
+# the sprint-28 gate-green code state 6303247 — `git diff 6303247..HEAD -- backend/ scripts/
+# pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY, so the six-gate evidence
+# recorded at sprint-28 close holds for this code state).
 #
-# Agreements in force: all of working-agreements.md as of 5172156 (incl. the 2026-07-02 Sonnet-5
-# in-process directive + the tab-AC-vs-DTO agreement — the latter N/A here, no consumer-tab AC).
+# Agreements in force: all of working-agreements.md as of 162783d (incl. the 2026-07-02
+# single-non-concurrent-DB-gate rule and the Sonnet-5 in-process directive; the tab-AC-vs-DTO
+# agreement is N/A — no consumer-tab AC this sprint).
 stories:
-  - id: STORY-042
-    points: 3
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
+  - id: STORY-045
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX backend commands (orchestrator-verified on committed HEAD)"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 6303247 (clean committed tree). pytest 428 passed
-          (single isolated run against the throwaway postgres:16 — incl. the 2 new test_asgi.py
-          tests); lint-imports 5 kept / 0 broken; check_fk_direction 11 FKs / 0 violations; `python -m
-          alembic upgrade head` exit 0; ruff check 'All checks passed!'; ruff format --check '155
-          files already formatted'. NOTE: an earlier gate attempt showed '364 passed, 64 errors' —
-          that was a TEST-INFRA collision (two concurrent pytest runs sharing one throwaway DB, the
-          truncate fixtures interfering), NOT a code failure; a single clean run = 428 passed. Manual
-          server smoke (implementer + spec reviewer): `uvicorn src.composition.asgi:app --port 8000`
-          boots, GET /api/v1/components -> 200 with the seeded http-check component, /health -> 200."
-        commit: 6303247
-        at: 2026-07-02T18:20:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC4 MET, AC5 correctly deferred) / quality APPROVE (0 Critical, 0
-        Major). Spec ran test_asgi.py itself (2 passed) and confirmed AC3 DRIVES real HTTP
-        servability: create_app(...)+TestClient asserts GET /api/v1/components -> 200 with the seeded
-        http-check id (from real config/apps/httpcheck.yaml), not a mock. Quality PROVED the
-        import-time-engine caveat is handled: `pytest --collect-only` with DATABASE_URL unset collects
-        both tests in 0.37s with NO engine build / DB connection (asgi imported inside the test body
-        after migrated_db sets the env). Confirmed: thin `app = create_app()` is the right shape;
-        docstrings mirror peers; command-sync (uvicorn dep + CLAUDE.md row same commit d16d6d1); the
-        CLAUDE.md run recipe is correct/runnable; lint-imports 5/0 (asgi.py in composition = no
-        boundary break); no scope creep (run.py/app.py/frontend untouched). KEEP."
-      fix: "None — both reviewers passed first-pass with zero blocking findings; no fix loop."
-      second_pass: null
-      open_minors:
-        - "test_asgi.py import_module immediately followed by importlib.reload builds the engine twice
-          on first run, orphaning the first (undisposed) engine — harmless in-test; the reload guards a
-          scenario no current test triggers. Marginal cleanup (single import_module or sys.modules pop)."
-        - "clean_topology fixture duplicated verbatim from test_seed.py — consistent with the existing
-          pattern (test_seed carries its own copy); both could eventually hoist to conftest.py."
-        - "Run-recipe mixes `.venv/Scripts/python.exe -m uvicorn` (step 3) with bare `python -m
-          src.composition.run` (step 4) — intentional, matches CLAUDE.md's existing live-loop
-          convention; slightly inconsistent to a first-time reader."
-      ac5_manual: "AC5 (end-to-end: npm run dev with no ECONNREFUSED, Dashboard shows components,
-        live-loop populates the other tabs) is a MANUAL PO-observed step needing the PO's live .env
-        credentials — carved out per the 2026-06-29 live-verification agreement. The mechanical path is
-        proven (server boots + serves seeded components in the smoke); the full live-data run is the
-        PO's to exercise at/after review."
-    blast_radius_resolved: true   # compile pass @ 6303247: dev-setup-and-dod updated (uvicorn dev dep
-                                  # + asgi entrypoint + 'Run the app locally' recipe; +asgi.py code_ref);
-                                  # api-five-file / architecture-boundary / config-layer re-verified
-                                  # (pyproject uvicorn dev-dep add only, Facts unaffected). Sweep: 0
-                                  # stale / 0 broken links across 12 articles.
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
