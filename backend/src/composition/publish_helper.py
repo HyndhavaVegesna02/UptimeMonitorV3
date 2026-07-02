@@ -1,12 +1,20 @@
 """Publish composition helpers (dossier §12, §14 T1.1).
 
-Contains two complementary publisher decorators:
+Contains three complementary publisher decorators plus the shared chain
+assembly both composition roots use:
 - `BestEffortPublisher` — wraps a delegate and never lets publish failures escape.
 - `RecordingPublisher` — wraps a delegate and records each SUCCESSFUL publish.
+- `StatusWritebackPublisher` (STORY-045, dossier §9/§12) — wraps a delegate and
+  a `ComponentRepository`; writes `components.status` back FIRST, then delegates.
 
-They compose naturally: `BestEffortPublisher(RecordingPublisher(real_publisher))`
-logs+swallows on failure and records only on success, matching the §12/T1.1
-commit-first/best-effort contract.
+They compose per the STORY-045 D2 shape:
+`StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(real_publisher)),
+component_repo)` — the durable status write-back happens BEFORE the best-effort
+external call, so a Statuspage outage never loses the write-back, while an
+unknown component id (a topology/change disagreement) propagates loudly.
+`build_publisher` assembles this chain (or its no-creds `LoggingPublisher`
+fallback) in ONE place so `composition/run.py` and `composition/app.py` never
+drift (2026-06-25 share-the-assembly agreement).
 """
 
 import logging
@@ -15,6 +23,7 @@ from src.core.domain.publication import Publication
 from src.core.domain.status import StatusChange
 from src.core.ports import StatusPublisherPort
 from src.core.ports.clock import ClockPort
+from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.publication_repository import PublicationRepository
 
 _log = logging.getLogger(__name__)
@@ -112,3 +121,93 @@ class LoggingPublisher(StatusPublisherPort):
             change.component_id,
             change.status,
         )
+
+
+class StatusWritebackPublisher(StatusPublisherPort):
+    """A `StatusPublisherPort` decorator that writes back `components.status`
+    BEFORE delegating (STORY-045, dossier §9, §12, §14 T1.1, D1).
+
+    Wraps a delegate publisher and a `ComponentRepository`. On each `publish`:
+      1. Calls `component_repo.set_status(change.component_id, change.status)` —
+         a durable DB write, applied FIRST (commit-first, mirroring §T1.1).
+      2. THEN calls `delegate.publish(change)`.
+
+    Sits OUTSIDE `BestEffortPublisher` in the composition chain (D2): the
+    write-back is a DB write and must PROPAGATE on failure (an unknown
+    component id means the topology seed and the change disagree — loud,
+    never swallowed) — only the external Statuspage call inside the delegate
+    chain is best-effort. Because the write-back happens before the delegate
+    is ever invoked, a delegate failure (swallowed further in by
+    `BestEffortPublisher`) can never undo it — this is what makes both the
+    approve trigger (`ApprovalService`) and the recovery trigger
+    (`DecideService`) see `components.status` updated even when Statuspage is
+    down or absent (the `LoggingPublisher` no-creds path included).
+    """
+
+    def __init__(
+        self, delegate: StatusPublisherPort, component_repo: ComponentRepository
+    ) -> None:
+        self._delegate = delegate
+        self._component_repo = component_repo
+
+    def publish(self, change: StatusChange) -> None:
+        """Write back the component's status, then delegate (commit-first, D1).
+
+        Raises `ComponentNotFoundError` (propagated from
+        `ComponentRepository.set_status`) if `change.component_id` is unknown —
+        the delegate is never reached in that case.
+        """
+        self._component_repo.set_status(change.component_id, change.status)
+        self._delegate.publish(change)
+
+
+def build_publisher(
+    *,
+    component_repo: ComponentRepository,
+    publication_repo: PublicationRepository,
+    clock: ClockPort,
+    statuspage_page_id: str | None,
+    statuspage_api_token: str | None,
+    component_mapping: dict[str, str],
+) -> StatusPublisherPort:
+    """Assemble the shared D2 publisher chain (STORY-045, dossier §12, §17).
+
+    The ONE place both composition roots (`composition/run.py::build_live_loop`
+    for the recovery-publish trigger, `composition/app.py::create_app` for the
+    approve trigger) build the publisher chain, so they can never drift
+    (2026-06-25 share-the-assembly agreement):
+
+    - `statuspage_page_id`, `statuspage_api_token`, AND `component_mapping` all
+      present/non-empty: `StatusWritebackPublisher(BestEffortPublisher(
+      RecordingPublisher(StatuspagePublisher(...))), component_repo)`.
+    - Otherwise: `StatusWritebackPublisher(LoggingPublisher(), component_repo)`
+      — the write-back still applies on the no-creds local dev path (so the
+      Dashboard reflects a decision even without live Statuspage credentials).
+
+    Publication-recording semantics are UNCHANGED: a `publications` row is
+    written only on a successful Statuspage publish (`RecordingPublisher`).
+    """
+    if statuspage_page_id and statuspage_api_token and component_mapping:
+        from src.adapters.outbound.statuspage import StatuspagePublisher
+        from src.adapters.outbound.statuspage.http_executor import (
+            make_statuspage_executor,
+        )
+
+        statuspage_publisher = StatuspagePublisher(
+            page_id=statuspage_page_id,
+            api_token=statuspage_api_token,
+            component_mapping=component_mapping,
+            executor=make_statuspage_executor(),
+        )
+        recording_publisher = RecordingPublisher(
+            delegate=statuspage_publisher,
+            publication_repo=publication_repo,
+            clock=clock,
+        )
+        delegate: StatusPublisherPort = BestEffortPublisher(
+            delegate=recording_publisher
+        )
+    else:
+        delegate = LoggingPublisher()
+
+    return StatusWritebackPublisher(delegate, component_repo)

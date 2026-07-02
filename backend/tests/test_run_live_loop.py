@@ -11,7 +11,11 @@ import sqlalchemy as sa
 from fakes import FakeClock
 from src.adapters.outbound.statuspage import StatuspagePublisher
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
-from src.composition.publish_helper import BestEffortPublisher, RecordingPublisher
+from src.composition.publish_helper import (
+    BestEffortPublisher,
+    RecordingPublisher,
+    StatusWritebackPublisher,
+)
 from src.composition.run import build_live_loop, main
 from src.composition.settings import LiveSecrets, Settings
 from src.core.services.decide import DecideService
@@ -19,7 +23,8 @@ from src.core.services.pipeline import AntiFlapThresholds
 
 
 def test_build_live_loop_assembly():
-    """build_live_loop assembles the REAL publisher chain + threads orchestration (T5).
+    """build_live_loop assembles the REAL publisher chain (via the shared
+    STORY-045 `build_publisher`) + threads orchestration (T5, STORY-045 D2).
 
     Builds genuine objects (only ``run_periodic`` is patched, to avoid creating
     live coroutines) and asserts the actual nesting + the orchestration extras
@@ -111,11 +116,18 @@ def test_build_live_loop_assembly():
         assert call.kwargs["clock"] is clock
         assert call.kwargs["config"] is config
 
-    # The publisher chain reaches DecideService correctly nested:
-    # DecideService(publisher=BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))
+    # The publisher chain reaches DecideService correctly nested (STORY-045 D2):
+    # DecideService(publisher=StatusWritebackPublisher(BestEffortPublisher(
+    #     RecordingPublisher(StatuspagePublisher)), component_repo))
     decide_service = mock_run_periodic.call_args_list[0].kwargs["decide_service"]
     assert isinstance(decide_service, DecideService)
-    best_effort = decide_service._publisher
+    writeback = decide_service._publisher
+    assert isinstance(writeback, StatusWritebackPublisher)
+    assert (
+        writeback._component_repo
+        is mock_run_periodic.call_args_list[0].kwargs["component_repo"]
+    )
+    best_effort = writeback._delegate
     assert isinstance(best_effort, BestEffortPublisher)
     recording = best_effort._delegate
     assert isinstance(recording, RecordingPublisher)
@@ -196,7 +208,10 @@ def test_build_live_loop_assembly_statuspage_absent():
 
     decide_service = mock_run_periodic.call_args_list[0].kwargs["decide_service"]
     assert isinstance(decide_service, DecideService)
-    assert isinstance(decide_service._publisher, LoggingPublisher)
+    # STORY-045 D2: write-back still applies on the no-creds local dev path.
+    writeback = decide_service._publisher
+    assert isinstance(writeback, StatusWritebackPublisher)
+    assert isinstance(writeback._delegate, LoggingPublisher)
 
 
 @patch("src.composition.run.load_settings")
