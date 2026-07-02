@@ -4,9 +4,10 @@
 **Goal:** rebuild the frontend zone from scratch — the shell (STORY-015a) — guided by
 `DESIGN-linear.app.md`, with dark + light themes, so tabs 015b–015g become pure fill-ins.
 **Branch:** `sprint-25` (tag `sprint-25-start` @ `521764c`). Committed: 5 pts (velocity mean 4.33 — single-story focused sprint).
-**Mode:** external implementation (2026-06-26 agreement) — the PO/Antigravity implements THIS
-plan + the story file + the dossier §17; the orchestrator runs the review back half on "do your
-review".
+**Mode:** in-process implementation (PO directive 2026-07-02, superseding the 2026-06-26
+external-handoff agreement) — a **Sonnet 5 implementer subagent at high effort** builds THIS
+plan + the story file + the dossier §17; the orchestrator runs the gate + Opus reviewers +
+review back half.
 
 Context: the first frontend (sprints 23–24, DESIGN-airtable.md) was fully reverted in `521764c`.
 This is a fresh build — do NOT resurrect code from the `sprint-23`/`sprint-24` branches; the
@@ -90,7 +91,7 @@ every green step**, staging only the files you touched (never `git add -A`).
       **in the same commit** (command-sync agreement). Final full run: three frontend gates +
       six backend gates all exit 0 on a clean committed tree.
 
-## Conventions checklist (external implementation — all new code is held to this at review)
+## Conventions checklist (all new code is held to this at review)
 
 1. **Tokens, not hex:** no raw color/size literals in components; everything references the
    token layer. (The token file itself is the only place hex lives.)
@@ -109,7 +110,7 @@ every green step**, staging only the files you touched (never `git add -A`).
 7. **CLAUDE.md + DoD sync in the same commit as the gate change** (T7).
 8. **No backend source changes.** The six backend gates must remain green untouched.
 
-## Guardrails (external implementer)
+## Guardrails (implementer)
 
 - Build to THIS plan + the story AC + dossier §17 — never to chat history.
 - Do NOT write `.scrum/` board state; do NOT run reviewers or merge; the orchestrator owns the

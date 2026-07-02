@@ -28,11 +28,12 @@ start_tag: sprint-25-start
 # first approved. DESIGN-linear.app.md is a GUIDE (creative freedom), not a verbatim mandate —
 # unlike the Airtable era.
 #
-# WORKFLOW: external implementer (PO/Antigravity) builds to plan.md as the self-contained
-# contract, committing onto sprint-25. PO triggers the back half ("do your review"); the
-# orchestrator then diffs sprint-25-start..HEAD, runs the FULL gate (six backend commands +
-# the three new frontend commands), the Opus spec + quality reviewers (5 pts -> full pipeline),
-# the mechanical wiki blast-radius sweep, then review/verdict/merge/retro.
+# WORKFLOW (amended at lock, PO directive 2026-07-02): implementation is IN-PROCESS — a
+# Sonnet 5 implementer subagent (model "sonnet", briefed for high effort) builds to plan.md
+# as the self-contained contract, committing onto sprint-25. This supersedes the 2026-06-26
+# external-handoff mode. The orchestrator then runs the FULL gate (six backend commands +
+# the three new frontend commands), the Opus spec + quality reviewers (5 pts -> full
+# pipeline), the mechanical wiki blast-radius sweep, then review/verdict/merge/retro.
 #
 # DoD: backend six commands UNCHANGED and must stay green (no backend source change in scope).
 # Frontend gates (npm test / npm run build / npm run lint) become REAL in this story (AC7) —
@@ -50,10 +51,10 @@ start_tag: sprint-25-start
 stories:
   - id: STORY-015a
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> external impl + Opus spec & quality reviewers + DoD gate
+    board: in-progress     # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null

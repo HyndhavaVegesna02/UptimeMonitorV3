@@ -40,6 +40,16 @@
   2026-06-28 — the accumulated working agreements must reach the external implementer somehow; the
   lock prompt is that vehicle, so it cannot depend on the PO remembering to ask.)
 
+- 2026-07-02 — **Implementation returns in-process: implementer subagents run on the Sonnet 5
+  model (`model: "sonnet"`) at HIGH effort — the orchestrator implements, no external handoff.**
+  This supersedes the 2026-06-26 external-implementation agreement (PO/Antigravity/Gemini) from
+  Sprint 25 onward: the orchestrator dispatches Sonnet 5 implementer subagents, briefed for
+  high-effort/thorough work, for every implementation step. Reviewer subagents (spec + quality)
+  stay on Opus per the 2026-06-24 model rule, which remains in force otherwise. The plan.md
+  self-containment discipline (conventions checklist, edge-behavior specs) is KEPT — it proved
+  its worth and now feeds the subagent brief instead of an external prompt. (PO directive,
+  2026-07-02, stated at the Sprint 25 lock.)
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the
