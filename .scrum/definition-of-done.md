@@ -37,7 +37,7 @@
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
 
-## Commands (frontend — activate from the frontend zone onward; placeholder until then)
+## Commands (frontend — live from STORY-015a, Sprint 25, run from `frontend/`)
 - [ ] Frontend tests pass: `npm test` -> exit 0
 - [ ] Frontend type-check/build: `npm run build` -> exit 0
 - [ ] Frontend lint: `npm run lint` -> exit 0

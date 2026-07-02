@@ -52,40 +52,40 @@ STORY-017. No backend source changes.
 TDD cadence: write the failing test, see it fail, minimal code, see it pass, **commit after
 every green step**, staging only the files you touched (never `git add -A`).
 
-- [ ] **T1 — Scaffold + hygiene (AC1).** `npm create vite@latest frontend` (react-ts), enable
+- [x] **T1 — Scaffold + hygiene (AC1).** `npm create vite@latest frontend` (react-ts), enable
       TS strict, add Vitest + RTL + jsdom + MSW + ESLint. PRUNE generator boilerplate: template
       SVGs/logos, template favicon (replace with a minimal project one), default `<title>`
       (set a real app title), boilerplate CSS/README content. Configure the `/api` dev proxy.
       Prove `npm run build`, `npm test`, `npm run lint` all exit 0 on the clean scaffold.
-- [ ] **T2 — Token layer + themes (AC4 foundation, AC5).** `src/styles/tokens.css` (or
+- [x] **T2 — Token layer + themes (AC4 foundation, AC5).** `src/styles/tokens.css` (or
       equivalent): CSS custom properties per theme under `:root[data-theme="dark"]` /
       `:root[data-theme="light"]` — surfaces, hairlines, ink scale, accent set, health set
       (+subtle variants), radii, spacing (4px base), type scale + families (Inter,
       JetBrains Mono via @fontsource). Inline pre-paint script resolves theme: localStorage
       override → else `prefers-color-scheme`. Theme toggle hook + persistence. Tests:
       system-default resolution, toggle override, persistence (AC5).
-- [ ] **T3 — Shell primitives (AC4).** `src/components/`: `Button` (primary/secondary/
+- [x] **T3 — Shell primitives (AC4).** `src/components/`: `Button` (primary/secondary/
       tertiary per the reference specs — 8px radius, compact padding), `StatusBadge` (pill,
       surface bg, status dot + ink label; accepts up/down/degraded/maintenance/unknown),
       `Panel`, `LoadingState`, `ErrorState` (with retry callback), `EmptyState`. Tokens only —
       zero raw hex in any component. RTL tests: badge renders dot + accessible label per
       status; unknown → neutral.
-- [ ] **T4 — Nav + routing (AC2).** Router with six routes; top nav (56px, canvas bg, hairline
+- [x] **T4 — Nav + routing (AC2).** Router with six routes; top nav (56px, canvas bg, hairline
       bottom): app title left, six tabs (Dashboard · Availability · Approvals · Check History ·
       Maintenance · Publications), theme toggle right. Active tab: ink + accent indicator;
       inactive: ink-subtle; keyboard operable, visible accent focus ring, ≥40px targets.
       Placeholder panel per tab. RTL test: six nav items render; clicking (and keyboard)
       switches the active panel (AC2).
-- [ ] **T5 — Typed API client + proven endpoint (AC3).** `src/api/client.ts`: fetch-based,
+- [x] **T5 — Typed API client + proven endpoint (AC3).** `src/api/client.ts`: fetch-based,
       single base-URL seam (`/api`), typed DTOs matching the backend (`GET /api/v1/health` or
       `GET /api/v1/components` — DTO shapes in `backend/src/api/v1/*/models.py`). MSW server
       setup for tests. Wire the endpoint into a placeholder with loading / error / retry.
       Tests: success path renders data; error path shows ErrorState; retry refetches (MSW).
-- [ ] **T6 — A11y pass (AC6).** Sweep both themes against the `ui-ux-pro-max` a11y floor +
+- [x] **T6 — A11y pass (AC6).** Sweep both themes against the `ui-ux-pro-max` a11y floor +
       `web-design-guidelines`: text contrast ≥4.5:1 every ink/surface pair, focus visible on
       every interactive element, no color-only status, targets ≥40px. Fix and test what the
       sweep finds.
-- [ ] **T7 — Gates + doc sync (AC7).** Activate the three frontend commands in
+- [x] **T7 — Gates + doc sync (AC7).** Activate the three frontend commands in
       `.scrum/definition-of-done.md` (replace the "placeholder until then" note) and add the
       frontend section to CLAUDE.md (commands, `frontend/` layout, design-reference pointer)
       **in the same commit** (command-sync agreement). Final full run: three frontend gates +

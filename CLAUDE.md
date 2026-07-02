@@ -35,6 +35,53 @@ backend/src/
 `config/` is reserved at the repo root (outside `backend/`) so that editing it
 reads as a topology change rather than a code change.
 
+### The frontend zone (dossier §17, STORY-015a)
+
+`frontend/` is a separate Vite + React + TypeScript (strict) SPA — the
+operator-cockpit "internal dashboard" surface (dossier §17, "two surfaces,
+not one"; the other surface is the public Statuspage). It is isolated from
+the Python backend: no backend source import, no shared build step; the six
+backend DoD commands never touch it and vice versa.
+
+```
+frontend/
+├── src/
+│   ├── styles/       # tokens.css (theme-scoped CSS custom properties) + global.css
+│   ├── theme/         # theme resolution (system pref + localStorage override), ThemeProvider/useTheme
+│   ├── components/    # shell primitives: Button, StatusBadge, Panel, Loading/Error/EmptyState
+│   ├── nav/            # top nav (six-tab IA) + routing table (tabs.ts)
+│   ├── pages/          # one placeholder per tab (015b-015g fill in real content)
+│   ├── api/             # typed fetch client (client.ts), DTO types mirroring backend/src/api/v1/*/models.py
+│   ├── features/        # per-tab feature code (e.g. features/dashboard/ComponentsProbe.tsx)
+│   ├── mocks/            # MSW handlers + node server (the only mocked I/O edge in frontend tests)
+│   └── test/              # Vitest setup (jest-dom matchers, MSW server lifecycle)
+├── index.html            # pre-paint inline theme-resolution script (no flash)
+└── vite.config.ts         # dev proxy (/api -> http://localhost:8000) + Vitest config
+```
+
+Design reference: `DESIGN-linear.app.md` (repo root) — a guide to adapt, not
+a copy target; see `docs/scrum/sprints/2026-07-02-sprint-25/plan.md` for the
+binding design brief (token values, accent discipline, health palette, type
+scale) that STORY-015a built to. `frontend/README.md` has the day-to-day
+quick reference.
+
+Frontend commands (run from `frontend/`; Node 24 / npm 11):
+
+| Task           | Command         |
+| -------------- | --------------- |
+| Install        | `npm install`   |
+| Dev server     | `npm run dev`   |
+| Build (+ tsc)  | `npm run build` |
+| Test (Vitest)  | `npm test`      |
+| Lint (ESLint)  | `npm run lint`  |
+
+`npm test` (Vitest, run-once), `npm run build` (`tsc -b && vite build`), and
+`npm run lint` (ESLint flat config) are the three frontend DoD gate commands,
+live as of STORY-015a — see `.scrum/definition-of-done.md`. The dev server
+proxies `/api/*` to `http://localhost:8000` (a locally running `uvicorn`
+instance of the backend); CORS stays deferred to STORY-017 per the
+2026-06-23 working agreement, so no backend change was needed to wire this.
+
 ## Stack (dossier §3)
 
 | Surface        | Choice                                                              |
