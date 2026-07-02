@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 42   # 041 = frontend pattern hardening (sprint-25 015a review); 014b/014c + 015a-g + 016a-c are split-children
+next_story_id: 43   # 042 = serve-API-locally dev stack (2026-07-02); 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -256,6 +256,14 @@ stories:
     priority: 16
     type: chore
     sprint: 26
+  - id: STORY-042
+    title: Serve the API over HTTP + documented end-to-end local dev stack
+    file: docs/scrum/stories/STORY-042-serve-api-locally-dev-stack.md
+    status: ready   # refined 2026-07-02; adds uvicorn + ASGI entrypoint + local-stack docs. PO-approved scope.
+    points: 3
+    priority: 19
+    type: chore
+    sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a
     title: Config layer — per-app config files + fail-fast loader + in-memory resolvers
