@@ -1,4 +1,5 @@
 import type { HTMLAttributes, ReactNode } from 'react'
+import { cx } from '../../lib/cx'
 import './Panel.css'
 
 export type PanelHeadingLevel = 'h1' | 'h2' | 'h3'
@@ -24,7 +25,7 @@ export function Panel({
   className,
   ...rest
 }: PanelProps) {
-  const classes = ['panel', className].filter(Boolean).join(' ')
+  const classes = cx('panel', className)
   const Heading = headingLevel
 
   return (

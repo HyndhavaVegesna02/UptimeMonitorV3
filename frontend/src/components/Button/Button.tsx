@@ -1,4 +1,5 @@
 import type { ButtonHTMLAttributes } from 'react'
+import { cx } from '../../lib/cx'
 import './Button.css'
 
 export type ButtonVariant = 'primary' | 'secondary' | 'tertiary'
@@ -19,9 +20,7 @@ export function Button({
   className,
   ...rest
 }: ButtonProps) {
-  const classes = ['button', `button--${variant}`, className]
-    .filter(Boolean)
-    .join(' ')
+  const classes = cx('button', `button--${variant}`, className)
 
   return <button type={type} className={classes} {...rest} />
 }
