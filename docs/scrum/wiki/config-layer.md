@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: ed19084
-verified_sprint: sprint-22
+verified_sha: 08d91e7
+verified_sprint: sprint-25
 status: verified
 ---
 
@@ -151,3 +151,6 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - sprint-20: updated (STORY-016 — `ComponentConfig.statuspage_component_id` + `Config.statuspage_mapping()` for the live publish chain; sample config is now `config/apps/httpcheck.yaml` (sockshop dropped)). verified_sha = d9c2a77.
 - sprint-22: re-verified (STORY-016c). No config-layer change; the only `pyproject.toml` edit was a ruff
   `.agents/` exclude unrelated to the config loader/resolvers. verified_sha = ed19084.
+- sprint-25: re-verified (STORY-015a). No config-layer change; the only `pyproject.toml` edit was adding
+  `"frontend"` to the ruff exclude for the new SPA, unrelated to the config loader/resolvers.
+  verified_sha = 08d91e7.

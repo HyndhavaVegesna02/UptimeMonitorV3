@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 41   # 040 (config/topology) used; 014b/014c + 016a are split-children
+next_story_id: 42   # 041 = frontend pattern hardening (sprint-25 015a review); 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -195,7 +195,7 @@ stories:
   - id: STORY-015a
     title: Frontend shell — Vite/React/TS scaffold, six-tab nav, typed API client, Linear-guided theme system (dark+light), test harness
     file: docs/scrum/stories/STORY-015a-frontend-shell.md
-    status: ready
+    status: done    # accepted at Sprint 25 review (2026-07-02), 5/5. Built guided by DESIGN-linear.app.md; dark+light themes.
     points: 5
     priority: 15
     type: feature
@@ -247,6 +247,14 @@ stories:
     points: 2
     priority: 21
     type: feature
+    sprint: null
+  - id: STORY-041
+    title: Frontend pattern hardening — client error-wrapping, shared cx(), modular MSW handlers, catch-all route
+    file: docs/scrum/stories/STORY-041-frontend-pattern-hardening.md
+    status: ready   # from sprint-25 STORY-015a review (6 minors); land with/before the 2nd tab (015c)
+    points: 2
+    priority: 16
+    type: chore
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a

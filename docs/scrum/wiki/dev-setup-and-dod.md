@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: ed19084
-verified_sprint: sprint-22
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json]
+verified_sha: 08d91e7
+verified_sprint: sprint-25
 status: verified
 ---
 
@@ -23,11 +23,23 @@ status: verified
   5. `ruff check .`
   6. `ruff format --check .`
   All six are live as of STORY-033. Commands 2–4 became real during Sprint 0 (bootstrap); commands 5 and 6 were added in Sprint 11.
-  - `[tool.ruff]` carries `exclude = [".agents", ".venv"]` (`pyproject.toml`, STORY-016c): `.agents/` is
-    untracked third-party skills tooling (not project code) that otherwise makes `ruff check .` /
-    `ruff format --check .` exit non-zero; the exclude scopes ruff to project code without affecting
-    `backend/`/`migrations/`. `.venv` is already gitignored and conventionally skipped — listed for
-    defensiveness.
+  - `[tool.ruff]` carries `exclude = [".agents", ".venv", "frontend"]` (`pyproject.toml`; `.agents`
+    STORY-016c, `frontend` STORY-015a): `.agents/` is untracked third-party skills tooling that otherwise
+    makes `ruff check .` / `ruff format --check .` exit non-zero; `frontend/` is the JS/TS SPA (no Python)
+    excluded so the Python formatter/linter stays scoped to backend code. `.venv` is already gitignored
+    and conventionally skipped — listed for defensiveness.
+- **The frontend has its own three-command DoD gate (live as of STORY-015a, sprint-25), run from
+  `frontend/`** (`.scrum/definition-of-done.md` "Commands (frontend)"; commands in `frontend/package.json`):
+  1. `npm test` — Vitest run-once (`"test": "vitest run"`)
+  2. `npm run build` — `tsc -b && vite build` (the type-check is part of the build gate)
+  3. `npm run lint` — ESLint flat config (`eslint .`)
+  These are INDEPENDENT of the six backend commands: the frontend is isolated (no backend import, no
+  shared build step), so a backend-only story never runs the npm gates and a frontend-only story never
+  runs the six backend commands. The `.scrum/definition-of-done.md` frontend section stopped being a
+  "placeholder until then" note and became live in the same commit (`08d91e7`) that documented the
+  commands + `frontend/` layout in CLAUDE.md (command-sync agreement). Toolchain: Vite + React +
+  TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
+  npm on Node 24. Playwright/E2E is deferred to a later integration story.
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
   `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
@@ -102,3 +114,8 @@ status: verified
   `ruff format --check .` stay green against untracked third-party skills tooling under `.agents/`
   (84 ruff errors there, none in project code). No contract or DoD command changed (still six).
   Re-verified at ed19084.
+- sprint-25: STORY-015a stood up the frontend zone (Vite/React/TS SPA under `frontend/`) and made the
+  three frontend DoD commands (`npm test` / `npm run build` / `npm run lint`) live in
+  `.scrum/definition-of-done.md` (replacing the placeholder note), documented in CLAUDE.md + added
+  `"frontend"` to the ruff `exclude` in the same commit (`08d91e7`). The six backend commands are
+  unchanged and untouched by frontend work. verified_sha → 08d91e7.

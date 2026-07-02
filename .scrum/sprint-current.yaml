@@ -1,8 +1,8 @@
 # YourTeam active sprint board.
 sprint: 25
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: null
+closed: 2026-07-02
 goal: "Stand the frontend zone back up — second attempt, new design direction. Sprint 23-24's UI
   (DESIGN-airtable.md era) was fully reverted by the PO in 521764c; this sprint rebuilds the
   frontend shell (STORY-015a) guided by DESIGN-linear.app.md as a reference to think with, not
@@ -51,13 +51,65 @@ start_tag: sprint-25-start
 stories:
   - id: STORY-015a
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all NINE commands (6 backend + 3 frontend)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 08d91e7 (clean committed tree). BACKEND: pytest 426
+          passed (throwaway postgres:16 via dev_db.py); lint-imports 5 kept / 0 broken;
+          check_fk_direction 11 FKs / 0 violations; `python -m alembic upgrade head` exit 0 (no new
+          migration); ruff check 'All checks passed!'; ruff format --check '153 files already
+          formatted'. FRONTEND (from frontend/): npm test 63 passed / 13 files / 0 skipped; npm run
+          build (tsc -b && vite build) exit 0; npm run lint (eslint) exit 0. Note: alembic run via
+          `python -m alembic` (the alembic.exe shim is blocked by an Application Control policy on
+          this box)."
+        commit: 08d91e7
+        at: 2026-07-02T16:20:00+05:30
+    review:
+      first_pass: "spec PASS (all 7 AC MET) / quality APPROVE (0 Critical, 0 Major). Spec ran the
+        three frontend gates itself, grep-verified no raw hex in components outside styles/, and
+        COMPUTED WCAG ratios in both themes (every ink-as-text token >=4.5:1 on every surface;
+        worst ink-subtle 5.14:1; ink-tertiary confirmed unused as text; accent is border/indicator
+        only, never text). Confirmed AC2/AC3/AC5 tests DRIVE the named path (nav click switches the
+        panel; error->retry asserts callCount==2; theme system-default/override/persist covered) —
+        not name-matched. AC7 doc-sync + DoD activation are in the SAME commit (08d91e7). Quality
+        confirmed the fetch hook is race-safe (cancelled-guard + attempt-keyed retry), the theme
+        system is flash-free and consistent between inline script and React, the token layer is
+        airtight, and the tests assert real behavior via accessible roles/text with MSW as the only
+        I/O mock — nothing lies, nothing disabled (clean against the project's three prior
+        'green-test-wrong-path' incidents). Backend diff empty; pyproject only the ruff exclude line.
+        KEEP recommendation."
+      fix: "None — both reviewers passed first-pass with zero blocking findings; no fix loop."
+      second_pass: null
+      open_minors:
+        - "client.ts::getJson wraps fetch-rejection + non-2xx into ApiError, but a 2xx with a
+          malformed body throws a raw SyntaxError from response.json() that escapes unwrapped
+          (graceful — the probe catch handles any Error, no crash — but inconsistent error type on a
+          path all six tabs copy). -> STORY-041."
+        - "Button.tsx / Panel.tsx duplicate the `[...].filter(Boolean).join(' ')` classnames idiom;
+          a one-line shared cx() helper before six tabs copy the primitives. -> STORY-041."
+        - "mocks/handlers.ts is a single flat array + one fixture export — the shared append-point
+          015b-015g all edit; per-feature handler modules would keep a tab story in its own files.
+          -> STORY-041."
+        - "AppShell.tsx has no catch-all/'*' route; an unknown path renders Nav + empty <main>
+          (minor UX gap). -> STORY-041."
+        - "statusMapping.ts unknown/partial_outage/major_outage branches not directly unit-tested
+          (only operational/degraded via the probe); explicitly provisional code pending 015b."
+        - "Sub-4px pixel literals (1px/2px/8px borders, badge dot) sit below the 4px spacing scale
+          so cannot use a spacing token — consistent with the color-focused 'tokens, not hex' rule,
+          noted only."
+      ac_note: "No live/manual-only AC in this story (contrast to STORY-016b's AC6): all seven AC
+        are mechanically verifiable and were verified in-session. No deferred/unexercised path."
+    blast_radius_resolved: true   # compile pass @ branch HEAD 08d91e7: NEW frontend-zone.md article;
+                                  # dev-setup-and-dod updated (frontend 3-command gate live + ruff
+                                  # 'frontend' exclude + code_refs +frontend/package.json); api-five-file,
+                                  # architecture-boundary, config-layer re-verified (pyproject 'frontend'
+                                  # ruff-exclude only, Facts unaffected). Mechanical sweep: 0 stale /
+                                  # 0 broken links across all 12 articles. verified_sha bumped to 08d91e7
+                                  # (re-stamped to the merge SHA at close per edge-case #4).
 hotfixes: []
 interrupts: []

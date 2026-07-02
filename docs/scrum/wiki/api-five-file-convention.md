@@ -1,8 +1,8 @@
 ---
 title: API Five-File Feature Convention
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/composition/app.py, pyproject.toml]
-verified_sha: ed19084
-verified_sprint: sprint-22
+verified_sha: 08d91e7
+verified_sprint: sprint-25
 status: verified
 ---
 
@@ -25,4 +25,10 @@ status: verified
   - `GET /history` (`api/v1/history/controller.py::get_history`) — returns per-signal observation DTOs (`list[ObservationDTO]`, most-recent first) via `ObservationRepository.in_window`. Empty window → 200 + `[]`. `ObservationDTO` omits `source`/`raw_ref`/`source_event_id` (client-facing subset of `SignalObservation`).
 - The `publications` feature (STORY-037) provides:
   - `GET /publications` (`api/v1/publications/controller.py::list_publications`) — returns recent `PublicationDTO` records most-recent-first via `PublicationsService.list_recent`. Empty repo → 200 + `[]`. `PublicationDTO` (`api/v1/publications/models.py::PublicationDTO`) has fields: `id`, `component_id`, `status` (string), `published_at`, `proposal_id` — distinct from the `Publication` domain type. `publication_repo` is wired into `create_app` + `app.state` (default: `PostgresPublicationRepository(engine)`); `get_publication_repo` added to `src/api/dependencies.py`. `src.api.v1.publications` added to the `api-feature-independence` contract in `pyproject.toml` (lint-imports: 5 kept / 0 broken).
+
+## History
+- sprint-25: re-verified (STORY-015a). The only `pyproject.toml` change was adding `"frontend"` to
+  `[tool.ruff] exclude` — a ruff-scope tweak for the new frontend SPA, unrelated to the
+  `api-feature-independence` contract or the five-file convention this article describes. 5 contracts
+  kept / 0 broken, unchanged. verified_sha → 08d91e7.
 
