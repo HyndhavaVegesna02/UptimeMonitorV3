@@ -1,4 +1,4 @@
-import type { ComponentDTO } from './types'
+import type { ComponentDTO, DecisionRequest, DecisionResponse, ProposalDTO } from './types'
 
 /**
  * Fetch-based typed API client (STORY-015a AC3). Single base-URL seam: every
@@ -44,7 +44,60 @@ async function getJson<T>(path: string): Promise<T> {
   }
 }
 
+async function postJson<TResponse, TBody>(
+  path: string,
+  body: TBody,
+): Promise<TResponse> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    throw new ApiError(`Network error while requesting ${path}`)
+  }
+
+  if (!response.ok) {
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+    )
+  }
+
+  try {
+    return (await response.json()) as TResponse
+  } catch {
+    throw new ApiError(
+      `Malformed JSON response from ${path}`,
+      response.status,
+    )
+  }
+}
+
 /** The AC3 proving endpoint: `GET /api/v1/components`. */
 export function getComponents(): Promise<ComponentDTO[]> {
   return getJson<ComponentDTO[]>('/v1/components')
+}
+
+/** `GET /api/v1/approvals` (STORY-015c AC1) — the open status proposals. */
+export function getApprovals(): Promise<ProposalDTO[]> {
+  return getJson<ProposalDTO[]>('/v1/approvals')
+}
+
+/**
+ * `POST /api/v1/decisions/{proposal_id}` (STORY-015c AC2). Rejects with a
+ * typed `ApiError` carrying `.status` on any non-2xx response — the
+ * Approvals tab branches on 409 (lost race — proposal no longer open) and
+ * 404 (proposal gone) distinctly from any other failure.
+ */
+export function postDecision(
+  proposalId: number,
+  body: DecisionRequest,
+): Promise<DecisionResponse> {
+  return postJson<DecisionResponse, DecisionRequest>(
+    `/v1/decisions/${proposalId}`,
+    body,
+  )
 }
