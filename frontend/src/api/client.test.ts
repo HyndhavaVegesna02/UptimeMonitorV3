@@ -34,4 +34,13 @@ describe('getComponents', () => {
 
     await expect(getComponents()).rejects.toBeInstanceOf(ApiError)
   })
+
+  it('throws a typed ApiError when a 2xx response body is not valid JSON', async () => {
+    server.use(
+      http.get('/api/v1/components', () => HttpResponse.text('not json')),
+    )
+
+    await expect(getComponents()).rejects.toBeInstanceOf(ApiError)
+    await expect(getComponents()).rejects.not.toBeInstanceOf(SyntaxError)
+  })
 })

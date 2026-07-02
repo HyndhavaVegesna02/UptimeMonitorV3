@@ -34,7 +34,14 @@ async function getJson<T>(path: string): Promise<T> {
     )
   }
 
-  return (await response.json()) as T
+  try {
+    return (await response.json()) as T
+  } catch {
+    throw new ApiError(
+      `Malformed JSON response from ${path}`,
+      response.status,
+    )
+  }
 }
 
 /** The AC3 proving endpoint: `GET /api/v1/components`. */
