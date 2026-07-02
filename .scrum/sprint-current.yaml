@@ -1,87 +1,85 @@
 # YourTeam active sprint board.
-sprint: 24
+sprint: 22
 status: closed        # none | active | review | closed | aborted
 started: 2026-06-29
 closed: 2026-06-29
-goal: "Ship the first REAL frontend tab — the Dashboard (component statuses) — on the STORY-015a shell.
-  This SETS the per-tab pattern (a dedicated page component + a data hook + a DESIGN-airtable.md-styled
-  layout + loading/empty/error states + MSW-backed Vitest tests) that every later tab (015c–015g) copies.
-  The Dashboard consumes the already-wired GET /api/v1/components (list[ComponentDTO]{id,name,status}); the
-  shell proved the endpoint, so this story promotes that proving example into a polished, tested tab body —
-  status cards/list using the four health tokens (up/down/degraded/maintenance) + icon+label, never color
-  alone. Folds in the Sprint-23 carry-forward: extract the Dashboard out of App.tsx into its own
-  component/hook, removing the eslint-disable react-hooks/set-state-in-effect smell. Single story, 3 pts."
-branch: sprint-24
-start_tag: sprint-24-start
-# Capacity: velocity last-3 (sprints 21,22,23) = 5,3,5 -> mean ~4.3. Committed 3 (STORY-015b) — deliberate
-# under-commit: the FIRST real tab is pattern-setting (like the shell sprint); get the per-tab pattern right
-# before fanning out to 015c–015g. PO chose Dashboard-only over Dashboard+Publications (5).
+goal: "Close the live ingest gap surfaced by STORY-016b's AC6 run: the PO's monitor emits TWO event types
+  per execution — http_monitor_execution (the canonical per-run verdict) + http_step_execution (the per-step
+  row), sharing the same event.id. The dispatch registry only knew http_step_execution, so the live loop
+  crashed with UnsupportedMonitorTypeError on the monitor_execution row; and normalizing both would collide
+  on UNIQUE(observations.source_event_id). Reconcile the adapter to ingest exactly ONE canonical observation
+  per execution: build_dql_query filters event.type == http_monitor_execution (excludes the duplicate step
+  row at source); dispatch registers http_monitor_execution -> normalize_http_row (the row carries every
+  field the normalizer already reads, so no normalizer-body change). Reconcile the recorded fixture + the 3
+  consuming test files to the canonical type. Then re-run the loop against the live tenant to confirm green
+  (AC6, the manual internal verification STORY-016b deferred). Single story, 3 pts."
+branch: sprint-22
+start_tag: sprint-22-start
+# Capacity: velocity last-3 (sprints 19,20,21) = 5,5,5 -> mean 5.0. Committed 3 (STORY-016c) — a deliberate
+# under-commit: focused single-fix reconciliation sprint, as the PO scoped it.
 #
-# IMPLEMENTATION: PO handoff (external implementer) — the orchestrator emits a self-contained implementer
-# prompt at lock (2026-06-28 agreement). The orchestrator runs the back half: the FRONTEND DoD gate (4 npm
-# commands) + confirms the Python gate still green (no backend change), the Opus spec + quality reviewers
-# (3 pts -> full reviewer pipeline; quality uses vercel-react-best-practices + DESIGN-airtable.md fidelity),
-# the wiki blast-radius sweep, then review/verdict/merge/retro. PO triggers the back half by pasting the
-# implementer summary or saying "do your review".
+# WORKFLOW: Sonnet implementer (2026-06-24 model rule) drives plan.md as the self-contained contract. The
+# orchestrator then runs the FULL six-command gate, the Opus spec + quality reviewers (3 pts -> full
+# reviewer pipeline), the mechanical wiki blast-radius sweep, then review/verdict/merge/retro. The live
+# AC6 re-run is a manual PO-observed step in the back half.
 #
-# PIPELINE: STORY-015b (3) -> external impl + Opus spec & quality reviewers + frontend DoD gate.
+# PIPELINE: STORY-016c (3) -> impl (Sonnet) + Opus spec & quality reviewers + DoD gate.
 #
-# DoD: frontend 4-command gate (typecheck/lint/test/build, from frontend/). NO backend change expected ->
-# Python six-command gate must stay green. NO new generator scaffold this sprint (scaffold-hygiene
-# agreement, 2026-06-29, is N/A — but any new dependency added must be justified).
+# DoD: NO new migration. NO new lint contract (executor/normalizer/dispatch stay in adapters). lint-imports
+# count stays 5. All six gates green on a CLEAN committed tree.
 #
-# DESIGN: DESIGN-airtable.md (repo root) is the binding visual design; reuse the shell's token layer + the
-# four health tokens. See the `frontend-zone` + memory `frontend-design-reference`.
+# PROVENANCE: scope derived from the 2026-06-29 STORY-016b AC6 live run + a read-only re-probe of the PO's
+# tenant (https://bqm75769.apps.dynatrace.com, monitor HTTP_CHECK-DB5792CB88D14CF4 "TodoMVC Homepage
+# Monitor"): 50 records = 26 http_monitor_execution + 24 http_step_execution, sharing event.id/timestamp.
+# Real shape saved to memory `dynatrace-grail-real-schema` (CORRECTION/EXPANSION section).
 #
-# Baseline at lock: branch sprint-24 cut from main @ cd015ab (sprint-23 merged). Frontend gate green there.
-# Agreements in force: pure-core/mockable-edges (MSW, no live API in tests), real-component tests (RTL drives
-# the real Dashboard; MSW mocks only the network edge), clean-committed-tree, command-sync (only if a
-# command changes — none expected), merge-is-last-step, mechanical wiki sweep, scaffold-hygiene (N/A this
-# sprint). See plan.md.
+# Baseline at lock: branch sprint-22 cut from main @ 654829c (sprint-21 merged). Cheap gates green there.
+# Agreements in force: composition/assembly-tests-build-real-objects (2026-06-29), clean-committed-tree
+# (2026-06-29), merge-is-last-step (2026-06-29), mechanical wiki sweep (2026-06-28), named-domain-errors,
+# empty+boundary tests (2026-06-25), DB-gated work uses the shared harness (2026-06-24). See plan.md.
 stories:
-  - id: STORY-015b
+  - id: STORY-016c
     points: 3
     board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # external impl (PO handoff) + Opus spec & quality reviewers + frontend DoD gate
+    pipeline: gate+reviewers   # 3 pts -> impl (Sonnet) + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
     paused_at_commit: null
     dod_evidence:
-      - command: "frontend gate (4) + backend gate (6)"
+      - command: "all SIX commands"
         exit_code: 0
-        output_tail: "orchestrator-verified at cef0f82 (clean committed tree). FRONTEND (from frontend/):
-          typecheck 0; lint 0; test -> 19 passed (2 files: 4 shell + 15 dashboard); build 0. BACKEND:
-          byte-identical to ad7d8f2 (frontend-only commits) -> Python six-command gate unaffected;
-          implementer reported all 6 green (pytest 424 + 2 known dev_db container-race flakes that pass in
-          isolation = 426)."
-        commit: cef0f82
-        at: 2026-06-29T20:25:00+05:30
+        output_tail: "orchestrator-verified at ed19084 (clean committed tree): pytest 426 passed;
+          lint-imports 5 kept / 0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head
+          exit 0 (no new migration); ruff check 'All checks passed!'; ruff format --check '153 files already
+          formatted'. DB-gated gates ran against the shared throwaway postgres:16 harness."
+        commit: ed19084
+        at: 2026-06-29T11:45:00+05:30
     review:
-      first_pass: "spec PASS + quality APPROVE, ZERO blocking (both Opus, first-pass). Spec verified AC1-AC3:
-        status->badge asserted via accessible TEXT (not color), real MSW empty + 500->retry round-trips, the
-        shell eslint-disable set-state-in-effect GONE (hook owns the effect), other five tabs still
-        placeholders. Quality verified: useComponents hook clean (cancelled-flag guard, counter-retrigger),
-        no components-in-components (sub-components module-scope), real <table>/<th scope>, appended CSS is
-        token-only, tests genuinely drive behavior. Non-blocking: degraded-badge label contrast ~2.2:1
-        (mustard-as-text, inherited from the shell), role=status on static badges (SR live-region spam),
-        redundant mountedRef, dead <tr> key, empty .dashboard-error rule, off-grid 10px paddings, untested
-        Refresh click; + a pattern note to extract StatusBadge/LoadingSkeleton/ErrorPanel into a shared
-        components/ layer by tab 2-3."
-      fix: "PO authorized orchestrator inline fix (A-E). A: health-badge variants tint border/bg + color the
-        ICON only, label text stays --colors-ink (degraded now >=4.5:1) — fixes the inherited shell contrast
-        across the app. B: role=status -> role=img on static badges. C: dropped redundant mountedRef (the
-        cancelled closure flag suffices). D: removed dead <tr> key + moved ErrorPanel coral border/tint into
-        .dashboard-error. E: added a behavioral Refresh-click re-fetch test (-> 19 tests). Gate re-run green.
-        Commit cef0f82. The bigger refactors (data-driven badge, shared components/ extraction, off-grid
-        padding, shell .health-badge--* rgba tokenization) deferred to STORY-041 (frontend pattern hardening)."
-      second_pass: "orchestrator re-verified all 4 frontend gates green on the clean committed tree cef0f82;
-        role=status + mountedRef confirmed removed; no raw hex/rgba in components. AC1-AC3 MET."
+      first_pass: "spec PASS (no blocking) / quality APPROVE (no blocking). Spec re-ran the 44 consuming
+        tests and confirmed AC1-AC5 are genuinely satisfied by behavior-driving tests (AC5 dedup chain is
+        not a tautology: query-filter assertion + single-observation + step-row-raises). Quality confirmed
+        the fix is surgical (executor/normalizer/_assembly/health_mapping UNTOUCHED — zero diff), tests
+        build real objects, and explicitly blessed the pyproject `[tool.ruff] exclude=['.agents','.venv']`
+        as the correct DoD-gate fix (.agents = untracked third-party skills tooling, 84 ruff errors, none
+        in project code). KEEP recommendation. http_step_execution registry removal endorsed by both as
+        the right call (states intent; fail-loud defense-in-depth behind the query filter)."
+      fix: "One cosmetic nit folded in (both reviewers): replaced `__import__('datetime').timedelta` with
+        the module-level `timedelta` import in the AC5 test. Commit ed19084. No behavioral change."
+      second_pass: "orchestrator re-verified all six gates green on the clean committed tree ed19084;
+        AC1-AC5 MET; AC6 (manual live verification) PASSED in-session."
+      ac6_live: "PASSED. `python -m src.composition.run` against the live tenant
+        (https://bqm75769.apps.dynatrace.com, monitor HTTP_CHECK-DB5792CB88D14CF4) ingested 119 real
+        observations with NO UnsupportedMonitorTypeError; health UP, two synthetic locations (…005C/…0060),
+        ns->ms latency (~600-920ms); distinct source_event_id (119) == total (119) -> no
+        UNIQUE(source_event_id) collision, proving the query-filter dedup works end to end. The real failure
+        result.status code/message remains TBD (no failing run could be induced this sprint) -> the health
+        mapping stays fail-loud (UnknownVendorStatusError) until observed."
       open_minors:
-        - "Deferred to STORY-041 (frontend pattern hardening): extract shared StatusBadge/LoadingSkeleton/ErrorPanel; data-drive getStatusBadge; fix off-grid 10px paddings; tokenize the shell .health-badge--* rgba border/bg."
-        - "Inter still via a runtime Google Fonts @import (shell-level) — self-host follow-up."
-        - "External implementer landed the story in ONE commit (5aaa4ea) despite commit-after-green cadence — retro note (external, can't enforce)."
-    blast_radius_resolved: true   # compile pass @ 4e8ecfd: frontend-zone.md updated (Dashboard tab + per-tab
-                                  # pattern + the resolved eslint-disable + badge-contrast note) + re-stamped
-                                  # to cef0f82; 3 new files added to its code_refs. Sweep: 0 stale / 0 broken.
+        - "No empty-`records` -> [] explicit test (pre-existing gap, not introduced by 016c; normalize_rows([]) is trivially [] via map). Candidate one-line follow-up chore."
+        - "Real DOWN/DEGRADED result.status mapping still TBD — needs an induced failing run on the live monitor; map_synthetic_status stays fail-loud until then."
+    blast_radius_resolved: true   # compile pass @ 61f4eca: 6 articles re-verified at ed19084
+                                  # (dynatrace-adapter content + AC6 note; dev-setup-and-dod ruff-exclude
+                                  # note; ingest/architecture-boundary/config-layer/api-five-file re-verify).
+                                  # Mechanical sweep: 0 stale / 0 broken links across all 11.
 hotfixes: []
 interrupts: []

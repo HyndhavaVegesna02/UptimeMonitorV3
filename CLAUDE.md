@@ -177,31 +177,3 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 | git               | configured                    | version control                           |
 
 No `psql` client is installed. Neon/Dynatrace/Statuspage credentials are read from `.env` or environment variables for the live loop.
-
-## Frontend (Zone 7) key-commands
-
-Run from the `frontend/` directory:
-
-| Task          | Command           |
-| ------------- | ----------------- |
-| Run dev server| `npm run dev`      |
-| Build app     | `npm run build`    |
-| Type check    | `npm run typecheck`|
-| Lint code     | `npm run lint`     |
-| Run tests     | `npm run test`     |
-
-The four DoD frontend gate commands (run from `frontend/`) are:
-`npm run typecheck` · `npm run lint` · `npm run test` · `npm run build`
-
-## Frontend Tooling Inventory
-
-| Tool                  | Version / note            | Purpose                                   |
-| --------------------- | ------------------------- | ----------------------------------------- |
-| Node.js               | v24                       | JS Runtime                                |
-| npm                   | v11                       | JS Package Manager                        |
-| Vite                  | v8 (React 18 SPA)         | Build tool and dev server                 |
-| Vitest                | test runner (DoD gate)    | `npm run test` must exit 0                |
-| React Testing Library | component rendering tests | RTL asserts user-visible behavior         |
-| MSW                   | mock service worker v2    | Mock network edge for tests               |
-| Playwright            | Deferred                  | E2E testing (deferred to a later sprint)  |
-

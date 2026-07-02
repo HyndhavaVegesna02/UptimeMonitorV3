@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes]
-verified_sha: ad7d8f2
-verified_sprint: sprint-23
+verified_sha: ed19084
+verified_sprint: sprint-22
 status: verified
 ---
 
@@ -23,15 +23,6 @@ status: verified
   5. `ruff check .`
   6. `ruff format --check .`
   All six are live as of STORY-033. Commands 2–4 became real during Sprint 0 (bootstrap); commands 5 and 6 were added in Sprint 11.
-  These six are the **backend** gate (Zones 1–6, the Python tree).
-- **The frontend (Zone 7) has its own four-command DoD gate** (STORY-015a, Sprint 23), run from `frontend/`,
-  each must exit 0 — parallel to, not part of, the six-command backend gate (`CLAUDE.md` "Frontend (Zone 7)"):
-  1. `npm run typecheck` (`tsc --noEmit`)
-  2. `npm run lint` (eslint: TS + react-hooks)
-  3. `npm run test` (`vitest run`)
-  4. `npm run build` (`vite build`)
-  The frontend tree (`frontend/`) is isolated from the Python tree; a frontend-only change leaves the
-  backend gate untouched and vice-versa. See [[frontend-zone]].
   - `[tool.ruff]` carries `exclude = [".agents", ".venv"]` (`pyproject.toml`, STORY-016c): `.agents/` is
     untracked third-party skills tooling (not project code) that otherwise makes `ruff check .` /
     `ruff format --check .` exit non-zero; the exclude scopes ruff to project code without affecting
@@ -111,7 +102,3 @@ status: verified
   `ruff format --check .` stay green against untracked third-party skills tooling under `.agents/`
   (84 ruff errors there, none in project code). No contract or DoD command changed (still six).
   Re-verified at ed19084.
-- sprint-23: STORY-015a stood up Zone 7 (frontend) and its own four-command DoD gate
-  (`npm run typecheck`/`lint`/`test`/`build`, from `frontend/`) — parallel to the six-command backend gate;
-  CLAUDE.md gained a "Frontend (Zone 7)" key-commands + tooling-inventory section. The backend six-command
-  gate is unchanged. See [[frontend-zone]]. Re-verified at ad7d8f2.
