@@ -5,6 +5,12 @@ Dossier §8 (step 5: "hand rows to the pipeline"), §10 (collapse→streak→ant
 
 All tests are PURE FAKE TESTS — no DB, no Statuspage, no live creds.
 The orchestrator is composition wiring; no domain logic lives here.
+
+STORY-045 adds: a recovery-trigger write-back test (AC2b — a DecideService wired
+with `StatusWritebackPublisher` writes `components.status` back after a recovery
+publish) and the AC5 end-to-end regression (degrade → approve → recover, proving
+the previously-unreachable recovery branch is now reachable once approve writes
+back a degraded `current_status`).
 """
 
 from __future__ import annotations
@@ -17,14 +23,18 @@ from src.composition.config import (
     Config,
     SignalConfig,
 )
+from src.composition.orchestrate import orchestrate_signal
+from src.composition.publish_helper import RecordingPublisher, StatusWritebackPublisher
 from src.core.domain import (
     Component,
     ComponentStatus,
     Health,
     Provenance,
     SignalObservation,
+    StatusChange,
 )
 from src.core.domain.proposal import ProposalState
+from src.core.services.approval import ApprovalService
 from src.core.services.decide import DecideAction, DecideService
 from src.core.services.pipeline import AntiFlapThresholds
 
@@ -366,6 +376,61 @@ class TestOrchestrateSignalAC2:
         assert publisher.published[0].component_id == component_id
         assert publisher.published[0].status == ComponentStatus.OPERATIONAL
 
+    def test_recovery_publish_writes_back_component_status(self):
+        """STORY-045 AC2 (recovery trigger): a DecideService wired with
+        StatusWritebackPublisher writes components.status back after the
+        recovery publish — the write-back applies at BOTH trigger points, not
+        just the approve trigger (see test_decisions.py's HTTP-level proof for
+        the approve trigger)."""
+        from fakes import (
+            FakeClock,
+            FakeComponentRepository,
+            FakeMaintenanceRepository,
+            FakeObservationRepository,
+            FakeProposalRepository,
+            RecordingStatusPublisher,
+        )
+
+        signal_key = "checkout-http"
+        component_id = "checkout"
+        cfg = _build_config(
+            signal_key=signal_key, component_id=component_id, recovery=2
+        )
+
+        now = _utc(10, 10, 0)
+        obs_repo = FakeObservationRepository()
+        obs_repo.saved = [
+            _obs(signal_key, _utc(10, 8, 30), Health.UP),
+            _obs(signal_key, _utc(10, 9, 30), Health.UP),
+        ]
+
+        comp = Component(
+            id=component_id,
+            name="Checkout",
+            status=ComponentStatus.DEGRADED,
+            app_id="sockshop",
+        )
+        component_repo = FakeComponentRepository(components=[comp])
+        maintenance_repo = FakeMaintenanceRepository()
+        proposal_repo = FakeProposalRepository()
+        clock = FakeClock(now)
+        delegate = RecordingStatusPublisher()
+        publisher = StatusWritebackPublisher(delegate, component_repo)
+        decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+        action = orchestrate_signal(
+            signal_key=signal_key,
+            config=cfg,
+            observation_repo=obs_repo,
+            maintenance_repo=maintenance_repo,
+            component_repo=component_repo,
+            decide_service=decide_service,
+            clock=clock,
+        )
+
+        assert action == DecideAction.PUBLISHED_RECOVERY
+        assert component_repo.get(component_id).status == ComponentStatus.OPERATIONAL
+
     def test_recovery_while_pending_obsoletes_proposal(self):
         """Recovery streak while a degradation is pending → OBSOLETED, nothing published."""
         from fakes import (
@@ -702,3 +767,147 @@ def test_orchestrate_signal_noop_when_component_not_found():
 
     assert action == DecideAction.NOOP
     assert proposal_repo.list_open() == []
+
+
+# ---------------------------------------------------------------------------
+# STORY-045 AC5 — end-to-end regression: degrade → approve → recover
+# ---------------------------------------------------------------------------
+
+
+def test_degrade_approve_recover_end_to_end():
+    """AC5: the previously-unreachable recovery branch is now reachable.
+
+    Before STORY-045, `components.status` was never written after seeding, so
+    `decide`'s current_status was frozen at OPERATIONAL and a recovery could
+    never fire (nothing is better than operational). This drives the full loop
+    through fakes only, sharing ONE publisher chain (StatusWritebackPublisher(
+    RecordingPublisher(statuspage_stand_in), component_repo)) between
+    `DecideService` (the recovery trigger) and `ApprovalService` (the approve
+    trigger) — exactly as both composition roots do in production (D2):
+
+      1. Cycle 1 — sustained DOWN: a degradation proposal opens; nothing is
+         published; components.status is untouched.
+      2. Approve — the operator approves: publish observed + a publications
+         row recorded + components.status now DEGRADED.
+      3. Cycle 2 — sustained UP: decide reads current_status=DEGRADED (written
+         back at step 2), so the UP streak is a RECOVERY — PUBLISHED_RECOVERY —
+         and components.status returns to OPERATIONAL.
+    """
+    from fakes import (
+        FakeClock,
+        FakeComponentRepository,
+        FakeMaintenanceRepository,
+        FakeObservationRepository,
+        FakeProposalRepository,
+        FakePublicationRepository,
+        RecordingStatusPublisher,
+    )
+
+    signal_key = "checkout-http"
+    component_id = "checkout"
+    # major=5, partial=4, degraded=2, recovery=2: 2 consecutive DOWN cycles
+    # clears `degraded` but neither `partial` nor `major` — a plain DEGRADED
+    # proposal (not the MAJOR_OUTAGE the other AC1 tests exercise).
+    cfg = _build_config(
+        signal_key=signal_key,
+        component_id=component_id,
+        major=5,
+        partial=4,
+        degraded=2,
+        recovery=2,
+    )
+
+    comp = Component(
+        id=component_id,
+        name="Checkout",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="sockshop",
+    )
+    component_repo = FakeComponentRepository(components=[comp])
+    maintenance_repo = FakeMaintenanceRepository()
+    proposal_repo = FakeProposalRepository()
+    publication_repo = FakePublicationRepository()
+
+    # ONE shared chain — the D2 shape, built from fakes standing in for the
+    # DB (component/publication repos) and the Statuspage HTTP edge.
+    publish_clock = FakeClock(_utc(9, day=24))
+    statuspage_stand_in = RecordingStatusPublisher()
+    publisher = StatusWritebackPublisher(
+        RecordingPublisher(statuspage_stand_in, publication_repo, publish_clock),
+        component_repo,
+    )
+
+    decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+    approval_service = ApprovalService(
+        proposal_repo=proposal_repo, clock=publish_clock, publisher=publisher
+    )
+
+    # --- Cycle 1: sustained DOWN -> degradation proposal opened, nothing
+    # published, status unchanged. ---
+    obs_repo_1 = FakeObservationRepository()
+    obs_repo_1.saved = [
+        _obs(signal_key, _utc(10, 2, 30), Health.DOWN),
+        _obs(signal_key, _utc(10, 3, 30), Health.DOWN),
+    ]
+    clock_1 = FakeClock(_utc(10, 4, 0))
+
+    action_1 = orchestrate_signal(
+        signal_key=signal_key,
+        config=cfg,
+        observation_repo=obs_repo_1,
+        maintenance_repo=maintenance_repo,
+        component_repo=component_repo,
+        decide_service=decide_service,
+        clock=clock_1,
+    )
+
+    assert action_1 == DecideAction.PROPOSED
+    assert statuspage_stand_in.published == []
+    assert publication_repo.list_recent() == []
+    assert component_repo.get(component_id).status == ComponentStatus.OPERATIONAL
+
+    open_proposals = proposal_repo.list_open()
+    assert len(open_proposals) == 1
+    proposal = open_proposals[0]
+    assert proposal.to_status == ComponentStatus.DEGRADED
+
+    # --- Approve: publish observed + publications row recorded + status now
+    # DEGRADED (AC1/AC2 approve trigger). ---
+    approval_service.approve(
+        proposal_id=proposal.id, actor="ops-1", notes="confirmed outage"
+    )
+
+    assert statuspage_stand_in.published == [
+        StatusChange(component_id=component_id, status=ComponentStatus.DEGRADED)
+    ]
+    pubs = publication_repo.list_recent()
+    assert len(pubs) == 1
+    assert pubs[0].component_id == component_id
+    assert pubs[0].status == ComponentStatus.DEGRADED
+    assert component_repo.get(component_id).status == ComponentStatus.DEGRADED
+
+    # --- Cycle 2: sustained UP while current_status=DEGRADED -> the
+    # previously-unreachable recovery branch fires (AC5). ---
+    obs_repo_2 = FakeObservationRepository()
+    obs_repo_2.saved = [
+        _obs(signal_key, _utc(10, 18, 30), Health.UP),
+        _obs(signal_key, _utc(10, 19, 30), Health.UP),
+    ]
+    clock_2 = FakeClock(_utc(10, 20, 0))
+
+    action_2 = orchestrate_signal(
+        signal_key=signal_key,
+        config=cfg,
+        observation_repo=obs_repo_2,
+        maintenance_repo=maintenance_repo,
+        component_repo=component_repo,
+        decide_service=decide_service,
+        clock=clock_2,
+    )
+
+    assert action_2 == DecideAction.PUBLISHED_RECOVERY
+    assert statuspage_stand_in.published[-1] == StatusChange(
+        component_id=component_id, status=ComponentStatus.OPERATIONAL
+    )
+    assert len(publication_repo.list_recent()) == 2
+    assert component_repo.get(component_id).status == ComponentStatus.OPERATIONAL
