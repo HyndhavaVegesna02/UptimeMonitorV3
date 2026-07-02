@@ -207,7 +207,7 @@ stories:
     points: 3
     priority: 16
     type: feature
-    sprint: null
+    sprint: 26
   - id: STORY-015c
     title: Approvals tab — pending proposals list + approve/reject
     file: docs/scrum/stories/STORY-015c-approvals-tab.md
@@ -251,11 +251,11 @@ stories:
   - id: STORY-041
     title: Frontend pattern hardening — client error-wrapping, shared cx(), modular MSW handlers, catch-all route
     file: docs/scrum/stories/STORY-041-frontend-pattern-hardening.md
-    status: ready   # from sprint-25 STORY-015a review (6 minors); land with/before the 2nd tab (015c)
+    status: ready   # from sprint-25 STORY-015a review (6 minors); committed to sprint 26 (before 015b)
     points: 2
     priority: 16
     type: chore
-    sprint: null
+    sprint: 26
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a
     title: Config layer — per-app config files + fail-fast loader + in-memory resolvers

@@ -12,21 +12,32 @@ that 015c–015g copy.
 
 ## Description
 The operator's landing view: every monitored component with its current health, at a glance.
-Each component row/card shows name, health StatusBadge (dot/icon + label — never color alone),
-and last-observed timestamp (mono). Health tokens from the shell drive the badge; an unknown
-status value renders a neutral "unknown" badge rather than crashing.
+Each component row shows name + health StatusBadge (dot/icon + label — never color alone).
+Health tokens from the shell drive the badge; an unknown status value renders a neutral
+"unknown" badge rather than crashing.
+
+**API contract note (verified 2026-07-02):** `backend/src/api/v1/components/models.py::ComponentDTO`
+exposes exactly `{id, name, status}` — there is NO last-observed timestamp, latency, or location
+field. This tab renders only what the DTO provides (name + status); a richer per-component
+last-observed/latency view would require a backend DTO change and is out of scope here (candidate
+future story). The shell already proved this endpoint end-to-end in
+`features/dashboard/ComponentsProbe.tsx` (STORY-015a AC3) — 015b promotes that proving example
+into the real, extracted Dashboard tab.
 
 ## Acceptance Criteria
 - [ ] AC1: The Dashboard tab fetches `GET /api/v1/components` via the shell's `apiClient` and
-      renders one entry per component: name, status badge (icon/dot + label), last-observed
-      timestamp. A semantic table (or list with proper roles) — keyboard/reader accessible.
+      renders one entry per component: name + status badge (icon/dot + label). A semantic table
+      (`<th scope>`) or a list with proper roles — keyboard/reader accessible.
 - [ ] AC2: Loading, empty ("no components configured"), and error+retry states render using the
       shell's state components; MSW-backed tests drive all three plus the success path.
-- [ ] AC3: Status→badge mapping is tested via accessible text (UP/DOWN/DEGRADED/MAINTENANCE),
-      including the unknown-status guard.
-- [ ] AC4: The per-tab pattern is established and documented (page in `tabs/`, hook in
-      `hooks/`, e.g. `useComponents`) for the remaining tabs to copy; no `eslint-disable` to
-      paper over effect misuse.
+- [ ] AC3: Status→badge mapping is tested via accessible text (operational→UP, degraded→DEGRADED,
+      partial_outage→DEGRADED, major_outage→DOWN per `api/statusMapping.ts`), including the
+      unknown-status guard (an unrecognized status string → neutral "unknown" badge).
+- [ ] AC4: The per-tab pattern is established for the remaining tabs to copy — the fetch logic is
+      extracted from the shell's `ComponentsProbe` into a reusable hook (e.g.
+      `features/dashboard/useComponents.ts`) with the discriminated-union fetch state +
+      cancelled-guard + attempt-keyed retry; the placeholder `ComponentsProbe` scaffolding is
+      removed/absorbed (no dead code left behind); no `eslint-disable` to paper over effect misuse.
 
 ## Open Questions
 None.
