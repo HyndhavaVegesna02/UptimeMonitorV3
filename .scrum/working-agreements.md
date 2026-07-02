@@ -433,4 +433,17 @@
   is `{id, name, status}` only — caught at planning and trimmed, avoiding a mid-sprint block / wrong
   build. The five remaining tab stories 015c–015g each render specific DTO fields, so the check has
   direct recurring value; it operationalizes the planning-precondition step for consumer stories.)
+- 2026-07-02 — **DB-gated gate commands run as a SINGLE, non-concurrent invocation against a
+  throwaway DB.** The orchestrator never runs two `pytest` (or `check_fk_direction` / `alembic`)
+  invocations against the same throwaway Postgres at the same time: the shared `migrated_db` fixture
+  (`backend/tests/conftest.py`) REUSES an already-set `DATABASE_URL` rather than spawning a per-run
+  container, and `clean_runtime_tables` truncates the runtime tables before each DB-gated test — so two
+  concurrent runners corrupt each other's data mid-test. If a DB-gated run appears slow or stuck,
+  DIAGNOSE it (inspect the process / container / output tail) before starting another — never launch a
+  second run that shares a live run's `DATABASE_URL`. A gate result produced while a second run was
+  concurrently hitting the same DB is INVALID and must be re-run cleanly (single invocation) before it
+  is recorded as DoD evidence. (Motivated by Sprint 28, STORY-042: a second `pytest` launched over a
+  slow first run collided on the shared throwaway DB and produced a false "364 passed, 64 errors" — all
+  DB-gated; a single clean run was 428 passed. The code was never at fault, but the false-red cost a
+  diagnose/kill-strays/reset-DB/re-run cycle and could have misled a session into a needless fix loop.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
