@@ -25,6 +25,11 @@ frontend/dist/
 frontend/.vite/
 *.local
 
+# Local agent/skill tooling artifacts (not project code)
+.agents/
+.claude/skills/council/
+skills-lock.json
+
 # OS / editor
 .DS_Store
 Thumbs.db
