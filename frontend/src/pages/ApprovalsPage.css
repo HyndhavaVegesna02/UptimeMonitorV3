@@ -1,0 +1,62 @@
+.approvals-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.approvals-table th,
+.approvals-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-hairline);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+.approvals-table th {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.approvals-table td {
+  font-size: var(--fs-body);
+}
+
+.approvals-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.approvals-table__transition {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.approvals-table__arrow {
+  color: var(--color-ink-subtle);
+}
+
+.approvals-table__new {
+  font-size: var(--fs-caption);
+  color: var(--color-ink-subtle);
+  font-style: italic;
+}
+
+.approvals-table__actions {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.approvals-table__confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.approvals-table__confirm-text {
+  font-size: var(--fs-body);
+  color: var(--color-ink);
+}

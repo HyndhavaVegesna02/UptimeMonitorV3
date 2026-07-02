@@ -96,3 +96,18 @@ p {
   line-height: var(--lh-mono);
   letter-spacing: var(--ls-mono);
 }
+
+/* Visually hidden but reader-accessible (e.g. the "to" between a decorative
+ * from->to arrow's two StatusBadges — STORY-015c AC1). Standard clip-based
+ * pattern, not `display: none` (which removes it from the a11y tree too). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
