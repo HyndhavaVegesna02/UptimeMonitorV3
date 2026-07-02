@@ -422,4 +422,15 @@
   verdict) AND `http_step_execution` (a per-step companion sharing the same `event.id`). Building to the
   wrong type caused the Sprint-22 live crash and a `UNIQUE(source_event_id)` collision hazard — both
   avoidable had the probe enumerated the type distribution up front.)
+- 2026-07-02 — **A consumer/tab story's AC that names specific data fields is verified against the
+  actual backend DTO at planning, before lock.** When a frontend (or any consumer) story's AC names
+  specific data fields to render/consume, the orchestrator checks those fields against the real
+  producing contract — `backend/src/api/v1/<feature>/models.py` for an API-backed tab — at planning,
+  BEFORE the sprint locks. A field the producer does not expose is trimmed from the AC (or split into
+  a separate story that adds it to the DTO); it is never locked into an AC the consumer cannot satisfy
+  without a producer change the sprint does not include. (Motivated by Sprint 26, STORY-015b: the
+  re-refined AC asked for a per-component "last-observed timestamp," but `components/models.py::ComponentDTO`
+  is `{id, name, status}` only — caught at planning and trimmed, avoiding a mid-sprint block / wrong
+  build. The five remaining tab stories 015c–015g each render specific DTO fields, so the check has
+  direct recurring value; it operationalizes the planning-precondition step for consumer stories.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
