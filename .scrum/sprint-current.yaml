@@ -42,10 +42,10 @@ start_tag: sprint-26-start
 stories:
   - id: STORY-041
     points: 2
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: gate         # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at 1-2 pts)
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null
