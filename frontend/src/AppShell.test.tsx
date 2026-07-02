@@ -104,4 +104,17 @@ describe('AppShell routing', () => {
       screen.getByRole('heading', { name: 'Dashboard', level: 1 }),
     ).toBeInTheDocument()
   })
+
+  it('renders a not-found panel with a link back to Dashboard for an unknown path', () => {
+    renderShell('/nonexistent-tab')
+
+    expect(
+      screen.getByRole('heading', { name: /not found/i }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'Back to Dashboard' }),
+    ).toBeInTheDocument()
+    // Nav still renders alongside the not-found panel.
+    expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
+  })
 })

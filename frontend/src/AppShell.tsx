@@ -6,6 +6,7 @@ import { ApprovalsPage } from './pages/ApprovalsPage'
 import { CheckHistoryPage } from './pages/CheckHistoryPage'
 import { MaintenancePage } from './pages/MaintenancePage'
 import { PublicationsPage } from './pages/PublicationsPage'
+import { NotFoundPage } from './pages/NotFoundPage'
 import './AppShell.css'
 
 /** The routed shell: Nav + one route per tab (STORY-015a AC2). Router-agnostic
@@ -35,6 +36,7 @@ export function AppShell() {
           <Route path="/check-history" element={<CheckHistoryPage />} />
           <Route path="/maintenance" element={<MaintenancePage />} />
           <Route path="/publications" element={<PublicationsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </main>
     </>
