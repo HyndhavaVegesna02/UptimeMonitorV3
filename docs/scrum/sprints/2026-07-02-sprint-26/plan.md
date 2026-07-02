@@ -65,30 +65,30 @@ Promote the shell's `GET /api/v1/components` proving example into the real Dashb
 ONLY — no timestamp/latency/location. Render only what the DTO provides (name + status badge). The
 shell already wired the endpoint in `features/dashboard/ComponentsProbe.tsx`; 015b extracts + promotes it.
 
-- [ ] **T1 — Extract `useComponents` hook (AC4).** Move the fetch logic out of `ComponentsProbe.tsx`
+- [x] **T1 — Extract `useComponents` hook (AC4).** Move the fetch logic out of `ComponentsProbe.tsx`
       into `frontend/src/features/dashboard/useComponents.ts`: the discriminated-union `FetchState`
       (`loading | error | success`), the cancelled-guarded effect, and the `attempt`-keyed `retry`
       callback (mirror the existing ComponentsProbe implementation exactly — it's already race-safe
       and eslint-clean). Return `{ state, retry }`. Unit-test the hook via a component that renders
       its states, driving success + error→retry against MSW (assert refetch, e.g. via call count or
       the success content appearing after a 500). No `eslint-disable`.
-- [ ] **T2 — Real DashboardPage (AC1, AC2).** Rewrite `frontend/src/pages/DashboardPage.tsx` to use
+- [x] **T2 — Real DashboardPage (AC1, AC2).** Rewrite `frontend/src/pages/DashboardPage.tsx` to use
       `useComponents` and render a semantic table (`<table>` with `<th scope="col">` for Component /
       Status) — one row per component: name + `<StatusBadge status={toHealthStatus(c.status)} />`.
       Panel `headingLevel="h1"` (top-level tab). Wire loading (`LoadingState`), empty
       (`EmptyState` — "No components configured"), and error+retry (`ErrorState`) via the hook's
       state. Remove the placeholder copy ("Live health overview lands in STORY-015b") and the
       "Backend connectivity check" scaffolding.
-- [ ] **T3 — Remove ComponentsProbe scaffolding (AC4).** Delete `features/dashboard/ComponentsProbe.tsx`
+- [x] **T3 — Remove ComponentsProbe scaffolding (AC4).** Delete `features/dashboard/ComponentsProbe.tsx`
       + its `.css` + test once the hook + page cover their behavior (the covering tests are REWRITTEN
       onto `useComponents`/`DashboardPage`, not dropped — 2026-06-29 agreement). No dead code, no
       orphan CSS/imports. `statusMapping.ts` stays (now consumed by the real page).
-- [ ] **T4 — Status→badge mapping test (AC3).** Test each mapping via accessible badge text:
+- [x] **T4 — Status→badge mapping test (AC3).** Test each mapping via accessible badge text:
       operational→UP, degraded→DEGRADED, partial_outage→DEGRADED, major_outage→DOWN, and an
       unrecognized status → the neutral "unknown" badge (the `toHealthStatus` `?? 'unknown'` guard).
       Drive it through the rendered Dashboard (MSW fixture with the range of statuses), asserting the
       badges' accessible labels — not by calling `toHealthStatus` in isolation only.
-- [ ] **T5 — MSW handlers + gates (AC2, AC5).** Add/extend the components handler in the per-feature
+- [x] **T5 — MSW handlers + gates (AC2, AC5).** Add/extend the components handler in the per-feature
       module from 041-T3 with fixtures covering the success (multiple statuses), empty (`[]`), and
       error (500) cases used by the tests. All three frontend gates exit 0 on a clean committed tree.
 
