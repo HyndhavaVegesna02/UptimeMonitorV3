@@ -1,0 +1,56 @@
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  line-height: var(--lh-caption);
+  /* Label text is always an ink token, never the health color (AC6):
+     health colors appear only in the dot + this subtle badge background. */
+  color: var(--color-ink-muted);
+}
+
+.status-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.status-badge--up {
+  background: var(--color-health-up-subtle);
+}
+.status-badge--up .status-badge__dot {
+  background: var(--color-health-up);
+}
+
+.status-badge--down {
+  background: var(--color-health-down-subtle);
+}
+.status-badge--down .status-badge__dot {
+  background: var(--color-health-down);
+}
+
+.status-badge--degraded {
+  background: var(--color-health-degraded-subtle);
+}
+.status-badge--degraded .status-badge__dot {
+  background: var(--color-health-degraded);
+}
+
+.status-badge--maintenance {
+  background: var(--color-health-maintenance-subtle);
+}
+.status-badge--maintenance .status-badge__dot {
+  background: var(--color-health-maintenance);
+}
+
+.status-badge--unknown {
+  background: var(--color-health-unknown-subtle);
+}
+.status-badge--unknown .status-badge__dot {
+  background: var(--color-health-unknown);
+}

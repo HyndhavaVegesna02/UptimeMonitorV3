@@ -1,0 +1,16 @@
+.panel {
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  padding: var(--space-6);
+}
+
+.panel__title {
+  font-family: var(--font-sans);
+  font-size: var(--fs-h2);
+  font-weight: var(--fw-h2);
+  line-height: var(--lh-h2);
+  letter-spacing: var(--ls-h2);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-4);
+}
