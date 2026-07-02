@@ -263,7 +263,7 @@ stories:
     points: 3
     priority: 19
     type: chore
-    sprint: null
+    sprint: 28
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a
     title: Config layer — per-app config files + fail-fast loader + in-memory resolvers

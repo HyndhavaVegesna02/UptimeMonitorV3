@@ -1,104 +1,50 @@
 # YourTeam active sprint board.
-sprint: 27
-status: closed        # none | active | review | closed | aborted
+sprint: 28
+status: active        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: 2026-07-02
-goal: "Build the Approvals tab (STORY-015c) — the product's reason to exist: a degradation reaches
-  the public Statuspage only after a human approves it here. Lists open proposals (GET
-  /api/v1/approvals) and performs approve/reject (POST /api/v1/decisions/{id}) with a confirmation
-  step and full failure handling (409 lost-race / 404 gone / error). Also lands the shared
-  useFetch<T> (015c is the 2nd fetch hook — the parallel-shape agreement fires): extract the generic
-  from 015b's useComponents, refactor useComponents onto it, build the approvals fetch on it.
-  Frontend-only; no backend change."
-branch: sprint-27
-start_tag: sprint-27-start
-# Capacity: velocity last-3 (sprints 22,25,26) = 3,5,5 -> mean 4.33. Committed 5 (STORY-015c) — a
-# single-story focused sprint, consistent with demonstrated throughput.
+closed: null
+goal: "Make the FastAPI backend HTTP-servable so the frontend dev stack works end to end
+  (STORY-042). Today `npm run dev` floods ECONNREFUSED because the API has only ever run in-process
+  via TestClient — no uvicorn, no ASGI entrypoint. Add uvicorn + a composition/asgi.py entrypoint
+  (app = create_app(), reads DATABASE_URL + config/apps → boot-time topology seed), a DB-gated
+  servability test, and document the full local stack (throwaway Docker Postgres + API server + the
+  live pull-loop + npm run dev) so every tab shows genuine live data. CORS stays deferred to
+  STORY-017."
+branch: sprint-28
+start_tag: sprint-28-start
+# Capacity: velocity last-3 (sprints 25,26,27) = 5,5,5 -> mean 5.0. Committed 3 (STORY-042) — a
+# deliberate under-commit: a focused mostly-backend chore with a manual PO-observed end-to-end tail;
+# it unblocks *seeing/using* the whole app locally.
 #
-# WORKFLOW (in-process, PO directive 2026-07-02): a Sonnet 5 implementer subagent at HIGH effort
-# builds to plan.md, committing onto sprint-27. Reviewers on Opus (2026-06-24). 015c is 5 pts ->
-# impl + Opus spec & quality reviewers + full DoD gate. Orchestrator runs the gate (3 frontend
-# commands; 6 backend commands must stay green untouched), reviewers, wiki blast-radius sweep,
-# then review/verdict/merge/retro.
+# WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds to
+# plan.md; Opus spec & quality reviewers (3 pts -> full pipeline); orchestrator runs the full
+# six-command backend DoD gate (+ the frontend 3 gates are untouched — this is a backend story),
+# wiki blast-radius sweep, then review/verdict/merge/retro.
 #
-# PLANNING DILIGENCE (per the 2026-07-02 tab-AC-vs-DTO agreement, applied at THIS lock): 015c's AC
-# were reconciled against the real contracts before lock — ProposalDTO = {id, component_id,
-# from_status, to_status, state, proposed_at} (NO reason/evidence, NO friendly name); decision POST
-# = {action:"approve"|"reject", actor:<non-empty>, notes?} -> {proposal_id,state,resolved_at} with
-# 200/422/404/409. PO decisions: fixed-placeholder actor behind ONE swappable seam (getActor(),
-# swap-point for STORY-017 auth); INCLUDE the useFetch<T> refactor here (AC5).
+# TOOLING: adds `uvicorn[standard]` to dev deps — surfaced at planning per the tooling-change
+# agreement. It is a runtime/dev server, not touched by ruff/lint-imports (a dep, not code).
 #
-# DoD: backend six commands UNCHANGED and green (no backend source change). Frontend gates
-# (npm test / npm run build / npm run lint) exit 0 on a CLEAN committed tree.
+# DoD: the six backend commands must stay green (pyproject changes with the uvicorn add + the new
+# asgi.py + a DB-gated test — all must pass). No frontend source change. AC5 is a MANUAL PO-observed
+# end-to-end step (needs the PO's live .env creds) — run at review or carved out as a tracked
+# follow-up per the 2026-06-29 live-verification agreement; AC1-AC4 are the mechanical gate.
 #
-# BASELINE at lock: sprint-27 cut from main @ 7938f2a (sprint-26 merged + retro/amendment). Gates
-# green at the sprint-26 code state (6d44c22, preserved on main): frontend npm test 71 / build /
-# lint; backend pytest 426 / lint-imports 5-0 / FK 11-0 / alembic exit 0 / ruff clean. 7938f2a adds
-# only docs/scrum bookkeeping on top.
+# BASELINE at lock: sprint-28 cut from main @ 5172156 (sprint-27 merged + STORY-042 refinement).
+# Backend gates green at the sprint-27 code state (50bf57b, preserved on main); 5172156 adds only
+# docs/scrum (the story file + backlog), no code change.
 #
-# Agreements in force: all of working-agreements.md as of 7938f2a, incl. the 2026-07-02 Sonnet-5
-# in-process directive AND the new 2026-07-02 tab-AC-vs-DTO verification agreement.
+# Agreements in force: all of working-agreements.md as of 5172156 (incl. the 2026-07-02 Sonnet-5
+# in-process directive + the tab-AC-vs-DTO agreement — the latter N/A here, no consumer-tab AC).
 stories:
-  - id: STORY-015c
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
+  - id: STORY-042
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 50bf57b (clean committed tree, diff frontend-only).
-          FRONTEND (from frontend/): npm test 96 passed / 18 files; npm run build (tsc -b && vite
-          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
-          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
-          (implementer-run — diff touches zero backend files). DB-gated pair NOT re-run: no
-          backend/migration/pyproject diff, so sprint-25's 11 FKs / 0 violations + alembic exit 0
-          still hold. (Gates re-run after the 50bf57b readOkJson dedup nit; 96 tests green.)"
-        commit: 50bf57b
-        at: 2026-07-02T17:32:00+05:30
-    review:
-      first_pass: "spec PASS (all 5 AC MET) / quality APPROVE (0 Critical, 0 Major). BOTH Opus
-        reviewers ran the frontend gates (96 tests). Spec traced each AC to a driving test: AC2 the
-        POST is gated by the confirm (postedBody undefined after first click; equals
-        {action, actor: getActor()} after confirm) + list refresh (callCount==2), both approve AND
-        reject; AC3 all three POST-failure paths MSW-driven with distinct outcomes (409 'already
-        resolved'+refresh, 404 'no longer exists'+refresh, 500 -> ErrorState+retry); AC5 useEffect
-        lives ONLY in lib/useFetch.ts (grep-confirmed no copy-pasted effect body), useComponents
-        tests unchanged+green, generic has its own test. Quality scrutinized the mutate path: no
-        double-submit (confirm control UNMOUNTS on submit, discrete events flush sync), no
-        stale-closure, list refresh fires on success+409+404; useFetch cancelled-guard + attempt
-        retry intact after extraction; postJson mirrors getJson's error contract with readable
-        .status; tokens-only CSS; status never color-alone (ink label, health on dot/bg only);
-        MSW-only mocking. KEEP."
-      fix: "One quality-review minor folded in inline (commit 50bf57b): getJson/postJson shared ~15
-        duplicated lines (non-2xx + parse-or-malformed tail) -> extracted a shared readOkJson so
-        015d-g inherit ONE parse-error contract. Behavior identical; client.test.ts (success / 404 /
-        409 / network / malformed) stays green. Gates re-run green."
-      second_pass: null
-      open_minors:
-        - "actor.test asserts only 'non-empty string', not the exact placeholder value — acceptable
-          for a deliberately-swappable seam (STORY-017 replaces the impl), won't catch an accidental
-          value change."
-        - "PATTERN (both reviewers, for 015d-g): the two real tabs now set the template — read tab =
-          thin useFetch(getX) wrapper (stable module-scoped fetcher, never inline); mutating tab =
-          local idle->confirming->submitting->failed machine SEPARATE from useFetch state,
-          double-submit guarded by UNMOUNTING the confirm control, branch on ApiError.status, always
-          retry() the list after a resolved decision. Captured in frontend-zone.md."
-      ac_note: "No live/manual-only AC: all five mechanically verifiable, verified in-session (both
-        reviewers ran the gates). AC reconciled to the real ProposalDTO/decision contracts at
-        planning (the 2026-07-02 tab-AC-vs-DTO agreement's first application): dropped the
-        nonexistent reason/evidence field; actor via a swappable getActor() seam (fixed placeholder,
-        PO)."
-      notes_omission: "The optional `notes` field is deliberately not surfaced (no AC requires it;
-        notes is Optional in DecisionRequest) — flagged as a candidate backlog item if an
-        operator-notes UI is later wanted. Both reviewers confirmed this is not silent scope loss."
-    blast_radius_resolved: true    # sprint-end compile pass @ 50bf57b: frontend-zone.md updated for
-                                   # 015c (shared useFetch<T>; postJson/readOkJson uniform error
-                                   # contract; actor seam; ProposalDTO/decision types; approvals
-                                   # handler/hook/page; read + mutate per-tab patterns). code_refs +=
-                                   # actor.ts, useFetch.ts, approvals handler/hook, ApprovalsPage.
-                                   # Sweep: 0 stale / 0 broken across 12 articles.
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
