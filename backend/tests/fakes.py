@@ -12,12 +12,14 @@ from datetime import datetime
 
 from src.core.domain import (
     Component,
+    ComponentStatus,
     IngestResult,
     MaintenanceWindow,
     Publication,
     SignalObservation,
     StatusChange,
 )
+from src.core.domain.component import ComponentNotFoundError
 from src.core.domain.proposal import (
     ProposalNotOpenError,
     ProposalState,
@@ -209,6 +211,21 @@ class FakeComponentRepository(ComponentRepository):
             if component.id == component_id:
                 return component
         return None
+
+    def set_status(self, component_id: str, status: ComponentStatus) -> None:
+        """Write back a component's status; raises ComponentNotFoundError if unknown.
+
+        Parity with PostgresComponentRepository.set_status (2026-06-26
+        fake/adapter parity agreement, STORY-045): both raise
+        `ComponentNotFoundError` on an unknown id, never a bare `ValueError`.
+        """
+        for index, component in enumerate(self._components):
+            if component.id == component_id:
+                self._components[index] = component.model_copy(
+                    update={"status": status}
+                )
+                return
+        raise ComponentNotFoundError(f"Component {component_id!r} not found.")
 
 
 class FakePublicationRepository(PublicationRepository):

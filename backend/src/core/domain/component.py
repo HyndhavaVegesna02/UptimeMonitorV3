@@ -8,6 +8,17 @@ from pydantic import BaseModel, ConfigDict
 from src.core.domain.status import ComponentStatus
 
 
+class ComponentNotFoundError(ValueError):
+    """Raised when a component cannot be found by its id (dossier §9, §17).
+
+    Mirrors `core/domain/proposal.py::ProposalNotFoundError`. Raised by
+    `ComponentRepository.set_status` when the conditional write affects zero
+    rows (2026-06-28 check-then-act agreement: never a bare `ValueError`) —
+    both the fake and `PostgresComponentRepository` raise this identically
+    (2026-06-26 fake/adapter parity agreement).
+    """
+
+
 class Component(BaseModel):
     """A system component with its display status (dossier §9, §17).
 
