@@ -60,6 +60,13 @@ class MissingLiveSecretError(ValueError):
     """Raised when one or more required live loop secrets are missing from the environment (dossier §17)."""
 
 
+# The env var names for the (optional) Statuspage credentials — the ONE naming
+# convention `LiveSecrets` and `StatuspageSecrets` both read (STORY-045: the
+# approve-trigger composition root must not invent a second convention).
+STATUSPAGE_PAGE_ID_VAR = "STATUSPAGE_PAGE_ID"
+STATUSPAGE_API_KEY_VAR = "STATUSPAGE_API_KEY"
+
+
 @dataclass(frozen=True)
 class LiveSecrets:
     """Immutable live secrets resolved from the environment (dossier §17)."""
@@ -68,6 +75,36 @@ class LiveSecrets:
     dynatrace_api_token: str
     statuspage_page_id: str | None
     statuspage_api_token: str | None
+
+
+@dataclass(frozen=True)
+class StatuspageSecrets:
+    """The Statuspage-only half of `LiveSecrets` (dossier §17, STORY-045).
+
+    `composition/app.py::create_app` (the approve trigger's composition root)
+    needs ONLY these two optional fields to build its publisher chain via
+    `build_publisher` — it must NOT call `load_live_secrets`, which raises
+    `MissingLiveSecretError` when the (irrelevant, here) DYNATRACE_* vars are
+    absent. Both fields are `None` when unset; `build_publisher` falls back to
+    a `LoggingPublisher` delegate in that case.
+    """
+
+    page_id: str | None
+    api_token: str | None
+
+
+def load_statuspage_secrets() -> StatuspageSecrets:
+    """Load the optional Statuspage secrets from the environment (dossier §17, STORY-045).
+
+    Reads the SAME env var names `load_live_secrets` uses for these two
+    fields (`STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR`) — never a second
+    naming convention. Tolerates total absence: both fields are `None`, no
+    error raised (unlike `load_live_secrets`, nothing here is required).
+    """
+    return StatuspageSecrets(
+        page_id=os.environ.get(STATUSPAGE_PAGE_ID_VAR),
+        api_token=os.environ.get(STATUSPAGE_API_KEY_VAR),
+    )
 
 
 def load_live_secrets() -> LiveSecrets:
@@ -89,12 +126,11 @@ def load_live_secrets() -> LiveSecrets:
             f"Missing required live secrets: {', '.join(missing)}"
         )
 
-    page_id = os.environ.get("STATUSPAGE_PAGE_ID")
-    sp_token = os.environ.get("STATUSPAGE_API_KEY")
+    statuspage_secrets = load_statuspage_secrets()
 
     return LiveSecrets(
         dynatrace_env_url=env_url,
         dynatrace_api_token=dt_token,
-        statuspage_page_id=page_id,
-        statuspage_api_token=sp_token,
+        statuspage_page_id=statuspage_secrets.page_id,
+        statuspage_api_token=statuspage_secrets.api_token,
     )

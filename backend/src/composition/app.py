@@ -9,6 +9,7 @@ from src.core.ports import (
     ObservationRepository,
     ProposalRepository,
     PublicationRepository,
+    StatusPublisherPort,
 )
 
 
@@ -37,11 +38,19 @@ def create_app(
     observation_repo: ObservationRepository | None = None,
     publication_repo: PublicationRepository | None = None,
     clock: ClockPort | None = None,
+    publisher: StatusPublisherPort | None = None,
     config_dir: str | None = None,
 ) -> FastAPI:
     """Create and wire the FastAPI application (composition root).
 
-    Accepts optional injected dependencies (like a FakeProposalRepository) for testing.
+    Accepts optional injected dependencies (like a FakeProposalRepository) for
+    testing. `publisher` (STORY-045) is symmetric with the repo params: pass an
+    explicit chain (e.g. one built from fakes) to control exactly what the
+    approve trigger publishes to; leave it `None` to get the default — the
+    shared `build_publisher` (dossier §12, §17, D2) chain wired against
+    whatever `component_repo`/`publication_repo` this call resolved, or a bare
+    `LoggingPublisher` when either is absent (the injected-fakes path is not
+    obligated to supply both just to exercise proposal-only endpoints).
     """
     app = FastAPI(title="Uptime Monitor V3 API", lifespan=lifespan)
 
@@ -100,10 +109,44 @@ def create_app(
 
         clock = SystemClock()
 
+    # Wire the publisher chain (STORY-045, D2, AC1/AC2). The approve trigger
+    # runs in THIS process, so the same shared `build_publisher` assembly
+    # `composition/run.py::build_live_loop` uses is built here too — the
+    # write-back-first / best-effort-external-call chain, or its LoggingPublisher
+    # fallback when Statuspage credentials or the config mapping are absent.
+    if publisher is None:
+        from src.composition.publish_helper import LoggingPublisher, build_publisher
+
+        if component_repo is not None and publication_repo is not None:
+            from src.composition.settings import load_statuspage_secrets
+
+            statuspage_secrets = load_statuspage_secrets()
+            mapping = (
+                app.state.seed_config.statuspage_mapping()
+                if app.state.seed_config is not None
+                else {}
+            )
+            publisher = build_publisher(
+                component_repo=component_repo,
+                publication_repo=publication_repo,
+                clock=clock,
+                statuspage_page_id=statuspage_secrets.page_id,
+                statuspage_api_token=statuspage_secrets.api_token,
+                component_mapping=mapping,
+            )
+        else:
+            # No component_repo (and/or publication_repo) wired — nothing to
+            # write back to or record against (e.g. a proposal-only injected
+            # test). Falls back to a bare no-op publisher; never attempts
+            # write-back against an absent repo.
+            publisher = LoggingPublisher()
+
     # Wire ApprovalService
     from src.core.services.approval import ApprovalService
 
-    approval_service = ApprovalService(proposal_repo=proposal_repo, clock=clock)
+    approval_service = ApprovalService(
+        proposal_repo=proposal_repo, clock=clock, publisher=publisher
+    )
 
     # Store in app state for dependencies to resolve
     app.state.proposal_repo = proposal_repo
@@ -112,6 +155,7 @@ def create_app(
     app.state.observation_repo = observation_repo
     app.state.publication_repo = publication_repo
     app.state.clock = clock
+    app.state.publisher = publisher
     app.state.approval_service = approval_service
 
     # Mount routers

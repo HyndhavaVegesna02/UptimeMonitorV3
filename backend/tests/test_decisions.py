@@ -2,9 +2,17 @@ from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
+from src.composition.publish_helper import RecordingPublisher, StatusWritebackPublisher
+from src.core.domain.component import Component
 from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.domain.status import ComponentStatus
-from tests.fakes import FakeProposalRepository
+from tests.fakes import (
+    FakeClock,
+    FakeComponentRepository,
+    FakeProposalRepository,
+    FakePublicationRepository,
+    RecordingStatusPublisher,
+)
 
 
 def test_decision_endpoint_validation_error():
@@ -237,3 +245,72 @@ def test_decision_endpoint_lost_race_returns_409():
     assert response.status_code == 409
     # No approval event recorded on the lost-race path.
     assert repo.approval_events == []
+
+
+def test_decision_endpoint_approve_publishes_and_writes_back_status():
+    """AC1/AC2: approving via HTTP publishes through the injected chain — a
+    publication is recorded AND components.status is written back, visible via
+    GET /api/v1/components. Composes the REAL StatusWritebackPublisher +
+    RecordingPublisher chain with fakes standing in for the DB/Statuspage I/O
+    edges (2026-06-29 composition-test agreement) and injects it through
+    create_app's `publisher=` override."""
+    proposal_repo = FakeProposalRepository()
+    component_repo = FakeComponentRepository(
+        components=[
+            Component(
+                id="checkout",
+                name="Checkout",
+                status=ComponentStatus.OPERATIONAL,
+                app_id="app-1",
+            )
+        ]
+    )
+    publication_repo = FakePublicationRepository()
+    clock = FakeClock(datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc))
+    statuspage_delegate = RecordingStatusPublisher()
+    publisher = StatusWritebackPublisher(
+        RecordingPublisher(statuspage_delegate, publication_repo, clock),
+        component_repo,
+    )
+
+    app = create_app(
+        proposal_repo=proposal_repo,
+        component_repo=component_repo,
+        publication_repo=publication_repo,
+        clock=clock,
+        publisher=publisher,
+    )
+    client = TestClient(app)
+
+    prop = StatusProposal(
+        component_id="checkout",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 28, 11, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = proposal_repo.create_open(prop)
+    assert saved is not None
+
+    response = client.post(
+        f"/api/v1/decisions/{saved.id}",
+        json={"action": "approve", "actor": "ops-1", "notes": "Approve it"},
+    )
+    assert response.status_code == 200
+
+    # AC2: components.status is written back — GET /components serves it.
+    comp_response = client.get("/api/v1/components")
+    assert comp_response.status_code == 200
+    assert comp_response.json() == [
+        {"id": "checkout", "name": "Checkout", "status": "degraded"}
+    ]
+
+    # AC1: a publication was recorded (delegate publish succeeded).
+    pubs = publication_repo.list_recent()
+    assert len(pubs) == 1
+    assert pubs[0].component_id == "checkout"
+    assert pubs[0].status == ComponentStatus.DEGRADED
+
+    # The Statuspage stand-in received the change too.
+    assert len(statuspage_delegate.published) == 1
+    assert statuspage_delegate.published[0].component_id == "checkout"

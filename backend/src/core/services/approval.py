@@ -12,7 +12,8 @@ from src.core.domain.proposal import (
     StatusProposal,
     is_valid_transition,
 )
-from src.core.ports import ClockPort, ProposalRepository
+from src.core.domain.status import StatusChange
+from src.core.ports import ClockPort, ProposalRepository, StatusPublisherPort
 
 # Re-exported for callers that import the proposal errors from this service
 # (the domain owns them; see src.core.domain.proposal).
@@ -24,32 +25,58 @@ __all__ = [
 
 
 class ApprovalService:
-    """Handles manual approvals and rejections of status proposals (dossier §12)."""
+    """Handles manual approvals and rejections of status proposals (dossier §12).
 
-    def __init__(self, *, proposal_repo: ProposalRepository, clock: ClockPort) -> None:
+    `publisher` is a REQUIRED keyword-only dependency (STORY-045, D4): a
+    silently-unwired publisher is the exact defect this story closes (approving
+    a proposal used to be a dead end — see STORY-045's story file), so there is
+    deliberately no default. The composition root's `build_publisher` chain
+    (`composition/publish_helper.py`) supplies the write-back + best-effort
+    Statuspage semantics; this service just publishes — same division of
+    responsibility as `core/services/decide.py::DecideService`.
+    """
+
+    def __init__(
+        self,
+        *,
+        proposal_repo: ProposalRepository,
+        clock: ClockPort,
+        publisher: StatusPublisherPort,
+    ) -> None:
         self._proposal_repo = proposal_repo
         self._clock = clock
+        self._publisher = publisher
 
     def approve(
         self, proposal_id: int, actor: str, notes: str | None = None
     ) -> StatusProposal:
-        """Approve an open status proposal (dossier §12).
+        """Approve an open status proposal and publish the approved status (dossier §12, STORY-045 AC1).
 
         Following dossier §T1.1 (commit-first / best-effort side effects), this service
-        commits the database resolution before return.
+        commits the database resolution BEFORE publishing: `self._publisher.publish(...)`
+        is called only after `_decide` has resolved the proposal and recorded the approval
+        event, so a publish failure never loses the already-committed decision.
         """
-        return self._decide(
+        updated = self._decide(
             proposal_id=proposal_id,
             to_state=ProposalState.APPROVED,
             action="approve",
             actor=actor,
             notes=notes,
         )
+        change = StatusChange(
+            component_id=updated.component_id, status=updated.to_status
+        )
+        self._publisher.publish(change)
+        return updated
 
     def reject(
         self, proposal_id: int, actor: str, notes: str | None = None
     ) -> StatusProposal:
-        """Reject an open status proposal (dossier §12).
+        """Reject an open status proposal — publishes NOTHING (dossier §12, STORY-045 AC1).
+
+        A rejection never reaches the publisher: only an approved degradation
+        (or a recovery, via `DecideService`) publishes.
 
         Following dossier §T1.1 (commit-first / best-effort side effects), this service
         commits the database resolution before return.
