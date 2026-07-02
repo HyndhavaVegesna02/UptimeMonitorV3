@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 44   # 043 = live-loop .env-not-loaded defect (from STORY-042 AC5 check); 014b/014c + 015a-g + 016a-c are split-children
+next_story_id: 47   # 044 availability/topology API + 045 approve-publish defect + 046 dashboard-maintenance (2026-07-02 audit); 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -217,9 +217,9 @@ stories:
     type: feature
     sprint: 27
   - id: STORY-015d
-    title: Availability tab — two-grain availability + group rollup over a window
+    title: Availability tab — two-grain availability (component rollup + per-signal drill-down)
     file: docs/scrum/stories/STORY-015d-availability-tab.md
-    status: ready
+    status: ready   # re-scoped 2026-07-02 (audit + PO multi-signal clarification); HARD dependency on STORY-044
     points: 3
     priority: 18
     type: feature
@@ -227,7 +227,7 @@ stories:
   - id: STORY-015e
     title: Check History tab — per-signal observation history
     file: docs/scrum/stories/STORY-015e-check-history-tab.md
-    status: ready
+    status: ready   # AC reconciled 2026-07-02 (audit): single required signal_key; depends on STORY-044 enumeration
     points: 3
     priority: 19
     type: feature
@@ -267,10 +267,35 @@ stories:
   - id: STORY-043
     title: Defect — the live loop (and asgi app) never load the .env file; docs claim they do
     file: docs/scrum/stories/STORY-043-live-loop-dotenv-not-loaded.md
-    status: ready   # filed from STORY-042 AC5 check (2026-07-02); load .env at entrypoints + dep + doc fix
+    status: ready   # filed from STORY-042 AC5 check (2026-07-02); AC5 extended by the audit to the wiki echo (dev-setup-and-dod)
     points: 2
     priority: 19
     type: defect
+    sprint: null
+  # ── 2026-07-02 full-codebase audit output ─────────────────────────
+  - id: STORY-045
+    title: Defect — approved proposals go nowhere (no publish on approval; components.status never written back)
+    file: docs/scrum/stories/STORY-045-approve-publish-status-writeback.md
+    status: ready   # audit H1 + approval-publish gap: the core loop's missing seam; Dashboard frozen at operational
+    points: 5
+    priority: 16    # highest open priority — the product's reason-to-exist is a dead end after "approve"
+    type: defect
+    sprint: null
+  - id: STORY-044
+    title: Availability & topology API — component→signals enumeration + component-rollup availability + real intervals
+    file: docs/scrum/stories/STORY-044-availability-topology-api.md
+    status: ready   # enabler for 015d + 015e (both blocked on it); folds audit H2 (interval 60-vs-120 mis-compute)
+    points: 5
+    priority: 17
+    type: feature
+    sprint: null
+  - id: STORY-046
+    title: Dashboard maintenance-state display — the maintenance badge is currently unreachable
+    file: docs/scrum/stories/STORY-046-dashboard-maintenance-state.md
+    status: draft   # audit M3; open design question (frontend overlay vs backend derived field) — refine before its sprint
+    points: 2
+    priority: 22
+    type: feature
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a

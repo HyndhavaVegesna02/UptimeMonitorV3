@@ -44,7 +44,10 @@ to approve or publish). So this defect is isolated to the `.env`-loading gap bet
       directly with explicit env). The six backend DoD gates stay green.
 - [ ] AC5: CLAUDE.md is accurate — the "Run the app locally" recipe and the "Live-loop secrets"
       section match the shipped behavior (either "reads `.env`" is now true, or the recipe says
-      "export the secrets first" — AC1 makes the former true).
+      "export the secrets first" — AC1 makes the former true). The SAME false claim also appears in
+      the wiki (`docs/scrum/wiki/dev-setup-and-dod.md`, the live-loop-secrets Fact: "from the
+      environment / a gitignored `.env`") — corrected in the same story with `verified_sha` bumped
+      (2026-07-02 audit finding M4).
 
 ## Open Questions (resolve at refinement/planning)
 - Dependency: `python-dotenv` is the obvious mechanism. It is imported at runtime by `run.py`, so it
