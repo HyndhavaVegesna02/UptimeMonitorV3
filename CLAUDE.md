@@ -220,6 +220,7 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 | Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
 | `scripts/dev_db.py` | live (STORY-019)            | shared throwaway-DB helper (CLI `up`/`down`) + the `migrated_db` pytest session fixture |
 | ruff              | live (STORY-033); `ruff check` + `ruff format` (DoD) | code style, sorting, and formatting |
+| uvicorn[standard] | live (STORY-042); dev dependency | local ASGI dev server — `uvicorn src.composition.asgi:app` |
 | httpx             | runtime dependency             | HTTP library for query and statuspage executors |
 | git               | configured                    | version control                           |
 
