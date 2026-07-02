@@ -19,14 +19,14 @@ export class ApiError extends Error {
   }
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`)
-  } catch {
-    throw new ApiError(`Network error while requesting ${path}`)
-  }
-
+/**
+ * Shared response-reader: maps a settled `fetch` `Response` to parsed JSON or a
+ * typed `ApiError`. A non-2xx status → `ApiError` carrying `.status` (so callers
+ * can branch on 404/409); a malformed 2xx body → `ApiError` (also with status).
+ * Both `getJson`/`postJson` funnel through here so there is ONE parse-error
+ * contract for every future tab to inherit (single source of the error shape).
+ */
+async function readOkJson<T>(response: Response, path: string): Promise<T> {
   if (!response.ok) {
     throw new ApiError(
       `Request to ${path} failed with status ${response.status}`,
@@ -37,11 +37,19 @@ async function getJson<T>(path: string): Promise<T> {
   try {
     return (await response.json()) as T
   } catch {
-    throw new ApiError(
-      `Malformed JSON response from ${path}`,
-      response.status,
-    )
+    throw new ApiError(`Malformed JSON response from ${path}`, response.status)
   }
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`)
+  } catch {
+    throw new ApiError(`Network error while requesting ${path}`)
+  }
+
+  return readOkJson<T>(response, path)
 }
 
 async function postJson<TResponse, TBody>(
@@ -59,21 +67,7 @@ async function postJson<TResponse, TBody>(
     throw new ApiError(`Network error while requesting ${path}`)
   }
 
-  if (!response.ok) {
-    throw new ApiError(
-      `Request to ${path} failed with status ${response.status}`,
-      response.status,
-    )
-  }
-
-  try {
-    return (await response.json()) as TResponse
-  } catch {
-    throw new ApiError(
-      `Malformed JSON response from ${path}`,
-      response.status,
-    )
-  }
+  return readOkJson<TResponse>(response, path)
 }
 
 /** The AC3 proving endpoint: `GET /api/v1/components`. */
