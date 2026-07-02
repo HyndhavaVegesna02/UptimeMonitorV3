@@ -1,0 +1,29 @@
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.dashboard-table th,
+.dashboard-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-hairline);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+}
+
+.dashboard-table th {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.dashboard-table td {
+  font-size: var(--fs-body);
+}
+
+.dashboard-table tbody tr:last-child td {
+  border-bottom: none;
+}
