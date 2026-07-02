@@ -12,19 +12,19 @@ with or just before the second tab so the seams are tightened before they prolif
 is inside `frontend/`; no backend impact.
 
 ## Description / Acceptance Criteria
-- [ ] AC1: `frontend/src/api/client.ts::getJson` wraps a malformed-body `SyntaxError` (from
+- [x] AC1: `frontend/src/api/client.ts::getJson` wraps a malformed-body `SyntaxError` (from
       `response.json()` on a 2xx) into the typed `ApiError`, so the client's contract ("produce a
       typed ApiError on any failure") holds on every realistic path. Test drives a 2xx + invalid
       JSON via MSW and asserts a typed `ApiError` (not a raw `SyntaxError`).
-- [ ] AC2: The duplicated `[...].filter(Boolean).join(' ')` classnames idiom in `Button.tsx` /
+- [x] AC2: The duplicated `[...].filter(Boolean).join(' ')` classnames idiom in `Button.tsx` /
       `Panel.tsx` (and any other primitive) is factored into a single shared `cx()` helper; the
       primitives use it. (Parallel-shape / shared-assembly agreement, 2026-06-25.)
-- [ ] AC3: `frontend/src/mocks/handlers.ts` is modularized so a tab story adds its handlers +
+- [x] AC3: `frontend/src/mocks/handlers.ts` is modularized so a tab story adds its handlers +
       fixtures in its own module composed into the server, rather than appending to one shared flat
       array — keeping a per-tab story inside its own files.
-- [ ] AC4: `frontend/src/AppShell.tsx` renders a catch-all (`*`) route for unknown paths (a simple
+- [x] AC4: `frontend/src/AppShell.tsx` renders a catch-all (`*`) route for unknown paths (a simple
       "not found" / redirect-to-Dashboard), tested.
-- [ ] AC5: All three frontend DoD gates stay green (`npm test`, `npm run build`, `npm run lint`).
+- [x] AC5: All three frontend DoD gates stay green (`npm test`, `npm run build`, `npm run lint`).
 
 ## Open Questions
 None.

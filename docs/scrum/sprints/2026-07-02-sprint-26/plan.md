@@ -23,19 +23,19 @@ Chore from the STORY-015a quality review: tighten the shell seams before six tab
 `components/Panel/Panel.tsx` (+ a new `cx` helper), `frontend/src/mocks/handlers.ts`,
 `frontend/src/AppShell.tsx`.
 
-- [ ] **T1 — Typed error on malformed 2xx body (AC1).** In `client.ts::getJson`, the
+- [x] **T1 — Typed error on malformed 2xx body (AC1).** In `client.ts::getJson`, the
       `await response.json()` on a 2xx with an invalid body currently throws a raw `SyntaxError`
       that escapes unwrapped. Wrap it: on a JSON-parse failure, throw `ApiError` (message names the
       path; carry the status). Test (Vitest + MSW): a handler returns 200 with a non-JSON body →
       assert the client rejects with `ApiError` (not a bare `SyntaxError`). Keep the existing
       network-error and non-2xx behavior unchanged (their tests stay green).
-- [ ] **T2 — Shared `cx()` classnames helper (AC2).** Add `frontend/src/lib/cx.ts` (or
+- [x] **T2 — Shared `cx()` classnames helper (AC2).** Add `frontend/src/lib/cx.ts` (or
       `components/cx.ts` — match where shared UI utils naturally sit): `cx(...parts): string` that
       filters falsy and joins on a space — exactly the `[...].filter(Boolean).join(' ')` idiom
       duplicated in `Button.tsx` and `Panel.tsx`. Unit-test it (falsy filtering, empty → ''). Then
       replace the inline idiom in `Button.tsx` and `Panel.tsx` with `cx(...)`; their existing tests
       must stay green (behavior identical). No new raw hex; tokens unchanged.
-- [ ] **T3 — Per-feature MSW handler modules (AC3).** Refactor `mocks/handlers.ts` so handlers
+- [x] **T3 — Per-feature MSW handler modules (AC3).** Refactor `mocks/handlers.ts` so handlers
       compose from per-feature modules instead of one flat array + one fixture export: e.g.
       `mocks/handlers/components.ts` exporting its handlers (+ `FIXTURE_COMPONENTS`), and
       `mocks/handlers/index.ts` spreading them into the `handlers` array the server registers
@@ -43,11 +43,11 @@ Chore from the STORY-015a quality review: tighten the shell seams before six tab
       `mocks/handlers/<feature>.ts` + composes it, touching no other feature's handlers. Existing
       tests that `server.use(...)` or import `FIXTURE_COMPONENTS` must keep working (re-export as
       needed). The full suite stays green.
-- [ ] **T4 — Catch-all route (AC4).** In `AppShell.tsx` add a trailing `<Route path="*" ...>`
+- [x] **T4 — Catch-all route (AC4).** In `AppShell.tsx` add a trailing `<Route path="*" ...>`
       rendering a small "not found" panel (use the shell's `Panel`/`EmptyState` + a link back to
       Dashboard) — an unknown path currently renders Nav + an empty `<main>`. RTL test: navigating
       (MemoryRouter) to an unknown path renders the not-found content and the Nav still shows.
-- [ ] **T5 — Gates green (AC5).** `npm test`, `npm run build`, `npm run lint` all exit 0 on a clean
+- [x] **T5 — Gates green (AC5).** `npm test`, `npm run build`, `npm run lint` all exit 0 on a clean
       committed tree. No CLAUDE.md/DoD change (no command added). No wiki blast radius expected
       (041 touches no file in any article's `code_refs` except possibly `frontend/package.json` — it
       shouldn't; flag if it does).
