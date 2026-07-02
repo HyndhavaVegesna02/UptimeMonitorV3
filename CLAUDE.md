@@ -78,9 +78,10 @@ Frontend commands (run from `frontend/`; Node 24 / npm 11):
 `npm test` (Vitest, run-once), `npm run build` (`tsc -b && vite build`), and
 `npm run lint` (ESLint flat config) are the three frontend DoD gate commands,
 live as of STORY-015a — see `.scrum/definition-of-done.md`. The dev server
-proxies `/api/*` to `http://localhost:8000` (a locally running `uvicorn`
-instance of the backend); CORS stays deferred to STORY-017 per the
-2026-06-23 working agreement, so no backend change was needed to wire this.
+proxies `/api/*` to `http://localhost:8000` — see "Run the app locally"
+below for the recipe that gets a real backend listening there (live as of
+STORY-042); CORS stays deferred to STORY-017 per the 2026-06-23 working
+agreement, so no backend change was needed to wire the proxy itself.
 
 ## Stack (dossier §3)
 
@@ -206,6 +207,31 @@ python scripts/check_fk_direction.py # 0 FKs on baseline -> exit 0
 
 docker rm -f uptime_pg_test          # clean up (never commit container/data)
 ```
+
+## Run the app locally (dossier §17, STORY-042)
+
+The full local stack is: throwaway Postgres + the API server (uvicorn) + the
+live pull-loop (`python -m src.composition.run`) + the frontend dev server —
+four processes sharing one `DATABASE_URL`. CORS is unneeded locally: the Vite
+dev proxy makes the frontend same-origin (real CORS is STORY-017).
+
+1. Start the throwaway DB (migrates and prints both URLs):
+   `.venv/Scripts/python.exe scripts/dev_db.py up`
+2. Export `DATABASE_URL` — the plain-libpq pooled form it printed (the
+   direct/`+psycopg` form is only for Alembic/migrations, not needed here).
+3. Start the API server on port 8000 (serves `/api/v1/*`; the boot-time
+   lifespan seed reads `config/apps` and populates components):
+   `.venv/Scripts/python.exe -m uvicorn src.composition.asgi:app --port 8000`
+4. In a SECOND terminal (same `DATABASE_URL`), run the live loop to populate
+   observations/proposals/publications — needs the Dynatrace/Statuspage `.env`
+   secrets (see "Live-loop secrets" above): `python -m src.composition.run`
+5. In a THIRD terminal: `cd frontend && npm run dev` — the Vite proxy now
+   reaches a real backend on :8000; no more `ECONNREFUSED`.
+
+The API server and the live loop are two independent, long-running processes
+— stopping one doesn't stop the other, and both must point at the same
+`DATABASE_URL`. `python scripts/dev_db.py down` tears down the throwaway
+Postgres container when done.
 
 ## Tooling inventory
 
