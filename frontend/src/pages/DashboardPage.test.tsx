@@ -1,9 +1,9 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../mocks/server'
-import { FIXTURE_COMPONENTS } from '../mocks/handlers'
+import { FIXTURE_COMPONENTS, FIXTURE_COMPONENTS_ALL_STATUSES } from '../mocks/handlers'
 import { DashboardPage } from './DashboardPage'
 
 describe('DashboardPage', () => {
@@ -69,5 +69,35 @@ describe('DashboardPage', () => {
       await screen.findByText(FIXTURE_COMPONENTS[0].name),
     ).toBeInTheDocument()
     expect(callCount).toBe(2)
+  })
+
+  it('maps each backend status onto the correct accessible badge label, including unknown (AC3)', async () => {
+    server.use(
+      http.get('/api/v1/components', () =>
+        HttpResponse.json(FIXTURE_COMPONENTS_ALL_STATUSES),
+      ),
+    )
+
+    render(<DashboardPage />)
+
+    await screen.findByRole('table')
+
+    const dataRows = screen.getAllByRole('row').slice(1) // drop the header row
+
+    const expectations: Array<[string, string]> = [
+      ['Operational Component', 'Up'],
+      ['Degraded Component', 'Degraded'],
+      ['Partial Outage Component', 'Degraded'],
+      ['Major Outage Component', 'Down'],
+      ['Mystery Component', 'Unknown'],
+    ]
+
+    for (const [name, label] of expectations) {
+      const row = dataRows.find((candidate) =>
+        within(candidate).queryByText(name),
+      )
+      expect(row).toBeDefined()
+      expect(within(row as HTMLElement).getByText(label)).toBeInTheDocument()
+    }
   })
 })

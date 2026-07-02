@@ -1,4 +1,8 @@
-import { componentsHandlers, FIXTURE_COMPONENTS } from './components'
+import {
+  componentsHandlers,
+  FIXTURE_COMPONENTS,
+  FIXTURE_COMPONENTS_ALL_STATUSES,
+} from './components'
 
 /**
  * Composes each feature's MSW handler module into the single array the
@@ -10,4 +14,4 @@ export const handlers = [...componentsHandlers]
 
 // Re-exported so existing call sites (`import { FIXTURE_COMPONENTS } from
 // '../mocks/handlers'`) keep working unchanged.
-export { FIXTURE_COMPONENTS }
+export { FIXTURE_COMPONENTS, FIXTURE_COMPONENTS_ALL_STATUSES }
