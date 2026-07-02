@@ -3,3 +3,23 @@
   max-width: 1280px;
   margin: 0 auto;
 }
+
+.skip-link {
+  position: absolute;
+  top: -48px;
+  left: var(--space-4);
+  z-index: 100;
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  text-decoration: none;
+  transition: top 0.12s ease;
+}
+
+.skip-link:focus-visible {
+  top: var(--space-4);
+  box-shadow: var(--focus-ring);
+}

@@ -8,9 +8,9 @@ import { Panel } from '../components'
  */
 export function DashboardPage() {
   return (
-    <Panel title="Dashboard">
+    <Panel title="Dashboard" headingLevel="h1">
       <p className="text-body">Live health overview lands in STORY-015b.</p>
-      <h3 className="text-h3">Backend connectivity check</h3>
+      <h2 className="text-h2">Backend connectivity check</h2>
       <ComponentsProbe />
     </Panel>
   )

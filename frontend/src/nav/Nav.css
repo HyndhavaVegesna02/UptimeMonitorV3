@@ -41,6 +41,7 @@
   text-decoration: none;
   border-bottom: 2px solid transparent;
   box-sizing: border-box;
+  touch-action: manipulation;
 }
 
 .nav__tab-link:hover {
@@ -64,6 +65,7 @@
   color: var(--color-ink);
   cursor: pointer;
   font-size: var(--fs-body);
+  touch-action: manipulation;
 }
 
 .nav__toggle:hover {

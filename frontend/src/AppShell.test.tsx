@@ -84,4 +84,24 @@ describe('AppShell routing', () => {
       ).toBeInTheDocument()
     }
   })
+
+  it('offers a skip link that moves focus to the main landmark', async () => {
+    const user = userEvent.setup()
+    renderShell('/')
+
+    const skipLink = screen.getByRole('link', { name: 'Skip to main content' })
+    expect(skipLink).toHaveAttribute('href', '#main-content')
+
+    skipLink.focus()
+    await user.keyboard('{Enter}')
+
+    expect(screen.getByRole('main')).toHaveFocus()
+  })
+
+  it('gives each route exactly one level-one heading', () => {
+    renderShell('/')
+    expect(
+      screen.getByRole('heading', { name: 'Dashboard', level: 1 }),
+    ).toBeInTheDocument()
+  })
 })

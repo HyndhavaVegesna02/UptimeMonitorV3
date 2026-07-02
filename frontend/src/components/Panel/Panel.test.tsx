@@ -28,4 +28,22 @@ describe('Panel', () => {
     const { container } = render(<Panel>content</Panel>)
     expect(container.querySelector('.panel')).not.toBeNull()
   })
+
+  it('renders the title as an h1 when this panel is the page root (headingLevel="h1")', () => {
+    render(
+      <Panel title="Dashboard" headingLevel="h1">
+        content
+      </Panel>,
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Dashboard', level: 1 }),
+    ).toBeInTheDocument()
+  })
+
+  it('defaults the title to an h2 for nested/secondary panels', () => {
+    render(<Panel title="Nested panel">content</Panel>)
+    expect(
+      screen.getByRole('heading', { name: 'Nested panel', level: 2 }),
+    ).toBeInTheDocument()
+  })
 })

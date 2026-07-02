@@ -40,7 +40,7 @@ export function Nav() {
           theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'
         }
       >
-        {theme === 'dark' ? '☀' : '☾'}
+        <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
       </button>
     </nav>
   )

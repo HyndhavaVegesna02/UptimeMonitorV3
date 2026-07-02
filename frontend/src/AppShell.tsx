@@ -13,8 +13,21 @@ import './AppShell.css'
 export function AppShell() {
   return (
     <>
+      <a
+        href="#main-content"
+        className="skip-link"
+        onClick={(event) => {
+          const target = document.getElementById('main-content')
+          if (target) {
+            event.preventDefault()
+            target.focus()
+          }
+        }}
+      >
+        Skip to main content
+      </a>
       <Nav />
-      <main className="app-shell__main">
+      <main id="main-content" className="app-shell__main" tabIndex={-1}>
         <Routes>
           <Route path="/" element={<DashboardPage />} />
           <Route path="/availability" element={<AvailabilityPage />} />
