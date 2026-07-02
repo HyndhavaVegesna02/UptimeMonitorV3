@@ -203,7 +203,7 @@ stories:
   - id: STORY-015b
     title: Dashboard tab — live component health at a glance
     file: docs/scrum/stories/STORY-015b-dashboard-tab.md
-    status: ready
+    status: done    # accepted at Sprint 26 review (2026-07-02), 3/3. First real tab; sets the per-tab pattern.
     points: 3
     priority: 16
     type: feature
@@ -251,7 +251,7 @@ stories:
   - id: STORY-041
     title: Frontend pattern hardening — client error-wrapping, shared cx(), modular MSW handlers, catch-all route
     file: docs/scrum/stories/STORY-041-frontend-pattern-hardening.md
-    status: ready   # from sprint-25 STORY-015a review (6 minors); committed to sprint 26 (before 015b)
+    status: done    # accepted at Sprint 26 review (2026-07-02), 2/2. Hardened the shell before 015b.
     points: 2
     priority: 16
     type: chore

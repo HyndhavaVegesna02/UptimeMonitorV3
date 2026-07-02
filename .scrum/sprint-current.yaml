@@ -1,8 +1,8 @@
 # YourTeam active sprint board.
 sprint: 26
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: null
+closed: 2026-07-02
 goal: "Land the first real frontend tab on a hardened shell. STORY-041 first tightens the shell
   seams the six tabs will copy (typed-client error-wrapping on a malformed 2xx body, a shared
   cx() classnames helper, per-feature MSW handler modules, a catch-all route). STORY-015b then
@@ -62,21 +62,64 @@ stories:
         commit: 4489f9d
         at: 2026-07-02T14:52:00+05:30
     review: null            # 2 pts -> no spec/quality reviewers per the size rule
-    blast_radius_resolved: false   # DEFERRED to the sprint-end compile pass: 041 touched
-                                   # client.ts / AppShell.tsx / mocks/handlers.ts, all in
-                                   # frontend-zone.md code_refs — but 015b (next, same sprint) touches
-                                   # the same files, so the article is updated ONCE at close reflecting
-                                   # both stories' diff (established multi-story pattern; the compile
-                                   # pass is the blocking gate before review).
+    blast_radius_resolved: true    # resolved at the sprint-end compile pass (@ 6d44c22): 041's
+                                   # changes to client.ts / AppShell.tsx / mocks/handlers.ts folded
+                                   # into frontend-zone.md alongside 015b's (single update, as planned).
   - id: STORY-015b
     points: 3
-    board: in-progress
+    board: done
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
+        exit_code: 0
+        output_tail: "orchestrator-verified at 6d44c22 (clean committed tree, diff frontend-only).
+          FRONTEND (from frontend/): npm test 71 passed / 15 files; npm run build (tsc -b && vite
+          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
+          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
+          (implementer-run — diff touches zero backend files). DB-gated pair NOT re-run: no
+          backend/migration/pyproject diff, so sprint-25's 11 FKs / 0 violations + alembic exit 0
+          still hold. (Gates re-run after the 6d44c22 docstring nit fix; 71 tests green.)"
+        commit: 6d44c22
+        at: 2026-07-02T16:36:00+05:30
+    review:
+      first_pass: "spec PASS (all 4 AC MET) / quality APPROVE (0 Critical, 0 Major). BOTH Opus
+        reviewers ran the three frontend gates themselves (71 tests). Spec traced each AC to a test
+        that DRIVES the named path: AC2 loading/empty/error->retry + success all via MSW (server.use
+        for empty [] and the fail-then-succeed retry asserting callCount==2), no mocked hook; AC3
+        all five status->badge mappings asserted via accessible badge TEXT scoped per-row with
+        within() (not toHealthStatus in isolation); AC4 useComponents extracted, ComponentsProbe
+        fully deleted, coverage PRESERVED (old test renamed onto the hook + a new all-statuses
+        mapping test = net coverage up). Quality confirmed the cancelled-guard survived extraction
+        byte-identical (no stale-closure/unmounted-setState race), DashboardPage.css is tokens-only
+        (zero hex), the badge label uses ink (--color-ink-muted) with health color confined to the
+        dot/background (non-text-only rule holds), no eslint-disable, no dead code after the
+        deletion. KEEP."
+      fix: "One doc-only nit both reviewers raised, folded in inline (commit 6d44c22): de-staled the
+        statusMapping.ts docstring (it still called itself 'provisional for the T5 proving example
+        only' / '015b will own it' — 015b now consumes it unchanged). No behavior change; gates
+        re-run green."
+      second_pass: null
+      open_minors:
+        - "useComponents.ts docstring notes it was 'extracted verbatim from ComponentsProbe' (now
+          deleted) — kept intentionally as accurate provenance, not a live code reference."
+        - "The error->retry path is asserted at BOTH the hook (useComponents.test) and page
+          (DashboardPage.test) level — defensible (isolated contract + full UI path), but 015c is
+          where a convention call on double-testing should be made."
+        - "PATTERN (quality reviewer, for 015c): useComponents is a ComponentDTO-specialized
+          useFetch<T>; when the 2nd near-identical fetch hook lands in 015c, lift the
+          discriminated-union + cancelled-guard + attempt-keyed-retry into a shared useFetch<T>
+          (parallel-shape trigger). Flagged in frontend-zone.md Inference + to raise at 015c planning."
+      ac_note: "No live/manual-only AC: all four are mechanically verifiable and were verified
+        in-session (both reviewers ran the gates). The 015b scope was trimmed at planning to the
+        real ComponentDTO ({id,name,status}) — no timestamp/latency AC that the API can't satisfy."
+    blast_radius_resolved: true    # sprint-end compile pass @ 6d44c22: frontend-zone.md updated for
+                                   # 041 + 015b (modular handlers, cx, catch-all, client hardening;
+                                   # useComponents + real DashboardPage; ComponentsProbe removed;
+                                   # statusMapping authoritative). code_refs re-scoped (dead
+                                   # handlers.ts -> handlers/; +cx.ts/useComponents.ts/DashboardPage.ts/
+                                   # statusMapping.ts). Sweep: 0 stale / 0 broken across 12 articles.
 hotfixes: []
 interrupts: []
