@@ -1,0 +1,167 @@
+/*
+ * Theme-scoped design tokens (STORY-015a AC4).
+ * Dark values are the DESIGN-linear.app.md reference, taken nearly verbatim
+ * (see the sprint-25 plan.md design brief). Light values are a designed
+ * derivation from the reference's inverse tokens, holding the same 4-step
+ * ink hierarchy and >=4.5:1 ink/surface contrast in both themes.
+ *
+ * Components consume ONLY these custom properties — never raw hex — per the
+ * sprint-25 conventions checklist ("tokens, not hex").
+ */
+
+:root[data-theme='dark'] {
+  /* Surfaces */
+  --color-canvas: #010102;
+  --color-surface-1: #0f1011;
+  --color-surface-2: #141516;
+  --color-surface-3: #18191a;
+  --color-surface-4: #191a1b;
+
+  /* Hairlines */
+  --color-hairline: #23252a;
+  --color-hairline-strong: #34343a;
+
+  /* Ink (4-step hierarchy) */
+  --color-ink: #f7f8f8;
+  --color-ink-muted: #d0d6e0;
+  --color-ink-subtle: #8a8f98;
+  --color-ink-tertiary: #62666d;
+
+  /* Accent — lavender, used scarcely (buttons, focus, active tab, links) */
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #828fff;
+  --color-accent-focus: #5e69d1;
+  --color-on-accent: #ffffff;
+
+  /* Health palette — non-text cues only; each has a -subtle badge surface */
+  --color-health-up: #27a644;
+  --color-health-up-subtle: rgba(39, 166, 68, 0.18);
+  --color-health-down: #e5484d;
+  --color-health-down-subtle: rgba(229, 72, 77, 0.18);
+  --color-health-degraded: #d5a021;
+  --color-health-degraded-subtle: rgba(213, 160, 33, 0.18);
+  --color-health-maintenance: #3b9eff;
+  --color-health-maintenance-subtle: rgba(59, 158, 255, 0.18);
+  --color-health-unknown: #8a8f98;
+  --color-health-unknown-subtle: rgba(138, 143, 152, 0.18);
+
+  /* Overlay / scrim */
+  --color-overlay: rgba(0, 0, 0, 0.6);
+}
+
+:root[data-theme='light'] {
+  /* Surfaces — derived from the reference's inverse tokens + two designed
+     steps so the same 4-level ladder exists in both themes. */
+  --color-canvas: #ffffff;
+  --color-surface-1: #f5f6f6;
+  --color-surface-2: #f6f7f7;
+  --color-surface-3: #eef0f1;
+  --color-surface-4: #e6e8ea;
+
+  /* Hairlines */
+  --color-hairline: #dfe1e4;
+  --color-hairline-strong: #c7cbd1;
+
+  /* Ink (4-step hierarchy, each >=4.5:1 against surface-1/canvas) */
+  --color-ink: #0d0e10;
+  --color-ink-muted: #3a3f47;
+  --color-ink-subtle: #5b606a;
+  --color-ink-tertiary: #767b84;
+
+  /* Accent — same lavender hue family; hover/focus darken for light-canvas
+     contrast instead of the dark theme's lighten. */
+  --color-accent: #5e6ad2;
+  --color-accent-hover: #4a55b8;
+  --color-accent-focus: #5e69d1;
+  --color-on-accent: #ffffff;
+
+  /* Health palette — darkened from the dark-theme values to hold ink-level
+     contrast when they ever sit as text-adjacent icons on light surfaces;
+     text itself never uses these (AC6). */
+  --color-health-up: #1a7f37;
+  --color-health-up-subtle: rgba(26, 127, 55, 0.12);
+  --color-health-down: #c53030;
+  --color-health-down-subtle: rgba(197, 48, 48, 0.12);
+  --color-health-degraded: #9a6700;
+  --color-health-degraded-subtle: rgba(154, 103, 0, 0.12);
+  --color-health-maintenance: #0b68cb;
+  --color-health-maintenance-subtle: rgba(11, 104, 203, 0.12);
+  --color-health-unknown: #5b606a;
+  --color-health-unknown-subtle: rgba(91, 96, 106, 0.12);
+
+  --color-overlay: rgba(13, 14, 16, 0.4);
+}
+
+:root {
+  color-scheme: light dark;
+
+  /* Type families */
+  --font-sans:
+    'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* Type scale — headings carry negative tracking, tapering to 0 at body
+     (reference scale adapted to app sizes <=28px per the design brief). */
+  --fs-h1: 28px;
+  --fw-h1: 600;
+  --lh-h1: 1.2;
+  --ls-h1: -0.6px;
+
+  --fs-h2: 20px;
+  --fw-h2: 600;
+  --lh-h2: 1.25;
+  --ls-h2: -0.3px;
+
+  --fs-h3: 16px;
+  --fw-h3: 600;
+  --lh-h3: 1.3;
+  --ls-h3: -0.1px;
+
+  --fs-body-lg: 16px;
+  --fw-body-lg: 400;
+  --lh-body-lg: 1.5;
+  --ls-body-lg: -0.05px;
+
+  --fs-body: 14px;
+  --fw-body: 400;
+  --lh-body: 1.5;
+  --ls-body: 0;
+
+  --fs-caption: 12px;
+  --fw-caption: 400;
+  --lh-caption: 1.4;
+  --ls-caption: 0;
+
+  --fs-button: 14px;
+  --fw-button: 500;
+  --lh-button: 1.2;
+  --ls-button: 0;
+
+  --fs-mono: 13px;
+  --fw-mono: 400;
+  --lh-mono: 1.5;
+  --ls-mono: 0;
+
+  /* Spacing — 4px base */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+
+  /* Radii */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-chip: 4px;
+  --radius-pill: 9999px;
+
+  /* Focus ring — accent, offset by a canvas-colored ring for legibility on
+     any surface (AC6: visible focus ring on every interactive element). */
+  --focus-ring: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-accent-focus);
+
+  /* Layout constants */
+  --nav-height: 56px;
+  --target-min: 40px;
+}
