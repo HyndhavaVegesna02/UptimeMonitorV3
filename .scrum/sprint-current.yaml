@@ -1,125 +1,53 @@
 # YourTeam active sprint board.
-sprint: 26
-status: closed        # none | active | review | closed | aborted
+sprint: 27
+status: active        # none | active | review | closed | aborted
 started: 2026-07-02
-closed: 2026-07-02
-goal: "Land the first real frontend tab on a hardened shell. STORY-041 first tightens the shell
-  seams the six tabs will copy (typed-client error-wrapping on a malformed 2xx body, a shared
-  cx() classnames helper, per-feature MSW handler modules, a catch-all route). STORY-015b then
-  promotes the shell's GET /api/v1/components proving example (features/dashboard/ComponentsProbe)
-  into the real Dashboard tab — extracting the fetch pattern into a reusable useComponents hook
-  (discriminated-union state + cancelled-guard + attempt-keyed retry) that establishes the per-tab
-  template 015c-015g copy. Frontend-only; no backend change."
-branch: sprint-26
-start_tag: sprint-26-start
-# Capacity: velocity last-3 recorded entries (sprints 21,22,25) = 5,3,5 -> mean 4.33. Committed 5
-# (041=2 + 015b=3) — consistent with demonstrated throughput (sprints 20/21/25 each delivered 5).
-# Sprints 23/24 were reverted (521764c); velocity.json has no entries for them.
+closed: null
+goal: "Build the Approvals tab (STORY-015c) — the product's reason to exist: a degradation reaches
+  the public Statuspage only after a human approves it here. Lists open proposals (GET
+  /api/v1/approvals) and performs approve/reject (POST /api/v1/decisions/{id}) with a confirmation
+  step and full failure handling (409 lost-race / 404 gone / error). Also lands the shared
+  useFetch<T> (015c is the 2nd fetch hook — the parallel-shape agreement fires): extract the generic
+  from 015b's useComponents, refactor useComponents onto it, build the approvals fetch on it.
+  Frontend-only; no backend change."
+branch: sprint-27
+start_tag: sprint-27-start
+# Capacity: velocity last-3 (sprints 22,25,26) = 3,5,5 -> mean 4.33. Committed 5 (STORY-015c) — a
+# single-story focused sprint, consistent with demonstrated throughput.
 #
 # WORKFLOW (in-process, PO directive 2026-07-02): a Sonnet 5 implementer subagent at HIGH effort
-# builds to plan.md, committing onto sprint-26. Reviewers stay on Opus (2026-06-24 model rule).
-# Per-story ceremony by size: 041 (2 pts) -> impl + DoD gate; 015b (3 pts) -> impl + Opus spec &
-# quality reviewers + DoD gate. The orchestrator runs the FULL gate (3 frontend commands; the 6
-# backend commands must stay green untouched), reviewers, mechanical wiki blast-radius sweep, then
-# review/verdict/merge/retro.
+# builds to plan.md, committing onto sprint-27. Reviewers on Opus (2026-06-24). 015c is 5 pts ->
+# impl + Opus spec & quality reviewers + full DoD gate. Orchestrator runs the gate (3 frontend
+# commands; 6 backend commands must stay green untouched), reviewers, wiki blast-radius sweep,
+# then review/verdict/merge/retro.
 #
-# EXECUTION ORDER: 041 FIRST (hardens the shared client/handlers/primitives), THEN 015b (built on
-# the hardened seams, so 015c-g copy a clean template). Reasoning: dependency + blast-radius — 041
-# touches the shared files every tab extends; doing it first avoids 015b building on un-hardened
-# seams that 041 would then have to re-touch.
+# PLANNING DILIGENCE (per the 2026-07-02 tab-AC-vs-DTO agreement, applied at THIS lock): 015c's AC
+# were reconciled against the real contracts before lock — ProposalDTO = {id, component_id,
+# from_status, to_status, state, proposed_at} (NO reason/evidence, NO friendly name); decision POST
+# = {action:"approve"|"reject", actor:<non-empty>, notes?} -> {proposal_id,state,resolved_at} with
+# 200/422/404/409. PO decisions: fixed-placeholder actor behind ONE swappable seam (getActor(),
+# swap-point for STORY-017 auth); INCLUDE the useFetch<T> refactor here (AC5).
 #
-# DoD: backend six commands UNCHANGED and must stay green (no backend source change in scope).
-# Frontend gates (npm test / npm run build / npm run lint) all exit 0 on a CLEAN committed tree.
+# DoD: backend six commands UNCHANGED and green (no backend source change). Frontend gates
+# (npm test / npm run build / npm run lint) exit 0 on a CLEAN committed tree.
 #
-# BASELINE at lock: sprint-26 cut from main @ 9e9b369 (sprint-25 merged + retro). Frontend + backend
-# gates verified green this session at the sprint-25 code state (08d91e7, preserved on main): backend
-# pytest 426 / lint-imports 5-0 / FK 11-0 / alembic exit 0 / ruff clean; frontend npm test 63 / build /
-# lint all exit 0. 9e9b369 adds only docs/scrum bookkeeping on top (no code change).
+# BASELINE at lock: sprint-27 cut from main @ 7938f2a (sprint-26 merged + retro/amendment). Gates
+# green at the sprint-26 code state (6d44c22, preserved on main): frontend npm test 71 / build /
+# lint; backend pytest 426 / lint-imports 5-0 / FK 11-0 / alembic exit 0 / ruff clean. 7938f2a adds
+# only docs/scrum bookkeeping on top.
 #
-# Agreements in force: all of working-agreements.md as of 9e9b369, INCLUDING the 2026-07-02 Sonnet-5
-# in-process implementation directive. The sprint-23/24 frontend amendments remain reverted / not
-# re-adopted (PO start-clean, 2026-07-02); their lessons live in the story AC.
+# Agreements in force: all of working-agreements.md as of 7938f2a, incl. the 2026-07-02 Sonnet-5
+# in-process directive AND the new 2026-07-02 tab-AC-vs-DTO verification agreement.
 stories:
-  - id: STORY-041
-    points: 2
-    board: done            # todo | in-progress | blocked | review | done
-    pipeline: gate         # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at 1-2 pts)
+  - id: STORY-015c
+    points: 5
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # first-pass clean
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 4489f9d (clean committed tree, diff frontend-only).
-          FRONTEND (from frontend/): npm test 68 passed / 14 files; npm run build (tsc -b && vite
-          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
-          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
-          (implementer-run — diff touches zero backend files so pytest is unaffected). DB-gated pair
-          (check_fk_direction / alembic upgrade head) NOT re-run: the diff touches no
-          backend/migration/pyproject file, so the sprint-25 result (11 FKs / 0 violations, alembic
-          exit 0 at the same schema) still holds — no schema change is possible from a frontend-only
-          diff."
-        commit: 4489f9d
-        at: 2026-07-02T14:52:00+05:30
-    review: null            # 2 pts -> no spec/quality reviewers per the size rule
-    blast_radius_resolved: true    # resolved at the sprint-end compile pass (@ 6d44c22): 041's
-                                   # changes to client.ts / AppShell.tsx / mocks/handlers.ts folded
-                                   # into frontend-zone.md alongside 015b's (single update, as planned).
-  - id: STORY-015b
-    points: 3
-    board: done
-    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
-    blocked_question: null
-    attempts: 1            # first-pass clean: both Opus reviewers passed, no fix loop
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend 3 gates + backend non-DB gates (orchestrator-verified on committed HEAD)"
-        exit_code: 0
-        output_tail: "orchestrator-verified at 6d44c22 (clean committed tree, diff frontend-only).
-          FRONTEND (from frontend/): npm test 71 passed / 15 files; npm run build (tsc -b && vite
-          build) exit 0; npm run lint exit 0. BACKEND: lint-imports 5 kept / 0 broken; ruff check
-          'All checks passed!'; ruff format --check '153 files already formatted'; pytest 426 passed
-          (implementer-run — diff touches zero backend files). DB-gated pair NOT re-run: no
-          backend/migration/pyproject diff, so sprint-25's 11 FKs / 0 violations + alembic exit 0
-          still hold. (Gates re-run after the 6d44c22 docstring nit fix; 71 tests green.)"
-        commit: 6d44c22
-        at: 2026-07-02T16:36:00+05:30
-    review:
-      first_pass: "spec PASS (all 4 AC MET) / quality APPROVE (0 Critical, 0 Major). BOTH Opus
-        reviewers ran the three frontend gates themselves (71 tests). Spec traced each AC to a test
-        that DRIVES the named path: AC2 loading/empty/error->retry + success all via MSW (server.use
-        for empty [] and the fail-then-succeed retry asserting callCount==2), no mocked hook; AC3
-        all five status->badge mappings asserted via accessible badge TEXT scoped per-row with
-        within() (not toHealthStatus in isolation); AC4 useComponents extracted, ComponentsProbe
-        fully deleted, coverage PRESERVED (old test renamed onto the hook + a new all-statuses
-        mapping test = net coverage up). Quality confirmed the cancelled-guard survived extraction
-        byte-identical (no stale-closure/unmounted-setState race), DashboardPage.css is tokens-only
-        (zero hex), the badge label uses ink (--color-ink-muted) with health color confined to the
-        dot/background (non-text-only rule holds), no eslint-disable, no dead code after the
-        deletion. KEEP."
-      fix: "One doc-only nit both reviewers raised, folded in inline (commit 6d44c22): de-staled the
-        statusMapping.ts docstring (it still called itself 'provisional for the T5 proving example
-        only' / '015b will own it' — 015b now consumes it unchanged). No behavior change; gates
-        re-run green."
-      second_pass: null
-      open_minors:
-        - "useComponents.ts docstring notes it was 'extracted verbatim from ComponentsProbe' (now
-          deleted) — kept intentionally as accurate provenance, not a live code reference."
-        - "The error->retry path is asserted at BOTH the hook (useComponents.test) and page
-          (DashboardPage.test) level — defensible (isolated contract + full UI path), but 015c is
-          where a convention call on double-testing should be made."
-        - "PATTERN (quality reviewer, for 015c): useComponents is a ComponentDTO-specialized
-          useFetch<T>; when the 2nd near-identical fetch hook lands in 015c, lift the
-          discriminated-union + cancelled-guard + attempt-keyed-retry into a shared useFetch<T>
-          (parallel-shape trigger). Flagged in frontend-zone.md Inference + to raise at 015c planning."
-      ac_note: "No live/manual-only AC: all four are mechanically verifiable and were verified
-        in-session (both reviewers ran the gates). The 015b scope was trimmed at planning to the
-        real ComponentDTO ({id,name,status}) — no timestamp/latency AC that the API can't satisfy."
-    blast_radius_resolved: true    # sprint-end compile pass @ 6d44c22: frontend-zone.md updated for
-                                   # 041 + 015b (modular handlers, cx, catch-all, client hardening;
-                                   # useComponents + real DashboardPage; ComponentsProbe removed;
-                                   # statusMapping authoritative). code_refs re-scoped (dead
-                                   # handlers.ts -> handlers/; +cx.ts/useComponents.ts/DashboardPage.ts/
-                                   # statusMapping.ts). Sweep: 0 stale / 0 broken across 12 articles.
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

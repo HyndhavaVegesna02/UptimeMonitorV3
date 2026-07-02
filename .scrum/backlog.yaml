@@ -215,7 +215,7 @@ stories:
     points: 5
     priority: 17
     type: feature
-    sprint: null
+    sprint: 27
   - id: STORY-015d
     title: Availability tab — two-grain availability + group rollup over a window
     file: docs/scrum/stories/STORY-015d-availability-tab.md
