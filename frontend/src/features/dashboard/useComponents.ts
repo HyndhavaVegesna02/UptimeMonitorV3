@@ -1,60 +1,19 @@
-import { useCallback, useEffect, useState } from 'react'
 import { getComponents } from '../../api/client'
 import type { ComponentDTO } from '../../api/types'
+import { useFetch } from '../../lib/useFetch'
+import type { FetchState, UseFetchResult } from '../../lib/useFetch'
 
-export type ComponentsFetchState =
-  | { phase: 'loading' }
-  | { phase: 'error'; message: string }
-  | { phase: 'success'; data: ComponentDTO[] }
+export type ComponentsFetchState = FetchState<ComponentDTO[]>
 
-export interface UseComponentsResult {
-  state: ComponentsFetchState
-  retry: () => void
-}
+export type UseComponentsResult = UseFetchResult<ComponentDTO[]>
 
 /**
- * Fetch hook for `GET /api/v1/components` (STORY-015b AC4) — extracted
- * verbatim from the STORY-015a proving example (`ComponentsProbe`) so the
- * Dashboard tab and every later tab share one fetch pattern: a
- * discriminated-union `ComponentsFetchState`, a cancelled-guarded effect
- * (never sets state after the request is stale/unmounted), and an
- * `attempt`-keyed `retry` that re-triggers the effect via a dependency bump
- * rather than calling the fetch directly from the event handler.
+ * Fetch hook for `GET /api/v1/components` (STORY-015b AC4). Built on the
+ * shared `useFetch<T>` (STORY-015c AC5) — this used to hold the fetch effect
+ * itself (a discriminated-union state, a cancelled-guarded effect, an
+ * `attempt`-keyed retry); that logic now lives once in `useFetch` and every
+ * tab's fetch hook, including this one, is a thin wrapper over it.
  */
 export function useComponents(): UseComponentsResult {
-  const [state, setState] = useState<ComponentsFetchState>({ phase: 'loading' })
-  const [attempt, setAttempt] = useState(0)
-
-  useEffect(() => {
-    let cancelled = false
-
-    getComponents()
-      .then((data) => {
-        if (!cancelled) {
-          setState({ phase: 'success', data })
-        }
-      })
-      .catch((err: unknown) => {
-        if (!cancelled) {
-          setState({
-            phase: 'error',
-            message: err instanceof Error ? err.message : 'Unknown error',
-          })
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [attempt])
-
-  const retry = useCallback(() => {
-    // Reset to loading in the event handler, not synchronously inside the
-    // effect body (react-hooks/set-state-in-effect) — this is what shows
-    // the spinner again for the in-flight retry.
-    setState({ phase: 'loading' })
-    setAttempt((n) => n + 1)
-  }, [])
-
-  return { state, retry }
+  return useFetch(getComponents)
 }
