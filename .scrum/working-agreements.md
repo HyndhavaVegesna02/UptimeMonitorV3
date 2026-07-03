@@ -446,4 +446,14 @@
   slow first run collided on the shared throwaway DB and produced a false "364 passed, 64 errors" — all
   DB-gated; a single clean run was 428 passed. The code was never at fault, but the false-red cost a
   diagnose/kill-strays/reset-DB/re-run cycle and could have misled a session into a needless fix loop.)
+- 2026-07-03 — **AC never pre-declare wiki blast radius — the mechanical sweep is the sole
+  decider.** A story's AC may require "wiki blast radius resolved" (and the six gates), but must
+  NOT enumerate which wiki articles will or won't be touched: at refinement nobody reliably
+  predicts the sweep's output, and a wrong prediction bakes a contradiction into the AC that a
+  reviewer must then adjudicate against the binding sweep agreement. Which articles update is
+  decided solely by the mechanical staleness sweep (2026-06-28 agreement) at DoD / the compile
+  pass. (Motivated by Sprint 30, STORY-044: AC4 listed `api-five-file-convention` among
+  "untouched" articles while the story's own AC1 — a NEW five-file module — made updating that
+  article mandatory; the spec reviewer had to resolve the built-in conflict. The implementer
+  updated the article, the only correct call.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
