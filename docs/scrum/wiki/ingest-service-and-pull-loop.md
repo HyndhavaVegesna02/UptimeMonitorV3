@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: ed19084
-verified_sprint: sprint-22
+verified_sha: 7cabee7
+verified_sprint: sprint-29
 status: verified          # verified | stale | archived
 ---
 
@@ -74,12 +74,16 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   wiring on one `engine`, builds the Dynatrace Grail executor (see [[dynatrace-adapter]]) and the
   publisher, constructs `DecideService(proposal_repo, publisher=...)`, and returns one
   `run_periodic(...)` coroutine per configured signal (with the six orchestration extras threaded).
-- **Publisher selection (STORY-016b):** the publish chain
-  `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))` (see [[statuspage-publish]]) is built
-  ONLY when the Statuspage secrets AND `config.statuspage_mapping()` are present; otherwise
-  `build_live_loop` injects a no-op `LoggingPublisher` so the loop runs **Dynatrace-only** (the PO can
-  verify ingest→pipeline→proposal internally without Statuspage creds). The `LoggingPublisher` path
-  builds no `RecordingPublisher`, so no publication rows are written on the no-op path.
+- **Publisher selection (STORY-016b, reshaped by STORY-045):** `build_live_loop` no longer assembles
+  the chain inline — it calls the shared `composition/publish_helper.py::build_publisher`
+  (`run.py::build_live_loop`, STORY-045 D2; see [[statuspage-publish]] for the full chain Facts),
+  passing `secrets.statuspage_page_id`/`statuspage_api_token` + `config.statuspage_mapping()`. With
+  Statuspage configured (both secrets AND a non-empty mapping) the chain is
+  `StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))`; otherwise
+  `StatusWritebackPublisher(LoggingPublisher())` — still **Dynatrace-only** externally (the PO can
+  verify ingest→pipeline→proposal internally without Statuspage creds) and still writing NO
+  publication rows on the no-op path, but the `components.status` write-back now applies on BOTH
+  paths (the local no-creds dev stack sees the Dashboard change).
 - `main()` (`run.py::main`, entrypoint `python -m src.composition.run`) loads settings + live secrets
   + config, seeds topology once, `asyncio.gather`s the loops, and disposes the engine in a `finally`
   on EVERY exit path (resource-lifecycle agreement; proven by `test_main_resource_lifecycle_failure_during_seeding`).
@@ -97,9 +101,12 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   no-domain-logic pass-through, one-cycle-per-tick + stoppable; plus STORY-016 the orchestration-
   threading path (`run_periodic` with all six extras yields a `(IngestResult, DecideAction)` tuple to
   `on_cycle`).
-- `backend/tests/test_run_live_loop.py` (STORY-016) builds the REAL chain via `build_live_loop` (only
-  `run_periodic` patched) and asserts the `BestEffort→Recording→Statuspage` nesting + the six extras on
-  each call, plus `main()` engine-dispose on success AND on a seeding failure.
+- `backend/tests/test_run_live_loop.py` (STORY-016, rewritten by STORY-045 per the 2026-06-29
+  contract-change agreement) builds the REAL chain via `build_live_loop` (only `run_periodic`
+  patched) and asserts the `StatusWriteback→BestEffort→Recording→Statuspage` nesting + the six
+  extras on each call (including that the SAME `component_repo` instance threads into both
+  `run_periodic` and the writeback publisher), plus `main()` engine-dispose on success AND on a
+  seeding failure.
 - The DB-gated persistence side (the actual `rejected_observations` row write) is covered in
   `backend/tests/test_persistence_adapters.py` — see [[persistence-adapters]].
 
@@ -131,3 +138,8 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - sprint-22: re-verified (STORY-016c). No pull-loop source change; `test_pull_loop.py` rows were flipped
   from `event.type: http_step_execution` to `http_monitor_execution` (the canonical row the live loop now
   ingests — see [[dynatrace-adapter]]). Verified at ed19084.
+- sprint-29: updated (STORY-045). `build_live_loop`'s inline publisher assembly moved into the shared
+  `publish_helper.py::build_publisher` (consumed by BOTH composition roots); the chain gains
+  `StatusWritebackPublisher` outermost (components.status write-back on both the creds and no-creds
+  paths); `test_run_live_loop.py` assembly tests rewritten for the new nesting. Ingest service +
+  pull loop themselves unchanged. verified_sha → 7cabee7.

@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 213034b
-verified_sprint: sprint-21
+verified_sha: 7cabee7
+verified_sprint: sprint-29
 status: verified
 ---
 
@@ -50,7 +50,12 @@ status: verified
   forbids core importing infrastructure. `load_settings()` raises `KeyError` if `DATABASE_URL`
   is unset (the app must not start without a DB URL). (The same module also hosts
   `load_live_secrets()` / `LiveSecrets` for the live loop's secrets — Dynatrace REQUIRED,
-  Statuspage OPTIONAL since STORY-016b — unrelated to the DB split; see [[dev-setup-and-dod]].)
+  Statuspage OPTIONAL since STORY-016b — plus, since STORY-045, the Statuspage-only subset
+  `load_statuspage_secrets()` / `StatuspageSecrets` (`settings.py::load_statuspage_secrets`), which
+  reads the SAME env-var names (`settings.py::STATUSPAGE_PAGE_ID_VAR` /
+  `settings.py::STATUSPAGE_API_KEY_VAR`) and to which `load_live_secrets` now delegates its
+  Statuspage half — used by `create_app`'s publisher wiring without requiring the DYNATRACE_* vars.
+  All unrelated to the DB split; see [[dev-setup-and-dod]] and [[statuspage-publish]].)
 - **URL dialect split (gotcha):** Alembic (SQLAlchemy 2) needs the psycopg3 dialect
   `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
@@ -96,3 +101,7 @@ status: verified
   `verified_sha` re-stamped to `d9c2a77`.
 - sprint-21: re-verified (STORY-016b). No migration or DB-split change; `load_live_secrets` now requires
   only the two Dynatrace vars (Statuspage optional). `verified_sha` re-stamped to `213034b`.
+- sprint-29: re-verified (STORY-045). No migration or DB-split change; `settings.py` gained the
+  `StatuspageSecrets`/`load_statuspage_secrets` subset (env-var names hoisted to
+  `STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR`; `load_live_secrets` delegates) for
+  `create_app`'s publisher wiring. `verified_sha` re-stamped to `7cabee7`.
