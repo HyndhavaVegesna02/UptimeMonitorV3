@@ -12,8 +12,10 @@ import {
   getApprovals,
   getComponentAvailability,
   getComponents,
+  getSampleMode,
   getTopology,
   postDecision,
+  putSampleMode,
 } from './client'
 
 describe('getComponents', () => {
@@ -220,5 +222,68 @@ describe('getComponentAvailability', () => {
         until: '2026-07-03T00:00:00.000Z',
       }),
     ).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('getSampleMode', () => {
+  it('fetches and parses the current flag state from /api/v1/sample-mode', async () => {
+    const result = await getSampleMode()
+    expect(result).toEqual({ enabled: false })
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.get('/api/v1/sample-mode', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(getSampleMode()).rejects.toBeInstanceOf(ApiError)
+    await expect(getSampleMode()).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.error()))
+
+    await expect(getSampleMode()).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('putSampleMode', () => {
+  it('PUTs { enabled } and parses the resulting SampleModeDTO', async () => {
+    let receivedBody: unknown
+    server.use(
+      http.put('/api/v1/sample-mode', async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json({ enabled: true })
+      }),
+    )
+
+    const result = await putSampleMode(true)
+
+    expect(receivedBody).toEqual({ enabled: true })
+    expect(result).toEqual({ enabled: true })
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.put('/api/v1/sample-mode', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(putSampleMode(true)).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.error()))
+
+    await expect(putSampleMode(true)).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('throws a typed ApiError when a 2xx response body is not valid JSON', async () => {
+    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.text('not json')))
+
+    await expect(putSampleMode(true)).rejects.toBeInstanceOf(ApiError)
   })
 })

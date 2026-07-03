@@ -9,6 +9,7 @@ import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_TOPOLOGY,
 } from './availability'
+import { FIXTURE_SAMPLE_MODE_OFF, sampleModeHandlers } from './sampleMode'
 
 /**
  * Composes each feature's MSW handler module into the single array the
@@ -20,6 +21,7 @@ export const handlers = [
   ...componentsHandlers,
   ...approvalsHandlers,
   ...availabilityHandlers,
+  ...sampleModeHandlers,
 ]
 
 // Re-exported so existing call sites (`import { FIXTURE_COMPONENTS } from
@@ -30,4 +32,5 @@ export {
   FIXTURE_PROPOSALS,
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_TOPOLOGY,
+  FIXTURE_SAMPLE_MODE_OFF,
 }

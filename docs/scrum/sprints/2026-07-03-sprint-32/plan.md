@@ -98,7 +98,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
 
 ## STORY-049 — Dashboard sample-switch toggle (2 pts) — AC1–AC5
 
-- [ ] **T1 — Types + client + MSW (AC4 plumbing).** Add `SampleModeDTO` to `types.ts`. Client:
+- [x] **T1 — Types + client + MSW (AC4 plumbing).** Add `SampleModeDTO` to `types.ts`. Client:
       `getSampleMode(): Promise<SampleModeDTO>` and `putSampleMode(enabled: boolean):
       Promise<SampleModeDTO>` — add a typed PUT helper mirroring the existing POST wrapper
       (network/non-2xx/malformed-body → `ApiError`). `mocks/handlers/sampleMode.ts` (GET + PUT
