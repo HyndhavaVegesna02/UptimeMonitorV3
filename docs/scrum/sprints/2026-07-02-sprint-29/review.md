@@ -79,4 +79,6 @@
    (includes the degrade→approve→recover e2e).
 
 ### Verdict
-- [ ] PO verdict: ACCEPT / REJECT (no partial accept; nitpicks → accept + follow-up story)
+- [x] PO verdict (2026-07-03): **ACCEPT + follow-up chore** — merged to main; the two quality
+      minors filed as STORY-047 (`docs/scrum/stories/STORY-047-publisher-wiring-minors.md`, 1 pt,
+      ready). Velocity: 5 committed / 5 accepted.
