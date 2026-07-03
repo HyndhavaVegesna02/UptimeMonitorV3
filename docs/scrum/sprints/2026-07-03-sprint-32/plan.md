@@ -91,7 +91,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       (`ErrorState`) via shell primitives; Panel `headingLevel="h1"`. MSW tests: selector change
       asserts the actual `since`/`until` query params sent (AC2's named assertion); null-pct row
       shows "no data" not 0%; loading/empty/error+retry each driven and asserted.
-- [ ] **T6 — Gates + blast radius (015d).** All three frontend gates exit 0 on a clean committed
+- [x] **T6 — Gates + blast radius (015d).** All three frontend gates exit 0 on a clean committed
       tree. No CLAUDE.md/DoD change (no new command). Run the mechanical wiki staleness sweep;
       update every article it flags (expect at least `frontend-zone.md` — client/types/handlers/new
       feature dir), **committing article-by-article** (2026-07-03 agreement).
