@@ -204,7 +204,7 @@ paths/DTOs other than stated.
       `seed_topology`): empty `[]`, signal_key ordering, `get` unknown → `None`, fields incl.
       NULL interval → `None`. Both-shapes validator tests for `Signal.interval_seconds > 0`.
       Then implement domain module (+ exports), port (+ exports), Postgres adapter, fake.
-- [ ] **T3 — `api/v1/topology/` five-file module (D3, AC1), TDD.** Failing tests first: shape
+- [x] **T3 — `api/v1/topology/` five-file module (D3, AC1), TDD.** Failing tests first: shape
       test (set equality, NAMED deliverable); fake-injected GET `/api/v1/topology` — empty →
       `[]`, multi-signal component nests sorted signals with all four fields, zero-signal
       component → `signals: []`, NULL-component_id signal appears nowhere. Then the module +

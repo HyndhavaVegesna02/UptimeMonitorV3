@@ -9,6 +9,7 @@ from src.core.ports import (
     ObservationRepository,
     ProposalRepository,
     PublicationRepository,
+    SignalRepository,
     StatusPublisherPort,
 )
 
@@ -37,6 +38,7 @@ def create_app(
     maintenance_repo: MaintenanceRepository | None = None,
     observation_repo: ObservationRepository | None = None,
     publication_repo: PublicationRepository | None = None,
+    signal_repo: SignalRepository | None = None,
     clock: ClockPort | None = None,
     publisher: StatusPublisherPort | None = None,
     config_dir: str | None = None,
@@ -70,6 +72,9 @@ def create_app(
         from src.adapters.persistence.proposal_repository import (
             PostgresProposalRepository,
         )
+        from src.adapters.persistence.signal_repository import (
+            PostgresSignalRepository,
+        )
         from src.composition.config import load_config
         from src.composition.settings import load_settings, to_psycopg_url
 
@@ -89,6 +94,8 @@ def create_app(
             )
 
             publication_repo = PostgresPublicationRepository(engine)
+        if signal_repo is None:
+            signal_repo = PostgresSignalRepository(engine)
         app.state.db_engine = engine
 
         # Load and validate config (fail-fast: raises if invalid)
@@ -154,6 +161,7 @@ def create_app(
     app.state.maintenance_repo = maintenance_repo
     app.state.observation_repo = observation_repo
     app.state.publication_repo = publication_repo
+    app.state.signal_repo = signal_repo
     app.state.clock = clock
     app.state.publisher = publisher
     app.state.approval_service = approval_service
