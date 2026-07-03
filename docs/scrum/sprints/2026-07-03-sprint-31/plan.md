@@ -167,7 +167,7 @@ outage flows through it as ordinary data, which is the entire point.
       shape test; GET default false; PUT→GET round-trips (fake-injected); 422 on bad body;
       DB-gated round-trip. Then the module + `create_app`/`app.state`/`dependencies.py`/
       `api/v1/__init__.py`/`pyproject.toml` wiring (seam comments on the create_app lines).
-- [ ] **T3 — `SampleModeIngest` decorator (D4, D5; AC3, AC5), TDD.** Failing tests first (all
+- [x] **T3 — `SampleModeIngest` decorator (D4, D5; AC3, AC5), TDD.** Failing tests first (all
       fake-driven — fake delegate capturing batches, fake flag repo): OFF → delegate receives
       the IDENTICAL batch objects (assert identity, not equality — AC7b); ON → delegate
       receives copies with `health=DOWN` + `raw_ref=SIMULATED_RAW_REF` and ALL other fields
