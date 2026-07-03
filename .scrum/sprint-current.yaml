@@ -42,13 +42,47 @@ start_tag: sprint-30-start
 stories:
   - id: STORY-044
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: review          # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1            # clean single pass — implementer completed T1-T6 with no stall, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
+        exit_code: 0
+        output_tail: "gate at d1ca619 (clean committed tree). pytest 475 passed in 91.59s (SINGLE run,
+          fixture-spawned throwaway postgres:16; +31 tests over sprint-29's 444); lint-imports 5 kept /
+          0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head exit 0 (new revision
+          5ed254a8daab applied; downgrade/upgrade reversibility verified by implementer pre-commit);
+          ruff check 'All checks passed!'; ruff format --check '168 files already formatted'. NOTE:
+          fk-direction + alembic re-ran sequentially after the first invocation missed the env-var
+          export (orchestrator shell slip, not a code failure) — never concurrent. Container torn down."
+        commit: d1ca619
+        at: 2026-07-03T13:35:00+05:30
+    review:
+      first_pass: "spec PASS (AC1-AC4 all MET; reviewer RAN the cited tests incl. the DB-gated topology
+        enumeration + parity-contract Postgres halves — passed, not skipped; MIN/SUM + per-child-interval
+        fixture traced to AC2's named path; H2 regression traced to AC3; contract-change rewrites
+        confirmed — only an import line removed from test_availability_endpoint.py) / quality APPROVE
+        (0 Critical, 0 Major; verified core availability.py untouched, D1 migration exact, parity
+        contract genuinely two-impl, per-child intervals real, create_app wiring symmetric, wiki symbol
+        citations accurate)."
+      fix: "None — both reviewers passed first-pass with zero blocking findings."
+      second_pass: null
+      open_minors:
+        - "availability/service.py::get_component_availability spells out all nine AvailabilityDTO
+          fields inline for each SignalAvailabilityDTO instead of reusing _to_dto (field-list
+          duplication that would drift if AvailabilityDTO gains a field)."
+        - "availability/service.py: children_signals iterated twice (null-interval guard then compute)
+          — intentional fail-fast, noted for completeness only."
+      spec_notes: "AC4's parenthetical listed api-five-file-convention among 'untouched' articles, but
+        AC1's new five-file module makes updating it MANDATORY (staleness sweep) — implementer resolved
+        the conflict the only correct way (updated it); the other two named articles are genuinely
+        untouched. Scope addition flagged: the 409 SignalIntervalUnconfiguredError path — plan-pinned
+        (D2/D4/D5), not improvised; keep. Implementer deviation: T4+T5 in one commit (shared service
+        plumbing), both still test-first — retro input, not a finding."
+    blast_radius_resolved: true   # implementer updated 5 articles + re-verified 2 (all bumped to
+                                  # 280c1e3); orchestrator mechanical sweep at compile pass: 12/12
+                                  # CURRENT, 0 broken links
 hotfixes: []
 interrupts: []
