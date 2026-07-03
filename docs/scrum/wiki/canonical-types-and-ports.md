@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: cc7f0ce
-verified_sprint: sprint-19
+verified_sha: 7cabee7
+verified_sprint: sprint-29
 status: verified          # verified | stale | archived
 ---
 
@@ -54,6 +54,11 @@ status: verified          # verified | stale | archived
   `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py::StatusProposal`).
 - `Component` (frozen) models a component and its display status (`component.py::Component`).
   Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b).
+- STORY-045: `ComponentNotFoundError` (`component.py::ComponentNotFoundError`, a `ValueError` subclass)
+  mirrors `proposal.py::ProposalNotFoundError`'s pattern. Raised by `ComponentRepository.set_status`
+  when the conditional write affects zero rows (2026-06-28 check-then-act agreement: never a bare
+  `ValueError`) — both `PostgresComponentRepository` and `FakeComponentRepository` raise it identically
+  (2026-06-26 fake/adapter parity agreement). See [[persistence-adapters]] for the adapter Facts.
 - `MaintenanceWindow` (frozen) models a scheduled maintenance window for a component (`maintenance.py::MaintenanceWindow`).
   Fields: `component_id:str`, `starts_at:datetime`, `ends_at:datetime`, `reason:str|None=None`, `id:int|None=None`. Timezones for starts_at and ends_at are validated to be UTC (`maintenance.py::MaintenanceWindow`). Enforces `ends_at > starts_at` invariant via a `model_validator(mode="after")` (`maintenance.py::MaintenanceWindow._require_ends_after_starts`) (STORY-036).
 - `Publication` (frozen) records a SUCCESSFUL Statuspage publish (§9, §12/T1.1, §17) (`publication.py::Publication`).
@@ -97,8 +102,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   validation gate refuses (STORY-009, dossier §8). `signal_key` is `str | None` deliberately:
   an unknown/absent signal_key is often exactly *why* a row was rejected
   (`rejected_observation_repository.py::RejectedObservationRepository.save`).
-- `ComponentRepository` — read persistence interface for listing and looking up components (`component_repository.py::ComponentRepository`).
-  Provides `list_components() -> list[Component]` (STORY-014b) and `get(component_id) -> Component | None` (STORY-016a: returns `None` on not-found).
+- `ComponentRepository` — persistence interface for listing, looking up, and writing back components (`component_repository.py::ComponentRepository`).
+  Provides `list_components() -> list[Component]` (STORY-014b), `get(component_id) -> Component | None` (STORY-016a: returns `None` on not-found), and `set_status(component_id, status) -> None` (STORY-045: writes the published status back; raises `ComponentNotFoundError` on an unknown id — see [[persistence-adapters]] for the adapter implementation and the shared fake/Postgres parity contract test).
 - `MaintenanceRepository` — persistence interface for managing maintenance windows (`maintenance_repository.py::MaintenanceRepository`).
   Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
 - `PublicationRepository` — persistence interface for recording and listing Statuspage publications (`publication_repository.py::PublicationRepository`).
@@ -180,3 +185,4 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - sprint-12: STORY-014 adds the `ProposalRepository.get(proposal_id)` lookup and the
   `ProposalNotFoundError`/`ProposalNotOpenError` domain errors to `proposal.py`. Re-verified at eb147ef.
 - sprint-19: STORY-037 adds `Publication` domain type (`core/domain/publication.py`, frozen, UTC-validated `published_at` via `field_validator`) and `PublicationRepository` port (`core/ports/publication_repository.py`, `record` + `list_recent`). `FakePublicationRepository` added to `backend/tests/fakes.py`. Both exported from their respective `__init__.py` modules. verified_sha → cc7f0ce.
+- sprint-29 (STORY-045): adds `ComponentNotFoundError` (`core/domain/component.py`) and the `ComponentRepository.set_status` abstract method — the status write-back the approve and recovery publish paths now use (see [[statuspage-publish]]'s `StatusWritebackPublisher` and [[persistence-adapters]]'s adapter/fake implementations). verified_sha → 7cabee7.

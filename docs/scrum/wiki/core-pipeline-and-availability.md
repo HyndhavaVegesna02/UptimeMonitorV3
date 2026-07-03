@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: 19eefc8
-verified_sprint: sprint-18
+verified_sha: 7cabee7
+verified_sprint: sprint-29
 status: verified          # verified | stale | archived
 ---
 
@@ -178,6 +178,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   6. Reconciles the proposed status against the current status using `DecideService.decide`.
 - If the component does not exist in topology (`component_repo.get` returns `None`), orchestration skips decision and returns `DecideAction.NOOP` (§8 step 5).
 - Best-effort publish (T1.1, STORY-016a AC3): the `decide_service` injected here MUST be wired with a best-effort publisher (`composition/publish_helper.py::BestEffortPublisher`), since `decide`'s recovery-publish branch propagates a publish failure by contract. With the wrapper, a Statuspage outage on recovery is logged + swallowed (the DB write already committed first) rather than crashing the cycle. (See [[statuspage-publish]]. The live composition root that wires this is deferred to STORY-016; today it is proven by the AC3 test.)
+- STORY-045 (write-back reachability, dossier §9/§12): `decide.py` and `orchestrate.py` are themselves UNCHANGED — `DecideService`'s injected `publisher` just gets a richer chain (`composition/publish_helper.py::StatusWritebackPublisher`, see [[statuspage-publish]]) that writes `components.status` back before delegating. Before this story, `components.status` was never written after seeding, so `current_status` was frozen at `operational` and the recovery branch (`proposed_is_better`) was unreachable in production. `test_orchestrate.py` gained `test_recovery_publish_writes_back_component_status` (a `DecideService` wired with `StatusWritebackPublisher` writes `components.status` back after a recovery publish) and `test_degrade_approve_recover_end_to_end` (the AC5 regression: `orchestrate_signal` opens a degradation, `ApprovalService.approve` (see [[api-five-file-convention]]) writes it back to DEGRADED via the SAME shared publisher chain, and a second `orchestrate_signal` cycle now reads `current_status=DEGRADED` and fires the previously-unreachable `PUBLISHED_RECOVERY` branch).
 
 
 ## Inference (synthesis, not verified)
@@ -217,3 +218,4 @@ boundary CI floors are catalogued in [[architecture-boundary]].
 - sprint-10: added core pipeline stage 4 — decide (STORY-024, dossier §10 / §12). Verified at 75674b7.
 - sprint-10 (STORY-029): enforced AvailabilityResult cross-field coherence validator. Verified at 32e24de.
 - sprint-11 (STORY-032): refactored DecideService to extract _open_proposal helper and add assertions on open proposal IDs. Verified at a93341d.
+- sprint-29 (STORY-045): no code change to `decide.py`/`orchestrate.py` (D5 — pinned in the sprint plan); added the recovery-reachability regression Facts above and two new `test_orchestrate.py` tests proving `components.status` write-back at the recovery trigger and the full degrade→approve→recover loop. verified_sha → 7cabee7.

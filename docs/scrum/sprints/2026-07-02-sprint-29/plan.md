@@ -111,13 +111,13 @@ the frontend, `alembic` (no schema change — `components.status` column exists)
 
 ## STORY-045 — approve→publish→write-back (5 pts) — AC1–AC6
 
-- [ ] **T1 — Port + parity (AC3), TDD.** Failing contract test first: shared test exercising
+- [x] **T1 — Port + parity (AC3), TDD.** Failing contract test first: shared test exercising
       `set_status` against BOTH the fake and `PostgresComponentRepository` (DB-gated half via
       `migrated_db` + seeded component; keep it ONE test body applied to both impls). Assert:
       update visible via `get`/`list_components`; unknown id → `ComponentNotFoundError` from BOTH.
       Then: add `ComponentNotFoundError` (domain), the abstract `set_status`, the Postgres UPDATE
       (rowcount guard), and the fake's identical impl. Commit per green step.
-- [ ] **T2 — `StatusWritebackPublisher` + shared `build_publisher` (D1, D2), TDD.** Failing tests
+- [x] **T2 — `StatusWritebackPublisher` + shared `build_publisher` (D1, D2), TDD.** Failing tests
       first: (a) writeback publisher writes status THEN delegates (order observable via a spy
       delegate that reads the fake repo's status when called); (b) delegate failure inside
       BestEffort does NOT prevent the already-done write-back, and nothing is recorded in
@@ -127,7 +127,7 @@ the frontend, `alembic` (no schema change — `components.status` column exists)
       creds-present vs absent (assert `isinstance` nesting / `_delegate` refs — the real wiring).
       Then implement; REFACTOR `run.py::build_live_loop` to consume `build_publisher` (behavior
       identical; its existing wiring tests keep passing or are UPDATED, never deleted).
-- [ ] **T3 — Approve publishes (AC1, D4), TDD.** Failing tests first, against `ApprovalService`
+- [x] **T3 — Approve publishes (AC1, D4), TDD.** Failing tests first, against `ApprovalService`
       with fake repo/clock + a fake publisher: approve → publisher received exactly one
       `StatusChange(component_id, to_status)` AFTER resolution (assert proposal already resolved
       when publish observed, or at minimum ordering via call recording); reject → zero publishes;
@@ -139,7 +139,7 @@ the frontend, `alembic` (no schema change — `components.status` column exists)
       every existing `ApprovalService(...)`/`create_app(...)` construction the suite already has.
       The decisions-endpoint tests gain: approve via HTTP → publication recorded + status written
       (fakes injected through `create_app`).
-- [ ] **T4 — Write-back at both trigger points (AC2) + recovery reachability (AC5), TDD.**
+- [x] **T4 — Write-back at both trigger points (AC2) + recovery reachability (AC5), TDD.**
       (a) Approval trigger: after an approve through the D2 chain (fake Statuspage delegate),
       `components.status` == to_status and `GET /api/v1/components` serves it (TestClient with
       injected fakes or DB-gated — implementer's choice, cheapest honest path).

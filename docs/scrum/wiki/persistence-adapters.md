@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/tests/test_persistence_adapters.py, backend/src/core/services/availability.py]
-verified_sha: cc7f0ce
-verified_sprint: sprint-19
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/src/core/services/availability.py]
+verified_sha: 7cabee7
+verified_sprint: sprint-29
 status: verified
 ---
 
@@ -93,10 +93,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - `record_approval_event` INSERTs a new record into `approval_events` (`proposal_repository.py::PostgresProposalRepository.record_approval_event`).
 - `list_open` (`proposal_repository.py::PostgresProposalRepository.list_open`) SELECTs all open proposals `WHERE state = 'open'` (STORY-014b). Returns `[]` if none exist.
 
-### `PostgresComponentRepository` — components listing and lookup (STORY-014b, STORY-016a)
+### `PostgresComponentRepository` — components listing, lookup, and status write-back (STORY-014b, STORY-016a, STORY-045)
 - Implements `ComponentRepository` port against `components` table (`component_repository.py::PostgresComponentRepository`).
 - `list_components` (`component_repository.py::PostgresComponentRepository.list_components`) SELECTs `id`, `name`, `status`, `app_id` and maps `status` text to `ComponentStatus`. Returns `[]` if none exist.
 - `get` (`component_repository.py::PostgresComponentRepository.get`) SELECTs a component by `id` (STORY-016a), returning `None` if absent (fake/adapter parity).
+- `set_status` (`component_repository.py::PostgresComponentRepository.set_status`, STORY-045) is a single conditional `UPDATE components SET status = ... WHERE id = ...` run in `sa.Engine.begin`; `rowcount == 0` raises `ComponentNotFoundError` (`core/domain/component.py::ComponentNotFoundError`) rather than silently no-op'ing (2026-06-28 check-then-act agreement) — mirrors `PostgresProposalRepository.resolve`'s conditional-write-then-guard shape. `FakeComponentRepository.set_status` (`backend/tests/fakes.py`) raises the identical error on an unknown id (2026-06-26 fake/adapter parity agreement); ONE shared contract test body (`backend/tests/test_component_repository_contract.py::_assert_set_status_contract`) is run against BOTH implementations (the Postgres half DB-gated via `migrated_db`), proving a known id's update is visible via `get` and an unknown id raises `ComponentNotFoundError` from both. Called by the composition-layer `StatusWritebackPublisher` decorator (see [[statuspage-publish]]) right before the best-effort external publish, at both the approve trigger and the recovery trigger.
 
 ### `PostgresMaintenanceRepository` — maintenance scheduling (STORY-036)
 - Implements `MaintenanceRepository` port against `maintenance_windows` table (`maintenance_repository.py::PostgresMaintenanceRepository`).
@@ -147,4 +148,5 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - sprint-14: STORY-036 adds `PostgresMaintenanceRepository` for scheduled maintenance windows. Re-verified at 8e15534.
 - sprint-18: updated (STORY-040 — added description of `seed_topology` idempotent seeding and the clean_topology testing convention). verified_sha = 19eefc8.
 - sprint-19: STORY-037 adds `PostgresPublicationRepository` against the existing `publications` table (no migration). `record` INSERTs + RETURNS; `list_recent` SELECTs ORDER BY `published_at DESC`. DB-gated test in `test_persistence_adapters.py::test_postgres_publication_repository` truncates `publications` for isolation. verified_sha → cc7f0ce.
+- sprint-29 (STORY-045): adds `PostgresComponentRepository.set_status` (a conditional `UPDATE` raising `ComponentNotFoundError` on 0 rows) and the identical `FakeComponentRepository.set_status`, proven by a new shared contract test file (`backend/tests/test_component_repository_contract.py`, added to `code_refs`). No migration — `components.status` already existed; it was simply never written after seeding until this story. verified_sha → 7cabee7.
 
