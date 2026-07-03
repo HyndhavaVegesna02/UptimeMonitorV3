@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 48   # 047 = STORY-045 review follow-up chore (2026-07-03); 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
+next_story_id: 50   # 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -303,6 +303,23 @@ stories:
     status: draft   # audit M3; open design question (frontend overlay vs backend derived field) — refine before its sprint
     points: 2
     priority: 22
+    type: feature
+    sprint: null
+  # ── Sample switch (PO idea, 2026-07-03 post-sprint-30 demo) ───────
+  - id: STORY-048
+    title: Sample switch (backend) — persisted flag + toggle API + incoming signals recorded as DOWN while ON
+    file: docs/scrum/stories/STORY-048-sample-switch-simulate-down.md
+    status: draft   # drafted 2026-07-03; awaiting PO approval of AC → ready
+    points: 5
+    priority: 16
+    type: feature
+    sprint: null
+  - id: STORY-049
+    title: Sample switch (frontend) — Dashboard toggle wired to the sample-mode API
+    file: docs/scrum/stories/STORY-049-dashboard-sample-switch-toggle.md
+    status: draft   # drafted 2026-07-03; HARD dependency on STORY-048
+    points: 2
+    priority: 17
     type: feature
     sprint: null
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
