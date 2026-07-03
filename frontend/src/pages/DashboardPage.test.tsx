@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -99,5 +99,157 @@ describe('DashboardPage', () => {
       expect(row).toBeDefined()
       expect(within(row as HTMLElement).getByText(label)).toBeInTheDocument()
     }
+  })
+})
+
+describe('DashboardPage — sample mode toggle (STORY-049)', () => {
+  it('renders the switch off by default, reflecting the GET, with no warning (AC1)', async () => {
+    render(<DashboardPage />)
+    await screen.findByRole('table')
+
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(
+      screen.queryByText(/sample mode — signals recorded as down/i),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders the switch on and the warning when the flag is already on (AC1, AC3)', async () => {
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+
+    render(<DashboardPage />)
+
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(
+      await screen.findByText(/sample mode — signals recorded as down/i),
+    ).toBeInTheDocument()
+  })
+
+  it('does not render the switch until the initial GET resolves (loading case)', async () => {
+    let resolveGet: (() => void) | undefined
+    server.use(
+      http.get('/api/v1/sample-mode', async () => {
+        await new Promise<void>((resolve) => {
+          resolveGet = resolve
+        })
+        return HttpResponse.json({ enabled: false })
+      }),
+    )
+
+    render(<DashboardPage />)
+
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
+
+    await waitFor(() => expect(resolveGet).toBeDefined())
+    resolveGet?.()
+
+    expect(await screen.findByRole('switch', { name: 'Sample mode' })).toBeInTheDocument()
+  })
+
+  it('toggling on PUTs { enabled: true } and shows the warning on success (AC2, AC3)', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.put('/api/v1/sample-mode', async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json({ enabled: true })
+      }),
+    )
+
+    render(<DashboardPage />)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+    await user.click(toggle)
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
+    expect(receivedBody).toEqual({ enabled: true })
+    expect(
+      await screen.findByText(/sample mode — signals recorded as down/i),
+    ).toBeInTheDocument()
+  })
+
+  it('toggling off PUTs { enabled: false } and the warning disappears (AC2, AC3)', async () => {
+    const user = userEvent.setup()
+    let receivedBody: unknown
+    server.use(
+      http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })),
+      http.put('/api/v1/sample-mode', async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json({ enabled: false })
+      }),
+    )
+
+    render(<DashboardPage />)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    expect(
+      await screen.findByText(/sample mode — signals recorded as down/i),
+    ).toBeInTheDocument()
+
+    await user.click(toggle)
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'))
+    expect(receivedBody).toEqual({ enabled: false })
+    expect(
+      screen.queryByText(/sample mode — signals recorded as down/i),
+    ).not.toBeInTheDocument()
+  })
+
+  it('on a failed PUT, shows an inline error and leaves aria-checked unchanged (AC2)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.put('/api/v1/sample-mode', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    render(<DashboardPage />)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+
+    await user.click(toggle)
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('disables the switch while the PUT is in flight, re-enabling it once settled (AC2)', async () => {
+    const user = userEvent.setup()
+    let resolvePut: (() => void) | undefined
+    server.use(
+      http.put('/api/v1/sample-mode', async () => {
+        await new Promise<void>((resolve) => {
+          resolvePut = resolve
+        })
+        return HttpResponse.json({ enabled: true })
+      }),
+    )
+
+    render(<DashboardPage />)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+
+    await user.click(toggle)
+
+    await waitFor(() => expect(toggle).toBeDisabled())
+
+    resolvePut?.()
+
+    await waitFor(() => expect(toggle).not.toBeDisabled())
+    expect(toggle).toHaveAttribute('aria-checked', 'true')
+  })
+
+  it('is keyboard-operable: Enter on the focused switch toggles it (AC1)', async () => {
+    const user = userEvent.setup()
+    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+
+    render(<DashboardPage />)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    toggle.focus()
+
+    await user.keyboard('{Enter}')
+
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
   })
 })

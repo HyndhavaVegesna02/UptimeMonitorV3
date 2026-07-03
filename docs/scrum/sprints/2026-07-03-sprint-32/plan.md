@@ -104,7 +104,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       (network/non-2xx/malformed-body → `ApiError`). `mocks/handlers/sampleMode.ts` (GET + PUT
       handlers, mutable fixture state) composed into `index.ts`. Client unit tests via MSW
       (incl. PUT body assertion).
-- [ ] **T2 — Toggle + warning on the Dashboard (AC1, AC2, AC3).** `features/dashboard/useSampleMode.ts`
+- [x] **T2 — Toggle + warning on the Dashboard (AC1, AC2, AC3).** `features/dashboard/useSampleMode.ts`
       (load via `useFetch(getSampleMode)`; expose a `setEnabled` that PUTs and reflects the
       RESPONSE state on success — no optimistic flip). On `DashboardPage`: a real switch
       (`role="switch"` + `aria-checked`, or a native checkbox styled as one), text-labeled
