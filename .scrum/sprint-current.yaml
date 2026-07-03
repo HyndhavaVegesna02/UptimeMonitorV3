@@ -1,91 +1,67 @@
 # YourTeam active sprint board.
-sprint: 31
-status: closed        # none | active | review | closed | aborted
+sprint: 32
+status: active        # none | active | review | closed | aborted
 started: 2026-07-03
-closed: 2026-07-03    # PO verdict: ACCEPT; actionable cosmetic minor folded into STORY-047; verified_sha-pin minor = no action
-goal: "Give the product an on-demand outage simulator (STORY-048): a DB-persisted sample-mode
-  flag (default OFF) flipped through a new API endpoint and re-read by the live loop each
-  cycle, so that while ON every incoming observation is recorded as DOWN (identifiably
-  simulated) — making the degrade->approve->publish->recover loop demonstrable against the
-  real healthy monitor. TEMPORARY feature by PO directive: removability designed in (AC7)."
-branch: sprint-31
-start_tag: sprint-31-start
-# Capacity: velocity last-3 (sprints 28,29,30) = 3,5,5 -> mean 4.3. Committed 5 (STORY-048) —
-# the same single-5 shape the PO approved for sprints 25-27, 29, 30 (all delivered 5/5).
-# PO approval: "lock story 048" + temporary-feature directive (2026-07-03, planning).
+goal: "Make the sample switch operable and the availability story visible: the two-grain
+  Availability tab (STORY-015d — component rollup + per-signal drill-down on the STORY-044
+  endpoints, window presets, honest no-data treatment) and a Dashboard sample-switch toggle
+  (STORY-049 — wired to the STORY-048 sample-mode API with an unmistakable ON warning)."
+branch: sprint-32
+start_tag: sprint-32-start
+# Capacity: velocity last-3 (sprints 29,30,31) = 5,5,5 -> mean 5.0. Committed 5
+# (STORY-015d 3 + STORY-049 2). PO approval 2026-07-03 (planning): "Approve and lock the
+# recommended stories but run the backend while implementing the sprint so that i can view
+# results" — approval of the recommended lock; the run-the-backend part is an OPERATIONAL
+# request (the STORY-042 local stack — throwaway DB + uvicorn :8000 + live loop + Vite dev
+# server — runs alongside implementation so the PO can watch live results), not sprint scope.
 #
-# WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds to
-# plan.md; Opus spec & quality reviewers (5 pts -> full pipeline); orchestrator runs the full
-# six-command backend DoD gate as a SINGLE non-concurrent DB-gated run (2026-07-02 agreement),
-# wiki blast-radius sweep, then review/verdict/merge/retro.
+# WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds
+# to plan.md; STORY-015d (3 pts) gets Opus spec + quality reviewers (full pipeline);
+# STORY-049 (2 pts) is implementer + DoD gate only. Frontend DoD surface: npm test /
+# npm run build / npm run lint from frontend/, exit 0 on a clean committed tree. Backend is
+# untouched this sprint — the six backend gates hold by the empty-diff baseline rule unless
+# the diff shows a backend path touched (then a full six-gate re-run is required).
 #
-# TOOLING: none — pure backend (STORY-049 carries the frontend toggle, next sprint).
+# TOOLING: none — pure frontend; Vitest + MSW + the per-tab pattern live since 015b/015c.
 #
-# KEY PLAN DECISIONS (pinned in plan.md, all serving AC7 removability): D1 dedicated single-row
-# `sample_mode` table (droppable, no FK); D2 `SampleModeRepository` port (is_enabled default
-# False / set_enabled upsert) + Postgres/fake parity; D3 five-file api/v1/sample_mode/ module
-# (GET + PUT /sample-mode); D4 composition-layer `SampleModeIngest` decorator over
-# SignalIngestPort — ONE marked seam line in run.py; D5 simulated marker = raw_ref sentinel
-# "sample-mode:forced-down" (zero schema/domain change; raw_ref is None on the live http path,
-# persisted, client-invisible); D6 REMOVAL inventory in a new sample-mode wiki article.
+# CONSUMER-DTO CHECK (2026-07-02 agreement) done at planning against real backend models:
+# topology GET /topology -> [{id,name,signals:[{signal_key,name,interval_seconds|null,
+# component_id}]}]; availability GET /availability/component/{id}?since&until ->
+# {component_id, rollup, signals[]} with availability_pct/completeness_pct float|null +
+# verdict counts + window + computed_at (+ signal_key per child); sample-mode GET/PUT
+# /sample-mode -> {enabled: bool}. No AC trimming needed.
 #
-# BASELINE at lock: sprint-31 cut from main @ 5914c45 — `git diff d1ca619..HEAD -- backend/
+# BASELINE at lock: sprint-32 cut from main @ 3785f12 — `git diff 61d786a..HEAD -- backend/
 # scripts/ pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY (docs/board/
-# refinement commits only since the sprint-30 gate-green state d1ca619), so the six-gate
-# evidence recorded at sprint-30 close holds for this code state.
+# retro commits only since the sprint-31 gate-green state 61d786a), so the six-gate backend
+# evidence recorded at sprint-31 close holds for this code state. frontend/ is unchanged
+# since its last green three-gate run (sprint-27 close; sprints 28-31 were backend/docs-only).
 #
-# Agreements in force: all of working-agreements.md as of 5914c45 (incl. the NEW 2026-07-03
-# AC-never-pre-declare-wiki-blast-radius rule — STORY-048's AC6 correctly names no articles;
-# the tab-AC-vs-DTO agreement is N/A this sprint — STORY-049 is the consumer story and is NOT
-# in this sprint).
+# Agreements in force: all of working-agreements.md as of 3785f12 (incl. the 2026-07-03
+# wiki-pass-commits-article-by-article rule; the 2026-07-02 tab-AC-vs-DTO check is DONE above;
+# the AC-never-pre-declare-blast-radius rule — the mechanical sweep decides which articles
+# update, but note sample-mode.md's REMOVAL inventory must gain STORY-049's frontend seam
+# when the sweep flags it).
 stories:
-  - id: STORY-048
-    points: 5
-    board: done            # todo | in-progress | blocked | review | done — ACCEPTED 2026-07-03
-    pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
+  - id: STORY-015d
+    points: 3
+    board: todo            # todo | in-progress | blocked | review | done
+    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # implementer stalled (600s watchdog) AFTER committing T1-T5 with the T6
-                           # wiki edits complete but uncommitted; orchestrator recovered + committed
-                           # the coherent tail as 61d786a (2026-06-25 crash-recovery agreement).
-                           # Both first-dispatch reviewers were killed by a session limit MID-RUN
-                           # (no verdicts); re-dispatched FRESH per the fresh-agent rule — no fix loop.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
-        exit_code: 0
-        output_tail: "gate at 61d786a (clean committed tree). pytest 498 passed in 174.64s (SINGLE
-          run, fixture-spawned throwaway postgres:16; +23 tests over sprint-30's 475); lint-imports
-          5 kept / 0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head exit 0
-          (new revision 09e9aa2cee32 add_sample_mode applied); ruff check 'All checks passed!';
-          ruff format --check '181 files already formatted'. Container torn down after."
-        commit: 61d786a
-        at: 2026-07-03T15:05:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC7 ALL MET; reviewer RAN all 46 story tests incl. the DB-gated
-        parity + endpoint round-trip halves — executed, not skipped; OFF-path asserts object
-        IDENTITY; behavior tests test_pull_loop/test_ingest_service UNMODIFIED and green; seam
-        comments grep-verified on every existing-file edit; REMOVAL inventory matches the diff;
-        zero scope additions) / quality APPROVE (0 Critical, 0 Major; verified decorator
-        once-per-call read + propagating failures + frozen-model model_copy safety, single-row
-        CHECK migration, upsert SQL, honest shared-store fake parity, real-nesting assembly test,
-        REMOVAL inventory spot-checked entry-by-entry, no debug scraps)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
-      open_minors:
-        - "wiki verified_sha pinned at 0ea652e (last code commit) rather than the wiki commit
-          61d786a — functionally correct (61d786a is wiki-only, sweep reports all CURRENT);
-          compile-pass detail, not a defect."
-        - "tests/fakes.py FakeSampleModeRepository uses bare `dict` type hints where peers
-          parametrize — cosmetic."
-      implementer_note: "Sonnet implementer stalled (600s watchdog) AFTER committing T1-T5 and
-        completing (uncommitted) T6 wiki edits; orchestrator recovered the coherent tail per the
-        2026-06-25 crash-recovery agreement and committed it as 61d786a. Second consecutive sprint
-        with this stall shape — retro input. Additionally BOTH first-dispatch Opus reviewers were
-        terminated mid-run by a session limit (resets 8:50pm IST) with no verdicts; fresh
-        re-dispatches both passed."
-    blast_radius_resolved: true   # implementer updated 7 articles + wrote sample-mode.md (all at
-                                  # verified_sha 0ea652e); orchestrator mechanical sweep: 13/13
-                                  # CURRENT, 0 broken links; spec reviewer independently re-ran the
-                                  # sweep and confirmed
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
+  - id: STORY-049
+    points: 2
+    board: todo
+    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

@@ -219,11 +219,11 @@ stories:
   - id: STORY-015d
     title: Availability tab — two-grain availability (component rollup + per-signal drill-down)
     file: docs/scrum/stories/STORY-015d-availability-tab.md
-    status: ready   # re-scoped 2026-07-02 (audit + PO multi-signal clarification); HARD dependency on STORY-044
+    status: ready   # LOCKED into Sprint 32 (2026-07-03); dependency STORY-044 done (sprint 30)
     points: 3
     priority: 18
     type: feature
-    sprint: null
+    sprint: 32
   - id: STORY-015e
     title: Check History tab — per-signal observation history
     file: docs/scrum/stories/STORY-015e-check-history-tab.md
@@ -317,11 +317,11 @@ stories:
   - id: STORY-049
     title: Sample switch (frontend) — Dashboard toggle wired to the sample-mode API
     file: docs/scrum/stories/STORY-049-dashboard-sample-switch-toggle.md
-    status: ready   # PO approved 2026-07-03; dependency STORY-048 satisfied (sprint 31) — free to schedule
+    status: ready   # LOCKED into Sprint 32 (2026-07-03); dependency STORY-048 done (sprint 31)
     points: 2
     priority: 17
     type: feature
-    sprint: null
+    sprint: 32
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a
     title: Config layer — per-app config files + fail-fast loader + in-memory resolvers
