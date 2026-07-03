@@ -211,14 +211,14 @@ paths/DTOs other than stated.
       `create_app`/`app.state`/`dependencies.py`/`api/v1/__init__.py` wiring. Finish with the
       DB-gated seeded end-to-end enumeration test (real Postgres repos + `seed_topology`,
       TestClient) proving "sourced from the seeded topology".
-- [ ] **T4 — Component-rollup availability endpoint (D4, AC2), TDD.** Failing tests first (fake
+- [x] **T4 — Component-rollup availability endpoint (D4, AC2), TDD.** Failing tests first (fake
       observation/component/signal repos through `create_app`): the two-interval multi-signal
       fixture proving per-child intervals + MIN/SUM rollup; 404 unknown component; 422 naive
       datetime; nulls on no-data; 200 empty-children on zero-signal component; 409 on
       NULL-interval child; non-aligned window included. Then: DTOs, validator, service method
       (+ ctor deps, shared window helper, call-site rewrites), controller route + error
       mapping.
-- [ ] **T5 — Per-signal default interval from topology (D5, AC3), TDD.** Failing tests first:
+- [x] **T5 — Per-signal default interval from topology (D5, AC3), TDD.** Failing tests first:
       the H2 regression (default → 120 → completeness ~100 %), explicit-interval-wins, 404
       unknown-on-default-path, 200 degenerate unknown-with-explicit. Then controller param +
       service resolution + error mapping; REWRITE the existing default-interval tests.

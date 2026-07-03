@@ -44,3 +44,33 @@ class AvailabilityDTO(BaseModel):
 
     computed_at: datetime
     """The instant this result was derived."""
+
+
+class SignalAvailabilityDTO(AvailabilityDTO):
+    """One child signal's availability, nested under a component rollup
+    (dossier §11, §13, STORY-044 AC2). Adds `signal_key` to `AvailabilityDTO`
+    so a component-grain response can name which signal each child is.
+    """
+
+    signal_key: str
+    """The child signal's key — names which signal this child result is for."""
+
+
+class ComponentAvailabilityDTO(BaseModel):
+    """Component-grain availability: the rollup plus each per-signal child
+    (dossier §11, §13, STORY-044 AC2). Lets a single call render BOTH the
+    two-grain Availability tab's component and signal rows.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    component_id: str
+    """The component this result is for."""
+
+    rollup: AvailabilityDTO
+    """`rollup_group` of the children: MIN of non-None percentages, SUM of counts."""
+
+    signals: list[SignalAvailabilityDTO]
+    """The per-signal children, sorted by `signal_key`. Empty for a
+    zero-signal component — `rollup` is then the `rollup_group([])` degenerate
+    (all-None percentages, zero counts), never a 500."""

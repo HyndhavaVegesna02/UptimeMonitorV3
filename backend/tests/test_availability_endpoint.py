@@ -13,13 +13,21 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
-from src.core.domain import Health, Provenance, SignalObservation
+from src.core.domain import (
+    Component,
+    ComponentStatus,
+    Health,
+    Provenance,
+    Signal,
+    SignalObservation,
+)
 from tests.fakes import (
     FakeClock,
     FakeComponentRepository,
     FakeMaintenanceRepository,
     FakeObservationRepository,
     FakeProposalRepository,
+    FakeSignalRepository,
 )
 
 _NOW = datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc)
@@ -43,11 +51,42 @@ def _obs(
 
 
 def _app(observation_repo: FakeObservationRepository, clock: FakeClock):
+    # STORY-044 D5: the per-signal default-interval path now looks up the
+    # signal's configured interval from the seeded topology — "checkout-http"
+    # is registered at 60s (the historical stopgap default) so the existing
+    # fixtures below, which omit interval_seconds, keep their prior behavior.
     return create_app(
         proposal_repo=FakeProposalRepository(),
         component_repo=FakeComponentRepository(),
         maintenance_repo=FakeMaintenanceRepository(),
         observation_repo=observation_repo,
+        signal_repo=FakeSignalRepository(
+            [
+                Signal(
+                    signal_key="checkout-http",
+                    name="Checkout HTTP Signal",
+                    component_id=None,
+                    interval_seconds=60,
+                )
+            ]
+        ),
+        clock=clock,
+    )
+
+
+def _component_app(
+    *,
+    observation_repo: FakeObservationRepository,
+    component_repo: FakeComponentRepository,
+    signal_repo: FakeSignalRepository,
+    clock: FakeClock,
+):
+    return create_app(
+        proposal_repo=FakeProposalRepository(),
+        component_repo=component_repo,
+        maintenance_repo=FakeMaintenanceRepository(),
+        observation_repo=observation_repo,
+        signal_repo=signal_repo,
         clock=clock,
     )
 
@@ -175,6 +214,476 @@ def test_availability_interval_seconds_param_honored():
     assert response.status_code == 200
     data = response.json()
     assert data["total_verdicts"] == 2
+
+
+def test_availability_default_interval_uses_signal_configured_interval_h2_regression():
+    """AC3/D5 (audit H2 regression): with no interval_seconds supplied, the
+    signal's CONFIGURED interval (120 for http-check, matching
+    config/apps/httpcheck.yaml) is used — not the old 60s stopgap default,
+    which would have HALVED completeness% by doubling expected_cycles.
+    """
+    since = datetime(2026, 7, 3, 10, 0, 0, tzinfo=timezone.utc)
+    until = since + timedelta(seconds=480)  # 4 cycles at 120s
+
+    obs_repo = FakeObservationRepository()
+    obs_repo.save_new(
+        [
+            _obs(
+                signal_key="http-check",
+                event_id=f"e{i}",
+                observed_at=since + timedelta(seconds=120 * i),
+                health=Health.UP,
+            )
+            for i in range(4)
+        ]
+    )
+    signal_repo = FakeSignalRepository(
+        [
+            Signal(
+                signal_key="http-check",
+                name="HTTP Check",
+                component_id=None,
+                interval_seconds=120,
+            )
+        ]
+    )
+    app = create_app(
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+        maintenance_repo=FakeMaintenanceRepository(),
+        observation_repo=obs_repo,
+        signal_repo=signal_repo,
+        clock=FakeClock(_NOW),
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/api/v1/availability",
+        params={
+            "signal_key": "http-check",
+            "since": since.isoformat(),
+            "until": until.isoformat(),
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    # 4 observations, expected_cycles = ceil(480/120) = 4 -> 100%, NOT ~50%
+    # (which is what a wrongly-defaulted 60s interval would have produced:
+    # expected_cycles = ceil(480/60) = 8 -> 4/8 = 50%).
+    assert data["completeness_pct"] == 1.0
+    assert data["availability_pct"] == 1.0
+
+
+def test_availability_explicit_interval_still_wins_over_configured():
+    """AC3/D5: an explicit interval_seconds overrides the signal's configured
+    interval (back-compat) — no topology lookup happens at all.
+    """
+    since = datetime(2026, 7, 3, 10, 0, 0, tzinfo=timezone.utc)
+    until = since + timedelta(seconds=480)
+
+    obs_repo = FakeObservationRepository()
+    obs_repo.save_new(
+        [
+            _obs(
+                signal_key="http-check",
+                event_id=f"e{i}",
+                observed_at=since + timedelta(seconds=120 * i),
+                health=Health.UP,
+            )
+            for i in range(4)
+        ]
+    )
+    signal_repo = FakeSignalRepository(
+        [
+            Signal(
+                signal_key="http-check",
+                name="HTTP Check",
+                component_id=None,
+                interval_seconds=120,
+            )
+        ]
+    )
+    app = create_app(
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+        maintenance_repo=FakeMaintenanceRepository(),
+        observation_repo=obs_repo,
+        signal_repo=signal_repo,
+        clock=FakeClock(_NOW),
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/api/v1/availability",
+        params={
+            "signal_key": "http-check",
+            "since": since.isoformat(),
+            "until": until.isoformat(),
+            "interval_seconds": 60,
+        },
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    # explicit 60s -> expected_cycles = ceil(480/60) = 8 -> 4/8 = 50%, proving
+    # the explicit value (not the configured 120s) drove the computation.
+    assert data["completeness_pct"] == 0.5
+
+
+def test_availability_unknown_signal_default_interval_returns_404():
+    """AC3/D5: an unknown signal_key on the DEFAULT-interval path is now an
+    honest 404 (contract change from the old silent all-None 200)."""
+    client = TestClient(_app(FakeObservationRepository(), FakeClock(_NOW)))
+
+    response = client.get(
+        "/api/v1/availability", params={"signal_key": "does-not-exist"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_availability_unknown_signal_explicit_interval_returns_200_degenerate():
+    """AC3/D5: an unknown signal_key WITH an explicit interval keeps today's
+    degenerate all-None 200 (back-compat pinned — no topology lookup happens
+    when the caller supplies an interval)."""
+    client = TestClient(_app(FakeObservationRepository(), FakeClock(_NOW)))
+
+    response = client.get(
+        "/api/v1/availability",
+        params={"signal_key": "does-not-exist", "interval_seconds": 60},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["availability_pct"] is None
+    assert data["completeness_pct"] is None
+
+
+def test_availability_default_interval_signal_configured_null_interval_returns_409():
+    """AC3/D5: a signal seeded but with interval_seconds NULL (D1 backfill
+    predates the row / re-seed never ran) -> 409 on the default-interval path."""
+    obs_repo = FakeObservationRepository()
+    signal_repo = FakeSignalRepository(
+        [
+            Signal(
+                signal_key="unconfigured-sig",
+                name="Unconfigured",
+                component_id=None,
+                interval_seconds=None,
+            )
+        ]
+    )
+    app = create_app(
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+        maintenance_repo=FakeMaintenanceRepository(),
+        observation_repo=obs_repo,
+        signal_repo=signal_repo,
+        clock=FakeClock(_NOW),
+    )
+    client = TestClient(app)
+
+    response = client.get(
+        "/api/v1/availability", params={"signal_key": "unconfigured-sig"}
+    )
+
+    assert response.status_code == 409
+
+
+def test_component_availability_multi_signal_rollup_min_and_sum():
+    """AC2: rollup = MIN of children's non-None percentages + SUM of counts;
+    each child uses ITS OWN configured interval (60s vs 120s) over the same window.
+    """
+    since = datetime(2026, 7, 3, 10, 0, 0, tzinfo=timezone.utc)
+    until = since + timedelta(minutes=4)  # 240s window
+
+    component = Component(
+        id="multi-comp",
+        name="Multi Comp",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+    )
+    sig_a = Signal(
+        signal_key="multi-comp-a",
+        name="A",
+        component_id="multi-comp",
+        interval_seconds=60,
+    )
+    sig_b = Signal(
+        signal_key="multi-comp-b",
+        name="B",
+        component_id="multi-comp",
+        interval_seconds=120,
+    )
+
+    obs_repo = FakeObservationRepository()
+    obs_repo.save_new(
+        [
+            _obs(
+                signal_key="multi-comp-a",
+                event_id="a1",
+                observed_at=since,
+                health=Health.UP,
+            ),
+            _obs(
+                signal_key="multi-comp-a",
+                event_id="a2",
+                observed_at=since + timedelta(seconds=60),
+                health=Health.UP,
+            ),
+            _obs(
+                signal_key="multi-comp-a",
+                event_id="a3",
+                observed_at=since + timedelta(seconds=120),
+                health=Health.UP,
+            ),
+            _obs(
+                signal_key="multi-comp-a",
+                event_id="a4",
+                observed_at=since + timedelta(seconds=180),
+                health=Health.UP,
+            ),
+            _obs(
+                signal_key="multi-comp-b",
+                event_id="b1",
+                observed_at=since,
+                health=Health.DOWN,
+            ),
+            _obs(
+                signal_key="multi-comp-b",
+                event_id="b2",
+                observed_at=since + timedelta(seconds=120),
+                health=Health.UP,
+            ),
+        ]
+    )
+
+    client = TestClient(
+        _component_app(
+            observation_repo=obs_repo,
+            component_repo=FakeComponentRepository([component]),
+            signal_repo=FakeSignalRepository([sig_a, sig_b]),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get(
+        "/api/v1/availability/component/multi-comp",
+        params={"since": since.isoformat(), "until": until.isoformat()},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["component_id"] == "multi-comp"
+    assert [s["signal_key"] for s in data["signals"]] == [
+        "multi-comp-a",
+        "multi-comp-b",
+    ]
+
+    child_a = data["signals"][0]
+    assert child_a["availability_pct"] == 1.0
+    assert child_a["completeness_pct"] == 1.0
+    assert child_a["total_verdicts"] == 4
+
+    child_b = data["signals"][1]
+    assert child_b["availability_pct"] == 0.5
+    assert child_b["completeness_pct"] == 1.0
+    assert child_b["total_verdicts"] == 2
+
+    rollup = data["rollup"]
+    assert rollup["availability_pct"] == 0.5  # MIN(1.0, 0.5)
+    assert rollup["completeness_pct"] == 1.0  # MIN(1.0, 1.0)
+    assert rollup["total_verdicts"] == 6  # SUM(4, 2)
+    assert rollup["passing_verdicts"] == 5  # SUM(4, 1)
+    assert rollup["distinct_locations"] == 0  # never summed
+
+
+def test_component_availability_non_aligned_window_sums_gap_verdicts():
+    """AC2 (2026-06-25 boundary agreement): a window that is not a multiple of
+    either child's interval still yields correct, non-negative, summed
+    gap_verdicts.
+    """
+    since = datetime(2026, 7, 3, 10, 0, 0, tzinfo=timezone.utc)
+    until = since + timedelta(seconds=190)  # not a multiple of 60 or 120
+
+    component = Component(
+        id="gap-comp",
+        name="Gap Comp",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+    )
+    sig_a = Signal(
+        signal_key="gap-comp-a", name="A", component_id="gap-comp", interval_seconds=60
+    )
+    sig_b = Signal(
+        signal_key="gap-comp-b",
+        name="B",
+        component_id="gap-comp",
+        interval_seconds=120,
+    )
+
+    obs_repo = FakeObservationRepository()
+    obs_repo.save_new(
+        [
+            _obs(
+                signal_key="gap-comp-a",
+                event_id="a1",
+                observed_at=since,
+                health=Health.UP,
+            ),
+            _obs(
+                signal_key="gap-comp-b",
+                event_id="b1",
+                observed_at=since,
+                health=Health.UP,
+            ),
+        ]
+    )
+
+    client = TestClient(
+        _component_app(
+            observation_repo=obs_repo,
+            component_repo=FakeComponentRepository([component]),
+            signal_repo=FakeSignalRepository([sig_a, sig_b]),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get(
+        "/api/v1/availability/component/gap-comp",
+        params={"since": since.isoformat(), "until": until.isoformat()},
+    )
+
+    assert response.status_code == 200
+    data = response.json()
+    child_a = next(s for s in data["signals"] if s["signal_key"] == "gap-comp-a")
+    child_b = next(s for s in data["signals"] if s["signal_key"] == "gap-comp-b")
+    assert child_a["gap_verdicts"] == 3  # ceil(190/60)=4 expected, 1 observed
+    assert child_b["gap_verdicts"] == 1  # ceil(190/120)=2 expected, 1 observed
+    assert data["rollup"]["gap_verdicts"] == 4  # SUM(3, 1)
+
+
+def test_component_availability_unknown_component_returns_404():
+    """AC2: unknown component id -> 404."""
+    client = TestClient(
+        _component_app(
+            observation_repo=FakeObservationRepository(),
+            component_repo=FakeComponentRepository(),
+            signal_repo=FakeSignalRepository(),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get("/api/v1/availability/component/does-not-exist")
+
+    assert response.status_code == 404
+
+
+def test_component_availability_naive_datetime_returns_422():
+    """AC2 (2026-06-28 agreement): a naive since -> 422."""
+    client = TestClient(
+        _component_app(
+            observation_repo=FakeObservationRepository(),
+            component_repo=FakeComponentRepository(),
+            signal_repo=FakeSignalRepository(),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get(
+        "/api/v1/availability/component/any-comp",
+        params={"since": "2026-07-03T10:00:00"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_component_availability_no_data_returns_nulls_not_500():
+    """AC2: a no-data window surfaces the calculator's None-percentage
+    degenerate handling, not a 500."""
+    component = Component(
+        id="quiet-comp",
+        name="Quiet",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+    )
+    sig = Signal(
+        signal_key="quiet-sig",
+        name="Quiet Sig",
+        component_id="quiet-comp",
+        interval_seconds=60,
+    )
+    client = TestClient(
+        _component_app(
+            observation_repo=FakeObservationRepository(),
+            component_repo=FakeComponentRepository([component]),
+            signal_repo=FakeSignalRepository([sig]),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get("/api/v1/availability/component/quiet-comp")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["rollup"]["availability_pct"] is None
+    assert data["rollup"]["completeness_pct"] is None
+    assert data["signals"][0]["availability_pct"] is None
+    assert data["signals"][0]["completeness_pct"] is None
+
+
+def test_component_availability_zero_signal_component_returns_empty_children():
+    """AC2: a component with zero mapped signals -> 200, signals: [],
+    rollup_group([]) degenerate (never a 500)."""
+    component = Component(
+        id="no-signals-comp",
+        name="No Signals",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+    )
+    client = TestClient(
+        _component_app(
+            observation_repo=FakeObservationRepository(),
+            component_repo=FakeComponentRepository([component]),
+            signal_repo=FakeSignalRepository(),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get("/api/v1/availability/component/no-signals-comp")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert data["signals"] == []
+    assert data["rollup"]["availability_pct"] is None
+    assert data["rollup"]["total_verdicts"] == 0
+
+
+def test_component_availability_null_interval_child_returns_409():
+    """AC2: a child signal seeded without a configured interval -> 409
+    (unreachable once seeded; forced here via the fake)."""
+    component = Component(
+        id="bad-comp", name="Bad", status=ComponentStatus.OPERATIONAL, app_id="app-1"
+    )
+    sig = Signal(
+        signal_key="bad-sig",
+        name="Bad Sig",
+        component_id="bad-comp",
+        interval_seconds=None,
+    )
+    client = TestClient(
+        _component_app(
+            observation_repo=FakeObservationRepository(),
+            component_repo=FakeComponentRepository([component]),
+            signal_repo=FakeSignalRepository([sig]),
+            clock=FakeClock(_NOW),
+        )
+    )
+
+    response = client.get("/api/v1/availability/component/bad-comp")
+
+    assert response.status_code == 409
 
 
 def test_availability_module_five_file_shape():
