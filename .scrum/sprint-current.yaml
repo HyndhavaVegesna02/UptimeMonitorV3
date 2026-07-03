@@ -40,10 +40,25 @@ stories:
     board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1            # implementer stalled after T4 commit + finished (uncommitted) wiki edits;
+                           # coherent tail recovered + committed by the orchestrator (2026-06-25
+                           # crash-recovery agreement) — no fix loop yet, reviewers pending
     paused_at_commit: null
-    dod_evidence: []
+    dod_evidence:
+      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
+        exit_code: 0
+        output_tail: "gate at 6d1799a (clean committed tree). ruff check 'All checks passed!'; ruff
+          format --check '156 files already formatted'; lint-imports 5 kept / 0 broken (120 files,
+          345 deps); pytest 444 passed in 113.66s (SINGLE run vs throwaway postgres:16 via
+          dev_db.py; +16 tests over sprint-28's 428); check_fk_direction 11 FKs / 0 violations;
+          alembic upgrade head exit 0. Container torn down after."
+        commit: 6d1799a
+        at: 2026-07-03T00:05:00+05:30
     review: null
-    blast_radius_resolved: false
+    blast_radius_resolved: true   # implementer updated 5 articles (statuspage-publish,
+                                  # canonical-types-and-ports, persistence-adapters,
+                                  # core-pipeline-and-availability, api-five-file-convention) to
+                                  # verified_sha 7cabee7; orchestrator re-runs the mechanical sweep
+                                  # at the compile pass before review
 hotfixes: []
 interrupts: []

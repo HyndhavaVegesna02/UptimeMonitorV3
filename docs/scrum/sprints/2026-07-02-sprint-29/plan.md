@@ -151,7 +151,7 @@ the frontend, `alembic` (no schema change — `components.status` column exists)
       unchanged; approve → publish observed + publications row + status now degraded; cycle 2 UP
       observations → decide's recovery branch fires (`PUBLISHED_RECOVERY`) → recovery publish +
       status back to operational. This asserts the previously-unreachable branch is now reachable.
-- [ ] **T5 — Gates + docs + blast radius (AC6).** All six backend DoD commands exit 0 on a clean
+- [x] **T5 — Gates + docs + blast radius (AC6).** *(wiki edits recovered from the stalled implementer + committed by the orchestrator; six-command gate run by the orchestrator at 6d1799a — all exit 0, pytest 444 passed single run)* All six backend DoD commands exit 0 on a clean
       committed tree — SINGLE non-concurrent DB-gated run. CLAUDE.md: no command changes expected
       (command-sync N/A unless you add one). Wiki blast radius: your diff will touch `code_refs` of
       at least `statuspage-publish`, `core-pipeline-and-availability`, `api-five-file-convention`
