@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 32
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-03
 goal: "Make the sample switch operable and the availability story visible: the two-grain
   Availability tab (STORY-015d — component rollup + per-signal drill-down on the STORY-044
@@ -45,19 +45,19 @@ start_tag: sprint-32-start
 stories:
   - id: STORY-015d
     points: 3
-    board: in-progress     # REOPENED 2026-07-03 ~20:00 — fix loop: percent-scale defect found by
-                           # the orchestrator at review prep, demoing against the LIVE backend:
-                           # availability_pct/completeness_pct are 0-1 FRACTIONS on the wire
-                           # (live: 1.0 = 100%), but formatPct + the bar width consume them as
-                           # percent-scale, and the MSW fixtures encoded percent-scale values
-                           # (99.87) — so 146 green tests validated the wrong scale and the live
-                           # tab shows '1.00%' for a fully-up component. ROOT CAUSE: the plan's
-                           # "Verified API contracts" section pinned field types but NOT the
-                           # scale, and its T4 example ('99.87%') implied percent-scale — a
-                           # planning-precision miss, not an implementer invention. Retro input.
+    board: done            # done after 1 fix loop — awaiting PO verdict at review
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 2            # attempt 1 clean through reviewers; attempt 2 = focused scale fix
+    attempts: 2            # attempt 1 clean through reviewers; attempt 2 = focused scale fix.
+                           # FIX-LOOP CAUSE (retro input): percent-scale defect found by the
+                           # orchestrator at review prep demoing against the LIVE backend —
+                           # availability_pct/completeness_pct are 0-1 FRACTIONS on the wire
+                           # (live: 1.0 = 100%) but formatPct + bar width consumed percent-scale,
+                           # and the MSW fixtures encoded percent-scale (99.87), so 146 green
+                           # tests validated the wrong scale ('1.00%' rendered for fully-up).
+                           # ROOT CAUSE: the plan's "Verified API contracts" pinned types but NOT
+                           # scale/units, and its T4 example ('99.87%') implied percent-scale —
+                           # a planning-precision miss, not an implementer invention.
     paused_at_commit: null
     dod_evidence:
       - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
@@ -68,6 +68,14 @@ stories:
           EMPTY — six-gate baseline (61d786a, sprint-31 close) holds."
         commit: 400331f
         at: 2026-07-03T19:32:00+05:30
+      - command: "npm test && npm run build && npm run lint (fix-loop re-run, orchestrator, clean committed HEAD)"
+        exit_code: 0
+        output_tail: "npm test: 23 files / 146 tests passed (17.48s). build + lint clean. LIVE
+          post-fix verification (Playwright on the running stack): Availability tab renders
+          100.00% / 8.33% against real backend fractions 1.0 / 0.0833; expand reveals the
+          per-signal child (name + signal_key + values); aria-expanded semantics correct."
+        commit: ae53070
+        at: 2026-07-03T20:06:00+05:30
     review:
       first_pass: "spec PASS (AC1-AC4 ALL MET; reviewer RAN the suite — 125/125 — and the 41
         AC-relevant tests, read test bodies: selector test asserts the ACTUAL tz-aware since/until
@@ -78,8 +86,18 @@ stories:
         covers the Promise.all fan-out so stale responses can't set state; useFetch genuinely
         untouched, both existing call sites unchanged; formatPct single formatter; tokens-only,
         bar aria-hidden with value always text; wiki update accurate, no overclaiming)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
+      fix: "Percent-scale fix loop (attempt 2, fresh Sonnet implementer, commits b827210 de119f5
+        eff33d3 ae53070): formatPct x100, bar width x100, ALL fixtures converted to true 0-1 wire
+        fractions with assertions rewritten (none deleted), plan.md contract annotated with the
+        scale, frontend-zone.md re-verified at eff33d3."
+      second_pass: "Focused Opus second-pass on the fix diff: PASS (ran the 146-test suite; read
+        test bodies — boundary asserts 0.998654->'99.87%', 1->'100.00%', 0->'0.00%',
+        null->'no data' genuine; no test blocks deleted; independent grep found NO remaining
+        percent-scale consumer; backend ground truth confirmed 0-1 ratio so the fix isn't
+        doubled; exactly two scale-sensitive call sites, shared helper correctly not warranted;
+        wiki/plan updates accurate, no overclaim). NOTE: the FIRST second-pass dispatch was
+        killed mid-run by an Opus session limit (resets 11:20pm IST) — fresh re-dispatch after
+        reset passed; second sprint running with this failure shape (retro input)."
       open_minors:
         - "Degenerate rollup renders literal '0/0 passing · 0 maint · 0 gap' next to 'no data' —
           honest but slightly redundant zeros; taste-only (quality reviewer, no change needed)."
