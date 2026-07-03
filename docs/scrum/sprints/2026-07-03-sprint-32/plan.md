@@ -57,7 +57,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       a zero-signal component with the all-None rollup, and a null-pct no-data window case), composed
       into `mocks/handlers/index.ts`. Unit tests: client functions hit the right URL + query params
       via MSW.
-- [ ] **T2 — Window range helper (AC2).** Pure helper (e.g.
+- [x] **T2 — Window range helper (AC2).** Pure helper (e.g.
       `features/availability/windowRange.ts`): `windowToRange(preset: '24h' | '7d' | '30d',
       now?: Date): { since: string; until: string }` returning tz-aware UTC ISO strings (trailing
       `Z`), `until` = now, `since` = now − preset. Unit-test all three presets + that output parses
