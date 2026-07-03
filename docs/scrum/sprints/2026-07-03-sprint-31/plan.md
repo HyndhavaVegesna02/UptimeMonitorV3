@@ -177,7 +177,7 @@ outage flows through it as ordinary data, which is the entire point.
       (fake raising → decorator raises). AC5 distinguishability: simulated row vs genuine DOWN
       differ on `raw_ref`. Then implement the decorator (module docstring: TEMPORARY, dossier
       §6/§8 seam, the removal pointer).
-- [ ] **T4 — The run.py seam + per-cycle flip (D4; AC3, AC4), TDD.** Failing tests first:
+- [x] **T4 — The run.py seam + per-cycle flip (D4; AC3, AC4), TDD.** Failing tests first:
       UPDATE `test_run_live_loop.py`'s assembly assertions — `build_live_loop` now yields
       `run_periodic` kwargs whose `ingest_port` is a `SampleModeIngest` whose `_delegate` is
       the real `IngestService` wired to the real repos (2026-06-29 agreement: assert the REAL

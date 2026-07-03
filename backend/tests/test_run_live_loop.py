@@ -17,8 +17,12 @@ from src.composition.publish_helper import (
     StatusWritebackPublisher,
 )
 from src.composition.run import build_live_loop, main
+
+# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
+from src.composition.sample_mode import SampleModeIngest
 from src.composition.settings import LiveSecrets, Settings
 from src.core.services.decide import DecideService
+from src.core.services.ingest_service import IngestService
 from src.core.services.pipeline import AntiFlapThresholds
 
 
@@ -115,6 +119,25 @@ def test_build_live_loop_assembly():
             assert extra in call.kwargs, f"run_periodic missing extra {extra!r}"
         assert call.kwargs["clock"] is clock
         assert call.kwargs["config"] is config
+
+    # STORY-048 (D4, AC3/AC4, sanctioned AC7b exception): ingest_port is now
+    # a SampleModeIngest wrapping the REAL IngestService wired to the real
+    # repos — asserts the actual nesting, not a stubbed constructor.
+    ingest_port = mock_run_periodic.call_args_list[0].kwargs["ingest_port"]
+    assert isinstance(ingest_port, SampleModeIngest)
+    assert isinstance(ingest_port._delegate, IngestService)
+    assert ingest_port._delegate._observation_repo is not None
+    assert ingest_port._delegate._watermark_repo is not None
+    assert ingest_port._delegate._rejected_repo is not None
+    assert ingest_port._delegate._clock is clock
+    from src.adapters.persistence.sample_mode_repository import (
+        PostgresSampleModeRepository,
+    )
+
+    assert isinstance(ingest_port._sample_mode_repo, PostgresSampleModeRepository)
+    # Same ingest_port instance threads into every per-signal run_periodic call.
+    for call in mock_run_periodic.call_args_list:
+        assert call.kwargs["ingest_port"] is ingest_port
 
     # The publisher chain reaches DecideService correctly nested (STORY-045 D2):
     # DecideService(publisher=StatusWritebackPublisher(BestEffortPublisher(

@@ -170,6 +170,45 @@ def test_simulated_row_distinguishable_from_genuine_down():
     assert genuine_received.raw_ref != simulated_received.raw_ref
 
 
+def test_flag_flip_between_cycles_affects_only_the_next_call():
+    """AC4: the flag is read ONCE per `ingest_observations` call — since each
+    `run_periodic` cycle calls ingest exactly once
+    (`composition/pull_loop.py::run_periodic`), driving the decorator twice
+    with the flag flipped between calls proves a flip takes effect from the
+    NEXT cycle, with no loop restart and no cross-call caching.
+
+    Covers both directions: OFF->ON (first batch recorded as-is, second
+    forced DOWN) and ON->OFF (symmetric).
+    """
+    delegate = FakeSignalIngestPort()
+    flag_repo = FakeSampleModeRepository()
+    decorator = SampleModeIngest(delegate=delegate, sample_mode_repo=flag_repo)
+
+    # Cycle 1: flag OFF -> as-is.
+    first = _observation(health=Health.UP)
+    decorator.ingest_observations([first])
+    assert delegate.received[-1] is first
+
+    # Flip OFF -> ON between cycles.
+    flag_repo.set_enabled(True)
+
+    # Cycle 2: flag ON -> forced DOWN + marked.
+    second = _observation(health=Health.UP)
+    decorator.ingest_observations([second])
+    forced_second = delegate.received[-1]
+    assert forced_second is not second
+    assert forced_second.health == Health.DOWN
+    assert forced_second.raw_ref == SIMULATED_RAW_REF
+
+    # Flip ON -> OFF between cycles (symmetric).
+    flag_repo.set_enabled(False)
+
+    # Cycle 3: flag OFF again -> as-is.
+    third = _observation(health=Health.UP)
+    decorator.ingest_observations([third])
+    assert delegate.received[-1] is third
+
+
 def test_decorator_is_a_signal_ingest_port():
     """SampleModeIngest satisfies the SignalIngestPort ABC (dossier §6)."""
     delegate = FakeSignalIngestPort()
