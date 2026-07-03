@@ -42,7 +42,7 @@ start_tag: sprint-30-start
 stories:
   - id: STORY-044
     points: 5
-    board: todo            # todo | in-progress | blocked | review | done
+    board: in-progress     # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 0
