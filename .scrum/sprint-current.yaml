@@ -1,81 +1,54 @@
 # YourTeam active sprint board.
-sprint: 29
-status: closed        # none | active | review | closed | aborted
-started: 2026-07-02
-closed: 2026-07-03    # PO verdict: ACCEPT + follow-up chore (STORY-047, the two quality minors)
-goal: "Close the product's core-loop dead end (STORY-045): an approved degradation actually
-  reaches Statuspage through the Recording->BestEffort chain, is recorded in `publications`,
-  and writes `components.status` back — so the Dashboard reflects reality, the next decide
-  cycle compares against the truth (no approval whack-a-mole), and the recovery auto-publish
-  branch becomes reachable for the first time."
-branch: sprint-29
-start_tag: sprint-29-start
-# Capacity: velocity last-3 (sprints 26,27,28) = 5,5,3 -> mean 4.3. Committed 5 (STORY-045) —
-# the 28 entry was a deliberate under-commit, not a miss; sprints 25-27 each delivered 5/5 and
-# the PO approved the single-5 commitment at planning ("Start with story 45", 2026-07-02).
+sprint: 30
+status: active        # none | active | review | closed | aborted
+started: 2026-07-03
+goal: "Expose the topology and component-grain availability the frontend is blind to
+  (STORY-044): component->signals enumeration from the seeded topology, rollup-plus-children
+  availability via the existing rollup_group, and authoritative server-side per-signal
+  intervals — killing the 60-vs-120 completeness mis-compute (audit H2) and unblocking the
+  Availability (015d) and Check History (015e) tabs."
+branch: sprint-30
+start_tag: sprint-30-start
+# Capacity: velocity last-3 (sprints 27,28,29) = 5,3,5 -> mean 4.3. Committed 5 (STORY-044) —
+# same single-5 commitment the PO approved for sprints 25-27 and 29 (all delivered 5/5).
+# PO approval: "lock story 044" (2026-07-03, planning).
 #
 # WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds to
 # plan.md; Opus spec & quality reviewers (5 pts -> full pipeline); orchestrator runs the full
 # six-command backend DoD gate as a SINGLE non-concurrent DB-gated run (2026-07-02 agreement),
 # wiki blast-radius sweep, then review/verdict/merge/retro.
 #
-# TOOLING: none — pure backend against existing infra. No frontend change.
+# TOOLING: none — pure backend against existing infra (throwaway-DB harness covers all AC).
+# No frontend change.
 #
-# DoD: the six backend commands must stay green. AC4's write-back-vs-publish ordering is PINNED
-# in plan.md (commit-first: DB writes durable BEFORE the best-effort external call) per the
-# 2026-06-26 plan-edge-behavior agreement. No live-credential AC — the whole story is provable
-# with fakes + the throwaway DB, so nothing is carved out as manual.
+# KEY PLAN DECISIONS (pinned in plan.md): signals.interval_seconds is NOT in the DB today —
+# T1 adds the migration + seed extension; T2 adds the Signal domain type + SignalRepository
+# port + Postgres adapter + fake (parity contract test, both halves); T3 = new five-file
+# api/v1/topology/ module (AC1); T4 = GET /availability/component/{id} in the existing
+# availability module (AC2, rollup + children); T5 = per-signal default interval (AC3,
+# caller-supplied still wins; unknown signal on the default path -> 404). Edge behaviors
+# pinned per the 2026-06-26 plan-edge-behavior agreement.
 #
-# BASELINE at lock: sprint-29 cut from main @ 162783d (docs + .gitignore housekeeping only since
-# the sprint-28 gate-green code state 6303247 — `git diff 6303247..HEAD -- backend/ scripts/
-# pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY, so the six-gate evidence
-# recorded at sprint-28 close holds for this code state).
+# BASELINE at lock: sprint-30 cut from main @ f9d160c — `git diff 6d1799a..HEAD -- backend/
+# scripts/ pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY (docs/board
+# commits only since the sprint-29 gate-green state 6d1799a), so the six-gate evidence
+# recorded at sprint-29 close holds for this code state.
 #
-# Agreements in force: all of working-agreements.md as of 162783d (incl. the 2026-07-02
-# single-non-concurrent-DB-gate rule and the Sonnet-5 in-process directive; the tab-AC-vs-DTO
-# agreement is N/A — no consumer-tab AC this sprint).
+# Agreements in force: all of working-agreements.md as of f9d160c (incl. the 2026-07-02
+# single-non-concurrent-DB-gate rule and the Sonnet-5 in-process directive; the 2026-07-02
+# tab-AC-vs-DTO agreement is N/A — no consumer-tab AC this sprint; the contract-change
+# agreement applies to the availability default-interval tests, which are REWRITTEN not
+# deleted).
 stories:
-  - id: STORY-045
+  - id: STORY-044
     points: 5
-    board: done            # todo | in-progress | blocked | review | done — ACCEPTED 2026-07-03
+    board: todo            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # implementer stalled after T4 commit + finished (uncommitted) wiki edits;
-                           # coherent tail recovered + committed by the orchestrator (2026-06-25
-                           # crash-recovery agreement) — no fix loop yet, reviewers pending
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
-        exit_code: 0
-        output_tail: "gate at 6d1799a (clean committed tree). ruff check 'All checks passed!'; ruff
-          format --check '156 files already formatted'; lint-imports 5 kept / 0 broken (120 files,
-          345 deps); pytest 444 passed in 113.66s (SINGLE run vs throwaway postgres:16 via
-          dev_db.py; +16 tests over sprint-28's 428); check_fk_direction 11 FKs / 0 violations;
-          alembic upgrade head exit 0. Container torn down after."
-        commit: 6d1799a
-        at: 2026-07-03T00:05:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC6 all MET; reviewer RAN the cited tests incl. the DB-gated
-        parity contract — Postgres half executed, not skipped; contract-change rewrites confirmed;
-        assembly tests assert REAL wiring; no scope additions) / quality APPROVE (0 Critical, 0
-        Major; verified engine.begin() commit semantics, D1 nesting order, production path can
-        never silently lose write-back, approve publishes to_status only after resolution,
-        run.py has zero leftover inline assembly, wiki symbol citations accurate)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
-      open_minors:
-        - "create_app injected-fakes path: injecting component_repo but omitting publication_repo
-          (or vice versa) silently yields a bare LoggingPublisher with no write-back — test-only
-          convenience surface; production always builds both repos and always gets the full chain."
-        - "publish_helper.py: pre-existing publish_best_effort free function coexists with the
-          BestEffortPublisher class wrapping it; both live. Predates this story."
-      implementer_note: "Sonnet implementer stalled (600s watchdog) AFTER committing T1-T4 and
-        completing (uncommitted) T5 wiki edits; orchestrator recovered the coherent tail per the
-        2026-06-25 crash-recovery agreement and committed it as 6d1799a. No work lost. Retro input."
-    blast_radius_resolved: true   # implementer updated 5 articles (statuspage-publish,
-                                  # canonical-types-and-ports, persistence-adapters,
-                                  # core-pipeline-and-availability, api-five-file-convention) to
-                                  # verified_sha 7cabee7; orchestrator re-runs the mechanical sweep
-                                  # at the compile pass before review
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
