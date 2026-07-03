@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+verified_sha: 0ea652e
+verified_sprint: sprint-31
 status: verified
 ---
 
@@ -48,3 +48,9 @@ status: verified
 
 ## History
 - sprint-29 (STORY-045): added `StatusWritebackPublisher` and the shared `build_publisher` assembly (D1/D2); refactored `composition/run.py::build_live_loop` to consume `build_publisher` instead of its previous inline chain — `DecideService._publisher` now nests a `StatusWritebackPublisher` outermost, so `test_run_live_loop.py`'s two assembly tests were rewritten (not deleted) to assert the new nesting. `composition/app.py::create_app` (see [[api-five-file-convention]]) is the second composition root now consuming `build_publisher`. verified_sha → 7cabee7.
+- sprint-31 (STORY-048, a TEMPORARY feature — see [[sample-mode]]): the publisher chain itself is
+  UNCHANGED. `composition/run.py` was touched only by an UNRELATED seam one step earlier in
+  `build_live_loop` — its step 2 (`ingest_port`, BEFORE the publisher assembly this article
+  describes) now wraps the real `IngestService` in a `SampleModeIngest` decorator (the on-demand
+  outage simulator); step 4 (`build_publisher`) and everything downstream of it is byte-identical.
+  Re-verified; no Fact in this article changed. verified_sha → 0ea652e.

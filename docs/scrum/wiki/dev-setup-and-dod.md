@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py]
-verified_sha: 280c1e3
-verified_sprint: sprint-30
+verified_sha: 0ea652e
+verified_sprint: sprint-31
 status: verified
 ---
 
@@ -141,3 +141,8 @@ status: verified
   list (see [[architecture-boundary]]) — unrelated to the six backend / three frontend DoD commands or
   the dependency lists this article describes. Still six backend + three frontend commands, all green.
   verified_sha → 280c1e3.
+- sprint-31: re-verified (STORY-048, a TEMPORARY feature — see [[sample-mode]]). No DoD-gate or
+  dependency change; the only `pyproject.toml` edit was adding `"src.api.v1.sample_mode"` to the
+  `api-feature-independence` import-linter contract's module list (see [[architecture-boundary]]) —
+  unrelated to the six backend / three frontend DoD commands or the dependency lists this article
+  describes. Still six backend + three frontend commands, all green. verified_sha → 0ea652e.

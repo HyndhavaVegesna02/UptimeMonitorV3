@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 280c1e3
-verified_sprint: sprint-30
+verified_sha: 0ea652e
+verified_sprint: sprint-31
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -28,8 +28,9 @@ status: verified
     may not import one another (`pyproject.toml` ("adapters-independence")).
   - `api-feature-independence` (independence): `src.api.v1.decisions`, `src.api.v1.health`,
     `src.api.v1.components`, `src.api.v1.approvals`, `src.api.v1.maintenance`,
-    `src.api.v1.availability`, `src.api.v1.history`, `src.api.v1.publications`, and
-    `src.api.v1.topology` may not import one another (`pyproject.toml` ("api-feature-independence")).
+    `src.api.v1.availability`, `src.api.v1.history`, `src.api.v1.publications`,
+    `src.api.v1.topology`, and `src.api.v1.sample_mode` may not import one another
+    (`pyproject.toml` ("api-feature-independence")).
   - `src-no-tests` (forbidden): `src` may not import `tests` (`pyproject.toml` ("src-no-tests")).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
@@ -118,3 +119,9 @@ status: verified
   (`5ed254a8daab_add_signals_interval_seconds`) adds a nullable `signals.interval_seconds` column —
   no FK, so the FK-direction check's SPINE allowlist and violation count are unaffected. 5 contracts
   kept / 0 broken, FK 11/0 unchanged. verified_sha → 280c1e3.
+- sprint-31: `src.api.v1.sample_mode` added to the `api-feature-independence` contract (STORY-048
+  D3, a TEMPORARY feature — see [[sample-mode]]) — the new sample-mode toggle feature is isolated
+  from all other feature modules. A new migration (`09e9aa2cee32_add_sample_mode`) adds a
+  dedicated, no-FK, single-row `sample_mode` table — the FK-direction check's SPINE allowlist and
+  violation count are unaffected. 5 contracts kept / 0 broken, FK 11/0 unchanged. verified_sha →
+  0ea652e.

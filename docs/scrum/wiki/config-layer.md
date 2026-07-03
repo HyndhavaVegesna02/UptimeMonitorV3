@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 280c1e3
-verified_sprint: sprint-30
+verified_sha: 0ea652e
+verified_sprint: sprint-31
 status: verified
 ---
 
@@ -163,3 +163,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   the new `signals.interval_seconds` column (see [[migrations-and-db]]). The only `pyproject.toml`
   edit was adding `"src.api.v1.topology"` to the `api-feature-independence` import-linter contract,
   unrelated to the config loader/resolvers. verified_sha = 280c1e3.
+- sprint-31: re-verified (STORY-048, a TEMPORARY feature — see [[sample-mode]]). No config-layer
+  change; the only `pyproject.toml` edit was adding `"src.api.v1.sample_mode"` to the
+  `api-feature-independence` import-linter contract, unrelated to the config loader/resolvers.
+  verified_sha = 0ea652e.

@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py]
+verified_sha: 0ea652e
+verified_sprint: sprint-31
 status: verified          # verified | stale | archived
 ---
 
@@ -87,6 +87,15 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - `main()` (`run.py::main`, entrypoint `python -m src.composition.run`) loads settings + live secrets
   + config, seeds topology once, `asyncio.gather`s the loops, and disposes the engine in a `finally`
   on EVERY exit path (resource-lifecycle agreement; proven by `test_main_resource_lifecycle_failure_during_seeding`).
+- **STORY-048 sample-mode seam (temporary — see [[sample-mode]]):** `build_live_loop` step 2's
+  `ingest_port` is now `composition/sample_mode.py::SampleModeIngest(delegate=IngestService(...),
+  sample_mode_repo=PostgresSampleModeRepository(engine))` instead of a bare `IngestService` — a
+  composition-layer decorator that forces every observation to `Health.DOWN` (+ a `raw_ref`
+  marker) while a persisted flag is ON, and passes the batch through byte-identically while OFF.
+  `IngestService` and `run_periodic`/`run_cycle` (`composition/pull_loop.py`) themselves are
+  UNCHANGED — the decorator wraps the ingest port from the outside, at the one seam
+  `build_live_loop` already owned. This is a TEMPORARY, removable feature; see [[sample-mode]] for
+  its full Facts and the removal inventory.
 
 ### Tests
 - `backend/tests/test_ingest_service.py` exercises the real `IngestService` through in-memory fake
@@ -106,7 +115,10 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   patched) and asserts the `StatusWriteback→BestEffort→Recording→Statuspage` nesting + the six
   extras on each call (including that the SAME `component_repo` instance threads into both
   `run_periodic` and the writeback publisher), plus `main()` engine-dispose on success AND on a
-  seeding failure.
+  seeding failure. STORY-048 (the sanctioned AC7b exception, temporary feature — see
+  [[sample-mode]]) additionally asserts `ingest_port` is a `SampleModeIngest` wrapping the REAL
+  `IngestService` wired to the real repos, and that the SAME `ingest_port` instance threads into
+  every per-signal `run_periodic` call.
 - The DB-gated persistence side (the actual `rejected_observations` row write) is covered in
   `backend/tests/test_persistence_adapters.py` — see [[persistence-adapters]].
 
@@ -143,3 +155,10 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `StatusWritebackPublisher` outermost (components.status write-back on both the creds and no-creds
   paths); `test_run_live_loop.py` assembly tests rewritten for the new nesting. Ingest service +
   pull loop themselves unchanged. verified_sha → 7cabee7.
+- sprint-31 (STORY-048, a TEMPORARY feature — see [[sample-mode]]): `build_live_loop` step 2's
+  `ingest_port` is now wrapped in `composition/sample_mode.py::SampleModeIngest` (the on-demand
+  outage simulator) — the ONE marked seam line in `run.py`. `test_run_live_loop.py`'s assembly
+  assertions were UPDATED (the AC7b-sanctioned exception) to assert the real
+  `SampleModeIngest→IngestService` nesting; `IngestService`, `pull_loop.py`, and the pre-existing
+  BEHAVIOR tests (`test_ingest_service.py`, `test_pull_loop.py`) are UNCHANGED and pass unmodified.
+  verified_sha → 0ea652e.
