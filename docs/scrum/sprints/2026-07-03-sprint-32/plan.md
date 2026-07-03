@@ -72,7 +72,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       consumer remount; choose the cleaner and say why in the report. MSW tests: success (merged
       shape), one-component-fetch failure → error state (Promise.all rejects — that is acceptable
       whole-tab error behavior), and range-change → refetch with the NEW query params asserted.
-- [ ] **T4 — Page render: two-grain rows (AC1).** `pages/AvailabilityPage.tsx` (+ CSS module
+- [x] **T4 — Page render: two-grain rows (AC1).** `pages/AvailabilityPage.tsx` (+ CSS module
       mirroring `DashboardPage.css` conventions): per component a headline row — name,
       rollup `availability_pct` as the headline (mono, consistent precision, e.g. `99.87%`),
       `completeness_pct`, verdict counts (total/passing/maintenance/gap) as auditability detail,
