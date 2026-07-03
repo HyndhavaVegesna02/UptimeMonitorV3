@@ -116,7 +116,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       MSW tests: initial state rendered from GET (both off and on); toggle success (assert the
       actual PUT body `{enabled: true}` MSW received + warning appears); toggle-off success
       (warning disappears); PUT failure (error shown, `aria-checked` unchanged); load-state case.
-- [ ] **T3 — Gates + blast radius (049).** Three frontend gates exit 0 on a clean committed tree.
+- [x] **T3 — Gates + blast radius (049).** Three frontend gates exit 0 on a clean committed tree.
       Run the mechanical sweep; expect at least `frontend-zone.md` AND `sample-mode.md` — the
       REMOVAL inventory in `sample-mode.md` MUST gain every frontend file/seam this story adds
       (it is a TEMPORARY feature; the inventory is its removal recipe). Commit article-by-article.
