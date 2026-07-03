@@ -46,6 +46,14 @@ Backend only (the Dashboard toggle UI is STORY-049):
 - [ ] AC5: simulated observations are identifiable as simulated in what is persisted; the test
       proves a simulated row is distinguishable from a genuine DOWN.
 - [ ] AC6: all six backend gates green; wiki blast radius resolved.
+- [ ] AC7 (PO directive at lock, 2026-07-03 — this is a TEMPORARY feature): removability is
+      designed in. (a) All sample-mode logic lives in dedicated new modules (domain, port,
+      adapter, API feature, composition seam); existing files are touched only at minimal,
+      clearly-marked seam points. (b) With the switch OFF, runtime behavior is byte-identical to
+      before this story (regression: the pre-existing ingest/loop tests pass unmodified).
+      (c) A REMOVAL inventory is written (in the story's wiki article) listing exactly what to
+      delete/revert — files, seam lines, the drop-migration — so a future removal story is
+      mechanical and cannot break the system.
 
 ## Open Questions
 None at draft time — switch meaning ("record incoming as DOWN") and default (OFF) are PO answers
@@ -55,3 +63,5 @@ None at draft time — switch meaning ("record incoming as DOWN") and default (O
 - 2026-07-03: drafted from the PO's post-sprint-30-demo idea + clarification ("incoming dynatrace
   logs from monitor should be recorded as down", default OFF). Estimate 5. Frontend toggle split
   out as STORY-049 (frontend zone isolation).
+- 2026-07-03: PO approved; at the sprint-31 lock the PO added the temporary-feature/removability
+  directive → AC7. Estimate unchanged (removability is a design constraint, not extra surface).

@@ -309,7 +309,7 @@ stories:
   - id: STORY-048
     title: Sample switch (backend) — persisted flag + toggle API + incoming signals recorded as DOWN while ON
     file: docs/scrum/stories/STORY-048-sample-switch-simulate-down.md
-    status: draft   # drafted 2026-07-03; awaiting PO approval of AC → ready
+    status: ready   # PO approved as drafted 2026-07-03 (incl. AC5 simulated-marker)
     points: 5
     priority: 16
     type: feature
@@ -317,7 +317,7 @@ stories:
   - id: STORY-049
     title: Sample switch (frontend) — Dashboard toggle wired to the sample-mode API
     file: docs/scrum/stories/STORY-049-dashboard-sample-switch-toggle.md
-    status: draft   # drafted 2026-07-03; HARD dependency on STORY-048
+    status: ready   # PO approved 2026-07-03; HARD dependency on STORY-048
     points: 2
     priority: 17
     type: feature
