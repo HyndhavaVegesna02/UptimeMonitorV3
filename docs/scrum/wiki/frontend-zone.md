@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx]
-verified_sha: 63886bc
+verified_sha: eff33d3
 verified_sprint: sprint-32
 status: verified
 ---
@@ -211,3 +211,16 @@ status: verified
   Sonnet-5-implementer TDD pass, one commit per green step; frontend-only; six backend gates
   untouched-green (empty diff — no backend source change). `code_refs` +=
   mocks/handlers/sampleMode.ts, features/dashboard/useSampleMode.ts. verified_sha = 63886bc.
+- sprint-32: fix — STORY-015d shipped with a WRONG scale assumption. The backend
+  (`core/services/availability.py`) puts `availability_pct`/`completeness_pct` on the wire as 0–1
+  FRACTIONS (`1.0` = 100%, never pre-multiplied), confirmed against a live response; the frontend
+  had been treating them as already percent-scale, so `formatPct` rendered `1.0` as `1.00%` and the
+  Availability bar drew a fully-up component at ~1% width. Fixed `features/availability/format.ts::
+  formatPct` to scale ×100 before formatting (doc-comment now states the wire scale explicitly);
+  `pages/AvailabilityPage.tsx::AvailabilityStat`'s bar-width calc to the same scale; and every fixture
+  value in `mocks/handlers/availability.ts` to true 0–1-fraction scale (tests rewritten to assert the
+  same human-readable display text from the corrected fixtures, per the 2026-06-29
+  rewrite-tests-to-the-new-contract agreement — none deleted). No other frontend consumer of these
+  two fields found (checked `api/types.ts`, `api/client.test.ts`,
+  `features/availability/useAvailability.test.tsx` — none assumed the wrong scale). Backend
+  untouched; six backend gates not run (no backend diff). verified_sha = eff33d3.
