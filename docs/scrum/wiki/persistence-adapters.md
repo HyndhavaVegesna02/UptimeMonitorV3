@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/src/core/services/availability.py]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/services/availability.py]
+verified_sha: 280c1e3
+verified_sprint: sprint-30
 status: verified
 ---
 
@@ -105,6 +105,26 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - `create` (`maintenance_repository.py::PostgresMaintenanceRepository.create`) INSERTs a new maintenance window and returns it with the database-assigned `id`.
 - `is_under_maintenance` (`maintenance_repository.py::PostgresMaintenanceRepository.is_under_maintenance`) checks if a component is active under maintenance at a given timestamp using inclusive start and exclusive end boundaries (`starts_at <= at < ends_at`).
 
+### `PostgresSignalRepository` — read-only seeded-topology signal access (STORY-044)
+- Implements `SignalRepository` port against the `signals` table (`signal_repository.py::PostgresSignalRepository`).
+  Read-only: SELECTs only, mirroring `PostgresComponentRepository`'s style (injected `Engine`,
+  lightweight `sa.table` construct, no ORM model) — the seed (`composition/seed.py::seed_topology`)
+  is the only writer.
+- `list_signals` (`signal_repository.py::PostgresSignalRepository.list_signals`) SELECTs `signal_key`,
+  `name`, `component_id`, `interval_seconds`, ordered by `signal_key` (deterministic). Returns `[]`
+  if none exist.
+- `get` (`signal_repository.py::PostgresSignalRepository.get`) SELECTs a signal by key, returning
+  `None` if absent (fake/adapter parity, 2026-06-26). A `NULL interval_seconds` column value
+  surfaces as `Signal.interval_seconds = None` — never guessed or defaulted here.
+- Fake/adapter parity (2026-06-26): `FakeSignalRepository` (`backend/tests/fakes.py`) and
+  `PostgresSignalRepository` agree on: empty → `[]`; `list_signals` ordered by `signal_key`; `get`
+  on an unknown key → `None`; `get` on a known key returns all four fields incl. a NULL
+  `interval_seconds` as `None`. ONE shared assertion body
+  (`backend/tests/test_signal_repository_contract.py::_assert_signal_repository_contract`) is run
+  against both implementations (the Postgres half DB-gated via `migrated_db`, seeded through raw
+  SQL — topology seeding via `seed_topology` is a heavier alternative not needed for this
+  read-only contract).
+
 ### `PostgresPublicationRepository` — successful publish recording (STORY-037)
 - Implements `PublicationRepository` port against the existing `publications` table (spine schema — no migration) (`publication_repository.py::PostgresPublicationRepository`).
 - `record` (`publication_repository.py::PostgresPublicationRepository.record`) INSERTs a new publication row via `INSERT … RETURNING` and returns the persisted `Publication` with the database-assigned `id`. Called ONLY after a successful Statuspage publish — the table has no error column (§12/T1.1: record successes only).
@@ -149,4 +169,9 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - sprint-18: updated (STORY-040 — added description of `seed_topology` idempotent seeding and the clean_topology testing convention). verified_sha = 19eefc8.
 - sprint-19: STORY-037 adds `PostgresPublicationRepository` against the existing `publications` table (no migration). `record` INSERTs + RETURNS; `list_recent` SELECTs ORDER BY `published_at DESC`. DB-gated test in `test_persistence_adapters.py::test_postgres_publication_repository` truncates `publications` for isolation. verified_sha → cc7f0ce.
 - sprint-29 (STORY-045): adds `PostgresComponentRepository.set_status` (a conditional `UPDATE` raising `ComponentNotFoundError` on 0 rows) and the identical `FakeComponentRepository.set_status`, proven by a new shared contract test file (`backend/tests/test_component_repository_contract.py`, added to `code_refs`). No migration — `components.status` already existed; it was simply never written after seeding until this story. verified_sha → 7cabee7.
+- sprint-30 (STORY-044): adds `PostgresSignalRepository` (`adapters/persistence/signal_repository.py`,
+  read-only: `list_signals` + `get` against the `signals` table, now including the D1-added
+  `interval_seconds` column) and the identical `FakeSignalRepository`, proven by a new shared
+  contract test file (`backend/tests/test_signal_repository_contract.py`, added to `code_refs`).
+  verified_sha → 280c1e3.
 

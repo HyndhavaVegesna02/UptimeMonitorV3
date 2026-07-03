@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 6303247
-verified_sprint: sprint-28
+verified_sha: 280c1e3
+verified_sprint: sprint-30
 status: verified
 ---
 
@@ -158,3 +158,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   adding `uvicorn[standard]` to the dev extras. The new `composition/asgi.py` entrypoint reads the
   same `config_dir` (default `config/apps`) via `create_app()`/`load_config` — no change to the
   loader/resolvers this article describes. verified_sha = 6303247.
+- sprint-30: re-verified (STORY-044). No config-layer change; `SignalConfig.interval_seconds`
+  already existed (STORY-016a) and is unchanged — STORY-044 only made `seed_topology` persist it to
+  the new `signals.interval_seconds` column (see [[migrations-and-db]]). The only `pyproject.toml`
+  edit was adding `"src.api.v1.topology"` to the `api-feature-independence` import-linter contract,
+  unrelated to the config loader/resolvers. verified_sha = 280c1e3.

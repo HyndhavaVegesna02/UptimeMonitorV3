@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
+verified_sha: 280c1e3
+verified_sprint: sprint-30
 status: verified
 ---
 
@@ -36,6 +36,7 @@ status: verified
     has no meaning once its proposal is gone). `downgrade()` drops every spine object; the
     round-trip `upgrade head` → `downgrade base` → `upgrade head` is tested directly.
 - **The signals.component_id migration** (STORY-040) is `migrations/versions/eec78d2e8cbe_add_signals_component_id.py` (`down_revision = "3a8254bcfe59"`). One reversible migration adding a nullable `signals.component_id` column referencing `components.id` (with `ON DELETE RESTRICT`) and an index `ix_signals_component_id`. This allows signals to link to components in the database read model.
+- **The signals.interval_seconds migration** (STORY-044, D1) is `migrations/versions/5ed254a8daab_add_signals_interval_seconds.py` (`down_revision = "eec78d2e8cbe"`, the current head). One reversible migration adding a NULLABLE `signals.interval_seconds` Integer column — no FK, no index. Nullable because a migration cannot read `config/` (config is composition's job) and must not invent a default: the column is backfilled by the boot seed (`composition/seed.py::seed_topology`, which now also carries `interval_seconds` in its `_SIGNALS` insert values and `on_conflict_do_update` `set_`) from `composition/config.py::SignalConfig.interval_seconds`. The `SignalRepository` port/adapter (see [[canonical-types-and-ports]], [[persistence-adapters]]) is the read side; a row whose `interval_seconds` is still `NULL` (seed never ran, or predates this migration) is surfaced honestly as `Signal.interval_seconds = None`, never guessed.
 - **No `create_all` anywhere** — every table must arrive via an explicit migration. The only
   textual occurrences of `create_all` are comments in the baseline file forbidding it.
 - **Two distinct connection env vars, never mixed** (dossier §3, §17):
@@ -105,3 +106,7 @@ status: verified
   `StatuspageSecrets`/`load_statuspage_secrets` subset (env-var names hoisted to
   `STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR`; `load_live_secrets` delegates) for
   `create_app`'s publisher wiring. `verified_sha` re-stamped to `7cabee7`.
+- sprint-30 (STORY-044): added `migrations/versions/5ed254a8daab_add_signals_interval_seconds.py`
+  (new head, `down_revision = "eec78d2e8cbe"`) — a nullable `signals.interval_seconds` Integer
+  column, backfilled by the boot seed rather than a migration-time default (D1). No DB-split
+  change. `verified_sha` re-stamped to `280c1e3`.

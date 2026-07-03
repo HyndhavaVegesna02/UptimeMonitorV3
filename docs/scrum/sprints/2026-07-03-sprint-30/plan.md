@@ -222,7 +222,7 @@ paths/DTOs other than stated.
       the H2 regression (default → 120 → completeness ~100 %), explicit-interval-wins, 404
       unknown-on-default-path, 200 degenerate unknown-with-explicit. Then controller param +
       service resolution + error mapping; REWRITE the existing default-interval tests.
-- [ ] **T6 — Gates + docs + blast radius (AC4).** All six backend DoD commands exit 0 on a clean
+- [x] **T6 — Gates + docs + blast radius (AC4).** All six backend DoD commands exit 0 on a clean
       committed tree — SINGLE non-concurrent DB-gated run. CLAUDE.md: no command changes
       expected (command-sync N/A unless one changes). Wiki blast radius — your diff will touch
       `code_refs` of at least: `api-five-file-convention` (new module + availability changes),

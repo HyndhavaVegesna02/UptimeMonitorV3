@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/services/pipeline.py]
+verified_sha: 280c1e3
+verified_sprint: sprint-30
 status: verified          # verified | stale | archived
 ---
 
@@ -59,6 +59,18 @@ status: verified          # verified | stale | archived
   when the conditional write affects zero rows (2026-06-28 check-then-act agreement: never a bare
   `ValueError`) — both `PostgresComponentRepository` and `FakeComponentRepository` raise it identically
   (2026-06-26 fake/adapter parity agreement). See [[persistence-adapters]] for the adapter Facts.
+- STORY-044: `Signal` (`topology.py::Signal`, frozen) is the seeded-topology read model — distinct
+  from `signal.py::SignalObservation` (a runtime observation). Fields: `signal_key:str`, `name:str`,
+  `component_id:str|None` (`None` for an orphan signal), `interval_seconds:int|None` (`None` when the
+  D1 migration's backfill hasn't run yet for this row). A `model_validator(mode="after")`
+  (`topology.py::Signal._require_positive_interval_when_set`) enforces `interval_seconds > 0` when not
+  `None` (2026-06-26 coherence agreement; both-shapes tested). Two domain errors, deliberately plain
+  `Exception` subclasses (NOT `ValueError`, unlike `ComponentNotFoundError`/`ProposalNotFoundError`):
+  `SignalNotFoundError` (`topology.py::SignalNotFoundError`) and `SignalIntervalUnconfiguredError`
+  (`topology.py::SignalIntervalUnconfiguredError`) — both raised by the EDGE SERVICE
+  (`api/v1/availability/service.py`, see [[api-five-file-convention]]), never by `SignalRepository`
+  itself, when the default-interval resolution path needs a signal that is absent from the topology
+  or seeded without a configured interval, respectively.
 - `MaintenanceWindow` (frozen) models a scheduled maintenance window for a component (`maintenance.py::MaintenanceWindow`).
   Fields: `component_id:str`, `starts_at:datetime`, `ends_at:datetime`, `reason:str|None=None`, `id:int|None=None`. Timezones for starts_at and ends_at are validated to be UTC (`maintenance.py::MaintenanceWindow`). Enforces `ends_at > starts_at` invariant via a `model_validator(mode="after")` (`maintenance.py::MaintenanceWindow._require_ends_after_starts`) (STORY-036).
 - `Publication` (frozen) records a SUCCESSFUL Statuspage publish (§9, §12/T1.1, §17) (`publication.py::Publication`).
@@ -77,9 +89,9 @@ status: verified          # verified | stale | archived
   them for callers that import from the service. See [[persistence-adapters]] for the repository
   contract that raises them.
 
-### The nine core ports (`core/ports/`, ABCs)
+### The ten core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All nine are `abc.ABC` with `@abstractmethod`,
+them, the composition root injects them. All ten are `abc.ABC` with `@abstractmethod`,
 signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py::SignalIngestPort.ingest_observations`).
@@ -108,6 +120,13 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
 - `PublicationRepository` — persistence interface for recording and listing Statuspage publications (`publication_repository.py::PublicationRepository`).
   Provides `record(publication) -> Publication` (INSERTs a new row, returns it with the db-assigned id; called ONLY after a successful publish — table has no error column) and `list_recent(limit: int = 50) -> list[Publication]` (most-recent-first by `published_at DESC`; `[]` when none exist) (STORY-037).
+- `SignalRepository` — read-only persistence for the seeded-topology signal read model
+  (`signal_repository.py::SignalRepository`, STORY-044). Provides `list_signals() -> list[Signal]`
+  (ordered by `signal_key`, `[]` when none exist, never raises) and `get(signal_key) ->
+  Signal | None` (`None` on unknown — mirrors `ComponentRepository.get`, 2026-06-26 parity
+  agreement). Read-only: the seed (`composition/seed.py::seed_topology`) is the only writer of
+  `signals`. See [[persistence-adapters]] for the adapter/fake implementations and the shared
+  parity contract test.
 - `ProposalRepository` — outbound and read persistence for status proposals (`proposal_repository.py::ProposalRepository`).
   Provides `create_open(proposal) -> StatusProposal | None` (persists open proposal, returns None on
   one-open-per-component conflict), `get_open(component_id) -> StatusProposal | None`,
@@ -131,8 +150,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   contract (`services → ports → domain`) now actually bites and is KEPT. `core-independence`
   KEPT (no adapter / sqlalchemy / httpx in core). See [[architecture-boundary]].
 - Fakes for every port live under `backend/tests/fakes.py` (FakeClock, FakeWatermarkRepository,
-  FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort, FakePublicationRepository) — never in
-  `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
+  FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort, FakePublicationRepository,
+  FakeSignalRepository) — never in `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
   (`backend/tests/test_ingest_service.py`) additionally defines its own local fakes
   (`DedupingObservationRepository`, `FakeWatermarkRepository`,
   `FakeRejectedObservationRepository`, `FakeClock`) rather than extending `tests/fakes.py`,
@@ -186,3 +205,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `ProposalNotFoundError`/`ProposalNotOpenError` domain errors to `proposal.py`. Re-verified at eb147ef.
 - sprint-19: STORY-037 adds `Publication` domain type (`core/domain/publication.py`, frozen, UTC-validated `published_at` via `field_validator`) and `PublicationRepository` port (`core/ports/publication_repository.py`, `record` + `list_recent`). `FakePublicationRepository` added to `backend/tests/fakes.py`. Both exported from their respective `__init__.py` modules. verified_sha → cc7f0ce.
 - sprint-29 (STORY-045): adds `ComponentNotFoundError` (`core/domain/component.py`) and the `ComponentRepository.set_status` abstract method — the status write-back the approve and recovery publish paths now use (see [[statuspage-publish]]'s `StatusWritebackPublisher` and [[persistence-adapters]]'s adapter/fake implementations). verified_sha → 7cabee7.
+- sprint-30 (STORY-044): adds the tenth port, `SignalRepository` (`core/ports/signal_repository.py`),
+  and its domain type `Signal` + two domain errors `SignalNotFoundError`/`SignalIntervalUnconfiguredError`
+  (`core/domain/topology.py`) — the seeded-topology signal read model the new `/topology` and
+  `/availability/component/{id}` endpoints consume (see [[api-five-file-convention]]) and the D5
+  per-signal default-interval fix (audit finding H2) reads. `FakeSignalRepository` added to
+  `backend/tests/fakes.py`; `PostgresSignalRepository` added (see [[persistence-adapters]]). Both
+  exported from their respective `__init__.py` modules. verified_sha → 280c1e3.

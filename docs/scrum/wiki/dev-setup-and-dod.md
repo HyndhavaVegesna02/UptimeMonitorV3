@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py]
-verified_sha: 6303247
-verified_sprint: sprint-28
+verified_sha: 280c1e3
+verified_sprint: sprint-30
 status: verified
 ---
 
@@ -136,3 +136,8 @@ status: verified
   (throwaway DB → export `DATABASE_URL` → uvicorn on :8000 → 2nd terminal `python -m src.composition.run`
   live loop → `npm run dev`). No DoD command changed (still six backend + three frontend); CORS stays
   deferred to STORY-017 (the Vite proxy makes dev same-origin). verified_sha → 6303247.
+- sprint-30: re-verified (STORY-044). No DoD-gate or dependency change; the only `pyproject.toml` edit
+  was adding `"src.api.v1.topology"` to the `api-feature-independence` import-linter contract's module
+  list (see [[architecture-boundary]]) — unrelated to the six backend / three frontend DoD commands or
+  the dependency lists this article describes. Still six backend + three frontend commands, all green.
+  verified_sha → 280c1e3.
