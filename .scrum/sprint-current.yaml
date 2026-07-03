@@ -37,7 +37,7 @@ start_tag: sprint-29-start
 stories:
   - id: STORY-045
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: review          # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 1            # implementer stalled after T4 commit + finished (uncommitted) wiki edits;
@@ -54,7 +54,24 @@ stories:
           alembic upgrade head exit 0. Container torn down after."
         commit: 6d1799a
         at: 2026-07-03T00:05:00+05:30
-    review: null
+    review:
+      first_pass: "spec PASS (AC1-AC6 all MET; reviewer RAN the cited tests incl. the DB-gated
+        parity contract — Postgres half executed, not skipped; contract-change rewrites confirmed;
+        assembly tests assert REAL wiring; no scope additions) / quality APPROVE (0 Critical, 0
+        Major; verified engine.begin() commit semantics, D1 nesting order, production path can
+        never silently lose write-back, approve publishes to_status only after resolution,
+        run.py has zero leftover inline assembly, wiki symbol citations accurate)."
+      fix: "None — both reviewers passed first-pass with zero blocking findings."
+      second_pass: null
+      open_minors:
+        - "create_app injected-fakes path: injecting component_repo but omitting publication_repo
+          (or vice versa) silently yields a bare LoggingPublisher with no write-back — test-only
+          convenience surface; production always builds both repos and always gets the full chain."
+        - "publish_helper.py: pre-existing publish_best_effort free function coexists with the
+          BestEffortPublisher class wrapping it; both live. Predates this story."
+      implementer_note: "Sonnet implementer stalled (600s watchdog) AFTER committing T1-T4 and
+        completing (uncommitted) T5 wiki edits; orchestrator recovered the coherent tail per the
+        2026-06-25 crash-recovery agreement and committed it as 6d1799a. No work lost. Retro input."
     blast_radius_resolved: true   # implementer updated 5 articles (statuspage-publish,
                                   # canonical-types-and-ports, persistence-adapters,
                                   # core-pipeline-and-availability, api-five-file-convention) to
