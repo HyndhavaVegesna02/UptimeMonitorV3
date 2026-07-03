@@ -20,7 +20,9 @@ const WINDOW_PRESETS: Array<{ value: WindowPreset; label: string }> = [
  * `0%`/`NaN%`. */
 function AvailabilityStat({ pct }: { pct: number | null }) {
   const hasData = pct !== null
-  const width = hasData ? Math.max(0, Math.min(100, pct)) : 0
+  // `pct` is the raw 0-1 wire fraction (STORY-015d fix) — scale to a 0-100
+  // percent before clamping to a bar width.
+  const width = hasData ? Math.max(0, Math.min(100, pct * 100)) : 0
 
   return (
     <span className="availability-stat">

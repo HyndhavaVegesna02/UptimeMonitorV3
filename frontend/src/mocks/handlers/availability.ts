@@ -6,10 +6,13 @@ import type {
   SignalAvailabilityDTO,
 } from '../../api/types'
 
+// NOTE: `availability_pct`/`completeness_pct` are 0-1 FRACTIONS on the wire
+// (STORY-015d fix; backend never pre-multiplies by 100) — these fixtures
+// mirror the real scale so tests exercise the actual contract.
 function makeAvailability(overrides: Partial<AvailabilityDTO> = {}): AvailabilityDTO {
   return {
-    availability_pct: 99.87,
-    completeness_pct: 100,
+    availability_pct: 0.9987,
+    completeness_pct: 1,
     total_verdicts: 96,
     passing_verdicts: 95,
     maintenance_verdicts: 1,
@@ -106,25 +109,25 @@ export const FIXTURE_TOPOLOGY: ComponentTopologyDTO[] = [
 export const FIXTURE_AVAILABILITY_BY_COMPONENT: Record<string, ComponentAvailabilityDTO> = {
   'sockshop-frontend': {
     component_id: 'sockshop-frontend',
-    rollup: makeAvailability({ availability_pct: 99.5, completeness_pct: 99.9 }),
+    rollup: makeAvailability({ availability_pct: 0.995, completeness_pct: 0.999 }),
     signals: [
       makeSignalAvailability('frontend-http', {
-        availability_pct: 99.9,
-        completeness_pct: 100,
+        availability_pct: 0.999,
+        completeness_pct: 1,
       }),
       makeSignalAvailability('frontend-tls', {
-        availability_pct: 99.5,
-        completeness_pct: 99.9,
+        availability_pct: 0.995,
+        completeness_pct: 0.999,
       }),
     ],
   },
   'sockshop-catalogue': {
     component_id: 'sockshop-catalogue',
-    rollup: makeAvailability({ availability_pct: 98.2, completeness_pct: 97.5 }),
+    rollup: makeAvailability({ availability_pct: 0.982, completeness_pct: 0.975 }),
     signals: [
       makeSignalAvailability('catalogue-http', {
-        availability_pct: 98.2,
-        completeness_pct: 97.5,
+        availability_pct: 0.982,
+        completeness_pct: 0.975,
       }),
     ],
   },

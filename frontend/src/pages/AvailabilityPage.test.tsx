@@ -23,7 +23,11 @@ describe('AvailabilityPage', () => {
       const row = screen.getByText(component.name).closest('tr') as HTMLElement
       expect(row).not.toBeNull()
       if (availability.rollup.availability_pct !== null) {
-        expect(within(row).getByText(`${availability.rollup.availability_pct.toFixed(2)}%`)).toBeInTheDocument()
+        // Fixture values are 0-1 wire fractions (STORY-015d fix) — scale to
+        // percent to match the page's display text.
+        expect(
+          within(row).getByText(`${(availability.rollup.availability_pct * 100).toFixed(2)}%`),
+        ).toBeInTheDocument()
       }
     }
   })
@@ -56,7 +60,9 @@ describe('AvailabilityPage', () => {
       expect(childRow).not.toBeNull()
       expect(within(childRow).getByText(topologySignal.name)).toBeInTheDocument()
       expect(
-        within(childRow).getByText(`${signal.availability_pct?.toFixed(2)}%`),
+        within(childRow).getByText(
+          `${((signal.availability_pct ?? 0) * 100).toFixed(2)}%`,
+        ),
       ).toBeInTheDocument()
     }
 
