@@ -62,7 +62,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       now?: Date): { since: string; until: string }` returning tz-aware UTC ISO strings (trailing
       `Z`), `until` = now, `since` = now − preset. Unit-test all three presets + that output parses
       tz-aware (this is the tz-discipline seam — a naive string here becomes a backend 422).
-- [ ] **T3 — `useAvailability` hook (AC1, AC2).** `features/availability/useAvailability.ts`:
+- [x] **T3 — `useAvailability` hook (AC1, AC2).** `features/availability/useAvailability.ts`:
       for a given range, fetch `getTopology()` then `Promise.all` of
       `getComponentAvailability(c.id, range)` per component; return the merged
       `{ topology, availabilityByComponent }` through the shared `useFetch` state machine
