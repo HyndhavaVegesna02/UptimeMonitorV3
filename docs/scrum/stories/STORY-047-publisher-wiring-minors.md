@@ -30,6 +30,16 @@ its two quality minors into this same chore (items 3–4 below).
    clear as written — recorded here because the PO folded both minors in; no behavior change is
    wanted, simplify only if it falls out of the AC4 refactor naturally.
 
+5. (from STORY-048, sprint 31) `backend/tests/fakes.py::FakeSampleModeRepository` uses bare
+   `dict` type hints (`store: dict | None`, `self._store: dict`) where the peer fakes
+   parametrize (e.g. `dict[int, StatusProposal]`) — cosmetic consistency fix
+   (`dict[bool, bool]` keyed by the single-row id, or whatever shape the store actually holds).
+   NOTE this fake is part of the TEMPORARY sample-mode feature (see
+   `docs/scrum/wiki/sample-mode.md` REMOVAL inventory) — if removal happens first, this item
+   dies with it. The sprint-31 quality review's other minor (wiki `verified_sha` pinned at the
+   last code commit instead of the wiki commit) needs NO chore: the sweep is clean and the pins
+   refresh naturally on the next touch.
+
 ## Acceptance Criteria
 - [ ] AC1: in `create_app`, whenever a `component_repo` is available (injected or real), the wired
       publisher performs status write-back — injecting `component_repo` without `publication_repo`
@@ -45,6 +55,8 @@ its two quality minors into this same chore (items 3–4 below).
       `_to_dto` helper (no nine-field inline duplication); existing rollup-endpoint tests stay
       green (behavior identical). The double iteration (item 4) needs no change unless the
       refactor removes it for free.
+- [ ] AC5: `FakeSampleModeRepository`'s store hints are parametrized like the peer fakes (item
+      5); suite stays green; skip (and tick as N/A) if sample-mode removal landed first.
 
 ## Open Questions
 None — all changes are mechanical; AC1's shape (write-back whenever component_repo exists) was
@@ -55,3 +67,5 @@ implied by the reviewer's note.
   Status: ready.
 - 2026-07-03: Sprint 30 review — PO accepted STORY-044 and folded its two quality minors in
   (items 3–4, AC4). Estimate stays 1 (all items are small mechanical edits in two files).
+- 2026-07-03: Sprint 31 review — STORY-048 accepted; its one actionable cosmetic minor folded in
+  (item 5, AC5); the verified_sha-pin minor recorded as no-action. Estimate stays 1.

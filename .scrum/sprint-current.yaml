@@ -1,7 +1,8 @@
 # YourTeam active sprint board.
 sprint: 31
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-03
+closed: 2026-07-03    # PO verdict: ACCEPT; actionable cosmetic minor folded into STORY-047; verified_sha-pin minor = no action
 goal: "Give the product an on-demand outage simulator (STORY-048): a DB-persisted sample-mode
   flag (default OFF) flipped through a new API endpoint and re-read by the live loop each
   cycle, so that while ON every incoming observation is recorded as DOWN (identifiably
@@ -40,7 +41,7 @@ start_tag: sprint-31-start
 stories:
   - id: STORY-048
     points: 5
-    board: review          # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done — ACCEPTED 2026-07-03
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 1            # implementer stalled (600s watchdog) AFTER committing T1-T5 with the T6

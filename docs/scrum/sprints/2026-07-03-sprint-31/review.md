@@ -111,6 +111,9 @@ curl -X PUT http://localhost:8000/api/v1/sample-mode -d '{"enabled": false}'
   fresh re-dispatches per the 2026-06-25 fresh-agent rule both passed. No fix loop either way.
 - Zero blocking review findings — third consecutive zero-fix-loop sprint.
 
-## Verdict (PO)
+## Verdict (PO, 2026-07-03)
 
-- STORY-048: **pending** — accept (merge to main) or reject (back to backlog with feedback).
+- STORY-048: **ACCEPT** — merged to main (5/5 points). Of the two cosmetic minors, the
+  actionable one (fake's bare `dict` hints) folded into STORY-047 (item 5 / AC5, estimate
+  stays 1); the verified_sha-pin note needs no chore (sweep-clean; pins refresh on next touch).
+  STORY-049 (the Dashboard toggle) is now unblocked.
