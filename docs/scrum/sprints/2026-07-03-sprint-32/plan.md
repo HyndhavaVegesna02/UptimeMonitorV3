@@ -82,7 +82,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
       child rows: signal `name` + `signal_key`, its own availability% / completeness% / counts /
       bar. Zero-signal component renders its (all-None) rollup honestly with no expandable children.
       MSW tests: multi-signal expand shows children with per-signal values; zero-signal case.
-- [ ] **T5 — Window selector + degenerate windows + states (AC2, AC3, AC4).** Window selector
+- [x] **T5 — Window selector + degenerate windows + states (AC2, AC3, AC4).** Window selector
       (segmented control / button group; ≥40px targets; `aria-pressed` or radio semantics;
       keyboard-operable) with 24h / 7d / 30d presets driving the hook's range. Null
       `availability_pct`/`completeness_pct` renders an explicit "no data" treatment (muted ink
