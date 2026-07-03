@@ -46,7 +46,7 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
 
 ## STORY-015d — Availability tab (3 pts) — AC1–AC4
 
-- [ ] **T1 — Types + client + MSW module (AC1 plumbing).** Add `TopologySignalDTO`,
+- [x] **T1 — Types + client + MSW module (AC1 plumbing).** Add `TopologySignalDTO`,
       `ComponentTopologyDTO`, `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`
       to `frontend/src/api/types.ts` (mirror the verified shapes EXACTLY, incl. `| null` fields).
       Add to `frontend/src/api/client.ts`: `getTopology(): Promise<ComponentTopologyDTO[]>` and

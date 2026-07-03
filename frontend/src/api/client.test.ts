@@ -1,8 +1,20 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../mocks/server'
-import { FIXTURE_COMPONENTS, FIXTURE_PROPOSALS } from '../mocks/handlers'
-import { ApiError, getApprovals, getComponents, postDecision } from './client'
+import {
+  FIXTURE_AVAILABILITY_BY_COMPONENT,
+  FIXTURE_COMPONENTS,
+  FIXTURE_PROPOSALS,
+  FIXTURE_TOPOLOGY,
+} from '../mocks/handlers'
+import {
+  ApiError,
+  getApprovals,
+  getComponentAvailability,
+  getComponents,
+  getTopology,
+  postDecision,
+} from './client'
 
 describe('getComponents', () => {
   it('fetches and parses the component list from /api/v1/components', async () => {
@@ -126,6 +138,87 @@ describe('postDecision', () => {
 
     await expect(
       postDecision(1, { action: 'approve', actor: 'dashboard-operator' }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('getTopology', () => {
+  it('fetches and parses the component+signals list from /api/v1/topology', async () => {
+    const topology = await getTopology()
+    expect(topology).toEqual(FIXTURE_TOPOLOGY)
+  })
+
+  it('returns an empty array when the topology has no components', async () => {
+    server.use(http.get('/api/v1/topology', () => HttpResponse.json([])))
+    const topology = await getTopology()
+    expect(topology).toEqual([])
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.get('/api/v1/topology', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(getTopology()).rejects.toBeInstanceOf(ApiError)
+    await expect(getTopology()).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.get('/api/v1/topology', () => HttpResponse.error()))
+
+    await expect(getTopology()).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('getComponentAvailability', () => {
+  it('fetches ComponentAvailabilityDTO and sends since/until as query params', async () => {
+    let receivedUrl: URL | undefined
+    server.use(
+      http.get('/api/v1/availability/component/:componentId', ({ request, params }) => {
+        receivedUrl = new URL(request.url)
+        const dto = FIXTURE_AVAILABILITY_BY_COMPONENT[params.componentId as string]
+        return HttpResponse.json(dto)
+      }),
+    )
+
+    const range = { since: '2026-07-02T00:00:00.000Z', until: '2026-07-03T00:00:00.000Z' }
+    const result = await getComponentAvailability('sockshop-frontend', range)
+
+    expect(receivedUrl?.pathname).toBe('/api/v1/availability/component/sockshop-frontend')
+    expect(receivedUrl?.searchParams.get('since')).toBe(range.since)
+    expect(receivedUrl?.searchParams.get('until')).toBe(range.until)
+    expect(result).toEqual(FIXTURE_AVAILABILITY_BY_COMPONENT['sockshop-frontend'])
+  })
+
+  it('fetches the zero-signal component with its all-None rollup honestly', async () => {
+    const range = { since: '2026-07-02T00:00:00.000Z', until: '2026-07-03T00:00:00.000Z' }
+    const result = await getComponentAvailability('sockshop-orders', range)
+
+    expect(result.signals).toEqual([])
+    expect(result.rollup.availability_pct).toBeNull()
+    expect(result.rollup.completeness_pct).toBeNull()
+  })
+
+  it('throws a typed ApiError carrying status 404 for an unknown component', async () => {
+    const range = { since: '2026-07-02T00:00:00.000Z', until: '2026-07-03T00:00:00.000Z' }
+
+    await expect(
+      getComponentAvailability('does-not-exist', range),
+    ).rejects.toMatchObject({ status: 404 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(
+      http.get('/api/v1/availability/component/:componentId', () => HttpResponse.error()),
+    )
+
+    await expect(
+      getComponentAvailability('sockshop-frontend', {
+        since: '2026-07-02T00:00:00.000Z',
+        until: '2026-07-03T00:00:00.000Z',
+      }),
     ).rejects.toBeInstanceOf(ApiError)
   })
 })

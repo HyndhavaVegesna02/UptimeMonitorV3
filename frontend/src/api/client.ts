@@ -1,4 +1,11 @@
-import type { ComponentDTO, DecisionRequest, DecisionResponse, ProposalDTO } from './types'
+import type {
+  ComponentAvailabilityDTO,
+  ComponentDTO,
+  ComponentTopologyDTO,
+  DecisionRequest,
+  DecisionResponse,
+  ProposalDTO,
+} from './types'
 
 /**
  * Fetch-based typed API client (STORY-015a AC3). Single base-URL seam: every
@@ -93,5 +100,31 @@ export function postDecision(
   return postJson<DecisionResponse, DecisionRequest>(
     `/v1/decisions/${proposalId}`,
     body,
+  )
+}
+
+/**
+ * `GET /api/v1/topology` (STORY-044/STORY-015d AC1) — every component with
+ * its nested signals, sourced from the seeded topology.
+ */
+export function getTopology(): Promise<ComponentTopologyDTO[]> {
+  return getJson<ComponentTopologyDTO[]>('/v1/topology')
+}
+
+/**
+ * `GET /api/v1/availability/component/{componentId}` (STORY-044/STORY-015d
+ * AC1, AC2) — the component-grain rollup plus its per-signal children for
+ * the given window. `since`/`until` MUST be tz-aware ISO strings (a
+ * trailing `Z`) — the backend 422s naive datetimes;
+ * `features/availability/windowRange.ts::windowToRange` is the app's single
+ * seam that guarantees this.
+ */
+export function getComponentAvailability(
+  componentId: string,
+  range: { since: string; until: string },
+): Promise<ComponentAvailabilityDTO> {
+  const query = new URLSearchParams({ since: range.since, until: range.until })
+  return getJson<ComponentAvailabilityDTO>(
+    `/v1/availability/component/${componentId}?${query.toString()}`,
   )
 }

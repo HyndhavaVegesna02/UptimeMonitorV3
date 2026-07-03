@@ -44,3 +44,66 @@ export interface DecisionResponse {
   state: string
   resolved_at: string
 }
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py::TopologySignalDTO`
+ * (STORY-044/STORY-015d AC1). `interval_seconds` is nullable — `None` when
+ * the seeded row predates the interval backfill or a re-seed has not yet
+ * run, surfaced honestly rather than guessed.
+ */
+export interface TopologySignalDTO {
+  signal_key: string
+  name: string
+  interval_seconds: number | null
+  component_id: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py::ComponentTopologyDTO`
+ * (STORY-044/STORY-015d AC1). `signals` is sorted server-side; a component
+ * with no mapped signals gets `signals: []`, never a 500.
+ */
+export interface ComponentTopologyDTO {
+  id: string
+  name: string
+  signals: TopologySignalDTO[]
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::AvailabilityDTO`
+ * (STORY-044/STORY-015d AC1, AC2). Both percentages are nullable — `None`
+ * on a degenerate/no-data window (never a crash, never a stand-in `0`).
+ */
+export interface AvailabilityDTO {
+  availability_pct: number | null
+  completeness_pct: number | null
+  total_verdicts: number
+  passing_verdicts: number
+  maintenance_verdicts: number
+  gap_verdicts: number
+  distinct_locations: number
+  window: string
+  computed_at: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::SignalAvailabilityDTO`
+ * — `AvailabilityDTO` plus `signal_key` naming which per-signal child this
+ * result is for (STORY-015d AC1).
+ */
+export interface SignalAvailabilityDTO extends AvailabilityDTO {
+  signal_key: string
+}
+
+/**
+ * Mirrors
+ * `backend/src/api/v1/availability/models.py::ComponentAvailabilityDTO`
+ * (STORY-044/STORY-015d AC1, AC2) — the component-grain `rollup` plus its
+ * per-signal `signals` children, sorted by `signal_key`. A zero-signal
+ * component gets `signals: []` and an all-None/zero `rollup`, never a 500.
+ */
+export interface ComponentAvailabilityDTO {
+  component_id: string
+  rollup: AvailabilityDTO
+  signals: SignalAvailabilityDTO[]
+}
