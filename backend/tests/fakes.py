@@ -16,6 +16,7 @@ from src.core.domain import (
     IngestResult,
     MaintenanceWindow,
     Publication,
+    Signal,
     SignalObservation,
     StatusChange,
 )
@@ -33,6 +34,7 @@ from src.core.ports import (
     ProposalRepository,
     PublicationRepository,
     SignalIngestPort,
+    SignalRepository,
     StatusPublisherPort,
     WatermarkRepository,
 )
@@ -255,6 +257,27 @@ class FakePublicationRepository(PublicationRepository):
             reverse=True,
         )
         return pubs[:limit]
+
+
+class FakeSignalRepository(SignalRepository):
+    """An in-memory seeded-topology signal repository for testing (STORY-044).
+
+    Parity with `PostgresSignalRepository` (2026-06-26 fake/adapter parity
+    agreement): `list_signals` returns `[]` when empty and is ordered by
+    `signal_key`; `get` returns `None` on an unknown key, never raises.
+    """
+
+    def __init__(self, signals: list[Signal] | None = None) -> None:
+        self._signals = list(signals) if signals is not None else []
+
+    def list_signals(self) -> list[Signal]:
+        return sorted(self._signals, key=lambda s: s.signal_key)
+
+    def get(self, signal_key: str) -> Signal | None:
+        for signal in self._signals:
+            if signal.signal_key == signal_key:
+                return signal
+        return None
 
 
 class FakeMaintenanceRepository(MaintenanceRepository):

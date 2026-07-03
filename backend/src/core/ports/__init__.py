@@ -17,6 +17,7 @@ from src.core.ports.rejected_observation_repository import (
     RejectedObservationRepository,
 )
 from src.core.ports.signal_ingest import SignalIngestPort
+from src.core.ports.signal_repository import SignalRepository
 from src.core.ports.status_publisher import StatusPublisherPort
 from src.core.ports.watermark import WatermarkRepository
 
@@ -26,6 +27,7 @@ __all__ = [
     "PublicationRepository",
     "RejectedObservationRepository",
     "SignalIngestPort",
+    "SignalRepository",
     "StatusPublisherPort",
     "WatermarkRepository",
     "ProposalRepository",

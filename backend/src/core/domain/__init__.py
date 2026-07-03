@@ -13,6 +13,11 @@ from src.core.domain.status import (
     is_worse,
     severity_rank,
 )
+from src.core.domain.topology import (
+    Signal,
+    SignalIntervalUnconfiguredError,
+    SignalNotFoundError,
+)
 from src.core.domain.verdict import Verdict
 
 __all__ = [
@@ -32,4 +37,7 @@ __all__ = [
     "is_worse",
     "Component",
     "MaintenanceWindow",
+    "Signal",
+    "SignalNotFoundError",
+    "SignalIntervalUnconfiguredError",
 ]

@@ -198,7 +198,7 @@ paths/DTOs other than stated.
       (upsert `set_`). Then: new Alembic revision (chain from `eec78d2e8cbe`; module docstring
       names story + purpose like peers), extend `_SIGNALS` + values + `set_` in `seed.py`.
       `alembic upgrade head` + `downgrade` exercised by the existing migration tests/gate.
-- [ ] **T2 — `Signal` domain type + `SignalRepository` port + adapter + fake (D2), TDD.**
+- [x] **T2 — `Signal` domain type + `SignalRepository` port + adapter + fake (D2), TDD.**
       Failing parity contract test first: ONE test body against BOTH `FakeSignalRepository` and
       `PostgresSignalRepository` (DB-gated half via `migrated_db`, seeded through
       `seed_topology`): empty `[]`, signal_key ordering, `get` unknown → `None`, fields incl.
