@@ -9,6 +9,9 @@ from src.core.ports import (
     PublicationRepository,
     SignalRepository,
 )
+
+# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
+from src.core.ports.sample_mode_repository import SampleModeRepository
 from src.core.services.approval import ApprovalService
 
 
@@ -50,3 +53,9 @@ def get_publication_repo(request: Request) -> PublicationRepository:
 def get_signal_repo(request: Request) -> SignalRepository:
     """FastAPI dependency to retrieve the SignalRepository from app state."""
     return request.app.state.signal_repo
+
+
+# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
+def get_sample_mode_repo(request: Request) -> SampleModeRepository:
+    """FastAPI dependency to retrieve the SampleModeRepository from app state."""
+    return request.app.state.sample_mode_repo

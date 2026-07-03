@@ -163,7 +163,7 @@ outage flows through it as ordinary data, which is the entire point.
       the migration (docstring names STORY-048 + TEMPORARY + the paired removal expectation),
       the port (edge behaviors in docstrings), the Postgres adapter, the fake in
       `backend/tests/fakes.py`.
-- [ ] **T2 — Five-file `api/v1/sample_mode/` + wiring (D3; AC2), TDD.** Failing tests first:
+- [x] **T2 — Five-file `api/v1/sample_mode/` + wiring (D3; AC2), TDD.** Failing tests first:
       shape test; GET default false; PUT→GET round-trips (fake-injected); 422 on bad body;
       DB-gated round-trip. Then the module + `create_app`/`app.state`/`dependencies.py`/
       `api/v1/__init__.py`/`pyproject.toml` wiring (seam comments on the create_app lines).

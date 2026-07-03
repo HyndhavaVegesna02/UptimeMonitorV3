@@ -68,6 +68,8 @@ modules = [
     "src.api.v1.history",
     "src.api.v1.publications",
     "src.api.v1.topology",
+    # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
+    "src.api.v1.sample_mode",
 ]
 
 [[tool.importlinter.contracts]]
