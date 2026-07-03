@@ -187,7 +187,7 @@ outage flows through it as ordinary data, which is the entire point.
       ON→OFF symmetric) — proving a flip takes effect next cycle with no rebuild. Then the
       one-line `run.py` change with the seam comment. Pre-existing ingest-service + pull-loop
       BEHAVIOR tests pass UNMODIFIED (run them; name them in the report).
-- [ ] **T5 — End-to-end proof (AC3/AC5 integration).** One fake-driven end-to-end: observations
+- [x] **T5 — End-to-end proof (AC3/AC5 integration).** One fake-driven end-to-end: observations
       flow through the REAL `IngestService` (fake observation/watermark/rejected repos or the
       DB-gated harness — cheapest honest path) wrapped by the decorator with the flag ON →
       persisted rows are DOWN + marked; flag OFF → rows match the vendor payload. This is the
