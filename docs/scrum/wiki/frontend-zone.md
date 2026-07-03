@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx]
-verified_sha: c2e865c
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx]
+verified_sha: 63886bc
 verified_sprint: sprint-32
 status: verified
 ---
@@ -58,16 +58,18 @@ status: verified
   their response through a shared `readOkJson(response, path)` that gives ONE uniform error
   contract (STORY-015c): EVERY failure is a typed `ApiError` — network rejection (no status),
   non-2xx (`.status` carried), and a malformed-body `SyntaxError` on a 2xx (with status). The
-  readable `.status` is what lets a mutating tab branch on 404/409. Endpoint fns: `getComponents`,
-  `getApprovals`, `postDecision(proposalId, body)`, `getTopology`,
+  readable `.status` is what lets a mutating tab branch on 404/409. A third helper, `putJson`
+  (STORY-049), mirrors `postJson` for PUT bodies, funneling through the same `readOkJson`. Endpoint
+  fns: `getComponents`, `getApprovals`, `postDecision(proposalId, body)`, `getTopology`,
   `getComponentAvailability(componentId, { since, until })` (STORY-015d — query-string encodes
   `since`/`until`, both REQUIRED to be tz-aware ISO strings since the backend 422s a naive
-  datetime). DTO types in `frontend/src/api/types.ts` (`ComponentDTO`, `ProposalDTO`,
-  `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
-  `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`) mirror the backend
-  `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability result)
-  carries `signal_key` but NOT a display `name`; the name lives only on the topology response's
-  nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
+  datetime), `getSampleMode()` / `putSampleMode(enabled)` (STORY-049 — a TEMPORARY-feature seam,
+  see `docs/scrum/wiki/sample-mode.md`). DTO types in `frontend/src/api/types.ts` (`ComponentDTO`,
+  `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
+  `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`) mirror
+  the backend `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability
+  result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
+  response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
   `signal_key` to label a child row (STORY-015d AC1; see `AvailabilityPage.tsx`).
   `frontend/src/api/statusMapping.ts::toHealthStatus` is the
   authoritative map from the backend `ComponentStatus` vocabulary (operational / degraded /
@@ -84,8 +86,9 @@ status: verified
   `frontend/src/test/setup.ts`). A tab story adds its own `handlers/<feature>.ts` and spreads it
   in — touching no other feature's handlers (STORY-041 refactor). Tests assert via accessible
   roles/text and drive real behavior (success + empty + error→retry against MSW; for a mutating
-  tab, the actual POST body MSW received; for STORY-015d, the actual `since`/`until` query params
-  a selector change sent); no component/hook under assertion is mocked. 125 tests at STORY-015d.
+  tab, the actual POST/PUT body MSW received; for STORY-015d, the actual `since`/`until` query
+  params a selector change sent); no component/hook under assertion is mocked. 146 tests at
+  STORY-049.
 - **Shared fetch machinery:** `frontend/src/lib/useFetch.ts::useFetch<T>(fetcher)` is the single
   home of the read-fetch state machine (STORY-015c, extracted from 015b's `useComponents` — the
   parallel-shape agreement): returns `{ state, retry }` over a discriminated-union `FetchState<T>`
@@ -127,6 +130,20 @@ status: verified
     numeric cell renders its value as TEXT even when it also draws a token-styled bar (the bar is
     never the sole carrier), and a `null` percentage renders an explicit "no data" label (never
     `0%`/`NaN%`). See `pages/AvailabilityPage.tsx`.
+  - **A load+mutate widget embedded in a read tab (Dashboard sample-mode toggle, STORY-049,
+    TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):** unlike Approvals' split (a read
+    `useFetch` hook plus page-local mutation state), `features/dashboard/useSampleMode.ts` owns
+    BOTH the load (`useFetch(getSampleMode)`) and the mutate (`setEnabled`, PUTting and updating an
+    internal `override` state from the PUT RESPONSE only) in one hook, because the widget is a
+    single boolean rather than a list — there is no "list to refresh" to reconcile against, so
+    reusing the exact Approvals split would add a needless refetch round-trip. `enabled` is
+    computed on every render as `override ?? state.data.enabled` (never effect-synced into a
+    separate piece of state) specifically to avoid a one-frame flash of a stale/default value the
+    instant the GET resolves — an effect-based mirror was tried first and exhibited exactly that
+    race in a real MSW test. A real `<button role="switch" aria-checked aria-label>` (not a
+    checkbox) carries the control; the widget renders nothing until the load's `state.phase`
+    leaves `'loading'`, and falls back to the shell `ErrorState` + `retry` on a load failure,
+    mirroring the read pattern above it. See `pages/DashboardPage.tsx` (`SampleModeToggle`).
   - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
     `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
     `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
@@ -183,3 +200,14 @@ status: verified
   untouched-green (empty diff). `code_refs` += mocks/handlers/availability.ts,
   features/availability/{windowRange,useAvailability,format}.ts, pages/AvailabilityPage.tsx.
   verified_sha = c2e865c.
+- sprint-32: updated for STORY-049 (the Dashboard sample-mode toggle — a TEMPORARY feature, see
+  `docs/scrum/wiki/sample-mode.md`). Landed `SampleModeDTO` in `api/types.ts`; `getSampleMode`/
+  `putSampleMode` on the client plus a new `putJson` helper (mirrors `postJson` for PUT bodies,
+  same `readOkJson`/`ApiError` contract); `mocks/handlers/sampleMode.ts` (stateless GET-default-off
+  + PUT-echoes-body handlers, matching the approvals/components convention of per-test
+  `server.use()` overrides for stateful scenarios rather than global mutable fixture state);
+  `features/dashboard/useSampleMode.ts` (the load+mutate-in-one-hook pattern documented above);
+  and `DashboardPage.tsx` gained an embedded `SampleModeToggle` (switch + tokens-styled warning).
+  Sonnet-5-implementer TDD pass, one commit per green step; frontend-only; six backend gates
+  untouched-green (empty diff — no backend source change). `code_refs` +=
+  mocks/handlers/sampleMode.ts, features/dashboard/useSampleMode.ts. verified_sha = 63886bc.
