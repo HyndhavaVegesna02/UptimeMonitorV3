@@ -192,7 +192,10 @@ outage flows through it as ordinary data, which is the entire point.
       DB-gated harness — cheapest honest path) wrapped by the decorator with the flag ON →
       persisted rows are DOWN + marked; flag OFF → rows match the vendor payload. This is the
       story's reason-to-exist regression.
-- [ ] **T6 — Gates + wiki + REMOVAL inventory (D6; AC6, AC7).** All six backend DoD commands
+- [x] **T6 — Gates + wiki + REMOVAL inventory (D6; AC6, AC7).** *(wiki tail recovered from the
+      stalled implementer + committed by the orchestrator as 61d786a per the 2026-06-25
+      crash-recovery agreement; six-command gate orchestrator-run at 61d786a — all exit 0,
+      pytest 498 passed single run; sweep 13/13 CURRENT)* All six backend DoD commands
       exit 0 on a clean committed tree — SINGLE non-concurrent DB-gated run. CLAUDE.md:
       command-sync N/A (no command changes; do NOT add feature docs to CLAUDE.md — the wiki
       article is the home). Write `docs/scrum/wiki/sample-mode.md` (Facts + REMOVAL inventory,

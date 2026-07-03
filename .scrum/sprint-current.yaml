@@ -40,13 +40,51 @@ start_tag: sprint-31-start
 stories:
   - id: STORY-048
     points: 5
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: review          # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1            # implementer stalled (600s watchdog) AFTER committing T1-T5 with the T6
+                           # wiki edits complete but uncommitted; orchestrator recovered + committed
+                           # the coherent tail as 61d786a (2026-06-25 crash-recovery agreement).
+                           # Both first-dispatch reviewers were killed by a session limit MID-RUN
+                           # (no verdicts); re-dispatched FRESH per the fresh-agent rule — no fix loop.
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
+        exit_code: 0
+        output_tail: "gate at 61d786a (clean committed tree). pytest 498 passed in 174.64s (SINGLE
+          run, fixture-spawned throwaway postgres:16; +23 tests over sprint-30's 475); lint-imports
+          5 kept / 0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head exit 0
+          (new revision 09e9aa2cee32 add_sample_mode applied); ruff check 'All checks passed!';
+          ruff format --check '181 files already formatted'. Container torn down after."
+        commit: 61d786a
+        at: 2026-07-03T15:05:00+05:30
+    review:
+      first_pass: "spec PASS (AC1-AC7 ALL MET; reviewer RAN all 46 story tests incl. the DB-gated
+        parity + endpoint round-trip halves — executed, not skipped; OFF-path asserts object
+        IDENTITY; behavior tests test_pull_loop/test_ingest_service UNMODIFIED and green; seam
+        comments grep-verified on every existing-file edit; REMOVAL inventory matches the diff;
+        zero scope additions) / quality APPROVE (0 Critical, 0 Major; verified decorator
+        once-per-call read + propagating failures + frozen-model model_copy safety, single-row
+        CHECK migration, upsert SQL, honest shared-store fake parity, real-nesting assembly test,
+        REMOVAL inventory spot-checked entry-by-entry, no debug scraps)."
+      fix: "None — both reviewers passed first-pass with zero blocking findings."
+      second_pass: null
+      open_minors:
+        - "wiki verified_sha pinned at 0ea652e (last code commit) rather than the wiki commit
+          61d786a — functionally correct (61d786a is wiki-only, sweep reports all CURRENT);
+          compile-pass detail, not a defect."
+        - "tests/fakes.py FakeSampleModeRepository uses bare `dict` type hints where peers
+          parametrize — cosmetic."
+      implementer_note: "Sonnet implementer stalled (600s watchdog) AFTER committing T1-T5 and
+        completing (uncommitted) T6 wiki edits; orchestrator recovered the coherent tail per the
+        2026-06-25 crash-recovery agreement and committed it as 61d786a. Second consecutive sprint
+        with this stall shape — retro input. Additionally BOTH first-dispatch Opus reviewers were
+        terminated mid-run by a session limit (resets 8:50pm IST) with no verdicts; fresh
+        re-dispatches both passed."
+    blast_radius_resolved: true   # implementer updated 7 articles + wrote sample-mode.md (all at
+                                  # verified_sha 0ea652e); orchestrator mechanical sweep: 13/13
+                                  # CURRENT, 0 broken links; spec reviewer independently re-ran the
+                                  # sweep and confirmed
 hotfixes: []
 interrupts: []
