@@ -85,13 +85,29 @@ stories:
                                   # intersect frontend/; orchestrator will re-sweep at compile pass
   - id: STORY-049
     points: 2
-    board: in-progress
-    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate
+    board: done            # awaiting PO verdict at review
+    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at this size)
     blocked_question: null
-    attempts: 1
+    attempts: 1            # clean single dispatch — no stall, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
+        exit_code: 0
+        output_tail: "npm test: 23 files / 146 tests passed (14.43s; +21 over 015d's 125). npm run
+          build: tsc -b && vite build OK (281ms). npm run lint: eslint . clean. Backend untouched:
+          diff 37439dc..HEAD over backend/ scripts/ pyproject.toml alembic.ini migrations/ config/
+          is EMPTY — six-gate baseline (61d786a, sprint-31 close) holds."
+        commit: 1b9ef7d
+        at: 2026-07-03T19:56:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline; no reviewer pass required
+    implementer_note: "Clean run, no stall; wiki committed article-by-article (4e591dd, a06a85d)
+      per the 2026-07-03 agreement. Design: single button role=switch with aria-checked; warning
+      uses health-degraded (amber) token reserving red for real down-status; useSampleMode owns
+      load+mutate in one hook (no list to reconcile, unlike Approvals) with render-derived
+      enabled (override ?? loaded) after an effect-synced version showed a one-frame race.
+      sample-mode.md REMOVAL inventory extended with every frontend file/seam incl. the shared
+      putJson helper caveat. Backlog candidates: no distinct in-flight visual beyond disabled."
+    blast_radius_resolved: true   # frontend-zone.md + sample-mode.md updated, verified_sha 63886bc
+                                  # each its own commit; orchestrator re-sweeps at compile pass
 hotfixes: []
 interrupts: []
