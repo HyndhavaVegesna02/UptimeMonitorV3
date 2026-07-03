@@ -39,6 +39,9 @@ from src.core.ports import (
     WatermarkRepository,
 )
 
+# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
+from src.core.ports.sample_mode_repository import SampleModeRepository
+
 
 class FakeClock(ClockPort):
     """A clock frozen at an injected instant, so tests control `now()`."""
@@ -278,6 +281,30 @@ class FakeSignalRepository(SignalRepository):
             if signal.signal_key == signal_key:
                 return signal
         return None
+
+
+class FakeSampleModeRepository(SampleModeRepository):
+    """An in-memory sample-mode flag store for testing (STORY-048 D2).
+
+    TEMPORARY feature — see docs/scrum/wiki/sample-mode.md. Parity with
+    `PostgresSampleModeRepository` (2026-06-26 fake/adapter parity
+    agreement): never-set -> False; idempotent re-set; never raises.
+
+    Accepts an optional shared `store` dict so a test can prove persistence
+    across a FRESH repository instance (mirroring how two `PostgresSampleModeRepository`
+    instances share state via the same `Engine`/database) — the default `None`
+    gives each instance its own private dict, matching every other fake's
+    normal per-instance-only behavior.
+    """
+
+    def __init__(self, store: dict | None = None) -> None:
+        self._store: dict = store if store is not None else {}
+
+    def is_enabled(self) -> bool:
+        return self._store.get("enabled", False)
+
+    def set_enabled(self, enabled: bool) -> None:
+        self._store["enabled"] = enabled
 
 
 class FakeMaintenanceRepository(MaintenanceRepository):

@@ -157,7 +157,7 @@ outage flows through it as ordinary data, which is the entire point.
 
 ## STORY-048 — sample switch backend (5 pts) — AC1–AC7
 
-- [ ] **T1 — Migration + port + adapter + fake parity (D1, D2; AC1), TDD.** Failing parity
+- [x] **T1 — Migration + port + adapter + fake parity (D1, D2; AC1), TDD.** Failing parity
       contract test first (ONE body, both impls; Postgres half DB-gated): never-set → False,
       set/read round-trips, idempotent re-set, persistence across repository instances. Then:
       the migration (docstring names STORY-048 + TEMPORARY + the paired removal expectation),
