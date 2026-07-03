@@ -1,89 +1,52 @@
 # YourTeam active sprint board.
-sprint: 30
-status: closed        # none | active | review | closed | aborted
+sprint: 31
+status: active        # none | active | review | closed | aborted
 started: 2026-07-03
-closed: 2026-07-03    # PO verdict: ACCEPT; the two quality minors folded into STORY-047 (PO choice)
-goal: "Expose the topology and component-grain availability the frontend is blind to
-  (STORY-044): component->signals enumeration from the seeded topology, rollup-plus-children
-  availability via the existing rollup_group, and authoritative server-side per-signal
-  intervals — killing the 60-vs-120 completeness mis-compute (audit H2) and unblocking the
-  Availability (015d) and Check History (015e) tabs."
-branch: sprint-30
-start_tag: sprint-30-start
-# Capacity: velocity last-3 (sprints 27,28,29) = 5,3,5 -> mean 4.3. Committed 5 (STORY-044) —
-# same single-5 commitment the PO approved for sprints 25-27 and 29 (all delivered 5/5).
-# PO approval: "lock story 044" (2026-07-03, planning).
+goal: "Give the product an on-demand outage simulator (STORY-048): a DB-persisted sample-mode
+  flag (default OFF) flipped through a new API endpoint and re-read by the live loop each
+  cycle, so that while ON every incoming observation is recorded as DOWN (identifiably
+  simulated) — making the degrade->approve->publish->recover loop demonstrable against the
+  real healthy monitor. TEMPORARY feature by PO directive: removability designed in (AC7)."
+branch: sprint-31
+start_tag: sprint-31-start
+# Capacity: velocity last-3 (sprints 28,29,30) = 3,5,5 -> mean 4.3. Committed 5 (STORY-048) —
+# the same single-5 shape the PO approved for sprints 25-27, 29, 30 (all delivered 5/5).
+# PO approval: "lock story 048" + temporary-feature directive (2026-07-03, planning).
 #
 # WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds to
 # plan.md; Opus spec & quality reviewers (5 pts -> full pipeline); orchestrator runs the full
 # six-command backend DoD gate as a SINGLE non-concurrent DB-gated run (2026-07-02 agreement),
 # wiki blast-radius sweep, then review/verdict/merge/retro.
 #
-# TOOLING: none — pure backend against existing infra (throwaway-DB harness covers all AC).
-# No frontend change.
+# TOOLING: none — pure backend (STORY-049 carries the frontend toggle, next sprint).
 #
-# KEY PLAN DECISIONS (pinned in plan.md): signals.interval_seconds is NOT in the DB today —
-# T1 adds the migration + seed extension; T2 adds the Signal domain type + SignalRepository
-# port + Postgres adapter + fake (parity contract test, both halves); T3 = new five-file
-# api/v1/topology/ module (AC1); T4 = GET /availability/component/{id} in the existing
-# availability module (AC2, rollup + children); T5 = per-signal default interval (AC3,
-# caller-supplied still wins; unknown signal on the default path -> 404). Edge behaviors
-# pinned per the 2026-06-26 plan-edge-behavior agreement.
+# KEY PLAN DECISIONS (pinned in plan.md, all serving AC7 removability): D1 dedicated single-row
+# `sample_mode` table (droppable, no FK); D2 `SampleModeRepository` port (is_enabled default
+# False / set_enabled upsert) + Postgres/fake parity; D3 five-file api/v1/sample_mode/ module
+# (GET + PUT /sample-mode); D4 composition-layer `SampleModeIngest` decorator over
+# SignalIngestPort — ONE marked seam line in run.py; D5 simulated marker = raw_ref sentinel
+# "sample-mode:forced-down" (zero schema/domain change; raw_ref is None on the live http path,
+# persisted, client-invisible); D6 REMOVAL inventory in a new sample-mode wiki article.
 #
-# BASELINE at lock: sprint-30 cut from main @ f9d160c — `git diff 6d1799a..HEAD -- backend/
-# scripts/ pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY (docs/board
-# commits only since the sprint-29 gate-green state 6d1799a), so the six-gate evidence
-# recorded at sprint-29 close holds for this code state.
+# BASELINE at lock: sprint-31 cut from main @ 5914c45 — `git diff d1ca619..HEAD -- backend/
+# scripts/ pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY (docs/board/
+# refinement commits only since the sprint-30 gate-green state d1ca619), so the six-gate
+# evidence recorded at sprint-30 close holds for this code state.
 #
-# Agreements in force: all of working-agreements.md as of f9d160c (incl. the 2026-07-02
-# single-non-concurrent-DB-gate rule and the Sonnet-5 in-process directive; the 2026-07-02
-# tab-AC-vs-DTO agreement is N/A — no consumer-tab AC this sprint; the contract-change
-# agreement applies to the availability default-interval tests, which are REWRITTEN not
-# deleted).
+# Agreements in force: all of working-agreements.md as of 5914c45 (incl. the NEW 2026-07-03
+# AC-never-pre-declare-wiki-blast-radius rule — STORY-048's AC6 correctly names no articles;
+# the tab-AC-vs-DTO agreement is N/A this sprint — STORY-049 is the consumer story and is NOT
+# in this sprint).
 stories:
-  - id: STORY-044
+  - id: STORY-048
     points: 5
-    board: done            # todo | in-progress | blocked | review | done — ACCEPTED 2026-07-03
+    board: todo            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # clean single pass — implementer completed T1-T6 with no stall, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "all SIX backend commands (orchestrator-run on committed HEAD, single non-concurrent DB-gated sequence)"
-        exit_code: 0
-        output_tail: "gate at d1ca619 (clean committed tree). pytest 475 passed in 91.59s (SINGLE run,
-          fixture-spawned throwaway postgres:16; +31 tests over sprint-29's 444); lint-imports 5 kept /
-          0 broken; check_fk_direction 11 FKs / 0 violations; alembic upgrade head exit 0 (new revision
-          5ed254a8daab applied; downgrade/upgrade reversibility verified by implementer pre-commit);
-          ruff check 'All checks passed!'; ruff format --check '168 files already formatted'. NOTE:
-          fk-direction + alembic re-ran sequentially after the first invocation missed the env-var
-          export (orchestrator shell slip, not a code failure) — never concurrent. Container torn down."
-        commit: d1ca619
-        at: 2026-07-03T13:35:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC4 all MET; reviewer RAN the cited tests incl. the DB-gated topology
-        enumeration + parity-contract Postgres halves — passed, not skipped; MIN/SUM + per-child-interval
-        fixture traced to AC2's named path; H2 regression traced to AC3; contract-change rewrites
-        confirmed — only an import line removed from test_availability_endpoint.py) / quality APPROVE
-        (0 Critical, 0 Major; verified core availability.py untouched, D1 migration exact, parity
-        contract genuinely two-impl, per-child intervals real, create_app wiring symmetric, wiki symbol
-        citations accurate)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
-      open_minors:
-        - "availability/service.py::get_component_availability spells out all nine AvailabilityDTO
-          fields inline for each SignalAvailabilityDTO instead of reusing _to_dto (field-list
-          duplication that would drift if AvailabilityDTO gains a field)."
-        - "availability/service.py: children_signals iterated twice (null-interval guard then compute)
-          — intentional fail-fast, noted for completeness only."
-      spec_notes: "AC4's parenthetical listed api-five-file-convention among 'untouched' articles, but
-        AC1's new five-file module makes updating it MANDATORY (staleness sweep) — implementer resolved
-        the conflict the only correct way (updated it); the other two named articles are genuinely
-        untouched. Scope addition flagged: the 409 SignalIntervalUnconfiguredError path — plan-pinned
-        (D2/D4/D5), not improvised; keep. Implementer deviation: T4+T5 in one commit (shared service
-        plumbing), both still test-first — retro input, not a finding."
-    blast_radius_resolved: true   # implementer updated 5 articles + re-verified 2 (all bumped to
-                                  # 280c1e3); orchestrator mechanical sweep at compile pass: 12/12
-                                  # CURRENT, 0 broken links
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

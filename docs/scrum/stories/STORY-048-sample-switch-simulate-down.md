@@ -50,7 +50,9 @@ Backend only (the Dashboard toggle UI is STORY-049):
       designed in. (a) All sample-mode logic lives in dedicated new modules (domain, port,
       adapter, API feature, composition seam); existing files are touched only at minimal,
       clearly-marked seam points. (b) With the switch OFF, runtime behavior is byte-identical to
-      before this story (regression: the pre-existing ingest/loop tests pass unmodified).
+      before this story (regression: the pre-existing ingest/loop BEHAVIOR tests pass
+      unmodified; the run.py assembly-shape test alone is updated for the marked seam — it
+      asserts composition shape, which deliberately changes there).
       (c) A REMOVAL inventory is written (in the story's wiki article) listing exactly what to
       delete/revert — files, seam lines, the drop-migration — so a future removal story is
       mechanical and cannot break the system.
