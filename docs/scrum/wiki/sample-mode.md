@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
-code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
+verified_sha: 63886bc
+verified_sprint: sprint-32
 status: verified          # verified | stale | archived
 ---
 
@@ -163,6 +163,17 @@ below for the mechanical deletion recipe.
   — were NOT touched and pass unmodified; neither file appears in this
   article's `code_refs` because neither changed.
 
+### The frontend consumer — Dashboard sample-mode toggle (STORY-049)
+- The Dashboard tab (`frontend/src/pages/DashboardPage.tsx`) renders a real
+  `<button role="switch">` reflecting `GET /api/v1/sample-mode` on load and
+  PUTting on click; `features/dashboard/useSampleMode.ts` owns both the load
+  and the mutation (see `docs/scrum/wiki/frontend-zone.md`'s per-tab-pattern
+  section for the design rationale — one hook, not the Approvals split,
+  because there is no list to reconcile against). While ON, a tokens-styled
+  "sample mode — signals recorded as DOWN" warning is shown. This is the
+  ONLY frontend surface sample mode has; no other tab/page renders anything
+  related to it.
+
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
   the REAL `IngestService` (in-memory fake repos, no DB) wrapped by
@@ -185,6 +196,11 @@ checklist — nothing else in the system depends on any of it:
 - `backend/tests/test_sample_mode_endpoint.py`
 - `backend/tests/test_sample_mode_ingest.py`
 - `backend/tests/test_sample_mode_end_to_end.py`
+- `frontend/src/features/dashboard/useSampleMode.ts` (STORY-049 — the
+  load+mutate hook)
+- `frontend/src/features/dashboard/useSampleMode.test.tsx`
+- `frontend/src/mocks/handlers/sampleMode.ts` (STORY-049 — the MSW GET/PUT
+  handlers + fixture)
 - This article, `docs/scrum/wiki/sample-mode.md` (archive/delete it too).
 
 **Revert these marked seam lines** (grep the tree for `STORY-048` — every
@@ -212,6 +228,31 @@ see docs/scrum/wiki/sample-mode.md)` immediately above or beside it):
   `IngestService` check (undo the `SampleModeIngest`/`IngestService` extra
   imports too).
 
+**Revert these frontend shared-file edits** (STORY-049 — no comment tag was
+added in the frontend code the way the backend uses `# STORY-048 sample-mode
+seam`; instead every touched export/section carries a doc-comment naming
+"TEMPORARY FEATURE" and pointing at this article — grep the tree for
+`sample-mode.md` under `frontend/src` to find every one):
+- `frontend/src/api/types.ts` — remove the `SampleModeDTO` interface.
+- `frontend/src/api/client.ts` — remove `getSampleMode`/`putSampleMode` and
+  the `putJson` helper (added by this story specifically to support the PUT;
+  check no other endpoint has since adopted it before deleting it).
+- `frontend/src/api/client.test.ts` — remove the `getSampleMode` import +
+  the `getSampleMode`/`putSampleMode` `describe` blocks.
+- `frontend/src/mocks/handlers/index.ts` — remove the `sampleMode` import
+  line, its spread into `handlers`, and the `FIXTURE_SAMPLE_MODE_OFF`
+  re-export.
+- `frontend/src/pages/DashboardPage.tsx` — remove the `useSampleMode` import,
+  the `SampleModeToggle` component, and its `<SampleModeToggle />` render
+  call inside `DashboardPage`.
+- `frontend/src/pages/DashboardPage.css` — remove the
+  `.dashboard-sample-mode*` rule block (delimited by the "Sample-mode toggle
+  (STORY-049)" comment).
+- `frontend/src/pages/DashboardPage.test.tsx` — remove the "DashboardPage —
+  sample mode toggle (STORY-049)" `describe` block; revert the `waitFor`
+  import back to `{ render, screen, within }` if nothing else in the file
+  still needs it.
+
 **Write a new migration** chaining from whatever is HEAD at removal time
 that DROPs the `sample_mode` table (`op.drop_table("sample_mode")`) — the
 existing `09e9aa2cee32_add_sample_mode.py` migration itself is NOT deleted
@@ -226,11 +267,27 @@ does not retroactively touch already-persisted rows.
 
 **What is untouched by removal** (D7 — never had a seam in the first place):
 `core/domain/*`, `core/services/*`, `composition/pull_loop.py`,
-`composition/seed.py`, all pre-existing tables/migrations, the frontend, all
-pre-existing endpoints. The publisher/approval chain needs no change either
-way — sample mode only ever produced ordinary data flowing through it.
+`composition/seed.py`, all pre-existing tables/migrations, all pre-existing
+backend endpoints, and — on the frontend side (STORY-049) — every OTHER
+tab/feature (`useComponents`, `useApprovals`, `useAvailability`,
+`AvailabilityPage`, `ApprovalsPage`), `lib/useFetch.ts` itself (unchanged),
+and `mocks/handlers/{components,approvals,availability}.ts`. The
+publisher/approval chain needs no change either way — sample mode only ever
+produced ordinary data flowing through it.
 
 ## History
+- sprint-32 (STORY-049): updated. Landed the frontend consumer — the
+  Dashboard sample-mode toggle (see the new "The frontend consumer" section
+  above) — and extended the REMOVAL inventory with every frontend
+  file/seam it added (`useSampleMode.ts`/`.test.tsx`, `mocks/handlers/
+  sampleMode.ts`, and the shared-file edits to `api/types.ts`, `api/
+  client.ts` (+ the new `putJson` helper), `api/client.test.ts`,
+  `mocks/handlers/index.ts`, `pages/DashboardPage.{tsx,css,test.tsx}`).
+  Corrected the D7 "untouched by removal" list, which previously (wrongly,
+  as of this story) named "the frontend" wholesale. `code_refs` +=
+  the seven frontend files above. Frontend-only change; six backend gates
+  untouched-green (empty diff — no backend source change), three frontend
+  gates green. verified_sha = 63886bc.
 - sprint-31 (STORY-048): created. PO directive at lock, 2026-07-03: a
   TEMPORARY feature; removability is a first-class AC (AC7). D1–D7 pinned in
   `docs/scrum/sprints/2026-07-03-sprint-31/plan.md`. verified_sha → 0ea652e
