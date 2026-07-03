@@ -34,6 +34,10 @@ staging only touched files (never `git add -A`), branch verified `sprint-32` bef
   `AvailabilityDTO`: `{ availability_pct: number | null, completeness_pct: number | null,
   total_verdicts: number, passing_verdicts: number, maintenance_verdicts: number,
   gap_verdicts: number, distinct_locations: number, window: string, computed_at: string (ISO) }`.
+  **`availability_pct`/`completeness_pct` are 0–1 FRACTIONS on the wire** (confirmed against a live
+  response and `core/services/availability.py`, which computes passing÷denominator and never ×100
+  — e.g. `1.0` = 100%, `0.08333333333333333` = 8.33%; ×100 for display; STORY-015d fix corrected an
+  earlier wrong assumption that these were already percent-scale).
   `SignalAvailabilityDTO` = `AvailabilityDTO` + `{ signal_key: string }`. Children sorted by
   `signal_key`; zero-signal component → `signals: []` + all-None/zero rollup (NOT a 500).
   `since`/`until` are optional ISO-8601 strings (default: last 24h ending now); **naive datetimes
