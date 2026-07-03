@@ -1,13 +1,14 @@
 ---
 id: STORY-047
-title: Chore — publisher-wiring minors from the STORY-045 quality review
+title: Chore — quality-review minors (STORY-045 publisher wiring + STORY-044 availability DTO)
 type: chore
 ---
 
 ## Context / how it surfaced
 Filed at the Sprint 29 review (2026-07-03): the PO accepted STORY-045 with a follow-up chore for
 the two non-blocking quality-review minors (Opus quality reviewer, 0 Critical / 0 Major — these
-were the only notes):
+were the only notes). At the Sprint 30 review (2026-07-03) the PO accepted STORY-044 and folded
+its two quality minors into this same chore (items 3–4 below).
 
 1. `composition/app.py::create_app` injected-fakes path: a test that injects `component_repo` but
    omits `publication_repo` (or vice versa) silently gets a bare `LoggingPublisher` with NO status
@@ -18,6 +19,16 @@ were the only notes):
 2. `composition/publish_helper.py`: the pre-existing `publish_best_effort` free function and the
    `BestEffortPublisher` class that wraps it are both live seams (predates STORY-045). One
    canonical best-effort seam is cleaner.
+
+3. (from STORY-044, sprint 30) `api/v1/availability/service.py::get_component_availability`
+   constructs each `SignalAvailabilityDTO` by spelling out all nine `AvailabilityDTO` fields
+   inline instead of reusing the `_to_dto` helper — field-list duplication that would drift if
+   `AvailabilityDTO` gains a field.
+
+4. (from STORY-044, sprint 30) same function: `children_signals` is iterated twice (null-interval
+   guard, then compute). The reviewer judged this INTENTIONAL fail-fast-before-any-compute and
+   clear as written — recorded here because the PO folded both minors in; no behavior change is
+   wanted, simplify only if it falls out of the AC4 refactor naturally.
 
 ## Acceptance Criteria
 - [ ] AC1: in `create_app`, whenever a `component_repo` is available (injected or real), the wired
@@ -30,11 +41,17 @@ were the only notes):
       moves, per the 2026-06-29 contract-change agreement).
 - [ ] AC3: all six backend DoD gates stay green; wiki blast radius resolved
       (`statuspage-publish.md`, `api-five-file-convention.md` as applicable).
+- [ ] AC4: `get_component_availability` builds each child `SignalAvailabilityDTO` via the shared
+      `_to_dto` helper (no nine-field inline duplication); existing rollup-endpoint tests stay
+      green (behavior identical). The double iteration (item 4) needs no change unless the
+      refactor removes it for free.
 
 ## Open Questions
-None — both changes are mechanical; AC1's shape (write-back whenever component_repo exists) was
+None — all changes are mechanical; AC1's shape (write-back whenever component_repo exists) was
 implied by the reviewer's note.
 
 ## History
 - 2026-07-03: filed from the Sprint 29 review (PO verdict: accept + follow-up chore). Estimate 1.
   Status: ready.
+- 2026-07-03: Sprint 30 review — PO accepted STORY-044 and folded its two quality minors in
+  (items 3–4, AC4). Estimate stays 1 (all items are small mechanical edits in two files).

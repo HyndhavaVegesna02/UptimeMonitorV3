@@ -1,7 +1,8 @@
 # YourTeam active sprint board.
 sprint: 30
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-03
+closed: 2026-07-03    # PO verdict: ACCEPT; the two quality minors folded into STORY-047 (PO choice)
 goal: "Expose the topology and component-grain availability the frontend is blind to
   (STORY-044): component->signals enumeration from the seeded topology, rollup-plus-children
   availability via the existing rollup_group, and authoritative server-side per-signal
@@ -42,7 +43,7 @@ start_tag: sprint-30-start
 stories:
   - id: STORY-044
     points: 5
-    board: review          # todo | in-progress | blocked | review | done
+    board: done            # todo | in-progress | blocked | review | done — ACCEPTED 2026-07-03
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
     attempts: 1            # clean single pass — implementer completed T1-T6 with no stall, no fix loop

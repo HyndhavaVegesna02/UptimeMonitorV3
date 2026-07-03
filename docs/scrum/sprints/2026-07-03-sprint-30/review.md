@@ -118,6 +118,8 @@ curl "http://localhost:8000/api/v1/availability?signal_key=http-check"
 - Clean single pass: no stall, no fix loop, zero blocking review findings — second consecutive
   zero-fix-loop sprint.
 
-## Verdict (PO)
+## Verdict (PO, 2026-07-03)
 
-- STORY-044: **pending** — accept (merge to main) or reject (back to backlog with feedback).
+- STORY-044: **ACCEPT** — merged to main (5/5 points). The two quality minors folded into the
+  existing STORY-047 chore (retitled: quality-review minors, STORY-045 + STORY-044), items 3–4 /
+  AC4; estimate stays 1.

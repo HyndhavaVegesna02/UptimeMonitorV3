@@ -282,9 +282,9 @@ stories:
     type: defect
     sprint: 29
   - id: STORY-047
-    title: Chore — publisher-wiring minors from the STORY-045 quality review
+    title: Chore — quality-review minors (STORY-045 publisher wiring + STORY-044 availability DTO)
     file: docs/scrum/stories/STORY-047-publisher-wiring-minors.md
-    status: ready   # filed at the Sprint 29 review (accept + follow-up chore verdict)
+    status: ready   # filed at Sprint 29 review; Sprint 30 review folded in STORY-044's two minors (2026-07-03)
     points: 1
     priority: 23
     type: chore
@@ -292,11 +292,11 @@ stories:
   - id: STORY-044
     title: Availability & topology API — component→signals enumeration + component-rollup availability + real intervals
     file: docs/scrum/stories/STORY-044-availability-topology-api.md
-    status: ready   # enabler for 015d + 015e (both blocked on it); folds audit H2 (interval 60-vs-120 mis-compute)
+    status: done    # accepted at Sprint 30 review (2026-07-03), 5/5 — minors folded into STORY-047; unblocks 015d + 015e
     points: 5
     priority: 17
     type: feature
-    sprint: null
+    sprint: 30
   - id: STORY-046
     title: Dashboard maintenance-state display — the maintenance badge is currently unreachable
     file: docs/scrum/stories/STORY-046-dashboard-maintenance-state.md
