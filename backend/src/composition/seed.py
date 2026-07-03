@@ -40,6 +40,7 @@ _SIGNALS = sa.table(
     sa.column("app_id"),
     sa.column("name"),
     sa.column("component_id"),
+    sa.column("interval_seconds"),
     sa.column("updated_at"),
 )
 
@@ -100,6 +101,7 @@ def seed_topology(config: Config, engine: Engine) -> None:
                     app_id=app.id,
                     name=sig.name,
                     component_id=sig.component_id,
+                    interval_seconds=sig.interval_seconds,
                 )
                 sig_upsert = sig_stmt.on_conflict_do_update(
                     index_elements=["signal_key"],
@@ -107,6 +109,7 @@ def seed_topology(config: Config, engine: Engine) -> None:
                         "app_id": sig_stmt.excluded.app_id,
                         "name": sig_stmt.excluded.name,
                         "component_id": sig_stmt.excluded.component_id,
+                        "interval_seconds": sig_stmt.excluded.interval_seconds,
                         "updated_at": sa.func.now(),
                     },
                 )

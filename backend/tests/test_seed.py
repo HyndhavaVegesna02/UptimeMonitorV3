@@ -164,6 +164,51 @@ def test_seed_topology_preserves_status(migrated_db, engine, clean_topology):
             assert row[1] == "degraded"  # preserved!
 
 
+def test_seed_topology_persists_interval_seconds(migrated_db, engine, clean_topology):
+    """T1 (STORY-044, D1): signals.interval_seconds is populated by the boot seed
+    from `SignalConfig.interval_seconds` and updated on re-seed (upsert `set_`).
+    """
+    thresholds = AntiFlapThresholds(major=3, partial=2, degraded=2, recovery=2)
+    comp = ComponentConfig(id="checkout", name="Checkout Component")
+    sig = SignalConfig(
+        signal_key="checkout-http",
+        native_id="SYNTHETIC_TEST-ABC",
+        name="Checkout HTTP Signal",
+        component_id="checkout",
+        interval_seconds=120,
+    )
+    app = AppConfig(
+        id="sockshop",
+        name="Sock Shop App",
+        monitor_provider="dynatrace",
+        components=[comp],
+        signals=[sig],
+        thresholds=thresholds,
+    )
+    config = Config([app])
+    seed_topology(config, engine)
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT interval_seconds FROM signals WHERE signal_key = 'checkout-http';"
+            )
+            assert cur.fetchone()[0] == 120
+
+    # Re-seed with a changed interval — the upsert `set_` updates it.
+    sig_updated = sig.model_copy(update={"interval_seconds": 60})
+    app_updated = app.model_copy(update={"signals": [sig_updated]})
+    config_updated = Config([app_updated])
+    seed_topology(config_updated, engine)
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT interval_seconds FROM signals WHERE signal_key = 'checkout-http';"
+            )
+            assert cur.fetchone()[0] == 60
+
+
 def test_seed_topology_cli_success(migrated_db, clean_topology, tmp_path):
     """C1: seed_topology.py CLI seeds correctly (exit 0) when valid env vars are present."""
     import os

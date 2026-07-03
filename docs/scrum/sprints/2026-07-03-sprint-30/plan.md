@@ -192,7 +192,7 @@ paths/DTOs other than stated.
 
 ## STORY-044 — topology + component availability + real intervals (5 pts) — AC1–AC4
 
-- [ ] **T1 — Migration + seed carry `interval_seconds` (D1), TDD.** Failing DB-gated test first
+- [x] **T1 — Migration + seed carry `interval_seconds` (D1), TDD.** Failing DB-gated test first
       (extend `test_seed.py`): after `seed_topology` with a config whose signal has
       `interval_seconds: 120`, the `signals` row carries 120; re-seed with 60 updates it
       (upsert `set_`). Then: new Alembic revision (chain from `eec78d2e8cbe`; module docstring
