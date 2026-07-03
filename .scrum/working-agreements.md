@@ -456,4 +456,13 @@
   "untouched" articles while the story's own AC1 — a NEW five-file module — made updating that
   article mandatory; the spec reviewer had to resolve the built-in conflict. The implementer
   updated the article, the only correct call.)
+- 2026-07-03 — **The wiki blast-radius pass commits ARTICLE-BY-ARTICLE.** The implementer brief
+  (and the plan's final gates-and-wiki task) must direct committing after EACH wiki article
+  update — never accumulating the whole pass as one uncommitted batch. The commit-after-green
+  cadence is the crash-recovery mechanism, and it applies to prose exactly as to code: a stall
+  mid-pass then loses at most one article instead of the entire final-task tail. (Motivated by
+  the IDENTICAL incident two sprints running: sprint 29 / STORY-045 and sprint 31 / STORY-048 —
+  both implementers hit the 600s watchdog stall with all code committed and the COMPLETE wiki
+  pass finished but uncommitted, each requiring an orchestrator tail-recovery under the
+  2026-06-25 crash-recovery agreement. Recovery worked both times; it should not be load-bearing.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
