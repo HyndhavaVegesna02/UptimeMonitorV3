@@ -45,10 +45,19 @@ start_tag: sprint-32-start
 stories:
   - id: STORY-015d
     points: 3
-    board: done            # todo | in-progress | blocked | review | done — awaiting PO verdict at review
+    board: in-progress     # REOPENED 2026-07-03 ~20:00 — fix loop: percent-scale defect found by
+                           # the orchestrator at review prep, demoing against the LIVE backend:
+                           # availability_pct/completeness_pct are 0-1 FRACTIONS on the wire
+                           # (live: 1.0 = 100%), but formatPct + the bar width consume them as
+                           # percent-scale, and the MSW fixtures encoded percent-scale values
+                           # (99.87) — so 146 green tests validated the wrong scale and the live
+                           # tab shows '1.00%' for a fully-up component. ROOT CAUSE: the plan's
+                           # "Verified API contracts" section pinned field types but NOT the
+                           # scale, and its T4 example ('99.87%') implied percent-scale — a
+                           # planning-precision miss, not an implementer invention. Retro input.
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1            # clean single dispatch — no stall, no fix loop
+    attempts: 2            # attempt 1 clean through reviewers; attempt 2 = focused scale fix
     paused_at_commit: null
     dod_evidence:
       - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
