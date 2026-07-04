@@ -112,7 +112,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       publications"). Loading / empty ("nothing published yet") / error+retry via shell
       primitives; Panel `headingLevel="h1"`. MSW tests: render (incl. null-proposal and
       non-operational status), empty, error+retry; assert the cap copy is present.
-- [ ] **T3 — Gates + blast radius (015g).** Three gates exit 0 on a clean committed tree.
+- [x] **T3 — Gates + blast radius (015g).** Three gates exit 0 on a clean committed tree.
       Mechanical sweep; update flagged articles (expect `frontend-zone.md`),
       article-by-article commits.
 
