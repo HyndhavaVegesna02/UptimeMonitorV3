@@ -73,7 +73,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       SEPARATE from `toHealthStatus` (different producing vocabulary; a doc-comment states
       why both exist). Unit-test all four branches. Do NOT modify `statusMapping.ts` (its
       contract change would ripple into Dashboard/Publications).
-- [ ] **T3 — `useHistory` hook (AC1, AC2).** `features/history/useHistory.ts`: for
+- [x] **T3 — `useHistory` hook (AC1, AC2).** `features/history/useHistory.ts`: for
       `{ signalKey, range }`, fetch `getHistory(...)` through the shared `useFetch` with the
       015d identity pattern (`useCallback([signalKey, range])`; consumers `useMemo` the range
       from the preset). Signal list comes from `getTopology()` (flatten components → signals;
