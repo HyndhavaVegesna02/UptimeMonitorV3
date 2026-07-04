@@ -92,7 +92,9 @@ honored: `sample-mode.md`'s REMOVAL inventory now lists every frontend file/seam
 4. Both implementer dispatches clean, no watchdog stalls — first sprint since 29 without a
    tail-recovery; the article-by-article wiki-commit agreement held.
 
-## Verdicts (PO)
+## Verdicts (PO, 2026-07-04: "accept both")
 
-- STORY-015d (3 pts): _pending_
-- STORY-049 (2 pts): _pending_
+- STORY-015d (3 pts): **ACCEPT**
+- STORY-049 (2 pts): **ACCEPT**
+
+Velocity recorded: 5 committed / 5 accepted. No follow-up story from the taste-only minors.

@@ -1,7 +1,10 @@
 # YourTeam active sprint board.
 sprint: 32
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-03
+closed: 2026-07-04    # PO verdict: "accept both" — STORY-015d + STORY-049 accepted (5/5 pts).
+                      # 015d's open minors were taste-only (quality reviewer: no change needed) —
+                      # no follow-up story; backlog candidates stay noted in review.md.
 goal: "Make the sample switch operable and the availability story visible: the two-grain
   Availability tab (STORY-015d — component rollup + per-signal drill-down on the STORY-044
   endpoints, window presets, honest no-data treatment) and a Dashboard sample-switch toggle

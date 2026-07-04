@@ -219,7 +219,7 @@ stories:
   - id: STORY-015d
     title: Availability tab — two-grain availability (component rollup + per-signal drill-down)
     file: docs/scrum/stories/STORY-015d-availability-tab.md
-    status: ready   # LOCKED into Sprint 32 (2026-07-03); dependency STORY-044 done (sprint 30)
+    status: done    # accepted at Sprint 32 review (2026-07-04), after a percent-scale fix loop caught at review prep
     points: 3
     priority: 18
     type: feature
@@ -317,7 +317,7 @@ stories:
   - id: STORY-049
     title: Sample switch (frontend) — Dashboard toggle wired to the sample-mode API
     file: docs/scrum/stories/STORY-049-dashboard-sample-switch-toggle.md
-    status: ready   # LOCKED into Sprint 32 (2026-07-03); dependency STORY-048 done (sprint 31)
+    status: done    # accepted at Sprint 32 review (2026-07-04); TEMPORARY-feature removal inventory extended to the frontend seams
     points: 2
     priority: 17
     type: feature
