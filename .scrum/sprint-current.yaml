@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 33
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-04
 goal: "Complete the read-only audit surfaces: the Check History tab (STORY-015e — per-signal
   observation ledger with signal + window selectors, honest volume handling) and the
