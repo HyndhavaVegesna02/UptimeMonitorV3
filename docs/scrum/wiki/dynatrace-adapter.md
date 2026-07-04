@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json]
-verified_sha: ed19084
+verified_sha: c1839e4
 verified_sprint: sprint-22
 status: verified          # verified | stale | archived
 ---
@@ -29,8 +29,15 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   the same `event.id` and `timestamp` is excluded at the source so `UNIQUE(observations.source_event_id)`
   can never collide; parameterizing `event.type` per monitor type is out of scope). When `watermark` is
   set it adds a lower bound at `watermark - overlap` on `timestamp` (never the bare watermark, so
-  late-landing rows are not missed — dossier §8); when `watermark is None` (never ingested) it adds no
-  time bound and the first pull reads everything; `| sort timestamp asc`.
+  late-landing rows are not missed — dossier §8), emitted as
+  `timestamp >= toTimestamp("<ISO Z>")` — **the `toTimestamp()` wrapper is load-bearing**: DQL
+  compares a bare string literal against the `timestamp` field without coercion and silently
+  matches NOTHING, which stalled ingestion after every first cycle until STORY-051
+  (live-confirmed 2026-07-04: bare string → 0 rows, `toTimestamp` → rows to the current minute;
+  the covering test also asserts the bare-string form is absent). When `watermark is None`
+  (never ingested) it adds no time bound and the first pull reads whatever Grail's DEFAULT scan
+  timeframe covers (~2h observed live — NOT "everything"; an explicit query timeframe is a
+  STORY-051-noted follow-up); `| sort timestamp asc`.
 - `watermark` must be tz-aware UTC — a naive datetime is rejected (`query.py::build_dql_query`), mirroring
   the core's own `observed_at` validator (`core/domain/signal.py::SignalObservation._require_utc`).
 - `native_id` is interpolated unescaped into the query string (`query.py::build_dql_query`); a comment
