@@ -1,5 +1,7 @@
 # Working Agreements
-# Append-only. Each entry: date, the agreement, and the incident that motivated it.
+# Append-only, with one sanctioned exception: the PO may direct a prune of superseded/spent
+# entries (each prune is recorded below; removed text lives in git history).
+# Each entry: date, the agreement, and the incident that motivated it.
 # These bind every session and every subagent brief.
 # Team-proposed amendments enter only via retro with PO approval.
 # PO-stated rules (coding style, conventions, process preferences) are appended
@@ -25,21 +27,6 @@
   subagents (spec-compliance AND code-quality) MUST be dispatched on the **Opus** model
   (`model: "opus"`). This applies to every Agent dispatch in the YourTeam pipeline, every
   story size. Not negotiable, no per-story override. (PO directive, 2026-06-24.)
-- 2026-06-28 — **Every sprint lock produces an implementer prompt as a standard deliverable.**
-  When the orchestrator locks a sprint (immediately AFTER writing `plan.md`), it ALSO generates —
-  WITHOUT being asked — a single self-contained, copy-pasteable prompt the PO hands to the external
-  implementer agent (Antigravity / Gemini). The prompt MUST: (a) point to `plan.md` as the
-  step-by-step contract + the story files + the dossier (build to those, never to chat history);
-  (b) state the branch, the execution order, the TDD + commit-after-green + scoped-staging cadence,
-  and the six-command DoD gate; (c) **feed in the binding working agreements relevant to that
-  sprint's code** — distilled to what actually applies, explicitly flagging any that are N/A this
-  sprint — because under external implementation (2026-06-26) there is no implementer-subagent brief
-  to carry them; (d) end with the guardrails: do NOT write `.scrum/` board state, do NOT run the
-  review/reviewers/merge, stop-and-report on genuine ambiguity or a 3x effort overrun. The prompt is
-  emitted as part of the lock turn, alongside the "Sprint N is locked" announcement. (PO directive,
-  2026-06-28 — the accumulated working agreements must reach the external implementer somehow; the
-  lock prompt is that vehicle, so it cannot depend on the PO remembering to ask.)
-
 - 2026-07-02 — **Implementation returns in-process: implementer subagents run on the Sonnet 5
   model (`model: "sonnet"`) at HIGH effort — the orchestrator implements, no external handoff.**
   This supersedes the 2026-06-26 external-implementation agreement (PO/Antigravity/Gemini) from
@@ -192,21 +179,6 @@
   `not(proposed_status and internal_warning)`), `SkewResult` (STORY-026, `skewed == bool(lagging_signals)`)
   — each documented the invariant in its docstring but left it unenforced, and each cost a fix-loop
   dispatch to add the validator after the fact. STORY-029 audits existing types for the same gap.)
-- 2026-06-26 — **External implementation: from Sprint 9 on, the PO implements the plan (Antigravity
-  / Gemini); the orchestrator does NOT dispatch implementer subagents.** Division of labor: the
-  orchestrator still runs standup → refinement → planning → lock (creates the `sprint-N` branch +
-  start tag, writes `sprint-current.yaml` + a DETAILED `plan.md` whose per-story TDD steps + AC are
-  the contract). The PO then implements externally, committing onto the sprint branch. The PO
-  triggers the back half by saying "do your review"; the orchestrator then diffs `sprint-N-start..HEAD`,
-  runs the FULL mechanical DoD gate itself, runs the spec + quality reviewers (Opus), resolves the
-  wiki forward-blast-radius, and runs review/verdict/merge/retro. The mechanical floor is UNCHANGED
-  and non-negotiable: a story is Done only when all four DoD commands exit 0 AND both reviews pass —
-  regardless of who wrote the code. Fix-loop findings (CRITICAL/MAJOR) route BACK to the PO/Gemini to
-  fix and re-trigger the review by default; the orchestrator may fix a trivial finding inline only if
-  the PO asks. `plan.md` must therefore be self-contained (signatures, file locations, conventions,
-  DoD) since there is no implementer-subagent brief. (Motivated by a PO token-budget constraint,
-  2026-06-26 — the orchestrator's review/ceremony role is preserved; only the implement step moves
-  out-of-process.)
 - 2026-06-26 — **A port's in-memory fake and its real adapter must AGREE on edge-case behavior.**
   When a core port has both a test fake and a real (e.g. Postgres) adapter, they must behave
   identically on the edge cases — not-found, conflict, invalid-state, empty — i.e. both raise (the
@@ -241,16 +213,6 @@
   convention every peer core service follows; the external implementer builds literally to the plan
   and does not infer unstated conventions. Fixed inline, but predictable and preventable from the plan.
   Generalizes the sprint-9 "plan.md must be self-contained" agreement into a concrete checklist.)
-- 2026-06-27 — **`ruff` (format + import-sort) is being added as a mechanical DoD gate** (retro
-  tooling decision — one of the two allowed moments to change tooling). A recurring class of
-  non-blocking cosmetic minors — trailing blank lines, unsorted/mixed imports — reaches code review
-  most sprints and accumulates into follow-up chores (STORY-031, STORY-032). A formatter + import
-  sorter catches them mechanically so they never reach a reviewer (and frees the quality reviewer for
-  substance). **STORY-033** implements it: add ruff to the dev extras + config, format the existing
-  tree in one pass, and wire `ruff check` + `ruff format --check` into `.scrum/definition-of-done.md`
-  + CLAUDE.md (the command-sync agreement applies — doc update in the same commit). Until STORY-033
-  lands, the DoD stays the current four commands. (Motivated by Sprint 10 review: STORY-024's minors
-  were entirely ruff-fixable — trailing blanks, mixed import source, unsorted imports.)
 - 2026-06-27 — **Wiki Facts cite SYMBOLS, not bare line numbers.** A Fact that points into code cites
   the defining symbol — `` `file.py::ClassName` ``, `` `file.py::function` ``, `` `file.py::Class.method` ``,
   or `` `file.py` ("section heading") `` — NOT a bare `file.py:NN`. Symbols survive formatting and most
@@ -486,4 +448,16 @@
   fixture-reality drift those tests cannot see. (Motivated by Sprint 32, STORY-015d: exactly this
   manual comparison caught the percent-scale defect after every mechanical and reviewer gate had
   passed; making it a standing step removes the luck from it.)
+
+## Prune record
+- 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
+  (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
+  produces an implementer prompt", both superseded wholesale by the 2026-07-02
+  implementation-returns-in-process directive (the one surviving obligation — plan.md
+  self-containment + conventions checklist — is restated inside the 2026-07-02 entry and the
+  2026-06-27 checklist agreement); (3) 2026-06-27 "ruff is being added as a DoD gate", a
+  transitional tooling decision fully implemented by STORY-033 — the live gate is recorded in
+  `.scrum/definition-of-done.md` + CLAUDE.md, so the adoption note carried no ongoing rule.
+  Full text of all three: `git show b2aff76:.scrum/working-agreements.md`.
+
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
