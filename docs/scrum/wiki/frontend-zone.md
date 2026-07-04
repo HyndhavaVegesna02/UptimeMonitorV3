@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx]
-verified_sha: eff33d3
-verified_sprint: sprint-32
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx]
+verified_sha: 0a1ef52
+verified_sprint: sprint-33
 status: verified
 ---
 
@@ -32,9 +32,9 @@ status: verified
   tabs as routed `NavLink` anchors (native anchor semantics, not an ARIA tablist) — active tab =
   ink text + accent bottom-border, inactive = ink-subtle. A trailing catch-all `<Route path="*">`
   renders `pages/NotFoundPage.tsx` (Panel + EmptyState + a link back to Dashboard) for unknown
-  paths (STORY-041). The three remaining not-yet-built pages (Check History, Maintenance,
-  Publications) are placeholders that stories 015e–015g replace wholesale; **Dashboard, Approvals,
-  and Availability are the three real tabs so far** (STORY-015b, 015c, 015d).
+  paths (STORY-041). The two remaining not-yet-built pages (Maintenance, Publications) are
+  placeholders that story 015g replaces wholesale; **Dashboard, Approvals, Availability, and Check
+  History are the four real tabs so far** (STORY-015b, 015c, 015d, 015e).
 - **Theme system (dark + light):** `frontend/src/theme/resolveTheme.ts` resolves the active
   theme (localStorage override → else `prefers-color-scheme`). An inline pre-paint script in
   `frontend/index.html` applies it before first paint (no flash), mirroring `resolveTheme.ts`.
@@ -64,9 +64,14 @@ status: verified
   `getComponentAvailability(componentId, { since, until })` (STORY-015d — query-string encodes
   `since`/`until`, both REQUIRED to be tz-aware ISO strings since the backend 422s a naive
   datetime), `getSampleMode()` / `putSampleMode(enabled)` (STORY-049 — a TEMPORARY-feature seam,
-  see `docs/scrum/wiki/sample-mode.md`). DTO types in `frontend/src/api/types.ts` (`ComponentDTO`,
+  see `docs/scrum/wiki/sample-mode.md`), `getHistory({ signal_key, since, until })` (STORY-015e
+  AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
+  same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
+  thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
+  requests). DTO types in `frontend/src/api/types.ts` (`ComponentDTO`,
   `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
-  `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`) mirror
+  `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`,
+  `ObservationDTO`) mirror
   the backend `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability
   result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
   response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
@@ -74,7 +79,14 @@ status: verified
   `frontend/src/api/statusMapping.ts::toHealthStatus` is the
   authoritative map from the backend `ComponentStatus` vocabulary (operational / degraded /
   partial_outage / major_outage) onto the health tokens (operational→up, degraded→degraded,
-  partial_outage→degraded, major_outage→down, else→unknown).
+  partial_outage→degraded, major_outage→down, else→unknown). **There is now a SECOND, deliberately
+  separate health mapper:** `frontend/src/features/history/observationHealth.ts::observationHealth`
+  maps the OBSERVATION vocabulary (`ObservationDTO.health`: `"up" | "down" | "degraded"`, else→
+  unknown) onto the SAME health tokens `StatusBadge` consumes (STORY-015e AC3). The two mappers'
+  input vocabularies overlap only on the string `"degraded"` — `ComponentStatus` has no `"up"`
+  value, so `toHealthStatus` would wrongly fold an observation's `"up"` into `unknown`; keeping
+  them separate means a future contract change to either vocabulary never ripples into the other
+  tab.
 - **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
   placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity when STORY-017
   auth + scopes land. Every decision POST reads the actor from here; the value is not scattered.
@@ -130,6 +142,23 @@ status: verified
     numeric cell renders its value as TEXT even when it also draws a token-styled bar (the bar is
     never the sole carrier), and a `null` percentage renders an explicit "no data" label (never
     `0%`/`NaN%`). See `pages/AvailabilityPage.tsx`.
+  - **A two-axis coupled-selector read tab (Check History, 015e):** on top of the read pattern, TWO
+    independently-changeable selectors (which SIGNAL, which WINDOW) both feed one fetch —
+    `features/history/useHistory.ts::useHistory({ signalKey, range })` wraps `getHistory(...)` in
+    `useCallback` keyed on `[signalKey, range]` (the SAME parameterized-fetch pattern as 015d's
+    single-axis `range`, just keyed on two independent values instead of one — no `useFetch` change
+    needed here either). The signal enumeration is a SEPARATE small `useFetch(getTopology)` wrapper
+    (`features/history/useSignalOptions.ts`) plus a pure `features/history/signals.ts::
+    flattenSignals` helper — reusing the EXISTING topology endpoint (STORY-044/015d) rather than
+    adding a new one; `CheckHistoryPage` computes the effective selection as
+    `selectedSignalKey ?? signals[0]?.signal_key` on every render (never effect-synced into state)
+    so the default appears the instant topology resolves, with the SAME one-frame-flash rationale
+    as the sample-mode toggle's `enabled` computation below. The API's own newest-first order is
+    rendered AS-IS (never re-sorted — the order is the contract). Because `/history` has no
+    pagination, the page caps what it RENDERS (not what it requests) at the latest 1,000 rows, with
+    a visible "showing latest 1,000 of N observations" note when the fetched count exceeds that —
+    the FULL fetched array is what gets sliced, so the note's `N` is always the real total. See
+    `pages/CheckHistoryPage.tsx`.
   - **A load+mutate widget embedded in a read tab (Dashboard sample-mode toggle, STORY-049,
     TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):** unlike Approvals' split (a read
     `useFetch` hook plus page-local mutation state), `features/dashboard/useSampleMode.ts` owns
@@ -224,3 +253,24 @@ status: verified
   two fields found (checked `api/types.ts`, `api/client.test.ts`,
   `features/availability/useAvailability.test.tsx` — none assumed the wrong scale). Backend
   untouched; six backend gates not run (no backend diff). verified_sha = eff33d3.
+- sprint-33: updated for STORY-015e (the Check History tab — a dense, chronological, per-signal
+  observation ledger on the existing `GET /api/v1/history` endpoint, STORY-014c). Landed
+  `ObservationDTO` in `api/types.ts`; `getHistory({ signal_key, since, until })` on the client;
+  `mocks/handlers/history.ts` (fixtures DERIVED from the sprint-33 plan's pinned live wire sample —
+  fractional-second ISO UTC timestamps, integer-ms latencies, raw vendor location strings, all
+  three observation-health values, a `latency_ms: null` row); the NEW, deliberately separate
+  `features/history/observationHealth.ts::observationHealth` mapper (documented above); the signal-
+  enumeration pair `features/history/signals.ts::flattenSignals` + `features/history/
+  useSignalOptions.ts` (both reusing the EXISTING `getTopology()`, no new endpoint);
+  `features/history/useHistory.ts` (the two-axis coupled-selector fetch, documented above); and
+  `pages/CheckHistoryPage.tsx` (signal + 24h/7d/30d window selectors, a semantic table — timestamp/
+  latency/location in the mono token, `StatusBadge` via `observationHealth` — newest-first exactly
+  as returned, the 1,000-row render cap with a visible count note, and full loading/empty/error+
+  retry coverage for both the signal-enumeration fetch and the observation fetch). Design decision:
+  used a semantic `<table>` (matching Dashboard/Approvals/Availability) rather than a non-table
+  "changelog row" list the story's Description suggested, for accessibility/consistency parity with
+  the three existing real tabs — noted as a design decision, not a deviation from any AC (AC1–AC4
+  only specify content/values, not markup shape). Sonnet-5-implementer TDD pass, one commit per
+  green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
+  change). `code_refs` += mocks/handlers/history.ts, features/history/{observationHealth,signals,
+  useSignalOptions,useHistory}.ts, pages/CheckHistoryPage.tsx. verified_sha = 0a1ef52.
