@@ -98,13 +98,29 @@ stories:
                                   # re-sweeps at compile pass
   - id: STORY-015g
     points: 2
-    board: in-progress
-    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate
+    board: done            # awaiting PO verdict at review
+    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at this size)
     blocked_question: null
-    attempts: 1
+    attempts: 1            # clean single dispatch
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
+        exit_code: 0
+        output_tail: "npm test: 188 passed (19.43s; +11 over 015e's 177). build OK 276ms. lint
+          clean. Backend untouched: diff 6703a14..HEAD over backend paths EMPTY. LIVE spot check
+          (Playwright): /publications renders the honest empty state 'Nothing published yet' +
+          permanent cap copy 'Showing the latest 50 publications' — matches the wire ([])."
+        commit: 2b0f2a6
+        at: 2026-07-04T14:05:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline
+    implementer_note: "Clean run. MSW fixtures derive from backend/tests/
+      test_publications_endpoint.py:39-50,70-76 + test_publication_domain.py:39-46 (checkout/
+      login components, operational/degraded/major_outage statuses, proposal_id 5/42/null) per
+      the 2026-07-04 real-sample agreement. Reused toHealthStatus (ComponentStatus vocabulary —
+      contrast 015e's separate observationHealth). Cap rendered as PERMANENT header copy since
+      the backend caps server-side and the client never learns a true total. Candidates: no
+      proposal drill-through (no endpoint exists); Maintenance is now the last placeholder tab."
+    blast_radius_resolved: true   # frontend-zone.md (4f787bc) + sample-mode.md (5230f59) at
+                                  # verified_sha b7811cf, one commit each
 hotfixes: []
 interrupts: []
