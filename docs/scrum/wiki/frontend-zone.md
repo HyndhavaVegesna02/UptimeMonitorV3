@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx]
-verified_sha: 0a1ef52
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx]
+verified_sha: b7811cf
 verified_sprint: sprint-33
 status: verified
 ---
@@ -32,9 +32,9 @@ status: verified
   tabs as routed `NavLink` anchors (native anchor semantics, not an ARIA tablist) — active tab =
   ink text + accent bottom-border, inactive = ink-subtle. A trailing catch-all `<Route path="*">`
   renders `pages/NotFoundPage.tsx` (Panel + EmptyState + a link back to Dashboard) for unknown
-  paths (STORY-041). The two remaining not-yet-built pages (Maintenance, Publications) are
-  placeholders that story 015g replaces wholesale; **Dashboard, Approvals, Availability, and Check
-  History are the four real tabs so far** (STORY-015b, 015c, 015d, 015e).
+  paths (STORY-041). The one remaining not-yet-built page (Maintenance) is a placeholder;
+  **Dashboard, Approvals, Availability, Check History, and Publications are the five real tabs so
+  far** (STORY-015b, 015c, 015d, 015e, 015g).
 - **Theme system (dark + light):** `frontend/src/theme/resolveTheme.ts` resolves the active
   theme (localStorage override → else `prefers-color-scheme`). An inline pre-paint script in
   `frontend/index.html` applies it before first paint (no flash), mirroring `resolveTheme.ts`.
@@ -68,10 +68,13 @@ status: verified
   AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
   same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
   thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
-  requests). DTO types in `frontend/src/api/types.ts` (`ComponentDTO`,
+  requests), and `getPublications()` (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
+  params; the endpoint itself caps at the repository's most-recent 50 server-side, so unlike
+  `/history` there is no client-side render cap to add). DTO types in `frontend/src/api/types.ts`
+  (`ComponentDTO`,
   `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
   `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`,
-  `ObservationDTO`) mirror
+  `ObservationDTO`, `PublicationDTO`) mirror
   the backend `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability
   result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
   response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
@@ -86,7 +89,9 @@ status: verified
   input vocabularies overlap only on the string `"degraded"` — `ComponentStatus` has no `"up"`
   value, so `toHealthStatus` would wrongly fold an observation's `"up"` into `unknown`; keeping
   them separate means a future contract change to either vocabulary never ripples into the other
-  tab.
+  tab. `PublicationDTO.status` (STORY-015g) IS the `ComponentStatus` vocabulary (same producing
+  type as `ComponentDTO.status`), so the Publications tab reuses the EXISTING `toHealthStatus`
+  directly — no third mapper.
 - **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
   placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity when STORY-017
   auth + scopes land. Every decision POST reads the actor from here; the value is not scattered.
@@ -159,6 +164,19 @@ status: verified
     a visible "showing latest 1,000 of N observations" note when the fetched count exceeds that —
     the FULL fetched array is what gets sliced, so the note's `N` is always the real total. See
     `pages/CheckHistoryPage.tsx`.
+  - **A second plain read tab (Publications, 015g):** the simplest shape in the set — a single
+    `GET /api/v1/publications` with no selector, no params, and no client-side render cap (the
+    endpoint's own `list_recent` already caps server-side at 50). `features/publications/
+    usePublications.ts` is a one-line `useFetch(getPublications)`, identical in shape to
+    `useComponents`/`useApprovals`. The only two nuances, both pinned at planning rather than
+    discovered mid-build: (1) `PublicationDTO.status` is the `ComponentStatus` vocabulary, so it
+    reuses the EXISTING `toHealthStatus` (documented above) rather than a new mapper — the
+    opposite call from 015e's `observationHealth`, and (2) the 50-item cap is stated as permanent
+    header copy ("Showing the latest 50 publications") rather than a conditional note, because
+    (unlike Check History's client-side cap) the frontend never learns the true total row count —
+    the backend enforces the cap before the response is even built. `proposal_id: null` renders an
+    em-dash, matching the `latency_ms: null`/`from_status: null` null-handling convention. See
+    `pages/PublicationsPage.tsx`.
   - **A load+mutate widget embedded in a read tab (Dashboard sample-mode toggle, STORY-049,
     TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):** unlike Approvals' split (a read
     `useFetch` hook plus page-local mutation state), `features/dashboard/useSampleMode.ts` owns
@@ -274,3 +292,20 @@ status: verified
   green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
   change). `code_refs` += mocks/handlers/history.ts, features/history/{observationHealth,signals,
   useSignalOptions,useHistory}.ts, pages/CheckHistoryPage.tsx. verified_sha = 0a1ef52.
+- sprint-33: updated for STORY-015g (the Publications tab — a read-only audit trail of what was
+  actually pushed to the public Statuspage and when, on the existing `GET /api/v1/publications`
+  endpoint, STORY-037). Landed `PublicationDTO` in `api/types.ts`; `getPublications()` on the
+  client (no params — the endpoint's own `list_recent` caps at 50 server-side, so unlike
+  `/history` there is no client-side render cap); `mocks/handlers/publications.ts` (fixtures
+  DERIVED from the backend's own `test_publications_endpoint.py`/`test_publication_domain.py`
+  fixtures per the 2026-07-04 real-sample agreement — component_id checkout/login, a non-
+  operational status incl. `major_outage`, a `proposal_id: null` case); the SIMPLEST read-tab hook
+  yet, `features/publications/usePublications.ts = useFetch(getPublications)` (documented above);
+  and `pages/PublicationsPage.tsx` (a changelog table newest-first — published_at mono, component_id,
+  a single `StatusBadge` via the EXISTING `toHealthStatus` (no new mapper — `PublicationDTO.status`
+  is the SAME `ComponentStatus` vocabulary `ComponentDTO.status` uses), proposal_id mono with
+  `null` -> em-dash, the 50-item cap stated as permanent header copy, and full loading/empty
+  ("nothing published yet")/error+retry coverage). Sonnet-5-implementer TDD pass, one commit per
+  green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
+  change). `code_refs` += mocks/handlers/publications.ts, features/publications/usePublications.ts,
+  pages/PublicationsPage.tsx. verified_sha = b7811cf.
