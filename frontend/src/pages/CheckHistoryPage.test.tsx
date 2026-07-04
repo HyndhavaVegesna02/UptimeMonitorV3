@@ -119,4 +119,106 @@ describe('CheckHistoryPage', () => {
     expect(new Date(newRange.since).toString()).not.toBe('Invalid Date')
     expect(newRange.since).toMatch(/Z$/)
   })
+
+  it('shows the shared LoadingState while signals are loading (AC4)', () => {
+    render(<CheckHistoryPage />)
+    expect(screen.getByRole('status')).toHaveTextContent('Loading signals…')
+  })
+
+  it('shows the shared LoadingState while observations are loading, once a signal is selected (AC4)', async () => {
+    server.use(
+      http.get('/api/v1/history', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+      }),
+    )
+
+    render(<CheckHistoryPage />)
+
+    // Topology loads fast (no artificial delay); the selector appears while
+    // the (artificially slowed) observations fetch is still in flight.
+    await screen.findByLabelText('Signal')
+    expect(screen.getByRole('status')).toHaveTextContent('Loading observations…')
+    await screen.findByRole('table')
+  })
+
+  it('shows the shared EmptyState "no observations in this window" when the signal has none (AC4)', async () => {
+    server.use(http.get('/api/v1/history', () => HttpResponse.json([])))
+
+    render(<CheckHistoryPage />)
+
+    expect(await screen.findByText('No observations in this window')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+  })
+
+  it('shows the shared ErrorState on a signal-enumeration failure, then recovers via retry (AC4)', async () => {
+    const user = userEvent.setup()
+    let callCount = 0
+    server.use(
+      http.get('/api/v1/topology', () => {
+        callCount += 1
+        if (callCount === 1) {
+          return HttpResponse.json({ detail: 'boom' }, { status: 500 })
+        }
+        return HttpResponse.json(FIXTURE_TOPOLOGY)
+      }),
+    )
+
+    render(<CheckHistoryPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load signals')
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await screen.findByRole('table')
+    expect(callCount).toBe(2)
+  })
+
+  it('shows the shared ErrorState on a history-fetch failure, then recovers via retry (AC4)', async () => {
+    const user = userEvent.setup()
+    let callCount = 0
+    server.use(
+      http.get('/api/v1/history', () => {
+        callCount += 1
+        if (callCount === 1) {
+          return HttpResponse.json({ detail: 'boom' }, { status: 500 })
+        }
+        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+      }),
+    )
+
+    render(<CheckHistoryPage />)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load check history')
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }))
+
+    await screen.findByRole('table')
+    expect(callCount).toBe(2)
+  })
+
+  it('caps rendering at the latest 1,000 observations with a visible count note when the window returns more (AC4)', async () => {
+    const TOTAL = 1500
+    const generated = Array.from({ length: TOTAL }, (_, index) => ({
+      signal_key: 'frontend-http',
+      observed_at: new Date(Date.UTC(2026, 6, 3, 0, 0, 0) - index * 1000).toISOString(),
+      health: 'up',
+      location: 'SYNTHETIC_LOCATION-0000000000000060',
+      latency_ms: 500,
+    }))
+    server.use(http.get('/api/v1/history', () => HttpResponse.json(generated)))
+
+    render(<CheckHistoryPage />)
+
+    expect(
+      await screen.findByText('showing latest 1,000 of 1,500 observations'),
+    ).toBeInTheDocument()
+
+    const table = screen.getByRole('table')
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(1000)
+    // The rendered subset is the NEWEST 1,000 — the first row is the array's
+    // first (newest-first) element, unchanged.
+    expect(within(rows[0]).getByText(generated[0].observed_at)).toBeInTheDocument()
+  })
 })

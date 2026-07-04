@@ -88,7 +88,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       (24h/7d/30d, mirror 015d's segmented control). Rows render newest-first exactly as the
       API returns them (do NOT re-sort — the ORDER is the contract). MSW tests: rows render
       with mapped badges (up/down/degraded), null-latency em-dash, order preserved.
-- [ ] **T5 — Volume cap + states (AC4).** Render at most the latest 1,000 rows; when the
+- [x] **T5 — Volume cap + states (AC4).** Render at most the latest 1,000 rows; when the
       response exceeds that, a visible note "showing latest 1,000 of N observations" (tested
       with a >1,000-row generated fixture). Loading (`LoadingState`), empty ("no observations
       in this window", `EmptyState`), error+retry (`ErrorState`); Panel `headingLevel="h1"`.
