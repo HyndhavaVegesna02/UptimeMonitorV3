@@ -1,7 +1,9 @@
 # YourTeam active sprint board.
 sprint: 33
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-04
+closed: 2026-07-04    # PO verdict: accept both (015e + 015g), 5/5 pts. No follow-up stories —
+                      # all minors were awareness-level.
 goal: "Complete the read-only audit surfaces: the Check History tab (STORY-015e — per-signal
   observation ledger with signal + window selectors, honest volume handling) and the
   Publications tab (STORY-015g — the what-customers-saw audit trail, latest-50 cap visible)."

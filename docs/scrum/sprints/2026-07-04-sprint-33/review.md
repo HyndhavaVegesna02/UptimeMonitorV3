@@ -75,7 +75,9 @@ check:** the endpoint returns `[]` and the tab renders the honest empty state + 
 - Remaining: 015f Maintenance tab (3, ready) — the last placeholder; STORY-043 (.env, 2,
   ready); STORY-047 (1, ready); STORY-017 + STORY-050 need refinement.
 
-## Verdicts (PO)
+## Verdicts (PO, 2026-07-04)
 
-- STORY-015e (3 pts): _pending_
-- STORY-015g (2 pts): _pending_
+- STORY-015e (3 pts): **ACCEPT**
+- STORY-015g (2 pts): **ACCEPT**
+
+Velocity recorded: 5 committed / 5 accepted. No follow-up stories.
