@@ -93,7 +93,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       with a >1,000-row generated fixture). Loading (`LoadingState`), empty ("no observations
       in this window", `EmptyState`), error+retry (`ErrorState`); Panel `headingLevel="h1"`.
       Tests for each state.
-- [ ] **T6 — Gates + blast radius (015e).** Three frontend gates exit 0 on a clean committed
+- [x] **T6 — Gates + blast radius (015e).** Three frontend gates exit 0 on a clean committed
       tree. Mechanical wiki staleness sweep; update every flagged article (expect at least
       `frontend-zone.md`), **committing article-by-article**.
 
