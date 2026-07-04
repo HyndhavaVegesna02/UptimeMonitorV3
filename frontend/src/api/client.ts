@@ -6,6 +6,7 @@ import type {
   DecisionResponse,
   ObservationDTO,
   ProposalDTO,
+  PublicationDTO,
   SampleModeDTO,
 } from './types'
 
@@ -166,6 +167,15 @@ export function getHistory(params: {
 }): Promise<ObservationDTO[]> {
   const query = new URLSearchParams(params)
   return getJson<ObservationDTO[]>(`/v1/history?${query.toString()}`)
+}
+
+/**
+ * `GET /api/v1/publications` (STORY-037/STORY-015g AC1) — recorded
+ * Statuspage publishes, newest-first, capped at the repository's most-recent
+ * 50 (`list_recent` — no pagination params exist on this endpoint).
+ */
+export function getPublications(): Promise<PublicationDTO[]> {
+  return getJson<PublicationDTO[]>('/v1/publications')
 }
 
 /**

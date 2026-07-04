@@ -6,6 +6,7 @@ import {
   FIXTURE_COMPONENTS,
   FIXTURE_HISTORY_FRONTEND_HTTP,
   FIXTURE_PROPOSALS,
+  FIXTURE_PUBLICATIONS,
   FIXTURE_TOPOLOGY,
 } from '../mocks/handlers'
 import {
@@ -14,6 +15,7 @@ import {
   getComponentAvailability,
   getComponents,
   getHistory,
+  getPublications,
   getSampleMode,
   getTopology,
   postDecision,
@@ -377,5 +379,43 @@ describe('putSampleMode', () => {
     server.use(http.put('/api/v1/sample-mode', () => HttpResponse.text('not json')))
 
     await expect(putSampleMode(true)).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('getPublications', () => {
+  it('fetches and parses the publication list from /api/v1/publications', async () => {
+    const publications = await getPublications()
+    expect(publications).toEqual(FIXTURE_PUBLICATIONS)
+  })
+
+  it('returns an empty array when nothing has been published yet', async () => {
+    server.use(http.get('/api/v1/publications', () => HttpResponse.json([])))
+
+    const publications = await getPublications()
+    expect(publications).toEqual([])
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.get('/api/v1/publications', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(getPublications()).rejects.toBeInstanceOf(ApiError)
+    await expect(getPublications()).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.get('/api/v1/publications', () => HttpResponse.error()))
+
+    await expect(getPublications()).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('throws a typed ApiError when a 2xx response body is not valid JSON', async () => {
+    server.use(http.get('/api/v1/publications', () => HttpResponse.text('not json')))
+
+    await expect(getPublications()).rejects.toBeInstanceOf(ApiError)
+    await expect(getPublications()).rejects.not.toBeInstanceOf(SyntaxError)
   })
 })

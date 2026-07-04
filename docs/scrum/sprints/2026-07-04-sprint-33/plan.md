@@ -99,7 +99,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
 
 ## STORY-015g — Publications tab (2 pts) — AC1–AC3
 
-- [ ] **T1 — Types + client + MSW (AC1 plumbing).** `PublicationDTO` in `api/types.ts`;
+- [x] **T1 — Types + client + MSW (AC1 plumbing).** `PublicationDTO` in `api/types.ts`;
       `getPublications(): Promise<PublicationDTO[]>` in `api/client.ts`;
       `mocks/handlers/publications.ts` with fixtures derived from the backend's publications
       test fixtures (ComponentStatus values incl. a non-operational one; a `proposal_id: null`

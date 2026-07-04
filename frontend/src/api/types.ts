@@ -130,6 +130,30 @@ export interface ObservationDTO {
 }
 
 /**
+ * Mirrors `backend/src/api/v1/publications/models.py::PublicationDTO`
+ * (STORY-037/STORY-015g AC1) — a single recorded Statuspage publish: the
+ * status that was pushed, for which component, and when. There is NO
+ * from-status field — a publication carries only the status that was
+ * published, so an "old→new" transition cannot be rendered from this shape.
+ * `status` is the `ComponentStatus` vocabulary (operational / degraded /
+ * partial_outage / major_outage, serialized via `.value`) — **UNLIKE**
+ * `ObservationDTO.health`, this DOES map through the EXISTING
+ * `api/statusMapping.ts::toHealthStatus` (same producing vocabulary as
+ * `ComponentDTO.status`). `proposal_id` links to the originating proposal
+ * and is nullable (no proposal_id when the publish had none) — render an
+ * em-dash, never a sentinel `0`. `GET /api/v1/publications` returns these
+ * newest-first, capped at the repository's most-recent 50 (`list_recent`,
+ * no pagination).
+ */
+export interface PublicationDTO {
+  id: number
+  component_id: string
+  status: string
+  published_at: string
+  proposal_id: number | null
+}
+
+/**
  * Mirrors `backend/src/api/v1/sample_mode/models.py::SampleModeDTO`
  * (STORY-048/STORY-049 AC4) — the persisted, process-crossing sample-mode
  * flag. `enabled: false` when the flag was never set. THIS IS A TEMPORARY
