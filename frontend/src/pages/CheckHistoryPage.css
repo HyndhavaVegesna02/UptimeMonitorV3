@@ -1,0 +1,106 @@
+.check-history-page__controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.check-history-page__signal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.check-history-page__signal-label {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.check-history-page__signal-select {
+  min-height: var(--target-min);
+  min-width: 260px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+}
+
+.check-history-page__window {
+  display: inline-flex;
+  gap: var(--space-2);
+}
+
+.check-history-page__window-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.check-history-page__window-button:hover {
+  background: var(--color-surface-2);
+}
+
+.check-history-page__window-button--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.check-history-page__cap-note {
+  color: var(--color-ink-subtle);
+  margin-bottom: var(--space-2);
+}
+
+.check-history-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.check-history-table th,
+.check-history-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-hairline);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.check-history-table th {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.check-history-table td {
+  font-size: var(--fs-body);
+}
+
+.check-history-table tbody tr:last-child td {
+  border-bottom: none;
+}

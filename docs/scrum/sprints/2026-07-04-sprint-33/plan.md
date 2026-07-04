@@ -80,7 +80,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       reuse the existing typed client fn). Default signal = first in the enumeration; default
       window = 24h. MSW tests: success; signal change → refetch with the NEW `signal_key`
       asserted; window change → refetch with NEW tz-aware `since`/`until` asserted; error.
-- [ ] **T4 — Page render (AC1, AC3).** `pages/CheckHistoryPage.tsx` (+ CSS mirroring the
+- [x] **T4 — Page render (AC1, AC3).** `pages/CheckHistoryPage.tsx` (+ CSS mirroring the
       established page conventions): dense hairline-separated chronological rows —
       `observed_at` (mono), `StatusBadge` via the T2 mapping, `latency_ms` (mono, rendered
       `571 ms`; null → em-dash, NEVER `0 ms` or `null ms`), `location` (mono, as-is). Signal
