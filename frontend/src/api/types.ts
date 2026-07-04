@@ -109,6 +109,27 @@ export interface ComponentAvailabilityDTO {
 }
 
 /**
+ * Mirrors `backend/src/api/v1/history/models.py::ObservationDTO`
+ * (STORY-014c/STORY-015e AC1) — a single raw per-signal check observation
+ * (the ingest ledger view) as returned newest-first by `GET /api/v1/history`.
+ * `health` is the OBSERVATION vocabulary (`"up" | "down" | "degraded"`,
+ * serialized via `.value`) — **NOT** the `ComponentStatus` vocabulary
+ * `api/statusMapping.ts::toHealthStatus` maps (see
+ * `features/history/observationHealth.ts` for the separate mapper and why it
+ * exists). `latency_ms` is an INTEGER MILLISECONDS value or `null` (no
+ * measurement) — render `null` as an em-dash, never `0 ms`. `location` is a
+ * raw vendor location id string (e.g. `"SYNTHETIC_LOCATION-0000000000000060"`)
+ * — render as-is, in the mono token.
+ */
+export interface ObservationDTO {
+  signal_key: string
+  observed_at: string
+  health: string
+  location: string
+  latency_ms: number | null
+}
+
+/**
  * Mirrors `backend/src/api/v1/sample_mode/models.py::SampleModeDTO`
  * (STORY-048/STORY-049 AC4) — the persisted, process-crossing sample-mode
  * flag. `enabled: false` when the flag was never set. THIS IS A TEMPORARY

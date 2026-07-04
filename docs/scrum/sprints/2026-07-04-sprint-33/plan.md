@@ -58,7 +58,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
 
 ## STORY-015e — Check History tab (3 pts) — AC1–AC4
 
-- [ ] **T1 — Types + client + MSW module (AC1 plumbing).** Add `ObservationDTO` to
+- [x] **T1 — Types + client + MSW module (AC1 plumbing).** Add `ObservationDTO` to
       `api/types.ts` (exact shape incl. `latency_ms: number | null`). Add
       `getHistory(params: { signal_key: string; since: string; until: string }):
       Promise<ObservationDTO[]>` to `api/client.ts` (query-string encode all three; reuse

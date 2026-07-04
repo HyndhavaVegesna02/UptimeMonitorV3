@@ -4,6 +4,7 @@ import type {
   ComponentTopologyDTO,
   DecisionRequest,
   DecisionResponse,
+  ObservationDTO,
   ProposalDTO,
   SampleModeDTO,
 } from './types'
@@ -146,6 +147,25 @@ export function getComponentAvailability(
   return getJson<ComponentAvailabilityDTO>(
     `/v1/availability/component/${componentId}?${query.toString()}`,
   )
+}
+
+/**
+ * `GET /api/v1/history` (STORY-014c/STORY-015e AC1, AC2) — newest-first raw
+ * observations for exactly ONE signal over a window; NO pagination. `since`/
+ * `until` MUST be tz-aware ISO strings (the backend 422s a naive datetime) —
+ * reuse `features/availability/windowRange.ts::windowToRange` to build them
+ * (the same tz-discipline seam STORY-015d relies on). Because there is no
+ * pagination, a wide window can return many thousands of rows; the Check
+ * History tab caps what it RENDERS client-side (STORY-015e AC4) — this fetch
+ * always requests the full in-window result.
+ */
+export function getHistory(params: {
+  signal_key: string
+  since: string
+  until: string
+}): Promise<ObservationDTO[]> {
+  const query = new URLSearchParams(params)
+  return getJson<ObservationDTO[]>(`/v1/history?${query.toString()}`)
 }
 
 /**

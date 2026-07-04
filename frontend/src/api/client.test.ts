@@ -4,6 +4,7 @@ import { server } from '../mocks/server'
 import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_COMPONENTS,
+  FIXTURE_HISTORY_FRONTEND_HTTP,
   FIXTURE_PROPOSALS,
   FIXTURE_TOPOLOGY,
 } from '../mocks/handlers'
@@ -12,6 +13,7 @@ import {
   getApprovals,
   getComponentAvailability,
   getComponents,
+  getHistory,
   getSampleMode,
   getTopology,
   postDecision,
@@ -220,6 +222,96 @@ describe('getComponentAvailability', () => {
       getComponentAvailability('sockshop-frontend', {
         since: '2026-07-02T00:00:00.000Z',
         until: '2026-07-03T00:00:00.000Z',
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('getHistory', () => {
+  it('fetches ObservationDTO[] and sends signal_key/since/until as query params', async () => {
+    let receivedUrl: URL | undefined
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        receivedUrl = new URL(request.url)
+        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+      }),
+    )
+
+    const params = {
+      signal_key: 'frontend-http',
+      since: '2026-07-02T13:29:17.931000Z',
+      until: '2026-07-03T13:29:17.931000Z',
+    }
+    const result = await getHistory(params)
+
+    expect(receivedUrl?.pathname).toBe('/api/v1/history')
+    expect(receivedUrl?.searchParams.get('signal_key')).toBe(params.signal_key)
+    expect(receivedUrl?.searchParams.get('since')).toBe(params.since)
+    expect(receivedUrl?.searchParams.get('until')).toBe(params.until)
+    expect(result).toEqual(FIXTURE_HISTORY_FRONTEND_HTTP)
+  })
+
+  it('fetches the default fixture from /api/v1/history newest-first', async () => {
+    const result = await getHistory({
+      signal_key: 'frontend-http',
+      since: '2026-07-02T13:29:17.931000Z',
+      until: '2026-07-03T13:29:17.931000Z',
+    })
+    expect(result).toEqual(FIXTURE_HISTORY_FRONTEND_HTTP)
+  })
+
+  it('returns an empty array when the signal has no observations in the window', async () => {
+    const result = await getHistory({
+      signal_key: 'does-not-exist',
+      since: '2026-07-02T13:29:17.931000Z',
+      until: '2026-07-03T13:29:17.931000Z',
+    })
+    expect(result).toEqual([])
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.get('/api/v1/history', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 422 }),
+      ),
+    )
+
+    await expect(
+      getHistory({
+        signal_key: 'frontend-http',
+        since: '2026-07-02T13:29:17.931000Z',
+        until: '2026-07-03T13:29:17.931000Z',
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
+    await expect(
+      getHistory({
+        signal_key: 'frontend-http',
+        since: '2026-07-02T13:29:17.931000Z',
+        until: '2026-07-03T13:29:17.931000Z',
+      }),
+    ).rejects.toMatchObject({ status: 422 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.get('/api/v1/history', () => HttpResponse.error()))
+
+    await expect(
+      getHistory({
+        signal_key: 'frontend-http',
+        since: '2026-07-02T13:29:17.931000Z',
+        until: '2026-07-03T13:29:17.931000Z',
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
+  })
+
+  it('throws a typed ApiError when a 2xx response body is not valid JSON', async () => {
+    server.use(http.get('/api/v1/history', () => HttpResponse.text('not json')))
+
+    await expect(
+      getHistory({
+        signal_key: 'frontend-http',
+        since: '2026-07-02T13:29:17.931000Z',
+        until: '2026-07-03T13:29:17.931000Z',
       }),
     ).rejects.toBeInstanceOf(ApiError)
   })
