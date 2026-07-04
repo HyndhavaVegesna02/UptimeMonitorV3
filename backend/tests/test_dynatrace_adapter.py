@@ -457,7 +457,13 @@ def test_build_dql_query_with_watermark_adds_overlap_lower_bound():
         overlap=timedelta(minutes=5),
     )
     # since = watermark - overlap = 05:55:00Z (never the bare watermark).
-    assert 'timestamp >= "2026-06-29T05:55:00Z"' in q
+    # The bound MUST be wrapped in toTimestamp(): DQL compares a bare string
+    # literal against the timestamp field without coercion and silently
+    # matches NOTHING, permanently stalling ingestion after the first cycle
+    # (STORY-051, live-confirmed 2026-07-04: bare string -> 0 rows,
+    # toTimestamp -> 120 rows on the same window).
+    assert 'timestamp >= toTimestamp("2026-06-29T05:55:00Z")' in q
+    assert 'timestamp >= "' not in q  # the bare-string form must never come back
     # AC1 (STORY-016c): event.type filter is present even with a watermark.
     assert 'event.type == "http_monitor_execution"' in q
 

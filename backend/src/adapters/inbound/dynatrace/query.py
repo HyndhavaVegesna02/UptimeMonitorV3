@@ -88,7 +88,13 @@ def build_dql_query(
     ]
     if watermark is not None:
         since = watermark - overlap
-        clauses.append(f'timestamp >= "{since.isoformat().replace("+00:00", "Z")}"')
+        # toTimestamp() is load-bearing: DQL compares a bare string literal
+        # against the timestamp field without coercion and silently matches
+        # NOTHING, so a bare-string bound returns 0 rows and the loop
+        # permanently stalls after its first (watermark-less) cycle
+        # (STORY-051, live-confirmed 2026-07-04).
+        since_iso = since.isoformat().replace("+00:00", "Z")
+        clauses.append(f'timestamp >= toTimestamp("{since_iso}")')
 
     filter_expr = " AND ".join(clauses)
     return f"fetch dt.synthetic.events\n| filter {filter_expr}\n| sort timestamp asc"
