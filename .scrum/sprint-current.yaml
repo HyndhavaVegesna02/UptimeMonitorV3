@@ -50,20 +50,58 @@ start_tag: sprint-33-start
 stories:
   - id: STORY-015e
     points: 3
-    board: in-progress     # todo | in-progress | blocked | review | done
+    board: done            # awaiting PO verdict at review
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 1
+    attempts: 1            # clean single dispatch — no stall, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    review: null
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
+        exit_code: 0
+        output_tail: "npm test: 177 passed (24.13s; +31 over sprint-32's 146). build (tsc -b &&
+          vite build) OK 325ms. lint clean. Backend untouched: diff 64b7c87..HEAD over backend
+          paths EMPTY — six-gate baseline holds. LIVE render-vs-wire spot check (2026-07-04
+          agreement, Playwright): rendered first row 2026-07-03T13:29:17.931000Z / Up / 571 ms /
+          SYNTHETIC_LOCATION-...0060 EXACTLY matches wire row[0] {health:'up', latency_ms:571};
+          order preserved; 24h pressed; observation-health mapping renders 'up' as Up (the
+          vocabulary the planning check protected)."
+        commit: a2163ca
+        at: 2026-07-04T12:46:00+05:30
+    review:
+      first_pass: "spec PASS (AC1-AC4 ALL MET; reviewer RAN 177/177 and read bodies — refetch
+        tests assert the ACTUAL changed signal_key and tz-aware since/until MSW received;
+        order test proves render order == response order with NO re-sort; null latency asserts
+        em-dash and absence of '0 ms'; volume test drives 1,500 rows and asserts 'showing latest
+        1,000 of 1,500 observations'; table-vs-changelog markup adjudicated: AC constrains
+        content/format not markup — compliant; shared-file edits additive, no coverage deleted)
+        / quality APPROVE (0 Critical, 0 Major; identity chain useMemo[preset]->
+        useCallback[signalKey,range]->useFetch[fetcher] traced clean; two-fetch design gates
+        the table on the topology fetch with render-derived default signal — zero-signal case
+        safe and tested; windowToRange REUSED not duplicated; observationHealth deliberately
+        separate from toHealthStatus with doc-comment; fixtures genuinely derive from the
+        pinned live sample)."
+      fix: "None — both reviewers passed first-pass with zero blocking findings."
+      second_pass: null
+      open_minors:
+        - "Row key uses observed_at+index — a pure natural key would be marginally cleaner;
+          not worth a fix loop (quality reviewer)."
+        - "On a selector switch the previous rows show until the new fetch resolves (useFetch
+          only resets to loading via retry) — established shared 015d behavior across all tabs,
+          flagged for awareness only."
+      implementer_note: "Clean run, no stall; wiki committed article-by-article (f8b525e,
+        ead0819). Design: semantic <table> over the Description's changelog-row (AC-compliant,
+        parity with the three existing tabs); windowToRange imported cross-feature rather than
+        moved; two-fetch split (useSignalOptions + useHistory) avoids the default-signal
+        chicken-and-egg; render-derived selection default (anti-flash pattern from 049)."
+    blast_radius_resolved: true   # sweep flagged exactly frontend-zone.md + sample-mode.md; both
+                                  # updated at verified_sha 0a1ef52, one commit each; orchestrator
+                                  # re-sweeps at compile pass
   - id: STORY-015g
     points: 2
-    board: todo
+    board: in-progress
     pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null
