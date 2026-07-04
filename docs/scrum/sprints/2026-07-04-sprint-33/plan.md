@@ -67,7 +67,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       location strings, health values from the observation vocabulary incl. at least one
       `"down"`, one `"degraded"`, and one `latency_ms: null`), newest-first; compose into
       `handlers/index.ts`. Client unit tests assert URL + exact query params via MSW.
-- [ ] **T2 — Observation-health badge mapping (AC3).** A small mapper (e.g.
+- [x] **T2 — Observation-health badge mapping (AC3).** A small mapper (e.g.
       `features/history/observationHealth.ts`) from `"up" | "down" | "degraded"` (else →
       unknown) onto the SAME health-token statuses `StatusBadge` consumes — deliberately
       SEPARATE from `toHealthStatus` (different producing vocabulary; a doc-comment states
