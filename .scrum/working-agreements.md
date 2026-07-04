@@ -465,4 +465,25 @@
   both implementers hit the 600s watchdog stall with all code committed and the COMPLETE wiki
   pass finished but uncommitted, each requiring an orchestrator tail-recovery under the
   2026-06-25 crash-recovery agreement. Recovery worked both times; it should not be load-bearing.)
+- 2026-07-04 — **The consumer-DTO planning check pins UNITS/SCALE, and test fixtures derive from
+  a REAL sample.** The 2026-07-02 tab-AC-vs-DTO check verifies, for every numeric field a consumer
+  story renders, the field's scale/units (fraction vs percent, seconds vs ms, etc.) and for every
+  string field its enum/format — read from the PRODUCING CODE (the service/domain computation),
+  never inferred from the field name (`_pct` proved nothing) — and the plan's "Verified API
+  contracts" section states them explicitly. MSW/test fixtures for a consumer story must be
+  derived from a REAL response sample (a live call or the backend's own test fixtures), not
+  invented at a plausible-looking scale. (Motivated by Sprint 32, STORY-015d: `availability_pct`
+  is a 0–1 fraction on the wire but the plan's example "99.87%" implied percent-scale; the
+  implementer invented percent-scale fixtures, so 146 green tests + two Opus reviewers validated
+  the wrong scale — the live tab rendered '1.00%' for a fully-up component. Fifth member of the
+  "green tests, wrong contract" family; first with a planning-precision root cause.)
+- 2026-07-04 — **Consumer/rendering stories get a LIVE render-vs-wire spot check at review
+  prep.** When the local stack (or a deployed instance) is available, the orchestrator — before
+  calling the review — loads the story's surface against the real backend and compares at least
+  one rendered value against the raw wire value for the same record (curl the endpoint, read the
+  UI). A mismatch reopens the story as a fix loop, not a review-day surprise. This complements,
+  not replaces, the MSW-only test discipline: tests stay hermetic; the spot check catches
+  fixture-reality drift those tests cannot see. (Motivated by Sprint 32, STORY-015d: exactly this
+  manual comparison caught the percent-scale defect after every mechanical and reviewer gate had
+  passed; making it a standing step removes the luck from it.)
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) -->
