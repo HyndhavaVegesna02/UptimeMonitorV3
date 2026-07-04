@@ -1,143 +1,72 @@
 # YourTeam active sprint board.
-sprint: 32
-status: closed        # none | active | review | closed | aborted
-started: 2026-07-03
-closed: 2026-07-04    # PO verdict: "accept both" — STORY-015d + STORY-049 accepted (5/5 pts).
-                      # 015d's open minors were taste-only (quality reviewer: no change needed) —
-                      # no follow-up story; backlog candidates stay noted in review.md.
-goal: "Make the sample switch operable and the availability story visible: the two-grain
-  Availability tab (STORY-015d — component rollup + per-signal drill-down on the STORY-044
-  endpoints, window presets, honest no-data treatment) and a Dashboard sample-switch toggle
-  (STORY-049 — wired to the STORY-048 sample-mode API with an unmistakable ON warning)."
-branch: sprint-32
-start_tag: sprint-32-start
-# Capacity: velocity last-3 (sprints 29,30,31) = 5,5,5 -> mean 5.0. Committed 5
-# (STORY-015d 3 + STORY-049 2). PO approval 2026-07-03 (planning): "Approve and lock the
-# recommended stories but run the backend while implementing the sprint so that i can view
-# results" — approval of the recommended lock; the run-the-backend part is an OPERATIONAL
-# request (the STORY-042 local stack — throwaway DB + uvicorn :8000 + live loop + Vite dev
-# server — runs alongside implementation so the PO can watch live results), not sprint scope.
+sprint: 33
+status: active        # none | active | review | closed | aborted
+started: 2026-07-04
+goal: "Complete the read-only audit surfaces: the Check History tab (STORY-015e — per-signal
+  observation ledger with signal + window selectors, honest volume handling) and the
+  Publications tab (STORY-015g — the what-customers-saw audit trail, latest-50 cap visible)."
+branch: sprint-33
+start_tag: sprint-33-start
+# Capacity: velocity last-3 (sprints 30,31,32) = 5,5,5 -> mean 5.0. Committed 5
+# (STORY-015e 3 + STORY-015g 2). PO approval 2026-07-04 (planning): "Approve & lock" after
+# directing "plan next sprints with other tabs" — tabs outrank STORY-043's equal priority by
+# explicit PO direction. Sprint-34 outlook (non-binding): 015f (3) + 043 (2).
 #
-# WORKFLOW (in-process, PO directive 2026-07-02): Sonnet 5 implementer at HIGH effort builds
-# to plan.md; STORY-015d (3 pts) gets Opus spec + quality reviewers (full pipeline);
-# STORY-049 (2 pts) is implementer + DoD gate only. Frontend DoD surface: npm test /
-# npm run build / npm run lint from frontend/, exit 0 on a clean committed tree. Backend is
-# untouched this sprint — the six backend gates hold by the empty-diff baseline rule unless
-# the diff shows a backend path touched (then a full six-gate re-run is required).
+# WORKFLOW: Sonnet 5 implementer at HIGH effort per story; STORY-015e (3 pts) -> Opus spec +
+# quality reviewers (full pipeline); STORY-015g (2 pts) -> gate-only. Frontend DoD surface:
+# npm test / npm run build / npm run lint from frontend/ on a clean committed tree. Backend
+# untouched -> six-gate baseline holds by empty diff (gate-green state 61d786a lineage; verified
+# empty at lock over backend paths since e820ef4).
 #
-# TOOLING: none — pure frontend; Vitest + MSW + the per-tab pattern live since 015b/015c.
+# TOOLING: none.
 #
-# CONSUMER-DTO CHECK (2026-07-02 agreement) done at planning against real backend models:
-# topology GET /topology -> [{id,name,signals:[{signal_key,name,interval_seconds|null,
-# component_id}]}]; availability GET /availability/component/{id}?since&until ->
-# {component_id, rollup, signals[]} with availability_pct/completeness_pct float|null +
-# verdict counts + window + computed_at (+ signal_key per child); sample-mode GET/PUT
-# /sample-mode -> {enabled: bool}. No AC trimming needed.
+# CONSUMER-DTO CHECK (2026-07-02 + 2026-07-04 units/scale agreements) done at planning against
+# producing code AND live wire samples:
+# - history GET /api/v1/history?signal_key&since&until -> [ObservationDTO {signal_key,
+#   observed_at ISO-UTC, health, location, latency_ms}] newest-first, NO pagination; naive
+#   datetime -> 422. UNITS/ENUMS: latency_ms = INTEGER MILLISECONDS | null (signal.py:71,
+#   live sample 571/745); health = OBSERVATION vocabulary "up"|"down"|"degraded" (Health enum,
+#   via .value) — NOT ComponentStatus; toHealthStatus does NOT apply ("up" would map to
+#   unknown) -> the tab pins its own observation-health badge mapping. location = raw vendor
+#   id string, rendered as-is (no friendly-name source exists).
+# - publications GET /api/v1/publications -> [PublicationDTO {id int, component_id str,
+#   status str, published_at ISO-UTC, proposal_id int|null}] newest-first, at most 50
+#   (list_recent cap — must be VISIBLE in the UI). status = ComponentStatus vocabulary
+#   (p.status.value) -> existing toHealthStatus DOES apply. Live endpoint currently returns []
+#   (nothing published) — the empty state is the true initial state; fixtures derive from
+#   backend test fixtures per the real-sample agreement.
+# - VOLUME DECISION (015e AC4, pinned): default window 24h (~720 rows at 120s cadence);
+#   7d/30d render the latest 1,000 with a visible "showing latest 1,000 of N" note; pagination
+#   deferred to a future story if ever needed.
 #
-# BASELINE at lock: sprint-32 cut from main @ 3785f12 — `git diff 61d786a..HEAD -- backend/
-# scripts/ pyproject.toml alembic.ini migrations/ config/ frontend/` is EMPTY (docs/board/
-# retro commits only since the sprint-31 gate-green state 61d786a), so the six-gate backend
-# evidence recorded at sprint-31 close holds for this code state. frontend/ is unchanged
-# since its last green three-gate run (sprint-27 close; sprints 28-31 were backend/docs-only).
+# BASELINE at lock: sprint-33 cut from main @ 350e928 — diff e820ef4..HEAD over backend/
+# frontend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is EMPTY (retro +
+# agreements-prune docs commits only), so sprint-32's close gate evidence (frontend 146/146 @
+# 1b9ef7d/ae53070; backend six-gate baseline 61d786a) holds for this code state.
 #
-# Agreements in force: all of working-agreements.md as of 3785f12 (incl. the 2026-07-03
-# wiki-pass-commits-article-by-article rule; the 2026-07-02 tab-AC-vs-DTO check is DONE above;
-# the AC-never-pre-declare-blast-radius rule — the mechanical sweep decides which articles
-# update, but note sample-mode.md's REMOVAL inventory must gain STORY-049's frontend seam
-# when the sweep flags it).
+# Agreements in force: all of working-agreements.md as of 350e928 (post-prune), incl. the two
+# NEW 2026-07-04 rules: units/scale pinned + real-sample fixtures (applied above) and the live
+# render-vs-wire spot check at review prep (orchestrator duty — the stack is running).
 stories:
-  - id: STORY-015d
+  - id: STORY-015e
     points: 3
-    board: done            # done after 1 fix loop — awaiting PO verdict at review
+    board: todo            # todo | in-progress | blocked | review | done
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
     blocked_question: null
-    attempts: 2            # attempt 1 clean through reviewers; attempt 2 = focused scale fix.
-                           # FIX-LOOP CAUSE (retro input): percent-scale defect found by the
-                           # orchestrator at review prep demoing against the LIVE backend —
-                           # availability_pct/completeness_pct are 0-1 FRACTIONS on the wire
-                           # (live: 1.0 = 100%) but formatPct + bar width consumed percent-scale,
-                           # and the MSW fixtures encoded percent-scale (99.87), so 146 green
-                           # tests validated the wrong scale ('1.00%' rendered for fully-up).
-                           # ROOT CAUSE: the plan's "Verified API contracts" pinned types but NOT
-                           # scale/units, and its T4 example ('99.87%') implied percent-scale —
-                           # a planning-precision miss, not an implementer invention.
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 22 files / 125 tests passed (22.88s). npm run build: tsc -b && vite
-          build OK (built in 232ms). npm run lint: eslint . clean. Backend untouched: diff
-          9a42926..HEAD over backend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is
-          EMPTY — six-gate baseline (61d786a, sprint-31 close) holds."
-        commit: 400331f
-        at: 2026-07-03T19:32:00+05:30
-      - command: "npm test && npm run build && npm run lint (fix-loop re-run, orchestrator, clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 23 files / 146 tests passed (17.48s). build + lint clean. LIVE
-          post-fix verification (Playwright on the running stack): Availability tab renders
-          100.00% / 8.33% against real backend fractions 1.0 / 0.0833; expand reveals the
-          per-signal child (name + signal_key + values); aria-expanded semantics correct."
-        commit: ae53070
-        at: 2026-07-03T20:06:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC4 ALL MET; reviewer RAN the suite — 125/125 — and the 41
-        AC-relevant tests, read test bodies: selector test asserts the ACTUAL tz-aware since/until
-        MSW received incl. a genuinely-new refetch; null-pct asserts 'no data' + absence of 0%/NaN
-        at BOTH grains; expand reveals name+key+pct children; no coverage deleted — additions only)
-        / quality APPROVE (0 Critical, 0 Major; traced the refetch-identity chain
-        useMemo[preset]->useCallback[range]->useFetch[fetcher] — stable, no loop; cancelled-guard
-        covers the Promise.all fan-out so stale responses can't set state; useFetch genuinely
-        untouched, both existing call sites unchanged; formatPct single formatter; tokens-only,
-        bar aria-hidden with value always text; wiki update accurate, no overclaiming)."
-      fix: "Percent-scale fix loop (attempt 2, fresh Sonnet implementer, commits b827210 de119f5
-        eff33d3 ae53070): formatPct x100, bar width x100, ALL fixtures converted to true 0-1 wire
-        fractions with assertions rewritten (none deleted), plan.md contract annotated with the
-        scale, frontend-zone.md re-verified at eff33d3."
-      second_pass: "Focused Opus second-pass on the fix diff: PASS (ran the 146-test suite; read
-        test bodies — boundary asserts 0.998654->'99.87%', 1->'100.00%', 0->'0.00%',
-        null->'no data' genuine; no test blocks deleted; independent grep found NO remaining
-        percent-scale consumer; backend ground truth confirmed 0-1 ratio so the fix isn't
-        doubled; exactly two scale-sensitive call sites, shared helper correctly not warranted;
-        wiki/plan updates accurate, no overclaim). NOTE: the FIRST second-pass dispatch was
-        killed mid-run by an Opus session limit (resets 11:20pm IST) — fresh re-dispatch after
-        reset passed; second sprint running with this failure shape (retro input)."
-      open_minors:
-        - "Degenerate rollup renders literal '0/0 passing · 0 maint · 0 gap' next to 'no data' —
-          honest but slightly redundant zeros; taste-only (quality reviewer, no change needed)."
-      implementer_note: "Clean run, NO watchdog stall this sprint (contrast sprints 29/31) — the
-        article-by-article wiki-commit agreement was honored (wiki commit 7e4fc68 separate).
-        Design decisions: refetch via useCallback-fetcher identity (no useFetch contract change);
-        zero-signal rows get no dead-end expand control; per-signal names joined from topology
-        via signalNameByKey. Backlog candidates flagged: no live-clock window re-slide on a timer;
-        bar color doesn't vary by availability threshold (accent-only)."
-    blast_radius_resolved: true   # implementer updated frontend-zone.md (verified_sha c2e865c) as
-                                  # its own commit 7e4fc68; swept all other articles — none
-                                  # intersect frontend/; orchestrator will re-sweep at compile pass
-  - id: STORY-049
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
+  - id: STORY-015g
     points: 2
-    board: done            # awaiting PO verdict at review
-    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at this size)
+    board: todo
+    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate
     blocked_question: null
-    attempts: 1            # clean single dispatch — no stall, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 23 files / 146 tests passed (14.43s; +21 over 015d's 125). npm run
-          build: tsc -b && vite build OK (281ms). npm run lint: eslint . clean. Backend untouched:
-          diff 37439dc..HEAD over backend/ scripts/ pyproject.toml alembic.ini migrations/ config/
-          is EMPTY — six-gate baseline (61d786a, sprint-31 close) holds."
-        commit: 1b9ef7d
-        at: 2026-07-03T19:56:00+05:30
-    review: null           # 2 pts -> gate-only per the default pipeline; no reviewer pass required
-    implementer_note: "Clean run, no stall; wiki committed article-by-article (4e591dd, a06a85d)
-      per the 2026-07-03 agreement. Design: single button role=switch with aria-checked; warning
-      uses health-degraded (amber) token reserving red for real down-status; useSampleMode owns
-      load+mutate in one hook (no list to reconcile, unlike Approvals) with render-derived
-      enabled (override ?? loaded) after an effect-synced version showed a one-frame race.
-      sample-mode.md REMOVAL inventory extended with every frontend file/seam incl. the shared
-      putJson helper caveat. Backlog candidates: no distinct in-flight visual beyond disabled."
-    blast_radius_resolved: true   # frontend-zone.md + sample-mode.md updated, verified_sha 63886bc
-                                  # each its own commit; orchestrator re-sweeps at compile pass
+    dod_evidence: []
+    review: null
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
