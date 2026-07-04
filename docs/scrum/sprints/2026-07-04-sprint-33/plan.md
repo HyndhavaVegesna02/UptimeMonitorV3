@@ -104,7 +104,7 @@ step**, staging only touched files (never `git add -A`), branch verified `sprint
       `mocks/handlers/publications.ts` with fixtures derived from the backend's publications
       test fixtures (ComponentStatus values incl. a non-operational one; a `proposal_id: null`
       case), newest-first, composed into `index.ts`. Client unit test via MSW.
-- [ ] **T2 — Hook + page (AC1, AC2, AC3).** `features/publications/usePublications.ts` =
+- [x] **T2 — Hook + page (AC1, AC2, AC3).** `features/publications/usePublications.ts` =
       `useFetch(getPublications)` (module-scoped fetcher — plain read tab, no params).
       `pages/PublicationsPage.tsx`: changelog rows newest-first — `published_at` (mono),
       `component_id`, single `StatusBadge` via the EXISTING `toHealthStatus`, `proposal_id`
