@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: 80df0c2
+verified_sprint: sprint-36
 status: verified          # verified | stale | archived
 ---
 
@@ -67,6 +67,22 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `component_repo`, `decide_service`, `clock`) and passes them straight through, so the LIVE loop runs
   the pipeline after ingest (all-or-none guard preserved). `on_cycle`'s type widens to
   `IngestResult | tuple[IngestResult, DecideAction]` accordingly.
+- **Per-cycle failure resilience (STORY-050, dossier §8, log-only per PO decision):** `run_periodic`
+  now wraps the `run_cycle` call in `try/except Exception` (`pull_loop.py::run_periodic`) — a cycle
+  that raises (e.g. `GrailQueryError` from a network timeout, per the STORY-050 incident) no longer
+  crashes the process. The `except` catches `Exception`, deliberately NOT `BaseException`: in Python
+  3.13 `asyncio.CancelledError` (like `KeyboardInterrupt`/`SystemExit`) is a `BaseException` subclass,
+  so it is not swallowed and still propagates to stop the loop. Each `run_periodic` call owns ONE
+  in-memory `consecutive_failures` counter for its one signal: on a caught exception the counter
+  increments and `logger.exception` logs at ERROR with the signal_key, the cause, and the running
+  count (`"Cycle failed for signal_key=%r (consecutive_failures=%d): %s"`); a success resets the
+  counter to zero. `on_cycle` is skipped on a failed cycle (there is no result to hand it) — the
+  success path is otherwise unchanged. The post-cycle `stop_event` re-check (STORY-023) now runs
+  after a FAILED cycle too, so a stop requested mid-failure still takes effect without waiting one
+  more `interval_seconds`. The loop NEVER exits on cycle failures, however many happen in a row
+  (AC3 — an accepted trade-off: a persistent failure, e.g. a mis-rotated token, is visible only in
+  logs). Startup failures (`MissingLiveSecretError`, bad config) are unaffected: they run in
+  `composition/run.py::main` BEFORE any `run_periodic` call exists, so they still fail fast (AC2).
 
 ### The live driver — `build_live_loop` / `main` (`composition/run.py`, STORY-016 T5)
 - `build_live_loop(*, settings, secrets, config, engine, clock) -> list[Coroutine]`
@@ -109,7 +125,16 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - `backend/tests/test_pull_loop.py` covers AC5: plain-asyncio (AST-asserts no `apscheduler` import),
   no-domain-logic pass-through, one-cycle-per-tick + stoppable; plus STORY-016 the orchestration-
   threading path (`run_periodic` with all six extras yields a `(IngestResult, DecideAction)` tuple to
-  `on_cycle`).
+  `on_cycle`). STORY-050 adds: a fake executor that fails once then succeeds proves the SECOND
+  cycle's ingest still ran and the failure is logged at ERROR with the signal_key (AC1); a scripted
+  fail/fail/succeed/fail sequence proves the per-signal consecutive-failure count logged is
+  1, 2, (reset), 1 and all four cycles run — the loop never exits on failure (AC3); a dedicated
+  cancellation test proves `asyncio.CancelledError` still stops the loop (it is a `BaseException`,
+  not caught by the new `except Exception`); a dedicated stop_event test proves a stop requested
+  during a FAILING cycle still takes effect immediately (extends STORY-023 to the failure path).
+  `backend/tests/test_run_live_loop.py` adds `test_main_fails_fast_on_missing_secrets_before_any_loop_starts`,
+  pinning AC2: a `MissingLiveSecretError` from `load_live_secrets()` still terminates `main()` before
+  `sa.create_engine`, `seed_topology`, or `build_live_loop` ever run.
 - `backend/tests/test_run_live_loop.py` (STORY-016, rewritten by STORY-045 per the 2026-06-29
   contract-change agreement) builds the REAL chain via `build_live_loop` (only `run_periodic`
   patched) and asserts the `StatusWriteback→BestEffort→Recording→Statuspage` nesting + the six
@@ -162,3 +187,10 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `SampleModeIngest→IngestService` nesting; `IngestService`, `pull_loop.py`, and the pre-existing
   BEHAVIOR tests (`test_ingest_service.py`, `test_pull_loop.py`) are UNCHANGED and pass unmodified.
   verified_sha → 0ea652e.
+- sprint-36 (STORY-050, defect): `run_periodic` now catches `Exception` (not `BaseException`) around
+  each `run_cycle` call, logs a failure at ERROR with the signal_key + cause + a per-signal
+  consecutive-failure count, skips `on_cycle` on failure, resets the counter on success, and NEVER
+  exits on cycle failures (LOG-ONLY per PO decision) — the loop rides out the transient Grail/network
+  errors that used to crash the whole process. `on_cycle`'s type and `run_cycle` itself are
+  UNCHANGED. `test_run_live_loop.py` gains one test pinning that AC2's startup fail-fast (missing
+  secrets) is untouched by this change. verified_sha → 80df0c2.
