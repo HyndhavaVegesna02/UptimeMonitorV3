@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 6a33edb
+verified_sha: d441468
 verified_sprint: sprint-36
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -130,3 +130,8 @@ status: verified
   process entrypoints — see [[dev-setup-and-dod]] and [[ingest-service-and-pull-loop]]) — no
   contract definition, zone-tree, or FK-check change. 5 contracts kept / 0 broken, FK 11/0
   unchanged. verified_sha → 6a33edb.
+- sprint-36 (STORY-047, re-verify only): `composition/__init__.py` lost its
+  `publish_best_effort` re-export (AC2 folded the free function into
+  `BestEffortPublisher` — see [[statuspage-publish]]) — still a plain package
+  `__init__.py`, no zone/contract change. 5 contracts kept / 0 broken, FK
+  11/0 unchanged. verified_sha → d441468.
