@@ -1,7 +1,7 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 35f7f0e
+verified_sha: d7fdd49
 verified_sprint: sprint-35
 status: verified
 ---
@@ -87,6 +87,7 @@ status: verified
   tweak later (see STORY-003 History).
 
 ## History
+- sprint-35 (STORY-017 review-minors fix): re-verified — `settings.py` docstring-only change (the '*' passthrough qualification). No Facts changed. verified_sha = d7fdd49.
 - sprint-35 (STORY-017, mechanical staleness sweep): re-verified — `composition/settings.py` gained the ADDITIVE `load_cors_allowed_origins()` + CORS env-var constants (STORY-017 AC2); the two-URL split facts this article pins are untouched. No content change. verified_sha = 35f7f0e. (Sweep completed by the orchestrator after the implementer hit its session limit mid-pass.)
 - sprint-0: created (STORY-003 Alembic + two-connection setup).
 - sprint-2: updated (STORY-006 spine schema migration) — baseline Fact corrected (no longer
