@@ -60,11 +60,11 @@ AC5 fixes BOTH docs: CLAUDE.md's two claims AND the `dev-setup-and-dod.md` wiki 
 (verified_sha bumped) — this is that story's OWN wiki blast radius, not the sweep's.
 
 ### Tasks
-- [ ] 1. Failing test: temp `.env` + scrubbed env → entrypoint loader resolves secrets;
+- [x] 1. Failing test: temp `.env` + scrubbed env → entrypoint loader resolves secrets;
       exported-var precedence test.
-- [ ] 2. `python-dotenv` to runtime deps; entrypoint `load_dotenv(...)` calls; green.
-- [ ] 3. AC5 doc fixes (CLAUDE.md same commit) + wiki `dev-setup-and-dod.md` update.
-- [ ] 4. Six-gate DoD + sweep (pyproject.toml will re-flag the shared articles).
+- [x] 2. `python-dotenv` to runtime deps; entrypoint `load_dotenv(...)` calls; green.
+- [x] 3. AC5 doc fixes (CLAUDE.md same commit) + wiki `dev-setup-and-dod.md` update.
+- [x] 4. Six-gate DoD + sweep (pyproject.toml will re-flag the shared articles).
 
 ## STORY-047 — quality-review minors (chore, 1 pt, gate-only, DROPPABLE)
 
