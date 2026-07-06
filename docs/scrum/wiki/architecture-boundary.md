@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: 6a33edb
+verified_sprint: sprint-36
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -125,3 +125,8 @@ status: verified
   dedicated, no-FK, single-row `sample_mode` table — the FK-direction check's SPINE allowlist and
   violation count are unaffected. 5 contracts kept / 0 broken, FK 11/0 unchanged. verified_sha →
   0ea652e.
+- sprint-36 (STORY-043, mechanical staleness sweep only): the only `pyproject.toml` edit was
+  adding `python-dotenv` to `[project.dependencies]` (a `.env`-loading defect fix at the two
+  process entrypoints — see [[dev-setup-and-dod]] and [[ingest-service-and-pull-loop]]) — no
+  contract definition, zone-tree, or FK-check change. 5 contracts kept / 0 broken, FK 11/0
+  unchanged. verified_sha → 6a33edb.
