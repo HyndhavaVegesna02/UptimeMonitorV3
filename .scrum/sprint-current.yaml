@@ -82,17 +82,33 @@ stories:
                                   # follow-up test commit is additive to an already-swept file
   - id: STORY-043
     points: 2
-    board: in-progress   # implementer dispatched (after 050 resolved — sequential, shared files)
+    board: done            # awaiting PO verdict at review
     pipeline: gate             # 2 pts -> gate-only
     blocked_question: null
-    attempts: 0
+    attempts: 1            # clean single dispatch (6a33edb..0a8b36b), no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # pyproject.toml (dotenv dep) + CLAUDE.md + the
-                                   # dev-setup-and-dod wiki false-claim fix (its AC5)
+    dod_evidence:
+      - command: "pytest (isolated throwaway DB, PO stack untouched) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check (orchestrator-run on clean committed HEAD)"
+        exit_code: 0
+        output_tail: "508 passed (+4 over 050''s 504); Contracts 5 kept / 0 broken; FK 11/0;
+          alembic OK; ruff both clean. Frontend untouched (empty diff main...HEAD)."
+        commit: 0a8b36b
+        at: 2026-07-06T17:35:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline
+    implementer_note: "load_dotenv() at the two entrypoints only (bare call — python-dotenv
+      walks up from the calling file, CWD-independent, documented at call sites); exported
+      vars always win (AC3 test); ordering test proves main() loads dotenv BEFORE
+      settings/secrets; asgi mirror test handles the importlib.reload patch subtlety.
+      CREDENTIAL-SAFETY catch: pre-existing entrypoint tests would have loaded the REAL
+      repo .env after this change — all four patched to stay hermetic. CLAUDE.md''s two
+      false claims + dev-setup-and-dod.md Fact corrected (AC5)."
+    blast_radius_resolved: true   # sweep: 6 articles — dev-setup-and-dod (AC5 fix, f66ecb0),
+                                  # ingest-service-and-pull-loop (real Fact update, e60cc64),
+                                  # 4 re-verifies (architecture-boundary, api-five-file-
+                                  # convention, config-layer, statuspage-publish + sample-mode)
   - id: STORY-047
     points: 1
-    board: todo
+    board: in-progress   # implementer dispatched — the over-commit did NOT bite; story runs
     pipeline: gate             # 1 pt -> gate-only; DROPS FIRST if the 6/5 over-commit bites
     blocked_question: null
     attempts: 0
