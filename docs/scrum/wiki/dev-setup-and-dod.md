@@ -1,19 +1,22 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: f0301c4
+verified_sprint: sprint-35
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx (`pyproject.toml` —
-  `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config loader, httpx
-  promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP executors).
-  Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
-  `[project.optional-dependencies] dev`; `uvicorn` added sprint-28 STORY-042 as the local ASGI dev
-  server — see "Run the app locally" below).
+  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx, uvicorn[standard]
+  (`pyproject.toml` — `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the
+  config loader, httpx promoted to a runtime dep sprint-20 STORY-016 for the Grail +
+  Statuspage HTTP executors, `uvicorn[standard]` promoted to a runtime dep sprint-35
+  STORY-017 D1 — it IS the production ASGI server the deployed Railway `api` service's
+  start command invokes, not a dev-only convenience — see [[deployment-topology]]).
+  Dev extras: pytest, import-linter, ruff (`pyproject.toml` —
+  `[project.optional-dependencies] dev`; `uvicorn` lived here from sprint-28 STORY-042 until
+  its sprint-35 promotion above).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
@@ -49,7 +52,8 @@ status: verified
   Full local stack (CLAUDE.md "Run the app locally"): `dev_db.py up` → export `DATABASE_URL` → the
   uvicorn command → a 2nd terminal running the live loop `python -m src.composition.run` (populates
   proposals/observations/publications) → `npm run dev`. Two processes share one `DATABASE_URL`; no CORS
-  locally (same-origin via the proxy — real CORS is STORY-017). Before STORY-042 the API had only ever
+  locally (same-origin via the proxy — real CORS is only enforced in the deployed topology, live as of
+  sprint-35 STORY-017 — see [[deployment-topology]]). Before STORY-042 the API had only ever
   run in-process via `TestClient` (no ASGI server, no module-level app).
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
@@ -146,3 +150,11 @@ status: verified
   `api-feature-independence` import-linter contract's module list (see [[architecture-boundary]]) —
   unrelated to the six backend / three frontend DoD commands or the dependency lists this article
   describes. Still six backend + three frontend commands, all green. verified_sha → 0ea652e.
+- sprint-35: updated (STORY-017). `uvicorn[standard]` moved from the `dev` extras to runtime
+  `[project.dependencies]` (D1 — it is the production ASGI server, not a dev-only tool; Facts
+  above updated). CLAUDE.md gained a "Deployed topology" section (same commit as the config it
+  documents) and one sentence in "Run the app locally" was reworded (CORS is now enforced in the
+  deployed topology, not merely "deferred to STORY-017") — see [[deployment-topology]]. Still six
+  backend + three frontend commands, all green (five non-pytest backend gates run directly in this
+  session; pytest deferred to an orchestrator run against a stopped stack — see
+  [[deployment-topology]]'s History). No DoD command or gate count changed. verified_sha → f0301c4.
