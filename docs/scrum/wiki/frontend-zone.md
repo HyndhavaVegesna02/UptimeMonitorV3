@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx]
-verified_sha: b7811cf
-verified_sprint: sprint-33
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
+verified_sha: b9f65f9
+verified_sprint: sprint-34
 status: verified
 ---
 
@@ -32,9 +32,9 @@ status: verified
   tabs as routed `NavLink` anchors (native anchor semantics, not an ARIA tablist) — active tab =
   ink text + accent bottom-border, inactive = ink-subtle. A trailing catch-all `<Route path="*">`
   renders `pages/NotFoundPage.tsx` (Panel + EmptyState + a link back to Dashboard) for unknown
-  paths (STORY-041). The one remaining not-yet-built page (Maintenance) is a placeholder;
-  **Dashboard, Approvals, Availability, Check History, and Publications are the five real tabs so
-  far** (STORY-015b, 015c, 015d, 015e, 015g).
+  paths (STORY-041). **All six tabs are now real — Dashboard, Availability, Approvals, Check
+  History, Maintenance, and Publications** (STORY-015b, 015c, 015d, 015e, 015f, 015g); there is no
+  remaining placeholder page.
 - **Theme system (dark + light):** `frontend/src/theme/resolveTheme.ts` resolves the active
   theme (localStorage override → else `prefers-color-scheme`). An inline pre-paint script in
   `frontend/index.html` applies it before first paint (no flash), mirroring `resolveTheme.ts`.
@@ -58,7 +58,14 @@ status: verified
   their response through a shared `readOkJson(response, path)` that gives ONE uniform error
   contract (STORY-015c): EVERY failure is a typed `ApiError` — network rejection (no status),
   non-2xx (`.status` carried), and a malformed-body `SyntaxError` on a 2xx (with status). The
-  readable `.status` is what lets a mutating tab branch on 404/409. A third helper, `putJson`
+  readable `.status` is what lets a mutating tab branch on 404/409. `ApiError` also carries an
+  optional `.detail` (STORY-015f AC3) — a best-effort, `.clone()`-based parse of a non-2xx body's
+  `{"detail": "..."}` string (FastAPI's shape for a manually-raised `HTTPException`, e.g.
+  `maintenance/service.py`'s 422s); `undefined` for network failures, malformed bodies, or a body
+  without a string `detail`. This is what lets the Maintenance tab map a 422's message onto the
+  specific field it names (`features/maintenance/fieldError.ts::fieldErrorFromDetail`) without
+  every caller re-parsing the response body itself — purely additive to the existing `ApiError`
+  shape, so no prior `.status`-only assertion broke. A third helper, `putJson`
   (STORY-049), mirrors `postJson` for PUT bodies, funneling through the same `readOkJson`. Endpoint
   fns: `getComponents`, `getApprovals`, `postDecision(proposalId, body)`, `getTopology`,
   `getComponentAvailability(componentId, { since, until })` (STORY-015d — query-string encodes
@@ -68,13 +75,16 @@ status: verified
   AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
   same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
   thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
-  requests), and `getPublications()` (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
+  requests), `getPublications()` (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
   params; the endpoint itself caps at the repository's most-recent 50 server-side, so unlike
-  `/history` there is no client-side render cap to add). DTO types in `frontend/src/api/types.ts`
+  `/history` there is no client-side render cap to add), and `getMaintenance()`/`postMaintenance(body)`
+  (STORY-036/STORY-015f AC1, AC2 — `GET`/`POST /api/v1/maintenance`; `postMaintenance` funnels
+  through `postJson`, not `putJson`, so the sample-mode REMOVAL recipe's "no other endpoint has
+  adopted `putJson`" caveat still holds). DTO types in `frontend/src/api/types.ts`
   (`ComponentDTO`,
   `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
   `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`,
-  `ObservationDTO`, `PublicationDTO`) mirror
+  `ObservationDTO`, `PublicationDTO`, `MaintenanceWindowDTO`, `CreateMaintenanceRequest`) mirror
   the backend `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability
   result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
   response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
@@ -191,6 +201,28 @@ status: verified
     checkbox) carries the control; the widget renders nothing until the load's `state.phase`
     leaves `'loading'`, and falls back to the shell `ErrorState` + `retry` on a load failure,
     mirroring the read pattern above it. See `pages/DashboardPage.tsx` (`SampleModeToggle`).
+  - **A second mutating tab, list + create form (Maintenance, STORY-015f):** unlike Approvals'
+    split (a read `useFetch` hook plus page-local mutation state), `features/maintenance/
+    useMaintenance.ts` owns BOTH the list load (`useFetch(getMaintenance)`) and the create
+    mutation (`schedule`, POSTing and calling the list's own `retry()` on success to reconcile
+    with the server) in one hook — the `useSampleMode` "load+mutate in one hook" shape, adapted
+    for a GROWING LIST rather than a single flag: success reconciles via `retry()` instead of a
+    locally-held override value. `schedule` resolves to a `boolean` (not `void`, unlike
+    `useSampleMode.setEnabled`) specifically so the form can reset its own fields exactly once on
+    success without racing the hook's async state update. The wire has NO `state` field for a
+    window; `features/maintenance/windowState.ts::deriveWindowState(startsAt, endsAt, now)` derives
+    upcoming/active/past CLIENT-SIDE per the backend's half-open rule (active iff
+    `starts_at <= now < ends_at`; both boundary instants unit-tested), rendered via a small
+    page-local `WindowStateBadge` — deliberately NOT the shared `StatusBadge`/`HealthStatus`
+    vocabulary, since a window's scheduling state is a different concept from component health
+    (the same separation-of-vocabularies reasoning `observationHealth.ts` documents). The schedule
+    form's component options come from the EXISTING `useComponents()` (no new fetch shape); its
+    two `datetime-local` inputs convert to tz-aware ISO via `new Date(value).toISOString()` before
+    POSTing. A 422's `ApiError.detail` is mapped by `features/maintenance/fieldError.ts::
+    fieldErrorFromDetail` (substring match on the backend's real validation wording) onto the
+    specific field it names and rendered INLINE next to that field (`role="alert"`) rather than as
+    a toast/console-only failure — an unmatched detail falls back to a general form-level alert.
+    See `pages/MaintenancePage.tsx`.
   - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
     `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
     `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
@@ -309,3 +341,20 @@ status: verified
   green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
   change). `code_refs` += mocks/handlers/publications.ts, features/publications/usePublications.ts,
   pages/PublicationsPage.tsx. verified_sha = b7811cf.
+- sprint-34: updated for STORY-015f (the Maintenance tab — the second MUTATING tab, on the
+  STORY-036 `GET`/`POST /api/v1/maintenance` endpoints; all six tabs are now real, no placeholder
+  page remains). Landed `MaintenanceWindowDTO`/`CreateMaintenanceRequest` in `api/types.ts`;
+  `getMaintenance`/`postMaintenance` on the client (funneled through `postJson`, not `putJson`);
+  a new optional `ApiError.detail` (a best-effort parse of a non-2xx `{"detail": ...}` body, purely
+  additive to the existing `.status`-only contract); `mocks/handlers/maintenance.ts` (fixtures
+  derived from the sprint-34 plan's pinned live wire sample, plus a `reason: null` window for the
+  em-dash case); `features/maintenance/windowState.ts::deriveWindowState` (the half-open
+  upcoming/active/past derivation, both boundary instants unit-pinned); `features/maintenance/
+  fieldError.ts::fieldErrorFromDetail` (422 detail message -> form field mapping); `features/
+  maintenance/useMaintenance.ts` (the "load+mutate in one hook" shape documented above); and
+  `pages/MaintenancePage.tsx` (windows list with a page-local `WindowStateBadge` + a schedule form
+  reusing `useComponents()` for its component options, full loading/empty/error+retry coverage,
+  and AC3's inline 422 field-error rendering). Sonnet-5-implementer TDD pass, one commit per green
+  step; frontend-only; six backend gates untouched-green (empty diff — no backend source change).
+  `code_refs` += mocks/handlers/maintenance.ts, features/maintenance/{windowState,fieldError,
+  useMaintenance}.ts, pages/MaintenancePage.tsx. verified_sha = b9f65f9.
