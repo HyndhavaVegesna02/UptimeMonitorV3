@@ -267,7 +267,7 @@ stories:
   - id: STORY-043
     title: Defect — the live loop (and asgi app) never load the .env file; docs claim they do
     file: docs/scrum/stories/STORY-043-live-loop-dotenv-not-loaded.md
-    status: ready   # filed from STORY-042 AC5 check (2026-07-02); AC5 extended by the audit to the wiki echo (dev-setup-and-dod). Open question pinned at sprint-36 planning: python-dotenv = RUNTIME dep (same D1 pattern as sprint-35's uvicorn move)
+    status: done    # accepted at Sprint 36 review (2026-07-06) — .env recipe true at last; exported vars win; docs corrected
     points: 2
     priority: 19
     type: defect
@@ -284,7 +284,7 @@ stories:
   - id: STORY-047
     title: Chore — quality-review minors (STORY-045 publisher wiring + STORY-044 availability DTO)
     file: docs/scrum/stories/STORY-047-publisher-wiring-minors.md
-    status: ready   # filed at Sprint 29 review; Sprint 30 review folded in STORY-044's two minors (2026-07-03)
+    status: done    # accepted at Sprint 36 review (2026-07-06) — all 5 minors applied incl. the write-back fallback fix
     points: 1
     priority: 23
     type: chore
@@ -341,7 +341,7 @@ stories:
   - id: STORY-050
     title: Defect — a single transient Grail/network error crashes the whole live loop
     file: docs/scrum/stories/STORY-050-live-loop-transient-error-resilience.md
-    status: ready   # refined 2026-07-06 (sprint-36 planning): PO decisions — AC3 log-only never-crash; catch-all per-cycle taxonomy, startup fail-fast untouched
+    status: done    # accepted at Sprint 36 review (2026-07-06) — spec PASS / quality 0C-0M ('exemplary'); log-only per PO decision
     points: 3
     priority: 19
     type: defect

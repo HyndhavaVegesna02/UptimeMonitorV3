@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 36
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-07-06    # PO verdict: accept all three (050+043+047), 6/6 pts.
 started: 2026-07-06
 goal: "Production-hardening: the live loop survives transient vendor/network errors
   (STORY-050), the documented .env-based startup actually works (STORY-043), and the
