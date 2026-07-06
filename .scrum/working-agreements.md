@@ -463,6 +463,19 @@
   mid-sprint to the real residual: the ordering 422's raw Pydantic `detail` blob + missing
   inline mapping.)
 
+- 2026-07-06 — **A story adding side effects to a process entrypoint audits every existing
+  test that drives that entrypoint, in the same story.** When a change makes an entrypoint
+  (`run.py::main`, `asgi.py` module scope, a CLI main) do something NEW at startup — file
+  loads, env mutation, network calls, seeding — the implementer brief must require
+  enumerating the existing tests that exercise that entrypoint and proving each stays
+  hermetic (patched or isolated), with the audit stated in the implementer's report.
+  (Motivated by Sprint 36, STORY-043: adding a bare `load_dotenv()` to both entrypoints
+  meant four PRE-EXISTING entrypoint tests would silently have loaded the real gitignored
+  repo-root `.env` — live Dynatrace/Statuspage secrets — into the test process
+  environment. The implementer caught and patched all four on its own diligence; nothing
+  in the standing process required that audit, so the catch was luck-shaped. This makes
+  it a rule.)
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
