@@ -78,25 +78,25 @@ rule):
 
 ### Task breakdown (TDD, commit after every green step)
 
-- [ ] 1. `mocks/handlers/maintenance.ts` — GET/POST handlers + fixtures derived from the
+- [x] 1. `mocks/handlers/maintenance.ts` — GET/POST handlers + fixtures derived from the
       wire sample above; register in `handlers/index.ts` (additive spread, mirroring
       peers).
-- [ ] 2. `api/types.ts::MaintenanceWindowDTO` + `api/client.ts::getMaintenance` /
+- [x] 2. `api/types.ts::MaintenanceWindowDTO` + `api/client.ts::getMaintenance` /
       `postMaintenance` (reuse `putJson`-style helper conventions; error-wrapping per
       STORY-041) — client tests: happy path + ApiError wrap + the POST body shape.
-- [ ] 3. `features/maintenance/windowState.ts` — pure derivation (upcoming/active/past),
+- [x] 3. `features/maintenance/windowState.ts` — pure derivation (upcoming/active/past),
       unit tests including BOTH boundary instants (`now === starts_at` → active;
       `now === ends_at` → past) per the half-open rule and the non-aligned-boundary
       agreement.
-- [ ] 4. `features/maintenance/useMaintenance.ts` — list via shared `useFetch`; create
+- [x] 4. `features/maintenance/useMaintenance.ts` — list via shared `useFetch`; create
       mutation with in-flight flag + refresh-on-success (015c Approvals precedent);
       mutation error kept for inline rendering; tests via MSW.
-- [ ] 5. `pages/MaintenancePage.tsx` (+ `.css`) — windows list (component, start/end in
+- [x] 5. `pages/MaintenancePage.tsx` (+ `.css`) — windows list (component, start/end in
       mono, reason, state badge via tokens-only dot+label) + schedule form (labeled
       inputs, text-input spec, focus ring, keyboard operable); replace the placeholder.
-- [ ] 6. AC3 test: MSW 422 (naive datetime / empty component_id shapes as FastAPI emits
+- [x] 6. AC3 test: MSW 422 (naive datetime / empty component_id shapes as FastAPI emits
       them) → error renders INLINE on the relevant field(s), not toast/console-only.
-- [ ] 7. Loading / empty ("No maintenance scheduled") / error+retry states — tested (AC4).
+- [x] 7. Loading / empty ("No maintenance scheduled") / error+retry states — tested (AC4).
 - [ ] 8. Wiki blast radius: run the mechanical sweep; expected minimum `frontend-zone.md`
       (+ whatever the sweep flags); commit article-by-article.
 - [ ] 9. Frontend DoD gate on the clean committed tree: `npm test`, `npm run build`,
