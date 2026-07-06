@@ -12,6 +12,7 @@ import logging
 from collections.abc import Coroutine
 
 import sqlalchemy as sa
+from dotenv import load_dotenv
 
 from src.adapters.inbound.dynatrace.grail_executor import make_grail_executor
 from src.adapters.persistence.component_repository import PostgresComponentRepository
@@ -135,14 +136,28 @@ def build_live_loop(
 
 
 async def main() -> None:
-    """Live loop execution entrypoint (dossier §17).
+    """Live loop execution entrypoint (dossier §17, STORY-043).
 
-    Loads settings, secrets, config, seeds the database topology, gathers and
-    runs the asyncio loops, and ensures database engine disposal.
+    Loads a repo-root ``.env`` (see the ``load_dotenv()`` call below), then
+    settings, secrets, config; seeds the database topology; gathers and runs
+    the asyncio loops; and ensures database engine disposal.
     """
     logging.basicConfig(level=logging.INFO)
 
     from src.adapters.system_clock import SystemClock
+
+    # STORY-043: load a repo-root `.env` BEFORE reading settings/secrets, so
+    # the documented local recipe ("Run the app locally", CLAUDE.md) — which
+    # runs this entrypoint from the repo root — can supply
+    # DYNATRACE_*/STATUSPAGE_*/DATABASE_URL from a gitignored `.env` file
+    # instead of requiring them to be exported into the shell first. No
+    # explicit path is passed: `load_dotenv()`'s default discovery walks
+    # upward from THIS file's own location (not the process CWD) to find the
+    # repo-root `.env` — the assumption is that the repo layout on disk is
+    # intact (not that CWD is any particular directory). Default
+    # `override=False` semantics mean an already-exported var always wins
+    # (AC3), so production (Railway, no `.env` file present) is unaffected.
+    load_dotenv()
 
     settings = load_settings()
     secrets = load_live_secrets()

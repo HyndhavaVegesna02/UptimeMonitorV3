@@ -15,6 +15,7 @@ dependencies = [
     "psycopg[binary]",
     "pyyaml",
     "httpx",
+    "python-dotenv",
 ]
 
 [project.optional-dependencies]

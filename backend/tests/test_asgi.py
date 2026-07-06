@@ -14,6 +14,7 @@ only inside a test body, after the `migrated_db` fixture has set
 """
 
 import importlib
+from unittest.mock import patch
 
 import psycopg
 import pytest
@@ -64,12 +65,16 @@ def test_asgi_module_exposes_app(migrated_db, clean_topology, monkeypatch):
 
     Imported INSIDE the test body (never at module top) so the real-engine
     build only happens once `migrated_db` has set DATABASE_URL — see the
-    import-time caveat in the module docstring above.
+    import-time caveat in the module docstring above. `dotenv.load_dotenv` is
+    patched to a no-op for the reload (STORY-043): the module now calls it at
+    import time, and this test must NEVER touch the real repo-root `.env`
+    (credential safety) — DATABASE_URL here comes from `monkeypatch` only.
     """
     monkeypatch.setenv("DATABASE_URL", migrated_db.database_url)
 
-    asgi = importlib.import_module("src.composition.asgi")
-    importlib.reload(asgi)  # in case a prior test in the process imported it
+    with patch("dotenv.load_dotenv"):
+        asgi = importlib.import_module("src.composition.asgi")
+        importlib.reload(asgi)  # in case a prior test in the process imported it
 
     from fastapi import FastAPI
 
@@ -78,3 +83,47 @@ def test_asgi_module_exposes_app(migrated_db, clean_topology, monkeypatch):
     with TestClient(asgi.app) as client:
         response = client.get("/api/v1/components")
         assert response.status_code == 200
+
+
+def test_asgi_module_loads_dotenv_before_create_app(
+    migrated_db, clean_topology, monkeypatch
+):
+    """AC2 (STORY-043): importing `src.composition.asgi` loads a repo-root
+    `.env` (via `dotenv.load_dotenv`) BEFORE `create_app()` builds the engine
+    / reads settings, so DATABASE_URL can come from `.env` too. Patches the
+    `dotenv` entrypoint AND `create_app` globally (asgi.py re-imports both
+    names on `importlib.reload`, so patching the SOURCE modules, not the
+    already-reloaded `asgi` module's names, is what survives the reload) so
+    this test proves call ORDER without ever touching the real repo-root
+    `.env` (credential safety).
+    """
+    monkeypatch.setenv("DATABASE_URL", migrated_db.database_url)
+
+    real_create_app = create_app
+    call_order = []
+
+    def _tracking_create_app(*args, **kwargs):
+        call_order.append("create_app")
+        return real_create_app(*args, **kwargs)
+
+    with (
+        patch(
+            "dotenv.load_dotenv",
+            side_effect=lambda *a, **k: call_order.append("load_dotenv"),
+        ) as mock_load_dotenv,
+        patch("src.composition.app.create_app", side_effect=_tracking_create_app),
+    ):
+        asgi = importlib.import_module("src.composition.asgi")
+        importlib.reload(asgi)
+
+    mock_load_dotenv.assert_called_once_with()
+    assert call_order == ["load_dotenv", "create_app"]
+
+    from fastapi import FastAPI
+
+    assert isinstance(asgi.app, FastAPI)
+
+    # Leave the module in a clean (unpatched) state for any test that runs
+    # after this one and relies on `asgi.app`/`asgi.create_app` being real.
+    with patch("dotenv.load_dotenv"):
+        importlib.reload(asgi)
