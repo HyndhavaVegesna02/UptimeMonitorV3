@@ -1,7 +1,7 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: 1257cc9
+verified_sha: e86493f
 verified_sprint: sprint-33
 status: verified          # verified | stale | archived
 ---
@@ -294,6 +294,19 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-34 (STORY-015f, unrelated story — mechanical staleness sweep only): the same three
+  `code_refs` (`frontend/src/api/types.ts`, `frontend/src/api/client.ts`,
+  `frontend/src/mocks/handlers/index.ts`) changed again, but ONLY additively — STORY-015f (the
+  Maintenance tab) added its own `MaintenanceWindowDTO`/`CreateMaintenanceRequest`,
+  `getMaintenance`/`postMaintenance`, and `maintenanceHandlers` import/spread alongside the
+  existing sample-mode content in those same shared files. `client.ts` also gained an optional
+  `ApiError.detail` field (populated from any non-2xx `{"detail": ...}` body, not just
+  sample-mode's) — purely additive to the `ApiError` shape, does not touch `getSampleMode`/
+  `putSampleMode`/`putJson` themselves. Re-checked the REMOVAL recipe above line-by-line: it still
+  names exact sample-mode-only lines/blocks in each file, none of which moved or were touched by
+  STORY-015f; `putJson` is still adopted by no other endpoint (STORY-015f's `postMaintenance` uses
+  `postJson`), so that removal caveat remains accurate too. No Facts changed. verified_sha =
+  e86493f.
 - 2026-07-06 (debug sprint, no story — `docs/scrum/sprints/2026-07-06-debug-sample-mode/
   report.md`): added the "Operational gotchas" section after a PO report ("sample mode ON
   but Check History shows up") was root-caused as environmental, not a code defect. The
