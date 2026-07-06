@@ -1,7 +1,7 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: 6a33edb
+verified_sha: d441468
 verified_sprint: sprint-36
 status: verified          # verified | stale | archived
 ---
@@ -61,7 +61,9 @@ below for the mechanical deletion recipe.
   no ORM model). `is_enabled` is a plain `SELECT` on `sa.Engine.connect`
   (read-only); `set_enabled` is the upsert on `sa.Engine.begin`.
 - `FakeSampleModeRepository` (`backend/tests/fakes.py`) accepts an optional
-  `store: dict | None = None` constructor arg — the ONE fake in this codebase
+  `store: dict[str, bool] | None = None` constructor arg (parametrized
+  STORY-047 AC5, matching the peer fakes' style — the store actually holds
+  `{"enabled": bool}`) — the ONE fake in this codebase
   that supports a SHARED backing store across instances, needed to prove
   "persistence across a fresh repository instance" (mirroring what a fresh
   `PostgresSampleModeRepository(engine)` on the SAME engine proves for real)
@@ -294,6 +296,14 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-36 (STORY-047, quality-review minors chore): AC5 parametrized
+  `FakeSampleModeRepository`'s store hint from bare `dict` to `dict[str,
+  bool]` (Fact updated above) — cosmetic, no behavior change. This article's
+  `code_refs` also include `backend/src/composition/app.py`, which changed
+  for AC1 (the injected-fakes publisher-wiring fix, unrelated to
+  `sample_mode_repo` wiring — see [[api-five-file-convention]] and
+  [[statuspage-publish]]); the `sample_mode_repo` param/wiring Facts above
+  are untouched. No other Facts changed. verified_sha = d441468.
 - sprint-36 (STORY-043, unrelated story — mechanical staleness sweep only): this article's
   `code_refs` include `backend/src/composition/run.py` and `pyproject.toml`. `run.py` gained ONE
   unrelated line — a `load_dotenv()` call at the top of `main()`, before
