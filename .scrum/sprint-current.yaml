@@ -39,10 +39,19 @@ start_tag: sprint-35-start
 stories:
   - id: STORY-017
     points: 5
-    board: in-progress   # code side COMPLETE (reviews passed, gates green); live tail (tasks
-                         # 8-10: PO console deploy + AC3/AC4) is the remaining work
+    board: blocked       # PAUSED at PO request 2026-07-06 ("stop this deploying sprint here,
+                         # resume later"). Code side COMPLETE: reviews first-pass clean, all
+                         # nine gates green @ d7fdd49, wiki sweep ALL CURRENT, review minors
+                         # 1+3 fixed. RESUME POINT = the live tail (plan tasks 8-10), which
+                         # starts at Step 0: no git remote exists — PO creates a private
+                         # GitHub repo, orchestrator pushes main + sprint-35, then the PO
+                         # walks docs/DEPLOY.md Parts A/B against the SPRINT-35 branch
+                         # (merge to main only after the review verdict), then AC3 fail-safe
+                         # demo + AC4 live verification close the story.
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gates
-    blocked_question: null
+    blocked_question: "Step 0 of the live tail: create the private GitHub repo (empty — no
+      README/.gitignore) and provide its URL so the branches can be pushed; then execute
+      docs/DEPLOY.md Parts A/B in the Railway/Vercel consoles (deploy branch: sprint-35)."
     attempts: 1            # implementer hit its session limit mid-wiki-sweep after tasks 1-6
                            # committed clean; orchestrator completed the trivial sweep tail
                            # under the 2026-06-25 rule (no re-dispatch needed)
