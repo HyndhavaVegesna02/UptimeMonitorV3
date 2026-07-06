@@ -1,7 +1,7 @@
 ---
 title: Deployment topology — Railway (api + worker) + Vercel, config-as-code + CORS
 code_refs: [pyproject.toml, railway.toml, frontend/vercel.json, docs/DEPLOY.md, backend/src/composition/app.py, backend/src/composition/settings.py]
-verified_sha: 1727c49
+verified_sha: 0ae56a2
 verified_sprint: sprint-35
 status: verified
 ---
@@ -140,6 +140,7 @@ status: verified
   rejection on a live deploy.
 
 ## History
+- sprint-35 (STORY-017 review-minors fix): re-verified at HEAD — DEPLOY.md gained the trailing-slash CORS warning (review MINOR-3); also clears the spec reviewer's note that verified_sha (1727c49) trailed HEAD. No Facts changed. verified_sha = 0ae56a2.
 - sprint-35 (STORY-017): created. D1 (`uvicorn[standard]` → runtime deps),
   AC2 (composition-layer CORS, env-driven allowlist, test-first), AC1/AC3
   (`railway.toml`, the `api`-service-only config-as-code file), AC1/D2
