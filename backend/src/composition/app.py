@@ -55,9 +55,17 @@ def create_app(
     explicit chain (e.g. one built from fakes) to control exactly what the
     approve trigger publishes to; leave it `None` to get the default — the
     shared `build_publisher` (dossier §12, §17, D2) chain wired against
-    whatever `component_repo`/`publication_repo` this call resolved, or a bare
-    `LoggingPublisher` when either is absent (the injected-fakes path is not
-    obligated to supply both just to exercise proposal-only endpoints).
+    whatever `component_repo`/`publication_repo` this call resolved.
+
+    Whenever a `component_repo` is available (injected or real), the wired
+    publisher performs status write-back (STORY-047 AC1): a `component_repo`
+    without a `publication_repo` yields `StatusWritebackPublisher(
+    LoggingPublisher())` — write-back still applies, just without the
+    publications-table recording that needs a `publication_repo` — never a
+    bare `LoggingPublisher` that silently skips write-back. Only when NO
+    `component_repo` is available at all (nothing to write back to — e.g. a
+    proposal-only injected test) does this fall back to a bare
+    `LoggingPublisher`.
     """
     app = FastAPI(title="Uptime Monitor V3 API", lifespan=lifespan)
 
@@ -133,7 +141,11 @@ def create_app(
     # write-back-first / best-effort-external-call chain, or its LoggingPublisher
     # fallback when Statuspage credentials or the config mapping are absent.
     if publisher is None:
-        from src.composition.publish_helper import LoggingPublisher, build_publisher
+        from src.composition.publish_helper import (
+            LoggingPublisher,
+            StatusWritebackPublisher,
+            build_publisher,
+        )
 
         if component_repo is not None and publication_repo is not None:
             from src.composition.settings import load_statuspage_secrets
@@ -152,11 +164,18 @@ def create_app(
                 statuspage_api_token=statuspage_secrets.api_token,
                 component_mapping=mapping,
             )
+        elif component_repo is not None:
+            # A component_repo is available but publication_repo is not
+            # (STORY-047 AC1): write-back still applies (there IS a repo to
+            # write back to), just without the publications-table recording
+            # that needs a publication_repo — never a bare LoggingPublisher
+            # that silently skips write-back.
+            publisher = StatusWritebackPublisher(LoggingPublisher(), component_repo)
         else:
-            # No component_repo (and/or publication_repo) wired — nothing to
-            # write back to or record against (e.g. a proposal-only injected
-            # test). Falls back to a bare no-op publisher; never attempts
-            # write-back against an absent repo.
+            # No component_repo wired at all — nothing to write back to
+            # (e.g. a proposal-only injected test). Falls back to a bare
+            # no-op publisher; never attempts write-back against an absent
+            # repo.
             publisher = LoggingPublisher()
 
     # Wire ApprovalService
