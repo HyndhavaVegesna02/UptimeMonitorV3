@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py]
-verified_sha: 80df0c2
+verified_sha: 6a33edb
 verified_sprint: sprint-36
 status: verified          # verified | stale | archived
 ---
@@ -103,6 +103,21 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - `main()` (`run.py::main`, entrypoint `python -m src.composition.run`) loads settings + live secrets
   + config, seeds topology once, `asyncio.gather`s the loops, and disposes the engine in a `finally`
   on EVERY exit path (resource-lifecycle agreement; proven by `test_main_resource_lifecycle_failure_during_seeding`).
+  **STORY-043 (`.env` loading, defect fix):** the VERY FIRST line of `main()` is now
+  `load_dotenv()` (`run.py::main`), BEFORE `load_settings()`/`load_live_secrets()` run — it loads a
+  gitignored repo-root `.env` into `os.environ` so the documented local recipe (CLAUDE.md "Run the
+  app locally") can supply `DYNATRACE_*`/`STATUSPAGE_*`/`DATABASE_URL` from that file instead of
+  requiring them to be exported into the shell first (before this story, NOTHING loaded `.env` —
+  `load_settings`/`load_live_secrets` only ever read `os.environ` directly, so the documented recipe
+  crashed with `MissingLiveSecretError`). `composition/asgi.py` gets the same treatment at module
+  scope, before `create_app()`. `load_dotenv()`'s default `override=False` semantics mean an
+  already-exported env var always wins over `.env` — production (Railway, which sets real env vars
+  and ships no `.env` file) is unaffected — and the call lives ONLY at these two process
+  entrypoints, never inside `load_settings`/`load_live_secrets` themselves, so DB-gated/unit tests
+  that call those functions directly with explicit `monkeypatch` env are untouched (AC4; STORY-050's
+  fail-fast-before-any-loop test stays green with `load_dotenv` patched in
+  `backend/tests/test_run_live_loop.py`). See [[dev-setup-and-dod]] for the full correction of the
+  CLAUDE.md/wiki claims this fixed.
 - **STORY-048 sample-mode seam (temporary — see [[sample-mode]]):** `build_live_loop` step 2's
   `ingest_port` is now `composition/sample_mode.py::SampleModeIngest(delegate=IngestService(...),
   sample_mode_repo=PostgresSampleModeRepository(engine))` instead of a bare `IngestService` — a
@@ -187,6 +202,13 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `SampleModeIngest→IngestService` nesting; `IngestService`, `pull_loop.py`, and the pre-existing
   BEHAVIOR tests (`test_ingest_service.py`, `test_pull_loop.py`) are UNCHANGED and pass unmodified.
   verified_sha → 0ea652e.
+- sprint-36 (STORY-043, defect): `main()` (`composition/run.py`) and `composition/asgi.py` (module
+  scope) now call `dotenv.load_dotenv()` as their very first action, before
+  `load_settings`/`load_live_secrets`/`create_app()` — the "Facts" section above documents the
+  before/after correction in full. `python-dotenv` added to `[project.dependencies]`
+  (`pyproject.toml`) as a runtime dependency. `load_settings`/`load_live_secrets` themselves are
+  UNCHANGED (still read only `os.environ`, per AC4) — the loading is entrypoint-only. verified_sha
+  → 6a33edb.
 - sprint-36 (STORY-050, defect): `run_periodic` now catches `Exception` (not `BaseException`) around
   each `run_cycle` call, logs a failure at ERROR with the signal_key + cause + a per-signal
   consecutive-failure count, skips `on_cycle` on failure, resets the counter on success, and NEVER
