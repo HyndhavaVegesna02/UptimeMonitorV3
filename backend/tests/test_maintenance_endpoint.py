@@ -102,6 +102,54 @@ def test_post_maintenance_invalid_times():
     assert response.status_code == 422
 
 
+def test_post_maintenance_end_before_start_clean_detail():
+    maintenance_repo = FakeMaintenanceRepository()
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    payload = {
+        "component_id": "checkout",
+        "starts_at": "2026-06-28T14:00:00Z",
+        "ends_at": "2026-06-28T12:00:00Z",  # ends_at < starts_at
+        "reason": "Invalid",
+    }
+    response = client.post("/api/v1/maintenance", json=payload)
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail == "ends_at must be strictly greater than starts_at."
+    assert "validation error for" not in detail
+    assert "input_value" not in detail
+    assert "pydantic" not in detail
+
+
+def test_post_maintenance_end_equals_start_clean_detail():
+    maintenance_repo = FakeMaintenanceRepository()
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    payload = {
+        "component_id": "checkout",
+        "starts_at": "2026-06-28T12:00:00Z",
+        "ends_at": "2026-06-28T12:00:00Z",  # ends_at == starts_at
+        "reason": "Invalid",
+    }
+    response = client.post("/api/v1/maintenance", json=payload)
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail == "ends_at must be strictly greater than starts_at."
+    assert "validation error for" not in detail
+    assert "input_value" not in detail
+    assert "pydantic" not in detail
+
+
 def test_post_maintenance_malformed():
     maintenance_repo = FakeMaintenanceRepository()
     app = create_app(
