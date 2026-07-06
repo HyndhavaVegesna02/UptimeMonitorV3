@@ -99,7 +99,7 @@ rule):
 - [x] 7. Loading / empty ("No maintenance scheduled") / error+retry states — tested (AC4).
 - [x] 8. Wiki blast radius: run the mechanical sweep; expected minimum `frontend-zone.md`
       (+ whatever the sweep flags); commit article-by-article.
-- [ ] 9. Frontend DoD gate on the clean committed tree: `npm test`, `npm run build`,
+- [x] 9. Frontend DoD gate on the clean committed tree: `npm test`, `npm run build`,
       `npm run lint` — all exit 0. Verify backend untouched: diff from STORY-051's gate
       SHA over backend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is EMPTY.
 
