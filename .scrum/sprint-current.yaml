@@ -65,7 +65,7 @@ start_tag: sprint-34-start
 stories:
   - id: STORY-051
     points: 2
-    board: todo
+    board: in-progress   # orchestrator-run close-out: six-gate DoD + wiki sweep (fix pre-exists)
     pipeline: gate             # 2 pts -> gate-only; fix pre-exists on the merged lineage
     blocked_question: null
     attempts: 0
