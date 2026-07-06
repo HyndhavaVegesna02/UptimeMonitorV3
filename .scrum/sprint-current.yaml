@@ -45,17 +45,44 @@ start_tag: sprint-36-start
 stories:
   - id: STORY-050
     points: 3
-    board: in-progress   # implementer dispatched
+    board: done            # awaiting PO verdict at review
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
     blocked_question: null
-    attempts: 0
+    attempts: 1            # clean single dispatch (6e4ffbd..bba14b5) + one tiny spec-review
+                           # follow-up test applied by the orchestrator (738d055)
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # pull_loop.py is in ingest-service-and-pull-loop.md +
-                                   # sample-mode.md code_refs — expect the sweep to flag
+    dod_evidence:
+      - command: "pytest (isolated throwaway DB, PO stack untouched) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check"
+        exit_code: 0
+        output_tail: "504 passed (+6 over sprint-35-lineage 498+... baseline main 498; +5
+          implementer tests, +1 follow-up); Contracts: 5 kept, 0 broken; FK-direction OK 11/0;
+          alembic OK; ruff both clean. Frontend untouched (empty diff from b320143)."
+        commit: 738d055
+        at: 2026-07-06T16:40:00+05:30
+    review:
+      first_pass: "spec PASS (AC1-AC3 ALL MET; reviewer ran 16/16 and traced every design pin
+        to its driving test — AC1 asserts the SECOND cycle's ingest ran via source_event_id;
+        AC2 proves failure before build_live_loop is ever called; AC3 counter asserts
+        1,2,reset-to-1 message content; cancellation + stop-after-failed-cycle pinned;
+        0 deletions in existing tests) / quality APPROVE (0C/0M, all seven scrutiny points —
+        try wraps ONLY run_cycle, on_cycle bugs still propagate, CancelledError untouched,
+        no busy-loop on hard failure, wiki Facts match code exactly; verdict: 'exemplary')."
+      fix: "One spec-review non-blocking finding applied by the orchestrator @ 738d055: the
+        AC-literal >=3-consecutive-failures case (counts 1,2,3 + loop still scheduling) —
+        the original test peaked at 2 consecutive. All gates re-run green at that SHA."
+      second_pass: null
+      open_minors:
+        - "logger.exception's %s exc arg duplicates the traceback content — intentional for
+          single-line greppability (quality reviewer: leave as is)."
+        - "Log-only-forever means persistent failure surfaces ONLY in logs — the explicit PO
+          decision; standing observability/alerting candidate (pairs with the loop-liveness
+          surface idea from the 2026-07-06 debug sprint)."
+    blast_radius_resolved: true   # sweep flagged ingest-service-and-pull-loop.md (updated,
+                                  # ceb149f) + sample-mode.md (re-verified, bba14b5); the
+                                  # follow-up test commit is additive to an already-swept file
   - id: STORY-043
     points: 2
-    board: todo
+    board: in-progress   # implementer dispatched (after 050 resolved — sequential, shared files)
     pipeline: gate             # 2 pts -> gate-only
     blocked_question: null
     attempts: 0
