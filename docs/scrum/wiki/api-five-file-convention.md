@@ -1,8 +1,8 @@
 ---
 title: API Five-File Feature Convention
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, pyproject.toml]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: f0301c4
+verified_sprint: sprint-35
 status: verified
 ---
 
@@ -45,6 +45,7 @@ status: verified
   - `GET /publications` (`api/v1/publications/controller.py::list_publications`) — returns recent `PublicationDTO` records most-recent-first via `PublicationsService.list_recent`. Empty repo → 200 + `[]`. `PublicationDTO` (`api/v1/publications/models.py::PublicationDTO`) has fields: `id`, `component_id`, `status` (string), `published_at`, `proposal_id` — distinct from the `Publication` domain type. `publication_repo` is wired into `create_app` + `app.state` (default: `PostgresPublicationRepository(engine)`); `get_publication_repo` added to `src/api/dependencies.py`. `src.api.v1.publications` added to the `api-feature-independence` contract in `pyproject.toml` (lint-imports: 5 kept / 0 broken).
 
 ## History
+- sprint-35 (STORY-017, mechanical staleness sweep): re-verified — pyproject.toml gained `uvicorn[standard]` in runtime deps (D1) and `composition/app.py` gained the CORS wiring, neither of which changes any five-file-convention Fact. No content change. verified_sha = f0301c4. (Bump was the interrupted implementer's last step; orchestrator completed + committed it under the 2026-06-25 trivial-tail rule.)
 - sprint-25: re-verified (STORY-015a). The only `pyproject.toml` change was adding `"frontend"` to
   `[tool.ruff] exclude` — a ruff-scope tweak for the new frontend SPA, unrelated to the
   `api-feature-independence` contract or the five-file convention this article describes. 5 contracts
