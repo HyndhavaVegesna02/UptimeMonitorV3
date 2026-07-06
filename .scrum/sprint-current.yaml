@@ -65,15 +65,26 @@ start_tag: sprint-34-start
 stories:
   - id: STORY-051
     points: 2
-    board: in-progress   # orchestrator-run close-out: six-gate DoD + wiki sweep (fix pre-exists)
+    board: done            # awaiting PO verdict at review
     pipeline: gate             # 2 pts -> gate-only; fix pre-exists on the merged lineage
     blocked_question: null
-    attempts: 0
+    attempts: 1            # orchestrator-run close-out, no dispatch, no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false   # sweep must cover the merged debug commits too (query.py
-                                   # -> dynatrace-adapter.md already updated in 2d999f2; the
-                                   # sweep re-verifies mechanically)
+    dod_evidence:
+      - command: "pytest && lint-imports && python scripts/check_fk_direction.py && alembic upgrade head && ruff check . && ruff format --check . (orchestrator-run, single non-concurrent invocation vs throwaway DB at 55432; live loop + uvicorn STOPPED first per the 2026-07-02 agreement)"
+        exit_code: 0
+        output_tail: "pytest: 498 passed in 56.45s. lint-imports: Contracts: 5 kept, 0 broken.
+          FK-direction OK: 11 FKs, 0 violations. alembic upgrade head OK. ruff check: All
+          checks passed! ruff format --check: 181 files already formatted. AC1 pinned by the
+          committed toTimestamp test (c1839e4); AC2 live-verified twice (2026-07-04 fix
+          session; 2026-07-06 debug sprint — watermark 06:13:54->06:15:54 across cycles vs
+          real Grail, docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md)."
+        commit: 362fb52
+        at: 2026-07-06T12:35:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline
+    blast_radius_resolved: true   # mechanical sweep over ALL articles at 362fb52: 0 stale —
+                                  # the debug-session commits (2d999f2 dynatrace-adapter,
+                                  # 6b34c1a sample-mode) already carried their updates
   - id: STORY-015f
     points: 3
     board: todo

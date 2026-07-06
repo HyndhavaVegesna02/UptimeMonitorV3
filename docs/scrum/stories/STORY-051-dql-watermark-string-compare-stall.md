@@ -48,7 +48,9 @@ fixed code ingests fresh rows and advances the watermark (see AC).
 - [x] AC2: live verification — with the fix deployed to the local stack, new observations
       (observed_at > restart instant) are persisted and the watermark advances past its stuck
       value within one cycle.
-- [ ] AC3: full six-command backend DoD gate exits 0 on the clean committed tree.
+- [x] AC3: full six-command backend DoD gate exits 0 on the clean committed tree.
+      (Sprint 34, 2026-07-06 @ 362fb52: 498 passed / 5 contracts kept / 11 FKs 0 violations /
+      alembic OK / ruff check + format clean.)
 
 ## Out of scope (filed as observations for refinement)
 - Grail's default scan timeframe (~2h) bounds any backfill: data older than the scan window at
