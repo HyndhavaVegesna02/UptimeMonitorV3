@@ -63,10 +63,10 @@ start_tag: sprint-37-start
 stories:
   - id: STORY-052
     points: 1
-    board: todo
+    board: in_progress
     pipeline: gate             # 1 pt -> gate-only (no reviewers)
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null               # 1 pt -> gate-only per the default pipeline
