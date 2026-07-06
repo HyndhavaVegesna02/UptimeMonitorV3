@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: 6a33edb
+verified_sprint: sprint-36
 status: verified
 ---
 
@@ -167,3 +167,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   change; the only `pyproject.toml` edit was adding `"src.api.v1.sample_mode"` to the
   `api-feature-independence` import-linter contract, unrelated to the config loader/resolvers.
   verified_sha = 0ea652e.
+- sprint-36: re-verified (STORY-043, mechanical staleness sweep only). No config-layer change; the
+  only `pyproject.toml` edit was adding `python-dotenv` to `[project.dependencies]` (a
+  `.env`-loading defect fix at the two process entrypoints — see [[dev-setup-and-dod]] and
+  [[ingest-service-and-pull-loop]]), unrelated to the config loader/resolvers. verified_sha =
+  6a33edb.
