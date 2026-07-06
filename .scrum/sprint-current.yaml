@@ -45,7 +45,7 @@ start_tag: sprint-36-start
 stories:
   - id: STORY-050
     points: 3
-    board: todo
+    board: in-progress   # implementer dispatched
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
     blocked_question: null
     attempts: 0
