@@ -20,11 +20,25 @@ STORY-016a (Sprint 17): when orchestration parameters are supplied,
 ``run_cycle`` calls ``orchestrate_signal`` after ingest (dossier §8 step 5
 "hand rows to the pipeline") and returns ``(IngestResult, DecideAction)``.
 Without them it returns only the ``IngestResult`` (backward-compatible).
+
+STORY-050 (Sprint 36, dossier §8): a pull-based monitor loop must ride out
+transient per-cycle vendor/network errors (e.g. a Grail HTTP timeout) rather
+than let one exception kill the whole process. ``run_periodic`` catches
+``Exception`` (never ``BaseException`` -- ``KeyboardInterrupt``/``SystemExit``/
+``asyncio.CancelledError`` must still propagate and stop the loop) around
+each ``run_cycle`` call, logs it at ERROR with the signal_key + the
+per-signal consecutive-failure count, and moves straight on to the next
+scheduled cycle. This is LOG-ONLY (PO decision, AC3): the loop never exits
+on a cycle failure, however many times in a row it happens. Startup
+failures (missing secrets, bad config) are unaffected -- they run in
+``composition/run.py::main`` BEFORE any ``run_periodic`` call and still
+fail fast (AC2).
 """
 
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Awaitable, Callable
 from datetime import timedelta
 
@@ -41,6 +55,8 @@ from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.maintenance_repository import MaintenanceRepository
 from src.core.ports.observation_repository import ObservationRepository
 from src.core.services.decide import DecideAction, DecideService
+
+logger = logging.getLogger(__name__)
 
 
 def run_cycle(
@@ -147,28 +163,57 @@ async def run_periodic(
     running forever, and `on_cycle` is an optional hook invoked with each
     cycle's result (e.g. for tests to observe progress, or later for
     logging/metrics).
+
+    STORY-050 (dossier §8): a cycle that raises is SURVIVED, not fatal. Each
+    `run_periodic` instance owns one signal and one consecutive-failure
+    counter for it: a raised `Exception` is caught, logged at ERROR with the
+    signal_key + the cause + the running consecutive-failure count for THIS
+    signal, and the loop proceeds straight to the next scheduled cycle
+    (LOG-ONLY, AC3 -- never crashes, however many failures in a row). A
+    success resets the counter to zero. `on_cycle` is skipped on a failed
+    cycle (there is no result to hand it). `Exception`, not `BaseException`,
+    is caught deliberately: `KeyboardInterrupt`/`SystemExit`/
+    `asyncio.CancelledError` are all `BaseException` subclasses (in Python
+    3.13, `CancelledError` included), so a bare `except Exception` already
+    lets cancellation propagate and stop the loop untouched. The post-cycle
+    `stop_event` re-check (STORY-023) runs whether the cycle succeeded or
+    failed, so a stop requested during a failing cycle still takes effect
+    immediately instead of waiting another `interval_seconds`.
     """
+    consecutive_failures = 0
     while stop_event is None or not stop_event.is_set():
-        result = run_cycle(
-            signal_key=signal_key,
-            native_id=native_id,
-            watermark_repo=watermark_repo,
-            ingest_port=ingest_port,
-            executor=executor,
-            overlap=overlap,
-            config=config,
-            observation_repo=observation_repo,
-            maintenance_repo=maintenance_repo,
-            component_repo=component_repo,
-            decide_service=decide_service,
-            clock=clock,
-        )
-        if on_cycle is not None:
-            await on_cycle(result)
-        # Re-check stop AFTER the cycle (and after on_cycle, which may request it):
+        try:
+            result = run_cycle(
+                signal_key=signal_key,
+                native_id=native_id,
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_port,
+                executor=executor,
+                overlap=overlap,
+                config=config,
+                observation_repo=observation_repo,
+                maintenance_repo=maintenance_repo,
+                component_repo=component_repo,
+                decide_service=decide_service,
+                clock=clock,
+            )
+        except Exception as exc:
+            consecutive_failures += 1
+            logger.exception(
+                "Cycle failed for signal_key=%r (consecutive_failures=%d): %s",
+                signal_key,
+                consecutive_failures,
+                exc,
+            )
+        else:
+            consecutive_failures = 0
+            if on_cycle is not None:
+                await on_cycle(result)
+        # Re-check stop AFTER the cycle (whether it succeeded or failed) --
         # the `while` guard only catches a stop set before a cycle starts. Without
         # this second check we would always sleep one more `interval_seconds` after a
-        # stop requested mid-cycle, delaying shutdown by a full interval (STORY-023).
+        # stop requested mid-cycle, delaying shutdown by a full interval (STORY-023;
+        # STORY-050 extends the same guarantee to a FAILED cycle).
         if stop_event is not None and stop_event.is_set():
             break
         await asyncio.sleep(interval_seconds)

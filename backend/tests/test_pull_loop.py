@@ -11,9 +11,11 @@ STORY-008/STORY-005's own test suites.
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Sequence
 from datetime import datetime, timezone
 
+import pytest
 from src.core.domain import Health, IngestResult, SignalObservation
 from src.core.ports import SignalIngestPort, WatermarkRepository
 
@@ -485,3 +487,185 @@ def test_run_periodic_with_orchestration_passes_extras():
     assert isinstance(res, tuple)
     assert isinstance(res[0], IngestResult)
     assert res[1] == DecideAction.NOOP
+
+
+# --- STORY-050: a failed cycle is logged and survived, never fatal ----------
+
+
+def test_run_periodic_survives_one_failed_cycle_then_continues(caplog):
+    """AC1 (STORY-050): a cycle that raises (e.g. `GrailQueryError` from a
+    network timeout) must not crash `run_periodic` -- the failure is logged
+    at ERROR (with the signal_key + cause) and the NEXT cycle runs on
+    schedule. Uses a fake executor that fails once then succeeds, and
+    asserts the SECOND cycle's ingest actually ran.
+    """
+    from src.adapters.inbound.dynatrace.grail_executor import GrailQueryError
+    from src.composition.pull_loop import run_periodic
+
+    watermark_repo = FakeWatermarkRepository()
+    ingest_port = RecordingIngestPort()
+    call_count = {"n": 0}
+
+    def flaky_executor(query: str) -> list[dict]:
+        call_count["n"] += 1
+        if call_count["n"] == 1:
+            raise GrailQueryError(
+                "HTTP request to Grail failed: _ssl.c:1015: "
+                "The handshake operation timed out"
+            )
+        return [_row(f"evt-{call_count['n']}", "2026-06-24T10:00:00Z")]
+
+    async def run_until_one_success_then_stop():
+        stop_event = asyncio.Event()
+
+        async def on_tick(result: IngestResult) -> None:
+            # A failed cycle never calls on_cycle (no result to hand it) --
+            # so this fires only once, on the SECOND (successful) cycle.
+            stop_event.set()
+
+        with caplog.at_level(logging.ERROR, logger="src.composition.pull_loop"):
+            await run_periodic(
+                signal_key="checkout-http",
+                native_id="HTTP_CHECK-9F2A",
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_port,
+                executor=flaky_executor,
+                interval_seconds=0,
+                stop_event=stop_event,
+                on_cycle=on_tick,
+            )
+
+    asyncio.run(asyncio.wait_for(run_until_one_success_then_stop(), timeout=5))
+
+    # Both cycles ran: the first failed, the second succeeded.
+    assert call_count["n"] == 2
+    # The SECOND cycle's ingest actually ran.
+    assert len(ingest_port.batches) == 1
+    assert ingest_port.batches[0][0].source_event_id == "evt-2"
+
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(error_records) == 1
+    message = error_records[0].getMessage()
+    assert "checkout-http" in message
+    assert "handshake operation timed out" in message
+
+
+def test_run_periodic_consecutive_failure_counts_increase_and_reset_on_success(
+    caplog,
+):
+    """AC3 (STORY-050): the per-signal consecutive-failure counter increases
+    with each successive failure, a success resets it to zero, and the loop
+    NEVER exits on cycle failures. Sequence fail, fail, succeed, fail ->
+    logged counts 1, 2, (reset), 1.
+    """
+    from src.composition.pull_loop import run_periodic
+
+    watermark_repo = FakeWatermarkRepository()
+    ingest_port = RecordingIngestPort()
+    outcomes = ["fail", "fail", "success", "fail"]
+    call_count = {"n": 0}
+
+    async def run_scripted_sequence():
+        stop_event = asyncio.Event()
+
+        def scripted_executor(query: str) -> list[dict]:
+            idx = call_count["n"]
+            call_count["n"] += 1
+            if idx == len(outcomes) - 1:
+                # Set stop_event from inside the LAST (failing) cycle --
+                # proves the loop keeps scheduling failed cycles past the
+                # first one, right up to the point we ask it to stop.
+                stop_event.set()
+            if outcomes[idx] == "fail":
+                raise RuntimeError(f"transient failure #{idx}")
+            return [_row(f"evt-{idx}", "2026-06-24T10:00:00Z")]
+
+        with caplog.at_level(logging.ERROR, logger="src.composition.pull_loop"):
+            await run_periodic(
+                signal_key="checkout-http",
+                native_id="HTTP_CHECK-9F2A",
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_port,
+                executor=scripted_executor,
+                interval_seconds=0,
+                stop_event=stop_event,
+            )
+
+    asyncio.run(asyncio.wait_for(run_scripted_sequence(), timeout=5))
+
+    # All four scripted cycles ran -- the loop never exited on failure.
+    assert call_count["n"] == 4
+
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(error_records) == 3  # the 3 "fail" outcomes; success logs nothing
+    assert "consecutive_failures=1" in error_records[0].getMessage()
+    assert "consecutive_failures=2" in error_records[1].getMessage()
+    # Reset by the intervening success -- back to 1, not 3.
+    assert "consecutive_failures=1" in error_records[2].getMessage()
+
+
+def test_run_periodic_cancellation_still_propagates_and_stops_loop():
+    """Guard (STORY-050): `asyncio.CancelledError` is a `BaseException`, not
+    an `Exception`, in Python 3.13 -- so the bare `except Exception` added
+    for AC1/AC3 must NOT swallow it. Cancelling the task must still stop
+    the loop.
+    """
+    from src.composition.pull_loop import run_periodic
+
+    watermark_repo = FakeWatermarkRepository()
+    ingest_port = RecordingIngestPort()
+
+    def fake_executor(query: str) -> list[dict]:
+        return []
+
+    async def run_and_cancel():
+        task = asyncio.ensure_future(
+            run_periodic(
+                signal_key="checkout-http",
+                native_id="HTTP_CHECK-9F2A",
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_port,
+                executor=fake_executor,
+                interval_seconds=10,  # long sleep so cancel lands mid-sleep
+            )
+        )
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert task.cancelled()
+
+    asyncio.run(run_and_cancel())
+
+
+def test_run_periodic_stop_event_honored_after_a_failed_cycle():
+    """Guard (STORY-050): a stop_event set during a FAILING cycle must not
+    wait another `interval_seconds` before stopping -- mirrors STORY-023's
+    existing success-path guarantee, now extended to the failure path.
+    """
+    from src.composition.pull_loop import run_periodic
+
+    watermark_repo = FakeWatermarkRepository()
+    ingest_port = RecordingIngestPort()
+    call_count = {"n": 0}
+
+    async def run_and_measure():
+        stop_event = asyncio.Event()
+
+        def failing_executor(query: str) -> list[dict]:
+            call_count["n"] += 1
+            stop_event.set()
+            raise RuntimeError("transient failure")
+
+        await run_periodic(
+            signal_key="checkout-http",
+            native_id="HTTP_CHECK-9F2A",
+            watermark_repo=watermark_repo,
+            ingest_port=ingest_port,
+            executor=failing_executor,
+            interval_seconds=10,  # would blow the outer timeout if not honored
+            stop_event=stop_event,
+        )
+
+    asyncio.run(asyncio.wait_for(run_and_measure(), timeout=5))
+    assert call_count["n"] == 1
