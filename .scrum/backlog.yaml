@@ -405,9 +405,9 @@ stories:
     type: chore
     sprint: 35
   - id: STORY-053
-    title: Sock Shop on Railway + toggleable failure shim + demo cadence tuning
+    title: Failure shim for the existing Railway demo app + demo cadence tuning
     file: docs/scrum/stories/STORY-053-sock-shop-railway-failure-shim.md
-    status: draft   # split from STORY-017 at sprint-35 refinement (2026-07-06); refine (app footprint + sample-mode-removal linkage) before scheduling
+    status: draft   # PO clarified 2026-07-06 post-sprint-36: demo app + Dynatrace monitor ALREADY live on Railway (today's metrics source); NO sample-mode-removal linkage. Residual question: shim mechanism (do we control the app's source/deploy?) — refine before scheduling; likely 3 -> 2
     points: 3
     priority: 21
     type: feature
