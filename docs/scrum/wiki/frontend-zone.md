@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: b9f65f9
-verified_sprint: sprint-34
+verified_sha: 240666e
+verified_sprint: sprint-37
 status: verified
 ---
 
@@ -222,6 +222,13 @@ status: verified
     fieldErrorFromDetail` (substring match on the backend's real validation wording) onto the
     specific field it names and rendered INLINE next to that field (`role="alert"`) rather than as
     a toast/console-only failure — an unmatched detail falls back to a general form-level alert.
+    STORY-052 (sprint-37, defect fix): the backend's ordering message ("ends_at must be strictly
+    greater than starts_at.") mentions BOTH fields, so `fieldErrorFromDetail` checks for that
+    "strictly greater than" phrase FIRST — before the generic per-field substring scan — and maps
+    it to `ends_at` (the field actually at fault), not the first-mentioned `starts_at`; the same
+    ordering keeps a raw multi-field detail (e.g. a Pydantic `ValidationError`'s `str()`, whose
+    `input_value={...}` echo can contain a `component_id` token) resolving deterministically
+    without throwing, rather than mis-mapping onto whichever field's token happens to appear first.
     See `pages/MaintenancePage.tsx`.
   - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
     `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
@@ -358,3 +365,13 @@ status: verified
   step; frontend-only; six backend gates untouched-green (empty diff — no backend source change).
   `code_refs` += mocks/handlers/maintenance.ts, features/maintenance/{windowState,fieldError,
   useMaintenance}.ts, pages/MaintenancePage.tsx. verified_sha = b9f65f9.
+- sprint-37: updated for STORY-052 (defect fix — a raw Pydantic 422 blob mis-mapping onto the
+  Component field for an `ends_at<=starts_at` scheduling error). `features/maintenance/
+  fieldError.ts::fieldErrorFromDetail` gained an early check for the ordering message, mapping it
+  to `ends_at` instead of the first-mentioned `starts_at` (see the updated Maintenance-tab bullet
+  above); its stale "two real backend 422 cases" doc comment was rewritten to name the current
+  three `validate_maintenance_request` cases. No `pages/MaintenancePage.tsx` change was needed —
+  its existing per-field inline-render wiring already covers `ends_at`. Frontend-only; six backend
+  gates untouched-green (the paired backend fix is `api/v1/maintenance/validation.py`, tracked in
+  [[api-five-file-convention]], not this article's code_refs). `code_refs` unchanged (no new
+  files). verified_sha = 240666e.
