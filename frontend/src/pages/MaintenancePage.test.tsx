@@ -267,4 +267,45 @@ describe('MaintenancePage', () => {
       ),
     ).toBeInTheDocument()
   })
+
+  it('renders an ends_at<=starts_at 422 INLINE next to the Ends field, not the Component field (STORY-052 AC2)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.post('/api/v1/maintenance', () =>
+        HttpResponse.json(
+          { detail: 'ends_at must be strictly greater than starts_at.' },
+          { status: 422 },
+        ),
+      ),
+    )
+
+    render(<MaintenancePage />)
+    await screen.findByRole('table')
+
+    await user.selectOptions(
+      await screen.findByLabelText('Component'),
+      FIXTURE_COMPONENTS[0].id,
+    )
+    await user.type(screen.getByLabelText('Starts'), '2026-07-09T10:00')
+    await user.type(screen.getByLabelText('Ends'), '2026-07-09T09:00')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    const endsField = screen.getByLabelText('Ends').closest('.maintenance-form__field')
+    expect(endsField).not.toBeNull()
+    expect(
+      await within(endsField as HTMLElement).findByText(
+        'ends_at must be strictly greater than starts_at.',
+      ),
+    ).toBeInTheDocument()
+
+    const componentField = screen
+      .getByLabelText('Component')
+      .closest('.maintenance-form__field')
+    expect(componentField).not.toBeNull()
+    expect(
+      within(componentField as HTMLElement).queryByText(
+        'ends_at must be strictly greater than starts_at.',
+      ),
+    ).not.toBeInTheDocument()
+  })
 })
