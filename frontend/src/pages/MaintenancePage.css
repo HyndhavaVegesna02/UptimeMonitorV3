@@ -1,0 +1,146 @@
+.maintenance-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-6);
+  border-bottom: 1px solid var(--color-hairline);
+}
+
+.maintenance-form__title {
+  color: var(--color-ink);
+  margin: 0;
+}
+
+.maintenance-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+  max-width: 360px;
+}
+
+.maintenance-form__label {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* The shared text-input spec (AC4): >=40px target height, 8px radius,
+   hairline border, surface-1 background — matching the select/window-button
+   controls other tabs already established (check-history-page__signal-select,
+   check-history-page__window-button). Focus ring comes from global.css's
+   `input:focus-visible` rule; nothing here overrides it. */
+.maintenance-form__input {
+  min-height: var(--target-min);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+}
+
+.maintenance-form__hint {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+}
+
+/* Inline field error (AC3) — the "down" health color marks the icon only,
+   text stays an ink token (mirrors ErrorState's non-color-alone rule). */
+.maintenance-form__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-ink);
+  font-size: var(--fs-caption);
+}
+
+.maintenance-form__error-icon {
+  color: var(--color-health-down);
+  flex-shrink: 0;
+}
+
+.maintenance-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.maintenance-table th,
+.maintenance-table td {
+  text-align: left;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-hairline);
+  font-family: var(--font-sans);
+  color: var(--color-ink);
+  vertical-align: middle;
+}
+
+.maintenance-table th {
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-h3);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.maintenance-table td {
+  font-size: var(--fs-body);
+}
+
+.maintenance-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Window-state badge (STORY-015f AC1) — deliberately separate markup/tokens
+   from the shell StatusBadge/HealthStatus vocabulary (component health),
+   since this models a WINDOW's own scheduling state instead. Dot is
+   aria-hidden; the text label is the sole accessible name (never color
+   alone), mirroring StatusBadge.css's structure. */
+.maintenance-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-caption);
+  line-height: var(--lh-caption);
+  color: var(--color-ink-muted);
+}
+
+.maintenance-state-badge__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* "Active" reuses the health-maintenance token — an active window IS the
+   thing that suppresses degradation proposals, the same concept the shell's
+   "maintenance" health color already represents. */
+.maintenance-state-badge--active {
+  background: var(--color-health-maintenance-subtle);
+}
+.maintenance-state-badge--active .maintenance-state-badge__dot {
+  background: var(--color-health-maintenance);
+}
+
+.maintenance-state-badge--upcoming {
+  background: var(--color-surface-3);
+}
+.maintenance-state-badge--upcoming .maintenance-state-badge__dot {
+  background: var(--color-accent);
+}
+
+.maintenance-state-badge--past {
+  background: var(--color-surface-2);
+}
+.maintenance-state-badge--past .maintenance-state-badge__dot {
+  background: var(--color-ink-tertiary);
+}
