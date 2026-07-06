@@ -67,7 +67,7 @@ the four PO decisions and folded audit inputs D1–D3 are recorded there; AC1–
       the config it documents); new wiki article `docs/scrum/wiki/deployment-topology.md`
       (`code_refs`: pyproject.toml, the Railway config file(s), frontend/vercel.json,
       docs/DEPLOY.md, the CORS wiring file).
-- [ ] 7. Gates + mechanical wiki sweep (article-by-article commits).
+- [x] 7. Gates + mechanical wiki sweep (article-by-article commits).
 
 ### Orchestrator + PO tail (after reviewers pass on the code diff)
 
