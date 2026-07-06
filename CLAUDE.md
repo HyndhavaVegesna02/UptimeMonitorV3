@@ -213,7 +213,8 @@ docker rm -f uptime_pg_test          # clean up (never commit container/data)
 The full local stack is: throwaway Postgres + the API server (uvicorn) + the
 live pull-loop (`python -m src.composition.run`) + the frontend dev server —
 four processes sharing one `DATABASE_URL`. CORS is unneeded locally: the Vite
-dev proxy makes the frontend same-origin (real CORS is STORY-017).
+dev proxy makes the frontend same-origin (real CORS is enforced only in the
+deployed topology — see "Deployed topology" below).
 
 1. Start the throwaway DB (migrates and prints both URLs):
    `.venv/Scripts/python.exe scripts/dev_db.py up`
@@ -232,6 +233,52 @@ The API server and the live loop are two independent, long-running processes
 — stopping one doesn't stop the other, and both must point at the same
 `DATABASE_URL`. `python scripts/dev_db.py down` tears down the throwaway
 Postgres container when done.
+
+## Deployed topology (dossier §17, STORY-017)
+
+Backend on Railway as TWO long-running services from this one repo, both
+reading the POOLED `DATABASE_URL`; frontend on Vercel. Full numbered PO
+console steps (project/service creation, env var entry, healthcheck,
+verification) live in `docs/DEPLOY.md` — this section is the quick-reference
+summary CLAUDE.md's command-sync agreement requires.
+
+| Process  | Command                                                        | Reads                       |
+| -------- | --------------------------------------------------------------- | ---------------------------- |
+| release  | `alembic upgrade head` (Railway `preDeployCommand`, `railway.toml`) | `DATABASE_URL_DIRECT` |
+| `api`    | `uvicorn src.composition.asgi:app --host 0.0.0.0 --port $PORT`  | `DATABASE_URL`, `CORS_ALLOWED_ORIGINS` |
+| `worker` | `python -m src.composition.run`                                 | `DATABASE_URL`, `DYNATRACE_ENV_URL`, `DYNATRACE_API_TOKEN`, `STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY` |
+
+- The release step runs ONCE, before `api` serves, on the DIRECT connection
+  (dialect note above); a nonzero exit halts the deploy and the previous
+  container keeps serving (AC3 fail-safe — Railway's own release-command
+  semantics, no custom code). `worker` has no release step of its own.
+- Both `api` and `worker` seed topology at boot from `config/apps/*.yaml`;
+  the seed is idempotent upserts, so double-seeding across both processes
+  (or a restart) is always safe.
+- Railway config-as-code lives at the repo-root `railway.toml` — built to
+  [Config as Code](https://docs.railway.com/config-as-code) and its
+  [reference](https://docs.railway.com/reference/config-as-code). It
+  expresses the `api` service only (build, release, start, healthcheck);
+  `worker`'s start command is a console-only field (`docs/DEPLOY.md` Part A4)
+  since Railway has no native "two start commands, one config file" shape
+  for services sharing a repo (confirmed against Railway's monorepo doc and
+  the "config-as-code always overrides the dashboard" rule).
+- `frontend/vercel.json` rewrites `/api/*` to the Railway `api` origin (a
+  placeholder the runbook has the PO fill in — Vercel's config file is
+  static, no env-var substitution — verified against
+  [Vercel project configuration](https://vercel.com/docs/project-configuration))
+  and falls back every other path to `/index.html` for the six-tab
+  client-side router (`App.tsx`'s `BrowserRouter`).
+  `frontend/src/api/client.ts::API_BASE_URL` stays `'/api'`, unchanged.
+- CORS: `composition/app.py::create_app` wires `CORSMiddleware` with an
+  allowlist read from `CORS_ALLOWED_ORIGINS` (comma-separated env var name
+  only; unset defaults to `http://localhost:5173` for local dev). Defense-in-
+  depth behind the Vercel rewrite (the browser stays same-origin through it)
+  per the 2026-06-23 agreement. `allow_credentials=False` — no cookie/session
+  auth exists yet.
+- Secrets hygiene (AC5): no secret VALUE lives in this repo at any commit —
+  every table above lists env var NAMES only; values are entered directly
+  into Railway service Variables by the PO.
 
 ## Tooling inventory
 
