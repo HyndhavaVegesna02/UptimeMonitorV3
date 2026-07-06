@@ -67,7 +67,7 @@ too): [Railway — Config as Code](https://docs.railway.com/config-as-code),
    | ----------------------- | ------------------------------------------------ |
    | `DATABASE_URL`          | Neon POOLED (PgBouncer) connection string, plain `postgresql://` form |
    | `DATABASE_URL_DIRECT`   | Neon DIRECT connection string, `postgresql+psycopg://` form (CLAUDE.md "URL dialect note" — the release step's `alembic upgrade head` runs the built image via SQLAlchemy 2/psycopg3, which needs the `+psycopg` dialect prefix explicitly) |
-   | `CORS_ALLOWED_ORIGINS`  | The Vercel production origin, e.g. `https://<your-project>.vercel.app` (comma-separate a preview-URL pattern too if you also want previews to hit this API) |
+   | `CORS_ALLOWED_ORIGINS`  | The Vercel production origin, e.g. `https://<your-project>.vercel.app` (comma-separate a preview-URL pattern too if you also want previews to hit this API). **No trailing slash** — origins match by exact string, so `https://app.vercel.app/` (with `/`) silently never matches and CORS appears broken. |
 
 ### A4. Configure the `worker` service
 6. In the SAME project, "+ New" → GitHub Repo → the same repo/branch again.

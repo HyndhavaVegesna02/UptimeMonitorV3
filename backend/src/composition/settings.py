@@ -74,7 +74,9 @@ def load_cors_allowed_origins() -> list[str]:
 
     Reads a comma-separated list of origins from ``CORS_ALLOWED_ORIGINS``.
     Unset or empty (after stripping blanks) falls back to
-    ``DEFAULT_CORS_ALLOWED_ORIGINS`` (localhost dev only) — never wide-open.
+    ``DEFAULT_CORS_ALLOWED_ORIGINS`` (localhost dev only) — the FALLBACK is
+    never wide-open; an explicit ``*`` set in the env var is a deliberate
+    operator choice and passes through to the middleware as allow-all.
     Whitespace around each origin is stripped; blank entries are dropped.
     """
     raw = os.environ.get(CORS_ALLOWED_ORIGINS_VAR, "")
