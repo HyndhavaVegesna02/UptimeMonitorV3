@@ -120,22 +120,23 @@ def test_publisher_raises_on_unmapped_component_id():
     assert "unknown_comp" in str(exc_info.value)
 
 
-def test_publish_best_effort_catches_and_logs_error(caplog):
+def test_best_effort_publisher_catches_and_logs_error(caplog):
+    # STORY-047 AC2: publish_best_effort was folded into BestEffortPublisher
+    # (one canonical best-effort seam) — exercise it via the class directly.
     import logging
 
-    from src.composition import publish_best_effort
+    from src.composition.publish_helper import BestEffortPublisher
     from src.core.domain.status import ComponentStatus, StatusChange
 
     class RaisingPublisher:
         def publish(self, change: StatusChange) -> None:
             raise RuntimeError("Statuspage is down!")
 
-    publisher = RaisingPublisher()
+    publisher = BestEffortPublisher(RaisingPublisher())
     change = StatusChange(component_id="checkout", status=ComponentStatus.DEGRADED)
 
-    logger = logging.getLogger("test_best_effort")
-    with caplog.at_level(logging.ERROR, logger="test_best_effort"):
-        publish_best_effort(publisher, change, logger=logger)
+    with caplog.at_level(logging.ERROR, logger="src.composition.publish_helper"):
+        publisher.publish(change)
 
     assert len(caplog.records) == 1
     assert "Failed to publish status change for checkout to Statuspage" in caplog.text
