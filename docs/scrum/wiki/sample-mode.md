@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: e86493f
-verified_sprint: sprint-33
+verified_sha: 80df0c2
+verified_sprint: sprint-36
 status: verified          # verified | stale | archived
 ---
 
@@ -294,6 +294,12 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-36 (STORY-050, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `backend/tests/test_run_live_loop.py`, which gained one new test
+  (`test_main_fails_fast_on_missing_secrets_before_any_loop_starts`, pinning STORY-050's AC2) —
+  purely additive, no assertion on `SampleModeIngest`/`build_live_loop` touched or added; the
+  removal inventory's mention of `test_run_live_loop.py` (the `test_build_live_loop_assembly`
+  revert instructions) remains accurate as written. No Facts changed. verified_sha = 80df0c2.
 - sprint-34 (STORY-015f, unrelated story — mechanical staleness sweep only): the same three
   `code_refs` (`frontend/src/api/types.ts`, `frontend/src/api/client.ts`,
   `frontend/src/mocks/handlers/index.ts`) changed again, but ONLY additively — STORY-015f (the
