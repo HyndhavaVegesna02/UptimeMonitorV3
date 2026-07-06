@@ -39,7 +39,7 @@ start_tag: sprint-35-start
 stories:
   - id: STORY-017
     points: 5
-    board: todo
+    board: in-progress   # Sonnet 5 implementer dispatched (HIGH effort), code-side tasks 1-7
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gates
     blocked_question: null
     attempts: 0
