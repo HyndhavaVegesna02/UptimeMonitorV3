@@ -2,8 +2,8 @@ from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from tests.fakes import (
     FakeComponentRepository,
-    FakePublicationRepository,
     FakeProposalRepository,
+    FakePublicationRepository,
 )
 
 
@@ -49,7 +49,10 @@ def test_create_app_component_repo_without_publication_repo_still_writes_back():
     """STORY-047 AC1: a component_repo injected without a publication_repo
     yields StatusWritebackPublisher(LoggingPublisher()) — write-back still
     applies — never a bare LoggingPublisher that silently skips it."""
-    from src.composition.publish_helper import LoggingPublisher, StatusWritebackPublisher
+    from src.composition.publish_helper import (
+        LoggingPublisher,
+        StatusWritebackPublisher,
+    )
 
     proposal_repo = FakeProposalRepository()
     component_repo = FakeComponentRepository()
