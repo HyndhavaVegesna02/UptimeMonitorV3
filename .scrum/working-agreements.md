@@ -449,6 +449,20 @@
   manual comparison caught the percent-scale defect after every mechanical and reviewer gate had
   passed; making it a standing step removes the luck from it.)
 
+- 2026-07-06 — **Planning contract checks prove claimed producer gaps by probing the failure
+  path live.** When a consumer story's AC names error/edge behavior (a 422 case, an error
+  message, a not-found), the planning consumer-DTO check exercises each named failure case
+  against the live producer (or cites the producer's endpoint test driving that exact case).
+  A claim that "the producer lacks X" must be proven by a live probe of X actually failing —
+  never inferred from reading one validator/layer — before it may amend an AC or be filed as
+  a defect. (Motivated by Sprint 34 planning: the check read only `maintenance/validation.py`
+  and live-probed only a VALID window, concluded end-before-start was not rejected, trimmed
+  STORY-015f's AC3 on that basis, and filed STORY-052 as a false "missing 422" defect — the
+  DOMAIN layer rejects end-before-start and equal timestamps; the 015f implementer caught the
+  contradiction via `test_post_maintenance_invalid_times`, and STORY-052 was re-scoped
+  mid-sprint to the real residual: the ordering 422's raw Pydantic `detail` blob + missing
+  inline mapping.)
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
