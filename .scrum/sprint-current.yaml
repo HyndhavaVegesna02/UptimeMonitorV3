@@ -1,136 +1,85 @@
 # YourTeam active sprint board.
-sprint: 36
-status: closed        # none | active | review | closed | aborted
-closed: 2026-07-06    # PO verdict: accept all three (050+043+047), 6/6 pts.
+sprint: 37
+status: active        # none | active | review | closed | aborted
 started: 2026-07-06
-goal: "Production-hardening: the live loop survives transient vendor/network errors
-  (STORY-050), the documented .env-based startup actually works (STORY-043), and the
-  accumulated quality minors are cleared (STORY-047)."
-branch: sprint-36
-start_tag: sprint-36-start
-# PARKED SPRINT NOTE: sprint 35 (STORY-017 deployment) is PAUSED at the PO's request
-# (2026-07-06) — its code (CORS, railway.toml, vercel.json, runbook) lives UNMERGED on
-# branch sprint-35; its frozen board is snapshotted VERBATIM at
-# docs/scrum/sprints/2026-07-06-sprint-35/paused-board.yaml. Resume recipe: after
-# sprint-36 closes/merges, rebase sprint-35 onto main (expect conflicts in pyproject.toml
-# [uvicorn move vs dotenv add], CLAUDE.md, .scrum files — resolve keeping BOTH stories'
-# content), re-run the nine gates on the rebased branch (edge-case #2), restore the board
-# from the snapshot, then continue at STORY-017's live tail (GitHub repo = step 0).
-# STORY-017 stays sprint: 35 in the backlog; sprint-36 does NOT touch it.
+goal: "Close the two remaining console-free maintenance gaps: the maintenance ordering
+  violation returns a clean, form-mappable 422 instead of a leaked Pydantic blob
+  (STORY-052), and the Dashboard visibly marks components that are under maintenance right
+  now (STORY-046)."
+branch: sprint-37
+start_tag: sprint-37-start
+# Capacity: recorded velocity last-3 = sprint 33 (5), 34 (5), 36 (6) -> mean 5.33. Sprint 35
+# is PARKED/unmerged (no accepted points recorded), so it is not in the mean. Committed 3
+# (052=1 + 046=2) — a DELIBERATE under-commit: these are the ONLY two console-free `ready`
+# stories. STORY-017 (deploy, parked on sprint-35) and STORY-053 (failure-shim proxy) both
+# need PO console time, which the PO deferred; padding with a console-gated story would
+# block mid-sprint. PO approval 2026-07-06 (planning): "Approve & lock" as proposed.
 #
-# Capacity: velocity last-3 (32,33,34) = 5,5,5 -> mean 5.0. Committed 6 (050=3, 043=2,
-# 047=1) — a DELIBERATE one-point over-commit at explicit PO direction ("start next
-# sprint with 50,43,47", 2026-07-06); 047 is last in order and drops first if it bites.
-# PO approvals same ceremony: STORY-050 refinement (AC3 = log-only never-crash; catch-all
-# per-cycle taxonomy) + lock.
+# PARKED SPRINT NOTE (unchanged): sprint 35 (STORY-017 deployment) is PAUSED at the PO's
+# request (2026-07-06); its code lives UNMERGED on branch sprint-35, frozen board snapshot
+# at docs/scrum/sprints/2026-07-06-sprint-35/paused-board.yaml. Resume recipe: after a
+# later sprint merges, rebase sprint-35 onto main (expect conflicts in pyproject.toml,
+# CLAUDE.md, .scrum files — keep BOTH stories' content), re-run the nine gates, restore the
+# board from the snapshot, then continue at STORY-017's live tail (GitHub repo = step 0).
+# STORY-017 stays sprint: 35 in the backlog; sprint-37 does NOT touch it.
+# NOTE: sprint-37 changes frontend maintenance files (fieldError.ts, DashboardPage) and
+# backend maintenance/validation.py — none overlap STORY-017's CORS/deploy-config diff, so
+# the eventual sprint-35 rebase gains no NEW conflict from sprint-37 beyond the usual
+# .scrum/CLAUDE.md/pyproject bookkeeping.
 #
-# WORKFLOW: STORY-050 (3 pts) -> full pipeline (Sonnet 5 impl HIGH effort + Opus spec &
-# quality reviewers + six-gate DoD). STORY-043 (2 pts) + STORY-047 (1 pt) -> gate-only.
-# All three are backend stories; frontend/ must stay untouched (empty frontend diff at
-# each gate; frontend 222-test evidence @ main lineage holds by that empty diff).
-# DB-gated pytest runs against an ISOLATED throwaway DB (unset DATABASE_URL so the
-# fixture spawns its own container) while the PO's local stack keeps running on 55432.
+# WORKFLOW: both stories are <=2 pts -> gate-only pipeline (Sonnet 5 implementer at HIGH
+# effort + DoD gate; NO spec/quality reviewer pipeline, per the size rule). STORY-052
+# touches BOTH backend + frontend -> full six-gate backend DoD + three-gate frontend DoD.
+# STORY-046 is frontend-only -> three-gate frontend DoD; backend gates still run and must
+# show an EMPTY backend diff (frontend/ change only).
+# DB-gated pytest runs against an ISOLATED throwaway DB (unset DATABASE_URL so the fixture
+# spawns its own container) while the PO's local stack keeps running on 55432 — the
+# 2026-07-02 single-non-concurrent-invocation agreement applies.
 #
-# TOOLING: none. CONSUMER-DTO CHECK: n/a (no consumer story). The NEW 2026-07-06
-# agreement (probe failure paths live before claiming a producer gap) noted — no producer
-# gaps are claimed by any story this sprint.
+# CONSUMER-DTO CHECK (2026-07-06, at planning): STORY-046 renders active-maintenance state
+# from GET /api/v1/maintenance. Verified against api/v1/maintenance/models.py::
+# MaintenanceWindowDTO = {id, component_id, starts_at, ends_at, reason} — tz-aware ISO
+# datetimes, NO server-side `state` field; active/upcoming/past is a CLIENT derivation the
+# frontend already does (features/maintenance/windowState.ts::deriveWindowState, half-open
+# starts_at <= now < ends_at). All fields the AC needs exist on the wire; 046 reuses that
+# derivation keyed by component_id. No producer gap; no AC trim needed.
+# STORY-052's failure-path claim was already live-probed (sprint-34): the domain layer
+# rejects end-before-start AND equal timestamps (422); 052 only relocates the message to
+# the edge validator for a clean one-liner — no new producer capability claimed.
 #
-# BASELINE at lock: sprint-36 cut from main @ 2f4547c (tag sprint-36-start) — main
-# unchanged since the sprint-34 close (sprint-35 is unmerged), so sprint-34's gate
-# evidence (backend six-gate @ 362fb52 lineage re-proven @ d7fdd49 on the 35 branch only;
-# for MAIN: 498 passed @ 362fb52 + frontend 222 @ 53ad5a1) holds for the cut point by
-# empty code diff (verified at the sprint-35 lock and unchanged since).
+# TOOLING: none.
 #
-# ORDER: 050 (highest risk, core loop) -> 043 (entrypoints) -> 047 (minors, droppable).
-# 050 and 043 both touch composition/run.py — SEQUENTIAL, never parallel dispatches.
+# BASELINE at lock: sprint-37 cut from main @ b64a122 (tag sprint-37-start). Everything on
+# main since the last green gate (8237962) is docs/.scrum only — the code diff
+# 8237962..b64a122 over backend/ frontend/ scripts/ config/ pyproject.toml alembic.ini
+# migrations/ is EMPTY (verified at lock) — so the sprint-36 gate evidence holds for the
+# cut point: backend 511 passed @ 8237962 lineage + frontend 222 passed @ 53ad5a1 lineage.
+#
+# ORDER: 052 (1) -> 046 (2). 052 first: higher blast radius (backend maintenance/
+# validation.py + wiki articles), a crisply-specified defect that lands an early Done and
+# warms the maintenance-frontend context (fieldError.ts, MaintenancePage) that 046 reuses;
+# 046 second reuses that context + the windowState derivation, frontend-only, slightly more
+# open-ended UI, so a slip there has the least blast radius.
 stories:
-  - id: STORY-050
-    points: 3
-    board: done            # awaiting PO verdict at review
-    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
-    blocked_question: null
-    attempts: 1            # clean single dispatch (6e4ffbd..bba14b5) + one tiny spec-review
-                           # follow-up test applied by the orchestrator (738d055)
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest (isolated throwaway DB, PO stack untouched) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check"
-        exit_code: 0
-        output_tail: "504 passed (+6 over sprint-35-lineage 498+... baseline main 498; +5
-          implementer tests, +1 follow-up); Contracts: 5 kept, 0 broken; FK-direction OK 11/0;
-          alembic OK; ruff both clean. Frontend untouched (empty diff from b320143)."
-        commit: 738d055
-        at: 2026-07-06T16:40:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC3 ALL MET; reviewer ran 16/16 and traced every design pin
-        to its driving test — AC1 asserts the SECOND cycle's ingest ran via source_event_id;
-        AC2 proves failure before build_live_loop is ever called; AC3 counter asserts
-        1,2,reset-to-1 message content; cancellation + stop-after-failed-cycle pinned;
-        0 deletions in existing tests) / quality APPROVE (0C/0M, all seven scrutiny points —
-        try wraps ONLY run_cycle, on_cycle bugs still propagate, CancelledError untouched,
-        no busy-loop on hard failure, wiki Facts match code exactly; verdict: 'exemplary')."
-      fix: "One spec-review non-blocking finding applied by the orchestrator @ 738d055: the
-        AC-literal >=3-consecutive-failures case (counts 1,2,3 + loop still scheduling) —
-        the original test peaked at 2 consecutive. All gates re-run green at that SHA."
-      second_pass: null
-      open_minors:
-        - "logger.exception's %s exc arg duplicates the traceback content — intentional for
-          single-line greppability (quality reviewer: leave as is)."
-        - "Log-only-forever means persistent failure surfaces ONLY in logs — the explicit PO
-          decision; standing observability/alerting candidate (pairs with the loop-liveness
-          surface idea from the 2026-07-06 debug sprint)."
-    blast_radius_resolved: true   # sweep flagged ingest-service-and-pull-loop.md (updated,
-                                  # ceb149f) + sample-mode.md (re-verified, bba14b5); the
-                                  # follow-up test commit is additive to an already-swept file
-  - id: STORY-043
-    points: 2
-    board: done            # awaiting PO verdict at review
-    pipeline: gate             # 2 pts -> gate-only
-    blocked_question: null
-    attempts: 1            # clean single dispatch (6a33edb..0a8b36b), no fix loop
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest (isolated throwaway DB, PO stack untouched) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check (orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "508 passed (+4 over 050''s 504); Contracts 5 kept / 0 broken; FK 11/0;
-          alembic OK; ruff both clean. Frontend untouched (empty diff main...HEAD)."
-        commit: 0a8b36b
-        at: 2026-07-06T17:35:00+05:30
-    review: null           # 2 pts -> gate-only per the default pipeline
-    implementer_note: "load_dotenv() at the two entrypoints only (bare call — python-dotenv
-      walks up from the calling file, CWD-independent, documented at call sites); exported
-      vars always win (AC3 test); ordering test proves main() loads dotenv BEFORE
-      settings/secrets; asgi mirror test handles the importlib.reload patch subtlety.
-      CREDENTIAL-SAFETY catch: pre-existing entrypoint tests would have loaded the REAL
-      repo .env after this change — all four patched to stay hermetic. CLAUDE.md''s two
-      false claims + dev-setup-and-dod.md Fact corrected (AC5)."
-    blast_radius_resolved: true   # sweep: 6 articles — dev-setup-and-dod (AC5 fix, f66ecb0),
-                                  # ingest-service-and-pull-loop (real Fact update, e60cc64),
-                                  # 4 re-verifies (architecture-boundary, api-five-file-
-                                  # convention, config-layer, statuspage-publish + sample-mode)
-  - id: STORY-047
+  - id: STORY-052
     points: 1
-    board: done            # awaiting PO verdict at review — the 6/5 over-commit never bit
-    pipeline: gate             # 1 pt -> gate-only
+    board: todo
+    pipeline: gate             # 1 pt -> gate-only (no reviewers)
     blocked_question: null
-    attempts: 1            # clean single dispatch (a63876e..8237962), no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "pytest (isolated throwaway DB) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check (orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "511 passed (+3 over 043's 508); Contracts 5 kept / 0 broken; FK 11/0;
-          alembic OK; ruff both clean. Frontend untouched (empty diff 6895e7f..HEAD)."
-        commit: "8237962"
-        at: 2026-07-06T18:10:00+05:30
-    review: null           # 1 pt -> gate-only per the default pipeline
-    implementer_note: "All 5 story-file minors applied, none stale: create_app now keeps
-      StatusWritebackPublisher when component_repo is injected without publication_repo
-      (AC1, behavior fix from the STORY-045 review); publish_best_effort folded into
-      BestEffortPublisher.publish (dual-seam removed); availability child DTOs built via
-      _to_dto().model_dump() (nine-field duplication gone; the double-iteration item
-      deliberately left — no-behavior-change rule); FakeSampleModeRepository store hint
-      parametrized. Sweep: 4 articles updated/re-verified at d441468."
-    blast_radius_resolved: true   # sweep: api-five-file-convention + statuspage-publish
-                                  # (real updates), architecture-boundary + sample-mode
-                                  # (re-verified); compile pass re-pinned dev-setup-and-dod
+    dod_evidence: []
+    review: null               # 1 pt -> gate-only per the default pipeline
+    blast_radius_resolved: false
+  - id: STORY-046
+    points: 2
+    board: todo
+    pipeline: gate             # 2 pts -> gate-only (no reviewers)
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    review: null               # 2 pts -> gate-only per the default pipeline
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

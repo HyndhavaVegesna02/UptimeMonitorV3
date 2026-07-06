@@ -304,7 +304,7 @@ stories:
     points: 2
     priority: 22
     type: feature
-    sprint: null
+    sprint: 37      # sprint-37 story 2 (frontend overlay)
   # ── Sample switch (PO idea, 2026-07-03 post-sprint-30 demo) ───────
   - id: STORY-048
     title: Sample switch (backend) — persisted flag + toggle API + incoming signals recorded as DOWN while ON
@@ -337,7 +337,7 @@ stories:
     points: 1
     priority: 22
     type: defect
-    sprint: null
+    sprint: 37      # sprint-37 story 1 (backend edge validator + frontend inline mapping)
   - id: STORY-050
     title: Defect — a single transient Grail/network error crashes the whole live loop
     file: docs/scrum/stories/STORY-050-live-loop-transient-error-resilience.md
