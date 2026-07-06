@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: 6a33edb
+verified_sprint: sprint-36
 status: verified
 ---
 
@@ -54,3 +54,9 @@ status: verified
   describes) now wraps the real `IngestService` in a `SampleModeIngest` decorator (the on-demand
   outage simulator); step 4 (`build_publisher`) and everything downstream of it is byte-identical.
   Re-verified; no Fact in this article changed. verified_sha → 0ea652e.
+- sprint-36 (STORY-043, mechanical staleness sweep only): the publisher chain itself is UNCHANGED.
+  `composition/run.py` gained ONE unrelated line before ANY of this article's code runs — a
+  `load_dotenv()` call at the very top of `main()`, before `load_settings`/`load_live_secrets`
+  (see [[dev-setup-and-dod]] and [[ingest-service-and-pull-loop]]) — `build_live_loop` and
+  `build_publisher` themselves are byte-identical. Re-verified; no Fact in this article changed.
+  verified_sha → 6a33edb.
