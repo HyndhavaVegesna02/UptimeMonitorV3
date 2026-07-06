@@ -1,7 +1,7 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: b7811cf
+verified_sha: 1257cc9
 verified_sprint: sprint-33
 status: verified          # verified | stale | archived
 ---
@@ -163,6 +163,24 @@ below for the mechanical deletion recipe.
   — were NOT touched and pass unmodified; neither file appears in this
   article's `code_refs` because neither changed.
 
+### Operational gotchas (live-verified 2026-07-06 debug sprint)
+- **The flip is NOT retroactive.** Forced copies keep `source_event_id` unchanged (D4
+  above: "dedup and watermark behavior is identical regardless of the flag"), so any
+  observation already persisted as `up` before the flip stays `up` forever — DOWN applies
+  only to events ingested in cycles AFTER the flip. The first-ever cycle backfills
+  Grail's ~2h default scan window; flipping ON after that leaves Check History
+  overwhelmingly "up" while new events trickle in DOWN one per minute. For an all-down
+  demo, flip ON before starting the loop against a fresh DB.
+- **The flag row lives per DB instance.** Recreating the throwaway dev Postgres
+  (`scripts/dev_db.py up`, or the pytest `migrated_db` fixture) resets `sample_mode` to
+  empty = OFF. The Dashboard toggle meanwhile keeps showing ON from
+  `useSampleMode`'s client-side override (it reflects the last successful PUT and never
+  re-polls) — the UI can show ON against a database whose flag is OFF. Diagnostic order
+  when "sample mode is on but rows are up": `select * from sample_mode` in the DB the
+  LOOP reads → watermark advancing across two cycles → `select health, raw_ref,
+  max(observed_at) from observations group by 1,2`. Full evidence trail:
+  `docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md`.
+
 ### The frontend consumer — Dashboard sample-mode toggle (STORY-049)
 - The Dashboard tab (`frontend/src/pages/DashboardPage.tsx`) renders a real
   `<button role="switch">` reflecting `GET /api/v1/sample-mode` on load and
@@ -276,6 +294,15 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- 2026-07-06 (debug sprint, no story — `docs/scrum/sprints/2026-07-06-debug-sample-mode/
+  report.md`): added the "Operational gotchas" section after a PO report ("sample mode ON
+  but Check History shows up") was root-caused as environmental, not a code defect. The
+  full chain (PUT → flag row → per-cycle read → forced-DOWN ingest → history API) was
+  live-verified BOTH ways against real Grail on branch
+  `debug/sample-mode-forced-down-not-applied`: flag ON → 120/120 + 2/2 rows `down` with
+  the D5 sentinel across two advancing-watermark cycles; flag OFF → subsequent rows
+  genuine `up`, `raw_ref` NULL. No Facts changed — the gotchas make explicit what D4's
+  dedup-unchanged fact already implied operationally. verified_sha = 1257cc9.
 - sprint-33 (STORY-015g, unrelated story — mechanical staleness sweep only): the same three
   `code_refs` (`frontend/src/api/types.ts`, `frontend/src/api/client.ts`,
   `frontend/src/mocks/handlers/index.ts`) changed again, but ONLY additively — STORY-015g (the
