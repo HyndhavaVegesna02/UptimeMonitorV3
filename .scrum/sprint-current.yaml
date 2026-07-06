@@ -1,7 +1,9 @@
 # YourTeam active sprint board.
 sprint: 34
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-06
+closed: 2026-07-06    # PO verdict: accept both (051 + 015f), 5/5 pts. Minors routed to
+                      # STORY-052 (already re-scoped mid-sprint); no new follow-up stories.
 goal: "Land the ingestion-stall fix on main and complete the second mutating tab: the live
   loop ingests reliably past its first cycle (STORY-051), and operators can view and
   schedule maintenance windows from the dashboard (STORY-015f)."

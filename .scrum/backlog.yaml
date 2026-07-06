@@ -235,7 +235,7 @@ stories:
   - id: STORY-015f
     title: Maintenance tab — windows list + schedule form
     file: docs/scrum/stories/STORY-015f-maintenance-tab.md
-    status: ready   # AC3 trimmed at sprint-34 planning (2026-07-06, PO-approved): end-before-start is NOT a backend 422 — see STORY-052
+    status: done    # accepted at Sprint 34 review (2026-07-06), first-pass clean; all six tabs now real. Minors -> STORY-052
     points: 3
     priority: 20
     type: feature
@@ -325,7 +325,7 @@ stories:
   - id: STORY-051
     title: Defect — DQL watermark bound compared as a bare string; ingestion silently stalls after the first cycle
     file: docs/scrum/stories/STORY-051-dql-watermark-string-compare-stall.md
-    status: ready   # PO-reported 2026-07-04; root-caused + fixed hotfix-style on debug/ingest-stall-sample-mode (c1839e4); fix live-verified twice (2026-07-04 + the 2026-07-06 debug sprint); in sprint 34 for the DoD gate (AC3) + acceptance
+    status: done    # accepted at Sprint 34 review (2026-07-06) — fix live-verified twice; gate 498 passed
     points: 2
     priority: 16
     type: defect
