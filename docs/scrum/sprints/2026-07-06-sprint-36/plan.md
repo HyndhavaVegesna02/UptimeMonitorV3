@@ -73,8 +73,8 @@ STORY-045 publisher-wiring + STORY-044 availability-DTO minors, verbatim from th
 file. No design decisions; mechanical. Six-gate DoD + sweep.
 
 ### Tasks
-- [ ] 1. Apply the story-file minors (one commit per coherent fix).
-- [ ] 2. Six-gate DoD + sweep.
+- [x] 1. Apply the story-file minors (one commit per coherent fix).
+- [x] 2. Six-gate DoD + sweep.
 
 ### Conventions checklist (standing)
 (a) doc comments citing the dossier §/story; (b) empty-input/boundary tests where
