@@ -39,12 +39,43 @@ start_tag: sprint-35-start
 stories:
   - id: STORY-017
     points: 5
-    board: in-progress   # Sonnet 5 implementer dispatched (HIGH effort), code-side tasks 1-7
+    board: in-progress   # code side COMPLETE (reviews passed, gates green); live tail (tasks
+                         # 8-10: PO console deploy + AC3/AC4) is the remaining work
     pipeline: gate+reviewers   # 5 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gates
     blocked_question: null
-    attempts: 0
+    attempts: 1            # implementer hit its session limit mid-wiki-sweep after tasks 1-6
+                           # committed clean; orchestrator completed the trivial sweep tail
+                           # under the 2026-06-25 rule (no re-dispatch needed)
     paused_at_commit: null
-    dod_evidence: []
+    dod_evidence:
+      - command: "pytest (isolated throwaway DB via fixture, running stack untouched) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check; frontend npm test/build/lint"
+        exit_code: 0
+        output_tail: "Backend @ d7fdd49 (re-run after the two review-minor fixes): 503 passed
+          (+5 CORS tests over sprint-34's 498); 5 contracts kept; 11 FKs 0 violations; alembic
+          OK; ruff both clean. Frontend @ 932b613: 33 files / 222 passed, build OK, lint clean —
+          holds for HEAD by empty frontend/ diff since. Wiki sweep: ALL CURRENT after
+          re-verifying api-five-file-convention, migrations-and-db (x2), sample-mode,
+          deployment-topology."
+        commit: d7fdd49
+        at: 2026-07-06T14:55:00+05:30
+    review:
+      first_pass: "spec PASS (AC1/AC2/AC5/AC6 MET with re-run evidence — reviewer re-ran
+        lint-imports + the CORS pytest subset, verified vercel.json rewrite ORDER, the real
+        /api/v1/health route behind the Railway healthcheck, and full-diff secrets scan;
+        AC3/AC4 DEFERRED-TO-LIVE-TAIL with enablement judged sound and complete) / quality
+        APPROVE (0 Critical, 0 Major; all seven scrutiny points PASS — preDeployCommand has
+        its deps in the built image, doc tables consistent cell-by-cell across CLAUDE.md /
+        DEPLOY.md / wiki, CORS tests drive real requests, allow_credentials=False verified)."
+      fix: "Review minors 1+3 applied same-session @ d7fdd49 (docstring '*' passthrough
+        qualification; DEPLOY.md trailing-slash origin warning) — ops-facing, pre-live-tail;
+        six backend gates re-run green at that SHA."
+      second_pass: null
+      open_minors:
+        - "MINOR-2: load_cors_allowed_origins parsing promises (blank entries dropped,
+          whitespace stripped) not directly regression-locked by a parametrized unit test —
+          logic verified correct by reviewer."
+        - "MINOR-4: vercel.json SPA fallback relies on Vercel filesystem-first rewrite
+          semantics without an explicit doc citation (every other Vercel behavior is cited)."
     blast_radius_resolved: false   # pyproject.toml is a SHARED code_ref (several articles) —
                                    # expect the sweep to flag multiple; plus the new
                                    # deployment-topology article (AC6)
