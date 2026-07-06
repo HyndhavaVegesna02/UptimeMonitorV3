@@ -1,8 +1,8 @@
 ---
 title: API Five-File Feature Convention
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, pyproject.toml]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: 6a33edb
+verified_sprint: sprint-36
 status: verified
 ---
 
@@ -66,4 +66,8 @@ status: verified
   still reports "5 kept / 0 broken"; only that one contract's module list grew, same shape as
   sprint-30's `topology` addition). `create_app`/`app.state`/`api/dependencies.py`/
   `api/v1/__init__.py` each gained a marked STORY-048 seam. verified_sha → 0ea652e.
+- sprint-36 (STORY-043, mechanical staleness sweep only): the only `pyproject.toml` edit was
+  adding `python-dotenv` to `[project.dependencies]` (a `.env`-loading defect fix, unrelated to
+  the API layer) — the `api-feature-independence` contract's `modules` list and the five-file
+  convention are untouched. 5 contracts kept / 0 broken, unchanged. verified_sha → 6a33edb.
 
