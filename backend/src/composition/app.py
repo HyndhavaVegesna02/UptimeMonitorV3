@@ -1,6 +1,7 @@
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from src.core.ports import (
     ClockPort,
@@ -60,6 +61,24 @@ def create_app(
     obligated to supply both just to exercise proposal-only endpoints).
     """
     app = FastAPI(title="Uptime Monitor V3 API", lifespan=lifespan)
+
+    # CORS (dossier §17, STORY-017 AC2): defense-in-depth behind the Vercel
+    # `/api/*` rewrite (D2) — the browser stays same-origin through the
+    # rewrite, but CORS is restricted anyway per the 2026-06-23
+    # defer-auth-cleanly agreement. Allowlist is env-driven
+    # (`settings.CORS_ALLOWED_ORIGINS_VAR`), defaulting to localhost dev
+    # origins only when unset. `allow_credentials=False`: no cookie/session
+    # auth exists yet (auth is deferred), so no credentialed-request need to
+    # widen the grant.
+    from src.composition.settings import load_cors_allowed_origins
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=load_cors_allowed_origins(),
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
     # Wire database engine and repositories
     if proposal_repo is None:

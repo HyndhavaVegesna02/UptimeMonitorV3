@@ -56,6 +56,32 @@ def load_settings() -> Settings:
     )
 
 
+# The env var the composition layer reads for the CORS allowlist (dossier §17,
+# STORY-017 AC2/AC5). Comma-separated origins; config/docs reference the NAME
+# only, never a committed value.
+CORS_ALLOWED_ORIGINS_VAR = "CORS_ALLOWED_ORIGINS"
+
+# Localhost dev default when CORS_ALLOWED_ORIGINS is unset/empty — the Vite
+# dev server's default port (`frontend/vite.config.ts` has no explicit
+# `server.port`, so Vite's own default, 5173, applies). This default is a
+# fixed literal (not a secret) so local `uvicorn` runs get a same-origin-free
+# CORS grant with zero env setup, matching the "Run the app locally" recipe.
+DEFAULT_CORS_ALLOWED_ORIGINS: tuple[str, ...] = ("http://localhost:5173",)
+
+
+def load_cors_allowed_origins() -> list[str]:
+    """Load the CORS allowlist from the environment (dossier §17, STORY-017).
+
+    Reads a comma-separated list of origins from ``CORS_ALLOWED_ORIGINS``.
+    Unset or empty (after stripping blanks) falls back to
+    ``DEFAULT_CORS_ALLOWED_ORIGINS`` (localhost dev only) — never wide-open.
+    Whitespace around each origin is stripped; blank entries are dropped.
+    """
+    raw = os.environ.get(CORS_ALLOWED_ORIGINS_VAR, "")
+    origins = [origin.strip() for origin in raw.split(",") if origin.strip()]
+    return origins if origins else list(DEFAULT_CORS_ALLOWED_ORIGINS)
+
+
 class MissingLiveSecretError(ValueError):
     """Raised when one or more required live loop secrets are missing from the environment (dossier §17)."""
 
