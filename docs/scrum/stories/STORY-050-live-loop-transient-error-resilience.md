@@ -26,20 +26,29 @@ refinement: which errors are "transient" (network/HTTP/Grail-5xx?) vs which shou
 fast (config errors, auth failures — fail-fast is a design value per the config-layer fail-fast
 loader).
 
-## Acceptance Criteria (draft — refine before sprint entry)
-- [ ] AC1 (draft): given a cycle whose ingest raises a transient executor error (e.g.
-      `GrailQueryError` from a network timeout), `run_periodic` logs and continues; the NEXT cycle
-      runs on schedule. Tested with a fake executor that fails once then succeeds.
-- [ ] AC2 (draft): non-transient startup failures (missing secrets, bad config) still fail fast
-      and loudly — unchanged behavior, with a test pinning at least one such path.
-- [ ] AC3 (draft): repeated consecutive failures are visible (log level/counter), not silently
-      swallowed forever. Exact mechanism (threshold? crash after N?) is a refinement question.
+## Acceptance Criteria (refined 2026-07-06, PO-approved at sprint-36 planning)
+- [ ] AC1: given a cycle that raises (e.g. `GrailQueryError` from a network timeout),
+      `run_periodic` logs the error with the signal_key + cause and continues — the NEXT cycle
+      runs on schedule. Tested with a fake executor that fails once then succeeds, asserting the
+      second cycle's ingest actually ran.
+- [ ] AC2: startup failures stay fail-fast — missing secrets (`MissingLiveSecretError`) and bad
+      config still terminate before any loop starts (these paths run BEFORE `run_periodic`;
+      unchanged behavior, pinned by test). Publish-path errors are OUT of scope (already
+      best-effort per STORY-016a/045).
+- [ ] AC3 (PO decision 2026-07-06: LOG-ONLY, never crash): every failed cycle logs at ERROR
+      with its consecutive-failure count for that signal; a success resets the counter; the
+      loop NEVER exits on cycle failures — pinned by a test driving many consecutive failures
+      and asserting the loop is still scheduling. Accepted trade-off (recorded): a persistent
+      failure (e.g. mis-rotated token) is visible only in logs — pairs with the loop-liveness
+      surface candidate from the 2026-07-06 debug sprint.
 
 ## Open Questions
-- Transient-vs-fatal error taxonomy: is `GrailQueryError` always retryable? Should publish-path
-  errors get the same treatment (they already have best-effort semantics per STORY-016a)?
-- Should a failure counter eventually crash the process (supervisor-friendly) or only log?
+None — taxonomy resolved (ALL per-cycle exceptions are survivable, no per-error classification;
+fail-fast is preserved structurally because startup runs before the loop), and the
+crash-vs-log question resolved by the PO (log only).
 
 ## History
 - 2026-07-03: filed as draft from the live crash observed during Sprint 32's PO-requested local
   stack run (orchestrator observation; estimate TBD at refinement).
+- 2026-07-06: refined to READY at sprint-36 planning. PO decisions: AC3 = log-only (never
+  crash); simple taxonomy (catch-all per cycle, startup untouched). Estimate 3.

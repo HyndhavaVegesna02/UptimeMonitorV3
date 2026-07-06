@@ -1,148 +1,76 @@
 # YourTeam active sprint board.
-sprint: 34
-status: closed        # none | active | review | closed | aborted
+sprint: 36
+status: active        # none | active | review | closed | aborted
 started: 2026-07-06
-closed: 2026-07-06    # PO verdict: accept both (051 + 015f), 5/5 pts. Minors routed to
-                      # STORY-052 (already re-scoped mid-sprint); no new follow-up stories.
-goal: "Land the ingestion-stall fix on main and complete the second mutating tab: the live
-  loop ingests reliably past its first cycle (STORY-051), and operators can view and
-  schedule maintenance windows from the dashboard (STORY-015f)."
-branch: sprint-34
-start_tag: sprint-34-start
-# Capacity: velocity last-3 (sprints 31,32,33) = 5,5,5 -> mean 5.0. Committed 5
-# (STORY-051 2 + STORY-015f 3). PO approval 2026-07-06 (planning): "Approve & lock";
-# second PO decision same ceremony: STORY-015f AC3's "end before start" example TRIMMED
-# (backend has no such 422) + STORY-052 filed as draft for the producer gap.
-# STORY-043 (2) + STORY-047 (1) remain ready, waiting — sprint-35 candidates.
+goal: "Production-hardening: the live loop survives transient vendor/network errors
+  (STORY-050), the documented .env-based startup actually works (STORY-043), and the
+  accumulated quality minors are cleared (STORY-047)."
+branch: sprint-36
+start_tag: sprint-36-start
+# PARKED SPRINT NOTE: sprint 35 (STORY-017 deployment) is PAUSED at the PO's request
+# (2026-07-06) — its code (CORS, railway.toml, vercel.json, runbook) lives UNMERGED on
+# branch sprint-35; its frozen board is snapshotted VERBATIM at
+# docs/scrum/sprints/2026-07-06-sprint-35/paused-board.yaml. Resume recipe: after
+# sprint-36 closes/merges, rebase sprint-35 onto main (expect conflicts in pyproject.toml
+# [uvicorn move vs dotenv add], CLAUDE.md, .scrum files — resolve keeping BOTH stories'
+# content), re-run the nine gates on the rebased branch (edge-case #2), restore the board
+# from the snapshot, then continue at STORY-017's live tail (GitHub repo = step 0).
+# STORY-017 stays sprint: 35 in the backlog; sprint-36 does NOT touch it.
 #
-# BRANCH NOTE: sprint-34 cut from main @ c5a90f8 (tag sprint-34-start), then IMMEDIATELY
-# fast-forwarded to 6b34c1a by merging debug/sample-mode-forced-down-not-applied — the
-# PO-directed debug-branch lineage carrying STORY-051's fix (c1839e4: query.py +
-# test_dynatrace_adapter.py), its wiki update (2d999f2), its story/backlog filing
-# (1257cc9), and the 2026-07-06 debug-sprint record (6b34c1a). STORY-051's remaining
-# sprint work is therefore: six-gate DoD on this merged tree (its AC3) + mechanical wiki
-# sweep + PO acceptance at review. Its AC1/AC2 are already live-verified twice
-# (2026-07-04 fix session; 2026-07-06 debug sprint — watermark advanced across cycles).
+# Capacity: velocity last-3 (32,33,34) = 5,5,5 -> mean 5.0. Committed 6 (050=3, 043=2,
+# 047=1) — a DELIBERATE one-point over-commit at explicit PO direction ("start next
+# sprint with 50,43,47", 2026-07-06); 047 is last in order and drops first if it bites.
+# PO approvals same ceremony: STORY-050 refinement (AC3 = log-only never-crash; catch-all
+# per-cycle taxonomy) + lock.
 #
-# WORKFLOW: STORY-051 (2 pts) -> gate-only (the fix is already written + live-verified;
-# no new implementation dispatch expected — orchestrator runs the gate; any fix loop uses
-# a Sonnet 5 implementer at HIGH effort per the 2026-07-02 rule). STORY-015f (3 pts) ->
-# Sonnet 5 implementer at HIGH effort + Opus spec & quality reviewers + frontend DoD gate
-# (npm test / npm run build / npm run lint from frontend/ on a clean committed tree).
-# Backend paths must stay untouched by 015f: diff from STORY-051's gate SHA over backend/
-# scripts/ pyproject.toml alembic.ini migrations/ config/ must be EMPTY at 015f's gate.
+# WORKFLOW: STORY-050 (3 pts) -> full pipeline (Sonnet 5 impl HIGH effort + Opus spec &
+# quality reviewers + six-gate DoD). STORY-043 (2 pts) + STORY-047 (1 pt) -> gate-only.
+# All three are backend stories; frontend/ must stay untouched (empty frontend diff at
+# each gate; frontend 222-test evidence @ main lineage holds by that empty diff).
+# DB-gated pytest runs against an ISOLATED throwaway DB (unset DATABASE_URL so the
+# fixture spawns its own container) while the PO's local stack keeps running on 55432.
 #
-# TOOLING: none.
+# TOOLING: none. CONSUMER-DTO CHECK: n/a (no consumer story). The NEW 2026-07-06
+# agreement (probe failure paths live before claiming a producer gap) noted — no producer
+# gaps are claimed by any story this sprint.
 #
-# CONSUMER-DTO CHECK (2026-07-02 + 2026-07-04 units/scale agreements) done at planning
-# against producing code AND the LIVE wire (local stack was running):
-# - GET /api/v1/maintenance -> [MaintenanceWindowDTO {id int, component_id str,
-#   starts_at/ends_at ISO-8601 UTC "Z", reason str|null}]. POST /api/v1/maintenance
-#   {component_id, starts_at, ends_at, reason?} -> the created DTO echoed back. Live
-#   probe round-tripped: POST {"...T10:00:00Z","...T11:00:00Z"} -> GET returns it
-#   verbatim. NO `state` field on the wire — upcoming/active/past is DERIVED client-side
-#   using the backend's pinned boundary rule: HALF-OPEN starts_at <= now < ends_at
-#   (core/ports/maintenance_repository.py::is_under_maintenance docstring + Postgres
-#   adapter WHERE clause agree). Equal boundaries: a window is NOT active at ends_at.
-# - Real 422 cases (maintenance/validation.py::validate_maintenance_request): tz-NAIVE
-#   starts_at or ends_at; empty/whitespace component_id. NOT end-before-start (STORY-052
-#   gap). AC3 trimmed to match at planning, PO-approved.
-#   CORRECTION (2026-07-06 mid-sprint): the end-before-start line was WRONG — the DOMAIN
-#   layer rejects it (and equal) with a 422; planning probed only the happy path live.
-#   STORY-052 re-scoped (leaked Pydantic detail + inline mapping); story/plan History
-#   corrected; PO informed at review; retro input: probe failure paths when pinning.
-# - UNITS/FORMATS: datetimes are ISO-8601 UTC with Z suffix on the wire; the form enters
-#   LOCAL time and must submit tz-aware (browser datetime-local -> Date -> toISOString);
-#   reason is nullable free text; id is int. MSW fixtures derive from the live sample
-#   pinned in plan.md ("Verified API contracts"), per the real-sample rule.
-# - One leftover probe row (id=1, "planning-time wire probe") lives in the throwaway dev
-#   DB only — dies with the container, not fixture material.
+# BASELINE at lock: sprint-36 cut from main @ 2f4547c (tag sprint-36-start) — main
+# unchanged since the sprint-34 close (sprint-35 is unmerged), so sprint-34's gate
+# evidence (backend six-gate @ 362fb52 lineage re-proven @ d7fdd49 on the 35 branch only;
+# for MAIN: 498 passed @ 362fb52 + frontend 222 @ 53ad5a1) holds for the cut point by
+# empty code diff (verified at the sprint-35 lock and unchanged since).
 #
-# BASELINE at lock: main @ c5a90f8 gate-green by empty diff — 9d6b6bf..c5a90f8 over
-# backend/ frontend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is EMPTY
-# (retro doc only), so sprint-33's close evidence (frontend 188 @ 2b0f2a6; backend
-# six-gate lineage) holds for the cut point. The ff-merge to 6b34c1a then CHANGES backend
-# code (the 051 fix) — re-proving the six gates on the merged tree IS STORY-051's AC3.
-#
-# Agreements in force: all of working-agreements.md as of c5a90f8, incl. the 2026-07-04
-# pair (units/scale pinned + real-sample fixtures — applied above; live render-vs-wire
-# spot check at review prep — orchestrator duty, stack running) and the 2026-07-03
-# wiki rules (sweep is the sole blast-radius decider; article-by-article commits).
+# ORDER: 050 (highest risk, core loop) -> 043 (entrypoints) -> 047 (minors, droppable).
+# 050 and 043 both touch composition/run.py — SEQUENTIAL, never parallel dispatches.
 stories:
-  - id: STORY-051
-    points: 2
-    board: done            # awaiting PO verdict at review
-    pipeline: gate             # 2 pts -> gate-only; fix pre-exists on the merged lineage
-    blocked_question: null
-    attempts: 1            # orchestrator-run close-out, no dispatch, no fix loop
-    paused_at_commit: null
-    dod_evidence:
-      - command: "pytest && lint-imports && python scripts/check_fk_direction.py && alembic upgrade head && ruff check . && ruff format --check . (orchestrator-run, single non-concurrent invocation vs throwaway DB at 55432; live loop + uvicorn STOPPED first per the 2026-07-02 agreement)"
-        exit_code: 0
-        output_tail: "pytest: 498 passed in 56.45s. lint-imports: Contracts: 5 kept, 0 broken.
-          FK-direction OK: 11 FKs, 0 violations. alembic upgrade head OK. ruff check: All
-          checks passed! ruff format --check: 181 files already formatted. AC1 pinned by the
-          committed toTimestamp test (c1839e4); AC2 live-verified twice (2026-07-04 fix
-          session; 2026-07-06 debug sprint — watermark 06:13:54->06:15:54 across cycles vs
-          real Grail, docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md)."
-        commit: 362fb52
-        at: 2026-07-06T12:35:00+05:30
-    review: null           # 2 pts -> gate-only per the default pipeline
-    blast_radius_resolved: true   # mechanical sweep over ALL articles at 362fb52: 0 stale —
-                                  # the debug-session commits (2d999f2 dynatrace-adapter,
-                                  # 6b34c1a sample-mode) already carried their updates
-  - id: STORY-015f
+  - id: STORY-050
     points: 3
-    board: done            # awaiting PO verdict at review
+    board: todo
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
     blocked_question: null
-    attempts: 1            # clean single dispatch (9681432..a65de00), no stall, no fix loop
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 33 files, 222 passed (+34 over sprint-33's 188). build (tsc -b
-          && vite build) OK 217ms. lint clean. Backend untouched: diff 362fb52..HEAD over
-          backend/ scripts/ pyproject.toml alembic.ini migrations/ config/ EMPTY — STORY-051's
-          six-gate evidence holds for the backend code state. LIVE render-vs-wire spot check
-          (2026-07-04 agreement, chrome-devtools vs real API on :8000): POSTed two real windows;
-          rendered row 1 http-check / 2026-07-06T07:03:07Z / 2026-07-06T09:03:07Z /
-          'DB failover drill' / Active EXACTLY matches wire id=1 with now inside the half-open
-          window; row 2 renders null reason as em-dash and Upcoming; component select populated
-          from the shared topology source."
-        commit: 53ad5a1
-        at: 2026-07-06T13:05:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC4 ALL MET; reviewer ran 222/222 and read bodies — both
-        half-open boundary instants unit-tested (now==starts_at -> active, now==ends_at ->
-        past); AC2 asserts the HANDLER-RECEIVED payload ends with Z and round-trips; AC3
-        asserts detail text INSIDE the specific field container for both real cases; AC4
-        labels via htmlFor/getByLabelText + Tab keyboard test; shared files additive, no
-        coverage deleted) / quality APPROVE (0 Critical, 0 Major; ApiError.detail additive
-        + non-JSON-body robust with pinned tests; useMaintenance race-free — stable retry
-        identity, form outside the phase gate so success-refresh can't unmount it,
-        double-submit disabled; WindowStateBadge vocabulary separation real + documented;
-        tokens-only verified against tokens.css; fixtures match the pinned wire sample
-        verbatim)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
-      open_minors:
-        - "Ordering-422 blob (STORY-052 territory): maps to the COMPONENT field via the
-          component_id token inside the Pydantic repr — graceful (no crash, deterministic,
-          full message shown) but misattributed + raw; fieldError.ts doc comment still says
-          'two real backend cases' and no test pins the multi-field-detail behavior. BOTH
-          folded into STORY-052's AC2 (2026-07-06)."
-        - "Inline-error JSX duplicated 4x in MaintenancePage.tsx — a tiny FieldError
-          sub-component would remove drift risk (pure cleanup)."
-        - "Field errors use role=alert but no aria-invalid/aria-describedby association —
-          consistent with peer tabs, flagged as the polished form."
-        - "new Date(value).toISOString() relies on native `required` (empty value would
-          throw RangeError as an unhandled rejection on a programmatic submit) —
-          defense-in-depth only, no real path today."
-        - "Global focus-ring rule covers input/button/a but not select — the Component
-          select shows the native outline, not the accent ring (spec reviewer)."
-    blast_radius_resolved: true   # implementer's sweep: frontend-zone.md (e48555d) +
-                                  # sample-mode.md (b9f65f9) re-verified article-by-article;
-                                  # orchestrator re-sweeps at the compile pass
+    dod_evidence: []
+    blast_radius_resolved: false   # pull_loop.py is in ingest-service-and-pull-loop.md +
+                                   # sample-mode.md code_refs — expect the sweep to flag
+  - id: STORY-043
+    points: 2
+    board: todo
+    pipeline: gate             # 2 pts -> gate-only
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false   # pyproject.toml (dotenv dep) + CLAUDE.md + the
+                                   # dev-setup-and-dod wiki false-claim fix (its AC5)
+  - id: STORY-047
+    points: 1
+    board: todo
+    pipeline: gate             # 1 pt -> gate-only; DROPS FIRST if the 6/5 over-commit bites
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
