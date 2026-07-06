@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: f0301c4
+verified_sprint: sprint-35
 status: verified
 ---
 
@@ -167,3 +167,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   change; the only `pyproject.toml` edit was adding `"src.api.v1.sample_mode"` to the
   `api-feature-independence` import-linter contract, unrelated to the config loader/resolvers.
   verified_sha = 0ea652e.
+- sprint-35: re-verified (STORY-017, D1). The only `pyproject.toml` change was moving
+  `uvicorn[standard]` from the `dev` extras to runtime `[project.dependencies]` — see
+  [[deployment-topology]]; unrelated to the config loader/resolvers this article describes.
+  verified_sha = f0301c4.
