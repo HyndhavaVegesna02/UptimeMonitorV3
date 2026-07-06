@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 34
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-06
 goal: "Land the ingestion-stall fix on main and complete the second mutating tab: the live
   loop ingests reliably past its first cycle (STORY-051), and operators can view and
