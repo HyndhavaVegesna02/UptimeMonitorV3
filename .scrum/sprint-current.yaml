@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 36
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-06
 goal: "Production-hardening: the live loop survives transient vendor/network errors
   (STORY-050), the documented .env-based startup actually works (STORY-043), and the
@@ -108,12 +108,28 @@ stories:
                                   # convention, config-layer, statuspage-publish + sample-mode)
   - id: STORY-047
     points: 1
-    board: in-progress   # implementer dispatched — the over-commit did NOT bite; story runs
-    pipeline: gate             # 1 pt -> gate-only; DROPS FIRST if the 6/5 over-commit bites
+    board: done            # awaiting PO verdict at review — the 6/5 over-commit never bit
+    pipeline: gate             # 1 pt -> gate-only
     blocked_question: null
-    attempts: 0
+    attempts: 1            # clean single dispatch (a63876e..8237962), no fix loop
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest (isolated throwaway DB) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check (orchestrator-run on clean committed HEAD)"
+        exit_code: 0
+        output_tail: "511 passed (+3 over 043's 508); Contracts 5 kept / 0 broken; FK 11/0;
+          alembic OK; ruff both clean. Frontend untouched (empty diff 6895e7f..HEAD)."
+        commit: "8237962"
+        at: 2026-07-06T18:10:00+05:30
+    review: null           # 1 pt -> gate-only per the default pipeline
+    implementer_note: "All 5 story-file minors applied, none stale: create_app now keeps
+      StatusWritebackPublisher when component_repo is injected without publication_repo
+      (AC1, behavior fix from the STORY-045 review); publish_best_effort folded into
+      BestEffortPublisher.publish (dual-seam removed); availability child DTOs built via
+      _to_dto().model_dump() (nine-field duplication gone; the double-iteration item
+      deliberately left — no-behavior-change rule); FakeSampleModeRepository store hint
+      parametrized. Sweep: 4 articles updated/re-verified at d441468."
+    blast_radius_resolved: true   # sweep: api-five-file-convention + statuspage-publish
+                                  # (real updates), architecture-boundary + sample-mode
+                                  # (re-verified); compile pass re-pinned dev-setup-and-dod
 hotfixes: []
 interrupts: []
