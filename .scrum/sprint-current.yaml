@@ -87,7 +87,7 @@ stories:
                                   # 6b34c1a sample-mode) already carried their updates
   - id: STORY-015f
     points: 3
-    board: todo
+    board: in-progress   # Sonnet 5 implementer dispatched (HIGH effort), full pipeline
     pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
     blocked_question: null
     attempts: 0
