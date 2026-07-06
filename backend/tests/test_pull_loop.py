@@ -604,6 +604,55 @@ def test_run_periodic_consecutive_failure_counts_increase_and_reset_on_success(
     assert "consecutive_failures=1" in error_records[2].getMessage()
 
 
+def test_run_periodic_three_consecutive_failures_keep_scheduling(caplog):
+    """AC3 (STORY-050): >= 3 CONSECUTIVE failures (the AC's literal bar,
+    spec-review follow-up) -- counts climb 1, 2, 3 with no reset in between,
+    and the loop is STILL scheduling afterwards (the 4th cycle runs).
+    """
+    from src.composition.pull_loop import run_periodic
+
+    watermark_repo = FakeWatermarkRepository()
+    ingest_port = RecordingIngestPort()
+    outcomes = ["fail", "fail", "fail", "success"]
+    call_count = {"n": 0}
+
+    async def run_scripted_sequence():
+        stop_event = asyncio.Event()
+
+        def scripted_executor(query: str) -> list[dict]:
+            idx = call_count["n"]
+            call_count["n"] += 1
+            if idx == len(outcomes) - 1:
+                stop_event.set()
+            if outcomes[idx] == "fail":
+                raise RuntimeError(f"transient failure #{idx}")
+            return [_row(f"evt-{idx}", "2026-06-24T10:00:00Z")]
+
+        with caplog.at_level(logging.ERROR, logger="src.composition.pull_loop"):
+            await run_periodic(
+                signal_key="checkout-http",
+                native_id="HTTP_CHECK-9F2A",
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_port,
+                executor=scripted_executor,
+                interval_seconds=0,
+                stop_event=stop_event,
+            )
+
+    asyncio.run(asyncio.wait_for(run_scripted_sequence(), timeout=5))
+
+    # All four cycles ran: three consecutive failures never exited the loop,
+    # and the 4th (successful) cycle actually ingested.
+    assert call_count["n"] == 4
+    assert len(ingest_port.batches) == 1
+
+    error_records = [r for r in caplog.records if r.levelno == logging.ERROR]
+    assert len(error_records) == 3
+    assert "consecutive_failures=1" in error_records[0].getMessage()
+    assert "consecutive_failures=2" in error_records[1].getMessage()
+    assert "consecutive_failures=3" in error_records[2].getMessage()
+
+
 def test_run_periodic_cancellation_still_propagates_and_stops_loop():
     """Guard (STORY-050): `asyncio.CancelledError` is a `BaseException`, not
     an `Exception`, in Python 3.13 -- so the bare `except Exception` added
