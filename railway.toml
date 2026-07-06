@@ -1,0 +1,40 @@
+# Railway config-as-code (dossier §17, STORY-017 AC1/AC3).
+#
+# Built to the "Using Config as Code" reference:
+#   https://docs.railway.com/config-as-code
+#   https://docs.railway.com/reference/config-as-code
+#   https://railway.com/railway.schema.json  (live JSON Schema)
+#
+# SCOPE: this file expresses the `api` service ONLY. Railway's config-as-code
+# fields apply to whichever service resolves this file (by default, the repo
+# root `railway.toml`/`railway.json`) — "configuration defined in code will
+# always override values from the dashboard" (same doc), so a SECOND service
+# in this repo (the `worker`, `python -m src.composition.run`) reading the
+# same file would inherit `startCommand`/`healthcheckPath` below, which is
+# wrong for a process with no HTTP port. Per Railway's own monorepo guidance
+# (https://docs.railway.com/deployments/monorepo, "Deploying a shared
+# monorepo") and the Help Station guidance for two services sharing a repo
+# (https://station.railway.com/questions/pre-deploy-command-from-railway-config-f-b5328546),
+# the `worker` service's start command (and its lack of a healthcheck) is set
+# via that service's own Settings tab in the console instead — see
+# docs/DEPLOY.md for the exact field values and the verification step (the
+# resolved config is visible per-deployment via "Understanding config
+# source" in the Railway dashboard).
+#
+# Both `api` and `worker` read the POOLED `DATABASE_URL` at runtime (never
+# this file); `preDeployCommand` below is the ONE release step, run once
+# before the `api` service's serve command, on `DATABASE_URL_DIRECT`
+# (CLAUDE.md "URL dialect note" — the direct URL must already carry the
+# `+psycopg` form since preDeployCommand runs the built image, not this repo's
+# venv). AC3 (fail-safe): Railway does not start the new container if
+# `preDeployCommand` exits non-zero — the previous deployment keeps serving.
+
+[build]
+builder = "RAILPACK"
+
+[deploy]
+preDeployCommand = "alembic upgrade head"
+startCommand = "uvicorn src.composition.asgi:app --host 0.0.0.0 --port $PORT"
+healthcheckPath = "/api/v1/health"
+healthcheckTimeout = 300
+restartPolicyType = "ON_FAILURE"
