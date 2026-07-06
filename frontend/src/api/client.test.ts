@@ -5,6 +5,7 @@ import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_COMPONENTS,
   FIXTURE_HISTORY_FRONTEND_HTTP,
+  FIXTURE_MAINTENANCE_WINDOWS,
   FIXTURE_PROPOSALS,
   FIXTURE_PUBLICATIONS,
   FIXTURE_TOPOLOGY,
@@ -15,10 +16,12 @@ import {
   getComponentAvailability,
   getComponents,
   getHistory,
+  getMaintenance,
   getPublications,
   getSampleMode,
   getTopology,
   postDecision,
+  postMaintenance,
   putSampleMode,
 } from './client'
 
@@ -45,6 +48,24 @@ describe('getComponents', () => {
 
     await expect(getComponents()).rejects.toBeInstanceOf(ApiError)
     await expect(getComponents()).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('carries the backend detail string on the thrown ApiError (STORY-015f AC3)', async () => {
+    server.use(
+      http.get('/api/v1/components', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(getComponents()).rejects.toMatchObject({ detail: 'boom' })
+  })
+
+  it('leaves ApiError.detail undefined when the non-ok body has no detail string', async () => {
+    server.use(
+      http.get('/api/v1/components', () => HttpResponse.json({}, { status: 500 })),
+    )
+
+    await expect(getComponents()).rejects.toMatchObject({ detail: undefined })
   })
 
   it('throws a typed ApiError on a network failure', async () => {
@@ -417,5 +438,109 @@ describe('getPublications', () => {
 
     await expect(getPublications()).rejects.toBeInstanceOf(ApiError)
     await expect(getPublications()).rejects.not.toBeInstanceOf(SyntaxError)
+  })
+})
+
+describe('getMaintenance', () => {
+  it('fetches and parses the maintenance window list from /api/v1/maintenance', async () => {
+    const windows = await getMaintenance()
+    expect(windows).toEqual(FIXTURE_MAINTENANCE_WINDOWS)
+  })
+
+  it('returns an empty array when nothing is scheduled', async () => {
+    server.use(http.get('/api/v1/maintenance', () => HttpResponse.json([])))
+
+    const windows = await getMaintenance()
+    expect(windows).toEqual([])
+  })
+
+  it('throws a typed ApiError on a non-2xx response', async () => {
+    server.use(
+      http.get('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    await expect(getMaintenance()).rejects.toBeInstanceOf(ApiError)
+    await expect(getMaintenance()).rejects.toMatchObject({ status: 500 })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.get('/api/v1/maintenance', () => HttpResponse.error()))
+
+    await expect(getMaintenance()).rejects.toBeInstanceOf(ApiError)
+  })
+})
+
+describe('postMaintenance', () => {
+  it('POSTs a tz-aware, well-formed body and parses the created DTO (AC2)', async () => {
+    let receivedBody: unknown
+    server.use(
+      http.post('/api/v1/maintenance', async ({ request }) => {
+        receivedBody = await request.json()
+        return HttpResponse.json(
+          {
+            id: 42,
+            component_id: 'checkout',
+            starts_at: '2026-07-07T10:00:00.000Z',
+            ends_at: '2026-07-07T11:00:00.000Z',
+            reason: 'Database migration',
+          },
+          { status: 201 },
+        )
+      }),
+    )
+
+    const payload = {
+      component_id: 'checkout',
+      starts_at: '2026-07-07T10:00:00.000Z',
+      ends_at: '2026-07-07T11:00:00.000Z',
+      reason: 'Database migration',
+    }
+    const result = await postMaintenance(payload)
+
+    expect(receivedBody).toEqual(payload)
+    // The exact assertion AC2 names: the payload the handler received is
+    // tz-aware (trailing Z) and well-formed (parses to a valid Date).
+    const receivedStartsAt = (receivedBody as { starts_at: string }).starts_at
+    expect(receivedStartsAt.endsWith('Z')).toBe(true)
+    expect(Number.isNaN(new Date(receivedStartsAt).getTime())).toBe(false)
+    expect(result).toEqual({
+      id: 42,
+      component_id: 'checkout',
+      starts_at: '2026-07-07T10:00:00.000Z',
+      ends_at: '2026-07-07T11:00:00.000Z',
+      reason: 'Database migration',
+    })
+  })
+
+  it('throws a typed ApiError carrying status 422 and the detail message on invalid input (AC3)', async () => {
+    server.use(
+      http.post('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'starts_at must be timezone-aware.' }, { status: 422 }),
+      ),
+    )
+
+    await expect(
+      postMaintenance({
+        component_id: 'checkout',
+        starts_at: '2026-07-07T10:00:00Z',
+        ends_at: '2026-07-07T11:00:00Z',
+        reason: null,
+      }),
+    ).rejects.toMatchObject({ status: 422, detail: 'starts_at must be timezone-aware.' })
+  })
+
+  it('throws a typed ApiError on a network failure', async () => {
+    server.use(http.post('/api/v1/maintenance', () => HttpResponse.error()))
+
+    await expect(
+      postMaintenance({
+        component_id: 'checkout',
+        starts_at: '2026-07-07T10:00:00Z',
+        ends_at: '2026-07-07T11:00:00Z',
+        reason: null,
+      }),
+    ).rejects.toBeInstanceOf(ApiError)
   })
 })

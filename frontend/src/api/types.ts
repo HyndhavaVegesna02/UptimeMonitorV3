@@ -162,3 +162,39 @@ export interface PublicationDTO {
 export interface SampleModeDTO {
   enabled: boolean
 }
+
+/**
+ * Mirrors `backend/src/api/v1/maintenance/models.py::MaintenanceWindowDTO`
+ * (STORY-036/STORY-015f AC1) — a single scheduled maintenance window.
+ * `starts_at`/`ends_at` are ISO-8601 UTC strings (trailing `Z`); `reason` is
+ * `string | null` — render `null` as an em-dash, never "null"/a blank cell
+ * (STORY-015f conventions checklist (h)). There is NO `state` field on the
+ * wire — upcoming/active/past is derived CLIENT-SIDE by
+ * `features/maintenance/windowState.ts` using the backend's half-open rule
+ * (`core/ports/maintenance_repository.py::is_under_maintenance`): active
+ * iff `starts_at <= now < ends_at`.
+ */
+export interface MaintenanceWindowDTO {
+  id: number
+  component_id: string
+  starts_at: string
+  ends_at: string
+  reason: string | null
+}
+
+/**
+ * Mirrors
+ * `backend/src/api/v1/maintenance/models.py::CreateMaintenanceRequest`
+ * (STORY-036/STORY-015f AC2) — the `POST /api/v1/maintenance` body.
+ * `starts_at`/`ends_at` MUST be tz-aware ISO strings (a trailing `Z`) — the
+ * backend 422s a naive datetime (STORY-015f AC3);
+ * `features/maintenance/useMaintenance.ts`'s caller builds them via
+ * `new Date(value).toISOString()` from a `datetime-local` input. `reason` is
+ * optional/nullable, matching the backend default of `None`.
+ */
+export interface CreateMaintenanceRequest {
+  component_id: string
+  starts_at: string
+  ends_at: string
+  reason?: string | null
+}

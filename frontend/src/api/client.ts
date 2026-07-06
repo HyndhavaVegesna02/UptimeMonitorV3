@@ -2,8 +2,10 @@ import type {
   ComponentAvailabilityDTO,
   ComponentDTO,
   ComponentTopologyDTO,
+  CreateMaintenanceRequest,
   DecisionRequest,
   DecisionResponse,
+  MaintenanceWindowDTO,
   ObservationDTO,
   ProposalDTO,
   PublicationDTO,
@@ -21,26 +23,60 @@ export const API_BASE_URL = '/api'
 
 export class ApiError extends Error {
   status?: number
+  /**
+   * The backend's raw `detail` string, when the non-2xx body parsed as
+   * `{ detail: string }` (FastAPI's shape for a manually-raised
+   * `HTTPException`, e.g. `maintenance/service.py`'s 422s — STORY-015f
+   * AC3). `undefined` for network failures, malformed bodies, or a body
+   * without a string `detail`. Lets a mutating tab map a 422's message onto
+   * the specific field it names (see `features/maintenance/fieldError.ts`)
+   * without every caller re-parsing the response body itself.
+   */
+  detail?: string
 
-  constructor(message: string, status?: number) {
+  constructor(message: string, status?: number, detail?: string) {
     super(message)
     this.name = 'ApiError'
     this.status = status
+    this.detail = detail
   }
+}
+
+/**
+ * Best-effort extraction of a `{ detail: string }` body (FastAPI's
+ * `HTTPException` shape) from a non-ok response, for `ApiError.detail`.
+ * Uses `.clone()` so the original `response` is left readable by any other
+ * caller. Never throws — a non-JSON body, an empty body, or a `detail` that
+ * isn't a string all resolve to `undefined`.
+ */
+async function readDetail(response: Response): Promise<string | undefined> {
+  try {
+    const body: unknown = await response.clone().json()
+    if (body && typeof body === 'object' && 'detail' in body) {
+      const detail = (body as { detail: unknown }).detail
+      return typeof detail === 'string' ? detail : undefined
+    }
+  } catch {
+    // Non-JSON or empty body — no detail available.
+  }
+  return undefined
 }
 
 /**
  * Shared response-reader: maps a settled `fetch` `Response` to parsed JSON or a
  * typed `ApiError`. A non-2xx status → `ApiError` carrying `.status` (so callers
- * can branch on 404/409); a malformed 2xx body → `ApiError` (also with status).
- * Both `getJson`/`postJson` funnel through here so there is ONE parse-error
- * contract for every future tab to inherit (single source of the error shape).
+ * can branch on 404/409) and, when present, `.detail` (the raw backend message,
+ * STORY-015f AC3); a malformed 2xx body → `ApiError` (also with status). Both
+ * `getJson`/`postJson` funnel through here so there is ONE parse-error contract
+ * for every future tab to inherit (single source of the error shape).
  */
 async function readOkJson<T>(response: Response, path: string): Promise<T> {
   if (!response.ok) {
+    const detail = await readDetail(response)
     throw new ApiError(
       `Request to ${path} failed with status ${response.status}`,
       response.status,
+      detail,
     )
   }
 
@@ -194,4 +230,28 @@ export function getSampleMode(): Promise<SampleModeDTO> {
  */
 export function putSampleMode(enabled: boolean): Promise<SampleModeDTO> {
   return putJson<SampleModeDTO, { enabled: boolean }>('/v1/sample-mode', { enabled })
+}
+
+/**
+ * `GET /api/v1/maintenance` (STORY-036/STORY-015f AC1) — every scheduled
+ * maintenance window. No `state` field on the wire; the Maintenance tab
+ * derives upcoming/active/past client-side (see
+ * `features/maintenance/windowState.ts`).
+ */
+export function getMaintenance(): Promise<MaintenanceWindowDTO[]> {
+  return getJson<MaintenanceWindowDTO[]>('/v1/maintenance')
+}
+
+/**
+ * `POST /api/v1/maintenance` (STORY-036/STORY-015f AC2) — schedules a new
+ * maintenance window and returns the created DTO. `starts_at`/`ends_at`
+ * MUST be tz-aware ISO strings — the backend 422s naive datetimes and an
+ * empty/whitespace `component_id` (STORY-015f AC3); the rejected
+ * `ApiError.detail` carries the raw validation message for inline
+ * field-error rendering.
+ */
+export function postMaintenance(
+  body: CreateMaintenanceRequest,
+): Promise<MaintenanceWindowDTO> {
+  return postJson<MaintenanceWindowDTO, CreateMaintenanceRequest>('/v1/maintenance', body)
 }

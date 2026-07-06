@@ -17,6 +17,7 @@ import {
   historyHandlers,
 } from './history'
 import { FIXTURE_PUBLICATIONS, publicationsHandlers } from './publications'
+import { FIXTURE_MAINTENANCE_WINDOWS, maintenanceHandlers } from './maintenance'
 
 /**
  * Composes each feature's MSW handler module into the single array the
@@ -31,6 +32,7 @@ export const handlers = [
   ...sampleModeHandlers,
   ...historyHandlers,
   ...publicationsHandlers,
+  ...maintenanceHandlers,
 ]
 
 // Re-exported so existing call sites (`import { FIXTURE_COMPONENTS } from
@@ -46,4 +48,5 @@ export {
   FIXTURE_HISTORY_FRONTEND_HTTP,
   FIXTURE_HISTORY_FRONTEND_TLS,
   FIXTURE_PUBLICATIONS,
+  FIXTURE_MAINTENANCE_WINDOWS,
 }
