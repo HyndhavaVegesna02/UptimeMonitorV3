@@ -34,18 +34,18 @@ Design pins:
   cycle too — a stop requested during a failing cycle must not wait another interval).
 
 ### Tasks (TDD, commit per green step)
-- [ ] 1. Failing test: fake executor raises `GrailQueryError` once then succeeds —
+- [x] 1. Failing test: fake executor raises `GrailQueryError` once then succeeds —
       `run_periodic` (with a 2-cycle stop) completes both cycles; second cycle's ingest
       ran; ERROR logged with signal_key (caplog).
-- [ ] 2. Minimal catch in `run_periodic` + green.
-- [ ] 3. Consecutive-counter tests: N failures log increasing counts; success resets
+- [x] 2. Minimal catch in `run_periodic` + green.
+- [x] 3. Consecutive-counter tests: N failures log increasing counts; success resets
       (fail, fail, succeed, fail → counts 1,2,reset,1); loop never exits (drive ≥3
       consecutive failures, assert still scheduling).
-- [ ] 4. Guard tests: cancellation still cancels; stop_event honored after a failed
+- [x] 4. Guard tests: cancellation still cancels; stop_event honored after a failed
       cycle; startup fail-fast pinned (missing secrets raises BEFORE any loop —
       existing `load_live_secrets` behavior, one test).
-- [ ] 5. Docstring updates (module + `run_periodic`) citing dossier §8 + STORY-050.
-- [ ] 6. Six-gate DoD (isolated pytest DB) + mechanical wiki sweep (expect
+- [x] 5. Docstring updates (module + `run_periodic`) citing dossier §8 + STORY-050.
+- [x] 6. Six-gate DoD (isolated pytest DB) + mechanical wiki sweep (expect
       `ingest-service-and-pull-loop.md` at minimum), article-by-article commits.
 
 ## STORY-043 — `.env` never loaded (defect, 2 pts, gate-only)

@@ -20,7 +20,7 @@ from src.composition.run import build_live_loop, main
 
 # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
 from src.composition.sample_mode import SampleModeIngest
-from src.composition.settings import LiveSecrets, Settings
+from src.composition.settings import LiveSecrets, MissingLiveSecretError, Settings
 from src.core.services.decide import DecideService
 from src.core.services.ingest_service import IngestService
 from src.core.services.pipeline import AntiFlapThresholds
@@ -298,3 +298,37 @@ def test_main_resource_lifecycle_failure_during_seeding(
 
     # Verify dispose was still called
     mock_engine.dispose.assert_called_once()
+
+
+@patch("src.composition.run.load_settings")
+@patch("src.composition.run.load_live_secrets")
+@patch("sqlalchemy.create_engine")
+@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.build_live_loop")
+def test_main_fails_fast_on_missing_secrets_before_any_loop_starts(
+    mock_build_loop,
+    mock_seed_topology,
+    mock_create_engine,
+    mock_load_secrets,
+    mock_load_settings,
+):
+    """AC2 (STORY-050): startup failures stay fail-fast. `load_live_secrets()`
+    runs BEFORE the engine is created, before topology seeding, and before
+    `build_live_loop`/`run_periodic` ever exist -- so a `MissingLiveSecretError`
+    there must terminate the process untouched by STORY-050's per-cycle
+    resilience, which only wraps the `run_cycle` call INSIDE `run_periodic`.
+    """
+    mock_load_settings.return_value = Settings(
+        database_url="postgresql://host/db", config_dir="dir"
+    )
+    mock_load_secrets.side_effect = MissingLiveSecretError(
+        "Missing required secrets: DYNATRACE_ENV_URL, DYNATRACE_API_TOKEN"
+    )
+
+    with pytest.raises(MissingLiveSecretError):
+        asyncio.run(main())
+
+    # Nothing past secret loading ever ran.
+    mock_create_engine.assert_not_called()
+    mock_seed_topology.assert_not_called()
+    mock_build_loop.assert_not_called()
