@@ -237,15 +237,7 @@ class AvailabilityService:
             child_dtos.append(
                 SignalAvailabilityDTO(
                     signal_key=signal.signal_key,
-                    availability_pct=result.availability_pct,
-                    completeness_pct=result.completeness_pct,
-                    total_verdicts=result.total_verdicts,
-                    passing_verdicts=result.passing_verdicts,
-                    maintenance_verdicts=result.maintenance_verdicts,
-                    gap_verdicts=result.gap_verdicts,
-                    distinct_locations=result.distinct_locations,
-                    window=result.window,
-                    computed_at=result.computed_at,
+                    **_to_dto(result).model_dump(),
                 )
             )
 
