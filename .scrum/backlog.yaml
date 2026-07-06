@@ -300,7 +300,7 @@ stories:
   - id: STORY-046
     title: Dashboard maintenance-state display — the maintenance badge is currently unreachable
     file: docs/scrum/stories/STORY-046-dashboard-maintenance-state.md
-    status: draft   # audit M3; open design question (frontend overlay vs backend derived field) — refine before its sprint
+    status: ready   # refined 2026-07-06 (sprint-37 planning): PO chose Option A (frontend overlay) + Dashboard-only scope; frontend-only, no backend change
     points: 2
     priority: 22
     type: feature
@@ -333,7 +333,7 @@ stories:
   - id: STORY-052
     title: Maintenance ordering 422 — clean edge message (raw Pydantic blob leaks today) + inline frontend mapping
     file: docs/scrum/stories/STORY-052-maintenance-end-before-start-422.md
-    status: draft   # CORRECTED mid-sprint-34 (2026-07-06): the originally-claimed missing-422 defect does NOT exist — the domain layer rejects end-before-start AND equal (live-confirmed); re-scoped to the leaked Pydantic detail + 015f inline mapping. Retro input: planning contract checks must probe failure paths live.
+    status: ready   # refined 2026-07-06 (sprint-37 planning): re-scoped to the leaked Pydantic detail + 015f inline mapping (the missing-422 claim was false — domain layer already rejects). Touches backend + frontend -> full six-gate + three-gate DoD.
     points: 1
     priority: 22
     type: defect

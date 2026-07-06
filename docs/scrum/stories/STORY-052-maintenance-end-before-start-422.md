@@ -27,7 +27,7 @@ this blob renders poorly/unmapped, and 015f (built to the amended AC3) has no te
 Give the ordering violation the same clean edge treatment the other syntactic checks
 have, and map it inline on the form.
 
-## Acceptance Criteria (draft — refine before scheduling)
+## Acceptance Criteria (refined READY, sprint-37 planning 2026-07-06)
 - [ ] AC1: `maintenance/validation.py::validate_maintenance_request` gains the ordering
       check (`ends_at <= starts_at` → `SyntacticValidationError` with a clean one-line
       message, e.g. "ends_at must be strictly greater than starts_at.") so the edge 422
@@ -55,3 +55,6 @@ domain behavior: yes, "strictly greater" (live-confirmed).
   planning check had probed only the happy path live. Re-scoped to the leaked-Pydantic
   detail + frontend inline mapping. Feeds the sprint-34 retro (probe failure paths, not
   just the happy path, when pinning consumer contracts).
+- 2026-07-06 (sprint-37 planning): refined to READY, estimate 1 confirmed. Touches BOTH
+  backend (`maintenance/validation.py` + endpoint test) and frontend (`fieldError.ts` +
+  Maintenance tab MSW test) → runs the full six-gate + three-gate DoD. No open questions.
