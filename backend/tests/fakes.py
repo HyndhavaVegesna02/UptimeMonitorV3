@@ -297,8 +297,8 @@ class FakeSampleModeRepository(SampleModeRepository):
     normal per-instance-only behavior.
     """
 
-    def __init__(self, store: dict | None = None) -> None:
-        self._store: dict = store if store is not None else {}
+    def __init__(self, store: dict[str, bool] | None = None) -> None:
+        self._store: dict[str, bool] = store if store is not None else {}
 
     def is_enabled(self) -> bool:
         return self._store.get("enabled", False)
