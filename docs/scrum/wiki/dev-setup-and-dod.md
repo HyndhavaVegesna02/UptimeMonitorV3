@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 6a33edb
+verified_sha: 8237962
 verified_sprint: sprint-36
 status: verified
 ---
@@ -116,6 +116,7 @@ status: verified
   it — no second editable copy.
 
 ## History
+- sprint-36 (compile pass): re-pinned verified_sha 6a33edb -> 8237962 — the only CLAUDE.md diff in range is f66ecb0, the SAME commit that updated this article to match it (pin had been placed at the code commit instead of the wiki commit). No Facts changed.
 - sprint-0: created (compile pass folding STORY-001/002/003 setup learnings).
 - sprint-3: updated (STORY-019 shared throwaway-DB harness) — added the
   `scripts/dev_db.py` CLI (`up`/`down`) as the standard way to obtain a
