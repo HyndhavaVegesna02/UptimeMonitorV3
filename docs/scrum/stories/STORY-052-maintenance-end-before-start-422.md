@@ -35,7 +35,12 @@ have, and map it inline on the form.
       detail for both end-before-start and equal timestamps. The domain validator stays
       (defense in depth) — this only changes which layer answers the API caller.
 - [ ] AC2: The Maintenance tab's field-error mapping handles the ordering message
-      (inline on `ends_at`), MSW-tested with the REAL new detail string.
+      (inline on `ends_at`), MSW-tested with the REAL new detail string. Includes the two
+      sprint-34 quality-review minors in the same area (2026-07-06): rewrite
+      `fieldError.ts`'s stale "two real backend 422 cases" doc comment, and add a test
+      pinning the multi-field-detail behavior (a detail naming several fields resolves
+      deterministically and never throws — today the raw ordering blob mis-maps to the
+      COMPONENT field via the `component_id` token in the Pydantic repr).
 - [ ] AC3: Six-gate backend DoD + three-gate frontend DoD green.
 
 ## Open Questions
