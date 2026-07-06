@@ -41,29 +41,29 @@ the four PO decisions and folded audit inputs D1–D3 are recorded there; AC1–
 
 ### Task breakdown (TDD where testable; commit after every green step)
 
-- [ ] 1. D1 pyproject move (`uvicorn[standard]` → runtime deps); reinstall editable;
+- [x] 1. D1 pyproject move (`uvicorn[standard]` → runtime deps); reinstall editable;
       six backend gates green (pyproject is a shared wiki `code_ref` — sweep at the end
       will flag several articles).
-- [ ] 2. CORS, test-first: composition-layer `CORSMiddleware` wiring with env-driven
+- [x] 2. CORS, test-first: composition-layer `CORSMiddleware` wiring with env-driven
       allowlist. Tests (httpx against `create_app`): allowed origin → preflight OK +
       `access-control-allow-origin` echoed; disallowed origin → no CORS grant; request
       WITHOUT an Origin header (the rewrite's server-to-server hot path) → behavior
       unchanged. Empty/unset env → localhost-dev-only default, tested.
-- [ ] 3. Railway config-as-code: whatever Railway's current mechanism supports
+- [x] 3. Railway config-as-code: whatever Railway's current mechanism supports
       (railway.json/toml; else Procfile + documented console fields) expressing: build,
       the release command (`alembic upgrade head`), the api start command, the worker
       start command. Cite the Railway doc used. If two services can't share one config
       file, one config + explicit runbook fields for the second service.
-- [ ] 4. `frontend/vercel.json`: the `/api/*` rewrite (+ SPA fallback if Vercel needs it
+- [x] 4. `frontend/vercel.json`: the `/api/*` rewrite (+ SPA fallback if Vercel needs it
       for client-side routing — verify against the six-tab router!). Three frontend gates
       green.
-- [ ] 5. Runbook `docs/DEPLOY.md`: numbered PO console steps — Railway project, two
+- [x] 5. Runbook `docs/DEPLOY.md`: numbered PO console steps — Railway project, two
       services from this repo, per-service env var NAMES table, release command
       placement, healthcheck; Vercel import of `frontend/`, the rewrite target, env vars
       if any. Includes the AC3 fail-safe demonstration step (deliberately failing
       release once — e.g. a temporarily wrong `DATABASE_URL_DIRECT` — and observing the
       old container keep serving) and the AC4 verification checklist.
-- [ ] 6. CLAUDE.md deployed-topology section (command-sync agreement — same commit as
+- [x] 6. CLAUDE.md deployed-topology section (command-sync agreement — same commit as
       the config it documents); new wiki article `docs/scrum/wiki/deployment-topology.md`
       (`code_refs`: pyproject.toml, the Railway config file(s), frontend/vercel.json,
       docs/DEPLOY.md, the CORS wiring file).
