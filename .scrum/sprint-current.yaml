@@ -1,128 +1,87 @@
 # YourTeam active sprint board.
-sprint: 33
-status: closed        # none | active | review | closed | aborted
-started: 2026-07-04
-closed: 2026-07-04    # PO verdict: accept both (015e + 015g), 5/5 pts. No follow-up stories —
-                      # all minors were awareness-level.
-goal: "Complete the read-only audit surfaces: the Check History tab (STORY-015e — per-signal
-  observation ledger with signal + window selectors, honest volume handling) and the
-  Publications tab (STORY-015g — the what-customers-saw audit trail, latest-50 cap visible)."
-branch: sprint-33
-start_tag: sprint-33-start
-# Capacity: velocity last-3 (sprints 30,31,32) = 5,5,5 -> mean 5.0. Committed 5
-# (STORY-015e 3 + STORY-015g 2). PO approval 2026-07-04 (planning): "Approve & lock" after
-# directing "plan next sprints with other tabs" — tabs outrank STORY-043's equal priority by
-# explicit PO direction. Sprint-34 outlook (non-binding): 015f (3) + 043 (2).
+sprint: 34
+status: active        # none | active | review | closed | aborted
+started: 2026-07-06
+goal: "Land the ingestion-stall fix on main and complete the second mutating tab: the live
+  loop ingests reliably past its first cycle (STORY-051), and operators can view and
+  schedule maintenance windows from the dashboard (STORY-015f)."
+branch: sprint-34
+start_tag: sprint-34-start
+# Capacity: velocity last-3 (sprints 31,32,33) = 5,5,5 -> mean 5.0. Committed 5
+# (STORY-051 2 + STORY-015f 3). PO approval 2026-07-06 (planning): "Approve & lock";
+# second PO decision same ceremony: STORY-015f AC3's "end before start" example TRIMMED
+# (backend has no such 422) + STORY-052 filed as draft for the producer gap.
+# STORY-043 (2) + STORY-047 (1) remain ready, waiting — sprint-35 candidates.
 #
-# WORKFLOW: Sonnet 5 implementer at HIGH effort per story; STORY-015e (3 pts) -> Opus spec +
-# quality reviewers (full pipeline); STORY-015g (2 pts) -> gate-only. Frontend DoD surface:
-# npm test / npm run build / npm run lint from frontend/ on a clean committed tree. Backend
-# untouched -> six-gate baseline holds by empty diff (gate-green state 61d786a lineage; verified
-# empty at lock over backend paths since e820ef4).
+# BRANCH NOTE: sprint-34 cut from main @ c5a90f8 (tag sprint-34-start), then IMMEDIATELY
+# fast-forwarded to 6b34c1a by merging debug/sample-mode-forced-down-not-applied — the
+# PO-directed debug-branch lineage carrying STORY-051's fix (c1839e4: query.py +
+# test_dynatrace_adapter.py), its wiki update (2d999f2), its story/backlog filing
+# (1257cc9), and the 2026-07-06 debug-sprint record (6b34c1a). STORY-051's remaining
+# sprint work is therefore: six-gate DoD on this merged tree (its AC3) + mechanical wiki
+# sweep + PO acceptance at review. Its AC1/AC2 are already live-verified twice
+# (2026-07-04 fix session; 2026-07-06 debug sprint — watermark advanced across cycles).
+#
+# WORKFLOW: STORY-051 (2 pts) -> gate-only (the fix is already written + live-verified;
+# no new implementation dispatch expected — orchestrator runs the gate; any fix loop uses
+# a Sonnet 5 implementer at HIGH effort per the 2026-07-02 rule). STORY-015f (3 pts) ->
+# Sonnet 5 implementer at HIGH effort + Opus spec & quality reviewers + frontend DoD gate
+# (npm test / npm run build / npm run lint from frontend/ on a clean committed tree).
+# Backend paths must stay untouched by 015f: diff from STORY-051's gate SHA over backend/
+# scripts/ pyproject.toml alembic.ini migrations/ config/ must be EMPTY at 015f's gate.
 #
 # TOOLING: none.
 #
-# CONSUMER-DTO CHECK (2026-07-02 + 2026-07-04 units/scale agreements) done at planning against
-# producing code AND live wire samples:
-# - history GET /api/v1/history?signal_key&since&until -> [ObservationDTO {signal_key,
-#   observed_at ISO-UTC, health, location, latency_ms}] newest-first, NO pagination; naive
-#   datetime -> 422. UNITS/ENUMS: latency_ms = INTEGER MILLISECONDS | null (signal.py:71,
-#   live sample 571/745); health = OBSERVATION vocabulary "up"|"down"|"degraded" (Health enum,
-#   via .value) — NOT ComponentStatus; toHealthStatus does NOT apply ("up" would map to
-#   unknown) -> the tab pins its own observation-health badge mapping. location = raw vendor
-#   id string, rendered as-is (no friendly-name source exists).
-# - publications GET /api/v1/publications -> [PublicationDTO {id int, component_id str,
-#   status str, published_at ISO-UTC, proposal_id int|null}] newest-first, at most 50
-#   (list_recent cap — must be VISIBLE in the UI). status = ComponentStatus vocabulary
-#   (p.status.value) -> existing toHealthStatus DOES apply. Live endpoint currently returns []
-#   (nothing published) — the empty state is the true initial state; fixtures derive from
-#   backend test fixtures per the real-sample agreement.
-# - VOLUME DECISION (015e AC4, pinned): default window 24h (~720 rows at 120s cadence);
-#   7d/30d render the latest 1,000 with a visible "showing latest 1,000 of N" note; pagination
-#   deferred to a future story if ever needed.
+# CONSUMER-DTO CHECK (2026-07-02 + 2026-07-04 units/scale agreements) done at planning
+# against producing code AND the LIVE wire (local stack was running):
+# - GET /api/v1/maintenance -> [MaintenanceWindowDTO {id int, component_id str,
+#   starts_at/ends_at ISO-8601 UTC "Z", reason str|null}]. POST /api/v1/maintenance
+#   {component_id, starts_at, ends_at, reason?} -> the created DTO echoed back. Live
+#   probe round-tripped: POST {"...T10:00:00Z","...T11:00:00Z"} -> GET returns it
+#   verbatim. NO `state` field on the wire — upcoming/active/past is DERIVED client-side
+#   using the backend's pinned boundary rule: HALF-OPEN starts_at <= now < ends_at
+#   (core/ports/maintenance_repository.py::is_under_maintenance docstring + Postgres
+#   adapter WHERE clause agree). Equal boundaries: a window is NOT active at ends_at.
+# - Real 422 cases (maintenance/validation.py::validate_maintenance_request): tz-NAIVE
+#   starts_at or ends_at; empty/whitespace component_id. NOT end-before-start (STORY-052
+#   gap). AC3 trimmed to match at planning, PO-approved.
+# - UNITS/FORMATS: datetimes are ISO-8601 UTC with Z suffix on the wire; the form enters
+#   LOCAL time and must submit tz-aware (browser datetime-local -> Date -> toISOString);
+#   reason is nullable free text; id is int. MSW fixtures derive from the live sample
+#   pinned in plan.md ("Verified API contracts"), per the real-sample rule.
+# - One leftover probe row (id=1, "planning-time wire probe") lives in the throwaway dev
+#   DB only — dies with the container, not fixture material.
 #
-# BASELINE at lock: sprint-33 cut from main @ 350e928 — diff e820ef4..HEAD over backend/
-# frontend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is EMPTY (retro +
-# agreements-prune docs commits only), so sprint-32's close gate evidence (frontend 146/146 @
-# 1b9ef7d/ae53070; backend six-gate baseline 61d786a) holds for this code state.
+# BASELINE at lock: main @ c5a90f8 gate-green by empty diff — 9d6b6bf..c5a90f8 over
+# backend/ frontend/ scripts/ pyproject.toml alembic.ini migrations/ config/ is EMPTY
+# (retro doc only), so sprint-33's close evidence (frontend 188 @ 2b0f2a6; backend
+# six-gate lineage) holds for the cut point. The ff-merge to 6b34c1a then CHANGES backend
+# code (the 051 fix) — re-proving the six gates on the merged tree IS STORY-051's AC3.
 #
-# Agreements in force: all of working-agreements.md as of 350e928 (post-prune), incl. the two
-# NEW 2026-07-04 rules: units/scale pinned + real-sample fixtures (applied above) and the live
-# render-vs-wire spot check at review prep (orchestrator duty — the stack is running).
+# Agreements in force: all of working-agreements.md as of c5a90f8, incl. the 2026-07-04
+# pair (units/scale pinned + real-sample fixtures — applied above; live render-vs-wire
+# spot check at review prep — orchestrator duty, stack running) and the 2026-07-03
+# wiki rules (sweep is the sole blast-radius decider; article-by-article commits).
 stories:
-  - id: STORY-015e
-    points: 3
-    board: done            # awaiting PO verdict at review
-    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + DoD gate
-    blocked_question: null
-    attempts: 1            # clean single dispatch — no stall, no fix loop
-    paused_at_commit: null
-    dod_evidence:
-      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 177 passed (24.13s; +31 over sprint-32's 146). build (tsc -b &&
-          vite build) OK 325ms. lint clean. Backend untouched: diff 64b7c87..HEAD over backend
-          paths EMPTY — six-gate baseline holds. LIVE render-vs-wire spot check (2026-07-04
-          agreement, Playwright): rendered first row 2026-07-03T13:29:17.931000Z / Up / 571 ms /
-          SYNTHETIC_LOCATION-...0060 EXACTLY matches wire row[0] {health:'up', latency_ms:571};
-          order preserved; 24h pressed; observation-health mapping renders 'up' as Up (the
-          vocabulary the planning check protected)."
-        commit: a2163ca
-        at: 2026-07-04T12:46:00+05:30
-    review:
-      first_pass: "spec PASS (AC1-AC4 ALL MET; reviewer RAN 177/177 and read bodies — refetch
-        tests assert the ACTUAL changed signal_key and tz-aware since/until MSW received;
-        order test proves render order == response order with NO re-sort; null latency asserts
-        em-dash and absence of '0 ms'; volume test drives 1,500 rows and asserts 'showing latest
-        1,000 of 1,500 observations'; table-vs-changelog markup adjudicated: AC constrains
-        content/format not markup — compliant; shared-file edits additive, no coverage deleted)
-        / quality APPROVE (0 Critical, 0 Major; identity chain useMemo[preset]->
-        useCallback[signalKey,range]->useFetch[fetcher] traced clean; two-fetch design gates
-        the table on the topology fetch with render-derived default signal — zero-signal case
-        safe and tested; windowToRange REUSED not duplicated; observationHealth deliberately
-        separate from toHealthStatus with doc-comment; fixtures genuinely derive from the
-        pinned live sample)."
-      fix: "None — both reviewers passed first-pass with zero blocking findings."
-      second_pass: null
-      open_minors:
-        - "Row key uses observed_at+index — a pure natural key would be marginally cleaner;
-          not worth a fix loop (quality reviewer)."
-        - "On a selector switch the previous rows show until the new fetch resolves (useFetch
-          only resets to loading via retry) — established shared 015d behavior across all tabs,
-          flagged for awareness only."
-      implementer_note: "Clean run, no stall; wiki committed article-by-article (f8b525e,
-        ead0819). Design: semantic <table> over the Description's changelog-row (AC-compliant,
-        parity with the three existing tabs); windowToRange imported cross-feature rather than
-        moved; two-fetch split (useSignalOptions + useHistory) avoids the default-signal
-        chicken-and-egg; render-derived selection default (anti-flash pattern from 049)."
-    blast_radius_resolved: true   # sweep flagged exactly frontend-zone.md + sample-mode.md; both
-                                  # updated at verified_sha 0a1ef52, one commit each; orchestrator
-                                  # re-sweeps at compile pass
-  - id: STORY-015g
+  - id: STORY-051
     points: 2
-    board: done            # awaiting PO verdict at review
-    pipeline: gate             # 2 pts -> Sonnet 5 impl + DoD gate (no reviewers at this size)
+    board: todo
+    pipeline: gate             # 2 pts -> gate-only; fix pre-exists on the merged lineage
     blocked_question: null
-    attempts: 1            # clean single dispatch
+    attempts: 0
     paused_at_commit: null
-    dod_evidence:
-      - command: "npm test && npm run build && npm run lint (from frontend/, orchestrator-run on clean committed HEAD)"
-        exit_code: 0
-        output_tail: "npm test: 188 passed (19.43s; +11 over 015e's 177). build OK 276ms. lint
-          clean. Backend untouched: diff 6703a14..HEAD over backend paths EMPTY. LIVE spot check
-          (Playwright): /publications renders the honest empty state 'Nothing published yet' +
-          permanent cap copy 'Showing the latest 50 publications' — matches the wire ([])."
-        commit: 2b0f2a6
-        at: 2026-07-04T14:05:00+05:30
-    review: null           # 2 pts -> gate-only per the default pipeline
-    implementer_note: "Clean run. MSW fixtures derive from backend/tests/
-      test_publications_endpoint.py:39-50,70-76 + test_publication_domain.py:39-46 (checkout/
-      login components, operational/degraded/major_outage statuses, proposal_id 5/42/null) per
-      the 2026-07-04 real-sample agreement. Reused toHealthStatus (ComponentStatus vocabulary —
-      contrast 015e's separate observationHealth). Cap rendered as PERMANENT header copy since
-      the backend caps server-side and the client never learns a true total. Candidates: no
-      proposal drill-through (no endpoint exists); Maintenance is now the last placeholder tab."
-    blast_radius_resolved: true   # frontend-zone.md (4f787bc) + sample-mode.md (5230f59) at
-                                  # verified_sha b7811cf, one commit each
+    dod_evidence: []
+    blast_radius_resolved: false   # sweep must cover the merged debug commits too (query.py
+                                   # -> dynatrace-adapter.md already updated in 2d999f2; the
+                                   # sweep re-verifies mechanically)
+  - id: STORY-015f
+    points: 3
+    board: todo
+    pipeline: gate+reviewers   # 3 pts -> Sonnet 5 impl + Opus spec & quality reviewers + gate
+    blocked_question: null
+    attempts: 0
+    paused_at_commit: null
+    dod_evidence: []
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []

@@ -21,8 +21,9 @@ tz-aware; the API's 422 validation errors surface inline on the form fields.
 - [ ] AC2: The schedule form POSTs `/api/v1/maintenance` with tz-aware datetimes; a successful
       create refreshes the list. MSW test asserts the submitted payload is tz-aware and
       well-formed.
-- [ ] AC3: API 422 validation errors (e.g. end before start, naive datetime) render inline on
-      the relevant fields — not a toast-only or console-only failure. Tested.
+- [ ] AC3: API 422 validation errors (naive datetime, empty component_id — the two real
+      backend cases; see History 2026-07-06) render inline on the relevant fields — not a
+      toast-only or console-only failure. Tested.
 - [ ] AC4: Form inputs use shell primitives (text-input spec, focus ring), are keyboard
       operable and labeled; loading/empty/error+retry states tested.
 
@@ -32,3 +33,8 @@ None.
 ## History
 - 2026-06-29: first version refined; reverted with `521764c`.
 - 2026-07-02: re-refined for the Linear-guided direction. Status: ready. Estimate 3.
+- 2026-07-06 (sprint-34 planning, PO-approved): AC3's "end before start" example TRIMMED —
+  the consumer-DTO check (2026-07-02 agreement) found `maintenance/validation.py` rejects
+  only naive datetimes and an empty component_id; `ends_at <= starts_at` is accepted
+  silently (live-probed). The producer gap is filed as STORY-052 (draft). AC3 now names
+  only the two real 422 cases. Pulled into sprint 34.
