@@ -113,7 +113,7 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 | Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
 | Stop throwaway DB   | `python scripts/dev_db.py down` (removes the container) |
-| Run live loop       | `python -m src.composition.run` (reads `.env`, runs e2e loop) |
+| Run live loop       | `python -m src.composition.run` (loads a repo-root `.env` at startup — STORY-043 — then runs the e2e loop) |
 | Lint code           | `ruff check .` (must exit 0)               |
 | Format check        | `ruff format --check .` (must exit 0)      |
 
@@ -140,8 +140,13 @@ Two distinct connection strings, two distinct env vars — never mix them:
 
 ### Live-loop secrets (STORY-016 — read by `python -m src.composition.run`)
 
-Read from the environment / a gitignored `.env` via `composition/settings.py::load_live_secrets()`
-(never committed; config holds the non-secret monitor id + Statuspage component id, never these values):
+Read from the environment via `composition/settings.py::load_live_secrets()`. The
+process entrypoints (`run.py::main`, `composition/asgi.py`) load a gitignored
+repo-root `.env` into the environment first, via `dotenv.load_dotenv()`
+(STORY-043) — `load_settings`/`load_live_secrets` themselves only ever read
+`os.environ`, never a file. An already-exported env var always wins over `.env`
+(config holds the non-secret monitor id + Statuspage component id, never these
+secret values):
 
 | Env var               | Used for                                                          |
 | --------------------- | ---------------------------------------------------------------- |
@@ -218,13 +223,16 @@ dev proxy makes the frontend same-origin (real CORS is STORY-017).
 1. Start the throwaway DB (migrates and prints both URLs):
    `.venv/Scripts/python.exe scripts/dev_db.py up`
 2. Export `DATABASE_URL` — the plain-libpq pooled form it printed (the
-   direct/`+psycopg` form is only for Alembic/migrations, not needed here).
+   direct/`+psycopg` form is only for Alembic/migrations, not needed here) —
+   or put it in a repo-root `.env` instead (STORY-043: both entrypoints below
+   load it at startup; an exported value still wins over `.env`).
 3. Start the API server on port 8000 (serves `/api/v1/*`; the boot-time
    lifespan seed reads `config/apps` and populates components):
    `.venv/Scripts/python.exe -m uvicorn src.composition.asgi:app --port 8000`
 4. In a SECOND terminal (same `DATABASE_URL`), run the live loop to populate
-   observations/proposals/publications — needs the Dynatrace/Statuspage `.env`
-   secrets (see "Live-loop secrets" above): `python -m src.composition.run`
+   observations/proposals/publications — needs the Dynatrace/Statuspage
+   secrets, either exported or in the same repo-root `.env` (STORY-043; see
+   "Live-loop secrets" above): `python -m src.composition.run`
 5. In a THIRD terminal: `cd frontend && npm run dev` — the Vite proxy now
    reaches a real backend on :8000; no more `ECONNREFUSED`.
 
@@ -248,6 +256,7 @@ Postgres container when done.
 | ruff              | live (STORY-033); `ruff check` + `ruff format` (DoD) | code style, sorting, and formatting |
 | uvicorn[standard] | live (STORY-042); dev dependency | local ASGI dev server — `uvicorn src.composition.asgi:app` |
 | httpx             | runtime dependency             | HTTP library for query and statuspage executors |
+| python-dotenv     | live (STORY-043); runtime dependency | `.env` loading at the two process entrypoints (`run.py::main`, `composition/asgi.py`) |
 | git               | configured                    | version control                           |
 
-No `psql` client is installed. Neon/Dynatrace/Statuspage credentials are read from `.env` or environment variables for the live loop.
+No `psql` client is installed. Neon/Dynatrace/Statuspage credentials are read from environment variables, exported directly or loaded from a gitignored repo-root `.env` (STORY-043) for the live loop.

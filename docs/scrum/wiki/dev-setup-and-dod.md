@@ -1,17 +1,18 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
+verified_sha: 6a33edb
+verified_sprint: sprint-36
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx (`pyproject.toml` —
-  `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config loader, httpx
-  promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP executors).
-  Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
+  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx, python-dotenv
+  (`pyproject.toml` — `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config
+  loader, httpx promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP
+  executors, python-dotenv added sprint-36 STORY-043 so the two process entrypoints can load a
+  `.env` file). Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
   `[project.optional-dependencies] dev`; `uvicorn` added sprint-28 STORY-042 as the local ASGI dev
   server — see "Run the app locally" below).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
@@ -42,15 +43,16 @@ status: verified
   commands + `frontend/` layout in CLAUDE.md (command-sync agreement). Toolchain: Vite + React +
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
   npm on Node 24. Playwright/E2E is deferred to a later integration story.
-- **Running the app locally (STORY-042):** the FastAPI API is served via the ASGI entrypoint
-  `backend/src/composition/asgi.py` (`app = create_app()` — reads `DATABASE_URL` + the topology config,
-  default `config/apps`, so the boot-time seed runs), launched with
+- **Running the app locally (STORY-042; `.env` loading STORY-043):** the FastAPI API is served via
+  the ASGI entrypoint `backend/src/composition/asgi.py` (`app = create_app()` — reads `DATABASE_URL`
+  + the topology config, default `config/apps`, so the boot-time seed runs), launched with
   `uvicorn src.composition.asgi:app --port 8000`. The Vite dev proxy (`/api` → `:8000`) then reaches it.
-  Full local stack (CLAUDE.md "Run the app locally"): `dev_db.py up` → export `DATABASE_URL` → the
-  uvicorn command → a 2nd terminal running the live loop `python -m src.composition.run` (populates
-  proposals/observations/publications) → `npm run dev`. Two processes share one `DATABASE_URL`; no CORS
-  locally (same-origin via the proxy — real CORS is STORY-017). Before STORY-042 the API had only ever
-  run in-process via `TestClient` (no ASGI server, no module-level app).
+  Full local stack (CLAUDE.md "Run the app locally"): `dev_db.py up` → export `DATABASE_URL` (or place
+  it in a repo-root `.env` — see the STORY-043 correction above) → the uvicorn command → a 2nd terminal
+  running the live loop `python -m src.composition.run` (populates proposals/observations/publications)
+  → `npm run dev`. Two processes share one `DATABASE_URL`; no CORS locally (same-origin via the proxy —
+  real CORS is STORY-017). Before STORY-042 the API had only ever run in-process via `TestClient` (no
+  ASGI server, no module-level app).
 - **Standard way to obtain a migrated throwaway DB (STORY-019):**
   `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
   `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
@@ -87,9 +89,20 @@ status: verified
   `.venv/Scripts/python.exe -c "import sys; from importlinter.cli import lint_imports; sys.exit(lint_imports())"`.
 - No `psql` client installed. Neon/Dynatrace/Statuspage credentials were not needed through the
   pure-backend sprints; the live loop (`python -m src.composition.run`, STORY-016) reads four secrets
-  from the environment / a gitignored `.env` (`DYNATRACE_ENV_URL`, `DYNATRACE_API_TOKEN`,
-  `STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY` — see CLAUDE.md "Live-loop secrets"). They are NOT part
-  of the six-command DoD gate (every test uses recorded fixtures).
+  from the environment via `composition/settings.py::load_live_secrets()` (`DYNATRACE_ENV_URL`,
+  `DYNATRACE_API_TOKEN`, `STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY` — see CLAUDE.md "Live-loop
+  secrets"). **Correction (sprint-36, STORY-043, 2026-07-02 audit finding M4):** before STORY-043,
+  nothing ever loaded a `.env` file — `load_settings`/`load_live_secrets` only ever read
+  `os.environ`, so "from the environment / a gitignored `.env`" was FALSE; the documented
+  `.env`-based recipe crashed with `MissingLiveSecretError` even with a fully-populated repo-root
+  `.env`, unless the secrets were also separately exported into the shell. STORY-043 fixed this by
+  calling `dotenv.load_dotenv()` at the two process entrypoints ONLY (`run.py::main`, before
+  `load_settings`/`load_live_secrets`; and `composition/asgi.py` module scope, before
+  `create_app()`) — never inside `load_settings`/`load_live_secrets` themselves, so DB-gated/unit
+  tests calling those directly with explicit env are unaffected (still NOT part of the six-command
+  DoD gate; every test uses recorded fixtures or explicit `monkeypatch` env). `load_dotenv()`'s
+  default `override=False` semantics mean an already-exported env var always wins over `.env`
+  (production/Railway, which sets real env vars and ships no `.env` file, is unaffected).
 - **Line endings are normalized to LF in the repo** via `.gitattributes` (`* text=auto eol=lf`
   + `binary` rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). Gotcha: the index
   blobs were already LF, so `git add --renormalize .` stages nothing — the CRLF a Windows
@@ -146,3 +159,11 @@ status: verified
   `api-feature-independence` import-linter contract's module list (see [[architecture-boundary]]) —
   unrelated to the six backend / three frontend DoD commands or the dependency lists this article
   describes. Still six backend + three frontend commands, all green. verified_sha → 0ea652e.
+- sprint-36: STORY-043 (defect fix) corrected the "credentials read from the environment / a
+  gitignored `.env`" Fact above — that was FALSE before this story (nothing loaded `.env`; only
+  `os.environ` was ever read, so the documented `.env`-only local recipe crashed with
+  `MissingLiveSecretError`). Added `python-dotenv` to `[project.dependencies]` (runtime — imported
+  by `run.py`/`asgi.py`) and a `load_dotenv()` call at each of the two process entrypoints only
+  (never inside `load_settings`/`load_live_secrets`, so the six-command DoD gate and its
+  explicit-env tests are unaffected). Still six backend + three frontend commands, all green.
+  verified_sha → 6a33edb.
