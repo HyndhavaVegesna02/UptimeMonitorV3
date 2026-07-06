@@ -1,38 +1,52 @@
 ---
 id: STORY-052
-title: Maintenance API rejects end-before-start windows with a 422
+title: Maintenance ordering 422 — clean edge message instead of a leaked Pydantic blob, + inline frontend mapping
 type: defect
 ---
 
-## Context
-Found by the sprint-34 planning consumer-DTO check (2026-07-06), while pinning the wire
-contract for STORY-015f: `POST /api/v1/maintenance` accepts `ends_at <= starts_at` and
-persists a zero/negative-length window (live-probed against the running local stack).
-`maintenance/validation.py::validate_maintenance_request` checks only empty
-`component_id` and tz-naive datetimes. A zero/negative window is nonsense data: it can
-never be "active" under the half-open `starts_at <= at < ends_at` rule
-(`core/ports/maintenance_repository.py::MaintenanceRepository.is_under_maintenance`),
-so it silently does nothing while looking scheduled. STORY-015f's AC3 originally named
-this as a 422 example; it was trimmed at planning (PO-approved) and the gap filed here.
+## Context (CORRECTED 2026-07-06 — the originally-claimed defect does not exist)
+As first filed at sprint-34 planning, this story claimed `POST /api/v1/maintenance`
+silently accepts `ends_at <= starts_at`. **That was wrong** — the planning check read
+only the edge validator (`maintenance/validation.py`) and live-probed only the happy
+path. The domain type (`core/domain` `MaintenanceWindow`, pinned by
+`test_maintenance_domain.py::test_maintenance_window_ends_at_must_be_greater_than_starts_at`
+and `test_maintenance_endpoint.py::test_post_maintenance_invalid_times`) enforces
+`ends_at must be strictly greater than starts_at` — end-before-start AND equal
+timestamps both return 422, live-confirmed 2026-07-06 during sprint 34.
+
+What IS wrong (live wire sample, 2026-07-06): the ordering 422's `detail` leaks the raw
+Pydantic internals —
+`"1 validation error for MaintenanceWindow\n  Value error, ends_at must be strictly
+greater than starts_at [type=value_error, input_value={...}] ... errors.pydantic.dev ..."`
+— a multi-line blob exposing internal type names and input echo, inconsistent with the
+edge validator's clean one-liners (`"starts_at must be timezone-aware."`). The
+Maintenance tab (STORY-015f) maps 422 details to form fields by message substring, so
+this blob renders poorly/unmapped, and 015f (built to the amended AC3) has no test for it.
 
 ## Description
-Reject `ends_at <= starts_at` at the API edge with a `SyntacticValidationError` → HTTP
-422, mirroring the existing naive-datetime checks in the same validator.
+Give the ordering violation the same clean edge treatment the other syntactic checks
+have, and map it inline on the form.
 
 ## Acceptance Criteria (draft — refine before scheduling)
-- [ ] AC1: `POST /api/v1/maintenance` with `ends_at <= starts_at` (both tz-aware) returns
-      422 with a message naming the ordering problem; equal timestamps are rejected too
-      (a zero-length window can never be active). Regression-tested at the endpoint level.
-- [ ] AC2: `validate_maintenance_request` gains the check + unit tests (reject
-      end-before-start and end-equals-start; accept a valid ordering).
-- [ ] AC3: Once landed, STORY-015f's Maintenance tab (if already merged) needs no change —
-      its inline-422 rendering is field-generic; verify the new 422 surfaces inline. If
-      015f grew a client-side ordering guard meanwhile, the two must not disagree.
+- [ ] AC1: `maintenance/validation.py::validate_maintenance_request` gains the ordering
+      check (`ends_at <= starts_at` → `SyntacticValidationError` with a clean one-line
+      message, e.g. "ends_at must be strictly greater than starts_at.") so the edge 422
+      fires BEFORE domain construction; endpoint regression test asserts the clean
+      detail for both end-before-start and equal timestamps. The domain validator stays
+      (defense in depth) — this only changes which layer answers the API caller.
+- [ ] AC2: The Maintenance tab's field-error mapping handles the ordering message
+      (inline on `ends_at`), MSW-tested with the REAL new detail string.
+- [ ] AC3: Six-gate backend DoD + three-gate frontend DoD green.
 
 ## Open Questions
-None known; confirm at refinement whether equal-timestamps should really 422 (recommended)
-or be allowed as a no-op.
+None — the original "should equal timestamps 422?" question is answered by the existing
+domain behavior: yes, "strictly greater" (live-confirmed).
 
 ## History
-- 2026-07-06: filed as draft at sprint-34 planning (consumer-DTO check finding; PO chose
-  "trim AC3 + file draft").
+- 2026-07-06: filed as draft at sprint-34 planning claiming a missing end-before-start
+  422 (consumer-DTO check finding; PO chose "trim AC3 + file draft").
+- 2026-07-06 (later, sprint 34 in flight): CORRECTED after the STORY-015f implementer
+  flagged `test_post_maintenance_invalid_times` — the 422 exists (domain layer); the
+  planning check had probed only the happy path live. Re-scoped to the leaked-Pydantic
+  detail + frontend inline mapping. Feeds the sprint-34 retro (probe failure paths, not
+  just the happy path, when pinning consumer contracts).

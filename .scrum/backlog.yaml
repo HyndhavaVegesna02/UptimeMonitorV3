@@ -331,9 +331,9 @@ stories:
     type: defect
     sprint: 34
   - id: STORY-052
-    title: Maintenance API rejects end-before-start windows with a 422
+    title: Maintenance ordering 422 — clean edge message (raw Pydantic blob leaks today) + inline frontend mapping
     file: docs/scrum/stories/STORY-052-maintenance-end-before-start-422.md
-    status: draft   # filed at sprint-34 planning (2026-07-06): the consumer-DTO check found POST /maintenance silently accepts ends_at <= starts_at; STORY-015f AC3 was trimmed accordingly (PO-approved)
+    status: draft   # CORRECTED mid-sprint-34 (2026-07-06): the originally-claimed missing-422 defect does NOT exist — the domain layer rejects end-before-start AND equal (live-confirmed); re-scoped to the leaked Pydantic detail + 015f inline mapping. Retro input: planning contract checks must probe failure paths live.
     points: 1
     priority: 22
     type: defect

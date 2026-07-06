@@ -38,3 +38,11 @@ None.
   only naive datetimes and an empty component_id; `ends_at <= starts_at` is accepted
   silently (live-probed). The producer gap is filed as STORY-052 (draft). AC3 now names
   only the two real 422 cases. Pulled into sprint 34.
+- 2026-07-06 (sprint 34 in flight, CORRECTION): the planning finding above was WRONG —
+  the check read only the edge validator and live-probed only the happy path. The DOMAIN
+  layer (`MaintenanceWindow`) rejects end-before-start AND equal timestamps with a 422
+  (live-confirmed mid-sprint; `test_post_maintenance_invalid_times` pins it). The trimmed
+  AC3 remains narrower-but-true, and the story was built + reviewed against it as locked.
+  The residual real gap — the ordering 422's detail leaks a raw Pydantic blob, and this
+  tab doesn't map it inline — is STORY-052 (re-scoped same day). Raised for the PO at the
+  sprint-34 review; retro input on probing failure paths.

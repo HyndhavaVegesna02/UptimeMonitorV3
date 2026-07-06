@@ -69,6 +69,12 @@ rule):
   `component_id`. End-before-start is NOT rejected by the backend (STORY-052) — the form
   must not claim otherwise; a client-side ordering hint is allowed only as a
   non-blocking warning, and only if cheap (optional, not AC).
+  **[CORRECTION, 2026-07-06 mid-sprint — the bullet above is WRONG as written]:** the
+  domain layer's `MaintenanceWindow` DOES reject end-before-start and equal timestamps
+  with a 422 (live-confirmed; the planning probe covered only the happy path and the
+  edge validator file). The 422's `detail` is a raw multi-line Pydantic blob, not a
+  clean message — that residual is STORY-052 (re-scoped). The story was built to the
+  amended AC3 as locked; see the story file's second 2026-07-06 History entry.
 - **Submission:** the form takes local time (`<input type="datetime-local">`) and
   submits tz-aware ISO (`new Date(value).toISOString()`); the MSW test asserts the
   payload received by the handler is tz-aware and well-formed (AC2).

@@ -45,6 +45,10 @@ start_tag: sprint-34-start
 # - Real 422 cases (maintenance/validation.py::validate_maintenance_request): tz-NAIVE
 #   starts_at or ends_at; empty/whitespace component_id. NOT end-before-start (STORY-052
 #   gap). AC3 trimmed to match at planning, PO-approved.
+#   CORRECTION (2026-07-06 mid-sprint): the end-before-start line was WRONG — the DOMAIN
+#   layer rejects it (and equal) with a 422; planning probed only the happy path live.
+#   STORY-052 re-scoped (leaked Pydantic detail + inline mapping); story/plan History
+#   corrected; PO informed at review; retro input: probe failure paths when pinning.
 # - UNITS/FORMATS: datetimes are ISO-8601 UTC with Z suffix on the wire; the form enters
 #   LOCAL time and must submit tz-aware (browser datetime-local -> Date -> toISOString);
 #   reason is nullable free text; id is int. MSW fixtures derive from the live sample
