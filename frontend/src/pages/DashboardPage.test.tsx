@@ -363,4 +363,28 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
       within(rowFor('Boundary End Component')).queryByText('Under maintenance'),
     ).not.toBeInTheDocument()
   })
+
+  it('coexists with the health badge — a degraded component under active maintenance shows BOTH, non-color-only (AC2)', async () => {
+    const DEGRADED_ACTIVE = {
+      id: 'comp-degraded-active',
+      name: 'Degraded Under Maintenance',
+      status: 'degraded',
+    }
+    server.use(
+      http.get('/api/v1/components', () => HttpResponse.json([DEGRADED_ACTIVE])),
+      http.get('/api/v1/maintenance', () =>
+        HttpResponse.json([{ ...ACTIVE_WINDOW, component_id: DEGRADED_ACTIVE.id }]),
+      ),
+    )
+
+    render(<DashboardPage />)
+    await screen.findByRole('table')
+
+    const row = rowFor(DEGRADED_ACTIVE.name)
+    // Health status is preserved — the overlay never hides/replaces it.
+    expect(within(row).getByText('Degraded')).toBeInTheDocument()
+    // The maintenance indicator carries an accessible TEXT label of its
+    // own — never a color-only cue.
+    expect(within(row).getByText('Under maintenance')).toBeInTheDocument()
+  })
 })
