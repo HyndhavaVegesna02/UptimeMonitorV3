@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: d441468
-verified_sprint: sprint-36
+verified_sha: 0f42798
+verified_sprint: sprint-37
 status: verified          # verified | stale | archived
 ---
 
@@ -296,6 +296,16 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-37 (STORY-046, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `frontend/src/pages/DashboardPage.tsx` and `frontend/src/pages/
+  DashboardPage.css`, both of which changed for STORY-046 (the Dashboard maintenance
+  indicator — see [[frontend-zone]]), but ONLY additively: a new `useMaintenanceWindows`
+  import/call, a page-local `isUnderActiveMaintenance` helper, and a second `StatusBadge`
+  rendered in the Status cell, plus a new `.dashboard-status-cell` CSS rule. None of it
+  touches the `useSampleMode` import, the `SampleModeToggle` component, its
+  `<SampleModeToggle />` render call, or the `.dashboard-sample-mode*` CSS block — re-checked
+  the REMOVAL recipe above line-by-line, it still names exact sample-mode-only lines/blocks
+  in each file, none of which moved. No Facts changed. verified_sha = 0f42798.
 - sprint-36 (STORY-047, quality-review minors chore): AC5 parametrized
   `FakeSampleModeRepository`'s store hint from bare `dict` to `dict[str,
   bool]` (Fact updated above) — cosmetic, no behavior change. This article's
