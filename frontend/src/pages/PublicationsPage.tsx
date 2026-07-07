@@ -1,25 +1,39 @@
 import { toHealthStatus } from '../api/statusMapping'
-import { EmptyState, ErrorState, LoadingState, Panel, StatusBadge } from '../components'
+import {
+  EmptyState,
+  ErrorState,
+  Icon,
+  LoadingState,
+  Panel,
+  StatusBadge,
+  Timeline,
+  TimelineItem,
+} from '../components'
 import { usePublications } from '../features/publications/usePublications'
 import './PublicationsPage.css'
 
 /** `proposal_id` renders as a mono id; `null` (no originating proposal)
- * renders as an em-dash — NEVER a sentinel `0` (STORY-015g AC1). */
+ * renders as an em-dash — NEVER a sentinel `0` (carried forward unchanged
+ * from STORY-015g into the STORY-062 timeline redesign). */
 function formatProposalId(proposalId: number | null): string {
   return proposalId === null ? '—' : String(proposalId)
 }
 
 /**
- * The Publications tab (STORY-015g): a read-only audit trail of what was
- * actually pushed to the public Statuspage, and when — "what did customers
- * see, and when" (dossier §17). Fetches `GET /api/v1/publications` via
- * `usePublications` (a plain `useFetch(getPublications)` wrapper — no
- * selector/params, matching the Dashboard read-tab shape) and renders one row
- * per publication, newest-first exactly as the API returns them. There is no
- * from-status on `PublicationDTO`, so unlike a changelog diff this shows only
- * the single published status per row (AC1). The endpoint caps at the
- * repository's most-recent 50 (`list_recent`, no pagination) — stated in the
- * header copy so the cap is visible, never silent (AC3).
+ * The Publications tab (STORY-062, sprint-38 Operator Dashboard redesign):
+ * a vertical timeline audit trail of what was actually pushed to the public
+ * Statuspage, and when — "what did customers see, and when" (dossier §17;
+ * reference mock's `isPublications` section). Fetches
+ * `GET /api/v1/publications` via `usePublications` (a plain
+ * `useFetch(getPublications)` wrapper) and renders one `TimelineItem` per
+ * publication, newest-first exactly as the API returns them — there is no
+ * from-status on `PublicationDTO`, so unlike a changelog diff this shows
+ * only the single published status per row. The mock's author/outcome/
+ * incident fields are OMITTED: `PublicationDTO` carries neither, and this
+ * redesign adapts to real data only (no fabricated fields) — see STORY-066
+ * for the follow-up that would add real metadata. The endpoint caps at the
+ * repository's most-recent 50 (`list_recent`, no pagination) — stated in
+ * the header copy so the cap is visible, never silent (AC2).
  */
 export function PublicationsPage() {
   const { state, retry } = usePublications()
@@ -41,34 +55,28 @@ export function PublicationsPage() {
       )}
 
       {state.phase === 'success' && state.data.length > 0 && (
-        <table className="publications-table">
-          <thead>
-            <tr>
-              <th scope="col">Published at</th>
-              <th scope="col">Component</th>
-              <th scope="col">Status</th>
-              <th scope="col">Proposal</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.data.map((publication) => (
-              <tr key={publication.id}>
-                <td>
-                  <span className="text-mono">{publication.published_at}</span>
-                </td>
-                <td>{publication.component_id}</td>
-                <td>
-                  <StatusBadge status={toHealthStatus(publication.status)} />
-                </td>
-                <td>
-                  <span className="text-mono">
-                    {formatProposalId(publication.proposal_id)}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Timeline aria-label="Publication log">
+          {state.data.map((publication, index) => (
+            <TimelineItem
+              key={publication.id}
+              tone={toHealthStatus(publication.status)}
+              isLast={index === state.data.length - 1}
+            >
+              <div className="publications-page__row-head">
+                <span className="text-mono publications-page__scope">
+                  {publication.component_id}
+                </span>
+                <Icon name="arrow-right" className="publications-page__arrow" />
+                <StatusBadge status={toHealthStatus(publication.status)} />
+              </div>
+              <div className="publications-page__meta text-mono text-caption">
+                <span>{publication.published_at}</span>
+                <span aria-hidden="true"> · </span>
+                <span>Proposal {formatProposalId(publication.proposal_id)}</span>
+              </div>
+            </TimelineItem>
+          ))}
+        </Timeline>
       )}
     </Panel>
   )
