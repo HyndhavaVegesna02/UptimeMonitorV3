@@ -1,4 +1,5 @@
 import { Button } from '../Button/Button'
+import { Icon } from '../Icon/Icon'
 import './ErrorState.css'
 
 export interface ErrorStateProps {
@@ -6,7 +7,8 @@ export interface ErrorStateProps {
   onRetry?: () => void
 }
 
-/** Error placeholder with an optional retry action (STORY-015a AC3/AC4).
+/** Error placeholder with an optional retry action (STORY-015a AC3/AC4;
+ * icon restyled to the shared feather-style `Icon` set at STORY-055).
  * `role="alert"` so the message is announced; the health "down" color marks
  * the icon only, never the text (AC6). */
 export function ErrorState({
@@ -16,9 +18,7 @@ export function ErrorState({
   return (
     <div className="error-state">
       <p className="error-state__message" role="alert">
-        <span className="error-state__icon" aria-hidden="true">
-          ⚠
-        </span>
+        <Icon name="alert-triangle" className="error-state__icon" />
         {message}
       </p>
       {onRetry ? (

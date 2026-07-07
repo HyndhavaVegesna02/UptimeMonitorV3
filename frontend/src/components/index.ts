@@ -1,4 +1,5 @@
 export { Button, type ButtonProps, type ButtonVariant } from './Button/Button'
+export { Icon, type IconProps, type IconName } from './Icon/Icon'
 export {
   StatusBadge,
   type HealthStatus,
