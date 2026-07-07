@@ -476,6 +476,28 @@
   in the standing process required that audit, so the catch was luck-shaped. This makes
   it a rule.)
 
+- 2026-07-06 — **A DoD-gate red caused by resource contention rather than the code under
+  test is an INVALID signal — prove it, re-run isolated for the valid result, and file a
+  story to make the gate deterministic.** When a gate command false-reds, the orchestrator
+  must PROVE it is contention before discounting it: the failing unit has an EMPTY diff
+  since the sprint cut (`git diff sprint-N-start..HEAD -- <failing file>`) AND it passes
+  when given adequate resources (in isolation and/or serialized, e.g. Vitest
+  `--no-file-parallelism`). Only then is the red discounted; the VALID gate signal is the
+  resource-isolated re-run, recorded as the DoD evidence with a prominent note. A gate that
+  can flake is filed as a defect so the mechanical floor stays trustworthy — a flaky gate is
+  never left as the standing gate. If the contention proof does NOT hold (the unit changed
+  this sprint, or it fails in isolation too), the red is REAL and the story is not Done. This
+  generalizes the 2026-07-02 DB-concurrency agreement (which covered only two concurrent runs
+  against one throwaway DB) to ANY resource contention — CPU, IO, test-runner parallelism.
+  (Motivated by Sprint 37, STORY-046 gate verification: the canonical `npm test` exited 1 on
+  a PRE-EXISTING, unrelated test — `CheckHistoryPage.test.tsx`'s 1500-row 1000-cap render hit
+  Vitest's 5000ms default timeout under file-parallelism CPU contention. Proven a false-red
+  (empty diff since sprint-37-start; 11 passed in isolation in 3.6s; 230 passed single-threaded;
+  and the same command passed green during STORY-052's run minutes earlier); handled per the
+  2026-07-02 precedent and filed as defect STORY-054. There was no standing rule for a SINGLE
+  invocation starving itself, so the handling relied on judgment — this makes it a rule, with
+  the mandatory proof step so a GENUINE red can never be waved off as "just contention.")
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
