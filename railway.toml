@@ -30,7 +30,7 @@
 # `preDeployCommand` exits non-zero — the previous deployment keeps serving.
 
 [build]
-builder = "RAILPACK"
+builder = "NIXPACKS"
 
 [deploy]
 preDeployCommand = "alembic upgrade head"

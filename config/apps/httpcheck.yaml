@@ -5,5 +5,5 @@ app:
 components:
   - { id: http-check, name: HTTP Check, statuspage_component_id: xdnywbx77npw }
 signals:
-  - { signal_key: http-check, native_id: HTTP_CHECK-DB5792CB88D14CF4, name: HTTP Check, component_id: http-check, interval_seconds: 120 }
+  - { signal_key: http-check, native_id: HTTP_CHECK-38B092E93932C002, name: HTTP Check, component_id: http-check, interval_seconds: 120 }
 thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
