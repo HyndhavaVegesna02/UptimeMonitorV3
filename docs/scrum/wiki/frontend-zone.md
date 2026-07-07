@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 0f42798
-verified_sprint: sprint-37
+verified_sha: 298f170
+verified_sprint: sprint-38
 status: verified
 ---
 
@@ -42,17 +42,30 @@ status: verified
   persisted to localStorage). Both surfaces read the SAME resolution logic.
 - **Token layer:** `frontend/src/styles/tokens.css` holds ALL visual values as CSS custom
   properties scoped per theme (`:root[data-theme='dark']` / `[data-theme='light']`) — surfaces,
-  hairlines, a 4-step ink scale, the lavender accent set, a health palette
-  (up/down/degraded/maintenance + unknown, each with a `-subtle` badge-background variant), radii,
-  spacing, type. **Components consume tokens only — no raw hex outside `styles/`** (enforced by
-  review; grep-verified clean at STORY-015a). Fonts (Inter + JetBrains Mono) load via `@fontsource`
-  (bundled, no runtime font-CDN fetch).
+  hairlines, a 4-step ink scale, the accent set (+ `--color-accent-bg`), a 7-status health palette
+  (up/degraded/partial/down/maintenance/unknown/missing, each with a `-subtle` badge-background
+  variant), a `--shadow` token (none in dark, a subtle two-layer shadow in light), radii, spacing,
+  type. **Components consume tokens only — no raw hex outside `styles/`** (enforced by review;
+  grep-verified clean at STORY-015a). Fonts are self-hosted Geist + Geist Mono via `@fontsource`
+  (imported in `frontend/src/styles/global.css`, loaded by `main.tsx`; bundled, no runtime
+  font-CDN `<link>`) — retuned from Inter/JetBrains Mono at STORY-055 (sprint-38), which also
+  retuned the palette/type-scale VALUES to the imported *Operator Dashboard* mock while keeping
+  every existing token NAME (see the Sprint-38 history entry below).
 - **Shell primitives** (`frontend/src/components/`, barrel `components/index.ts`): `Button`
   (primary/secondary/tertiary), `StatusBadge` (pill; `aria-hidden` status dot + ink text label —
-  status is NEVER color-alone), `Panel` (surface-1 + hairline + 12px radius, `headingLevel` prop
-  defaulting to `h2`), `LoadingState`, `ErrorState` (retry callback), `EmptyState`. These ship
-  with the shell so per-tab stories don't copy-paste. Classnames are composed with the shared
-  `cx(...)` helper (`frontend/src/lib/cx.ts`, STORY-041) — filters falsy, joins on a space.
+  status is NEVER color-alone; 7-value `HealthStatus` union as of STORY-055), `Panel` (surface-1 +
+  hairline + 8px radius + `--shadow`, `headingLevel` prop defaulting to `h2`), `LoadingState`,
+  `ErrorState` (retry callback; warning glyph now the shared `Icon` set), `EmptyState`, `Icon`
+  (STORY-055 — 18 inline feather-style SVGs, decorative/`aria-hidden` by default, opt-in
+  `role="img"`+`<title>` for a standalone meaningful icon), `Table`/`TableHead`/`TableBody`/
+  `TableRow`/`TableHeaderCell`/`TableCell` (STORY-055 — extracts the th/td/hairline/uppercase-
+  caption styling previously copy-pasted per page; `TableHeaderCell` defaults `scope="col"`),
+  `UptimeBar` (STORY-055 — N-segment sparkline colored by `HealthStatus`, per-segment `title`
+  tooltip, hatched "missing" fill, explicit "No data" state for zero segments), `SummaryCard`
+  (STORY-055 — dot + uppercase label + big mono value + sub, tone variants mapped to the health
+  tokens), `Timeline`/`TimelineItem` (STORY-055 — semantic `<ul>`/`<li>` vertical line + dot list).
+  These ship with the shell so per-tab stories don't copy-paste. Classnames are composed with the
+  shared `cx(...)` helper (`frontend/src/lib/cx.ts`, STORY-041) — filters falsy, joins on a space.
 - **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single `/api` base-URL seam.
   Both `getJson` (GET) and `postJson` (POST — JSON body, `Content-Type: application/json`) funnel
   their response through a shared `readOkJson(response, path)` that gives ONE uniform error
@@ -92,7 +105,11 @@ status: verified
   `frontend/src/api/statusMapping.ts::toHealthStatus` is the
   authoritative map from the backend `ComponentStatus` vocabulary (operational / degraded /
   partial_outage / major_outage) onto the health tokens (operational→up, degraded→degraded,
-  partial_outage→degraded, major_outage→down, else→unknown). **There is now a SECOND, deliberately
+  partial_outage→partial, major_outage→down, else→unknown). **STORY-055 (sprint-38):**
+  `partial_outage` now maps to its own `'partial'` token (previously folded into `'degraded'`)
+  now that the palette has a dedicated partial-outage color; the `DashboardPage` test covering the
+  all-statuses fixture was rewritten to assert "Partial outage" instead of "Degraded" for that
+  case. **There is now a SECOND, deliberately
   separate health mapper:** `frontend/src/features/history/observationHealth.ts::observationHealth`
   maps the OBSERVATION vocabulary (`ObservationDTO.health`: `"up" | "down" | "degraded"`, else→
   unknown) onto the SAME health tokens `StatusBadge` consumes (STORY-015e AC3). The two mappers'
@@ -413,3 +430,23 @@ status: verified
   active windows", never blocking the components table. Sonnet-5-implementer TDD pass, one commit
   per green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
   change). `code_refs` += features/dashboard/useMaintenanceWindows.ts. verified_sha = 0f42798.
+- sprint-38: updated for STORY-055 (Wave 0 of the Operator Dashboard redesign — design-system
+  foundation + four shared primitives; every later sprint-38 story inherits this). Retuned
+  `tokens.css` to the sprint-38 plan.md palette remap table for BOTH themes under the EXISTING
+  token names (surfaces/hairlines/ink/accent + new `--color-accent-bg`), extended the health
+  palette 5->7 (`partial`+`missing` added, each with a `-subtle`), added a `--shadow` token and a
+  compact operator-console type scale, kept the `data-theme` scoping + `index.html` pre-paint
+  script mechanism untouched. Extended `HealthStatus`/`StatusBadge` `DEFAULT_LABELS` with
+  `partial` ("Partial outage") / `missing` ("Missing data"); `statusMapping.ts` now maps
+  `partial_outage -> 'partial'` (documented above). Self-hosted Geist + Geist Mono replacing
+  Inter/JetBrains Mono (`@fontsource/geist` + `@fontsource/geist-mono`, `package.json` +
+  `global.css` updated in the same commit as `CLAUDE.md`/`frontend/README.md`'s font line, per the
+  2026-06-23 command-sync agreement); added global `font-variant-numeric: tabular-nums`. Added the
+  `Icon` component (18 feather-style SVGs) and four new shared primitives — `Table`/`UptimeBar`/
+  `SummaryCard`/`Timeline` (documented above) — each with co-located CSS + its own Vitest test.
+  Restyled `Button`/`Panel`/`LoadingState`/`ErrorState`/`EmptyState` to the new tokens (existing
+  tests green, accessible names unchanged); `ErrorState`'s bare warning glyph now renders through
+  `Icon`. Sonnet-5-implementer TDD pass, one commit per green step; frontend-only; six backend
+  gates untouched (empty diff since `sprint-38-start` — no backend/scripts/config/migrations/
+  pyproject/alembic change). `code_refs` unchanged (no new top-level file paths beyond
+  `components/index.ts`, already listed). verified_sha = 298f170.
