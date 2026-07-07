@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 240666e
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
+verified_sha: 0f42798
 verified_sprint: sprint-37
 status: verified
 ---
@@ -230,6 +230,32 @@ status: verified
     `input_value={...}` echo can contain a `component_id` token) resolving deterministically
     without throwing, rather than mis-mapping onto whichever field's token happens to appear first.
     See `pages/MaintenancePage.tsx`.
+  - **A read tab overlaying a second independent fetch (Dashboard maintenance
+    indicator, STORY-046):** the frontend health vocabulary's `maintenance`
+    `HealthStatus` value was dead code — the backend `ComponentStatus` (the
+    only producer `toHealthStatus` maps) is a closed 4-value set with no
+    maintenance state, so it could never be produced from
+    `GET /api/v1/components`. `DashboardPage.tsx` now ALSO fetches
+    `features/dashboard/useMaintenanceWindows.ts = useFetch(getMaintenance)`
+    (a second, independent `useFetch(getComponents)`-shaped hook — NOT a
+    joined/parameterized fetch, since health and maintenance are separate
+    concepts per dossier §6/§11 with no shared loading/error lifecycle to
+    couple). A page-local `isUnderActiveMaintenance(componentId, windows)`
+    filters `windows` to that `component_id` and checks
+    `deriveWindowState(startsAt, endsAt) === 'active'` for ANY of them
+    (`features/maintenance/windowState.ts` — the SAME half-open derivation
+    `MaintenancePage.tsx` uses, reused rather than re-derived; both boundary
+    instants, `starts_at` and `ends_at`, are pinned by tests). The indicator
+    renders a SECOND `StatusBadge` (`status="maintenance"`, labeled "Under
+    maintenance") in the Status cell ALONGSIDE the health badge — never
+    replacing it, so a degraded component under maintenance shows BOTH, and
+    the indicator carries its own text label (never color-only). Graceful
+    degradation: `maintenanceState.phase === 'success' ? maintenanceState.data
+    : []` treats a maintenance-fetch failure OR its loading state as "no
+    active windows" rather than blocking or erroring the primary components
+    table — the overlay is an enhancement, not a hard dependency. No change
+    to `statusMapping.ts`/`ComponentStatus`/`StatusBadge.tsx`. See
+    `pages/DashboardPage.tsx`.
   - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
     `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
     `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
@@ -375,3 +401,15 @@ status: verified
   gates untouched-green (the paired backend fix is `api/v1/maintenance/validation.py`, tracked in
   [[api-five-file-convention]], not this article's code_refs). `code_refs` unchanged (no new
   files). verified_sha = 240666e.
+- sprint-37: updated for STORY-046 (Dashboard maintenance indicator — the dead-code `maintenance`
+  `HealthStatus` value is now reachable: the PO's chosen Option A overlays a maintenance indicator
+  on the Dashboard, derived CLIENT-SIDE from `GET /api/v1/maintenance`, never from
+  `ComponentStatus`). Landed `features/dashboard/useMaintenanceWindows.ts = useFetch(getMaintenance)`
+  (documented above) and wired `DashboardPage.tsx` to render a second `StatusBadge` next to the
+  health badge for any component with an ACTIVE window (half-open boundary, both `starts_at`/
+  `ends_at` instants tested) — coexisting with, never replacing, the health badge, and carrying a
+  text label so it is not color-only. `statusMapping.ts`/`ComponentStatus`/`StatusBadge.tsx`
+  UNCHANGED. Graceful degradation: a maintenance-fetch failure or loading state renders as "no
+  active windows", never blocking the components table. Sonnet-5-implementer TDD pass, one commit
+  per green step; frontend-only; six backend gates untouched-green (empty diff — no backend source
+  change). `code_refs` += features/dashboard/useMaintenanceWindows.ts. verified_sha = 0f42798.
