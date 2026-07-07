@@ -1,0 +1,60 @@
+.uptime-bar {
+  display: flex;
+  align-items: stretch;
+  gap: 1.5px;
+  height: 18px;
+}
+
+.uptime-bar__segment {
+  flex: 1;
+  border-radius: 1px;
+  background: var(--color-health-unknown);
+}
+
+.uptime-bar__segment--up {
+  background: var(--color-health-up);
+}
+
+.uptime-bar__segment--degraded {
+  background: var(--color-health-degraded);
+}
+
+.uptime-bar__segment--partial {
+  background: var(--color-health-partial);
+}
+
+.uptime-bar__segment--down {
+  background: var(--color-health-down);
+}
+
+.uptime-bar__segment--maintenance {
+  background: var(--color-health-maintenance);
+}
+
+.uptime-bar__segment--unknown {
+  background: var(--color-health-unknown);
+}
+
+/* Missing (no monitoring data for that period) renders as a hatched
+   pattern rather than a flat fill, so it reads as "absence of data"
+   distinct from every real health color — mirrors the sprint-38 reference
+   mock's HATCH treatment. */
+.uptime-bar__segment--missing {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-health-missing) 0,
+    var(--color-health-missing) 2px,
+    var(--color-health-missing-subtle) 2px,
+    var(--color-health-missing-subtle) 5px
+  );
+}
+
+.uptime-bar--empty {
+  align-items: center;
+  height: 18px;
+}
+
+.uptime-bar__no-data {
+  font-size: var(--fs-caption);
+  color: var(--color-ink-tertiary);
+}
