@@ -117,7 +117,9 @@ stories:
     board: in_progress
     pipeline: full
     wave: 1
-    attempts: 1            # Wave 1 solo Sonnet-5/HIGH implementer dispatched 2026-07-07 (on 055 foundation)
+    attempts: 2            # attempt 1 (2026-07-07) died on an account SESSION LIMIT (resets 4:50pm IST)
+                           # having committed NOTHING — tree verified clean at 4bdb465 (crash-recovery
+                           # 2026-06-25), no scraps/artifacts. attempt 2 = fresh agent from clean state.
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
