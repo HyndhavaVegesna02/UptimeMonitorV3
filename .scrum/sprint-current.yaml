@@ -98,10 +98,10 @@ stories:
                                   # swept api-five-file-convention @ 240666e + frontend-zone @ 127c8fb)
   - id: STORY-046
     points: 2
-    board: todo
+    board: in_progress
     pipeline: gate             # 2 pts -> gate-only (no reviewers)
     blocked_question: null
-    attempts: 0
+    attempts: 1
     paused_at_commit: null
     dod_evidence: []
     review: null               # 2 pts -> gate-only per the default pipeline
