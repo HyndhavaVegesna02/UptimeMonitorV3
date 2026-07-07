@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 37
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-06
 goal: "Close the two remaining console-free maintenance gaps: the maintenance ordering
   violation returns a clean, form-mappable 422 instead of a leaked Pydantic blob
