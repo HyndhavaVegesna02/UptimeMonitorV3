@@ -387,4 +387,19 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
     // own — never a color-only cue.
     expect(within(row).getByText('Under maintenance')).toBeInTheDocument()
   })
+
+  it('degrades gracefully: a /api/v1/maintenance failure still renders the components table, with no markers', async () => {
+    server.use(
+      http.get('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    render(<DashboardPage />)
+
+    const table = await screen.findByRole('table')
+    expect(table).toBeInTheDocument()
+    expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
+    expect(screen.queryByText('Under maintenance')).not.toBeInTheDocument()
+  })
 })

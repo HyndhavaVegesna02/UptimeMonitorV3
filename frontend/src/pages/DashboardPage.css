@@ -28,6 +28,16 @@
   border-bottom: none;
 }
 
+/* Maintenance overlay (STORY-046): the health StatusBadge and the
+   maintenance indicator badge sit side by side in the Status cell — the
+   indicator COEXISTS with, never replaces, the health badge. */
+.dashboard-status-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
 /* Sample-mode toggle (STORY-049) — a TEMPORARY feature; see
    docs/scrum/wiki/sample-mode.md's REMOVAL inventory. */
 .dashboard-sample-mode {

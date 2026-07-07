@@ -1,8 +1,27 @@
 import { toHealthStatus } from '../api/statusMapping'
+import type { MaintenanceWindowDTO } from '../api/types'
 import { EmptyState, ErrorState, LoadingState, Panel, StatusBadge } from '../components'
 import { useComponents } from '../features/dashboard/useComponents'
+import { useMaintenanceWindows } from '../features/dashboard/useMaintenanceWindows'
 import { useSampleMode } from '../features/dashboard/useSampleMode'
+import { deriveWindowState } from '../features/maintenance/windowState'
 import './DashboardPage.css'
+
+/**
+ * True iff ANY of `windows` belonging to `componentId` is currently ACTIVE
+ * per the half-open `deriveWindowState` rule (STORY-046, dossier §6/§11 —
+ * health and maintenance are separate concepts, so this never touches
+ * `toHealthStatus`/`ComponentStatus`). Multiple windows on one component are
+ * OR'd together: any single active window is enough to mark it.
+ */
+function isUnderActiveMaintenance(
+  componentId: string,
+  windows: MaintenanceWindowDTO[],
+): boolean {
+  return windows
+    .filter((window) => window.component_id === componentId)
+    .some((window) => deriveWindowState(window.starts_at, window.ends_at) === 'active')
+}
 
 /**
  * The sample-mode toggle (STORY-049 AC1–AC3): a real switch reflecting
@@ -67,9 +86,21 @@ function SampleModeToggle() {
  * the per-tab pattern 015c–015g copy: page in `pages/`, fetch hook in
  * `features/<tab>/`, shell primitives for loading/empty/error states.
  * Also hosts the STORY-049 sample-mode toggle (a TEMPORARY feature).
+ *
+ * STORY-046: ALSO fetches `GET /api/v1/maintenance` via
+ * `useMaintenanceWindows` and overlays a maintenance indicator next to a
+ * component's health badge when it has an ACTIVE window (never replacing
+ * the health badge — dossier §6/§11, health and maintenance are separate
+ * concepts). Graceful degradation: a maintenance-fetch failure (or its
+ * loading state) must never block the primary components table, so any
+ * non-`'success'` maintenance state is treated as "no active windows" —
+ * the overlay silently disappears instead of erroring the whole page.
  */
 export function DashboardPage() {
   const { state, retry } = useComponents()
+  const { state: maintenanceState } = useMaintenanceWindows()
+  const maintenanceWindows =
+    maintenanceState.phase === 'success' ? maintenanceState.data : []
 
   return (
     <Panel title="Dashboard" headingLevel="h1">
@@ -98,7 +129,12 @@ export function DashboardPage() {
               <tr key={component.id}>
                 <td>{component.name}</td>
                 <td>
-                  <StatusBadge status={toHealthStatus(component.status)} />
+                  <div className="dashboard-status-cell">
+                    <StatusBadge status={toHealthStatus(component.status)} />
+                    {isUnderActiveMaintenance(component.id, maintenanceWindows) && (
+                      <StatusBadge status="maintenance" label="Under maintenance" />
+                    )}
+                  </div>
                 </td>
               </tr>
             ))}
