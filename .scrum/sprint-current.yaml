@@ -81,19 +81,43 @@ start_tag: sprint-38-start
 stories:
   - id: STORY-055
     points: 5
-    board: in_progress     # todo | in_progress | done | blocked
+    board: done            # awaiting PO verdict at sprint review
     pipeline: full             # 5 pts -> implementer + spec + quality reviewers + gate
     wave: 0
-    attempts: 1            # Wave 0 solo Sonnet-5/HIGH implementer dispatched 2026-07-07
+    attempts: 1            # Wave 0 solo Sonnet-5/HIGH implementer, clean single dispatch (5981f72..500090e)
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "frontend three-gate DoD (npx vitest run --no-file-parallelism / npm run build / npm run lint) orchestrator-run on clean committed HEAD; backend six-gate carried by EMPTY backend diff sprint-38-start..HEAD"
+        exit_code: 0
+        output_tail: "Vitest VALID signal = 39 files / 257 passed (--no-file-parallelism, exit 0),
+          108.20s — the canonical `npm test` false-reds on the PRE-EXISTING CheckHistoryPage 1000-cap
+          render timeout under file-parallelism CPU contention (empty diff on that file since
+          sprint-38-start; 11/11 in isolation), the known STORY-054 defect that STORY-060 resolves —
+          discounted per the 2026-07-06 contention agreement. build OK (tsc -b && vite build, exit 0;
+          Geist woff2 bundled; index.js 260.28 kB). lint clean (eslint, exit 0). Backend diff empty."
+        commit: 500090e
+        at: 2026-07-07T14:11:00+05:30
+    review:
+      spec: "PASS — all AC1-AC6 MET (Opus). Token values match plan.md remap both themes; 7-status
+        palette + HealthStatus/StatusBadge/statusMapping(partial_outage->partial) with driving tests
+        (contract change rewrote DashboardPage/StatusBadge tests, none dropped); Geist self-hosted, no
+        CDN, Inter/JetBrains removed; shadow token + Icon set + 4 primitives token-only with co-located
+        tests; backend diff empty; frontend-zone wiki re-verified."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline clean (hex only in tokens.css),
+        no a11y regressions, primitives well-typed/reusable, no test lies."
+    open_minors:
+      - "SummaryCard tone vocab is 'ok|degraded|partial|down|accent|neutral' (diverges from HealthStatus
+        'up|...'); STORY-057 must map up->ok when consuming it (flagged in the 057 brief)."
+      - "SummaryCard.css big-number 24px/-0.02em un-tokenized — consider a --fs-stat token (058 reuse)."
+      - "UptimeBar per-segment info is title-only (mouse); aggregate role=img label covers a11y; SR-per-segment is a later polish."
+      - "Page-level table CSS not yet de-duplicated — lands as Wave-2 pages adopt the Table primitive (correct sequencing)."
   - id: STORY-056
     points: 5
-    board: todo
+    board: in_progress
     pipeline: full
     wave: 1
+    attempts: 1            # Wave 1 solo Sonnet-5/HIGH implementer dispatched 2026-07-07 (on 055 foundation)
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
