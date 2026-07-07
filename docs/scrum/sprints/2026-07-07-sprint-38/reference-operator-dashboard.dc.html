@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d10; --bg-elev:#111419; --bg-elev2:#171b21; --bg-hover:#1b2027;
+  --border:#22272e; --border-strong:#2d333b;
+  --text:#e6e9ee; --text-dim:#98a1ac; --text-faint:#69727d;
+  --accent:#7c85f0; --accent-bg:rgba(124,133,240,.14); --accent-text:#fff;
+  --ok:#3fb950; --ok-bg:rgba(63,185,80,.13);
+  --degraded:#d6a419; --degraded-bg:rgba(214,164,25,.14);
+  --partial:#e8843b; --partial-bg:rgba(232,132,59,.14);
+  --major:#f85149; --major-bg:rgba(248,81,73,.14);
+  --unknown:#8b96a5; --unknown-bg:rgba(139,150,165,.13);
+  --missing:#4f7bd0; --missing-bg:rgba(79,123,208,.16);
+  --mono:'Geist Mono',ui-monospace,'SF Mono',Menlo,monospace;
+  --shadow:none;
+}
+[data-theme="light"]{
+  --bg:#f6f7f9; --bg-elev:#ffffff; --bg-elev2:#f0f2f5; --bg-hover:#eaedf1;
+  --border:#e4e7eb; --border-strong:#d3d8de;
+  --text:#161a1e; --text-dim:#59626c; --text-faint:#8a929b;
+  --accent:#5b60d6; --accent-bg:rgba(91,96,214,.10); --accent-text:#fff;
+  --ok:#1a7f37; --ok-bg:rgba(26,127,55,.11);
+  --degraded:#9a6700; --degraded-bg:rgba(154,103,0,.11);
+  --partial:#bc4c00; --partial-bg:rgba(188,76,0,.11);
+  --major:#cf222e; --major-bg:rgba(207,34,46,.10);
+  --unknown:#57606a; --unknown-bg:rgba(87,96,106,.11);
+  --missing:#0969da; --missing-bg:rgba(9,105,218,.12);
+  --shadow:0 1px 3px rgba(18,24,38,.06),0 1px 2px rgba(18,24,38,.04);
+}
+*{box-sizing:border-box}
+body{margin:0;font-variant-numeric:tabular-nums}
+button{transition:background .12s ease,color .12s ease,border-color .12s ease,filter .12s ease}
+input,select{transition:border-color .12s ease,box-shadow .12s ease}
+@keyframes statusPulse{0%,100%{opacity:1}50%{opacity:.4}}
+input,select,button,textarea{font-family:inherit}
+input::placeholder{color:var(--text-faint)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border-strong);border-radius:6px;border:2px solid transparent;background-clip:padding-box}
+</style>
+</helmet>
+<div data-theme="{{ theme }}" style="height:100vh;display:flex;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Geist',ui-sans-serif,system-ui,-apple-system,'Segoe UI',sans-serif;font-size:13px;line-height:1.45;-webkit-font-smoothing:antialiased">
+
+  <!-- SIDEBAR -->
+  <aside style="flex:none;width:{{ navW }};display:flex;flex-direction:column;border-right:1px solid var(--border);background:var(--bg-elev);transition:width .14s ease">
+    <button onClick="{{ toggleNav }}" title="Uptime Monitor" style-hover="background:var(--bg-hover)" style="flex:none;height:52px;display:flex;align-items:center;gap:9px;padding:0 14px;border:none;border-bottom:1px solid var(--border);background:transparent;cursor:pointer;color:var(--text);justify-content:{{ navJustify }}">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+      <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}">
+        <span style="font-weight:700;letter-spacing:-.01em;font-size:14px;flex:1;text-align:left">Uptime Monitor</span>
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+      </sc-if>
+    </button>
+
+    <nav style="flex:1;padding:8px;display:flex;flex-direction:column;gap:2px;overflow:auto">
+      <button onClick="{{ navDash.onClick }}" title="Dashboard" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navDash.weight }};color:{{ navDash.color }};background:{{ navDash.bg }};justify-content:{{ navJustify }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Dashboard</span></sc-if>
+      </button>
+      <button onClick="{{ navAvail.onClick }}" title="Availability" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navAvail.weight }};color:{{ navAvail.color }};background:{{ navAvail.bg }};justify-content:{{ navJustify }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Availability</span></sc-if>
+      </button>
+      <button onClick="{{ navAppr.onClick }}" title="Approvals" style-hover="background:var(--bg-hover);color:var(--text)" style="position:relative;display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navAppr.weight }};color:{{ navAppr.color }};background:{{ navAppr.bg }};justify-content:{{ navJustify }}">
+        <span style="position:relative;flex:none;display:inline-flex">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+          <sc-if value="{{ navCollapsed }}" hint-placeholder-val="{{ false }}">
+            <sc-if value="{{ navAppr.badge }}" hint-placeholder-val="{{ true }}"><span style="position:absolute;top:-4px;right:-5px;width:8px;height:8px;border-radius:50%;background:var(--major);border:1.5px solid var(--bg-elev)"></span></sc-if>
+          </sc-if>
+        </span>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Approvals</span></sc-if>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}">
+          <sc-if value="{{ navAppr.badge }}" hint-placeholder-val="{{ true }}"><span style="min-width:17px;height:17px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;font-size:11px;font-weight:700;background:var(--major);color:#fff">{{ navAppr.badge }}</span></sc-if>
+        </sc-if>
+      </button>
+      <button onClick="{{ navHist.onClick }}" title="Check History" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navHist.weight }};color:{{ navHist.color }};background:{{ navHist.bg }};justify-content:{{ navJustify }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Check History</span></sc-if>
+      </button>
+      <button onClick="{{ navMaint.onClick }}" title="Maintenance" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navMaint.weight }};color:{{ navMaint.color }};background:{{ navMaint.bg }};justify-content:{{ navJustify }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.6 2.6-2.4-.6-.6-2.4z"/></svg>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Maintenance</span></sc-if>
+      </button>
+      <button onClick="{{ navPub.onClick }}" title="Publications" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;gap:11px;padding:8px 9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:{{ navPub.weight }};color:{{ navPub.color }};background:{{ navPub.bg }};justify-content:{{ navJustify }}">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg>
+        <sc-if value="{{ navExpanded }}" hint-placeholder-val="{{ true }}"><span style="flex:1;text-align:left">Publications</span></sc-if>
+      </button>
+    </nav>
+
+  </aside>
+
+  <!-- CONTENT COLUMN -->
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column;overflow:hidden">
+
+  <!-- TOP BAR -->
+  <header style="flex:none;height:52px;display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 14px;border-bottom:1px solid var(--border);background:var(--bg-elev)">
+    <button onClick="{{ triggerFailure }}" title="Trigger test failure" style-hover="background:var(--major);color:#ffffff" style="width:32px;height:32px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--major);border-radius:6px;cursor:pointer;color:var(--major);background:var(--major-bg)">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7z"/></svg>
+    </button>
+    <button onClick="{{ toggleTheme }}" title="Toggle theme" style-hover="background:var(--bg-hover);color:var(--text)" style="width:32px;height:32px;flex:none;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:6px;cursor:pointer;color:var(--text-dim);background:transparent">
+      <sc-if value="{{ isLight }}" hint-placeholder-val="{{ true }}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5 19 19M5 19l1.5-1.5M17.5 6.5 19 5"/></svg>
+      </sc-if>
+      <sc-if value="{{ isDark }}" hint-placeholder-val="{{ true }}">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </sc-if>
+    </button>
+  </header>
+
+  <!-- BANNER -->
+  <sc-if value="{{ banner }}" hint-placeholder-val="{{ true }}">
+    <div style="flex:none;display:flex;align-items:center;gap:10px;padding:8px 16px;background:var(--major-bg);border-bottom:1px solid var(--border);color:var(--major);font-size:12.5px;font-weight:500">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg>
+      <span style="flex:1;color:var(--text)">{{ banner }}</span>
+      <button onClick="{{ dismissBanner }}" style="border:none;background:transparent;color:var(--text-dim);cursor:pointer;font-size:12px">Dismiss</button>
+    </div>
+  </sc-if>
+
+  <!-- MAIN -->
+  <main style="flex:1;overflow:auto">
+
+    <!-- ============ DASHBOARD ============ -->
+    <sc-if value="{{ isDashboard }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:1400px;min-width:920px;margin:0 auto">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px">
+          <div>
+            <h1 style="margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em">System health</h1>
+            <p style="margin:2px 0 0;color:var(--text-dim);font-size:12.5px">Live status across {{ compCount }} monitored components · updated {{ clock }} · click a row to see its signals</p>
+          </div>
+        </div>
+
+        <div style="display:flex;gap:12px;margin-bottom:20px">
+          <sc-for list="{{ summaryCards }}" as="c" hint-placeholder-count="5">
+            <div style="flex:1;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:14px 16px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <span style="width:7px;height:7px;border-radius:50%;flex:none;background:{{ c.dot }};box-shadow:0 0 0 3px {{ c.dotBg }}"></span>
+                <span style="font-size:11px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.06em;font-weight:600;white-space:nowrap">{{ c.label }}</span>
+              </div>
+              <div style="font-family:var(--mono);font-size:24px;font-weight:600;margin-top:10px;color:{{ c.color }};letter-spacing:-.02em">{{ c.value }}</div>
+              <div style="font-size:11.5px;color:var(--text-faint);margin-top:2px;white-space:nowrap">{{ c.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <sc-for list="{{ dashGroups }}" as="g" hint-placeholder-count="4">
+          <div style="margin-bottom:16px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden">
+            <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)">
+              <span style="font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-dim);white-space:nowrap">{{ g.name }}</span>
+              <span style="color:var(--text-faint);font-size:11px;font-family:var(--mono);white-space:nowrap">{{ g.count }}</span>
+              <div style="flex:1"></div>
+              <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11.5px;font-weight:600;color:{{ g.worst.c }};background:{{ g.worst.bg }};white-space:nowrap">
+                <span style="width:6px;height:6px;border-radius:50%;background:{{ g.worst.c }}"></span>{{ g.worst.label }}
+              </span>
+            </div>
+            <sc-for list="{{ g.components }}" as="c" hint-placeholder-count="3">
+              <div style="border-bottom:1px solid var(--border)">
+                <div onClick="{{ c.onToggle }}" style-hover="background:var(--bg-hover)" style="display:flex;align-items:center;gap:14px;padding:{{ rowPad }};cursor:pointer">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" style="flex:none;transform:{{ c.chevron }};transition:transform .12s"><path d="M9 6l6 6-6 6"/></svg>
+                  <div style="display:flex;align-items:center;gap:9px;width:212px;flex:none;min-width:0">
+                    <span style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ c.sm.c }};box-shadow:0 0 0 3px {{ c.sm.bg }};animation:{{ c.pulse }}"></span>
+                    <div style="min-width:0">
+                      <div style="font-family:var(--mono);font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.name }}</div>
+                      <div style="font-size:10.5px;color:{{ c.sigColor }};margin-top:1px;white-space:nowrap">{{ c.sigText }}</div>
+                    </div>
+                  </div>
+                  <div style="flex:1;display:flex;gap:1.5px;height:18px;align-items:stretch">
+                    <sc-for list="{{ c.segs }}" as="s" hint-placeholder-count="30">
+                      <div title="{{ s.title }}" style="flex:1;border-radius:1px;background:{{ s.bg }}"></div>
+                    </sc-for>
+                  </div>
+                  <span style="font-family:var(--mono);font-size:12.5px;color:{{ c.uptimeColor }};text-align:right;width:64px;flex:none">{{ c.uptime }}</span>
+                  <div style="width:114px;flex:none;display:flex;justify-content:flex-start">
+                    <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11.5px;font-weight:600;color:{{ c.sm.c }};background:{{ c.sm.bg }};white-space:nowrap">
+                      <span style="width:6px;height:6px;border-radius:50%;background:{{ c.sm.c }}"></span>{{ c.sm.label }}
+                    </span>
+                  </div>
+                </div>
+                <sc-if value="{{ c.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:4px 14px 12px 46px;background:var(--bg-elev2)">
+                    <div style="font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:6px 0 4px">Signals feeding this component</div>
+                    <div style="border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg-elev)">
+                      <sc-for list="{{ c.signalsView }}" as="sig" hint-placeholder-count="4">
+                        <div style="display:grid;grid-template-columns:150px 130px 1fr 96px 90px;gap:12px;align-items:center;padding:6px 12px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11.5px">
+                          <span style="color:var(--text)">{{ sig.loc }}</span>
+                          <span style="color:var(--text-faint)">{{ sig.locLabel }}</span>
+                          <span style="display:inline-flex;align-items:center;gap:6px;color:{{ sig.sc.c }};font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ sig.sc.c }}"></span>{{ sig.sc.label }}</span>
+                          <span style="text-align:right;color:var(--text-dim)">{{ sig.latency }}</span>
+                          <span style="text-align:right;color:var(--text-faint)">{{ sig.last }}</span>
+                        </div>
+                      </sc-for>
+                    </div>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+
+    <!-- ============ AVAILABILITY ============ -->
+    <sc-if value="{{ isAvailability }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:1400px;min-width:920px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:12px">
+          <div>
+            <h1 style="margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em">Availability &amp; completeness</h1>
+            <p style="margin:2px 0 0;color:var(--text-dim);font-size:12.5px">Uptime vs. how much monitoring data we actually captured</p>
+          </div>
+          <div style="display:flex;align-items:center;gap:16px">
+            <div style="display:flex;align-items:center;gap:14px;font-size:11.5px;color:var(--text-dim)">
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:9px;border-radius:2px;background:var(--major)"></span>Down / outage</span>
+              <span style="display:inline-flex;align-items:center;gap:6px"><span style="width:14px;height:9px;border-radius:2px;background:{{ hatchSwatch }}"></span>Missing data</span>
+            </div>
+            <div style="display:flex;background:var(--bg-elev2);border:1px solid var(--border);border-radius:7px;padding:2px">
+              <sc-for list="{{ winView }}" as="w" hint-placeholder-count="3">
+                <button onClick="{{ w.onClick }}" style-hover="color:var(--text)" style="padding:4px 12px;border:none;border-radius:5px;cursor:pointer;font-size:12px;font-weight:{{ w.weight }};color:{{ w.color }};background:{{ w.bg }}">{{ w.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+
+        <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden">
+          <div style="display:grid;grid-template-columns:230px 1fr 1fr;gap:20px;padding:9px 16px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em">
+            <span>Component</span><span>Availability</span><span>Data completeness</span>
+          </div>
+          <sc-for list="{{ availRows }}" as="r" hint-placeholder-count="8">
+            <div style-hover="background:var(--bg-hover)" style="display:grid;grid-template-columns:230px 1fr 1fr;gap:20px;padding:13px 16px;border-bottom:1px solid var(--border);align-items:center">
+              <div style="min-width:0">
+                <div style="font-family:var(--mono);font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ r.name }}</div>
+                <div style="font-size:11px;color:var(--text-faint);margin-top:2px">{{ r.group }}</div>
+              </div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+                  <span style="font-family:var(--mono);font-size:16px;font-weight:600;color:{{ r.availColor }}">{{ r.availPct }}</span>
+                  <span style="font-size:11px;color:var(--text-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ r.downLabel }}</span>
+                </div>
+                <div style="display:flex;gap:1.5px;height:14px;align-items:stretch">
+                  <sc-for list="{{ r.segs }}" as="s" hint-placeholder-count="30">
+                    <div title="{{ s.title }}" style="flex:1;border-radius:1px;background:{{ s.bg }}"></div>
+                  </sc-for>
+                </div>
+              </div>
+              <div>
+                <div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">
+                  <span style="font-family:var(--mono);font-size:16px;font-weight:600;color:{{ r.complColor }}">{{ r.complPct }}</span>
+                  <sc-if value="{{ r.complLow }}" hint-placeholder-val="{{ true }}">
+                    <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--missing)"><span style="width:6px;height:6px;border-radius:50%;background:var(--missing)"></span>missing data</span>
+                  </sc-if>
+                </div>
+                <div style="display:flex;height:14px;border-radius:3px;overflow:hidden;background:var(--bg-elev2)">
+                  <div style="width:{{ r.complW }};background:var(--ok)"></div>
+                  <div style="flex:1;background:{{ hatchSwatch }}"></div>
+                </div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ APPROVALS ============ -->
+    <sc-if value="{{ isApprovals }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:960px;min-width:620px;margin:0 auto">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px">
+          <h1 style="margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em">Pending proposals</h1>
+          <span style="font-size:12px;color:var(--text-dim)">{{ approvedCount }} approved this session</span>
+        </div>
+        <p style="margin:0 0 16px;color:var(--text-dim);font-size:12.5px">Approving publishes the change to the public status page. Rejecting requires confirmation.</p>
+
+        <sc-if value="{{ hasApprovals }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ approvalsView }}" as="a" hint-placeholder-count="3">
+              <div style="display:grid;grid-template-columns:4px 1fr;gap:16px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden">
+                <div style="background:{{ a.sev.c }}"></div>
+                <div style="padding:15px 16px 15px 0">
+                  <div style="display:flex;align-items:flex-start;gap:14px">
+                    <div style="flex:1;min-width:0">
+                      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                        <span style="font-family:var(--mono);font-size:14px;font-weight:600">{{ a.compName }}</span>
+                        <span style="font-size:11.5px;color:var(--text-faint)">{{ a.group }}</span>
+                        <span style="padding:1px 7px;border-radius:4px;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:{{ a.sev.c }};background:{{ a.sev.bg }};white-space:nowrap">{{ a.sev.label }}</span>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:9px;margin-top:10px">
+                        <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11.5px;font-weight:600;color:{{ a.from.c }};background:{{ a.from.bg }};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.from.c }}"></span>{{ a.from.label }}</span>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                        <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11.5px;font-weight:600;color:{{ a.to.c }};background:{{ a.to.bg }};white-space:nowrap"><span style="width:6px;height:6px;border-radius:50%;background:{{ a.to.c }}"></span>{{ a.to.label }}</span>
+                      </div>
+                      <div style="margin-top:10px;font-size:12.5px;color:var(--text)">{{ a.reason }}</div>
+                      <div style="margin-top:6px;font-size:11.5px;color:var(--text-faint);font-family:var(--mono)">{{ a.source }} · detected {{ a.since }} · {{ a.checks }}</div>
+                      <div style="margin-top:10px;display:flex;align-items:center;gap:7px;flex-wrap:wrap">
+                        <span style="font-size:10.5px;color:var(--text-faint);text-transform:uppercase;letter-spacing:.04em;font-weight:600">Triggering signals</span>
+                        <sc-for list="{{ a.trigView }}" as="t" hint-placeholder-count="2">
+                          <span style="display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border-radius:5px;font-size:11px;font-weight:600;font-family:var(--mono);color:{{ t.sc.c }};background:{{ t.sc.bg }}"><span style="width:5px;height:5px;border-radius:50%;background:{{ t.sc.c }}"></span>{{ t.locLabel }}</span>
+                        </sc-for>
+                      </div>
+                    </div>
+
+                    <div style="flex:none;display:flex;flex-direction:column;gap:8px;width:132px">
+                      <sc-if value="{{ a.idle }}" hint-placeholder-val="{{ true }}">
+                        <button onClick="{{ a.onApprove }}" style-hover="filter:brightness(1.12)" style="display:flex;align-items:center;justify-content:center;gap:7px;padding:8px 12px;border:none;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;color:#fff;background:var(--ok)">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Approve
+                        </button>
+                        <button onClick="{{ a.onAskReject }}" style-hover="background:var(--bg-hover);color:var(--text)" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border:1px solid var(--border-strong);border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text-dim);background:transparent">Reject</button>
+                      </sc-if>
+                      <sc-if value="{{ a.confirming }}" hint-placeholder-val="{{ true }}">
+                        <div style="font-size:11px;color:var(--text-dim);text-align:center;margin-bottom:-2px">Confirm reject?</div>
+                        <button onClick="{{ a.onReject }}" style-hover="filter:brightness(1.12)" style="display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border:none;border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:600;color:#fff;background:var(--major)">Reject</button>
+                        <button onClick="{{ a.onCancel }}" style-hover="background:var(--bg-hover);color:var(--text)" style="padding:8px 12px;border:1px solid var(--border-strong);border-radius:7px;cursor:pointer;font-size:12.5px;font-weight:500;color:var(--text-dim);background:transparent">Cancel</button>
+                      </sc-if>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ noApprovals }}" hint-placeholder-val="{{ true }}">
+          <div style="text-align:center;padding:64px 20px;background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow)">
+            <div style="width:44px;height:44px;margin:0 auto 12px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--ok-bg);color:var(--ok)">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+            </div>
+            <div style="font-weight:600;font-size:14px">Queue clear</div>
+            <div style="color:var(--text-dim);font-size:12.5px;margin-top:3px">No proposals awaiting review. Trigger a test failure to see one appear.</div>
+          </div>
+        </sc-if>
+      </div>
+    </sc-if>
+
+    <!-- ============ CHECK HISTORY ============ -->
+    <sc-if value="{{ isHistory }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:1400px;min-width:920px;margin:0 auto">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+          <h1 style="margin:0;font-size:17px;font-weight:650;letter-spacing:-.01em;margin-right:6px">Check history</h1>
+          <div style="position:relative;flex:1;min-width:220px;max-width:340px">
+            <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%)" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input value="{{ q }}" onChange="{{ onSearch }}" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" placeholder="Search signal — component, location, code…" style="width:100%;padding:7px 10px 7px 30px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none" />
+          </div>
+          <select value="{{ fr }}" onChange="{{ onFilterResult }}" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" style="padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none">
+            <sc-for list="{{ resultOpts }}" as="o" hint-placeholder-count="5"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+          </select>
+          <select value="{{ fl }}" onChange="{{ onFilterLoc }}" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" style="padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none">
+            <sc-for list="{{ locOpts }}" as="o" hint-placeholder-count="7"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+          </select>
+          <span style="font-size:12px;color:var(--text-faint);margin-left:auto">{{ histCount }} signals</span>
+        </div>
+
+        <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden">
+          <div style="display:grid;grid-template-columns:170px 180px 130px 70px 130px 90px 70px;gap:0;padding:9px 14px;border-bottom:1px solid var(--border);font-size:11px;font-weight:600;color:var(--text-faint);text-transform:uppercase;letter-spacing:.05em;font-family:var(--mono)">
+            <span>Timestamp</span><span>Component</span><span>Location</span><span>Type</span><span>Result</span><span style="text-align:right">Latency</span><span style="text-align:right">Code</span>
+          </div>
+          <div style="max-height:calc(100vh - 210px);overflow:auto">
+            <sc-for list="{{ histView }}" as="h" hint-placeholder-count="20">
+              <div style-hover="background:var(--bg-hover)" style="display:grid;grid-template-columns:170px 180px 130px 70px 130px 90px 70px;gap:0;padding:6px 14px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:11.5px;align-items:center;background:{{ h.rowBg }}">
+                <span style="color:var(--text-dim)">{{ h.ts }}</span>
+                <span style="color:var(--text)">{{ h.comp }}</span>
+                <span style="color:var(--text-dim)">{{ h.loc }}</span>
+                <span style="color:var(--text-faint)">{{ h.type }}</span>
+                <span style="display:inline-flex;align-items:center;gap:6px;color:{{ h.rc.c }};font-weight:600"><span style="width:6px;height:6px;border-radius:50%;background:{{ h.rc.c }}"></span>{{ h.rc.label }}</span>
+                <span style="text-align:right;color:var(--text-dim)">{{ h.lat }}</span>
+                <span style="text-align:right;color:{{ h.codeColor }}">{{ h.code }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ MAINTENANCE ============ -->
+    <sc-if value="{{ isMaintenance }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:1200px;min-width:800px;margin:0 auto">
+        <h1 style="margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.01em">Scheduled maintenance</h1>
+        <p style="margin:0 0 16px;color:var(--text-dim);font-size:12.5px">Windows suppress alerting for affected components to prevent false proposals.</p>
+        <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;align-items:start">
+          <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:16px">
+            <div style="font-weight:650;font-size:13px;margin-bottom:12px">New window</div>
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Title</label>
+            <input value="{{ form.title }}" onChange="{{ onFormTitle }}" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" placeholder="e.g. Postgres upgrade" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none;margin-bottom:12px" />
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Component</label>
+            <select value="{{ form.comp }}" onChange="{{ onFormComp }}" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none;margin-bottom:12px">
+              <option value="">Select component…</option>
+              <sc-for list="{{ componentOptions }}" as="o" hint-placeholder-count="8"><option value="{{ o.v }}">{{ o.l }}</option></sc-for>
+            </select>
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">Start</label>
+            <input value="{{ form.start }}" onChange="{{ onFormStart }}" type="datetime-local" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none;margin-bottom:12px" />
+            <label style="display:block;font-size:11.5px;color:var(--text-dim);margin-bottom:5px">End</label>
+            <input value="{{ form.end }}" onChange="{{ onFormEnd }}" type="datetime-local" style-focus="border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:7px;background:var(--bg-elev2);color:var(--text);font-size:12.5px;outline:none;margin-bottom:14px" />
+            <button onClick="{{ addMaint }}" style-hover="filter:brightness(1.08)" style="width:100%;padding:9px;border:none;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;color:var(--accent-text);background:var(--accent)">Schedule window</button>
+          </div>
+
+          <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);overflow:hidden">
+            <sc-for list="{{ maintView }}" as="m" hint-placeholder-count="4">
+              <div style-hover="background:var(--bg-hover)" style="display:flex;align-items:center;gap:14px;padding:13px 16px;border-bottom:1px solid var(--border)">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:9px">
+                    <span style="font-weight:600;font-size:13px">{{ m.title }}</span>
+                    <span style="padding:1px 7px;border-radius:4px;font-size:10.5px;font-weight:600;color:{{ m.st.c }};background:{{ m.st.bg }}">{{ m.st.label }}</span>
+                  </div>
+                  <div style="font-size:11.5px;color:var(--text-faint);margin-top:4px;font-family:var(--mono)">{{ m.comp }} · {{ m.range }}</div>
+                </div>
+                <button onClick="{{ m.onDelete }}" title="Delete" style-hover="border-color:var(--major);color:var(--major);background:var(--major-bg)" style="width:30px;height:30px;flex:none;display:flex;align-items:center;justify-content:center;border:1px solid var(--border);border-radius:7px;cursor:pointer;color:var(--text-faint);background:transparent">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>
+                </button>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- ============ PUBLICATIONS ============ -->
+    <sc-if value="{{ isPublications }}" hint-placeholder-val="{{ true }}">
+      <div style="padding:18px 20px;max-width:1200px;min-width:800px;margin:0 auto">
+        <h1 style="margin:0 0 4px;font-size:17px;font-weight:650;letter-spacing:-.01em">Publication log</h1>
+        <p style="margin:0 0 16px;color:var(--text-dim);font-size:12.5px">Everything pushed to the public status page, most recent first.</p>
+        <div style="background:var(--bg-elev);border:1px solid var(--border);border-radius:8px;box-shadow:var(--shadow);padding:8px 0">
+          <sc-for list="{{ pubsView }}" as="p" hint-placeholder-count="6">
+            <div style-hover="background:var(--bg-hover)" style="display:flex;gap:14px;padding:11px 20px 0">
+              <div style="display:flex;flex-direction:column;align-items:center;flex:none;width:10px">
+                <span style="width:8px;height:8px;border-radius:50%;flex:none;background:{{ p.sc.c }};box-shadow:0 0 0 3px {{ p.sc.bg }};margin-top:4px"></span>
+                <div style="flex:1;width:1px;background:{{ p.lineBg }};margin-top:8px"></div>
+              </div>
+              <div style="flex:1;min-width:0;padding-bottom:14px">
+                <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+                  <span style="font-family:var(--mono);font-size:12.5px;font-weight:600">{{ p.scope }}</span>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex:none"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                  <span style="font-size:12.5px;font-weight:600;color:{{ p.sc.c }};white-space:nowrap">{{ p.status }}</span>
+                  <span style="padding:1px 8px;border-radius:4px;font-size:11px;font-weight:600;color:{{ p.oc.c }};background:{{ p.oc.bg }};white-space:nowrap">{{ p.outcome }}</span>
+                </div>
+                <div style="margin-top:4px;font-size:11.5px;color:var(--text-faint);font-family:var(--mono)">{{ p.ts }} · by {{ p.author }} · {{ p.inc }}</div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:&quot;100%&quot;,&quot;height&quot;:&quot;100%&quot;},&quot;defaultTheme&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Appearance&quot;},&quot;compactRows&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Appearance&quot;}}">
+class Component extends DCLogic {
+  SM = {
+    operational:{label:'Operational',c:'var(--ok)',bg:'var(--ok-bg)'},
+    degraded:{label:'Degraded',c:'var(--degraded)',bg:'var(--degraded-bg)'},
+    partial:{label:'Partial Outage',c:'var(--partial)',bg:'var(--partial-bg)'},
+    major:{label:'Major Outage',c:'var(--major)',bg:'var(--major-bg)'},
+    unknown:{label:'Unknown',c:'var(--unknown)',bg:'var(--unknown-bg)'}
+  };
+  SEV = {
+    info:{label:'info',c:'var(--unknown)',bg:'var(--unknown-bg)'},
+    warning:{label:'warning',c:'var(--degraded)',bg:'var(--degraded-bg)'},
+    critical:{label:'critical',c:'var(--major)',bg:'var(--major-bg)'}
+  };
+  HATCH = 'repeating-linear-gradient(45deg, var(--missing) 0, var(--missing) 2px, var(--missing-bg) 2px, var(--missing-bg) 5px)';
+  LOCS = ['us-east-1','us-west-2','eu-west-1','eu-central-1','ap-south-1','ap-northeast-1'];
+  LOCLABEL = {'us-east-1':'N. Virginia','us-west-2':'Oregon','eu-west-1':'Ireland','eu-central-1':'Frankfurt','ap-south-1':'Mumbai','ap-northeast-1':'Tokyo'};
+  SIG = {
+    up:{label:'Reporting',c:'var(--ok)',bg:'var(--ok-bg)'},
+    degraded:{label:'Slow',c:'var(--degraded)',bg:'var(--degraded-bg)'},
+    down:{label:'Failing',c:'var(--major)',bg:'var(--major-bg)'},
+    missing:{label:'No data',c:'var(--missing)',bg:'var(--missing-bg)'}
+  };
+
+  // A component is fed by several signals (one check per location). Its status is
+  // the collapsed worst-of its signals. genSignals produces signals consistent
+  // with the component's collapsed status.
+  genSignals(comp){
+    const r=this.rng(this.hash(comp.id+'|sig'));
+    const nLoc=3+Math.floor(r()*4); // 3-6 locations
+    const start=Math.abs(this.hash(comp.id))%this.LOCS.length;
+    const locs=[];for(let i=0;i<nLoc;i++)locs.push(this.LOCS[(start+i)%this.LOCS.length]);
+    const st=comp.status;
+    let states=locs.map(()=>'up');
+    const setN=(count,val)=>{for(let i=0;i<count&&i<states.length;i++)states[i]=val;};
+    if(st==='degraded'){setN(Math.max(1,Math.ceil(nLoc/3)),'degraded');}
+    else if(st==='partial'){setN(Math.max(1,Math.floor(nLoc/2)),'down');}
+    else if(st==='major'){setN(nLoc,'down');if(nLoc>2)states[nLoc-1]='degraded';}
+    else if(st==='unknown'){setN(Math.max(1,nLoc-1),'missing');}
+    return locs.map((loc,i)=>{
+      const ss=states[i];
+      let lat='—',last=Math.floor(8+r()*40)+'s ago';
+      if(ss==='up')lat=Math.floor(38+r()*160)+'ms';
+      else if(ss==='degraded')lat=Math.floor(700+r()*1400)+'ms';
+      else if(ss==='down'){lat='timeout';last=Math.floor(4+r()*20)+'s ago';}
+      else{lat='—';last=Math.floor(3+r()*9)+'m ago';}
+      return {loc,locLabel:this.LOCLABEL[loc]||loc,status:ss,latency:lat,last};
+    });
+  }
+  sigSummary(signals){
+    const n=signals.length;
+    const down=signals.filter(x=>x.status==='down').length;
+    const deg=signals.filter(x=>x.status==='degraded').length;
+    const miss=signals.filter(x=>x.status==='missing').length;
+    if(down)return {text:n+' signals · '+down+' failing',c:'var(--major)'};
+    if(miss)return {text:n+' signals · '+miss+' missing data',c:'var(--missing)'};
+    if(deg)return {text:n+' signals · '+deg+' slow',c:'var(--degraded)'};
+    return {text:n+' signals · all reporting',c:'var(--text-faint)'};
+  }
+
+  state = this.build();
+
+  build(){
+    const theme = this.props.defaultTheme || 'dark';
+    const components = [
+      {id:'api-gateway',name:'api-gateway',group:'Edge & API',status:'operational',region:'global'},
+      {id:'auth-service',name:'auth-service',group:'Edge & API',status:'operational',region:'us-east-1'},
+      {id:'webhooks',name:'webhooks-dispatch',group:'Edge & API',status:'degraded',region:'global'},
+      {id:'app-dashboard',name:'app-dashboard',group:'App & Web',status:'operational',region:'global'},
+      {id:'marketing-site',name:'marketing-site',group:'App & Web',status:'operational',region:'cdn'},
+      {id:'status-page',name:'status-page',group:'App & Web',status:'operational',region:'cdn'},
+      {id:'ingest-workers',name:'ingest-workers',group:'Data Pipeline',status:'partial',region:'us-east-1'},
+      {id:'metrics-db',name:'metrics-db',group:'Data Pipeline',status:'operational',region:'us-east-1'},
+      {id:'alert-engine',name:'alert-engine',group:'Data Pipeline',status:'operational',region:'multi'},
+      {id:'us-east-1',name:'region-us-east-1',group:'Infrastructure',status:'operational',region:'aws'},
+      {id:'eu-west-1',name:'region-eu-west-1',group:'Infrastructure',status:'degraded',region:'aws'},
+      {id:'primary-db',name:'primary-db',group:'Infrastructure',status:'operational',region:'us-east-1'},
+      {id:'object-storage',name:'object-storage',group:'Infrastructure',status:'operational',region:'multi'},
+      {id:'cdn',name:'edge-cdn',group:'Infrastructure',status:'operational',region:'global'}
+    ];
+    const approvals = [
+      {id:'p1',compId:'webhooks',from:'operational',to:'degraded',sev:'warning',since:'6m ago',source:'auto · http-probe',reason:'5xx error rate 4.2% across 3 regions (threshold 2%).',checks:'3/12 probes failing'},
+      {id:'p2',compId:'ingest-workers',from:'degraded',to:'partial',sev:'critical',since:'2m ago',source:'auto · queue-monitor',reason:'Queue depth 52k and rising; 2 consumers unresponsive.',checks:'consumer lag 8m14s'},
+      {id:'p3',compId:'eu-west-1',from:'operational',to:'degraded',sev:'warning',since:'11m ago',source:'auto · latency-probe',reason:'p95 latency 1.83s sustained (threshold 1.00s).',checks:'2/6 probes slow'}
+    ];
+    const maint = [
+      {id:'m1',title:'Postgres 16 major upgrade',comp:'primary-db',range:'Jul 09 02:00 → 04:00 UTC',status:'scheduled'},
+      {id:'m2',title:'CDN edge cache purge',comp:'edge-cdn',range:'Jul 07 now → 15:00 UTC',status:'active'},
+      {id:'m3',title:'EU region failover drill',comp:'region-eu-west-1',range:'Jul 12 22:00 → 23:30 UTC',status:'scheduled'},
+      {id:'m4',title:'Auth token rotation',comp:'auth-service',range:'Jul 03 01:00 → 01:20 UTC',status:'completed'}
+    ];
+    const pubs = [
+      {id:'u1',ts:'Jul 07 · 09:14:22',scope:'webhooks-dispatch',status:'Degraded',statusKey:'degraded',outcome:'Published',author:'k.tanaka',inc:'INC-2291'},
+      {id:'u2',ts:'Jul 06 · 19:41:08',scope:'ingest-workers',status:'Operational',statusKey:'operational',outcome:'Published',author:'auto',inc:'INC-2288'},
+      {id:'u3',ts:'Jul 06 · 18:02:55',scope:'ingest-workers',status:'Partial Outage',statusKey:'partial',outcome:'Published',author:'auto',inc:'INC-2288'},
+      {id:'u4',ts:'Jul 05 · 22:17:40',scope:'status-page',status:'Major Outage',statusKey:'major',outcome:'Reverted',author:'m.silva',inc:'INC-2280'},
+      {id:'u5',ts:'Jul 05 · 11:30:12',scope:'region-eu-west-1',status:'Degraded',statusKey:'degraded',outcome:'Published',author:'auto',inc:'INC-2274'},
+      {id:'u6',ts:'Jul 04 · 08:05:33',scope:'edge-cdn',status:'Operational',statusKey:'operational',outcome:'Published',author:'k.tanaka',inc:'INC-2270'}
+    ];
+    return {theme,tab:'dashboard',win:'30d',components,approvals,maint,pubs,
+      hist:this.genHist(components),form:{title:'',comp:'',start:'',end:''},
+      confirmId:null,banner:null,approved:0,q:'',fr:'all',fl:'all',testIdx:0,seq:0,expanded:{},navCollapsed:false};
+  }
+
+  hash(s){let h=0;for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))|0;return h;}
+  rng(seed){let a=seed>>>0;return function(){a=(a+0x6D2B79F5)|0;let t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+
+  segBg(st){
+    if(st==='ok')return 'var(--ok)';
+    if(st==='degraded')return 'var(--degraded)';
+    if(st==='partial')return 'var(--partial)';
+    if(st==='major')return 'var(--major)';
+    return this.HATCH;
+  }
+  genSegments(id,status,n){
+    const r=this.rng(this.hash(id+'|'+n));
+    let dp=0.004,gp=0.01,mp=0.012;
+    if(status==='degraded'){dp=0.012;gp=0.13;mp=0.02;}
+    else if(status==='partial'){dp=0.09;gp=0.11;mp=0.03;}
+    else if(status==='major'){dp=0.42;gp=0.16;mp=0.05;}
+    else if(status==='unknown'){dp=0.02;gp=0.03;mp=0.55;}
+    const out=[];
+    for(let i=0;i<n;i++){
+      const x=r();let st='ok';
+      if(x<mp)st='missing';
+      else if(x<mp+dp)st=(status==='partial'?'partial':'major');
+      else if(x<mp+dp+gp)st='degraded';
+      out.push({state:st,bg:this.segBg(st),title:st});
+    }
+    return out;
+  }
+  segStats(segs){
+    const total=segs.length;
+    const missing=segs.filter(s=>s.state==='missing').length;
+    const down=segs.filter(s=>s.state==='major'||s.state==='partial').length;
+    const nonMissing=total-missing||1;
+    return {availPct:((nonMissing-down)/nonMissing*100),complPct:(nonMissing/total*100),down,nonMissing,total};
+  }
+  thColor(p){return p>=99.9?'var(--ok)':p>=99?'var(--degraded)':p>=95?'var(--partial)':'var(--major)';}
+
+  genHist(components){
+    const r=this.rng(20260707);
+    const ids=components.map(c=>c.name);
+    const types=['HTTP','TCP','DNS','ICMP'];
+    const rows=[];let t=14*3600+32*60+11;
+    for(let i=0;i<48;i++){
+      const x=r();let res='ok';
+      if(x<0.06)res='fail';else if(x<0.14)res='timeout';else if(x<0.24)res='degraded';
+      const comp=ids[Math.floor(r()*ids.length)];
+      const loc=this.LOCS[Math.floor(r()*this.LOCS.length)];
+      const type=types[Math.floor(r()*types.length)];
+      let lat='—',code='—';
+      if(res==='ok'){lat=Math.floor(38+r()*150)+'ms';code='200';}
+      else if(res==='degraded'){lat=Math.floor(420+r()*900)+'ms';code=r()<0.5?'200':'429';}
+      else if(res==='timeout'){lat='timeout';code='—';}
+      else{lat='—';code=r()<0.5?'503':'500';}
+      rows.push({id:'h'+i,ts:this.fmtClock(t),comp,loc,type,result:res,lat,code});
+      t-=Math.floor(28+r()*70);
+    }
+    return rows;
+  }
+  fmtClock(sec){let s=((sec%86400)+86400)%86400;const h=Math.floor(s/3600),m=Math.floor((s%3600)/60),ss=s%60;const p=n=>String(n).padStart(2,'0');return 'Jul 07 · '+p(h)+':'+p(m)+':'+p(ss);}
+  now(){const d=new Date();const p=n=>String(n).padStart(2,'0');return 'Jul 07 · '+p(d.getHours())+':'+p(d.getMinutes())+':'+p(d.getSeconds());}
+
+  toggleTheme=()=>this.setState(s=>({theme:s.theme==='dark'?'light':'dark'}));
+  setTab=(t)=>this.setState({tab:t});
+  toggleExpand=(id)=>this.setState(s=>({expanded:{...s.expanded,[id]:!s.expanded[id]}}));
+  toggleNav=()=>this.setState(s=>({navCollapsed:!s.navCollapsed}));
+  setWin=(w)=>this.setState({win:w});
+  dismissBanner=()=>this.setState({banner:null});
+  onSearch=(e)=>this.setState({q:e.target.value});
+  onFilterResult=(e)=>this.setState({fr:e.target.value});
+  onFilterLoc=(e)=>this.setState({fl:e.target.value});
+  onFormTitle=(e)=>this.setState(s=>({form:{...s.form,title:e.target.value}}));
+  onFormComp=(e)=>this.setState(s=>({form:{...s.form,comp:e.target.value}}));
+  onFormStart=(e)=>this.setState(s=>({form:{...s.form,start:e.target.value}}));
+  onFormEnd=(e)=>this.setState(s=>({form:{...s.form,end:e.target.value}}));
+
+  addMaint=()=>this.setState(s=>{
+    const f=s.form;if(!f.title||!f.comp)return {};
+    const comp=s.components.find(c=>c.id===f.comp);
+    const fmt=(v)=>v?v.replace('T',' ').slice(5):'—';
+    const range=(f.start||f.end)?(fmt(f.start)+' → '+fmt(f.end)+' UTC'):'time TBD';
+    const m={id:'m'+Date.now(),title:f.title,comp:comp?comp.name:f.comp,range,status:'scheduled'};
+    return {maint:[m,...s.maint],form:{title:'',comp:'',start:'',end:''}};
+  });
+  delMaint=(id)=>this.setState(s=>({maint:s.maint.filter(m=>m.id!==id)}));
+
+  doApprove=(id)=>this.setState(s=>{
+    const a=s.approvals.find(x=>x.id===id);if(!a)return {};
+    const comp=s.components.find(c=>c.id===a.compId);
+    const components=s.components.map(c=>c.id===a.compId?{...c,status:a.to}:c);
+    const pub={id:'pub'+Date.now(),ts:this.now(),scope:comp.name,status:this.SM[a.to].label,statusKey:a.to,outcome:'Published',author:'you',inc:a.inc||('INC-'+(2292+s.seq))};
+    return {components,approvals:s.approvals.filter(x=>x.id!==id),pubs:[pub,...s.pubs],approved:s.approved+1,confirmId:null,seq:s.seq+1};
+  });
+  askReject=(id)=>this.setState({confirmId:id});
+  cancelReject=()=>this.setState({confirmId:null});
+  doReject=(id)=>this.setState(s=>({approvals:s.approvals.filter(x=>x.id!==id),confirmId:null}));
+
+  triggerFailure=()=>this.setState(s=>{
+    const pool=['app-dashboard','object-storage','metrics-db','api-gateway','cdn'];
+    const id=pool[s.testIdx%pool.length];
+    const comp=s.components.find(c=>c.id===id);
+    const from=comp.status;
+    const components=s.components.map(c=>c.id===id?{...c,status:'major'}:c);
+    const ap={id:'test'+Date.now(),compId:id,from,to:'major',sev:'critical',since:'just now',source:'manual · test-trigger',reason:'Synthetic failure injected for demo — connection refused on all probes.',checks:'6/6 probes failing'};
+    const r=this.rng(Date.now()>>>0);
+    const newRows=[0,1,2].map((i)=>({id:'ht'+Date.now()+i,ts:this.now(),comp:comp.name,loc:this.LOCS[Math.floor(r()*this.LOCS.length)],type:'HTTP',result:'fail',lat:'—',code:'503'}));
+    return {components,approvals:[ap,...s.approvals],hist:[...newRows,...s.hist],testIdx:s.testIdx+1,banner:'Test failure injected on '+comp.name+' — proposal queued in Approvals.'};
+  });
+
+  winSegN(){return this.state.win==='24h'?24:this.state.win==='7d'?28:30;}
+
+  renderVals(){
+    const s=this.state;const SM=this.SM;
+    const isLight=s.theme==='light';
+    const rowPad=(this.props.compactRows?'6px 14px':'9px 14px');
+    const tabs=[
+      {id:'dashboard',label:'Dashboard'},
+      {id:'availability',label:'Availability'},
+      {id:'approvals',label:'Approvals',badge:s.approvals.length||null},
+      {id:'history',label:'Check History'},
+      {id:'maintenance',label:'Maintenance'},
+      {id:'publications',label:'Publications'}
+    ];
+    const tabsView=tabs.map(t=>({...t,active:s.tab===t.id,weight:s.tab===t.id?600:500,
+      color:s.tab===t.id?'var(--text)':'var(--text-dim)',bg:s.tab===t.id?'var(--bg-elev2)':'transparent',
+      onClick:()=>this.setTab(t.id)}));
+    const navExpanded=!s.navCollapsed;
+    const mkNav=(id,badge)=>({badge:badge||null,weight:s.tab===id?600:500,
+      color:s.tab===id?'var(--text)':'var(--text-dim)',bg:s.tab===id?'var(--bg-elev2)':'transparent',
+      onClick:()=>this.setTab(id)});
+    const navDash=mkNav('dashboard'),navAvail=mkNav('availability'),navAppr=mkNav('approvals',s.approvals.length||null),
+      navHist=mkNav('history'),navMaint=mkNav('maintenance'),navPub=mkNav('publications');
+
+    // Dashboard
+    const order={operational:0,degraded:1,partial:2,major:3,unknown:1.5};
+    const enrich=(c)=>{const segs=this.genSegments(c.id,c.status,30);const st=this.segStats(segs);
+      const signals=this.genSignals(c);const summ=this.sigSummary(signals);
+      const isExp=!!s.expanded[c.id];
+      const signalsView=signals.map(sig=>({loc:sig.loc,locLabel:sig.locLabel,latency:sig.latency,last:sig.last,
+        sc:this.SIG[sig.status]}));
+      return {name:c.name,region:c.region,sm:SM[c.status]||SM.unknown,segs,
+        uptime:st.availPct.toFixed(2)+'%',uptimeColor:this.thColor(st.availPct),
+        pulse:(c.status==='major'||c.status==='partial')?'statusPulse 1.6s ease-in-out infinite':'none',
+        sigText:summ.text,sigColor:summ.c,signalsView,expanded:isExp,
+        chevron:isExp?'rotate(90deg)':'rotate(0deg)',onToggle:()=>this.toggleExpand(c.id)};};
+    const groupNames=['Edge & API','App & Web','Data Pipeline','Infrastructure'];
+    const dashGroups=groupNames.map(gn=>{
+      const cs=s.components.filter(c=>c.group===gn);
+      let worst=cs.reduce((w,c)=>order[c.status]>order[w]?c.status:w,'operational');
+      return {name:gn,count:cs.length+' components',worst:SM[worst]||SM.unknown,components:cs.map(enrich)};
+    });
+    const countBy=(k)=>s.components.filter(c=>c.status===k).length;
+    const avgUp=s.components.reduce((a,c)=>a+this.segStats(this.genSegments(c.id,c.status,30)).availPct,0)/s.components.length;
+    const summaryCards=[
+      {label:'Operational',value:countBy('operational'),color:'var(--ok)',dot:'var(--ok)',dotBg:'var(--ok-bg)',sub:'of '+s.components.length+' components'},
+      {label:'Degraded',value:countBy('degraded'),color:'var(--degraded)',dot:'var(--degraded)',dotBg:'var(--degraded-bg)',sub:'need attention'},
+      {label:'Outages',value:countBy('partial')+countBy('major'),color:'var(--major)',dot:'var(--major)',dotBg:'var(--major-bg)',sub:'partial + major'},
+      {label:'30d uptime',value:avgUp.toFixed(2)+'%',color:this.thColor(avgUp),dot:this.thColor(avgUp),dotBg:'transparent',sub:'fleet average'},
+      {label:'Open proposals',value:s.approvals.length,color:s.approvals.length?'var(--accent)':'var(--text)',dot:'var(--accent)',dotBg:'var(--accent-bg)',sub:'awaiting review'}
+    ];
+
+    // Availability
+    const n=this.winSegN();
+    const availRows=s.components.map(c=>{const segs=this.genSegments(c.id,c.status,n);const st=this.segStats(segs);
+      return {name:c.name,group:c.group,availPct:st.availPct.toFixed(2)+'%',availColor:this.thColor(st.availPct),
+        downLabel:st.down?(st.down+(st.down===1?' period down':' periods down')):'no downtime',segs,
+        complPct:st.complPct.toFixed(1)+'%',complW:st.complPct.toFixed(1)+'%',
+        complColor:st.complPct<98?'var(--missing)':'var(--text)',complLow:st.complPct<98};});
+    const winView=['24h','7d','30d'].map(w=>({label:w,active:s.win===w,weight:s.win===w?600:500,
+      color:s.win===w?'var(--text)':'var(--text-dim)',bg:s.win===w?'var(--bg-elev)':'transparent',onClick:()=>this.setWin(w)}));
+
+    // Approvals
+    const approvalsView=s.approvals.map(a=>{const comp=s.components.find(c=>c.id===a.compId)||{name:a.compId,group:'',id:a.compId,status:a.to};
+      const trig=this.genSignals(comp).filter(x=>x.status==='down'||x.status==='degraded'||x.status==='missing')
+        .map(x=>({locLabel:x.locLabel,sc:this.SIG[x.status]}));
+      const trigView=trig.length?trig:[{locLabel:'threshold breach',sc:this.SIG.down}];
+      return {compName:comp.name,group:comp.group,sev:this.SEV[a.sev],from:SM[a.from],to:SM[a.to],
+        reason:a.reason,source:a.source,since:a.since,checks:a.checks,trigView,
+        idle:s.confirmId!==a.id,confirming:s.confirmId===a.id,
+        onApprove:()=>this.doApprove(a.id),onAskReject:()=>this.askReject(a.id),
+        onReject:()=>this.doReject(a.id),onCancel:()=>this.cancelReject()};});
+
+    // History
+    const RC={ok:{label:'ok',c:'var(--ok)'},degraded:{label:'degraded',c:'var(--degraded)'},timeout:{label:'timeout',c:'var(--partial)'},fail:{label:'fail',c:'var(--major)'}};
+    const q=s.q.toLowerCase();
+    const histFiltered=s.hist.filter(h=>{
+      if(s.fr!=='all'&&h.result!==s.fr)return false;
+      if(s.fl!=='all'&&h.loc!==s.fl)return false;
+      if(q&&!(h.comp+' '+h.loc+' '+h.code+' '+h.type).toLowerCase().includes(q))return false;
+      return true;});
+    const histView=histFiltered.map((h,i)=>({ts:h.ts,comp:h.comp,loc:h.loc,type:h.type,rc:RC[h.result],
+      lat:h.lat,code:h.code,codeColor:(h.code==='200'?'var(--text-dim)':(h.code==='—'?'var(--text-faint)':'var(--major)')),
+      rowBg:i%2?'transparent':'var(--bg-elev2)'}));
+    const resultOpts=[{v:'all',l:'All results'},{v:'ok',l:'OK'},{v:'degraded',l:'Degraded'},{v:'timeout',l:'Timeout'},{v:'fail',l:'Fail'}];
+    const locOpts=[{v:'all',l:'All locations'}].concat(this.LOCS.map(l=>({v:l,l})));
+
+    // Maintenance
+    const MST={scheduled:{label:'Scheduled',c:'var(--accent)',bg:'var(--accent-bg)'},active:{label:'Active',c:'var(--degraded)',bg:'var(--degraded-bg)'},completed:{label:'Completed',c:'var(--unknown)',bg:'var(--unknown-bg)'}};
+    const maintView=s.maint.map(m=>({title:m.title,comp:m.comp,range:m.range,st:MST[m.status],onDelete:()=>this.delMaint(m.id)}));
+    const componentOptions=s.components.map(c=>({v:c.id,l:c.name}));
+
+    // Publications
+    const OC={Published:{c:'var(--ok)',bg:'var(--ok-bg)'},Reverted:{c:'var(--major)',bg:'var(--major-bg)'},Dismissed:{c:'var(--unknown)',bg:'var(--unknown-bg)'}};
+    const pubsView=s.pubs.map((p,i)=>({ts:p.ts,scope:p.scope,status:p.status,sc:SM[p.statusKey]||SM.unknown,outcome:p.outcome,oc:OC[p.outcome]||OC.Published,author:p.author,inc:p.inc,
+      lineBg:(i===s.pubs.length-1?'transparent':'var(--border)')}));
+
+    return {
+      theme:s.theme,isLight,isDark:!isLight,toggleTheme:this.toggleTheme,triggerFailure:this.triggerFailure,
+      banner:s.banner,dismissBanner:this.dismissBanner,tabsView,rowPad,hatchSwatch:this.HATCH,
+      navCollapsed:s.navCollapsed,navExpanded,navW:(s.navCollapsed?'56px':'220px'),
+      navJustify:(s.navCollapsed?'center':'flex-start'),toggleNav:this.toggleNav,
+      navDash,navAvail,navAppr,navHist,navMaint,navPub,
+      compCount:s.components.length,clock:this.now(),
+      isDashboard:s.tab==='dashboard',isAvailability:s.tab==='availability',isApprovals:s.tab==='approvals',
+      isHistory:s.tab==='history',isMaintenance:s.tab==='maintenance',isPublications:s.tab==='publications',
+      summaryCards,dashGroups,
+      availRows,winView,
+      approvalsView,hasApprovals:s.approvals.length>0,noApprovals:s.approvals.length===0,approvedCount:s.approved,
+      q:s.q,fr:s.fr,fl:s.fl,onSearch:this.onSearch,onFilterResult:this.onFilterResult,onFilterLoc:this.onFilterLoc,
+      histView,histCount:histView.length,resultOpts,locOpts,
+      form:s.form,onFormTitle:this.onFormTitle,onFormComp:this.onFormComp,onFormStart:this.onFormStart,onFormEnd:this.onFormEnd,
+      addMaint:this.addMaint,maintView,componentOptions,pubsView
+    };
+  }
+}
+</script>
+</body>
+</html>
