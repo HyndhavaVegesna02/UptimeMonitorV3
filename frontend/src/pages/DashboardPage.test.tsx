@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { FIXTURE_COMPONENTS, FIXTURE_COMPONENTS_ALL_STATUSES } from '../mocks/handlers'
 import { DashboardPage } from './DashboardPage'
@@ -251,5 +251,116 @@ describe('DashboardPage — sample mode toggle (STORY-049)', () => {
     await user.keyboard('{Enter}')
 
     await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
+  })
+})
+
+describe('DashboardPage — maintenance indicator (STORY-046)', () => {
+  // Fixed instant so active/upcoming/past/boundary windows are deterministic
+  // (2026-06-25 working-agreement: non-aligned-boundary tests pin `now`).
+  const NOW = new Date('2026-07-07T10:30:00Z')
+
+  beforeEach(() => {
+    // `vi.setSystemTime` alone (without `vi.useFakeTimers()`) mocks `Date`
+    // for the deterministic windowState assertions below WITHOUT freezing
+    // real timers — MSW's fetch handling relies on real timers, so faking
+    // them would hang every awaited request (mirrors MaintenancePage.test.tsx).
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const MAINTENANCE_COMPONENTS = [
+    { id: 'comp-active', name: 'Active Window Component', status: 'operational' },
+    { id: 'comp-upcoming', name: 'Upcoming Window Component', status: 'operational' },
+    { id: 'comp-past', name: 'Past Window Component', status: 'operational' },
+    { id: 'comp-none', name: 'No Window Component', status: 'operational' },
+    { id: 'comp-boundary-start', name: 'Boundary Start Component', status: 'operational' },
+    { id: 'comp-boundary-end', name: 'Boundary End Component', status: 'operational' },
+  ]
+
+  // Real wire shape (id/component_id/starts_at/ends_at/reason) per
+  // `MaintenanceWindowDTO`.
+  const ACTIVE_WINDOW = {
+    id: 101,
+    component_id: 'comp-active',
+    starts_at: '2026-07-07T10:00:00Z',
+    ends_at: '2026-07-07T11:00:00Z',
+    reason: null,
+  }
+  const UPCOMING_WINDOW = {
+    id: 102,
+    component_id: 'comp-upcoming',
+    starts_at: '2026-07-08T09:00:00Z',
+    ends_at: '2026-07-08T10:00:00Z',
+    reason: null,
+  }
+  const PAST_WINDOW = {
+    id: 103,
+    component_id: 'comp-past',
+    starts_at: '2026-07-06T09:00:00Z',
+    ends_at: '2026-07-06T10:00:00Z',
+    reason: null,
+  }
+  // Half-open boundary (`starts_at <= now < ends_at`): AT starts_at, ACTIVE.
+  const BOUNDARY_START_WINDOW = {
+    id: 104,
+    component_id: 'comp-boundary-start',
+    starts_at: '2026-07-07T10:30:00Z', // === NOW
+    ends_at: '2026-07-07T11:30:00Z',
+    reason: null,
+  }
+  // AT ends_at, no longer active (past) — the other half of the boundary.
+  const BOUNDARY_END_WINDOW = {
+    id: 105,
+    component_id: 'comp-boundary-end',
+    starts_at: '2026-07-07T09:30:00Z',
+    ends_at: '2026-07-07T10:30:00Z', // === NOW
+    reason: null,
+  }
+
+  function rowFor(name: string): HTMLElement {
+    return screen.getByText(name).closest('tr') as HTMLElement
+  }
+
+  it('marks only components with an ACTIVE window, including exact half-open boundaries (AC1)', async () => {
+    server.use(
+      http.get('/api/v1/components', () => HttpResponse.json(MAINTENANCE_COMPONENTS)),
+      http.get('/api/v1/maintenance', () =>
+        HttpResponse.json([
+          ACTIVE_WINDOW,
+          UPCOMING_WINDOW,
+          PAST_WINDOW,
+          BOUNDARY_START_WINDOW,
+          BOUNDARY_END_WINDOW,
+        ]),
+      ),
+    )
+
+    render(<DashboardPage />)
+    await screen.findByRole('table')
+
+    // Active + the starts_at boundary instant ARE marked.
+    expect(
+      within(rowFor('Active Window Component')).getByText('Under maintenance'),
+    ).toBeInTheDocument()
+    expect(
+      within(rowFor('Boundary Start Component')).getByText('Under maintenance'),
+    ).toBeInTheDocument()
+
+    // Upcoming, past, no-window, and the ends_at boundary instant are NOT.
+    expect(
+      within(rowFor('Upcoming Window Component')).queryByText('Under maintenance'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(rowFor('Past Window Component')).queryByText('Under maintenance'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(rowFor('No Window Component')).queryByText('Under maintenance'),
+    ).not.toBeInTheDocument()
+    expect(
+      within(rowFor('Boundary End Component')).queryByText('Under maintenance'),
+    ).not.toBeInTheDocument()
   })
 })
