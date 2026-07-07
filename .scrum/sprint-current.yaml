@@ -114,21 +114,39 @@ stories:
       - "Page-level table CSS not yet de-duplicated — lands as Wave-2 pages adopt the Table primitive (correct sequencing)."
   - id: STORY-056
     points: 5
-    board: in_progress
+    board: done            # awaiting PO verdict at sprint review
     pipeline: full
     wave: 1
-    attempts: 2            # attempt 1 (2026-07-07) died on an account SESSION LIMIT (resets 4:50pm IST)
-                           # having committed NOTHING — tree verified clean at 4bdb465 (crash-recovery
-                           # 2026-06-25), no scraps/artifacts. attempt 2 = fresh agent from clean state.
+    attempts: 2            # attempt 1 (2026-07-07) died on an account SESSION LIMIT having committed
+                           # NOTHING — tree verified clean at 4bdb465 (crash-recovery 2026-06-25).
+                           # attempt 2 = fresh agent from clean state, clean single pass (0d767a5).
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "frontend three-gate DoD (npm test / npm run build / npm run lint) orchestrator-run on clean committed HEAD 0d767a5; backend carried by EMPTY backend diff sprint-38-start..HEAD"
+        exit_code: 0
+        output_tail: "npm test = 43 files / 282 passed (25.72s, NO contention false-red this run —
+          normal npm test green). build OK (tsc -b && vite build; index.js 262.17 kB). lint clean.
+          Backend diff empty."
+        commit: 0d767a5
+        at: 2026-07-07T21:48:00+05:30
+    review:
+      spec: "PASS — all AC1-AC6 MET (Opus). Collapsible sidebar (routed NavLinks, aria-expanded,
+        active=accent, skip-link/40px kept); top-bar theme toggle + relocated sample-mode ⚡ trigger
+        (API + role/state preserved, Dashboard inline switch removed); banner live region; Approvals
+        badge dot/number with graceful failure (driven twice); tabs.ts single source. Nav deletion +
+        sample-mode move preserved all covered behaviors."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline clean; a11y intact; single lifted
+        useSampleMode shared by trigger+banner (no double-fetch); coverage genuinely migrated."
+    open_minors:
+      - "Approvals badge uses hardcoded border-radius 8px / border 1.5px (dimensions only) — could use a radius token."
+      - "Toggle-OFF PUT-body assertion + keyboard-Enter-on-switch not re-created verbatim (hook test covers off; native button = intrinsic keyboard) — symmetric variants, non-blocking."
   - id: STORY-057
     points: 5
-    board: todo
+    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
     pipeline: full
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
@@ -144,9 +162,10 @@ stories:
     review: null
   - id: STORY-059
     points: 5
-    board: todo
+    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
     pipeline: full
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
@@ -171,9 +190,10 @@ stories:
     review: null
   - id: STORY-062
     points: 2
-    board: todo
+    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
     pipeline: gate             # 2 pts -> gate-only (no reviewers)
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
