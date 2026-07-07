@@ -1,6 +1,13 @@
 import './StatusBadge.css'
 
-export type HealthStatus = 'up' | 'down' | 'degraded' | 'maintenance' | 'unknown'
+export type HealthStatus =
+  | 'up'
+  | 'down'
+  | 'degraded'
+  | 'partial'
+  | 'maintenance'
+  | 'unknown'
+  | 'missing'
 
 export interface StatusBadgeProps {
   status: HealthStatus
@@ -12,8 +19,10 @@ const DEFAULT_LABELS: Record<HealthStatus, string> = {
   up: 'Up',
   down: 'Down',
   degraded: 'Degraded',
+  partial: 'Partial outage',
   maintenance: 'Maintenance',
   unknown: 'Unknown',
+  missing: 'Missing data',
 }
 
 /**

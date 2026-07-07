@@ -87,7 +87,7 @@ describe('DashboardPage', () => {
     const expectations: Array<[string, string]> = [
       ['Operational Component', 'Up'],
       ['Degraded Component', 'Degraded'],
-      ['Partial Outage Component', 'Degraded'],
+      ['Partial Outage Component', 'Partial outage'],
       ['Major Outage Component', 'Down'],
       ['Mystery Component', 'Unknown'],
     ]
