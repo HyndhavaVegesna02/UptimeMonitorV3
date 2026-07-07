@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Icon } from '../components'
 import './SampleModeBanner.css'
 
@@ -17,16 +17,23 @@ export interface SampleModeBannerProps {
  * `DashboardPage`'s inline `role="status"` text. Dismissing is LOCAL,
  * session-scoped UI state — it resets (the banner is ready to show again)
  * the next time `visible` transitions false -> true, so toggling sample
- * mode off and back on always re-surfaces the warning.
+ * mode off and back on always re-surfaces the warning. That reset uses the
+ * React-documented "adjusting state when a prop changes" pattern (compare
+ * against a mirrored previous-value state DURING render, not inside a
+ * `useEffect`) — an effect here would fire an extra, avoidable render after
+ * every prop change to synchronize with no external system
+ * (react.dev/learn/you-might-not-need-an-effect).
  */
 export function SampleModeBanner({ visible }: SampleModeBannerProps) {
   const [dismissed, setDismissed] = useState(false)
+  const [prevVisible, setPrevVisible] = useState(visible)
 
-  useEffect(() => {
+  if (visible !== prevVisible) {
+    setPrevVisible(visible)
     if (visible) {
       setDismissed(false)
     }
-  }, [visible])
+  }
 
   if (!visible || dismissed) {
     return null
