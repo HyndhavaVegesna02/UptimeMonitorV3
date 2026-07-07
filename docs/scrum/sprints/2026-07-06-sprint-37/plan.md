@@ -71,39 +71,39 @@ Maintenance tab MSW/error path (`frontend/src/pages/MaintenancePage.*` /
 
 ### Tasks
 
-- [ ] **1. Backend — failing test for the clean ordering 422.** In
+- [x] **1. Backend — failing test for the clean ordering 422.** In
   `test_maintenance_endpoint.py`, add a test posting `ends_at < starts_at` asserting
   `status_code == 422` AND `response.json()["detail"] == "ends_at must be strictly greater
   than starts_at."` (a clean one-liner, no `"validation error for"`, no `"input_value"`,
   no `"pydantic"`). Add a sibling asserting the SAME clean detail for `ends_at == starts_at`
   (equal timestamps — the domain rule is strictly-greater). Run; see both fail (today's
   detail is the blob). Commit the test.
-- [ ] **2. Backend — add the ordering check to the edge validator.** In
+- [x] **2. Backend — add the ordering check to the edge validator.** In
   `validate_maintenance_request`, after the tz-aware checks, add:
   `if ends_at <= starts_at: raise SyntacticValidationError("ends_at must be strictly
   greater than starts_at.")`. This fires in service step 1 → mapped to a clean 422 BEFORE
   domain construction. The domain validator stays (defense in depth). Update the function
   docstring. Run the two tests green + the existing `test_post_maintenance_invalid_times`
   (still 422). Commit.
-- [ ] **3. Frontend — failing test for ends_at mapping + multi-field determinism.** In
+- [x] **3. Frontend — failing test for ends_at mapping + multi-field determinism.** In
   `fieldError.test.ts`, add: (a) `fieldErrorFromDetail("ends_at must be strictly greater
   than starts_at.")` returns `'ends_at'` (NOT `starts_at` — the ordering violation is the
   user's `ends_at` input); (b) a multi-field-detail determinism test proving a detail
   naming several fields resolves deterministically and never throws. Run; see (a) fail
   (current order returns `starts_at`). Commit the test.
-- [ ] **4. Frontend — fix the mapping + refresh the stale doc comment.** Make the ordering
+- [x] **4. Frontend — fix the mapping + refresh the stale doc comment.** Make the ordering
   message map to `ends_at` (e.g. an explicit early check for the strictly-greater phrase →
   `ends_at`, placed before the generic substring scan; keep the generic scan for the other
   cases). Rewrite `fieldError.ts`'s stale `"two real backend 422 cases"` doc comment to
   reflect the THREE cases now (component_id empty, tz-aware, ordering) and cite
   `maintenance/validation.py`. Run the fieldError tests green. Commit.
-- [ ] **5. Frontend — Maintenance tab renders the ordering error inline on ends_at.** Add
+- [x] **5. Frontend — Maintenance tab renders the ordering error inline on ends_at.** Add
   an MSW-backed test on the Maintenance tab: submitting `ends_at <= starts_at` gets the
   REAL new detail string (`"ends_at must be strictly greater than starts_at."`) from a
   mocked 422 and renders it INLINE next to the `ends_at` field (not a toast/console-only,
   not on component_id). Wire the page if needed to consume `fieldErrorFromDetail`'s result
   for this case. Run green. Commit.
-- [ ] **6. Gates + wiki sweep.** Run the full six-gate backend DoD (pytest on an ISOLATED
+- [x] **6. Gates + wiki sweep.** Run the full six-gate backend DoD (pytest on an ISOLATED
   throwaway DB — unset DATABASE_URL; lint-imports; check_fk_direction; alembic upgrade head;
   ruff check; ruff format --check) and the three-gate frontend DoD (npm test, npm run build,
   npm run lint). Run the mechanical wiki staleness sweep over all `docs/scrum/wiki/*.md`

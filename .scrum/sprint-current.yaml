@@ -63,14 +63,39 @@ start_tag: sprint-37-start
 stories:
   - id: STORY-052
     points: 1
-    board: in_progress
+    board: done            # awaiting PO verdict at review
     pipeline: gate             # 1 pt -> gate-only (no reviewers)
     blocked_question: null
-    attempts: 1
+    attempts: 1            # implementer (Sonnet 5) committed all 7 tasks clean (c2c6651..127c8fb)
+                           # then was interrupted when the previous process exited — its final
+                           # report (DoD evidence) was LOST. Orchestrator verified per the
+                           # 2026-06-25 crash-recovery rule: coherent committed work, clean tree,
+                           # no leaked artifacts; then RAN ALL NINE GATES + the wiki sweep itself
+                           # to establish the evidence below (verification-before-completion).
     paused_at_commit: null
-    dod_evidence: []
-    review: null               # 1 pt -> gate-only per the default pipeline
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "pytest (isolated throwaway DB via dev_db.py on 55432; PO stack not running) + lint-imports + check_fk_direction + alembic upgrade head + ruff check + ruff format --check; frontend npm test/build/lint — ALL orchestrator-run on clean committed HEAD after the implementer interruption"
+        exit_code: 0
+        output_tail: "Backend @ 127c8fb: 513 passed (+2 over sprint-36's 511: end-before-start +
+          equal-timestamp clean-detail ordering-422 tests); 5 contracts kept / 0 broken; FK 11/0;
+          alembic OK; ruff check + format both clean. Frontend @ 127c8fb: 33 files / 225 passed
+          (+3 over 222: fieldError ends_at-mapping + multi-field determinism + MaintenancePage MSW
+          inline-render); build OK (257.86 kB js); lint clean."
+        commit: 127c8fb
+        at: 2026-07-07T12:05:00+05:30
+    review: null           # 1 pt -> gate-only per the default pipeline
+    implementer_note: "Backend fix is exactly the ordering check in maintenance/validation.py
+      (ends_at <= starts_at -> SyntacticValidationError 'ends_at must be strictly greater than
+      starts_at.', firing in service.py step 1 BEFORE domain construction, so the clean one-liner
+      replaces the raw Pydantic blob); service.py UNCHANGED; domain validator kept as defense in
+      depth. Frontend: fieldError.ts checks the 'strictly greater than' phrase FIRST -> ends_at
+      (before the generic substring scan, which would else mis-map to starts_at/component_id), doc
+      comment rewritten to the THREE 422 cases; both sprint-34 minors folded in (stale doc + the
+      multi-field-determinism test). MaintenancePage.tsx source UNCHANGED — the page already
+      consumed fieldErrorFromDetail; only its test was added."
+    blast_radius_resolved: true   # orchestrator re-ran the mechanical staleness sweep over ALL
+                                  # docs/scrum/wiki/*.md @ 127c8fb -> ALL CURRENT (implementer had
+                                  # swept api-five-file-convention @ 240666e + frontend-zone @ 127c8fb)
   - id: STORY-046
     points: 2
     board: todo
