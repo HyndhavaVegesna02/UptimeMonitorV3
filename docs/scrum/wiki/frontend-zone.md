@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Nav.tsx, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 298f170
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
+verified_sha: 4daf4c6
 verified_sprint: sprint-38
 status: verified
 ---
@@ -25,21 +25,41 @@ status: verified
 - **Dev ↔ API seam:** the Vite dev server proxies `/api/*` → `http://localhost:8000`
   (`frontend/vite.config.ts`), a locally running uvicorn backend. No backend change and no CORS
   work was needed — CORS stays deferred to STORY-017 per the 2026-06-23 working agreement.
-- **App shell + routing:** `frontend/src/AppShell.tsx` composes the persistent `Nav` + a routed
-  `<main>`. The six tabs are a single source of truth in `frontend/src/nav/tabs.ts` (Dashboard ·
-  Availability · Approvals · Check History · Maintenance · Publications), each mapping a path to
-  its page component under `frontend/src/pages/`. `Nav` (`frontend/src/nav/Nav.tsx`) renders the
-  tabs as routed `NavLink` anchors (native anchor semantics, not an ARIA tablist) — active tab =
-  ink text + accent bottom-border, inactive = ink-subtle. A trailing catch-all `<Route path="*">`
-  renders `pages/NotFoundPage.tsx` (Panel + EmptyState + a link back to Dashboard) for unknown
-  paths (STORY-041). **All six tabs are now real — Dashboard, Availability, Approvals, Check
-  History, Maintenance, and Publications** (STORY-015b, 015c, 015d, 015e, 015f, 015g); there is no
+- **App shell + routing (rebuilt STORY-056, sprint-38):** `frontend/src/AppShell.tsx` composes a
+  collapsible left icon `Sidebar` + a content column (`TopBar` + `SampleModeBanner` + a routed
+  `<main>`), replacing the old single top `Nav` bar (`Nav.tsx`/`Nav.css`/`Nav.test.tsx` deleted).
+  The six tabs remain a single source of truth in `frontend/src/nav/tabs.ts` (Dashboard ·
+  Availability · Approvals · Check History · Maintenance · Publications) — each entry now also
+  carries an `icon: IconName` (STORY-055's shared `Icon` set) alongside `path`/`label`, consumed by
+  `frontend/src/nav/Sidebar.tsx`. `Sidebar` renders each tab as a routed `NavLink` (native anchor
+  semantics, still deliberately NOT an ARIA tablist) — active = accent background + bold weight,
+  inactive = ink-muted. Every link's accessible name is set explicitly via `aria-label` (not left
+  to visible text) so it holds steady whether the sidebar is expanded (icon + visible label +
+  optional badge) or collapsed (icon-only, label/badge visually hidden but the name unchanged) —
+  a screen-reader user always hears e.g. "Approvals, 3 pending" regardless of the visual state. The
+  collapse/expand choice is a header button (logo + title + chevron when expanded) with
+  `aria-expanded` + a dynamic `aria-label` ("Collapse sidebar"/"Expand sidebar"), persisted to
+  `localStorage` by `frontend/src/nav/sidebarState.ts` (mirrors `theme/resolveTheme.ts`'s
+  stored-override pattern; defaults to expanded). The Approvals tab shows a live pending-count
+  badge — `frontend/src/features/shell/useApprovalsBadge.ts` (`useFetch(getApprovals)`, count on
+  success, `undefined` while loading or on failure) — rendered as a number when expanded, a
+  decorative dot when collapsed, and folded into the link's `aria-label` either way; no badge
+  renders on a fetch failure (graceful degradation, never a stale/fabricated count).
+  `frontend/src/nav/TopBar.tsx` is the right-aligned header bar (theme toggle + the sample-mode ⚡
+  trigger, see below); `frontend/src/nav/SampleModeBanner.tsx` is the dismissible warning region
+  under it. A trailing catch-all `<Route path="*">` renders `pages/NotFoundPage.tsx` (Panel +
+  EmptyState + a link back to Dashboard) for unknown paths (STORY-041), unchanged by the shell
+  rebuild. **All six tabs are now real — Dashboard, Availability, Approvals, Check History,
+  Maintenance, and Publications** (STORY-015b, 015c, 015d, 015e, 015f, 015g); there is no
   remaining placeholder page.
 - **Theme system (dark + light):** `frontend/src/theme/resolveTheme.ts` resolves the active
   theme (localStorage override → else `prefers-color-scheme`). An inline pre-paint script in
   `frontend/index.html` applies it before first paint (no flash), mirroring `resolveTheme.ts`.
-  `ThemeContext.tsx` + `useTheme.ts` expose it to React and back the nav toggle (override
-  persisted to localStorage). Both surfaces read the SAME resolution logic.
+  `ThemeContext.tsx` + `useTheme.ts` expose it to React and back the toggle button in `TopBar`
+  (override persisted to localStorage; moved there from the old `Nav` at STORY-056 — same
+  `useTheme()` call, same persistence, only the button's location and icon changed: it now shows
+  the CURRENT theme, sun/moon, rather than the old glyph's target-theme convention). Both surfaces
+  read the SAME resolution logic.
 - **Token layer:** `frontend/src/styles/tokens.css` holds ALL visual values as CSS custom
   properties scoped per theme (`:root[data-theme='dark']` / `[data-theme='light']`) — surfaces,
   hairlines, a 4-step ink scale, the accent set (+ `--color-accent-bg`), a 7-status health palette
@@ -204,20 +224,24 @@ status: verified
     the backend enforces the cap before the response is even built. `proposal_id: null` renders an
     em-dash, matching the `latency_ms: null`/`from_status: null` null-handling convention. See
     `pages/PublicationsPage.tsx`.
-  - **A load+mutate widget embedded in a read tab (Dashboard sample-mode toggle, STORY-049,
-    TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):** unlike Approvals' split (a read
-    `useFetch` hook plus page-local mutation state), `features/dashboard/useSampleMode.ts` owns
-    BOTH the load (`useFetch(getSampleMode)`) and the mutate (`setEnabled`, PUTting and updating an
-    internal `override` state from the PUT RESPONSE only) in one hook, because the widget is a
-    single boolean rather than a list — there is no "list to refresh" to reconcile against, so
-    reusing the exact Approvals split would add a needless refetch round-trip. `enabled` is
-    computed on every render as `override ?? state.data.enabled` (never effect-synced into a
-    separate piece of state) specifically to avoid a one-frame flash of a stale/default value the
-    instant the GET resolves — an effect-based mirror was tried first and exhibited exactly that
-    race in a real MSW test. A real `<button role="switch" aria-checked aria-label>` (not a
-    checkbox) carries the control; the widget renders nothing until the load's `state.phase`
-    leaves `'loading'`, and falls back to the shell `ErrorState` + `retry` on a load failure,
-    mirroring the read pattern above it. See `pages/DashboardPage.tsx` (`SampleModeToggle`).
+  - **A load+mutate widget owned by the shell, not a tab (sample-mode trigger, STORY-049,
+    relocated STORY-056, TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):**
+    `features/dashboard/useSampleMode.ts` still owns BOTH the load (`useFetch(getSampleMode)`) and
+    the mutate (`setEnabled`, PUTting and updating an internal `override` state from the PUT
+    RESPONSE only) in one hook, unchanged since STORY-049 — a single boolean, no "list to refresh"
+    to reconcile against. `enabled` is still computed on every render as `override ??
+    state.data.enabled` (never effect-synced) to avoid a one-frame flash. What CHANGED at
+    STORY-056: the hook is no longer called from `DashboardPage` — `AppShell.tsx` calls it ONCE and
+    passes the result down as a prop to both `nav/TopBar.tsx` (the ⚡ trigger — still a real
+    `<button role="switch" aria-checked aria-label="Sample mode">`, rendering nothing until
+    `state.phase` leaves `'loading'`, a retry affordance on a load failure instead of the switch)
+    and `nav/SampleModeBanner.tsx` (the warning, now dismissible — session-scoped local state that
+    re-arms whenever the derived `visible` boolean transitions false → true again). This "lift once,
+    thread down as a prop" shape is DELIBERATE: two independent `useSampleMode()` calls (one in the
+    trigger, one in the banner) would each run their own GET/override cycle and could disagree the
+    instant one of them PUTs — see `TopBar.tsx`'s and `SampleModeBanner.tsx`'s header comments.
+    `DashboardPage.tsx` no longer renders or imports anything sample-mode-related. See
+    `AppShell.tsx`, `nav/TopBar.tsx`, `nav/SampleModeBanner.tsx`.
   - **A second mutating tab, list + create form (Maintenance, STORY-015f):** unlike Approvals'
     split (a read `useFetch` hook plus page-local mutation state), `features/maintenance/
     useMaintenance.ts` owns BOTH the list load (`useFetch(getMaintenance)`) and the create
@@ -292,6 +316,22 @@ status: verified
   re-inventing it.
 
 ## History
+- sprint-38: updated for STORY-056 (Wave 1 of the Operator Dashboard redesign — the app shell,
+  wrapping every page). Replaced the top `Nav` bar with a collapsible left icon `Sidebar` (routed
+  `NavLink`s carrying `aria-label`s that stay correct across expand/collapse, a
+  `localStorage`-persisted expand choice via the new `nav/sidebarState.ts`, an Approvals
+  pending-count badge from the new `features/shell/useApprovalsBadge.ts`) + a `TopBar` (theme
+  toggle, relocated sample-mode ⚡ trigger) + a dismissible `SampleModeBanner`, all composed by a
+  rewritten `AppShell.tsx`. `nav/tabs.ts`'s `TabDefinition` gained an `icon: IconName` field
+  (STORY-055's shared `Icon` set already had every needed glyph — no `Icon` additions this story).
+  `useSampleMode()` is now called ONCE in `AppShell` and threaded down as a prop to both `TopBar`
+  and `SampleModeBanner` (documented above) rather than embedded in `DashboardPage`, which lost its
+  `SampleModeToggle` component/CSS/tests entirely (moved, not dropped — equivalent coverage now
+  lives in `TopBar.test.tsx`/`SampleModeBanner.test.tsx`/`AppShell.test.tsx`). `Nav.tsx`/`Nav.css`/
+  `Nav.test.tsx` deleted. Sonnet-5-implementer TDD pass, one commit per green step; frontend-only;
+  six backend gates untouched (empty diff since `sprint-38-start`). `code_refs` +=
+  `nav/{Sidebar,TopBar,SampleModeBanner,sidebarState}`, `features/shell/useApprovalsBadge.ts`; `Nav.tsx`
+  removed. verified_sha = 4daf4c6.
 - sprint-25: created (STORY-015a — the frontend shell, second attempt, built guided by
   `DESIGN-linear.app.md`; dark+light themes; the first attempt was reverted in `521764c`).
   verified_sha = 08d91e7.
