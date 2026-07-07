@@ -98,13 +98,45 @@ stories:
                                   # swept api-five-file-convention @ 240666e + frontend-zone @ 127c8fb)
   - id: STORY-046
     points: 2
-    board: in_progress
+    board: done            # awaiting PO verdict at review
     pipeline: gate             # 2 pts -> gate-only (no reviewers)
     blocked_question: null
-    attempts: 1
+    attempts: 1            # clean single dispatch (Sonnet 5) 7e0f4fd..a518c45; orchestrator
+                           # ran the gate verification (npm test contention false-red handled
+                           # per the 2026-07-02 precedent — see dod_evidence)
     paused_at_commit: null
-    dod_evidence: []
-    review: null               # 2 pts -> gate-only per the default pipeline
-    blast_radius_resolved: false
+    dod_evidence:
+      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on clean HEAD; backend six-gate carried by EMPTY backend diff 127c8fb..HEAD"
+        exit_code: 0
+        output_tail: "Frontend @ a518c45: VALID signal = 230 passed / 34 files (npx vitest run
+          --no-file-parallelism, exit 0) — the +8 over sprint-36's 222 (STORY-052 +3 & STORY-046
+          +5); build OK (tsc -b && vite build, exit 0); lint clean (eslint, exit 0). NOTE: the
+          canonical `npm test` (default file parallelism) INTERMITTENTLY exits 1 on ONE
+          PRE-EXISTING, UNRELATED test — CheckHistoryPage's 1500-row 1000-cap render hits Vitest's
+          5000ms default timeout under CPU contention (empty diff since sprint-37-start; passes in
+          ISOLATION in 3.6s / 11 passed; passed green during STORY-052's own npm test run). Treated
+          as a contention-induced FALSE-RED per the binding 2026-07-02 agreement (re-run cleanly for
+          the real signal); filed as defect STORY-054 so the gate itself becomes deterministic.
+          Backend six gates unchanged since 127c8fb (513 passed / 5 contracts / FK 11-0 / alembic OK
+          / ruff clean) — backend diff 127c8fb..HEAD is empty."
+        commit: a518c45
+        at: 2026-07-07T12:40:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline
+    implementer_note: "Frontend-only (this session's backend diff empty). New thin hook
+      features/dashboard/useMaintenanceWindows.ts = useFetch(getMaintenance) mirroring
+      useComponents; DashboardPage computes per-component isUnderActiveMaintenance() by filtering
+      windows on component_id and OR-ing deriveWindowState(...)=='active' (reuses the existing
+      half-open windowState.ts; boundary at starts_at active / ends_at not). The indicator is a
+      SECOND StatusBadge (status='maintenance', label='Under maintenance') in a .dashboard-status-cell
+      flex wrapper ALONGSIDE the health badge — never replacing it (dossier §6/§11), never color-only.
+      statusMapping.ts / ComponentStatus UNTOUCHED. Graceful degradation: any non-'success'
+      maintenance fetch state -> [] -> no marker (dedicated 500-response test proves the components
+      table still renders). AC1/AC2/AC3 all covered by MSW tests."
+    open_minors:
+      - "The canonical `npm test` is flaky on this machine (pre-existing CheckHistoryPage timeout
+        under parallelism) -> STORY-054 filed; sprint-37 retro input."
+    blast_radius_resolved: true   # implementer swept frontend-zone (@ 9f16880) + sample-mode
+                                  # (@ a518c45); orchestrator re-runs the full sweep in the
+                                  # sprint-close compile pass below.
 hotfixes: []
 interrupts: []

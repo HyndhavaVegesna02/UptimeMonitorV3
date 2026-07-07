@@ -142,30 +142,30 @@ Backend untouched.
 
 ### Tasks
 
-- [ ] **1. Failing test — active window marks its component.** In `DashboardPage.test.tsx`,
+- [x] **1. Failing test — active window marks its component.** In `DashboardPage.test.tsx`,
   add an MSW handler returning `/api/v1/maintenance` windows derived from the REAL wire
   shape (`{id, component_id, starts_at, ends_at, reason}`, tz-aware ISO). Assert: a
   component with an ACTIVE window (`starts_at <= now < ends_at`) shows the maintenance
   indicator; components with only UPCOMING or PAST windows, and components with NO window,
   do NOT. Pin `now` deterministically (fixtures relative to a fixed instant, or inject as
   `windowState` allows). Run; see fail. Commit.
-- [ ] **2. Failing test — coexistence with health + non-color-only.** Assert a component
+- [x] **2. Failing test — coexistence with health + non-color-only.** Assert a component
   that is BOTH degraded (health status) AND under active maintenance renders BOTH signals —
   the maintenance indicator does not replace or hide the health badge — and the indicator
   carries a non-color cue (text/label/icon), not color alone (accessibility rule). Run; see
   fail. Commit.
-- [ ] **3. Fetch maintenance windows on the Dashboard.** Add a hook (e.g.
+- [x] **3. Fetch maintenance windows on the Dashboard.** Add a hook (e.g.
   `features/dashboard/useMaintenanceWindows.ts`) mirroring `useComponents.ts`'s
   shape/error-wrapping, using the typed client. Docstring cites dossier §6/§11 (health vs
   maintenance kept separate) + §17. Handle loading/error per the existing per-tab pattern
   (the Dashboard already renders Loading/Error states). Commit once its own unit test is
   green.
-- [ ] **4. Overlay the indicator.** In the Dashboard, for each component compute
+- [x] **4. Overlay the indicator.** In the Dashboard, for each component compute
   `isUnderMaintenance = windows for that component_id .some(w => deriveWindowState(...) ===
   'active')` and render the maintenance indicator alongside the existing StatusBadge using
   the existing `maintenance` tokens. Do not alter `statusMapping.ts` / `ComponentStatus`.
   Run tasks 1–2 tests green. Commit.
-- [ ] **5. Gates + wiki sweep.** Run the three-gate frontend DoD (npm test, build, lint).
+- [x] **5. Gates + wiki sweep.** Run the three-gate frontend DoD (npm test, build, lint).
   Run the six-gate backend DoD too and CONFIRM an empty backend diff (frontend/ change only)
   — record that. Run the mechanical wiki sweep; frontend files are unlikely to be in any
   article's `code_refs`, but run it and update/re-verify anything flagged, committing
