@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 8237962
-verified_sprint: sprint-36
+verified_sha: 298f170
+verified_sprint: sprint-38
 status: verified
 ---
 
@@ -168,3 +168,12 @@ status: verified
   (never inside `load_settings`/`load_live_secrets`, so the six-command DoD gate and its
   explicit-env tests are unaffected). Still six backend + three frontend commands, all green.
   verified_sha → 6a33edb.
+- sprint-38: re-verified (STORY-055 — frontend design-system foundation). The staleness sweep
+  flagged this article because `CLAUDE.md` and `frontend/package.json` both changed (the Geist/
+  Geist Mono font swap: `@fontsource/inter`/`@fontsource/jetbrains-mono` replaced by
+  `@fontsource/geist`/`@fontsource/geist-mono`, and CLAUDE.md's frontend-zone paragraph updated to
+  match — see [[frontend-zone]]). Neither change touches this article's Facts: the frontend DoD
+  gate is still the same three commands (`npm test`/`npm run build`/`npm run lint`), still
+  INDEPENDENT of the six backend commands, and `package.json`'s `dependencies` shape (a `dependencies`
+  + `devDependencies` split with the three scripts) is unchanged — only which font packages sit in
+  `dependencies`. No DoD-gate or command change. verified_sha → 298f170.
