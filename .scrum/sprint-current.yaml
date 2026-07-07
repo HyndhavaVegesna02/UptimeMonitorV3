@@ -1,6 +1,7 @@
 # YourTeam active sprint board.
 sprint: 37
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
+closed: 2026-07-06    # PO verdict: accept BOTH (052=1 + 046=2), 3/3 pts. Merged to main.
 started: 2026-07-06
 goal: "Close the two remaining console-free maintenance gaps: the maintenance ordering
   violation returns a clean, form-mappable 422 instead of a leaked Pydantic blob

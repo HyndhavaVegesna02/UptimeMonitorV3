@@ -300,7 +300,7 @@ stories:
   - id: STORY-046
     title: Dashboard maintenance-state display — the maintenance badge is currently unreachable
     file: docs/scrum/stories/STORY-046-dashboard-maintenance-state.md
-    status: ready   # refined 2026-07-06 (sprint-37 planning): PO chose Option A (frontend overlay) + Dashboard-only scope; frontend-only, no backend change
+    status: done    # accepted at Sprint 37 review (2026-07-06) — Dashboard overlays an "Under maintenance" badge alongside health via useMaintenanceWindows + deriveWindowState; frontend-only, graceful degradation
     points: 2
     priority: 22
     type: feature
@@ -333,7 +333,7 @@ stories:
   - id: STORY-052
     title: Maintenance ordering 422 — clean edge message (raw Pydantic blob leaks today) + inline frontend mapping
     file: docs/scrum/stories/STORY-052-maintenance-end-before-start-422.md
-    status: ready   # refined 2026-07-06 (sprint-37 planning): re-scoped to the leaked Pydantic detail + 015f inline mapping (the missing-422 claim was false — domain layer already rejects). Touches backend + frontend -> full six-gate + three-gate DoD.
+    status: done    # accepted at Sprint 37 review (2026-07-06) — clean edge 422 replaces the Pydantic blob; frontend maps it inline on ends_at; both sprint-34 minors folded in
     points: 1
     priority: 22
     type: defect
