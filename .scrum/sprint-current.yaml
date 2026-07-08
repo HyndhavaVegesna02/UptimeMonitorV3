@@ -1,330 +1,53 @@
 # YourTeam active sprint board.
-sprint: 38
-status: closed        # none | active | review | closed | aborted
-closed: 2026-07-08    # PO verdict 2026-07-08: ACCEPT all 8 stories (31/31 pts). Accepted as-is:
-                      # h1 stays "Dashboard"/"Maintenance" (nav-label invariant); Check History cap
-                      # stays 1000. Merged to main. (Stale-monitor-id hotfix landed separately on main.)
-started: 2026-07-07
-goal: "Re-skin the entire six-tab operator SPA to the imported Operator Dashboard design
-  (collapsible icon sidebar, Geist type, expanded 7-status palette, cards/grids/timeline),
-  binding every element to REAL API data (no fakes) while preserving all functionality,
-  routing, and business logic. Backend data gaps are filed as follow-up stories (063-067),
-  not built here."
-branch: sprint-38
-start_tag: sprint-38-start
-# CAPACITY / DELIBERATE OVER-COMMIT: recorded velocity last-3 = sprint 34 (?), 36 (6), 37 (3)
-# -> low; measured mean historically ~5.3. Committed 31 points (055=5, 056=5, 057=5, 058=3,
-# 059=5, 060=3, 061=3, 062=2) — a ~5-6x OVER-COMMIT. This is an EXPLICIT PO directive
-# (2026-07-07): "after planning is done I want a single sprint finish" + "spin up multiple
-# Sonnet 5 HIGH agents for independent works". The size risk (partial completion if the
-# session budget runs out) was flagged to the PO once and accepted. Ordering front-loads the
-# highest-blast-radius foundation so a partial finish still leaves a coherent shippable subset.
+sprint: 39
+status: closed        # PO verdict 2026-07-08: ACCEPT STORY-071 (2/2). Merged to main. Small debug sprint.
+started: 2026-07-08
+goal: "Small debug sprint (PO-directed, systematic-debugging): fix the approve/reject 500 —
+  approval_events.action was written as 'approve'/'reject' but the spine constraint allows only
+  'approved'/'rejected', so every real decision hit a CheckViolation. Root-caused before any fix."
+branch: sprint-39
+start_tag: sprint-39-start
+# CONTEXT: found live during the sprint-38 review walkthrough once real Dynatrace data flowed
+# (post monitor-id hotfix) and a real proposal appeared. ROOT CAUSE (confirmed, systematic
+# debugging Phase 1-3): core/services/approval.py approve()->action="approve" / reject()->
+# action="reject", but migrations spine ck_approval_events_action = action IN ('approved','rejected').
+# Fake/adapter-parity gap (2026-06-26): the in-memory fake accepted 'approve'; only real Postgres
+# rejects it, and no DB-gated test drove a real approve/reject through the constraint.
 #
-# PARALLEL EXECUTION MODEL (PO-directed multi-agent): wave-based, because the eight stories are
-# NOT all independent.
-#   Wave 0 (SOLO, blocking): 055 design-system foundation + shared primitives — everything
-#     inherits its tokens/fonts/components/primitives. Must be gate-green + committed on
-#     sprint-38 before any other dispatch.
-#   Wave 1 (SOLO, blocking): 056 shell — every page renders inside it; it also relocates the
-#     sample-mode toggle out of DashboardPage (which 057 then rebuilds), so it precedes 057.
-#   Wave 2 (PARALLEL, worktree-isolated): 057-062 page redesigns fan out as up to 6 concurrent
-#     Sonnet-5/HIGH implementers, each in its own git worktree (isolation:'worktree') on
-#     DISJOINT files (own page.tsx/.css + features/<tab> + tests + MSW handler). Rationale: a
-#     shared working tree + git index cannot take concurrent writers (violates the 2026-06-24
-#     clean-tree/scoped-staging agreement).
-#   Integration is SERIAL: branches merge into sprint-38 one at a time; Opus spec+quality
-#     reviews (057-061) and the frontend DoD gate run serially per story — NEVER concurrent
-#     npm test/vite build, per the 2026-07-06 CPU-contention false-red agreement.
+# PIPELINE: STORY-071 = 2 pts -> gate-only (no reviewers) per the size rule. Implementer Sonnet 5 /
+# HIGH per the 2026-07-02 model rule. Fix at SOURCE (action derived from to_state.value) + a DB-gated
+# regression test that drives the REAL approve+reject path through the Postgres constraint (closes the
+# parity gap). Backend six-gate DoD.
 #
-# PIPELINE: 055-061 are 3+ pts -> full pipeline (Sonnet 5 / HIGH implementer + Opus spec
-# reviewer + Opus quality reviewer + DoD gate). 062 is 2 pts -> gate-only. Per the 2026-06-24
-# + 2026-07-02 model rules. Frontend-only sprint: each story runs the frontend three-gate DoD
-# (npm test / build / lint) on a clean committed tree AND must show an EMPTY backend diff
-# (git diff sprint-38-start..HEAD -- backend/ scripts/ config/ migrations/ pyproject.toml
-# alembic.ini). The npm test contention rule (2026-07-06) applies: a parallelism/CPU false-red
-# is proven (empty diff on the failing unit + passes isolated/serialized) then re-run with
-# `npx vitest run --no-file-parallelism` for the valid signal.
+# DB for the gate: the throwaway Postgres (container uptime_pg_pytest on 55432) is UP and migrated;
+# the live loop/API writers were STOPPED first, so a SINGLE-invocation pytest reusing the already-set
+# DATABASE_URL is safe (2026-07-02 no-concurrent-DB agreement honored). No frontend change needed
+# (the frontend already maps the failure notice; once the backend returns 200 the notice clears).
 #
-# CONSUMER-DTO / CONTRACT CHECK (2026-07-07, at planning — per the 2026-07-02 + 2026-07-04
-# agreements): every rendered field verified against the real producing contract. Gaps found
-# (design shows richer data than the API exposes) → the frontend ADAPTS (omits/substitutes a
-# real field, never fabricates) and the gap is filed as a backend follow-up:
-#   - ProposalDTO {id, component_id, from_status, to_status, state, proposed_at} — NO severity/
-#     reason/source/triggering-signals. STORY-059 derives severity from to_status; omits rest -> STORY-063.
-#   - ObservationDTO {signal_key, observed_at, health, location, latency_ms} — NO HTTP code / check
-#     type. STORY-060 omits those two columns -> STORY-064.
-#   - MaintenanceWindowDTO {id, component_id, starts_at, ends_at, reason} — NO title; NO DELETE
-#     endpoint. STORY-061 maps "title"<->reason; omits delete -> STORY-065.
-#   - PublicationDTO {id, component_id, status, published_at, proposal_id} — NO author/outcome/
-#     incident. STORY-062 omits those -> STORY-066.
-#   - ComponentDTO {id, name, status} — NO group; NO per-component uptime-bucket API. STORY-057
-#     renders ONE group + omits sparkline segments where no data (uses availability/history only) -> STORY-067.
-#   NUMERIC SCALE pinned (2026-07-04): availability_pct / completeness_pct are 0-1 FRACTIONS on the
-#   wire (existing formatPct handles the *100); MSW fixtures for redesigned pages derive from the
-#   existing handler fixtures (already real-shape), not re-invented.
-#
-# TOOLING: no new MCP/CLI. The only dependency adds are `@fontsource/geist` + `@fontsource/geist-mono`
-# (self-hosted Geist per the mock, no CDN) — added within STORY-055; CLAUDE.md tooling inventory
-# updated in the same commit per the 2026-06-23 command-sync agreement if the frontend stack line
-# changes.
-#
-# BASELINE at lock: sprint-38 cut from main @ c548c39 (tag sprint-38-start). Last green gates
-# (sprint-37, merged): backend 513 passed; frontend 230 passed (single-threaded valid signal).
-# This sprint touches frontend/ ONLY; backend diff must stay empty.
-#
-# PARKED SPRINT NOTE (unchanged): sprint 35 (STORY-017 deployment) remains PAUSED/unmerged on
-# branch sprint-35 (PO 2026-07-06). Sprint-38 is frontend-only and does NOT touch STORY-017's
-# CORS/deploy-config diff; the eventual sprint-35 rebase gains no new conflict beyond the usual
-# .scrum/CLAUDE.md/pyproject bookkeeping.
-#
-# ORDER: 055 -> 056 -> [057, 058, 059, 060, 061, 062 parallel]. 055 first (foundation, highest
-# blast radius, all inherit). 056 second (shell wraps every page; frees DashboardPage of the
-# inline sample-mode switch before 057 rebuilds it). Then pages fan out; integrate/review/gate
-# serially in descending blast radius (057, 058 share UptimeBar; 059-062 independent).
+# BASELINE: sprint-39 cut from main @ 023b79d (tag sprint-39-start). Main includes the sprint-38
+# redesign + the monitor-id hotfix.
 stories:
-  - id: STORY-055
-    points: 5
-    board: done            # awaiting PO verdict at sprint review
-    pipeline: full             # 5 pts -> implementer + spec + quality reviewers + gate
-    wave: 0
-    attempts: 1            # Wave 0 solo Sonnet-5/HIGH implementer, clean single dispatch (5981f72..500090e)
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD (npx vitest run --no-file-parallelism / npm run build / npm run lint) orchestrator-run on clean committed HEAD; backend six-gate carried by EMPTY backend diff sprint-38-start..HEAD"
-        exit_code: 0
-        output_tail: "Vitest VALID signal = 39 files / 257 passed (--no-file-parallelism, exit 0),
-          108.20s — the canonical `npm test` false-reds on the PRE-EXISTING CheckHistoryPage 1000-cap
-          render timeout under file-parallelism CPU contention (empty diff on that file since
-          sprint-38-start; 11/11 in isolation), the known STORY-054 defect that STORY-060 resolves —
-          discounted per the 2026-07-06 contention agreement. build OK (tsc -b && vite build, exit 0;
-          Geist woff2 bundled; index.js 260.28 kB). lint clean (eslint, exit 0). Backend diff empty."
-        commit: 500090e
-        at: 2026-07-07T14:11:00+05:30
-    review:
-      spec: "PASS — all AC1-AC6 MET (Opus). Token values match plan.md remap both themes; 7-status
-        palette + HealthStatus/StatusBadge/statusMapping(partial_outage->partial) with driving tests
-        (contract change rewrote DashboardPage/StatusBadge tests, none dropped); Geist self-hosted, no
-        CDN, Inter/JetBrains removed; shadow token + Icon set + 4 primitives token-only with co-located
-        tests; backend diff empty; frontend-zone wiki re-verified."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline clean (hex only in tokens.css),
-        no a11y regressions, primitives well-typed/reusable, no test lies."
-    open_minors:
-      - "SummaryCard tone vocab is 'ok|degraded|partial|down|accent|neutral' (diverges from HealthStatus
-        'up|...'); STORY-057 must map up->ok when consuming it (flagged in the 057 brief)."
-      - "SummaryCard.css big-number 24px/-0.02em un-tokenized — consider a --fs-stat token (058 reuse)."
-      - "UptimeBar per-segment info is title-only (mouse); aggregate role=img label covers a11y; SR-per-segment is a later polish."
-      - "Page-level table CSS not yet de-duplicated — lands as Wave-2 pages adopt the Table primitive (correct sequencing)."
-  - id: STORY-056
-    points: 5
-    board: done            # awaiting PO verdict at sprint review
-    pipeline: full
-    wave: 1
-    attempts: 2            # attempt 1 (2026-07-07) died on an account SESSION LIMIT having committed
-                           # NOTHING — tree verified clean at 4bdb465 (crash-recovery 2026-06-25).
-                           # attempt 2 = fresh agent from clean state, clean single pass (0d767a5).
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD (npm test / npm run build / npm run lint) orchestrator-run on clean committed HEAD 0d767a5; backend carried by EMPTY backend diff sprint-38-start..HEAD"
-        exit_code: 0
-        output_tail: "npm test = 43 files / 282 passed (25.72s, NO contention false-red this run —
-          normal npm test green). build OK (tsc -b && vite build; index.js 262.17 kB). lint clean.
-          Backend diff empty."
-        commit: 0d767a5
-        at: 2026-07-07T21:48:00+05:30
-    review:
-      spec: "PASS — all AC1-AC6 MET (Opus). Collapsible sidebar (routed NavLinks, aria-expanded,
-        active=accent, skip-link/40px kept); top-bar theme toggle + relocated sample-mode ⚡ trigger
-        (API + role/state preserved, Dashboard inline switch removed); banner live region; Approvals
-        badge dot/number with graceful failure (driven twice); tabs.ts single source. Nav deletion +
-        sample-mode move preserved all covered behaviors."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline clean; a11y intact; single lifted
-        useSampleMode shared by trigger+banner (no double-fetch); coverage genuinely migrated."
-    open_minors:
-      - "Approvals badge uses hardcoded border-radius 8px / border 1.5px (dimensions only) — could use a radius token."
-      - "Toggle-OFF PUT-body assertion + keyboard-Enter-on-switch not re-created verbatim (hook test covers off; native button = intrinsic keyboard) — symmetric variants, non-blocking."
-  - id: STORY-057
-    points: 5
-    board: done            # awaiting PO verdict at review. attempt 2 (main tree). attempt 1 (worktree) died on session limit mid step-3;
-                           # its committed steps 1-2 (feature hooks summary/useTopology/useComponentSignals/
-                           # useComponentUptime + tests) were RECOVERED by merging its branch into sprint-38
-                           # @ 5a7f099 (gate 309 green), scrap discarded (crash-recovery 2026-06-25).
-                           # Remaining: rebuild DashboardPage.tsx/.css/.test.tsx to consume the hooks
-                           # (summary cards + grouped expandable rows + UptimeBar + drill-down + maint badge).
-    pipeline: full
-    wave: 2
-    attempts: 2
-    blocked_question: null
-    dod_evidence:
-      - command: "frontend three-gate DoD run by the 057-completion implementer + re-confirmed by both Opus reviewers at HEAD 903af13 (integrated on sprint-38); empty backend diff"
-        exit_code: 0
-        output_tail: "npm test 315/315 (48 files, no false-red on the implementer's run); all 42
-          STORY-057 story tests green in isolation (reviewer-confirmed); build OK (241ms); lint clean;
-          backend diff 0e6314e..HEAD empty. Only full-suite red seen by a reviewer = the UNRELATED
-          CheckHistoryPage STORY-054 parallelism false-red (STORY-060 in flight resolves it)."
-        commit: 903af13
-        at: 2026-07-08T08:41:00+05:30
-    review:
-      spec: "PASS — AC1-AC5 MET (Opus). SummaryCard row from real getComponents counts; keyboard
-        aria-expanded rows → real topology+history drill-down w/ graceful per-row degradation; uptime %
-        from real availability rollup + UptimeBar from real history with the bar OMITTED (no fabricated
-        segments) where no data (driven+asserted); ONE group (no group field → 067); maintenance badge
-        preserved (deriveWindowState, dot+label, coexists). Data-adaptation honest. h1='Dashboard' (not
-        mock's 'System health') kept to satisfy shell tests — PO note, not an AC failure."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Clean strict-typed hooks; no-data/failure paths
-        genuinely derived+tested; a11y intact (button expander over mock's div, dot+text, reduced-motion
-        guard); token discipline holds; coverage grew. 4 MINOR cleanup follow-ups."
-    po_note: "Dashboard h1 reads 'Dashboard' not the mock's 'System health' (shell tests tie h1 to the
-      nav-tab label); change would need a coordinated shell-test update. PO decides at review."
-    open_minors:
-      - "useTopology.ts duplicates history/useSignalOptions (both thin useFetch(getTopology)) — consolidate post-sprint."
-      - "useComponentUptime redundant .slice(); DashboardPage.css dimensional literals could use --space-1; expander could add aria-controls."
-    paused_at_commit: null
-    dod_evidence: []
-    review: null
-  - id: STORY-058
-    points: 3
-    board: done            # awaiting PO verdict at review
-    pipeline: full
-    wave: 2
-    attempts: 1            # clean parallel worktree dispatch; branch worktree-agent-aa0295d8b74b3b6f8 (87e1b9f),
-                           # merged --no-ff into sprint-38 @ 2505718
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD re-run by both Opus reviewers on integrated sprint-38 (353 tests); empty backend diff"
-        exit_code: 0
-        output_tail: "353/353 on a clean run (build OK, lint clean). Scale invariant verified end-to-end
-          (0.982 fraction -> '98.20%', no sprint-32 double-multiply). NOTE: useAvailability.test.tsx
-          can throw parallelism false-reds under CPU contention (18 uncaught exceptions once; clean on
-          re-run) — to be investigated at sprint-close per the 2026-07-06 contention agreement."
-        commit: 2505718
-        at: 2026-07-08T09:30:00+05:30
-    review:
-      spec: "PASS — AC1-AC3 MET (Opus). Grid (avail % + down label + UptimeBar | completeness % +
-        missing chip + hatched split bar), legend, 24h/7d/30d toggle reusing windowRange, drill-down.
-        0-1 fractions correct end-to-end. Bands/labels from real verdict counts, no fabrication."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline clean (hatch uses --color-health-missing),
-        a11y intact, helpers pure+tested. One tracked follow-up: segments.ts duplicates dashboard
-        useComponentUptime (worktree-isolation copy) -> consolidate into features/history/uptimeSegments.ts."
-    open_minors:
-      - "useAvailability.test.tsx parallelism false-red (18 uncaught exceptions under contention; clean serialized) -> investigate/fix or file defect at sprint close."
-      - "segments.ts <-> dashboard useComponentUptime duplication -> post-sprint consolidation into features/history/uptimeSegments.ts."
-  - id: STORY-059
-    points: 5
-    board: done            # awaiting PO verdict at sprint review
-    pipeline: full
-    wave: 2
-    attempts: 1            # clean parallel worktree dispatch (Sonnet 5); branch worktree-agent-a73672abf6189634e
-                           # (4654014..f733a28), merged --no-ff into sprint-38 @ c440a3e
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on integrated sprint-38 HEAD c440a3e (059+062 merged); empty backend diff"
-        exit_code: 0
-        output_tail: "44 files / 290 passed (31.66s); build OK (index.js 263.88 kB); lint clean;
-          backend diff sprint-38-start..HEAD empty. (Combined batch gate covering 059+062.)"
-        commit: c440a3e
-        at: 2026-07-08T08:26:00+05:30
-    review:
-      spec: "PASS — AC1-AC3 MET (Opus): card layout, severity DERIVED from to_status (no fake field),
-        from→to pills + 'New', real proposed_at, full idle→confirming→submitting→failed machine +
-        409/404 role=status notices, 'Queue clear' empty state, omitted fields asserted absent. AC4:
-        the wiki sweep is INTENTIONALLY batch-deferred to the sprint-end compile pass (6 parallel
-        page agents were scoped OFF the shared frontend-zone.md to avoid merge collisions) —
-        orchestrator-confirmed, so AC4 -> MET / PASS."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline (severity reuses 7-status
-        palette), a11y intact (stripe not sole carrier), state machine correct, coverage expanded."
-    open_minors:
-      - "ApprovalCard chip font-size 10.5px un-tokenized (off type scale) — consider a --fs token."
-      - "approval-card--{up,maintenance,missing} stripe modifiers absent (deriveSeverity never returns them) — harmless."
-  - id: STORY-060
-    points: 3
-    board: done            # awaiting PO verdict at review
-    pipeline: full
-    wave: 2
-    attempts: 2            # impl (worktree worktree-agent-a8ef19c8450539c28 @ ba2ae59, merged @ 8234a48)
-                           # + one fix loop (main tree, 644a9d5..f1c3d9e) resolving the 2 quality MAJORs
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on sprint-38 HEAD f1c3d9e (all 8 stories integrated); empty backend diff"
-        exit_code: 0
-        output_tail: "50 files / 355 passed (39s, normal parallelism, NO flake this run); build OK
-          (250ms); lint clean. Whole-sprint backend diff sprint-38-start..HEAD empty. STORY-054 flake
-          RESOLVED (cap test renders 5 rows via injectable maxRenderedRows prop, 1.64s deterministic)."
-        commit: f1c3d9e
-        at: 2026-07-08T09:24:00+05:30
-    review:
-      spec: "PASS — AC1-AC4 MET (Opus). Filter toolbar (search + result + location + window toggle,
-        labeled); dense grid Timestamp/Component/Location/Result(dot+label)/Latency; Type+Code omitted
-        -> STORY-064; system-wide ledger (Promise.all over all signals) faithful to the mock; hook
-        removals (useHistory/useSignalOptions) lost no coverage."
-      quality: "APPROVE after fix loop — initial CHANGES REQUESTED (2 MAJOR: missing reduced-motion
-        guard; cap lowered 1000->200) both RESOLVED: guard added (mirrors AvailabilityPage), 1000 cap
-        RESTORED via injectable maxRenderedRows prop (preserves existing functionality; flake fixed by
-        testing truncation with a tiny injected cap, not a 1000-row render). Orchestrator-verified."
-    open_minors:
-      - "Unbounded Promise.all fan-out (one getHistory per signal) — fine at demo scale, scalability follow-up (bulk endpoint/concurrency cap)."
-      - "Stale docstrings in dashboard useTopology.ts/useComponentSignals.ts cite the removed useSignalOptions/useHistory -> sprint-close cleanup."
-  - id: STORY-061
-    points: 3
-    board: done            # awaiting PO verdict at review
-    pipeline: full
-    wave: 2
-    attempts: 1            # clean parallel worktree dispatch; branch worktree-agent-ab1eb135b670500cb (f17f6ea),
-                           # merged --no-ff into sprint-38 @ 5027fe2
-    blocked_question: null
-    paused_at_commit: null
-    dod_evidence:
-      - command: "frontend three-gate DoD re-run by both Opus reviewers on integrated sprint-38 (353 tests); empty backend diff"
-        exit_code: 0
-        output_tail: "MaintenancePage 12/12; full suite 353/353 on clean run; build OK; lint clean.
-          Backend diff empty. windowState/fieldError/useMaintenance helpers untouched (reused read-only)."
-        commit: 5027fe2
-        at: 2026-07-08T09:30:00+05:30
-    review:
-      spec: "PASS — AC1-AC4 MET (Opus). Two-column form-card + windows list, Title->reason map, state
-        badges via deriveWindowState, inline 422 field mapping (fieldError) + form-level fallback +
-        reset-on-success, delete OMITTED (asserted absent) -> STORY-065, tz-aware preserved."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline, a11y (labeled fields, role=alert
-        errors, dot+text badge), form correctness, helpers reused read-only. Minor cosmetic follow-ups."
-    po_note: "Maintenance h1 reads 'Maintenance' not the mock's 'Scheduled maintenance' (subtitle matches
-      mock verbatim); same h1↔nav-label pattern as 057. PO decides at review."
-  - id: STORY-062
+  - id: STORY-071
     points: 2
-    board: done            # awaiting PO verdict at sprint review
-    pipeline: gate             # 2 pts -> gate-only (no reviewers)
-    wave: 2
-    attempts: 1            # clean parallel worktree dispatch (Sonnet 5); branch worktree-agent-a79fd02c038e2ded8
-                           # (82a878f), merged --no-ff into sprint-38 @ c440a3e
+    board: done            # awaiting PO verdict + merge
+    pipeline: gate             # 2 pts -> gate-only
+    attempts: 1            # clean single Sonnet dispatch (06cf232 fix+tests, c35af16 wiki)
     blocked_question: null
     paused_at_commit: null
     dod_evidence:
-      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on integrated sprint-38 HEAD c440a3e (059+062 merged); empty backend diff"
+      - command: "backend six-gate DoD orchestrator-run on clean committed HEAD c35af16 (DATABASE_URL reused on 55432, single invocation; live writers stopped)"
         exit_code: 0
-        output_tail: "44 files / 290 passed (31.66s); build OK; lint clean; backend diff empty.
-          (Combined batch gate covering 059+062.) Publications now a vertical Timeline; author/outcome/
-          incident omitted (not on PublicationDTO) -> STORY-066. 7 scoped tests green pre-merge."
-        commit: c440a3e
-        at: 2026-07-08T08:26:00+05:30
-    review: null           # 2 pts -> gate-only per the default pipeline
-hotfixes:
-  - date: 2026-07-08
-    what: "Corrected a stale Dynatrace monitor native_id in config/apps/httpcheck.yaml
-      (HTTP_CHECK-DB5792CB88D14CF4 -> HTTP_CHECK-38B092E93932C002). Found during the sprint-38
-      review browser walkthrough: History/Availability were empty because the configured monitor
-      id had produced ZERO executions in 30 days (live-probed) while the actually-live monitor
-      HTTP_CHECK-38B092E93932C002 had 2,882 runs/24h. The pull loop was polling Dynatrace correctly
-      (async execute+poll, HTTP 200) but the stale id matched no rows, so nothing ingested."
-    branch: "hotfix/stale-monitor-native-id (off main c548c39), ff-merged to main @ 79bfbb3"
-    scope: "config-only (no code/schema/migration). Verified: load_config + test_config 34 passed,
-      ruff clean, lint-imports 5/0. DB-gated pytest/fk/alembic skipped (schema untouched; throwaway
-      DB was serving the running demo stack — 2026-07-02 no-concurrent-DB agreement)."
-    note: "NOT a sprint-38 defect (sprint-38 is frontend-only). Pre-existing operational config drift.
-      main diverged from sprint-38's base; accepting sprint-38 is now a 3-way merge (disjoint:
-      config vs frontend) — clean. Retro input: config/apps native_ids can silently drift when the
-      vendor monitor is recreated — consider a boot-time or periodic 'monitor id resolves to live
-      executions' health check so a stale id surfaces loudly instead of ingesting nothing."
+        output_tail: "pytest 515 passed (35.84s; +2 over sprint-38's 513: the DB-gated real-approve/reject
+          regression + the fake/adapter parity test); lint-imports 5 kept/0 broken; check_fk_direction
+          11 FKs/0 violations; alembic upgrade head OK; ruff check clean; ruff format 181 formatted."
+        commit: c35af16
+        at: 2026-07-08T10:35:00+05:30
+    review: null           # gate-only per size rule
+    fix_summary: "core/services/approval.py::_decide now derives action=to_state.value (APPROVED.value
+      'approved' / REJECTED.value 'rejected') at the single record_approval_event call site, replacing
+      the hard-coded 'approve'/'reject' literals that violated ck_approval_events_action. Regression:
+      test_persistence_adapters.py drives a REAL approve+reject through PostgresProposalRepository (failed
+      pre-fix with the exact CheckViolation; passes post-fix) + a fake/adapter parity test (closes the
+      2026-06-26 gap). Pre-existing test_approval.py/test_decisions.py assertions updated to past tense."
+hotfixes: []
 interrupts: []

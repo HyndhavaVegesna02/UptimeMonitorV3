@@ -1,8 +1,8 @@
 ---
 title: API Five-File Feature Convention
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, pyproject.toml]
-verified_sha: 27f904b
-verified_sprint: sprint-37
+verified_sha: 06cf232
+verified_sprint: sprint-39
 status: verified
 ---
 
@@ -81,4 +81,13 @@ status: verified
   above) — `service.py` itself is UNCHANGED (the fix is entirely which layer's exception the
   existing step-1/step-2 try/except in `service.py::MaintenanceService.create_window` catches
   first). Five-file convention and `api-feature-independence` contract untouched. verified_sha → 27f904b.
+- sprint-39 (STORY-071, defect fix, mechanical staleness sweep): `core/services/approval.py::ApprovalService._decide`
+  was recording the present-tense verb (`action="approve"`/`"reject"`) into `approval_events.action`,
+  violating the spine's `ck_approval_events_action` constraint (`action IN ('approved', 'rejected')`)
+  on every real approve/reject — a 500 on `POST /api/v1/decisions/{id}`. Fixed by deriving
+  `action=to_state.value` inside `_decide` instead of a separately-hard-coded literal (the `action`
+  param was dropped from `approve`/`reject`'s calls into `_decide` entirely). `test_approval.py` and
+  `test_decisions.py` assertions that pinned the old (wrong) `'approve'`/`'reject'` literal were
+  updated to `'approved'`/`'rejected'`. No change to the five-file shape, DTOs, or the
+  `api-feature-independence` contract. verified_sha → 06cf232.
 

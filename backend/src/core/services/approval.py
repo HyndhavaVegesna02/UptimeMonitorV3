@@ -60,7 +60,6 @@ class ApprovalService:
         updated = self._decide(
             proposal_id=proposal_id,
             to_state=ProposalState.APPROVED,
-            action="approve",
             actor=actor,
             notes=notes,
         )
@@ -84,7 +83,6 @@ class ApprovalService:
         return self._decide(
             proposal_id=proposal_id,
             to_state=ProposalState.REJECTED,
-            action="reject",
             actor=actor,
             notes=notes,
         )
@@ -93,11 +91,16 @@ class ApprovalService:
         self,
         proposal_id: int,
         to_state: ProposalState,
-        action: str,
         actor: str,
         notes: str | None,
     ) -> StatusProposal:
-        """Helper to encapsulate load -> guard -> resolve -> record event sequence (dossier §12)."""
+        """Helper to encapsulate load -> guard -> resolve -> record event sequence (dossier §12).
+
+        The recorded `action` is derived from `to_state.value` (STORY-071) — never
+        a separately-hard-coded literal — so it can never drift from the spine's
+        `ck_approval_events_action` constraint (`action IN ('approved', 'rejected')`),
+        which mirrors `ProposalState`'s terminal values one-for-one.
+        """
         proposal = self._proposal_repo.get(proposal_id)
         if proposal is None:
             raise ProposalNotFoundError(f"Proposal {proposal_id} not found.")
@@ -115,11 +118,11 @@ class ApprovalService:
             reason=notes,
             resolved_at=now,
         )
-        # Record approval event
+        # Record approval event — action derived from to_state, single source of truth.
         self._proposal_repo.record_approval_event(
             proposal_id,
             actor=actor,
-            action=action,
+            action=to_state.value,
             notes=notes,
             occurred_at=now,
         )

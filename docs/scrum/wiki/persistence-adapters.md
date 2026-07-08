@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/services/availability.py]
-verified_sha: 280c1e3
-verified_sprint: sprint-30
+verified_sha: 06cf232
+verified_sprint: sprint-39
 status: verified
 ---
 
@@ -174,4 +174,15 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `interval_seconds` column) and the identical `FakeSignalRepository`, proven by a new shared
   contract test file (`backend/tests/test_signal_repository_contract.py`, added to `code_refs`).
   verified_sha → 280c1e3.
+- sprint-39 (STORY-071, defect fix, mechanical staleness sweep): `PostgresProposalRepository` and
+  `record_approval_event` are UNCHANGED — the defect (approve/reject 500 on
+  `ck_approval_events_action`) was in the calling `core/services/approval.py::ApprovalService`,
+  which passed the wrong `action` literal into this repository's INSERT (see
+  [[api-five-file-convention]]). `test_persistence_adapters.py` (in `code_refs`) gained two
+  DB-gated regression tests: one driving a real approve AND reject through the real
+  `ApprovalService` + `PostgresProposalRepository` against the live Postgres constraint (confirmed
+  failing with `CheckViolation` before the fix), and one asserting the fake and real repository
+  agree on the recorded `action` (fake/adapter parity). No new fact about this adapter's own
+  behavior — `record_approval_event` always INSERTed whatever `action` string it was given; it was
+  never at fault. verified_sha → 06cf232.
 
