@@ -1,64 +1,50 @@
 # YourTeam active sprint board.
-sprint: 40
-status: closed        # PO verdict 2026-07-08: ACCEPT STORY-072 (5/5). Merged to main.
+sprint: 41
+status: active        # none | active | review | closed | aborted
 started: 2026-07-08
-goal: "Make approve record a Publications entry INDEPENDENT of the Statuspage publish, carrying a
-  success/failed outcome (PO-directed 2026-07-08). Statuspage publish stays best-effort (the 401
-  credential fix is deferred to the PO). Delivers STORY-066's outcome portion end-to-end."
-branch: sprint-40
-start_tag: sprint-40-start
-# CONTEXT: found live at the sprint-39 wrap — approve returned 200 but Publications stayed empty.
-# ROOT CAUSE (systematic debugging): publisher chain
-# StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(real))); RecordingPublisher records
-# SUCCESSES ONLY, and the real Statuspage publish failed 401 "Could not authenticate" (invalid
-# STATUSPAGE_API_KEY) -> no row recorded; BestEffort swallowed the 401 (approve still 200).
-# PO DECISION (AskUserQuestion 2026-07-08): record every attempt with a success/failed outcome
-# (adds an outcome column); DEFER the publish (leave best-effort; PO refreshes the credential later).
+goal: "Quick cleanup sprint: make the frontend gate deterministic (068), consolidate the redesign
+  worktree-duplication + nits (069), and add a loud startup warning when a configured Dynatrace
+  monitor id returns no data (070 — from the stale-monitor-id hotfix retro)."
+branch: sprint-41
+start_tag: sprint-41-start
+# PO-approved 2026-07-08 (with the 070 mechanism = loud WARNING at loop startup, not fail-fast).
+# PIPELINE: 068 (2pt) gate-only; 069 (3pt) + 070 (3pt) full pipeline (Sonnet 5/HIGH implementer +
+# Opus spec + Opus quality + gate). Total 8 pts (slightly above the ~5.3 mean; all low-risk cleanup).
 #
-# PIPELINE: STORY-072 = 5 pts -> full pipeline (Sonnet 5/HIGH implementer + Opus spec + Opus quality
-# + gate). Full-stack: backend migration (publications.outcome) + record-always publisher change +
-# domain/repo + PublicationDTO/api + frontend Publications timeline outcome chip.
-# RETRO LESSON APPLIED (STORY-071): if outcome gets a CHECK constraint, ship a DB-gated test writing
-# each allowed value AND proving a disallowed value is rejected (fakes can't model DB constraints).
+# EXECUTION: 070 is BACKEND (independent zone); 068 + 069 are FRONTEND and BOTH touch
+# features/availability, so 068 precedes 069 (no parallel overlap). Plan: 070 (backend) runs in
+# PARALLEL with 068 (frontend) in isolated worktrees; 069 (frontend) after 068 integrates.
+# DB: the throwaway Postgres (55432) is up; the live loop/API WRITERS ARE PAUSED for this sprint so
+# 070's backend gate runs single-invocation (2026-07-02); frontend gates need no DB. Worktree agents
+# sync `git merge sprint-41` first (2026-07-08 amendment) — though sprint-41 has no code beyond main.
 #
-# DB for the gate: throwaway Postgres up on 55432; live loop/API writers STOPPED, so a SINGLE
-# pytest invocation reusing the set DATABASE_URL is safe (2026-07-02). The new migration applies via
-# `alembic upgrade head` on DATABASE_URL_DIRECT (55432, +psycopg form).
-#
-# BASELINE: sprint-40 cut from main @ 50d2491 (tag sprint-40-start) — includes the redesign, the
-# monitor-id hotfix, and the decision fix.
+# BASELINE: sprint-41 cut from main @ 3274eed (tag sprint-41-start) — includes redesign + all fixes.
 stories:
-  - id: STORY-072
-    points: 5
-    board: done            # awaiting PO verdict + merge
-    pipeline: full
-    attempts: 1            # clean single Sonnet dispatch (29cc6ff); + wiki sweep
+  - id: STORY-068
+    points: 2
+    board: in_progress     # Wave 1 (parallel worktree) with 070
+    pipeline: gate
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    dod_evidence:
-      - command: "nine-gate DoD orchestrator-run on clean committed HEAD 29cc6ff against a FRESH throwaway DB (dev_db down+up; DATABASE_URL/_DIRECT reused; single invocation)"
-        exit_code: 0
-        output_tail: "backend: pytest 522 passed (73s; +7 over sprint-39's 515: record-always both paths,
-          outcome CHECK allowed/rejected, DTO, migration round-trip), lint-imports 5/0, fk 11/0, alembic OK,
-          ruff check clean, ruff format 182. frontend: npm test 356 passed, build OK, lint clean.
-          NOTE: a first gate run on the session-hammered DB gave 78 'alembic upgrade head failed' DB-gated
-          errors — proven ENVIRONMENTAL (fresh DB = 522 green; implementer + spec reviewer also green at
-          29cc6ff) per the 2026-07-06 contention agreement; valid signal is the fresh-DB run."
-        commit: 29cc6ff
-        at: 2026-07-08T20:36:00+05:30
-    review:
-      spec: "PASS — AC1-AC5 MET (Opus). Record-always: DB-gated test drives the REAL RecordingPublisher+
-        BestEffortPublisher+Postgres chain on BOTH success (->succeeded) and raising-delegate (->failed)
-        paths, exactly one row each, caller sees no exception (best-effort intact). Migration up/down/up
-        + CHECK allowed/rejected DB test. DTO exposes outcome; frontend chip drives both. outcome not
-        conflated with status. No coverage dropped (success-only tests rewritten)."
-      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Migration clean (backfill->NOT NULL->CHECK, reversible);
-        record-always try/except/else = exactly-one-row + bare re-raise (best-effort preserved); closed
-        PublicationOutcome enum; fake/adapter parity holds (model_copy round-trips); clean five-file API;
-        OutcomeChip reuses StatusBadge (dot+text, token-only)."
-    open_minors:
-      - "publish_helper failure path: if record() itself raises, it masks the original delegate error (BestEffort still swallows, approve stays 200) — benign edge, follow-up note only."
-    po_note: "Statuspage publish stays best-effort (401 credential deferred to PO). Until STATUSPAGE_API_KEY
-      is refreshed, approve records a publication with outcome='failed' (the visible audit trail requested)."
+    dod_evidence: []
+    review: null
+  - id: STORY-069
+    points: 3
+    board: todo
+    pipeline: full
+    blocked_question: null
+    paused_at_commit: null
+    dod_evidence: []
+    review: null
+  - id: STORY-070
+    points: 3
+    board: in_progress     # Wave 1 (parallel worktree) with 068
+    pipeline: full
+    attempts: 1
+    blocked_question: null
+    paused_at_commit: null
+    dod_evidence: []
+    review: null
 hotfixes: []
 interrupts: []

@@ -529,26 +529,28 @@ stories:
   - id: STORY-068
     title: Defect — useAvailability.test.tsx false-reds under npm test file-parallelism (uncaught exceptions under CPU contention)
     file: docs/scrum/stories/STORY-068-useavailability-parallelism-flake.md
-    status: draft   # found at sprint-38 STORY-061 spec review (2026-07-08): 18 uncaught exceptions in useAvailability.test.tsx on a contended parallel run; clean (355/355) serialized/on re-run. Same class as the now-fixed STORY-054. Investigate (unhandled rejection on the segment-fetch degradation path vs pure timeout) and make deterministic. Refine before scheduling.
+    status: ready   # refined at sprint-41 planning 2026-07-08; make useAvailability.test.tsx deterministic under npm test parallelism (leak-vs-timeout).
     points: 2
     priority: 22
     type: defect
-    sprint: null
+    sprint: 41
   - id: STORY-069
     title: Chore — sprint-38 redesign consolidation minors (uptimeSegments dedup, stale docstrings, token/a11y nits)
     file: docs/scrum/stories/STORY-069-redesign-consolidation-minors.md
-    status: draft   # accumulated non-blocking review MINORs from sprint-38. Refine before scheduling.
+    status: ready   # refined at sprint-41 planning 2026-07-08; consolidation: extract features/history/uptimeSegments.ts (dedup) + stale docstrings + token/a11y nits.
+    points: 3
     type: chore
-    sprint: null
+    sprint: 41
   - id: STORY-070
     title: Live vendor-id drift health check — surface a configured-but-empty Dynatrace monitor id loudly
     file: docs/scrum/stories/STORY-070-vendor-id-drift-health-check.md
-    status: draft   # from the sprint-38 retro (2026-07-08 working agreement). The stale native_id polled
+    status: ready   # refined at sprint-41 planning 2026-07-08; MVP mechanism = loud WARNING at loop startup when a configured native_id returns 0 rows (not fail-fast).
                     # Dynatrace fine but ingested 0 rows silently for 30 days. Add a boot-time/periodic
                     # signal that each configured monitor native_id resolves to live executions, failing
                     # loud on "0 rows for configured monitor". Refine (boot-time vs periodic vs metric) + estimate.
+    points: 3
     type: feature
-    sprint: null
+    sprint: 41
   - id: STORY-071
     title: Defect — approve/reject 500s (approval_events.action 'approve'/'reject' violates the ck_approval_events_action constraint 'approved'/'rejected')
     file: docs/scrum/stories/STORY-071-decision-action-check-violation.md

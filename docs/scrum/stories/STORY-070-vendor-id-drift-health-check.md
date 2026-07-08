@@ -29,9 +29,15 @@ stays vendor-free). No live Dynatrace call in tests (fake the executor).
       boot/loop path per the chosen mechanism.
 - [ ] Backend six-gate DoD green.
 
+## Decided (sprint-41 planning, PO 2026-07-08)
+- **Mechanism = loud WARNING at live-loop startup** (NOT fail-fast — must not block startup). At
+  loop start, run a bounded DQL count per configured `native_id` over a recent window; 0 rows → log
+  a prominent WARNING naming the monitor. Testable with a faked executor (no live Dynatrace call).
+- Window/threshold: a recent bounded window (e.g. last ~2h or a small multiple of the interval); a
+  single startup probe returning 0 rows is enough to warn.
+
 ## Open Questions
-- Mechanism: boot-time fail-fast vs periodic warning vs a health metric/endpoint? (PO/refinement.)
-- Window + threshold for "empty" (e.g. 0 rows over 2× the interval)?
+None — mechanism decided above.
 
 ## History
 - 2026-07-08: filed from the Sprint 38 retro (working agreement on live vendor-id drift).
