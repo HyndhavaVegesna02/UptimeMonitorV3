@@ -1,4 +1,5 @@
 import { toHealthStatus } from '../api/statusMapping'
+import type { PublicationDTO } from '../api/types'
 import {
   EmptyState,
   ErrorState,
@@ -19,21 +20,36 @@ function formatProposalId(proposalId: number | null): string {
   return proposalId === null ? '—' : String(proposalId)
 }
 
+/** Renders `PublicationDTO.outcome` (STORY-072 AC4) as a dot+text chip,
+ * reusing `StatusBadge` so the outcome NEVER relies on color alone: `up`
+ * (green) for `succeeded`, `down` (red) for `failed`, token-only colors
+ * throughout. `outcome` is DISTINCT from `status` (the health status
+ * attempted) — this is whether the Statuspage call itself succeeded. */
+function OutcomeChip({ outcome }: { outcome: PublicationDTO['outcome'] }) {
+  return (
+    <StatusBadge
+      status={outcome === 'succeeded' ? 'up' : 'down'}
+      label={outcome === 'succeeded' ? 'Succeeded' : 'Failed'}
+    />
+  )
+}
+
 /**
- * The Publications tab (STORY-062, sprint-38 Operator Dashboard redesign):
- * a vertical timeline audit trail of what was actually pushed to the public
- * Statuspage, and when — "what did customers see, and when" (dossier §17;
- * reference mock's `isPublications` section). Fetches
+ * The Publications tab (STORY-062, sprint-38 Operator Dashboard redesign;
+ * STORY-072 added the outcome chip): a vertical timeline audit trail of
+ * every approve publish ATTEMPT — "what did customers see, and when"
+ * (dossier §17; reference mock's `isPublications` section), now including
+ * attempts where the Statuspage call itself failed (STORY-072: publications
+ * are recorded independent of Statuspage success). Fetches
  * `GET /api/v1/publications` via `usePublications` (a plain
  * `useFetch(getPublications)` wrapper) and renders one `TimelineItem` per
  * publication, newest-first exactly as the API returns them — there is no
  * from-status on `PublicationDTO`, so unlike a changelog diff this shows
- * only the single published status per row. The mock's author/outcome/
- * incident fields are OMITTED: `PublicationDTO` carries neither, and this
- * redesign adapts to real data only (no fabricated fields) — see STORY-066
- * for the follow-up that would add real metadata. The endpoint caps at the
- * repository's most-recent 50 (`list_recent`, no pagination) — stated in
- * the header copy so the cap is visible, never silent (AC2).
+ * only the single published status per row. The mock's author/incident
+ * fields are still OMITTED: `PublicationDTO` carries neither — see
+ * STORY-066 for the follow-up that would add that metadata. The endpoint
+ * caps at the repository's most-recent 50 (`list_recent`, no pagination) —
+ * stated in the header copy so the cap is visible, never silent (AC2).
  */
 export function PublicationsPage() {
   const { state, retry } = usePublications()
@@ -68,6 +84,7 @@ export function PublicationsPage() {
                 </span>
                 <Icon name="arrow-right" className="publications-page__arrow" />
                 <StatusBadge status={toHealthStatus(publication.status)} />
+                <OutcomeChip outcome={publication.outcome} />
               </div>
               <div className="publications-page__meta text-mono text-caption">
                 <span>{publication.published_at}</span>
