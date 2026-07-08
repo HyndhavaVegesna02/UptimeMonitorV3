@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 39
-status: review        # none | active | review | closed | aborted — STORY-071 Done; awaiting PO accept + merge
+status: closed        # PO verdict 2026-07-08: ACCEPT STORY-071 (2/2). Merged to main. Small debug sprint.
 started: 2026-07-08
 goal: "Small debug sprint (PO-directed, systematic-debugging): fix the approve/reject 500 —
   approval_events.action was written as 'approve'/'reject' but the spine constraint allows only
