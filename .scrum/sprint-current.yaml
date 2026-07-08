@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 39
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted — STORY-071 Done; awaiting PO accept + merge
 started: 2026-07-08
 goal: "Small debug sprint (PO-directed, systematic-debugging): fix the approve/reject 500 —
   approval_events.action was written as 'approve'/'reject' but the spine constraint allows only
@@ -29,12 +29,25 @@ start_tag: sprint-39-start
 stories:
   - id: STORY-071
     points: 2
-    board: in_progress     # todo | in_progress | done | blocked
+    board: done            # awaiting PO verdict + merge
     pipeline: gate             # 2 pts -> gate-only
-    attempts: 1
+    attempts: 1            # clean single Sonnet dispatch (06cf232 fix+tests, c35af16 wiki)
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null           # gate-only
+    dod_evidence:
+      - command: "backend six-gate DoD orchestrator-run on clean committed HEAD c35af16 (DATABASE_URL reused on 55432, single invocation; live writers stopped)"
+        exit_code: 0
+        output_tail: "pytest 515 passed (35.84s; +2 over sprint-38's 513: the DB-gated real-approve/reject
+          regression + the fake/adapter parity test); lint-imports 5 kept/0 broken; check_fk_direction
+          11 FKs/0 violations; alembic upgrade head OK; ruff check clean; ruff format 181 formatted."
+        commit: c35af16
+        at: 2026-07-08T10:35:00+05:30
+    review: null           # gate-only per size rule
+    fix_summary: "core/services/approval.py::_decide now derives action=to_state.value (APPROVED.value
+      'approved' / REJECTED.value 'rejected') at the single record_approval_event call site, replacing
+      the hard-coded 'approve'/'reject' literals that violated ck_approval_events_action. Regression:
+      test_persistence_adapters.py drives a REAL approve+reject through PostgresProposalRepository (failed
+      pre-fix with the exact CheckViolation; passes post-fix) + a fake/adapter parity test (closes the
+      2026-06-26 gap). Pre-existing test_approval.py/test_decisions.py assertions updated to past tense."
 hotfixes: []
 interrupts: []
