@@ -143,7 +143,11 @@ stories:
       - "Toggle-OFF PUT-body assertion + keyboard-Enter-on-switch not re-created verbatim (hook test covers off; native button = intrinsic keyboard) — symmetric variants, non-blocking."
   - id: STORY-057
     points: 5
-    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
+    board: todo            # attempt 1 (parallel worktree) DIED on session limit (resets 1am IST 07-08)
+                           # mid step-3; steps 1-2 (feature hooks: summary/topology/uptime + drill-down)
+                           # committed on branch worktree-agent-aaa91698c95023706 (a37e975,d545f49) + an
+                           # incomplete uncommitted step-3 scrap. Re-dispatch FRESH from sprint-38 tip
+                           # when budget returns (crash-recovery 2026-06-25: keep committed, discard scrap).
     pipeline: full
     wave: 2
     attempts: 1
@@ -162,14 +166,32 @@ stories:
     review: null
   - id: STORY-059
     points: 5
-    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
+    board: done            # awaiting PO verdict at sprint review
     pipeline: full
     wave: 2
-    attempts: 1
+    attempts: 1            # clean parallel worktree dispatch (Sonnet 5); branch worktree-agent-a73672abf6189634e
+                           # (4654014..f733a28), merged --no-ff into sprint-38 @ c440a3e
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on integrated sprint-38 HEAD c440a3e (059+062 merged); empty backend diff"
+        exit_code: 0
+        output_tail: "44 files / 290 passed (31.66s); build OK (index.js 263.88 kB); lint clean;
+          backend diff sprint-38-start..HEAD empty. (Combined batch gate covering 059+062.)"
+        commit: c440a3e
+        at: 2026-07-08T08:26:00+05:30
+    review:
+      spec: "PASS — AC1-AC3 MET (Opus): card layout, severity DERIVED from to_status (no fake field),
+        from→to pills + 'New', real proposed_at, full idle→confirming→submitting→failed machine +
+        409/404 role=status notices, 'Queue clear' empty state, omitted fields asserted absent. AC4:
+        the wiki sweep is INTENTIONALLY batch-deferred to the sprint-end compile pass (6 parallel
+        page agents were scoped OFF the shared frontend-zone.md to avoid merge collisions) —
+        orchestrator-confirmed, so AC4 -> MET / PASS."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Token discipline (severity reuses 7-status
+        palette), a11y intact (stripe not sole carrier), state machine correct, coverage expanded."
+    open_minors:
+      - "ApprovalCard chip font-size 10.5px un-tokenized (off type scale) — consider a --fs token."
+      - "approval-card--{up,maintenance,missing} stripe modifiers absent (deriveSeverity never returns them) — harmless."
   - id: STORY-060
     points: 3
     board: todo
@@ -190,13 +212,21 @@ stories:
     review: null
   - id: STORY-062
     points: 2
-    board: in_progress     # Wave 2 Batch 1 (parallel worktree) dispatched 2026-07-07
+    board: done            # awaiting PO verdict at sprint review
     pipeline: gate             # 2 pts -> gate-only (no reviewers)
     wave: 2
-    attempts: 1
+    attempts: 1            # clean parallel worktree dispatch (Sonnet 5); branch worktree-agent-a79fd02c038e2ded8
+                           # (82a878f), merged --no-ff into sprint-38 @ c440a3e
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on integrated sprint-38 HEAD c440a3e (059+062 merged); empty backend diff"
+        exit_code: 0
+        output_tail: "44 files / 290 passed (31.66s); build OK; lint clean; backend diff empty.
+          (Combined batch gate covering 059+062.) Publications now a vertical Timeline; author/outcome/
+          incident omitted (not on PublicationDTO) -> STORY-066. 7 scoped tests green pre-merge."
+        commit: c440a3e
+        at: 2026-07-08T08:26:00+05:30
+    review: null           # 2 pts -> gate-only per the default pipeline
 hotfixes: []
 interrupts: []
