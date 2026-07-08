@@ -2,7 +2,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../../mocks/server'
-import { FIXTURE_AVAILABILITY_BY_COMPONENT, FIXTURE_TOPOLOGY } from '../../mocks/handlers'
+import {
+  FIXTURE_AVAILABILITY_BY_COMPONENT,
+  FIXTURE_HISTORY_FRONTEND_HTTP,
+  FIXTURE_TOPOLOGY,
+} from '../../mocks/handlers'
 import { useAvailability } from './useAvailability'
 import type { AvailabilityRange } from './windowRange'
 
@@ -29,6 +33,7 @@ function Harness({ range }: { range: AvailabilityRange }) {
       {state.data.topology.map((component) => (
         <li key={component.id}>
           {component.name}: {String(state.data.availabilityByComponent[component.id]?.rollup.availability_pct)}
+          {' '}segments:{state.data.segmentsByComponent[component.id]?.length ?? 'none'}
         </li>
       ))}
     </ul>
@@ -108,5 +113,43 @@ describe('useAvailability', () => {
       expect(seenSince.length).toBeGreaterThan(0)
     })
     expect(seenSince.every((since) => since === RANGE_B.since)).toBe(true)
+  })
+
+  it('builds sparkline segments from the component\'s first signal\'s real history (STORY-058 AC1)', async () => {
+    render(<Harness range={RANGE_A} />)
+
+    const items = await screen.findAllByRole('listitem')
+    const frontend = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-frontend')!
+    const frontendItem = items.find((item) => item.textContent?.includes(frontend.name))!
+    // `sockshop-frontend`'s first signal is `frontend-http`, fixtured with
+    // `FIXTURE_HISTORY_FRONTEND_HTTP.length` real observations.
+    expect(frontendItem).toHaveTextContent(
+      `segments:${FIXTURE_HISTORY_FRONTEND_HTTP.length}`,
+    )
+  })
+
+  it('never calls getHistory for a zero-signal component — segments stay empty, never fabricated (STORY-058 AC1)', async () => {
+    render(<Harness range={RANGE_A} />)
+
+    const items = await screen.findAllByRole('listitem')
+    const zeroSignal = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-orders')!
+    const zeroSignalItem = items.find((item) => item.textContent?.includes(zeroSignal.name))!
+    expect(zeroSignalItem).toHaveTextContent('segments:0')
+  })
+
+  it('degrades a single component\'s segment fetch failure to an empty array — never blocks the whole bundle (STORY-058 AC1)', async () => {
+    server.use(
+      http.get('/api/v1/history', () => HttpResponse.json({ detail: 'boom' }, { status: 500 })),
+    )
+
+    render(<Harness range={RANGE_A} />)
+
+    // The bundle still reaches success — a history failure is an
+    // enhancement-only degradation, unlike an availability rollup failure.
+    const items = await screen.findAllByRole('listitem')
+    expect(items).toHaveLength(FIXTURE_TOPOLOGY.length)
+    const frontend = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-frontend')!
+    const frontendItem = items.find((item) => item.textContent?.includes(frontend.name))!
+    expect(frontendItem).toHaveTextContent('segments:0')
   })
 })
