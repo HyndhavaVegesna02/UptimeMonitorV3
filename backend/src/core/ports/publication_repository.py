@@ -1,8 +1,9 @@
-"""The publication repository port (dossier §9, §12/T1.1, §17).
+"""The publication repository port (dossier §9, §12/T1.1, §17, STORY-072).
 
-Records SUCCESSFUL Statuspage publishes and provides the read path for the
-Publications tab (§17). The table has no error column — failed publishes are
-logged and swallowed by BestEffortPublisher; only successes are recorded.
+Records EVERY approve publish ATTEMPT and provides the read path for the
+Publications tab (§17). Each row carries an `outcome` (`succeeded`/`failed`,
+STORY-072) — a raising delegate still gets recorded (with `outcome='failed'`)
+before `BestEffortPublisher` logs+swallows the error for the caller.
 """
 
 from abc import ABC, abstractmethod
@@ -11,7 +12,7 @@ from src.core.domain.publication import Publication
 
 
 class PublicationRepository(ABC):
-    """Port for recording and listing successful Statuspage publishes (dossier §9, §12/T1.1, §17).
+    """Port for recording and listing publish attempts (dossier §9, §12/T1.1, §17, STORY-072).
 
     The core owns this interface; adapters implement it. Signatures speak in
     canonical vocabulary only (Publication domain type, not SQL or HTTP types).
@@ -21,8 +22,8 @@ class PublicationRepository(ABC):
     def record(self, publication: Publication) -> Publication:
         """Persist a new publication record and return it with the database-assigned id.
 
-        Called ONLY after a successful Statuspage publish (the table has no error
-        column — do not call this on a failed publish).
+        Called on EVERY publish attempt (STORY-072) — `publication.outcome`
+        distinguishes a successful publish from a raising delegate.
 
         Args:
             publication: The Publication to persist (id should be None).

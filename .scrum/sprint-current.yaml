@@ -1,53 +1,64 @@
 # YourTeam active sprint board.
-sprint: 39
-status: closed        # PO verdict 2026-07-08: ACCEPT STORY-071 (2/2). Merged to main. Small debug sprint.
+sprint: 40
+status: closed        # PO verdict 2026-07-08: ACCEPT STORY-072 (5/5). Merged to main.
 started: 2026-07-08
-goal: "Small debug sprint (PO-directed, systematic-debugging): fix the approve/reject 500 —
-  approval_events.action was written as 'approve'/'reject' but the spine constraint allows only
-  'approved'/'rejected', so every real decision hit a CheckViolation. Root-caused before any fix."
-branch: sprint-39
-start_tag: sprint-39-start
-# CONTEXT: found live during the sprint-38 review walkthrough once real Dynatrace data flowed
-# (post monitor-id hotfix) and a real proposal appeared. ROOT CAUSE (confirmed, systematic
-# debugging Phase 1-3): core/services/approval.py approve()->action="approve" / reject()->
-# action="reject", but migrations spine ck_approval_events_action = action IN ('approved','rejected').
-# Fake/adapter-parity gap (2026-06-26): the in-memory fake accepted 'approve'; only real Postgres
-# rejects it, and no DB-gated test drove a real approve/reject through the constraint.
+goal: "Make approve record a Publications entry INDEPENDENT of the Statuspage publish, carrying a
+  success/failed outcome (PO-directed 2026-07-08). Statuspage publish stays best-effort (the 401
+  credential fix is deferred to the PO). Delivers STORY-066's outcome portion end-to-end."
+branch: sprint-40
+start_tag: sprint-40-start
+# CONTEXT: found live at the sprint-39 wrap — approve returned 200 but Publications stayed empty.
+# ROOT CAUSE (systematic debugging): publisher chain
+# StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(real))); RecordingPublisher records
+# SUCCESSES ONLY, and the real Statuspage publish failed 401 "Could not authenticate" (invalid
+# STATUSPAGE_API_KEY) -> no row recorded; BestEffort swallowed the 401 (approve still 200).
+# PO DECISION (AskUserQuestion 2026-07-08): record every attempt with a success/failed outcome
+# (adds an outcome column); DEFER the publish (leave best-effort; PO refreshes the credential later).
 #
-# PIPELINE: STORY-071 = 2 pts -> gate-only (no reviewers) per the size rule. Implementer Sonnet 5 /
-# HIGH per the 2026-07-02 model rule. Fix at SOURCE (action derived from to_state.value) + a DB-gated
-# regression test that drives the REAL approve+reject path through the Postgres constraint (closes the
-# parity gap). Backend six-gate DoD.
+# PIPELINE: STORY-072 = 5 pts -> full pipeline (Sonnet 5/HIGH implementer + Opus spec + Opus quality
+# + gate). Full-stack: backend migration (publications.outcome) + record-always publisher change +
+# domain/repo + PublicationDTO/api + frontend Publications timeline outcome chip.
+# RETRO LESSON APPLIED (STORY-071): if outcome gets a CHECK constraint, ship a DB-gated test writing
+# each allowed value AND proving a disallowed value is rejected (fakes can't model DB constraints).
 #
-# DB for the gate: the throwaway Postgres (container uptime_pg_pytest on 55432) is UP and migrated;
-# the live loop/API writers were STOPPED first, so a SINGLE-invocation pytest reusing the already-set
-# DATABASE_URL is safe (2026-07-02 no-concurrent-DB agreement honored). No frontend change needed
-# (the frontend already maps the failure notice; once the backend returns 200 the notice clears).
+# DB for the gate: throwaway Postgres up on 55432; live loop/API writers STOPPED, so a SINGLE
+# pytest invocation reusing the set DATABASE_URL is safe (2026-07-02). The new migration applies via
+# `alembic upgrade head` on DATABASE_URL_DIRECT (55432, +psycopg form).
 #
-# BASELINE: sprint-39 cut from main @ 023b79d (tag sprint-39-start). Main includes the sprint-38
-# redesign + the monitor-id hotfix.
+# BASELINE: sprint-40 cut from main @ 50d2491 (tag sprint-40-start) — includes the redesign, the
+# monitor-id hotfix, and the decision fix.
 stories:
-  - id: STORY-071
-    points: 2
+  - id: STORY-072
+    points: 5
     board: done            # awaiting PO verdict + merge
-    pipeline: gate             # 2 pts -> gate-only
-    attempts: 1            # clean single Sonnet dispatch (06cf232 fix+tests, c35af16 wiki)
+    pipeline: full
+    attempts: 1            # clean single Sonnet dispatch (29cc6ff); + wiki sweep
     blocked_question: null
     paused_at_commit: null
     dod_evidence:
-      - command: "backend six-gate DoD orchestrator-run on clean committed HEAD c35af16 (DATABASE_URL reused on 55432, single invocation; live writers stopped)"
+      - command: "nine-gate DoD orchestrator-run on clean committed HEAD 29cc6ff against a FRESH throwaway DB (dev_db down+up; DATABASE_URL/_DIRECT reused; single invocation)"
         exit_code: 0
-        output_tail: "pytest 515 passed (35.84s; +2 over sprint-38's 513: the DB-gated real-approve/reject
-          regression + the fake/adapter parity test); lint-imports 5 kept/0 broken; check_fk_direction
-          11 FKs/0 violations; alembic upgrade head OK; ruff check clean; ruff format 181 formatted."
-        commit: c35af16
-        at: 2026-07-08T10:35:00+05:30
-    review: null           # gate-only per size rule
-    fix_summary: "core/services/approval.py::_decide now derives action=to_state.value (APPROVED.value
-      'approved' / REJECTED.value 'rejected') at the single record_approval_event call site, replacing
-      the hard-coded 'approve'/'reject' literals that violated ck_approval_events_action. Regression:
-      test_persistence_adapters.py drives a REAL approve+reject through PostgresProposalRepository (failed
-      pre-fix with the exact CheckViolation; passes post-fix) + a fake/adapter parity test (closes the
-      2026-06-26 gap). Pre-existing test_approval.py/test_decisions.py assertions updated to past tense."
+        output_tail: "backend: pytest 522 passed (73s; +7 over sprint-39's 515: record-always both paths,
+          outcome CHECK allowed/rejected, DTO, migration round-trip), lint-imports 5/0, fk 11/0, alembic OK,
+          ruff check clean, ruff format 182. frontend: npm test 356 passed, build OK, lint clean.
+          NOTE: a first gate run on the session-hammered DB gave 78 'alembic upgrade head failed' DB-gated
+          errors — proven ENVIRONMENTAL (fresh DB = 522 green; implementer + spec reviewer also green at
+          29cc6ff) per the 2026-07-06 contention agreement; valid signal is the fresh-DB run."
+        commit: 29cc6ff
+        at: 2026-07-08T20:36:00+05:30
+    review:
+      spec: "PASS — AC1-AC5 MET (Opus). Record-always: DB-gated test drives the REAL RecordingPublisher+
+        BestEffortPublisher+Postgres chain on BOTH success (->succeeded) and raising-delegate (->failed)
+        paths, exactly one row each, caller sees no exception (best-effort intact). Migration up/down/up
+        + CHECK allowed/rejected DB test. DTO exposes outcome; frontend chip drives both. outcome not
+        conflated with status. No coverage dropped (success-only tests rewritten)."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Migration clean (backfill->NOT NULL->CHECK, reversible);
+        record-always try/except/else = exactly-one-row + bare re-raise (best-effort preserved); closed
+        PublicationOutcome enum; fake/adapter parity holds (model_copy round-trips); clean five-file API;
+        OutcomeChip reuses StatusBadge (dot+text, token-only)."
+    open_minors:
+      - "publish_helper failure path: if record() itself raises, it masks the original delegate error (BestEffort still swallows, approve stays 200) — benign edge, follow-up note only."
+    po_note: "Statuspage publish stays best-effort (401 credential deferred to PO). Until STATUSPAGE_API_KEY
+      is refreshed, approve records a publication with outcome='failed' (the visible audit trail requested)."
 hotfixes: []
 interrupts: []

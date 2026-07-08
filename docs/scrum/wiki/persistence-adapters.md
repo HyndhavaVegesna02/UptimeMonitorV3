@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/services/availability.py]
-verified_sha: 06cf232
-verified_sprint: sprint-39
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/services/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py]
+verified_sha: a1bacab
+verified_sprint: sprint-40
 status: verified
 ---
 
@@ -125,11 +125,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   SQL — topology seeding via `seed_topology` is a heavier alternative not needed for this
   read-only contract).
 
-### `PostgresPublicationRepository` — successful publish recording (STORY-037)
-- Implements `PublicationRepository` port against the existing `publications` table (spine schema — no migration) (`publication_repository.py::PostgresPublicationRepository`).
-- `record` (`publication_repository.py::PostgresPublicationRepository.record`) INSERTs a new publication row via `INSERT … RETURNING` and returns the persisted `Publication` with the database-assigned `id`. Called ONLY after a successful Statuspage publish — the table has no error column (§12/T1.1: record successes only).
-- `list_recent` (`publication_repository.py::PostgresPublicationRepository.list_recent`) SELECTs up to `limit` (default 50) publications ordered by `published_at DESC` (most-recent-first). Returns `[]` when none exist. Used by the Publications tab (§17).
-- Fake/adapter parity (2026-06-26): `FakePublicationRepository` and `PostgresPublicationRepository` agree on: empty → `[]`, `record` returns a persisted row with `id`, `list_recent` is most-recent-first (ordered by `published_at DESC`).
+### `PostgresPublicationRepository` — publish-attempt recording (STORY-037; STORY-072 record-always)
+- Implements `PublicationRepository` port against the `publications` table (`publication_repository.py::PostgresPublicationRepository`). The table's `outcome` column was added by `migrations/versions/ecda752c8865_add_publications_outcome.py` (STORY-072, see [[statuspage-publish]], [[migrations-and-db]]) — NOT the original spine migration.
+- `record` (`publication_repository.py::PostgresPublicationRepository.record`) INSERTs a new publication row (including `outcome`) via `INSERT … RETURNING` and returns the persisted `Publication` with the database-assigned `id`. Called on EVERY publish ATTEMPT (STORY-072) — `publication.outcome` (`PublicationOutcome.SUCCEEDED`/`FAILED`) distinguishes a successful publish from a raising delegate; the `ck_publications_outcome` CHECK constraint enforces the closed vocabulary at the DB level.
+- `list_recent` (`publication_repository.py::PostgresPublicationRepository.list_recent`) SELECTs up to `limit` (default 50) publications (including `outcome`) ordered by `published_at DESC` (most-recent-first). Returns `[]` when none exist. Used by the Publications tab (§17).
+- Fake/adapter parity (2026-06-26; re-verified STORY-072): `FakePublicationRepository` and `PostgresPublicationRepository` agree on: empty → `[]`, `record` returns a persisted row with `id`, `list_recent` is most-recent-first (ordered by `published_at DESC`), and (STORY-072) both agree on the `outcome` recorded for a given `Publication` — `FakePublicationRepository` needed NO code change (it already round-trips every field via `model_copy`), only the CHECK constraint is real-adapter-only (tested directly against Postgres, not via the fake — see [[statuspage-publish]]).
 
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
@@ -185,4 +185,17 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   agree on the recorded `action` (fake/adapter parity). No new fact about this adapter's own
   behavior — `record_approval_event` always INSERTed whatever `action` string it was given; it was
   never at fault. verified_sha → 06cf232.
+- sprint-40 (STORY-072, record-always publication outcome): `PostgresPublicationRepository` now
+  DOES have a migration behind it — `migrations/versions/ecda752c8865_add_publications_outcome.py`
+  adds `publications.outcome` (see [[statuspage-publish]], [[migrations-and-db]]) — correcting the
+  STORY-037-era "existing table, no migration" fact (Facts updated above). `record`/`list_recent`
+  now read/write `outcome`; `FakePublicationRepository` needed no code change (fake/adapter parity
+  held automatically via `model_copy`). Three new DB-gated tests in `test_persistence_adapters.py`:
+  `test_postgres_publication_repository_records_failed_outcome` (real round-trip of an explicit
+  FAILED record), `test_publications_outcome_check_constraint_allows_values_rejects_others` (drives
+  `ck_publications_outcome` directly — both allowed values insert, a disallowed one raises
+  `psycopg.errors.CheckViolation` — the STORY-071 retro lesson), and
+  `test_recording_publisher_records_exactly_one_row_via_real_postgres_success_and_failure` (the real
+  `RecordingPublisher`+`BestEffortPublisher` chain against real Postgres, both paths, exactly one row
+  each). verified_sha → a1bacab.
 

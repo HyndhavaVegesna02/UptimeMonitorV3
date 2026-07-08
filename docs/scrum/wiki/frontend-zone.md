@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 977e9ea
-verified_sprint: sprint-38
+verified_sha: 144bcc0
+verified_sprint: sprint-40
 status: verified
 ---
 
@@ -257,11 +257,16 @@ status: verified
     ~1,000+ rows was slow enough under `npm test` file-parallelism to occasionally exceed Vitest's
     per-test timeout); production always renders via the default. See `pages/CheckHistoryPage.tsx`,
     `features/history/{filterHistory,mergeObservations,useAllHistory}.ts`.
-  - **Publications (STORY-062 rebuild of 015g):** a vertical `Timeline`/`TimelineItem` (the STORY-055
-    shared primitive) replacing the old changelog table — one `TimelineItem` per publication,
-    newest-first exactly as `usePublications()` (`useFetch(getPublications)`, unchanged shape)
-    returns them, toned via the EXISTING `toHealthStatus` (unchanged — `PublicationDTO.status` is
-    the SAME `ComponentStatus` vocabulary). The mock's author/outcome/incident fields are OMITTED —
+  - **Publications (STORY-062 rebuild of 015g; STORY-072 added the outcome chip):** a vertical
+    `Timeline`/`TimelineItem` (the STORY-055 shared primitive) replacing the old changelog table —
+    one `TimelineItem` per publication, newest-first exactly as `usePublications()`
+    (`useFetch(getPublications)`, unchanged shape) returns them, toned via the EXISTING
+    `toHealthStatus` (unchanged — `PublicationDTO.status` is the SAME `ComponentStatus` vocabulary).
+    Each row NOW also renders `PublicationDTO.outcome` (`'succeeded' | 'failed'`, STORY-072 — every
+    approve publish ATTEMPT is recorded independent of whether the Statuspage call itself succeeded)
+    as an `OutcomeChip` (`pages/PublicationsPage.tsx::OutcomeChip`) — a REUSE of `StatusBadge` mapped
+    `succeeded -> 'up'` / `failed -> 'down'` with a `'Succeeded'`/`'Failed'` label override, so it
+    stays dot+text/token-only with no new CSS. The mock's author/incident fields are still OMITTED —
     not on `PublicationDTO` — deferred to STORY-066; the 50-item server-side cap is still stated as
     permanent header copy (never a conditional note, since the frontend never learns the true total
     row count for this endpoint); `proposal_id: null` still renders an em-dash. See
@@ -280,7 +285,8 @@ status: verified
     stories, never silently fabricated fields:** STORY-063 (Approvals: proposal
     reason/source/detected-ago/checks), STORY-064 (Check History: observation Code/Type columns —
     not on `ObservationDTO`), STORY-065 (Maintenance: a real title field + delete), STORY-066
-    (Publications: author/outcome/incident metadata), STORY-067 (component grouping on Dashboard —
+    (Publications: author/incident metadata — `outcome` itself landed in STORY-072, see above),
+    STORY-067 (component grouping on Dashboard —
     today's rebuild renders ONE flat section, no `group` field on the wire yet — and a dedicated
     per-component uptime-bucket API, so both Dashboard's `useComponentUptime` and Availability's
     `useAvailability` independently adapt today by composing the existing per-component
@@ -535,3 +541,14 @@ status: verified
   gates untouched (empty diff since `sprint-38-start` — no backend/scripts/config/migrations/
   pyproject/alembic change). `code_refs` unchanged (no new top-level file paths beyond
   `components/index.ts`, already listed). verified_sha = 298f170.
+- sprint-40: updated for STORY-072 (record-always publication outcome; see [[statuspage-publish]] and
+  [[persistence-adapters]] for the backend side). `PublicationDTO` (`api/types.ts`) gained
+  `outcome: 'succeeded' | 'failed'`; `PublicationsPage.tsx` renders it per row via a new
+  `OutcomeChip` helper that REUSES `StatusBadge` (`succeeded -> 'up'`, `failed -> 'down'`, custom
+  `'Succeeded'`/`'Failed'` labels) — no new component, no new CSS (documented above). MSW fixtures
+  (`mocks/handlers/publications.ts`) updated to carry `outcome` on all three `FIXTURE_PUBLICATIONS`
+  rows (the `login`/`major_outage` row is the one `failed` attempt, mirroring the real 401 root
+  cause that motivated this story) — `PublicationsPage.test.tsx` drives both outcomes. Frontend-only;
+  the paired backend change (migration + record-always `RecordingPublisher` + `PublicationDTO`) is
+  tracked in [[statuspage-publish]]/[[persistence-adapters]]/[[canonical-types-and-ports]], not this
+  article's code_refs. `code_refs` unchanged (no new file paths). verified_sha = 144bcc0.

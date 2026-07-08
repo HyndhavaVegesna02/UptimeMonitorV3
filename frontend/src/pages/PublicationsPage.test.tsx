@@ -46,6 +46,22 @@ describe('PublicationsPage', () => {
     expect(within(items[1]).getByText('Down')).toBeInTheDocument()
   })
 
+  it('renders the outcome as a dot+text chip, succeeded vs failed (STORY-072 AC4)', async () => {
+    render(<PublicationsPage />)
+    const list = await screen.findByRole('list', { name: 'Publication log' })
+    const items = screen.getAllByRole('listitem')
+
+    // FIXTURE_PUBLICATIONS[0]/[2] are outcome: 'succeeded'; [1] is 'failed'.
+    expect(within(items[0]).getByText('Succeeded')).toBeInTheDocument()
+    expect(within(items[1]).getByText('Failed')).toBeInTheDocument()
+    expect(within(items[2]).getByText('Succeeded')).toBeInTheDocument()
+
+    // Never color-only: the outcome text is present alongside the status
+    // text, both accompanied by a decorative (aria-hidden) dot.
+    expect(within(list).getAllByText('Succeeded')).toHaveLength(2)
+    expect(within(list).getAllByText('Failed')).toHaveLength(1)
+  })
+
   it('renders a null proposal_id as an em-dash, never a sentinel 0 (AC1)', async () => {
     render(<PublicationsPage />)
     await screen.findByRole('list', { name: 'Publication log' })

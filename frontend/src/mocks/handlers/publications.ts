@@ -9,11 +9,13 @@ import type { PublicationDTO } from '../../api/types'
  * (component_id "checkout", `ComponentStatus.DEGRADED`/`OPERATIONAL` at
  * `_utc(10)`/`_utc(12)` on 2026-06-29) and
  * `::test_get_publications_dto_shape` (component_id "login",
- * `ComponentStatus.MAJOR_OUTAGE` at `_utc(8)`, `proposal_id=5`), plus
+ * `ComponentStatus.MAJOR_OUTAGE` at `_utc(8)`, `proposal_id=5`,
+ * `PublicationOutcome.FAILED` — STORY-072), plus
  * `backend/tests/test_publication_domain.py::test_publication_with_all_fields`
  * (`proposal_id=42`). Newest-first; covers a non-operational status
- * (`major_outage`, `degraded`) and a `proposal_id: null` case (STORY-015g
- * AC1).
+ * (`major_outage`, `degraded`), a `proposal_id: null` case (STORY-015g AC1),
+ * and BOTH `outcome` values (STORY-072 AC4) — the `login` row is the one
+ * `failed` attempt (mirrors the real 401 root cause), the rest `succeeded`.
  */
 export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
   {
@@ -22,6 +24,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     status: 'operational',
     published_at: '2026-06-29T12:00:00Z',
     proposal_id: null,
+    outcome: 'succeeded',
   },
   {
     id: 2,
@@ -29,6 +32,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     status: 'major_outage',
     published_at: '2026-06-29T10:00:00Z',
     proposal_id: 5,
+    outcome: 'failed',
   },
   {
     id: 3,
@@ -36,6 +40,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     status: 'degraded',
     published_at: '2026-06-29T08:00:00Z',
     proposal_id: 42,
+    outcome: 'succeeded',
   },
 ]
 

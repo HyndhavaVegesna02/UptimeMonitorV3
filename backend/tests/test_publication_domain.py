@@ -1,6 +1,7 @@
-"""Tests for the Publication domain type (STORY-037, Phase A).
+"""Tests for the Publication domain type (STORY-037, Phase A; STORY-072).
 
-Verifies: frozen, UTC-validated published_at, correct fields/defaults.
+Verifies: frozen, UTC-validated published_at, correct fields/defaults,
+and the STORY-072 `outcome` field (default + explicit succeeded/failed).
 AC1 (domain type) — dossier §9, §12/T1.1, §17.
 """
 
@@ -15,8 +16,9 @@ def _utc_now() -> datetime:
 
 
 def test_publication_valid_construction():
-    """AC1: A Publication with valid UTC published_at constructs successfully."""
-    from src.core.domain.publication import Publication
+    """AC1/STORY-072: A Publication with valid UTC published_at constructs
+    successfully, defaulting outcome to SUCCEEDED."""
+    from src.core.domain.publication import Publication, PublicationOutcome
     from src.core.domain.status import ComponentStatus
 
     pub = Publication(
@@ -28,7 +30,31 @@ def test_publication_valid_construction():
     assert pub.status == ComponentStatus.OPERATIONAL
     assert pub.published_at == _utc_now()
     assert pub.proposal_id is None
+    assert pub.outcome == PublicationOutcome.SUCCEEDED
     assert pub.id is None
+
+
+def test_publication_outcome_explicit_failed():
+    """STORY-072 AC1: outcome=FAILED can be set explicitly (the raising-delegate path)."""
+    from src.core.domain.publication import Publication, PublicationOutcome
+    from src.core.domain.status import ComponentStatus
+
+    pub = Publication(
+        component_id="checkout",
+        status=ComponentStatus.DEGRADED,
+        published_at=_utc_now(),
+        outcome=PublicationOutcome.FAILED,
+    )
+    assert pub.outcome == PublicationOutcome.FAILED
+
+
+def test_publication_outcome_values():
+    """STORY-072 AC2: PublicationOutcome is a closed succeeded/failed vocabulary."""
+    from src.core.domain.publication import PublicationOutcome
+
+    assert PublicationOutcome.SUCCEEDED.value == "succeeded"
+    assert PublicationOutcome.FAILED.value == "failed"
+    assert {o.value for o in PublicationOutcome} == {"succeeded", "failed"}
 
 
 def test_publication_with_all_fields():
@@ -97,3 +123,8 @@ def test_publication_non_utc_datetime_rejected():
 def test_publication_exported_from_domain_init():
     """AC1: Publication is exported from core/domain/__init__.py."""
     from src.core.domain import Publication  # noqa: F401
+
+
+def test_publication_outcome_exported_from_domain_init():
+    """STORY-072: PublicationOutcome is exported from core/domain/__init__.py."""
+    from src.core.domain import PublicationOutcome  # noqa: F401

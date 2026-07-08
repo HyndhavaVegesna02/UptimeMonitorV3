@@ -1,4 +1,4 @@
-"""Pydantic DTOs for the publications API feature (dossier §9, §12/T1.1, §17)."""
+"""Pydantic DTOs for the publications API feature (dossier §9, §12/T1.1, §17, STORY-072)."""
 
 from datetime import datetime
 
@@ -6,10 +6,10 @@ from pydantic import BaseModel, ConfigDict
 
 
 class PublicationDTO(BaseModel):
-    """Data Transfer Object representing a recorded Statuspage publish.
+    """Data Transfer Object representing a recorded publish ATTEMPT.
 
     Distinct from the `Publication` domain type — this is the HTTP surface.
-    Fields: component_id, status, published_at, proposal_id, id.
+    Fields: component_id, status, published_at, proposal_id, outcome, id.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -21,10 +21,13 @@ class PublicationDTO(BaseModel):
     """The canonical component id."""
 
     status: str
-    """The status that was published (as a string, e.g. 'operational')."""
+    """The status that was (attempted to be) published (as a string, e.g. 'operational')."""
 
     published_at: datetime
-    """Instant the publish was recorded (tz-aware UTC)."""
+    """Instant the publish attempt was recorded (tz-aware UTC)."""
 
     proposal_id: int | None
     """The status_proposal that triggered this publish, if any."""
+
+    outcome: str
+    """Whether the Statuspage publish succeeded or failed (STORY-072: 'succeeded'/'failed')."""

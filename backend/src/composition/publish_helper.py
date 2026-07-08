@@ -1,9 +1,11 @@
-"""Publish composition helpers (dossier §12, §14 T1.1).
+"""Publish composition helpers (dossier §12, §14 T1.1, STORY-072).
 
 Contains three complementary publisher decorators plus the shared chain
 assembly both composition roots use:
 - `BestEffortPublisher` — wraps a delegate and never lets publish failures escape.
-- `RecordingPublisher` — wraps a delegate and records each SUCCESSFUL publish.
+- `RecordingPublisher` — wraps a delegate and records EVERY publish attempt
+  with a `succeeded`/`failed` outcome (STORY-072), independent of whether the
+  delegate itself succeeded.
 - `StatusWritebackPublisher` (STORY-045, dossier §9/§12) — wraps a delegate and
   a `ComponentRepository`; writes `components.status` back FIRST, then delegates.
 
@@ -19,7 +21,7 @@ drift (2026-06-25 share-the-assembly agreement).
 
 import logging
 
-from src.core.domain.publication import Publication
+from src.core.domain.publication import Publication, PublicationOutcome
 from src.core.domain.status import StatusChange
 from src.core.ports import StatusPublisherPort
 from src.core.ports.clock import ClockPort
@@ -65,20 +67,24 @@ class BestEffortPublisher(StatusPublisherPort):
 
 
 class RecordingPublisher(StatusPublisherPort):
-    """A `StatusPublisherPort` decorator that records each SUCCESSFUL publish.
+    """A `StatusPublisherPort` decorator that records EVERY publish attempt (STORY-072).
 
     Wraps a delegate publisher and a `PublicationRepository`. On each `publish`:
       1. Calls `delegate.publish(change)`.
       2. IF the delegate succeeds (no exception), records a `Publication` via
-         `publication_repo.record(...)` using `clock.now()` as the timestamp.
-      3. If the delegate RAISES, the error propagates BEFORE any recording —
-         nothing is written to the publications table (§12/T1.1: the table has
-         no error column; only successful publishes are recorded).
+         `publication_repo.record(...)` with `outcome=SUCCEEDED`, using
+         `clock.now()` as the timestamp.
+      3. IF the delegate RAISES, records a `Publication` with
+         `outcome=FAILED` FIRST, THEN re-raises the original error — so the
+         attempt is durably recorded independent of the Statuspage result
+         (STORY-072 AC1) even though the caller still sees the exception
+         propagate (the outer `BestEffortPublisher` swallows it from there).
 
     Composes inside `BestEffortPublisher` (assembled live in STORY-016):
         `BestEffortPublisher(RecordingPublisher(StatuspagePublisher))`.
     The BestEffortPublisher outer layer logs+swallows delegate failures, so a
-    raising delegate leads to: error logged, nothing recorded, no crash.
+    raising delegate leads to: error logged, a `FAILED` publication recorded,
+    no crash.
     """
 
     def __init__(
@@ -92,16 +98,34 @@ class RecordingPublisher(StatusPublisherPort):
         self._clock = clock
 
     def publish(self, change: StatusChange) -> None:
-        """Publish via delegate, then record success; propagate failures without recording."""
-        self._delegate.publish(change)
-        # Only reached on success — errors propagate before this line.
-        self._publication_repo.record(
-            Publication(
-                component_id=change.component_id,
-                status=change.status,
-                published_at=self._clock.now(),
+        """Publish via delegate; record the attempt's outcome either way (STORY-072).
+
+        A raising delegate is recorded with `outcome=FAILED` and then
+        RE-RAISED unchanged — recording never masks or replaces the original
+        error for the caller (`BestEffortPublisher`, further out, is what
+        swallows it).
+        """
+        try:
+            self._delegate.publish(change)
+        except Exception:
+            self._publication_repo.record(
+                Publication(
+                    component_id=change.component_id,
+                    status=change.status,
+                    published_at=self._clock.now(),
+                    outcome=PublicationOutcome.FAILED,
+                )
             )
-        )
+            raise
+        else:
+            self._publication_repo.record(
+                Publication(
+                    component_id=change.component_id,
+                    status=change.status,
+                    published_at=self._clock.now(),
+                    outcome=PublicationOutcome.SUCCEEDED,
+                )
+            )
 
 
 class LoggingPublisher(StatusPublisherPort):
@@ -179,8 +203,10 @@ def build_publisher(
       — the write-back still applies on the no-creds local dev path (so the
       Dashboard reflects a decision even without live Statuspage credentials).
 
-    Publication-recording semantics are UNCHANGED: a `publications` row is
-    written only on a successful Statuspage publish (`RecordingPublisher`).
+    Publication-recording semantics (STORY-072): a `publications` row is
+    written on EVERY attempt via `RecordingPublisher`, carrying
+    `outcome=succeeded`/`failed` — independent of whether the Statuspage call
+    itself succeeds.
     """
     if statuspage_page_id and statuspage_api_token and component_mapping:
         from src.adapters.outbound.statuspage import StatuspagePublisher

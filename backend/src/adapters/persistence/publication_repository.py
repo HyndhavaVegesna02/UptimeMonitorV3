@@ -1,4 +1,4 @@
-"""Postgres-backed `PublicationRepository` (dossier §9, §12/T1.1, §17)."""
+"""Postgres-backed `PublicationRepository` (dossier §9, §12/T1.1, §17, STORY-072)."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from datetime import timezone
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
 
-from src.core.domain.publication import Publication
+from src.core.domain.publication import Publication, PublicationOutcome
 from src.core.domain.status import ComponentStatus
 from src.core.ports.publication_repository import PublicationRepository
 
@@ -18,15 +18,18 @@ _PUBLICATIONS = sa.table(
     sa.column("proposal_id"),
     sa.column("status"),
     sa.column("published_at"),
+    sa.column("outcome"),
 )
 
 
 class PostgresPublicationRepository(PublicationRepository):
-    """Concrete Postgres adapter for recording and listing publications (dossier §9, §12/T1.1, §17).
+    """Concrete Postgres adapter for recording and listing publications (dossier §9, §12/T1.1, §17, STORY-072).
 
-    Records SUCCESSFUL Statuspage publishes only — the table has no error column.
-    list_recent returns most-recent-first (published_at DESC) to back the Publications
-    tab (§17).
+    Records every publish ATTEMPT (STORY-072) — `outcome` distinguishes a
+    successful publish from a raising delegate; the `ck_publications_outcome`
+    CHECK constraint (STORY-072 migration) enforces the closed
+    `succeeded`/`failed` vocabulary at the DB level. list_recent returns
+    most-recent-first (published_at DESC) to back the Publications tab (§17).
     """
 
     def __init__(self, engine: Engine) -> None:
@@ -35,8 +38,8 @@ class PostgresPublicationRepository(PublicationRepository):
     def record(self, publication: Publication) -> Publication:
         """INSERT a new publication row and return it with the database-assigned id.
 
-        Called only after a successful Statuspage publish (§12/T1.1 — record
-        SUCCESSES only; a raising delegate records nothing).
+        Called on EVERY publish attempt (STORY-072) — `publication.outcome`
+        carries whether the delegate publish succeeded or raised.
         """
         stmt = (
             sa.insert(_PUBLICATIONS)
@@ -46,6 +49,7 @@ class PostgresPublicationRepository(PublicationRepository):
                     "proposal_id": publication.proposal_id,
                     "status": publication.status.value,
                     "published_at": publication.published_at,
+                    "outcome": publication.outcome.value,
                 }
             )
             .returning(
@@ -54,6 +58,7 @@ class PostgresPublicationRepository(PublicationRepository):
                 _PUBLICATIONS.c.proposal_id,
                 _PUBLICATIONS.c.status,
                 _PUBLICATIONS.c.published_at,
+                _PUBLICATIONS.c.outcome,
             )
         )
 
@@ -67,6 +72,7 @@ class PostgresPublicationRepository(PublicationRepository):
             proposal_id=row.proposal_id,
             status=ComponentStatus(row.status),
             published_at=row.published_at.astimezone(timezone.utc),
+            outcome=PublicationOutcome(row.outcome),
         )
 
     def list_recent(self, limit: int = 50) -> list[Publication]:
@@ -81,6 +87,7 @@ class PostgresPublicationRepository(PublicationRepository):
                 _PUBLICATIONS.c.proposal_id,
                 _PUBLICATIONS.c.status,
                 _PUBLICATIONS.c.published_at,
+                _PUBLICATIONS.c.outcome,
             )
             .order_by(_PUBLICATIONS.c.published_at.desc())
             .limit(limit)
@@ -96,6 +103,7 @@ class PostgresPublicationRepository(PublicationRepository):
                 proposal_id=row.proposal_id,
                 status=ComponentStatus(row.status),
                 published_at=row.published_at.astimezone(timezone.utc),
+                outcome=PublicationOutcome(row.outcome),
             )
             for row in rows
         ]

@@ -1016,7 +1016,7 @@ def test_postgres_publication_repository(migrated_db, engine):
     from src.adapters.persistence.publication_repository import (
         PostgresPublicationRepository,
     )
-    from src.core.domain.publication import Publication
+    from src.core.domain.publication import Publication, PublicationOutcome
     from src.core.domain.status import ComponentStatus
 
     # Isolation: truncate publications (FKs into components; clean it first)
@@ -1045,6 +1045,8 @@ def test_postgres_publication_repository(migrated_db, engine):
     assert saved1.status == ComponentStatus.DEGRADED
     assert saved1.published_at == datetime(2026, 6, 29, 10, 0, 0, tzinfo=timezone.utc)
     assert saved1.proposal_id is None
+    # STORY-072: outcome defaults to SUCCEEDED and round-trips through Postgres.
+    assert saved1.outcome == PublicationOutcome.SUCCEEDED
 
     # Record a second, more recent publication
     pub2 = Publication(
@@ -1066,3 +1068,143 @@ def test_postgres_publication_repository(migrated_db, engine):
     limited = repo.list_recent(limit=1)
     assert len(limited) == 1
     assert limited[0].id == saved2.id
+
+
+def test_postgres_publication_repository_records_failed_outcome(migrated_db, engine):
+    """STORY-072 AC1/AC2: PostgresPublicationRepository persists an explicit
+    outcome=FAILED record and round-trips it correctly."""
+    from src.adapters.persistence.publication_repository import (
+        PostgresPublicationRepository,
+    )
+    from src.core.domain.publication import Publication, PublicationOutcome
+    from src.core.domain.status import ComponentStatus
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE publications;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "pub-failed-comp", "pub-app")
+
+    repo = PostgresPublicationRepository(engine)
+
+    pub = Publication(
+        component_id="pub-failed-comp",
+        status=ComponentStatus.MAJOR_OUTAGE,
+        published_at=datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc),
+        outcome=PublicationOutcome.FAILED,
+    )
+    saved = repo.record(pub)
+
+    assert saved.outcome == PublicationOutcome.FAILED
+
+    # Re-read via list_recent to confirm the outcome round-trips from storage,
+    # not just from the INSERT ... RETURNING row.
+    results = repo.list_recent()
+    assert len(results) == 1
+    assert results[0].outcome == PublicationOutcome.FAILED
+
+
+def test_publications_outcome_check_constraint_allows_values_rejects_others(
+    migrated_db,
+):
+    """STORY-072 AC2 (STORY-071 retro lesson — fakes can't model DB constraints):
+    drive the REAL `ck_publications_outcome` CHECK constraint directly. Both
+    allowed values ('succeeded', 'failed') insert cleanly; a disallowed value
+    ('succeed', a plausible typo/present-tense mistake) is rejected with
+    `psycopg.errors.CheckViolation`.
+    """
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE publications;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "pub-ck-comp", "pub-app")
+
+    insert_sql = (
+        "INSERT INTO publications (component_id, status, published_at, outcome) "
+        "VALUES (%s, 'operational', %s, %s)"
+    )
+    ts = datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc)
+
+    # Both allowed values insert cleanly.
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(insert_sql, ("pub-ck-comp", ts, "succeeded"))
+            cur.execute(insert_sql, ("pub-ck-comp", ts, "failed"))
+        conn.commit()
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT COUNT(*) FROM publications WHERE component_id = %s",
+                ("pub-ck-comp",),
+            )
+            (count,) = cur.fetchone()
+    assert count == 2
+
+    # A disallowed value is rejected by the CHECK constraint.
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            with pytest.raises(psycopg.errors.CheckViolation):
+                cur.execute(insert_sql, ("pub-ck-comp", ts, "succeed"))
+        conn.rollback()
+
+
+def test_recording_publisher_records_exactly_one_row_via_real_postgres_success_and_failure(
+    migrated_db, engine
+):
+    """STORY-072 AC1 regression: drives the REAL `RecordingPublisher` +
+    `PostgresPublicationRepository` (wrapped in `BestEffortPublisher`, mirroring
+    the production chain) through BOTH a successful publish and a raising
+    delegate against a REAL Postgres. Asserts exactly one row is recorded per
+    attempt with the correct outcome, and that `BestEffortPublisher` still
+    swallows the raising-delegate's exception for the caller (best-effort
+    stays intact even though recording now happens on both paths)."""
+    from src.adapters.persistence.publication_repository import (
+        PostgresPublicationRepository,
+    )
+    from src.composition.publish_helper import BestEffortPublisher, RecordingPublisher
+    from src.core.domain.publication import PublicationOutcome
+    from src.core.domain.status import ComponentStatus, StatusChange
+    from tests.fakes import FakeClock, RecordingStatusPublisher
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE publications;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "pub-real-success", "pub-app")
+    seed_component(migrated_db.database_url, "pub-real-failure", "pub-app")
+
+    repo = PostgresPublicationRepository(engine)
+    clock = FakeClock(datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc))
+
+    class RaisingDelegate:
+        def publish(self, change: StatusChange) -> None:
+            raise RuntimeError("Statuspage 401")
+
+    # --- Success path -------------------------------------------------
+    success_delegate = RecordingStatusPublisher()
+    success_recording = RecordingPublisher(success_delegate, repo, clock)
+    success_best_effort = BestEffortPublisher(success_recording)
+
+    success_change = StatusChange(
+        component_id="pub-real-success", status=ComponentStatus.OPERATIONAL
+    )
+    success_best_effort.publish(success_change)  # must not raise
+
+    # --- Failure path ---------------------------------------------------
+    failure_recording = RecordingPublisher(RaisingDelegate(), repo, clock)
+    failure_best_effort = BestEffortPublisher(failure_recording)
+
+    failure_change = StatusChange(
+        component_id="pub-real-failure", status=ComponentStatus.MAJOR_OUTAGE
+    )
+    failure_best_effort.publish(failure_change)  # swallowed — must not raise
+
+    results = repo.list_recent()
+    by_component = {r.component_id: r for r in results}
+    assert len(results) == 2
+    assert by_component["pub-real-success"].outcome == PublicationOutcome.SUCCEEDED
+    assert by_component["pub-real-failure"].outcome == PublicationOutcome.FAILED
