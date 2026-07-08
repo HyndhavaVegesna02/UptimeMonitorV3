@@ -158,9 +158,10 @@ stories:
     review: null
   - id: STORY-058
     points: 3
-    board: todo
+    board: in_progress     # Wave 2 Batch 2 (parallel worktree) dispatched 2026-07-08
     pipeline: full
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
@@ -195,18 +196,20 @@ stories:
       - "approval-card--{up,maintenance,missing} stripe modifiers absent (deriveSeverity never returns them) — harmless."
   - id: STORY-060
     points: 3
-    board: todo
+    board: in_progress     # Wave 2 Batch 2 (parallel worktree) dispatched 2026-07-08
     pipeline: full
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
     review: null
   - id: STORY-061
     points: 3
-    board: todo
+    board: in_progress     # Wave 2 Batch 2 (parallel worktree) dispatched 2026-07-08
     pipeline: full
     wave: 2
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
