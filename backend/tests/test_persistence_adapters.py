@@ -547,6 +547,140 @@ def test_postgres_proposal_repository_record_approval_event(migrated_db, engine)
     assert occurred_at == occurred_time
 
 
+def test_approval_service_approve_and_reject_persist_action_via_real_postgres(
+    migrated_db, engine
+):
+    """STORY-071 regression (AC1/AC2): drives a REAL approve AND a REAL reject
+    through the REAL `ApprovalService` + `PostgresProposalRepository` against the
+    real Postgres `ck_approval_events_action` constraint (`action IN ('approved',
+    'rejected')`). Before the fix, `ApprovalService._decide` recorded the present
+    -tense verb ("approve"/"reject") and this test failed with
+    `psycopg.errors.CheckViolation` on `ck_approval_events_action`. After the fix
+    (`action=to_state.value`), both persist cleanly with the past-tense value that
+    matches the resolved `state` — closing the fake/adapter-parity gap (no DB-gated
+    test previously drove approve/reject through the real constraint).
+    """
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.services.approval import ApprovalService
+    from tests.fakes import FakeClock, RecordingStatusPublisher
+
+    seed_component(migrated_db.database_url, "approve-real-comp")
+    seed_component(migrated_db.database_url, "reject-real-comp")
+    repo = PostgresProposalRepository(engine)
+    clock = FakeClock(datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc))
+    publisher = RecordingStatusPublisher()
+    service = ApprovalService(proposal_repo=repo, clock=clock, publisher=publisher)
+
+    approve_prop = StatusProposal(
+        component_id="approve-real-comp",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 7, 8, 8, 0, 0, tzinfo=timezone.utc),
+    )
+    saved_approve = repo.create_open(approve_prop)
+    assert saved_approve is not None
+
+    reject_prop = StatusProposal(
+        component_id="reject-real-comp",
+        from_status=ComponentStatus.OPERATIONAL,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 7, 8, 8, 0, 0, tzinfo=timezone.utc),
+    )
+    saved_reject = repo.create_open(reject_prop)
+    assert saved_reject is not None
+
+    # No CheckViolation on either path.
+    approved = service.approve(saved_approve.id, actor="ops-1", notes="Approve it")
+    rejected = service.reject(saved_reject.id, actor="ops-1", notes="Reject it")
+
+    assert approved.state == ProposalState.APPROVED
+    assert rejected.state == ProposalState.REJECTED
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT proposal_id, action FROM approval_events "
+                "WHERE proposal_id IN (%s, %s) ORDER BY proposal_id",
+                (saved_approve.id, saved_reject.id),
+            )
+            rows = cur.fetchall()
+
+    assert rows == [
+        (saved_approve.id, "approved"),
+        (saved_reject.id, "rejected"),
+    ]
+
+
+def test_fake_and_real_proposal_repository_agree_on_recorded_action(
+    migrated_db, engine
+):
+    """STORY-071 AC3 (fake/adapter parity): the fake and the real repository
+    must record the SAME `action` string for approve/reject when driven through
+    `ApprovalService`, so a future drift between them is caught without needing
+    Postgres to reject it."""
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.services.approval import ApprovalService
+    from tests.fakes import FakeClock, FakeProposalRepository, RecordingStatusPublisher
+
+    clock = FakeClock(datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc))
+
+    def _prop(component_id: str) -> StatusProposal:
+        return StatusProposal(
+            component_id=component_id,
+            from_status=ComponentStatus.OPERATIONAL,
+            to_status=ComponentStatus.DEGRADED,
+            state=ProposalState.OPEN,
+            proposed_at=datetime(2026, 7, 8, 8, 0, 0, tzinfo=timezone.utc),
+        )
+
+    # Real repository.
+    seed_component(migrated_db.database_url, "parity-approve-comp")
+    seed_component(migrated_db.database_url, "parity-reject-comp")
+    real_repo = PostgresProposalRepository(engine)
+    real_service = ApprovalService(
+        proposal_repo=real_repo, clock=clock, publisher=RecordingStatusPublisher()
+    )
+    real_approved = real_repo.create_open(_prop("parity-approve-comp"))
+    real_rejected = real_repo.create_open(_prop("parity-reject-comp"))
+    assert real_approved is not None and real_rejected is not None
+    real_service.approve(real_approved.id, actor="ops-1")
+    real_service.reject(real_rejected.id, actor="ops-1")
+
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT action FROM approval_events WHERE proposal_id = %s",
+                (real_approved.id,),
+            )
+            real_approve_action = cur.fetchone()[0]
+            cur.execute(
+                "SELECT action FROM approval_events WHERE proposal_id = %s",
+                (real_rejected.id,),
+            )
+            real_reject_action = cur.fetchone()[0]
+
+    # Fake repository.
+    fake_repo = FakeProposalRepository()
+    fake_service = ApprovalService(
+        proposal_repo=fake_repo, clock=clock, publisher=RecordingStatusPublisher()
+    )
+    fake_approved = fake_repo.create_open(_prop("parity-approve-comp"))
+    fake_rejected = fake_repo.create_open(_prop("parity-reject-comp"))
+    assert fake_approved is not None and fake_rejected is not None
+    fake_service.approve(fake_approved.id, actor="ops-1")
+    fake_service.reject(fake_rejected.id, actor="ops-1")
+
+    fake_approve_action = fake_repo.approval_events[0]["action"]
+    fake_reject_action = fake_repo.approval_events[1]["action"]
+
+    assert real_approve_action == fake_approve_action == "approved"
+    assert real_reject_action == fake_reject_action == "rejected"
+
+
 def test_postgres_proposal_repository_resolve_unknown_raises(migrated_db, engine):
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
     from src.core.domain.proposal import ProposalState

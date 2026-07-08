@@ -79,7 +79,7 @@ def test_decision_endpoint_approve_success():
     event = repo.approval_events[0]
     assert event["proposal_id"] == saved.id
     assert event["actor"] == "ops-1"
-    assert event["action"] == "approve"
+    assert event["action"] == "approved"
 
 
 def test_decision_endpoint_reject_success():

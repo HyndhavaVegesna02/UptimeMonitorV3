@@ -58,7 +58,7 @@ def test_approval_service_approve_success():
     event = repo.approval_events[0]
     assert event["proposal_id"] == saved.id
     assert event["actor"] == "operator-1"
-    assert event["action"] == "approve"
+    assert event["action"] == "approved"
     assert event["notes"] == "Approve this degradation"
     assert event["occurred_at"] == clock_time
 
@@ -89,7 +89,7 @@ def test_approval_service_reject_success():
     event = repo.approval_events[0]
     assert event["proposal_id"] == saved.id
     assert event["actor"] == "operator-1"
-    assert event["action"] == "reject"
+    assert event["action"] == "rejected"
     assert event["notes"] == "Reject this degradation"
     assert event["occurred_at"] == clock_time
 
