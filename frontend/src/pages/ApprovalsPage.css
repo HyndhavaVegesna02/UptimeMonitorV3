@@ -1,64 +1,21 @@
-.approvals-table {
-  width: 100%;
-  border-collapse: collapse;
+.approvals-page {
+  max-width: 960px;
+  margin: 0 auto;
 }
 
-.approvals-table th,
-.approvals-table td {
-  text-align: left;
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-hairline);
-  font-family: var(--font-sans);
-  color: var(--color-ink);
-}
-
-.approvals-table th {
-  color: var(--color-ink-subtle);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-h3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.approvals-table td {
-  font-size: var(--fs-body);
-}
-
-.approvals-table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.approvals-table__transition {
-  display: inline-flex;
+.approvals-page__header {
+  display: flex;
   align-items: center;
-  gap: var(--space-2);
-}
-
-.approvals-table__arrow {
-  color: var(--color-ink-subtle);
-}
-
-.approvals-table__new {
-  font-size: var(--fs-caption);
-  color: var(--color-ink-subtle);
-  font-style: italic;
-}
-
-.approvals-table__actions {
-  display: inline-flex;
-  gap: var(--space-2);
-}
-
-.approvals-table__confirm {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
+  justify-content: space-between;
+  gap: var(--space-3);
   flex-wrap: wrap;
+  margin-bottom: var(--space-2);
 }
 
-.approvals-table__confirm-text {
-  font-size: var(--fs-body);
-  color: var(--color-ink);
+.approvals-page__intro {
+  margin: 0 0 var(--space-4);
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
 }
 
 .approvals-page__notice {
@@ -68,4 +25,47 @@
   background: var(--color-surface-2);
   color: var(--color-ink);
   font-size: var(--fs-body);
+}
+
+.approval-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.approvals-page__empty {
+  text-align: center;
+  padding: var(--space-12) var(--space-4);
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow);
+}
+
+.approvals-page__empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: 0 auto var(--space-3);
+  border-radius: 50%;
+  background: var(--color-health-up-subtle);
+  color: var(--color-health-up);
+}
+
+.approvals-page__empty-title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--fs-body-lg);
+  color: var(--color-ink);
+}
+
+.approvals-page__empty-detail {
+  margin: 3px 0 0;
+  color: var(--color-ink-subtle);
+  font-size: var(--fs-caption);
 }

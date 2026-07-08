@@ -1,47 +1,30 @@
 import { useState } from 'react'
 import { getActor } from '../api/actor'
 import { ApiError, postDecision } from '../api/client'
-import { toHealthStatus } from '../api/statusMapping'
-import {
-  Button,
-  EmptyState,
-  ErrorState,
-  LoadingState,
-  Panel,
-  StatusBadge,
-} from '../components'
+import { ErrorState, Icon, LoadingState } from '../components'
+import { ApprovalCard } from '../features/approvals/ApprovalCard'
+import { toCardDecisionState } from '../features/approvals/decisionState'
+import type { DecisionAction, DecisionUiState } from '../features/approvals/decisionState'
 import { useApprovals } from '../features/approvals/useApprovals'
 import './ApprovalsPage.css'
 
-type DecisionAction = 'approve' | 'reject'
-
-const CONFIRM_COPY: Record<DecisionAction, { prompt: string; confirmLabel: string }> = {
-  approve: { prompt: 'Approve this proposal?', confirmLabel: 'Confirm approve' },
-  reject: { prompt: 'Reject this proposal?', confirmLabel: 'Confirm reject' },
-}
-
-const ACTION_LABEL: Record<DecisionAction, string> = {
-  approve: 'Approve',
-  reject: 'Reject',
-}
-
-/** Local UI state machine for the currently-focused row's decision flow
- * (STORY-015c AC2/AC3/AC4) — separate from the list's own `useApprovals`
- * fetch state. Only one row can be mid-decision at a time. */
-type DecisionUiState =
-  | { phase: 'idle' }
-  | { phase: 'confirming'; proposalId: number; action: DecisionAction }
-  | { phase: 'submitting'; proposalId: number; action: DecisionAction }
-  | { phase: 'failed'; proposalId: number; action: DecisionAction; message: string }
-
 /**
- * The Approvals tab (STORY-015c): the human approval gate — a degradation
- * reaches the public Statuspage only after an operator approves it here.
- * Fetches `GET /api/v1/approvals` via `useApprovals` and renders one row
- * per open proposal — `component_id`, the `from_status -> to_status`
- * transition (two `StatusBadge`s; `from_status` may be null for a
- * component's first-ever proposal, rendered as "New" instead of a badge),
- * and `proposed_at` (mono) — plus Approve/Reject actions (AC1, AC4).
+ * The Approvals tab (STORY-015c; card layout per STORY-059): the human
+ * approval gate — a degradation reaches the public Statuspage only after an
+ * operator approves it here. Fetches `GET /api/v1/approvals` via
+ * `useApprovals` and renders one card per open proposal (STORY-059 AC1):
+ * `component_id`, a severity accent stripe DERIVED from `to_status`
+ * (`features/approvals/severity.ts`), the `from_status -> to_status`
+ * transition (two `StatusBadge`s; "New" when `from_status` is null), and
+ * real `proposed_at` — plus Approve/Reject actions.
+ *
+ * Fields the API does not expose (reason/source/detected-ago/checks/
+ * triggering-signals — not on `ProposalDTO`) are OMITTED, never faked
+ * (AC3) — deferred to STORY-063 proposal enrichment.
+ *
+ * The idle -> confirming -> submitting -> failed decision state machine and
+ * the 409/404 notice banner are carried over from STORY-015c UNCHANGED
+ * (AC2) — only the row markup became a card (`ApprovalCard`).
  */
 export function ApprovalsPage() {
   const { state, retry } = useApprovals()
@@ -86,7 +69,15 @@ export function ApprovalsPage() {
   }
 
   return (
-    <Panel title="Approvals" headingLevel="h1">
+    <div className="approvals-page">
+      <div className="approvals-page__header">
+        <h1 className="text-h1">Approvals</h1>
+      </div>
+      <p className="approvals-page__intro">
+        Approving publishes the change to the public status page. Every decision
+        requires confirmation before it submits.
+      </p>
+
       {notice ? (
         <p className="approvals-page__notice" role="status">
           {notice}
@@ -100,98 +91,31 @@ export function ApprovalsPage() {
       )}
 
       {state.phase === 'success' && state.data.length === 0 && (
-        <EmptyState message="nothing pending approval" />
+        <div className="approvals-page__empty">
+          <span className="approvals-page__empty-icon" aria-hidden="true">
+            <Icon name="check" size={20} />
+          </span>
+          <p className="approvals-page__empty-title">Queue clear</p>
+          <p className="approvals-page__empty-detail">
+            No proposals awaiting review.
+          </p>
+        </div>
       )}
 
       {state.phase === 'success' && state.data.length > 0 && (
-        <table className="approvals-table">
-          <thead>
-            <tr>
-              <th scope="col">Component</th>
-              <th scope="col">Transition</th>
-              <th scope="col">Proposed</th>
-              <th scope="col">Decision</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.data.map((proposal) => {
-              const isActiveRow =
-                decisionState.phase !== 'idle' && decisionState.proposalId === proposal.id
-
-              return (
-                <tr key={proposal.id}>
-                  <td>{proposal.component_id}</td>
-                  <td>
-                    <span className="approvals-table__transition">
-                      {proposal.from_status ? (
-                        <StatusBadge status={toHealthStatus(proposal.from_status)} />
-                      ) : (
-                        <span className="approvals-table__new">New</span>
-                      )}
-                      <span className="approvals-table__arrow" aria-hidden="true">
-                        →
-                      </span>
-                      <span className="sr-only">to</span>
-                      <StatusBadge status={toHealthStatus(proposal.to_status)} />
-                    </span>
-                  </td>
-                  <td>
-                    <time className="text-mono" dateTime={proposal.proposed_at}>
-                      {proposal.proposed_at}
-                    </time>
-                  </td>
-                  <td>
-                    {isActiveRow && decisionState.phase === 'confirming' && (
-                      <span className="approvals-table__confirm">
-                        <span className="approvals-table__confirm-text">
-                          {CONFIRM_COPY[decisionState.action].prompt}
-                        </span>
-                        <Button
-                          variant="primary"
-                          onClick={() => void confirmDecision(proposal.id, decisionState.action)}
-                        >
-                          {CONFIRM_COPY[decisionState.action].confirmLabel}
-                        </Button>
-                        <Button variant="tertiary" onClick={cancelConfirm}>
-                          Cancel
-                        </Button>
-                      </span>
-                    )}
-
-                    {isActiveRow && decisionState.phase === 'submitting' && (
-                      <span className="approvals-table__confirm-text">Submitting…</span>
-                    )}
-
-                    {isActiveRow && decisionState.phase === 'failed' && (
-                      <ErrorState
-                        message={decisionState.message}
-                        onRetry={() => void confirmDecision(proposal.id, decisionState.action)}
-                      />
-                    )}
-
-                    {!isActiveRow && (
-                      <span className="approvals-table__actions">
-                        <Button
-                          variant="secondary"
-                          onClick={() => requestConfirm(proposal.id, 'approve')}
-                        >
-                          {ACTION_LABEL.approve}
-                        </Button>
-                        <Button
-                          variant="secondary"
-                          onClick={() => requestConfirm(proposal.id, 'reject')}
-                        >
-                          {ACTION_LABEL.reject}
-                        </Button>
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <ul className="approval-list">
+          {state.data.map((proposal) => (
+            <ApprovalCard
+              key={proposal.id}
+              proposal={proposal}
+              decision={toCardDecisionState(decisionState, proposal.id)}
+              onRequestConfirm={(action) => requestConfirm(proposal.id, action)}
+              onCancelConfirm={cancelConfirm}
+              onConfirmDecision={(action) => confirmDecision(proposal.id, action)}
+            />
+          ))}
+        </ul>
       )}
-    </Panel>
+    </div>
   )
 }

@@ -8,67 +8,94 @@ import { getActor } from '../api/actor'
 import { ApprovalsPage } from './ApprovalsPage'
 
 describe('ApprovalsPage', () => {
-  it('shows a loading state, then a table with one row per open proposal (AC1)', async () => {
+  it('shows a loading state, then one card per open proposal (AC1)', async () => {
     render(<ApprovalsPage />)
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
-    const table = await screen.findByRole('table')
-    expect(table).toBeInTheDocument()
+    const list = await screen.findByRole('list')
+    expect(list).toBeInTheDocument()
 
-    expect(
-      screen.getByText(FIXTURE_PROPOSALS[0].component_id),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByText(FIXTURE_PROPOSALS[1].component_id),
-    ).toBeInTheDocument()
+    expect(screen.getByText(FIXTURE_PROPOSALS[0].component_id)).toBeInTheDocument()
+    expect(screen.getByText(FIXTURE_PROPOSALS[1].component_id)).toBeInTheDocument()
 
-    // Exactly one data row per fixture proposal.
-    expect(screen.getAllByRole('row')).toHaveLength(FIXTURE_PROPOSALS.length + 1)
+    // Exactly one card per fixture proposal.
+    expect(within(list).getAllByRole('listitem')).toHaveLength(FIXTURE_PROPOSALS.length)
+  })
+
+  it('renders a severity chip derived from to_status, not a fake field (AC1)', async () => {
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    // FIXTURE_PROPOSALS[0].to_status === 'degraded' -> "Degraded" severity,
+    // which also happens to be the to-status StatusBadge's own label text —
+    // both are legitimately present, hence getAllByText/length 2 (one is the
+    // severity chip, one is the StatusBadge label).
+    const degradedCard = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest('li')
+    expect(degradedCard).not.toBeNull()
+    const degradedMatches = within(degradedCard as HTMLElement).getAllByText('Degraded')
+    expect(degradedMatches).toHaveLength(2)
+    expect(
+      degradedMatches.some((el) => el.classList.contains('approval-card__severity')),
+    ).toBe(true)
+
+    // FIXTURE_PROPOSALS[1].to_status === 'major_outage' -> "Major" severity.
+    const majorCard = screen.getByText(FIXTURE_PROPOSALS[1].component_id).closest('li')
+    expect(majorCard).not.toBeNull()
+    expect(within(majorCard as HTMLElement).getByText('Major')).toBeInTheDocument()
   })
 
   it('renders both StatusBadges for an ordinary transition (AC1)', async () => {
     render(<ApprovalsPage />)
 
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest('tr')
-    expect(row).not.toBeNull()
-    // operational -> "Up", degraded -> "Degraded" (src/api/statusMapping.ts)
-    expect(within(row as HTMLElement).getByText('Up')).toBeInTheDocument()
-    expect(within(row as HTMLElement).getByText('Degraded')).toBeInTheDocument()
+    const card = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest('li')
+    expect(card).not.toBeNull()
+    // operational -> "Up", degraded -> "Degraded" (src/api/statusMapping.ts).
+    // "Degraded" also matches the severity chip (same word, different
+    // element) — assert two occurrences rather than a single unique match.
+    expect(within(card as HTMLElement).getByText('Up')).toBeInTheDocument()
+    expect(within(card as HTMLElement).getAllByText('Degraded')).toHaveLength(2)
   })
 
-  it('handles a null from_status without crashing, rendering only the to-status badge (AC1)', async () => {
+  it('handles a null from_status without crashing, rendering "New" instead of a badge (AC1)', async () => {
     render(<ApprovalsPage />)
 
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[1].component_id).closest('tr')
-    expect(row).not.toBeNull()
-    expect(within(row as HTMLElement).getByText('Down')).toBeInTheDocument()
+    const card = screen.getByText(FIXTURE_PROPOSALS[1].component_id).closest('li')
+    expect(card).not.toBeNull()
+    expect(within(card as HTMLElement).getByText('New')).toBeInTheDocument()
+    expect(within(card as HTMLElement).getByText('Down')).toBeInTheDocument()
     // No StatusBadge label rendered for the null from_status.
-    expect(within(row as HTMLElement).queryByText('Unknown')).not.toBeInTheDocument()
+    expect(within(card as HTMLElement).queryByText('Unknown')).not.toBeInTheDocument()
   })
 
-  it('renders the proposed_at timestamp in monospace (AC1)', async () => {
+  it('renders the real proposed_at timestamp in monospace (AC1)', async () => {
     render(<ApprovalsPage />)
 
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
     const time = screen.getByText(FIXTURE_PROPOSALS[0].proposed_at)
     expect(time).toHaveClass('text-mono')
   })
 
-  it('renders the empty state when there are no open proposals (AC1)', async () => {
+  it('does not render fields the API does not expose — no reason/source/checks/signals copy (AC3)', async () => {
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    expect(screen.queryByText(/triggering signals/i)).not.toBeInTheDocument()
+    expect(screen.queryByText(/detected/i)).not.toBeInTheDocument()
+  })
+
+  it('shows the "Queue clear" empty state when there are no open proposals (AC3)', async () => {
     server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
 
     render(<ApprovalsPage />)
 
-    expect(
-      await screen.findByText('nothing pending approval'),
-    ).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(await screen.findByText('Queue clear')).toBeInTheDocument()
+    expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {
@@ -86,29 +113,27 @@ describe('ApprovalsPage', () => {
 
     render(<ApprovalsPage />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Could not load proposals',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load proposals')
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
-    await screen.findByRole('table')
+    await screen.findByRole('list')
     expect(callCount).toBe(2)
   })
 
-  it('renders an Approve and a Reject action per open proposal (AC1, AC4)', async () => {
+  it('renders an Approve and a Reject action per open proposal (AC1, AC2)', async () => {
     render(<ApprovalsPage />)
 
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
     for (const proposal of FIXTURE_PROPOSALS) {
-      const row = screen.getByText(proposal.component_id).closest('tr')
-      expect(row).not.toBeNull()
+      const card = screen.getByText(proposal.component_id).closest('li')
+      expect(card).not.toBeNull()
       expect(
-        within(row as HTMLElement).getByRole('button', { name: 'Approve' }),
+        within(card as HTMLElement).getByRole('button', { name: 'Approve' }),
       ).toBeInTheDocument()
       expect(
-        within(row as HTMLElement).getByRole('button', { name: 'Reject' }),
+        within(card as HTMLElement).getByRole('button', { name: 'Reject' }),
       ).toBeInTheDocument()
     }
   })
@@ -137,10 +162,10 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(target.component_id).closest('tr') as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Approve' }))
+    const card = screen.getByText(target.component_id).closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Approve' }))
 
     // Confirmation precedes the POST: no request fired yet by clicking Approve.
     expect(postedBody).toBeUndefined()
@@ -178,10 +203,10 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(target.component_id).closest('tr') as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Reject' }))
+    const card = screen.getByText(target.component_id).closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Reject' }))
 
     await user.click(await screen.findByRole('button', { name: 'Confirm reject' }))
 
@@ -192,7 +217,7 @@ describe('ApprovalsPage', () => {
     expect(getCallCount).toBe(2)
   })
 
-  it('lets the operator dismiss the confirmation step without POSTing (AC4)', async () => {
+  it('lets the operator dismiss the confirmation step without POSTing (AC2)', async () => {
     const user = userEvent.setup()
     let postCalled = false
     server.use(
@@ -207,36 +232,36 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest(
-      'tr',
-    ) as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Approve' }))
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[0].component_id)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Approve' }))
 
     await user.click(await screen.findByRole('button', { name: 'Cancel' }))
 
     expect(screen.queryByRole('button', { name: 'Confirm approve' })).not.toBeInTheDocument()
-    expect(within(row).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
     expect(postCalled).toBe(false)
   })
 
-  it('is keyboard-operable: Enter on a focused Approve button opens the confirmation (AC4)', async () => {
+  it('is keyboard-operable: Enter on a focused Approve button opens the confirmation (AC2)', async () => {
     const user = userEvent.setup()
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest(
-      'tr',
-    ) as HTMLElement
-    const approveButton = within(row).getByRole('button', { name: 'Approve' })
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[0].component_id)
+      .closest('li') as HTMLElement
+    const approveButton = within(card).getByRole('button', { name: 'Approve' })
     approveButton.focus()
     await user.keyboard('{Enter}')
 
     expect(await screen.findByRole('button', { name: 'Confirm approve' })).toBeInTheDocument()
   })
 
-  it('shows an inline "already resolved" message and refreshes the list on a 409 lost race (AC3)', async () => {
+  it('shows an inline "already resolved" message and refreshes the list on a 409 lost race (AC2)', async () => {
     const user = userEvent.setup()
     let getCallCount = 0
     server.use(
@@ -250,19 +275,20 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest(
-      'tr',
-    ) as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Approve' }))
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[0].component_id)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Approve' }))
     await user.click(await screen.findByRole('button', { name: 'Confirm approve' }))
 
     expect(await screen.findByText(/already been resolved/i)).toBeInTheDocument()
+    expect(screen.getByRole('status')).toHaveTextContent(/already been resolved/i)
     await waitFor(() => expect(getCallCount).toBe(2))
   })
 
-  it('shows an inline "no longer exists" message and refreshes the list on a 404 (AC3)', async () => {
+  it('shows an inline "no longer exists" message and refreshes the list on a 404 (AC2)', async () => {
     const user = userEvent.setup()
     let getCallCount = 0
     server.use(
@@ -276,19 +302,19 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest(
-      'tr',
-    ) as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Reject' }))
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[0].component_id)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Reject' }))
     await user.click(await screen.findByRole('button', { name: 'Confirm reject' }))
 
     expect(await screen.findByText(/no longer exists/i)).toBeInTheDocument()
     await waitFor(() => expect(getCallCount).toBe(2))
   })
 
-  it('shows the shell ErrorState with retry on a generic decision failure, and retry re-attempts the POST (AC3)', async () => {
+  it('shows the shell ErrorState with retry on a generic decision failure, and retry re-attempts the POST (AC2)', async () => {
     const user = userEvent.setup()
     let attempt = 0
     server.use(
@@ -306,12 +332,12 @@ describe('ApprovalsPage', () => {
     )
 
     render(<ApprovalsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list')
 
-    const row = screen.getByText(FIXTURE_PROPOSALS[0].component_id).closest(
-      'tr',
-    ) as HTMLElement
-    await user.click(within(row).getByRole('button', { name: 'Approve' }))
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[0].component_id)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Approve' }))
     await user.click(await screen.findByRole('button', { name: 'Confirm approve' }))
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
@@ -320,13 +346,13 @@ describe('ApprovalsPage', () => {
 
     await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument())
     // The list refresh (triggered by the successful retry) unmounts and
-    // remounts the table, so re-locate the row instead of reusing the
+    // remounts the cards, so re-locate the card instead of reusing the
     // pre-refresh reference.
-    await screen.findByRole('table')
-    const refreshedRow = screen
+    await screen.findByRole('list')
+    const refreshedCard = screen
       .getByText(FIXTURE_PROPOSALS[0].component_id)
-      .closest('tr') as HTMLElement
-    expect(within(refreshedRow).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+      .closest('li') as HTMLElement
+    expect(within(refreshedCard).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
     expect(attempt).toBe(2)
   })
 })
