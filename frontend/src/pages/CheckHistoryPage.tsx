@@ -86,7 +86,7 @@ export function CheckHistoryPage() {
 
   const [filters, setFilters] = useState<HistoryFilters>(DEFAULT_HISTORY_FILTERS)
 
-  const rows = state.phase === 'success' ? state.data : []
+  const rows = useMemo(() => (state.phase === 'success' ? state.data : []), [state])
   const locationOptions = useMemo(() => uniqueLocations(rows), [rows])
   const filtered = useMemo(() => filterHistoryRows(rows, filters), [rows, filters])
 
