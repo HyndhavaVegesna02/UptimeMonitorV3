@@ -238,14 +238,33 @@ stories:
       - "approval-card--{up,maintenance,missing} stripe modifiers absent (deriveSeverity never returns them) — harmless."
   - id: STORY-060
     points: 3
-    board: in_progress     # Wave 2 Batch 2 (parallel worktree) dispatched 2026-07-08
+    board: done            # awaiting PO verdict at review
     pipeline: full
     wave: 2
-    attempts: 1
+    attempts: 2            # impl (worktree worktree-agent-a8ef19c8450539c28 @ ba2ae59, merged @ 8234a48)
+                           # + one fix loop (main tree, 644a9d5..f1c3d9e) resolving the 2 quality MAJORs
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "frontend three-gate DoD (npm test / build / lint) orchestrator-run on sprint-38 HEAD f1c3d9e (all 8 stories integrated); empty backend diff"
+        exit_code: 0
+        output_tail: "50 files / 355 passed (39s, normal parallelism, NO flake this run); build OK
+          (250ms); lint clean. Whole-sprint backend diff sprint-38-start..HEAD empty. STORY-054 flake
+          RESOLVED (cap test renders 5 rows via injectable maxRenderedRows prop, 1.64s deterministic)."
+        commit: f1c3d9e
+        at: 2026-07-08T09:24:00+05:30
+    review:
+      spec: "PASS — AC1-AC4 MET (Opus). Filter toolbar (search + result + location + window toggle,
+        labeled); dense grid Timestamp/Component/Location/Result(dot+label)/Latency; Type+Code omitted
+        -> STORY-064; system-wide ledger (Promise.all over all signals) faithful to the mock; hook
+        removals (useHistory/useSignalOptions) lost no coverage."
+      quality: "APPROVE after fix loop — initial CHANGES REQUESTED (2 MAJOR: missing reduced-motion
+        guard; cap lowered 1000->200) both RESOLVED: guard added (mirrors AvailabilityPage), 1000 cap
+        RESTORED via injectable maxRenderedRows prop (preserves existing functionality; flake fixed by
+        testing truncation with a tiny injected cap, not a 1000-row render). Orchestrator-verified."
+    open_minors:
+      - "Unbounded Promise.all fan-out (one getHistory per signal) — fine at demo scale, scalability follow-up (bulk endpoint/concurrency cap)."
+      - "Stale docstrings in dashboard useTopology.ts/useComponentSignals.ts cite the removed useSignalOptions/useHistory -> sprint-close cleanup."
   - id: STORY-061
     points: 3
     board: done            # awaiting PO verdict at review
