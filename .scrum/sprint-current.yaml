@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 38
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted — all 8 stories Done; wiki compiled; awaiting PO verdicts
 started: 2026-07-07
 goal: "Re-skin the entire six-tab operator SPA to the imported Operator Dashboard design
   (collapsible icon sidebar, Geist type, expanded 7-status palette, cards/grids/timeline),
