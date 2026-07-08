@@ -45,17 +45,18 @@ const RESULT_OPTIONS: Array<{ value: string; label: string }> = [
   { value: 'down', label: 'Down' },
 ]
 
-/** The most rows the tab will ever RENDER (STORY-060 AC3, resolving
- * STORY-054) — the `/history` endpoint has no pagination, so a wide window
- * can return many thousands of rows across every signal; this is a
- * client-side render cap, not a request limit. Lowered from the pre-060
- * value of 1,000: that render was slow enough under `npm test`
- * file-parallelism / CPU contention to occasionally exceed Vitest's 5s
- * per-test timeout (STORY-054's flaky false-red). 200 rows is still a deep
- * scroll for an operator glancing at recent history, renders comfortably
- * inside the timeout even under contention, and keeps the SAME cap-caption
- * UX — only the number changed. */
-const MAX_RENDERED_ROWS = 200
+/** The default (production) value for the most rows the tab will ever
+ * RENDER (STORY-060 AC3, restoring the pre-060 STORY-015e cap of 1,000 per
+ * the "preserve all existing functionality" rule) — the `/history` endpoint
+ * has no pagination, so a wide window can return many thousands of rows
+ * across every signal; this is a client-side render cap, not a request
+ * limit. It is passed as the `maxRenderedRows` prop's default rather than
+ * hard-coded so tests can inject a small cap (STORY-054's flake was the cap
+ * TEST rendering ~1,000-1,500 rows, slow enough under `npm test`
+ * file-parallelism/CPU contention to occasionally exceed Vitest's 5s
+ * per-test timeout) — production always renders via the default, unchanged
+ * from pre-060 behavior. */
+const DEFAULT_MAX_RENDERED_ROWS = 1000
 
 /** `latency_ms` renders as integer milliseconds; `null` (no measurement)
  * renders as an em-dash — NEVER `0 ms`, which would misreport "no reading"
@@ -76,7 +77,9 @@ function formatLatency(latencyMs: number | null): string {
  * client-side — none of the three filters trigger a refetch, only the
  * window toggle does.
  */
-export function CheckHistoryPage() {
+export function CheckHistoryPage({
+  maxRenderedRows = DEFAULT_MAX_RENDERED_ROWS,
+}: { maxRenderedRows?: number } = {}) {
   const [preset, setPreset] = useState<WindowPreset>('24h')
   // Memoized per preset (not per render) so `useAllHistory`'s fetcher keeps
   // a STABLE identity while the window selection is unchanged (015d
@@ -90,8 +93,8 @@ export function CheckHistoryPage() {
   const locationOptions = useMemo(() => uniqueLocations(rows), [rows])
   const filtered = useMemo(() => filterHistoryRows(rows, filters), [rows, filters])
 
-  const rendered = filtered.slice(0, MAX_RENDERED_ROWS)
-  const truncated = filtered.length > MAX_RENDERED_ROWS
+  const rendered = filtered.slice(0, maxRenderedRows)
+  const truncated = filtered.length > maxRenderedRows
 
   return (
     <Panel title="Check History" headingLevel="h1">
@@ -189,7 +192,7 @@ export function CheckHistoryPage() {
         <>
           {truncated ? (
             <p className="check-history-page__cap-note text-caption">
-              showing latest {MAX_RENDERED_ROWS.toLocaleString()} of{' '}
+              showing latest {maxRenderedRows.toLocaleString()} of{' '}
               {filtered.length.toLocaleString()} observations
             </p>
           ) : null}
