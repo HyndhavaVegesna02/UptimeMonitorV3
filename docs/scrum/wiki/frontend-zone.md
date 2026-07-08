@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/useSignalOptions.ts, frontend/src/features/history/useHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 4daf4c6
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
+verified_sha: 977e9ea
 verified_sprint: sprint-38
 status: verified
 ---
@@ -151,8 +151,8 @@ status: verified
   in — touching no other feature's handlers (STORY-041 refactor). Tests assert via accessible
   roles/text and drive real behavior (success + empty + error→retry against MSW; for a mutating
   tab, the actual POST/PUT body MSW received; for STORY-015d, the actual `since`/`until` query
-  params a selector change sent); no component/hook under assertion is mocked. 146 tests at
-  STORY-049.
+  params a selector change sent); no component/hook under assertion is mocked. 355 tests across 50
+  files at HEAD of sprint-38 (`npm test`, all green).
 - **Shared fetch machinery:** `frontend/src/lib/useFetch.ts::useFetch<T>(fetcher)` is the single
   home of the read-fetch state machine (STORY-015c, extracted from 015b's `useComponents` — the
   parallel-shape agreement): returns `{ state, retry }` over a discriminated-union `FetchState<T>`
@@ -172,58 +172,122 @@ status: verified
   selection is unchanged and changes — triggering exactly one refetch — only when the selection
   does. No `useFetch` contract change, no rewritten `useFetch` tests; this is the sanctioned
   extension for 015e–015g if a future tab needs the same shape.
-- **The per-tab pattern to copy (015e–015g)** — three real tabs now set it:
-  - **Read tab (Dashboard, 015b):** a page in `pages/<Tab>Page.tsx` + a one-line
-    `features/<tab>/use<Tab>.ts` = `useFetch(<moduleScopedFetcher>)`, rendering a four-state view
-    (loading / error+retry / empty / success) from the shared primitives — success branch a
-    semantic `<table>` (`<th scope="col">`, one row per item).
-  - **Mutating tab (Approvals, 015c):** on top of the read pattern, a per-page local UI state
-    machine (`idle → confirming → submitting → failed`) kept SEPARATE from the list's `useFetch`
-    state; double-submit guarded by UNMOUNTING the confirm control (not merely disabling); on
-    confirm, POST via the typed client reading `getActor()`; branch on `ApiError.status` for domain
-    outcomes (409 lost-race / 404 gone → inline notice; else → `ErrorState`); always call the list's
-    `retry()` after a resolved decision (success OR terminal conflict) so the view reconciles with
-    the server. See `pages/ApprovalsPage.tsx`.
-  - **Two-grain drill-down read tab (Availability, 015d):** on top of the read pattern, TWO
-    additional shapes: (1) a **selector-driven, parameterized fetch** — see the
-    "parameterized fetch" note above `useFetch`'s sharp edge; (2) **expandable parent/child rows**
-    within one semantic `<table>` — a real `<button aria-expanded>` per parent row toggles rendering
-    additional `<tr className="…__child">` rows for that parent's children (a `Set<string>` of
-    expanded ids in local state, NOT a `useFetch`/server concern), and a component with zero
-    children renders a plain (non-interactive) name cell instead of a dead-end expand control. Every
-    numeric cell renders its value as TEXT even when it also draws a token-styled bar (the bar is
-    never the sole carrier), and a `null` percentage renders an explicit "no data" label (never
-    `0%`/`NaN%`). See `pages/AvailabilityPage.tsx`.
-  - **A two-axis coupled-selector read tab (Check History, 015e):** on top of the read pattern, TWO
-    independently-changeable selectors (which SIGNAL, which WINDOW) both feed one fetch —
-    `features/history/useHistory.ts::useHistory({ signalKey, range })` wraps `getHistory(...)` in
-    `useCallback` keyed on `[signalKey, range]` (the SAME parameterized-fetch pattern as 015d's
-    single-axis `range`, just keyed on two independent values instead of one — no `useFetch` change
-    needed here either). The signal enumeration is a SEPARATE small `useFetch(getTopology)` wrapper
-    (`features/history/useSignalOptions.ts`) plus a pure `features/history/signals.ts::
-    flattenSignals` helper — reusing the EXISTING topology endpoint (STORY-044/015d) rather than
-    adding a new one; `CheckHistoryPage` computes the effective selection as
-    `selectedSignalKey ?? signals[0]?.signal_key` on every render (never effect-synced into state)
-    so the default appears the instant topology resolves, with the SAME one-frame-flash rationale
-    as the sample-mode toggle's `enabled` computation below. The API's own newest-first order is
-    rendered AS-IS (never re-sorted — the order is the contract). Because `/history` has no
-    pagination, the page caps what it RENDERS (not what it requests) at the latest 1,000 rows, with
-    a visible "showing latest 1,000 of N observations" note when the fetched count exceeds that —
-    the FULL fetched array is what gets sliced, so the note's `N` is always the real total. See
-    `pages/CheckHistoryPage.tsx`.
-  - **A second plain read tab (Publications, 015g):** the simplest shape in the set — a single
-    `GET /api/v1/publications` with no selector, no params, and no client-side render cap (the
-    endpoint's own `list_recent` already caps server-side at 50). `features/publications/
-    usePublications.ts` is a one-line `useFetch(getPublications)`, identical in shape to
-    `useComponents`/`useApprovals`. The only two nuances, both pinned at planning rather than
-    discovered mid-build: (1) `PublicationDTO.status` is the `ComponentStatus` vocabulary, so it
-    reuses the EXISTING `toHealthStatus` (documented above) rather than a new mapper — the
-    opposite call from 015e's `observationHealth`, and (2) the 50-item cap is stated as permanent
-    header copy ("Showing the latest 50 publications") rather than a conditional note, because
-    (unlike Check History's client-side cap) the frontend never learns the true total row count —
-    the backend enforces the cap before the response is even built. `proposal_id: null` renders an
-    em-dash, matching the `latency_ms: null`/`from_status: null` null-handling convention. See
+- **The per-tab pattern (Wave 0/1 established it; Wave 2, sprint-38, rebuilt every page onto the
+  Operator Dashboard mock while keeping the shape):** a page in `pages/<Tab>Page.tsx` + one or more
+  `features/<tab>/use<Thing>.ts` hooks built on the shared `useFetch<T>`, rendering a four-state
+  view (loading / error+retry / empty / success) from the shared primitives. The six tabs at HEAD:
+  - **Dashboard (STORY-057 rebuild of 015b/046):** `useComponents()` is still the PRIMARY, blocking
+    fetch (only its failure blocks the page) gating a `SummaryCard` row —
+    `features/dashboard/summary.ts::summarizeComponents` derives REAL bucket counts (up / degraded /
+    partial / down, led by a "Components" total card) from `toHealthStatus`, adding a trailing
+    "Unknown" card only when that bucket actually has a member — never a permanent zero-value card.
+    Below it, one expandable `<table>` row per component (`pages/DashboardPage.tsx::ComponentRow`):
+    a `UptimeBar` sparkline + mono `formatPct`, and a `StatusBadge` (plus a SECOND "Under
+    maintenance" `StatusBadge`, STORY-046, unchanged, alongside — never replacing — the health one).
+    THREE more hooks layer on as graceful-degradation ENHANCEMENTS, per AC2 — a failure/loading
+    state in any of them degrades to "no expand affordance" / "no uptime data" / "no maintenance
+    badge" and never blocks or clears the primary table: `features/dashboard/useTopology.ts` (thin
+    `useFetch(getTopology)`, feeds the expand affordance), `features/dashboard/
+    useComponentUptime.ts::useComponentUptime(topology, range)` (a fixed 24h `range` — no selector
+    on this tab — combining the rollup `availability_pct` from `getComponentAvailability` with a
+    `buildUptimeSegments` sparkline built from the component's FIRST topology signal's raw
+    `getHistory`, capped at `MAX_UPTIME_SEGMENTS = 30`; `fetchComponentUptime` NEVER rejects — a
+    per-component failure degrades to `{ pct: null, segments: [] }` so one troubled component can't
+    blank every other row), and `features/dashboard/useMaintenanceWindows.ts` (STORY-046,
+    unchanged). Expanding a row (a real `<button aria-expanded>`, `Set<string>` of expanded ids in
+    local state) lazily mounts `SignalsDrilldown`, which calls
+    `features/dashboard/useComponentSignals.ts::useComponentSignals(signals, range)` — its
+    `buildSignalRows` collapses each signal's observations to "latest per location" (the newest-
+    first `getHistory` contract means the FIRST observation seen per location IS the latest), and a
+    signal with zero observations in the window contributes one honest `'missing'`-status row rather
+    than being silently dropped; the drill-down's own loading/error/empty states are scoped to that
+    region alone. See `pages/DashboardPage.tsx`, `features/dashboard/{summary,useTopology,
+    useComponentSignals,useComponentUptime}.ts`.
+  - **Availability (STORY-058 rebuild of 015d):** a two-column grid replacing the old single
+    Availability column — `AvailabilityCell` (a big mono `formatPct` colored by
+    `features/availability/format.ts::availabilityBand`'s four real-percentage bands — up ≥99.9% /
+    degraded ≥99% / partial ≥95% / else down — plus `formatDownLabel`'s sublabel derived from the
+    REAL verdict counts `total − passing − maintenance`, never a fabricated count) and
+    `CompletenessCell` (mono `completeness_pct` + a hatched split bar, `isCompletenessLow` flagging
+    a REAL completeness below the 98% `COMPLETENESS_LOW_THRESHOLD` with a "missing data" chip — a
+    `null` pct is deliberately NOT "low", a distinct "no data" case). The rollup row's own
+    `UptimeBar` sparkline is `features/availability/segments.ts::buildAvailabilitySegments` (a
+    line-for-line copy of the Dashboard's `buildUptimeSegments`, `MAX_AVAILABILITY_SEGMENTS = 30`,
+    kept as its own file per the sprint-38 Wave-2 file-scope isolation rule since parallel
+    implementers worked in separate worktrees); a per-signal drill-down child row renders the same
+    `AvailabilityCell`/`CompletenessCell` pair with `showBar={false}` (mirroring the Dashboard
+    drill-down's bar-less convention). A legend (down/missing swatches) plus the 24h/7d/30d window
+    toggle (`features/availability/windowRange.ts`, unchanged, also reused by Check History) sit in
+    the header. The two-grain expand/collapse mechanics (a real `<button aria-expanded>`, per-signal
+    name resolved from topology since `SignalAvailabilityDTO` carries no `name`) are unchanged from
+    015d. See `pages/AvailabilityPage.tsx`, `features/availability/{segments,format}.ts`.
+  - **Approvals (STORY-059 rebuild of 015c):** one `ApprovalCard` per open proposal (`<ul
+    className="approval-list">` replacing the old table) with a left severity-accent stripe —
+    `features/approvals/severity.ts::deriveSeverity(to_status)` maps `major_outage → down/"Major"`,
+    `partial_outage → partial/"Partial"`, `degraded → degraded/"Degraded"` onto the SAME 7-status
+    health tokens every other indicator uses (a defensive `'unknown'` fallback for the
+    else-case, which `core/services/decide.py` makes practically unreachable — an open proposal is
+    always a degradation, never a recovery). The `from_status → to_status` transition is two
+    `StatusBadge`s (`from_status === null` renders "New" — a component's first-ever proposal has no
+    prior status) plus an `Icon name="arrow-right"`. The idle → confirming → submitting → failed
+    state machine (`features/approvals/decisionState.ts`, byte-identical to 015c) is narrowed
+    per-card via `toCardDecisionState` so a card never compares proposal ids itself; the 409/404
+    notice banner still lives one level up in `ApprovalsPage` (not scoped to a single card). Fields
+    the wire doesn't expose (reason/source/detected-ago/checks/triggering-signals) are OMITTED,
+    never faked — deferred to STORY-063. See `pages/ApprovalsPage.tsx`, `features/approvals/
+    {severity,decisionState,ApprovalCard}.tsx`.
+  - **Check History (STORY-060 rebuild of 015e — now a SYSTEM-WIDE ledger, not one signal at a
+    time):** `features/history/useAllHistory.ts` enumerates every topology signal via the EXISTING
+    `getTopology()` (reusing `features/history/signals.ts::flattenSignals`), fires one `getHistory`
+    call per signal IN PARALLEL for the selected 24h/7d/30d window, and merges the results via
+    `features/history/mergeObservations.ts::mergeObservations` — each signal's own observations
+    arrive newest-first, but interleaving multiple signals means the merged list must be RE-SORTED
+    by `observed_at` descending to stay newest-first overall; `HistoryRow` extends `ObservationDTO`
+    with a `componentName` resolved at merge time from the topology join. This ONE `useFetch`
+    fetcher supersedes and REMOVES the old per-signal-selector pair `features/history/
+    useSignalOptions.ts` + `useHistory.ts` (deleted — no longer in `code_refs`). A filter toolbar
+    (free-text search + a result `<select>` + a location `<select>`, `features/history/
+    filterHistory.ts::filterHistoryRows`/`uniqueLocations`) then narrows the ALREADY-LOADED list
+    client-side — none of the three filters triggers a refetch, only the window toggle does; the
+    location options are populated from the currently-loaded window's REAL data (no dedicated
+    locations-enumeration endpoint). The dense grid replaced the old selector-driven single-signal
+    table. The 1,000-row render cap (STORY-015e, `/history` has no pagination) is preserved but now
+    an INJECTABLE `maxRenderedRows` prop (default `DEFAULT_MAX_RENDERED_ROWS = 1000`) — added in the
+    STORY-060 review fix so a test can pin a small cap without the STORY-054 flake (rendering
+    ~1,000+ rows was slow enough under `npm test` file-parallelism to occasionally exceed Vitest's
+    per-test timeout); production always renders via the default. See `pages/CheckHistoryPage.tsx`,
+    `features/history/{filterHistory,mergeObservations,useAllHistory}.ts`.
+  - **Publications (STORY-062 rebuild of 015g):** a vertical `Timeline`/`TimelineItem` (the STORY-055
+    shared primitive) replacing the old changelog table — one `TimelineItem` per publication,
+    newest-first exactly as `usePublications()` (`useFetch(getPublications)`, unchanged shape)
+    returns them, toned via the EXISTING `toHealthStatus` (unchanged — `PublicationDTO.status` is
+    the SAME `ComponentStatus` vocabulary). The mock's author/outcome/incident fields are OMITTED —
+    not on `PublicationDTO` — deferred to STORY-066; the 50-item server-side cap is still stated as
+    permanent header copy (never a conditional note, since the frontend never learns the true total
+    row count for this endpoint); `proposal_id: null` still renders an em-dash. See
     `pages/PublicationsPage.tsx`.
+  - **Maintenance (STORY-061 rebuild of 015f/052):** a two-column layout — a `ScheduleForm` card
+    ("New window": Title/Component/Start/End, "Title" a client-only label submitted as `reason`;
+    `fieldErrorFromDetail`/`deriveWindowState`/`useComponents()` for its options all UNCHANGED from
+    015f) beside a windows list, each entry showing its title/reason (`formatReason`, `null` →
+    em-dash), a `WindowStateBadge` (unchanged since 015f — deliberately SEPARATE from
+    `StatusBadge`/`HealthStatus`, since a window's scheduling state is a different concept from
+    component health), and `component_id · starts_at–ends_at`. The per-window delete control is
+    OMITTED — no `DELETE /api/v1/maintenance/{id}` on the wire — deferred to STORY-065.
+    `useMaintenance` (load+mutate-in-one-hook, calling the list's `retry()` on a successful create)
+    is UNCHANGED. See `pages/MaintenancePage.tsx`.
+  - **The adapt-to-real-data decisions across all six rebuilds are tracked as explicit follow-up
+    stories, never silently fabricated fields:** STORY-063 (Approvals: proposal
+    reason/source/detected-ago/checks), STORY-064 (Check History: observation Code/Type columns —
+    not on `ObservationDTO`), STORY-065 (Maintenance: a real title field + delete), STORY-066
+    (Publications: author/outcome/incident metadata), STORY-067 (component grouping on Dashboard —
+    today's rebuild renders ONE flat section, no `group` field on the wire yet — and a dedicated
+    per-component uptime-bucket API, so both Dashboard's `useComponentUptime` and Availability's
+    `useAvailability` independently adapt today by composing the existing per-component
+    `getComponentAvailability` rollup with a sparkline built from the FIRST topology signal's raw
+    `getHistory` — two near-identical `buildXSegments` helpers kept as separate files per the
+    sprint-38 Wave-2 file-scope isolation rule, not a shared one, since parallel implementers worked
+    in separate worktrees).
   - **A load+mutate widget owned by the shell, not a tab (sample-mode trigger, STORY-049,
     relocated STORY-056, TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):**
     `features/dashboard/useSampleMode.ts` still owns BOTH the load (`useFetch(getSampleMode)`) and
@@ -242,61 +306,16 @@ status: verified
     instant one of them PUTs — see `TopBar.tsx`'s and `SampleModeBanner.tsx`'s header comments.
     `DashboardPage.tsx` no longer renders or imports anything sample-mode-related. See
     `AppShell.tsx`, `nav/TopBar.tsx`, `nav/SampleModeBanner.tsx`.
-  - **A second mutating tab, list + create form (Maintenance, STORY-015f):** unlike Approvals'
-    split (a read `useFetch` hook plus page-local mutation state), `features/maintenance/
-    useMaintenance.ts` owns BOTH the list load (`useFetch(getMaintenance)`) and the create
-    mutation (`schedule`, POSTing and calling the list's own `retry()` on success to reconcile
-    with the server) in one hook — the `useSampleMode` "load+mutate in one hook" shape, adapted
-    for a GROWING LIST rather than a single flag: success reconciles via `retry()` instead of a
-    locally-held override value. `schedule` resolves to a `boolean` (not `void`, unlike
-    `useSampleMode.setEnabled`) specifically so the form can reset its own fields exactly once on
-    success without racing the hook's async state update. The wire has NO `state` field for a
-    window; `features/maintenance/windowState.ts::deriveWindowState(startsAt, endsAt, now)` derives
-    upcoming/active/past CLIENT-SIDE per the backend's half-open rule (active iff
-    `starts_at <= now < ends_at`; both boundary instants unit-tested), rendered via a small
-    page-local `WindowStateBadge` — deliberately NOT the shared `StatusBadge`/`HealthStatus`
-    vocabulary, since a window's scheduling state is a different concept from component health
-    (the same separation-of-vocabularies reasoning `observationHealth.ts` documents). The schedule
-    form's component options come from the EXISTING `useComponents()` (no new fetch shape); its
-    two `datetime-local` inputs convert to tz-aware ISO via `new Date(value).toISOString()` before
-    POSTing. A 422's `ApiError.detail` is mapped by `features/maintenance/fieldError.ts::
-    fieldErrorFromDetail` (substring match on the backend's real validation wording) onto the
-    specific field it names and rendered INLINE next to that field (`role="alert"`) rather than as
-    a toast/console-only failure — an unmatched detail falls back to a general form-level alert.
-    STORY-052 (sprint-37, defect fix): the backend's ordering message ("ends_at must be strictly
-    greater than starts_at.") mentions BOTH fields, so `fieldErrorFromDetail` checks for that
-    "strictly greater than" phrase FIRST — before the generic per-field substring scan — and maps
-    it to `ends_at` (the field actually at fault), not the first-mentioned `starts_at`; the same
-    ordering keeps a raw multi-field detail (e.g. a Pydantic `ValidationError`'s `str()`, whose
-    `input_value={...}` echo can contain a `component_id` token) resolving deterministically
-    without throwing, rather than mis-mapping onto whichever field's token happens to appear first.
-    See `pages/MaintenancePage.tsx`.
-  - **A read tab overlaying a second independent fetch (Dashboard maintenance
-    indicator, STORY-046):** the frontend health vocabulary's `maintenance`
-    `HealthStatus` value was dead code — the backend `ComponentStatus` (the
-    only producer `toHealthStatus` maps) is a closed 4-value set with no
-    maintenance state, so it could never be produced from
-    `GET /api/v1/components`. `DashboardPage.tsx` now ALSO fetches
-    `features/dashboard/useMaintenanceWindows.ts = useFetch(getMaintenance)`
-    (a second, independent `useFetch(getComponents)`-shaped hook — NOT a
-    joined/parameterized fetch, since health and maintenance are separate
-    concepts per dossier §6/§11 with no shared loading/error lifecycle to
-    couple). A page-local `isUnderActiveMaintenance(componentId, windows)`
-    filters `windows` to that `component_id` and checks
-    `deriveWindowState(startsAt, endsAt) === 'active'` for ANY of them
-    (`features/maintenance/windowState.ts` — the SAME half-open derivation
-    `MaintenancePage.tsx` uses, reused rather than re-derived; both boundary
-    instants, `starts_at` and `ends_at`, are pinned by tests). The indicator
-    renders a SECOND `StatusBadge` (`status="maintenance"`, labeled "Under
-    maintenance") in the Status cell ALONGSIDE the health badge — never
-    replacing it, so a degraded component under maintenance shows BOTH, and
-    the indicator carries its own text label (never color-only). Graceful
-    degradation: `maintenanceState.phase === 'success' ? maintenanceState.data
-    : []` treats a maintenance-fetch failure OR its loading state as "no
-    active windows" rather than blocking or erroring the primary components
-    table — the overlay is an enhancement, not a hard dependency. No change
-    to `statusMapping.ts`/`ComponentStatus`/`StatusBadge.tsx`. See
-    `pages/DashboardPage.tsx`.
+  - The Dashboard maintenance indicator (STORY-046 — the frontend health vocabulary's `maintenance`
+    `HealthStatus` value, otherwise dead code since the backend `ComponentStatus`
+    `toHealthStatus` maps is a closed 4-value set with no maintenance state) is unchanged by the
+    STORY-057 rebuild: `isUnderActiveMaintenance`/`deriveWindowState`/`useMaintenanceWindows` all
+    carry over verbatim, folded into the new `ComponentRow` (documented above).
+  - The field-mapping fix from STORY-052 (sprint-37: the backend's `ends_at`/`starts_at` ordering
+    422 mentions BOTH fields, so `features/maintenance/fieldError.ts::fieldErrorFromDetail` checks
+    for the "strictly greater than" phrase FIRST — before the generic per-field substring scan — and
+    maps it to `ends_at`, the field actually at fault) is preserved unchanged by the STORY-061
+    two-column rebuild.
   - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
     `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
     `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
@@ -307,15 +326,41 @@ status: verified
   `getX()`/`postX()`) and a new `mocks/handlers/<feature>.ts`; the routing table, MSW composition,
   and the shared `useFetch<T>` are structured for additive-only edits, so sequential tab stories
   don't collide.
-- **The shared `useFetch<T>` (done in 015c) is now the foundation for 015d–015g** — the
-  parallel-shape trigger the Sprint-26 retro flagged has been discharged. A read tab with NO
-  selector/args is a thin `useFetch(getX)`; one WITH a selector (015d's window) wraps its
-  parameterized call in `useCallback` keyed on a caller-memoized arg object instead — the one
-  sharp edge to watch either way is the stable-`fetcher`-reference rule. A future mutating tab
+- **The shared `useFetch<T>` (done in 015c) is now the foundation for every read hook through
+  sprint-38** — the parallel-shape trigger the Sprint-26 retro flagged has been discharged, and held
+  up across a much wider set of shapes than originally anticipated: a read tab with NO
+  selector/args is a thin `useFetch(getX)`; one WITH a selector (015d's window, or Dashboard's fixed
+  24h `range`) wraps its parameterized call in `useCallback` keyed on a caller-memoized arg object;
+  and STORY-057's `useComponentUptime`/`useComponentSignals` show the pattern generalizes to a
+  compound key (`[topology, range]` / `[signals, range]`) with no `useFetch` change either. The one
+  sharp edge to watch throughout is still the stable-`fetcher`-reference rule. A mutating tab still
   reuses the Approvals local-state-machine + `ApiError.status`-branching pattern rather than
   re-inventing it.
 
 ## History
+- sprint-38 (sprint-close compile pass, this update): recompiled for Wave 2 of the Operator
+  Dashboard redesign — STORY-057 (Dashboard: summary-card row + expandable per-component signal
+  drill-down + `UptimeBar` uptime column, `features/dashboard/{summary,useTopology,
+  useComponentSignals,useComponentUptime}.ts`), STORY-058 (Availability: two-column
+  availability/completeness grid with hatched-completeness split bar + a legend,
+  `features/availability/segments.ts` + new `format.ts` helpers `formatDownLabel`/
+  `isCompletenessLow`/`availabilityBand`), STORY-059 (Approvals: `ApprovalCard` list with a
+  severity-accent stripe, `features/approvals/severity.ts::deriveSeverity`), STORY-060 (Check
+  History: rebuilt as a SYSTEM-WIDE ledger — `features/history/useAllHistory.ts` +
+  `mergeObservations.ts` + `filterHistory.ts` replace the deleted single-signal-selector pair
+  `useSignalOptions.ts`/`useHistory.ts`; the 1,000-row cap gained an injectable `maxRenderedRows`
+  prop, STORY-060 review fix, resolving the STORY-054 flake), STORY-061 (Maintenance: two-column
+  form+list layout, delete control omitted → STORY-065), and STORY-062 (Publications: vertical
+  `Timeline`/`TimelineItem` replacing the changelog table, metadata omitted → STORY-066). All six
+  tabs now sit on the STORY-055 design system + STORY-056 shell (documented in the entries below,
+  unchanged by Wave 2). Backend diff empty for the whole sprint (frontend-only). `code_refs`: removed
+  the deleted `frontend/src/features/history/{useSignalOptions,useHistory}.ts`; added the STORY-055
+  shared-primitive defining files (`components/{Table,UptimeBar,SummaryCard,Timeline,Icon}/*.tsx`,
+  previously only covered via the `components/index.ts` barrel) and every new Wave-2 defining
+  feature module (`dashboard/{summary,useTopology,useComponentSignals,useComponentUptime}.ts`,
+  `availability/segments.ts`, `approvals/{severity,decisionState,ApprovalCard}.ts(x)`,
+  `history/{filterHistory,mergeObservations,useAllHistory}.ts`). Test count at HEAD: 355 tests / 50
+  files (`npm test`, all green). verified_sha = 977e9ea.
 - sprint-38: updated for STORY-056 (Wave 1 of the Operator Dashboard redesign — the app shell,
   wrapping every page). Replaced the top `Nav` bar with a collapsible left icon `Sidebar` (routed
   `NavLink`s carrying `aria-label`s that stay correct across expand/collapse, a
