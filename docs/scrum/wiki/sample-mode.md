@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
-code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/DashboardPage.css]
-verified_sha: 0f42798
-verified_sprint: sprint-37
+code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx]
+verified_sha: 4daf4c6
+verified_sprint: sprint-38
 status: verified          # verified | stale | archived
 ---
 
@@ -183,16 +183,31 @@ below for the mechanical deletion recipe.
   max(observed_at) from observations group by 1,2`. Full evidence trail:
   `docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md`.
 
-### The frontend consumer — Dashboard sample-mode toggle (STORY-049)
-- The Dashboard tab (`frontend/src/pages/DashboardPage.tsx`) renders a real
-  `<button role="switch">` reflecting `GET /api/v1/sample-mode` on load and
-  PUTting on click; `features/dashboard/useSampleMode.ts` owns both the load
-  and the mutation (see `docs/scrum/wiki/frontend-zone.md`'s per-tab-pattern
-  section for the design rationale — one hook, not the Approvals split,
-  because there is no list to reconcile against). While ON, a tokens-styled
-  "sample mode — signals recorded as DOWN" warning is shown. This is the
-  ONLY frontend surface sample mode has; no other tab/page renders anything
-  related to it.
+### The frontend consumer — shell TopBar trigger + banner (STORY-049, relocated STORY-056)
+- **STORY-056 (sprint-38) relocated this OUT of `DashboardPage` and into the app shell** — every
+  tab renders inside the shell, so the trigger no longer needs to live on one specific tab. The
+  hook itself, `features/dashboard/useSampleMode.ts`, is UNCHANGED (still owns both the load
+  `useFetch(getSampleMode)` and the mutation `setEnabled`; see
+  `docs/scrum/wiki/frontend-zone.md`'s per-tab-pattern section for the one-hook design rationale).
+  What changed is WHO calls it and WHERE it renders:
+  - `frontend/src/AppShell.tsx` calls `useSampleMode()` exactly ONCE and passes the result down as
+    a prop to both consumers below — never two independent hook calls, which would each run their
+    own GET/override cycle and could disagree the instant one of them PUTs.
+  - `frontend/src/nav/TopBar.tsx` renders the real `<button role="switch" aria-checked
+    aria-label="Sample mode">` (now a ⚡ icon button, right-aligned in the top bar) — same
+    role/state contract as the old inline toggle; a GET failure now renders a small retry
+    affordance in the trigger's place instead of a load failure falling back to the full shell
+    `ErrorState` (a 32px icon slot has no room for that block); a failed PUT surfaces a visible
+    `role="alert"` next to the buttons.
+  - `frontend/src/nav/SampleModeBanner.tsx` renders the exact "sample mode — signals recorded as
+    DOWN" `role="status"` warning text from the old inline block, now in a shell-level banner
+    region under the top bar, and now DISMISSIBLE (session-scoped local state; re-arms whenever the
+    flag transitions off then on again).
+  - `frontend/src/pages/DashboardPage.tsx` no longer imports `useSampleMode` or renders anything
+    sample-mode-related — it is a plain read tab again, same shape as Availability/Publications.
+  This is still the ONLY frontend surface sample mode has; no other tab/page renders anything
+  related to it — the surface just moved from "inside one tab's page" to "the shell every tab
+  renders inside."
 
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
@@ -248,7 +263,7 @@ see docs/scrum/wiki/sample-mode.md)` immediately above or beside it):
   `IngestService` check (undo the `SampleModeIngest`/`IngestService` extra
   imports too).
 
-**Revert these frontend shared-file edits** (STORY-049 — no comment tag was
+**Revert these frontend shared-file edits** (STORY-049, relocated STORY-056 — no comment tag was
 added in the frontend code the way the backend uses `# STORY-048 sample-mode
 seam`; instead every touched export/section carries a doc-comment naming
 "TEMPORARY FEATURE" and pointing at this article — grep the tree for
@@ -262,16 +277,30 @@ seam`; instead every touched export/section carries a doc-comment naming
 - `frontend/src/mocks/handlers/index.ts` — remove the `sampleMode` import
   line, its spread into `handlers`, and the `FIXTURE_SAMPLE_MODE_OFF`
   re-export.
-- `frontend/src/pages/DashboardPage.tsx` — remove the `useSampleMode` import,
-  the `SampleModeToggle` component, and its `<SampleModeToggle />` render
-  call inside `DashboardPage`.
-- `frontend/src/pages/DashboardPage.css` — remove the
-  `.dashboard-sample-mode*` rule block (delimited by the "Sample-mode toggle
-  (STORY-049)" comment).
-- `frontend/src/pages/DashboardPage.test.tsx` — remove the "DashboardPage —
-  sample mode toggle (STORY-049)" `describe` block; revert the `waitFor`
-  import back to `{ render, screen, within }` if nothing else in the file
-  still needs it.
+- `frontend/src/features/dashboard/useSampleMode.ts` /
+  `useSampleMode.test.tsx` — delete both (also listed in "Delete these files
+  entirely" above; unchanged since STORY-049 despite STORY-056 moving its
+  callers).
+- `frontend/src/AppShell.tsx` — remove the `useSampleMode` import + its call,
+  the derived `bannerVisible` boolean, the `sampleMode={sampleMode}` prop
+  passed to `TopBar`, and the `<SampleModeBanner visible={bannerVisible} />`
+  render call (STORY-056 seam — `AppShell` reverts to composing `Sidebar` +
+  `TopBar` (no prop) + the routed `<main>` only).
+- `frontend/src/nav/TopBar.tsx` / `TopBar.css` / `TopBar.test.tsx` — remove
+  the `sampleMode: UseSampleModeResult` prop and every trigger-button branch
+  keyed off it (the `mutationError` alert, the `state.phase === 'success'`
+  switch, the `state.phase === 'error'` retry button, and their CSS); `TopBar`
+  reverts to rendering only the theme toggle (STORY-056 seam).
+- `frontend/src/nav/SampleModeBanner.tsx` / `SampleModeBanner.css` /
+  `SampleModeBanner.test.tsx` — delete all three (STORY-056 seam; nothing
+  else in `AppShell` depends on this component once its render call above is
+  removed).
+- `frontend/src/pages/DashboardPage.tsx` / `.css` / `.test.tsx` — nothing to
+  revert here anymore as of STORY-056 (the inline `SampleModeToggle`
+  component/CSS/tests were already removed from this page when the trigger
+  relocated to the shell; this bullet is now a no-op, kept only so a future
+  reader doesn't wonder why the sprint-32 removal recipe used to name this
+  file and no longer does).
 
 **Write a new migration** chaining from whatever is HEAD at removal time
 that DROPs the `sample_mode` table (`op.drop_table("sample_mode")`) — the
@@ -296,6 +325,20 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-38 (STORY-056, Wave 1 of the Operator Dashboard redesign — the app shell): relocated the
+  frontend consumer OUT of `DashboardPage` and into the shell (see the rewritten "The frontend
+  consumer" section above). `features/dashboard/useSampleMode.ts` itself is BYTE-IDENTICAL — only
+  its caller changed, from `DashboardPage`'s embedded `SampleModeToggle` to `AppShell.tsx` calling
+  it once and threading the result down to the new `nav/TopBar.tsx` (the ⚡ trigger) and
+  `nav/SampleModeBanner.tsx` (the now-dismissible warning). `DashboardPage.tsx`/`.css`/`.test.tsx`
+  lost all sample-mode content; the equivalent test coverage now lives in `TopBar.test.tsx` /
+  `SampleModeBanner.test.tsx` / `AppShell.test.tsx` (moved, not dropped). Rewrote the REMOVAL
+  recipe's frontend bullets to match (new `AppShell.tsx`/`TopBar.tsx`/`SampleModeBanner.tsx` seam
+  points; the old `DashboardPage.*` bullets are now no-ops, kept as a pointer rather than deleted).
+  `code_refs` += `frontend/src/AppShell.tsx`, `frontend/src/nav/TopBar.tsx`,
+  `frontend/src/nav/SampleModeBanner.tsx`; removed `frontend/src/pages/DashboardPage.tsx`/`.css`
+  (no sample-mode content left in either). Frontend-only; six backend gates untouched (empty diff
+  since `sprint-38-start`). verified_sha = 4daf4c6.
 - sprint-37 (STORY-046, unrelated story — mechanical staleness sweep only): this article's
   `code_refs` include `frontend/src/pages/DashboardPage.tsx` and `frontend/src/pages/
   DashboardPage.css`, both of which changed for STORY-046 (the Dashboard maintenance

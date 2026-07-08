@@ -4,11 +4,12 @@ import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { server } from '../../mocks/server'
 import { FIXTURE_TOPOLOGY } from '../../mocks/handlers'
-import { useSignalOptions } from './useSignalOptions'
+import { useTopology } from './useTopology'
 
-/** Minimal harness rendering every `useSignalOptions` phase. */
+/** Minimal harness rendering every `useTopology` phase, so the hook is
+ * driven the same way its consumer (`DashboardPage`) will drive it. */
 function Harness() {
-  const { state, retry } = useSignalOptions()
+  const { state, retry } = useTopology()
 
   if (state.phase === 'loading') {
     return <div role="status">Loading…</div>
@@ -26,24 +27,27 @@ function Harness() {
   return (
     <ul>
       {state.data.map((component) => (
-        <li key={component.id}>{component.name}</li>
+        <li key={component.id}>
+          {component.name}: {component.signals.length} signals
+        </li>
       ))}
     </ul>
   )
 }
 
-describe('useSignalOptions', () => {
+describe('useTopology', () => {
   it('starts in the loading phase, then reaches success with the fetched topology', async () => {
     render(<Harness />)
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
+    const firstComponent = FIXTURE_TOPOLOGY[0]
     expect(
-      await screen.findByText(FIXTURE_TOPOLOGY[0].name),
+      await screen.findByText(`${firstComponent.name}: ${firstComponent.signals.length} signals`),
     ).toBeInTheDocument()
   })
 
-  it('reaches the error phase on failure, then recovers via retry', async () => {
+  it('reaches the error phase on failure, then recovers via retry (re-fetching)', async () => {
     const user = userEvent.setup()
     let callCount = 0
     server.use(
@@ -62,8 +66,9 @@ describe('useSignalOptions', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
+    const firstComponent = FIXTURE_TOPOLOGY[0]
     expect(
-      await screen.findByText(FIXTURE_TOPOLOGY[0].name),
+      await screen.findByText(`${firstComponent.name}: ${firstComponent.signals.length} signals`),
     ).toBeInTheDocument()
     expect(callCount).toBe(2)
   })

@@ -7,6 +7,12 @@ FastAPI dev server; see `vite.config.ts`).
 
 Design reference: `../DESIGN-linear.app.md` (a guide, not a copy target — see
 `docs/scrum/sprints/2026-07-02-sprint-25/plan.md` for the binding design brief).
+Sprint 38 re-skins the design system to the imported *Operator Dashboard* mock —
+see `docs/scrum/sprints/2026-07-07-sprint-38/plan.md`.
+
+Fonts are self-hosted via `@fontsource/geist` + `@fontsource/geist-mono`
+(imported in `src/styles/global.css`, loaded from `main.tsx`) — no runtime
+Google-CDN `<link>`.
 
 ## Commands
 

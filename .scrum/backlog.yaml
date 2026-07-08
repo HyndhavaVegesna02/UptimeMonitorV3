@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 55   # 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
+next_story_id: 70   # 068 = useAvailability.test.tsx parallelism false-red (sprint-38 STORY-058); 069 = sprint-38 redesign consolidation chore. 055-062 = Operator Dashboard redesign (sprint 38, frontend-only, adapt-to-real-data); 063-067 = redesign backend-gap follow-ups (drafts, deferred per PO 2026-07-07). 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -419,6 +419,126 @@ stories:
     points: 3
     priority: 21
     type: feature
+    sprint: null
+  # ── Operator Dashboard redesign (Sprint 38; PO-approved 2026-07-07) ──
+  #   Re-skin the six-tab operator SPA to the imported Claude Design
+  #   ("Operator Dashboard.dc.html", project 990e0ed7). Frontend-only, adapt
+  #   every element to REAL API data (no fakes); backend data gaps → 063-067
+  #   follow-up drafts. Fonts: self-hosted Geist per the mock. Sample-mode
+  #   toggle relocated to the top-bar trigger. Wave order: 055 → 056 → (057-062
+  #   parallel). All 3+ get spec+quality reviewers; implementers Sonnet 5 / HIGH.
+  - id: STORY-055
+    title: Design-system foundation — Geist fonts, retuned tokens (both themes), 7-status palette, shadow token, icon set, restyled base components + shared Table/UptimeBar/SummaryCard/Timeline primitives
+    file: docs/scrum/stories/STORY-055-design-system-foundation.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07; re-pointed 3->5 to pull shared primitives forward for parallel Wave 2
+    points: 5
+    priority: 15
+    type: feature
+    sprint: 38
+  - id: STORY-056
+    title: App shell redesign — collapsible left icon sidebar, top bar (theme toggle + relocated sample-mode trigger), banner, Approvals count badge
+    file: docs/scrum/stories/STORY-056-app-shell-sidebar.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 5
+    priority: 16
+    type: feature
+    sprint: 38
+  - id: STORY-057
+    title: Dashboard redesign — summary stat cards + grouped expandable component rows + signal drill-down + uptime sparkline (adapt to real data)
+    file: docs/scrum/stories/STORY-057-dashboard-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 5
+    priority: 17
+    type: feature
+    sprint: 38
+  - id: STORY-058
+    title: Availability redesign — grid layout, segment bars + hatched completeness + legend, window toggle, per-signal drill-down
+    file: docs/scrum/stories/STORY-058-availability-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 3
+    priority: 18
+    type: feature
+    sprint: 38
+  - id: STORY-059
+    title: Approvals redesign — card layout with severity stripe, from→to pills, confirm flow, "Queue clear" empty state (adapt to real data)
+    file: docs/scrum/stories/STORY-059-approvals-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 5
+    priority: 19
+    type: feature
+    sprint: 38
+  - id: STORY-060
+    title: Check History redesign — filter toolbar (search + result + location), dense mono grid; resolve STORY-054 flaky render
+    file: docs/scrum/stories/STORY-060-check-history-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07; subsumes STORY-054
+    points: 3
+    priority: 20
+    type: feature
+    sprint: 38
+  - id: STORY-061
+    title: Maintenance redesign — two-column form-card + windows list with state badges, inline 422 field mapping preserved
+    file: docs/scrum/stories/STORY-061-maintenance-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 3
+    priority: 21
+    type: feature
+    sprint: 38
+  - id: STORY-062
+    title: Publications redesign — vertical timeline layout (adapt to real data)
+    file: docs/scrum/stories/STORY-062-publications-redesign.md
+    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    points: 2
+    priority: 22
+    type: feature
+    sprint: 38
+  # ── Redesign backend-gap follow-ups (drafts; deferred out of sprint 38 per PO 2026-07-07) ──
+  #   Each captures data the mock shows that the current API does not expose. The
+  #   frontend adapts (omits) in sprint 38; these add the real data later. Refine
+  #   + estimate before scheduling.
+  - id: STORY-063
+    title: Proposal enrichment — severity / reason / source / triggering-signals on ProposalDTO (Approvals cards)
+    file: docs/scrum/stories/STORY-063-proposal-enrichment.md
+    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-059's omitted fields
+    type: feature
+    sprint: null
+  - id: STORY-064
+    title: Observation HTTP status code + check type on ObservationDTO (Check History columns)
+    file: docs/scrum/stories/STORY-064-observation-code-type.md
+    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-060's omitted columns
+    type: feature
+    sprint: null
+  - id: STORY-065
+    title: Maintenance title field + DELETE endpoint (Maintenance form title + delete action)
+    file: docs/scrum/stories/STORY-065-maintenance-title-delete.md
+    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-061's omitted title/delete
+    type: feature
+    sprint: null
+  - id: STORY-066
+    title: Publication author / outcome / incident metadata (Publications timeline)
+    file: docs/scrum/stories/STORY-066-publication-metadata.md
+    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-062's omitted fields
+    type: feature
+    sprint: null
+  - id: STORY-067
+    title: Component grouping + per-component uptime-bucket API (Dashboard groups + richer sparklines)
+    file: docs/scrum/stories/STORY-067-component-grouping-uptime-buckets.md
+    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-057's single-group + omitted-segment adaptation
+    type: feature
+    sprint: null
+  # ── Sprint-38 redesign follow-ups (found at review; deferred out of sprint 38) ──
+  - id: STORY-068
+    title: Defect — useAvailability.test.tsx false-reds under npm test file-parallelism (uncaught exceptions under CPU contention)
+    file: docs/scrum/stories/STORY-068-useavailability-parallelism-flake.md
+    status: draft   # found at sprint-38 STORY-061 spec review (2026-07-08): 18 uncaught exceptions in useAvailability.test.tsx on a contended parallel run; clean (355/355) serialized/on re-run. Same class as the now-fixed STORY-054. Investigate (unhandled rejection on the segment-fetch degradation path vs pure timeout) and make deterministic. Refine before scheduling.
+    points: 2
+    priority: 22
+    type: defect
+    sprint: null
+  - id: STORY-069
+    title: Chore — sprint-38 redesign consolidation minors (uptimeSegments dedup, stale docstrings, token/a11y nits)
+    file: docs/scrum/stories/STORY-069-redesign-consolidation-minors.md
+    status: draft   # accumulated non-blocking review MINORs from sprint-38. Refine before scheduling.
+    type: chore
     sprint: null
   # ── Chores (from retros) ─────────────────────────────────────────
   - id: STORY-018

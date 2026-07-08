@@ -1,10 +1,18 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { FIXTURE_COMPONENTS, FIXTURE_COMPONENTS_ALL_STATUSES } from '../mocks/handlers'
 import { DashboardPage } from './DashboardPage'
+
+/** Scopes a summary-card lookup to the summary row — several status LABELS
+ * (e.g. "Degraded") are shared with the per-row `StatusBadge` text below,
+ * so an unscoped `getByText` would find both. */
+function cardFor(label: string): HTMLElement {
+  const summary = document.querySelector('.dashboard-page__summary') as HTMLElement
+  return within(summary).getByText(label).closest('.summary-card') as HTMLElement
+}
 
 describe('DashboardPage', () => {
   it('shows a loading state, then a table with one row per component (AC1, AC2)', async () => {
@@ -15,10 +23,11 @@ describe('DashboardPage', () => {
     const table = await screen.findByRole('table')
     expect(table).toBeInTheDocument()
 
-    // Semantic column headers (AC1: `<th scope="col">`).
+    // Semantic column headers (AC1: `<th scope="col">` via the shared `Table` primitive).
     expect(
       screen.getByRole('columnheader', { name: 'Component' }),
     ).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Uptime' })).toBeInTheDocument()
     expect(
       screen.getByRole('columnheader', { name: 'Status' }),
     ).toBeInTheDocument()
@@ -26,11 +35,26 @@ describe('DashboardPage', () => {
     expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
     expect(screen.getByText(FIXTURE_COMPONENTS[1].name)).toBeInTheDocument()
     // operational -> "Up", degraded -> "Degraded" (src/api/statusMapping.ts)
-    expect(screen.getByText('Up')).toBeInTheDocument()
-    expect(screen.getByText('Degraded')).toBeInTheDocument()
+    // — scoped to the table since the summary-card row above also has a
+    // "Degraded" label.
+    expect(within(table).getByText('Up')).toBeInTheDocument()
+    expect(within(table).getByText('Degraded')).toBeInTheDocument()
 
-    // Exactly one data row per fixture component.
+    // Exactly one data row per fixture component (no row expanded).
     expect(screen.getAllByRole('row')).toHaveLength(FIXTURE_COMPONENTS.length + 1)
+  })
+
+  it('renders a SummaryCard row derived from real component counts (AC1)', async () => {
+    render(<DashboardPage />)
+    await screen.findByRole('table')
+
+    // FIXTURE_COMPONENTS: 1 operational + 1 degraded, no partial/down/unknown.
+    expect(within(cardFor('Components')).getByText('2')).toBeInTheDocument()
+    expect(within(cardFor('Operational')).getByText('1')).toBeInTheDocument()
+    expect(within(cardFor('Degraded')).getByText('1')).toBeInTheDocument()
+    expect(within(cardFor('Partial outage')).getByText('0')).toBeInTheDocument()
+    expect(within(cardFor('Down')).getByText('0')).toBeInTheDocument()
+    expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
   })
 
   it('renders the empty state when the backend returns no components (AC2)', async () => {
@@ -87,7 +111,7 @@ describe('DashboardPage', () => {
     const expectations: Array<[string, string]> = [
       ['Operational Component', 'Up'],
       ['Degraded Component', 'Degraded'],
-      ['Partial Outage Component', 'Degraded'],
+      ['Partial Outage Component', 'Partial outage'],
       ['Major Outage Component', 'Down'],
       ['Mystery Component', 'Unknown'],
     ]
@@ -100,157 +124,97 @@ describe('DashboardPage', () => {
       expect(within(row as HTMLElement).getByText(label)).toBeInTheDocument()
     }
   })
-})
 
-describe('DashboardPage — sample mode toggle (STORY-049)', () => {
-  it('renders the switch off by default, reflecting the GET, with no warning (AC1)', async () => {
+  it('binds the per-row uptime % and sparkline to real availability/history, omitting fabricated segments where none exist (AC3)', async () => {
     render(<DashboardPage />)
     await screen.findByRole('table')
 
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    // sockshop-frontend: real availability_pct (0.995) + a real 4-observation
+    // sparkline built from FIXTURE_HISTORY_FRONTEND_HTTP.
+    expect(await screen.findByText('99.50%')).toBeInTheDocument()
     expect(
-      screen.queryByText(/sample mode — signals recorded as down/i),
-    ).not.toBeInTheDocument()
-  })
+      screen.getByRole('img', { name: 'Sock Shop — frontend uptime' }),
+    ).toBeInTheDocument()
 
-  it('renders the switch on and the warning when the flag is already on (AC1, AC3)', async () => {
-    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
-
-    render(<DashboardPage />)
-
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
+    // sockshop-catalogue: real availability_pct (0.982), but its primary
+    // signal (catalogue-http) has no fixtured history -> the shared
+    // `UptimeBar`'s own explicit "no data" state, never a fabricated bar.
+    expect(await screen.findByText('98.20%')).toBeInTheDocument()
     expect(
-      await screen.findByText(/sample mode — signals recorded as down/i),
+      screen.getByRole('img', { name: 'Sock Shop — catalogue uptime: no data' }),
     ).toBeInTheDocument()
   })
 
-  it('does not render the switch until the initial GET resolves (loading case)', async () => {
-    let resolveGet: (() => void) | undefined
-    server.use(
-      http.get('/api/v1/sample-mode', async () => {
-        await new Promise<void>((resolve) => {
-          resolveGet = resolve
-        })
-        return HttpResponse.json({ enabled: false })
-      }),
-    )
-
-    render(<DashboardPage />)
-
-    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
-
-    await waitFor(() => expect(resolveGet).toBeDefined())
-    resolveGet?.()
-
-    expect(await screen.findByRole('switch', { name: 'Sample mode' })).toBeInTheDocument()
-  })
-
-  it('toggling on PUTs { enabled: true } and shows the warning on success (AC2, AC3)', async () => {
+  it('expands a component row to its real signal drill-down: location/status/latency/last-observed (AC2)', async () => {
     const user = userEvent.setup()
-    let receivedBody: unknown
-    server.use(
-      http.put('/api/v1/sample-mode', async ({ request }) => {
-        receivedBody = await request.json()
-        return HttpResponse.json({ enabled: true })
-      }),
-    )
-
     render(<DashboardPage />)
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await screen.findByRole('table')
+
+    const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
 
     await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
 
-    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
-    expect(receivedBody).toEqual({ enabled: true })
-    expect(
-      await screen.findByText(/sample mode — signals recorded as down/i),
-    ).toBeInTheDocument()
-  })
-
-  it('toggling off PUTs { enabled: false } and the warning disappears (AC2, AC3)', async () => {
-    const user = userEvent.setup()
-    let receivedBody: unknown
-    server.use(
-      http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })),
-      http.put('/api/v1/sample-mode', async ({ request }) => {
-        receivedBody = await request.json()
-        return HttpResponse.json({ enabled: false })
-      }),
-    )
-
-    render(<DashboardPage />)
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
-    expect(
-      await screen.findByText(/sample mode — signals recorded as down/i),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Signals feeding this component')).toBeInTheDocument()
+    // frontend-http -> 3 distinct-location rows; frontend-tls -> 1.
+    expect(screen.getAllByText('Frontend HTTP check')).toHaveLength(3)
+    expect(screen.getAllByText('Frontend TLS check')).toHaveLength(1)
+    expect(screen.getByText('SYNTHETIC_LOCATION-0000000000000060')).toBeInTheDocument()
+    expect(screen.getByText('571 ms')).toBeInTheDocument()
 
     await user.click(toggle)
-
-    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'false'))
-    expect(receivedBody).toEqual({ enabled: false })
-    expect(
-      screen.queryByText(/sample mode — signals recorded as down/i),
-    ).not.toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText('Signals feeding this component')).not.toBeInTheDocument()
   })
 
-  it('on a failed PUT, shows an inline error and leaves aria-checked unchanged (AC2)', async () => {
+  it('is keyboard-operable: focus + Enter toggles the expand affordance (AC2)', async () => {
     const user = userEvent.setup()
+    render(<DashboardPage />)
+    await screen.findByRole('table')
+
+    const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
+    toggle.focus()
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+
+    await user.keyboard('{Enter}')
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+  })
+
+  it('degrades gracefully: a topology failure still renders the components table with no expand affordance (AC2)', async () => {
     server.use(
-      http.put('/api/v1/sample-mode', () =>
+      http.get('/api/v1/topology', () =>
         HttpResponse.json({ detail: 'boom' }, { status: 500 }),
       ),
     )
 
     render(<DashboardPage />)
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    await screen.findByRole('table')
 
-    await user.click(toggle)
-
-    expect(await screen.findByRole('alert')).toBeInTheDocument()
-    expect(toggle).toHaveAttribute('aria-checked', 'false')
+    expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: FIXTURE_COMPONENTS[0].name }),
+    ).not.toBeInTheDocument()
   })
 
-  it('disables the switch while the PUT is in flight, re-enabling it once settled (AC2)', async () => {
+  it('degrades gracefully: a signal drill-down failure is scoped to the expanded row only (AC2)', async () => {
     const user = userEvent.setup()
-    let resolvePut: (() => void) | undefined
     server.use(
-      http.put('/api/v1/sample-mode', async () => {
-        await new Promise<void>((resolve) => {
-          resolvePut = resolve
-        })
-        return HttpResponse.json({ enabled: true })
-      }),
+      http.get('/api/v1/history', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
     )
 
     render(<DashboardPage />)
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    await screen.findByRole('table')
 
+    const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
     await user.click(toggle)
 
-    await waitFor(() => expect(toggle).toBeDisabled())
-
-    resolvePut?.()
-
-    await waitFor(() => expect(toggle).not.toBeDisabled())
-    expect(toggle).toHaveAttribute('aria-checked', 'true')
-  })
-
-  it('is keyboard-operable: Enter on the focused switch toggles it (AC1)', async () => {
-    const user = userEvent.setup()
-    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
-
-    render(<DashboardPage />)
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    toggle.focus()
-
-    await user.keyboard('{Enter}')
-
-    await waitFor(() => expect(toggle).toHaveAttribute('aria-checked', 'true'))
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load signals')
+    // The primary table is untouched by the drill-down's own failure.
+    expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
+    expect(screen.getByText(FIXTURE_COMPONENTS[1].name)).toBeInTheDocument()
   })
 })
 
@@ -324,7 +288,7 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
     return screen.getByText(name).closest('tr') as HTMLElement
   }
 
-  it('marks only components with an ACTIVE window, including exact half-open boundaries (AC1)', async () => {
+  it('marks only components with an ACTIVE window, including exact half-open boundaries (AC4)', async () => {
     server.use(
       http.get('/api/v1/components', () => HttpResponse.json(MAINTENANCE_COMPONENTS)),
       http.get('/api/v1/maintenance', () =>
@@ -364,7 +328,7 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('coexists with the health badge — a degraded component under active maintenance shows BOTH, non-color-only (AC2)', async () => {
+  it('coexists with the health badge — a degraded component under active maintenance shows BOTH, non-color-only (AC4)', async () => {
     const DEGRADED_ACTIVE = {
       id: 'comp-degraded-active',
       name: 'Degraded Under Maintenance',

@@ -30,6 +30,18 @@ const UPCOMING_WINDOW = {
   reason: 'Planned upgrade',
 }
 
+/** Finds the `<li>` ancestor of a piece of text rendered in the windows
+ * list — mirrors the old table's `closest('tr')` helper, adapted to the
+ * STORY-061 two-column list markup. */
+function windowItemFor(text: string): HTMLElement {
+  const node = screen.getByText(text)
+  const item = node.closest('li')
+  if (!item) {
+    throw new Error(`no <li> ancestor found for text "${text}"`)
+  }
+  return item as HTMLElement
+}
+
 describe('MaintenancePage', () => {
   beforeEach(() => {
     // `vi.setSystemTime` alone (without `vi.useFakeTimers()`) mocks `Date`
@@ -43,29 +55,37 @@ describe('MaintenancePage', () => {
     vi.useRealTimers()
   })
 
-  it('shows a loading state, then a table with one row per window (AC1)', async () => {
+  it('renders a two-column layout: a "New window" form card + a windows list (AC1)', async () => {
     render(<MaintenancePage />)
+
+    expect(screen.getByRole('heading', { name: 'Maintenance', level: 1 })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'New window', level: 2 })).toBeInTheDocument()
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
-    const table = await screen.findByRole('table')
-    expect(table).toBeInTheDocument()
-
     for (const window of FIXTURE_MAINTENANCE_WINDOWS) {
-      expect(screen.getByText(window.component_id)).toBeInTheDocument()
+      expect(await screen.findByText(window.component_id)).toBeInTheDocument()
     }
   })
 
-  it('renders start/end mono and an em-dash for a null reason (AC1, conventions (h))', async () => {
+  it('renders each window as title/reason + state badge + "component · range" (AC1)', async () => {
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
-    // FIXTURE_MAINTENANCE_WINDOWS[1] has reason: null.
+    // FIXTURE_MAINTENANCE_WINDOWS[1] has reason: null -> em-dash title.
     const nullReasonWindow = FIXTURE_MAINTENANCE_WINDOWS[1]
-    const row = screen.getByText(nullReasonWindow.component_id).closest('tr') as HTMLElement
-    expect(within(row).getByText(nullReasonWindow.starts_at)).toHaveClass('text-mono')
-    expect(within(row).getByText(nullReasonWindow.ends_at)).toHaveClass('text-mono')
-    expect(within(row).getByText('—')).toBeInTheDocument()
+    const item = windowItemFor(nullReasonWindow.component_id)
+    expect(within(item).getByText('—')).toBeInTheDocument()
+    expect(
+      within(item).getByText(
+        `${nullReasonWindow.starts_at}–${nullReasonWindow.ends_at}`,
+      ),
+    ).toBeInTheDocument()
+
+    // The other fixture window has a real reason string, rendered as its title.
+    const namedWindow = FIXTURE_MAINTENANCE_WINDOWS[0]
+    const namedItem = windowItemFor(namedWindow.component_id)
+    expect(within(namedItem).getByText(namedWindow.reason as string)).toBeInTheDocument()
   })
 
   it('derives and renders the correct state badge per the half-open rule (AC1)', async () => {
@@ -76,18 +96,22 @@ describe('MaintenancePage', () => {
     )
 
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(PAST_WINDOW.component_id)
 
-    const pastRow = screen.getByText(PAST_WINDOW.component_id).closest('tr') as HTMLElement
-    expect(within(pastRow).getByText('Past')).toBeInTheDocument()
+    expect(within(windowItemFor(PAST_WINDOW.component_id)).getByText('Past')).toBeInTheDocument()
+    expect(
+      within(windowItemFor(ACTIVE_WINDOW.component_id)).getByText('Active'),
+    ).toBeInTheDocument()
+    expect(
+      within(windowItemFor(UPCOMING_WINDOW.component_id)).getByText('Upcoming'),
+    ).toBeInTheDocument()
+  })
 
-    const activeRow = screen.getByText(ACTIVE_WINDOW.component_id).closest('tr') as HTMLElement
-    expect(within(activeRow).getByText('Active')).toBeInTheDocument()
+  it('never renders a delete control on a window (AC3 — omitted, no DELETE endpoint)', async () => {
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
-    const upcomingRow = screen
-      .getByText(UPCOMING_WINDOW.component_id)
-      .closest('tr') as HTMLElement
-    expect(within(upcomingRow).getByText('Upcoming')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument()
   })
 
   it('renders the empty state when no windows are scheduled (AC4)', async () => {
@@ -96,7 +120,7 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />)
 
     expect(await screen.findByText('No maintenance scheduled')).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: /window/i })).not.toBeInTheDocument()
   })
 
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {
@@ -120,39 +144,45 @@ describe('MaintenancePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
     expect(callCount).toBe(2)
   })
 
-  it('has labeled, keyboard-operable form inputs using shell primitives (AC4)', async () => {
+  it('has labeled, keyboard-operable form inputs in mock order: Title, Component, Start, End (AC1, AC4)', async () => {
     const user = userEvent.setup()
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
+    const titleInput = screen.getByLabelText('Title')
     const componentSelect = await screen.findByLabelText('Component')
-    const startsInput = screen.getByLabelText('Starts')
-    const endsInput = screen.getByLabelText('Ends')
-    const reasonInput = screen.getByLabelText('Reason')
+    const startInput = screen.getByLabelText('Start')
+    const endInput = screen.getByLabelText('End')
     const submitButton = screen.getByRole('button', { name: /schedule window/i })
+
+    await user.type(titleInput, 'Routine check')
+    expect(titleInput).toHaveValue('Routine check')
 
     await user.selectOptions(componentSelect, FIXTURE_COMPONENTS[0].id)
     expect(componentSelect).toHaveValue(FIXTURE_COMPONENTS[0].id)
 
-    await user.type(reasonInput, 'Routine check')
-    expect(reasonInput).toHaveValue('Routine check')
-
-    // Keyboard-operable: Tab reaches every field, in document order.
-    startsInput.focus()
-    expect(startsInput).toHaveFocus()
+    // Keyboard-operable, mock order: Title -> Component -> Start -> End -> submit.
+    titleInput.focus()
+    expect(titleInput).toHaveFocus()
     await user.tab()
-    expect(endsInput).toHaveFocus()
+    expect(componentSelect).toHaveFocus()
+    await user.tab()
+    expect(startInput).toHaveFocus()
+    await user.tab()
+    expect(endInput).toHaveFocus()
 
     expect(submitButton).toBeInTheDocument()
   })
 
-  it('POSTs a tz-aware, well-formed payload and refreshes the list on success (AC2)', async () => {
+  it('POSTs a tz-aware payload with Title mapped to reason, refreshes the list, and resets the form on success (AC1, AC2)', async () => {
     const user = userEvent.setup()
-    let postedBody: { component_id: string; starts_at: string; ends_at: string; reason: string | null } | undefined
+    let postedBody:
+      | { component_id: string; starts_at: string; ends_at: string; reason: string | null }
+      | undefined
     let getCallCount = 0
     const created = {
       id: 99,
@@ -176,22 +206,24 @@ describe('MaintenancePage', () => {
     )
 
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
-    await user.selectOptions(
-      await screen.findByLabelText('Component'),
-      FIXTURE_COMPONENTS[0].id,
-    )
-    await user.type(screen.getByLabelText('Starts'), '2026-07-09T09:00')
-    await user.type(screen.getByLabelText('Ends'), '2026-07-09T10:00')
-    await user.type(screen.getByLabelText('Reason'), 'Routine check')
+    const titleInput = screen.getByLabelText('Title')
+    const componentSelect = await screen.findByLabelText('Component')
+
+    await user.type(titleInput, 'Routine check')
+    await user.selectOptions(componentSelect, FIXTURE_COMPONENTS[0].id)
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
 
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
     await waitFor(() => expect(getCallCount).toBe(2))
     expect(postedBody).toBeDefined()
     expect(postedBody?.component_id).toBe(FIXTURE_COMPONENTS[0].id)
-    // Tz-aware and well-formed (AC2's exact assertion): trailing Z, parses.
+    // Title -> reason mapping (AC1: the DTO has no separate title field).
+    expect(postedBody?.reason).toBe('Routine check')
+    // Tz-aware and well-formed (AC2): trailing Z, parses.
     expect(postedBody?.starts_at.endsWith('Z')).toBe(true)
     expect(postedBody?.ends_at.endsWith('Z')).toBe(true)
     expect(Number.isNaN(new Date(postedBody!.starts_at).getTime())).toBe(false)
@@ -201,10 +233,16 @@ describe('MaintenancePage', () => {
     expect(postedBody?.ends_at).toBe(new Date('2026-07-09T10:00').toISOString())
 
     // Refreshed list now includes the newly-created window.
-    await screen.findByText(created.reason as string)
+    await screen.findByText(created.reason)
+
+    // Form resets on success (AC2).
+    expect(screen.getByLabelText('Title')).toHaveValue('')
+    expect(screen.getByLabelText('Component')).toHaveValue('')
+    expect(screen.getByLabelText('Start')).toHaveValue('')
+    expect(screen.getByLabelText('End')).toHaveValue('')
   })
 
-  it('renders a naive-starts_at 422 INLINE next to the Starts field, not toast/console-only (AC3)', async () => {
+  it('renders a naive-starts_at 422 INLINE next to the Start field, not toast/console-only (AC2)', async () => {
     const user = userEvent.setup()
     server.use(
       http.post('/api/v1/maintenance', () =>
@@ -213,24 +251,24 @@ describe('MaintenancePage', () => {
     )
 
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
     )
-    await user.type(screen.getByLabelText('Starts'), '2026-07-09T09:00')
-    await user.type(screen.getByLabelText('Ends'), '2026-07-09T10:00')
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
-    const startsField = screen.getByLabelText('Starts').closest('.maintenance-form__field')
-    expect(startsField).not.toBeNull()
+    const startField = screen.getByLabelText('Start').closest('.maintenance-form__field')
+    expect(startField).not.toBeNull()
     expect(
-      await within(startsField as HTMLElement).findByText('starts_at must be timezone-aware.'),
+      await within(startField as HTMLElement).findByText('starts_at must be timezone-aware.'),
     ).toBeInTheDocument()
   })
 
-  it('renders an empty-component_id 422 INLINE next to the Component field (AC3)', async () => {
+  it('renders an empty-component_id 422 INLINE next to the Component field (AC2)', async () => {
     const user = userEvent.setup()
     server.use(
       http.post('/api/v1/maintenance', () =>
@@ -242,7 +280,7 @@ describe('MaintenancePage', () => {
     )
 
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
     // A component IS chosen client-side (the select's own `required` would
     // otherwise block submission); the server-side 422 is exercised purely
@@ -253,8 +291,8 @@ describe('MaintenancePage', () => {
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
     )
-    await user.type(screen.getByLabelText('Starts'), '2026-07-09T09:00')
-    await user.type(screen.getByLabelText('Ends'), '2026-07-09T10:00')
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
     const componentField = screen
@@ -268,7 +306,7 @@ describe('MaintenancePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('renders an ends_at<=starts_at 422 INLINE next to the Ends field, not the Component field (STORY-052 AC2)', async () => {
+  it('renders an ends_at<=starts_at 422 INLINE next to the End field, not the Component field (AC2)', async () => {
     const user = userEvent.setup()
     server.use(
       http.post('/api/v1/maintenance', () =>
@@ -280,20 +318,20 @@ describe('MaintenancePage', () => {
     )
 
     render(<MaintenancePage />)
-    await screen.findByRole('table')
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
     )
-    await user.type(screen.getByLabelText('Starts'), '2026-07-09T10:00')
-    await user.type(screen.getByLabelText('Ends'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T10:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T09:00')
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
-    const endsField = screen.getByLabelText('Ends').closest('.maintenance-form__field')
-    expect(endsField).not.toBeNull()
+    const endField = screen.getByLabelText('End').closest('.maintenance-form__field')
+    expect(endField).not.toBeNull()
     expect(
-      await within(endsField as HTMLElement).findByText(
+      await within(endField as HTMLElement).findByText(
         'ends_at must be strictly greater than starts_at.',
       ),
     ).toBeInTheDocument()
@@ -307,5 +345,27 @@ describe('MaintenancePage', () => {
         'ends_at must be strictly greater than starts_at.',
       ),
     ).not.toBeInTheDocument()
+  })
+
+  it('falls back to a form-level error when the 422 detail names no known field (AC2)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.post('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'something unexpected happened' }, { status: 422 }),
+      ),
+    )
+
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    await user.selectOptions(
+      await screen.findByLabelText('Component'),
+      FIXTURE_COMPONENTS[0].id,
+    )
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('something unexpected happened')
   })
 })

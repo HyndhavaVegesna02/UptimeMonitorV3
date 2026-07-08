@@ -1,10 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { describe, expect, it, vi } from 'vitest'
+import { HttpResponse, http } from 'msw'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider } from './theme/ThemeContext'
 import { AppShell } from './AppShell'
 import { TABS } from './nav/tabs'
+import { server } from './mocks/server'
+import { FIXTURE_PROPOSALS } from './mocks/handlers'
 
 function mockMatchMedia(prefersDark: boolean) {
   vi.stubGlobal(
@@ -29,7 +32,22 @@ function renderShell(initialPath = '/') {
   )
 }
 
+// The sidebar persists its expanded/collapsed choice to localStorage
+// (STORY-056 AC1) — clear it before every test so one test's collapse
+// click can never leak into the next test's "starts expanded" assumption.
+beforeEach(() => {
+  window.localStorage.clear()
+})
+
 describe('AppShell routing', () => {
+  // These routing tests assert every tab's PLAIN accessible name — pin the
+  // Approvals fetch to zero open proposals so its badge never appends a
+  // ", N pending" suffix (the badge itself is exercised separately below,
+  // in "AppShell — Approvals badge").
+  beforeEach(() => {
+    server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
+  })
+
   it('renders all six nav items', () => {
     renderShell()
     for (const tab of TABS) {
@@ -114,7 +132,94 @@ describe('AppShell routing', () => {
     expect(
       screen.getByRole('link', { name: 'Back to Dashboard' }),
     ).toBeInTheDocument()
-    // Nav still renders alongside the not-found panel.
+    // Sidebar still renders alongside the not-found panel.
     expect(screen.getByRole('navigation', { name: 'Primary' })).toBeInTheDocument()
+  })
+})
+
+describe('AppShell — sidebar collapse (STORY-056 AC1)', () => {
+  beforeEach(() => {
+    server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
+  })
+
+  it('starts expanded by default and collapses/expands via the header toggle', async () => {
+    const user = userEvent.setup()
+    renderShell('/')
+
+    const toggle = screen.getByRole('button', { name: 'Collapse sidebar' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+
+    await user.click(toggle)
+
+    expect(
+      screen.getByRole('button', { name: 'Expand sidebar' }),
+    ).toHaveAttribute('aria-expanded', 'false')
+
+    // Tabs remain reachable by accessible name regardless of collapse state.
+    for (const tab of TABS) {
+      expect(screen.getByRole('link', { name: tab.label })).toBeInTheDocument()
+    }
+  })
+})
+
+describe('AppShell — top bar + banner (STORY-056 AC2, AC3)', () => {
+  it('renders the top bar sample-mode trigger and theme toggle', async () => {
+    renderShell('/')
+    expect(await screen.findByRole('switch', { name: 'Sample mode' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /switch to/i })).toBeInTheDocument()
+  })
+
+  it('shows the sample-mode banner only once the flag is on', async () => {
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderShell('/')
+
+    expect(
+      await screen.findByText(/sample mode — signals recorded as down/i),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('status')).toBeInTheDocument()
+  })
+
+  it('does not show the banner when the flag is off', async () => {
+    renderShell('/')
+    await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(
+      screen.queryByText(/sample mode — signals recorded as down/i),
+    ).not.toBeInTheDocument()
+  })
+
+  it('toggling the top-bar trigger on shows the banner (single shared source of truth)', async () => {
+    const user = userEvent.setup()
+    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderShell('/')
+
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    await user.click(toggle)
+
+    expect(
+      await screen.findByText(/sample mode — signals recorded as down/i),
+    ).toBeInTheDocument()
+  })
+})
+
+describe('AppShell — Approvals badge (STORY-056 AC4)', () => {
+  it('shows the open-proposal count on the Approvals sidebar item', async () => {
+    renderShell('/')
+    expect(
+      await screen.findByRole('link', {
+        name: `Approvals, ${FIXTURE_PROPOSALS.length} pending`,
+      }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows no badge when the approvals fetch fails', async () => {
+    server.use(
+      http.get('/api/v1/approvals', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+    renderShell('/')
+
+    // Still routable by its plain label — no ", N pending" suffix.
+    expect(await screen.findByRole('link', { name: 'Approvals' })).toBeInTheDocument()
   })
 })

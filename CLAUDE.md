@@ -48,7 +48,8 @@ frontend/
 ├── src/
 │   ├── styles/       # tokens.css (theme-scoped CSS custom properties) + global.css
 │   ├── theme/         # theme resolution (system pref + localStorage override), ThemeProvider/useTheme
-│   ├── components/    # shell primitives: Button, StatusBadge, Panel, Loading/Error/EmptyState
+│   ├── components/    # shell primitives: Button, StatusBadge, Panel, Loading/Error/EmptyState,
+│   │                    # Icon, Table, UptimeBar, SummaryCard, Timeline (STORY-055)
 │   ├── nav/            # top nav (six-tab IA) + routing table (tabs.ts)
 │   ├── pages/          # one placeholder per tab (015b-015g fill in real content)
 │   ├── api/             # typed fetch client (client.ts), DTO types mirroring backend/src/api/v1/*/models.py
@@ -62,8 +63,14 @@ frontend/
 Design reference: `DESIGN-linear.app.md` (repo root) — a guide to adapt, not
 a copy target; see `docs/scrum/sprints/2026-07-02-sprint-25/plan.md` for the
 binding design brief (token values, accent discipline, health palette, type
-scale) that STORY-015a built to. `frontend/README.md` has the day-to-day
-quick reference.
+scale) that STORY-015a built to. Sprint 38 re-skins the design system to the
+imported *Operator Dashboard* mock (`docs/scrum/sprints/2026-07-07-sprint-38/`)
+— retuned tokens, a 7-status health palette (`up`/`degraded`/`partial`/`down`/
+`maintenance`/`unknown`/`missing`), and four shared primitives (`Table`,
+`UptimeBar`, `SummaryCard`, `Timeline`), landed by STORY-055. Fonts are
+self-hosted Geist + Geist Mono (`@fontsource/geist` + `@fontsource/geist-mono`,
+imported in `src/styles/global.css`) — no runtime Google-CDN `<link>`.
+`frontend/README.md` has the day-to-day quick reference.
 
 Frontend commands (run from `frontend/`; Node 24 / npm 11):
 

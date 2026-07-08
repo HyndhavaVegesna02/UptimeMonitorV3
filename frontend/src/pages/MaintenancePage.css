@@ -1,16 +1,52 @@
+.maintenance-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.maintenance-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.maintenance-page__title {
+  color: var(--color-ink);
+}
+
+.maintenance-page__subtitle {
+  color: var(--color-ink-muted);
+}
+
+/* Two-column layout (STORY-061 AC1, mock's `grid-template-columns:320px
+   1fr`): a fixed-width form card + a flexible windows list. Collapses to a
+   single stacked column on narrow viewports rather than clipping the form. */
+.maintenance-page__layout {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .maintenance-page__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.maintenance-page__form-panel {
+  padding: var(--space-4);
+}
+
+.maintenance-page__list-panel {
+  padding: 0;
+}
+
 .maintenance-form {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-4);
-  margin-bottom: var(--space-6);
-  padding-bottom: var(--space-6);
-  border-bottom: 1px solid var(--color-hairline);
-}
-
-.maintenance-form__title {
-  color: var(--color-ink);
-  margin: 0;
+  align-items: stretch;
+  gap: var(--space-3);
 }
 
 .maintenance-form__field {
@@ -18,7 +54,6 @@
   flex-direction: column;
   gap: var(--space-2);
   width: 100%;
-  max-width: 360px;
 }
 
 .maintenance-form__label {
@@ -29,33 +64,35 @@
   letter-spacing: 0.04em;
 }
 
-/* The shared text-input spec (AC4): >=40px target height, 8px radius,
-   hairline border, surface-1 background — matching the select/window-button
-   controls other tabs already established (check-history-page__signal-select,
-   check-history-page__window-button). Focus ring comes from global.css's
+/* The shared text-input spec (STORY-015a AC4, unchanged): >=40px target
+   height, control radius, hairline border, surface-2 background — matching
+   the mock's form-card inputs. Focus ring comes from global.css's
    `input:focus-visible` rule; nothing here overrides it. */
 .maintenance-form__input {
   min-height: var(--target-min);
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   border: 1px solid var(--color-hairline);
-  background: var(--color-surface-1);
+  background: var(--color-surface-2);
   color: var(--color-ink);
   font-family: var(--font-sans);
   font-size: var(--fs-body);
 }
 
 .maintenance-form__hint {
+  margin: 0;
   color: var(--color-ink-subtle);
   font-size: var(--fs-caption);
 }
 
-/* Inline field error (AC3) — the "down" health color marks the icon only,
-   text stays an ink token (mirrors ErrorState's non-color-alone rule). */
+/* Inline field error (STORY-015f AC3, unchanged) — the "down" health color
+   marks the icon only, text stays an ink token (mirrors ErrorState's
+   non-color-alone rule). */
 .maintenance-form__error {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  margin: 0;
   color: var(--color-ink);
   font-size: var(--fs-caption);
 }
@@ -65,42 +102,45 @@
   flex-shrink: 0;
 }
 
-.maintenance-table {
-  width: 100%;
-  border-collapse: collapse;
+.maintenance-window-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.maintenance-table th,
-.maintenance-table td {
-  text-align: left;
-  padding: var(--space-2) var(--space-3);
+.maintenance-window {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
   border-bottom: 1px solid var(--color-hairline);
-  font-family: var(--font-sans);
-  color: var(--color-ink);
-  vertical-align: middle;
 }
 
-.maintenance-table th {
-  color: var(--color-ink-subtle);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-h3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.maintenance-table td {
-  font-size: var(--fs-body);
-}
-
-.maintenance-table tbody tr:last-child td {
+.maintenance-window:last-child {
   border-bottom: none;
 }
 
-/* Window-state badge (STORY-015f AC1) — deliberately separate markup/tokens
-   from the shell StatusBadge/HealthStatus vocabulary (component health),
-   since this models a WINDOW's own scheduling state instead. Dot is
-   aria-hidden; the text label is the sole accessible name (never color
-   alone), mirroring StatusBadge.css's structure. */
+.maintenance-window__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.maintenance-window__title {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+.maintenance-window__meta {
+  color: var(--color-ink-subtle);
+}
+
+/* Window-state badge (STORY-015f AC1, carried into the STORY-061 list
+   redesign unchanged) — deliberately separate markup/tokens from the shell
+   StatusBadge/HealthStatus vocabulary (component health), since this models
+   a WINDOW's own scheduling state instead. Dot is aria-hidden; the text
+   label is the sole accessible name (never color alone). */
 .maintenance-state-badge {
   display: inline-flex;
   align-items: center;

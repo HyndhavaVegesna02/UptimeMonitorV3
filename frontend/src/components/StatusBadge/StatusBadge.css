@@ -41,6 +41,20 @@
   background: var(--color-health-degraded);
 }
 
+.status-badge--partial {
+  background: var(--color-health-partial-subtle);
+}
+.status-badge--partial .status-badge__dot {
+  background: var(--color-health-partial);
+}
+
+.status-badge--missing {
+  background: var(--color-health-missing-subtle);
+}
+.status-badge--missing .status-badge__dot {
+  background: var(--color-health-missing);
+}
+
 .status-badge--maintenance {
   background: var(--color-health-maintenance-subtle);
 }

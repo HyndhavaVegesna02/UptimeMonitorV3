@@ -7,8 +7,10 @@ describe('StatusBadge', () => {
     ['up', 'Up'],
     ['down', 'Down'],
     ['degraded', 'Degraded'],
+    ['partial', 'Partial outage'],
     ['maintenance', 'Maintenance'],
     ['unknown', 'Unknown'],
+    ['missing', 'Missing data'],
   ] as const)('renders the %s status with an accessible "%s" label', (status, label) => {
     render(<StatusBadge status={status} />)
     expect(screen.getByText(label)).toBeInTheDocument()
@@ -33,7 +35,15 @@ describe('StatusBadge', () => {
     expect(screen.getByText('All systems operational')).toBeInTheDocument()
   })
 
-  it.each(['up', 'down', 'degraded', 'maintenance', 'unknown'] as const)(
+  it.each([
+    'up',
+    'down',
+    'degraded',
+    'partial',
+    'maintenance',
+    'unknown',
+    'missing',
+  ] as const)(
     'applies the status--%s modifier class for its variant styling',
     (status) => {
       const { container } = render(<StatusBadge status={status} />)
