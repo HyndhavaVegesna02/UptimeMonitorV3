@@ -307,5 +307,21 @@ stories:
         commit: c440a3e
         at: 2026-07-08T08:26:00+05:30
     review: null           # 2 pts -> gate-only per the default pipeline
-hotfixes: []
+hotfixes:
+  - date: 2026-07-08
+    what: "Corrected a stale Dynatrace monitor native_id in config/apps/httpcheck.yaml
+      (HTTP_CHECK-DB5792CB88D14CF4 -> HTTP_CHECK-38B092E93932C002). Found during the sprint-38
+      review browser walkthrough: History/Availability were empty because the configured monitor
+      id had produced ZERO executions in 30 days (live-probed) while the actually-live monitor
+      HTTP_CHECK-38B092E93932C002 had 2,882 runs/24h. The pull loop was polling Dynatrace correctly
+      (async execute+poll, HTTP 200) but the stale id matched no rows, so nothing ingested."
+    branch: "hotfix/stale-monitor-native-id (off main c548c39), ff-merged to main @ 79bfbb3"
+    scope: "config-only (no code/schema/migration). Verified: load_config + test_config 34 passed,
+      ruff clean, lint-imports 5/0. DB-gated pytest/fk/alembic skipped (schema untouched; throwaway
+      DB was serving the running demo stack — 2026-07-02 no-concurrent-DB agreement)."
+    note: "NOT a sprint-38 defect (sprint-38 is frontend-only). Pre-existing operational config drift.
+      main diverged from sprint-38's base; accepting sprint-38 is now a 3-way merge (disjoint:
+      config vs frontend) — clean. Retro input: config/apps native_ids can silently drift when the
+      vendor monitor is recreated — consider a boot-time or periodic 'monitor id resolves to live
+      executions' health check so a stale id surfaces loudly instead of ingesting nothing."
 interrupts: []
