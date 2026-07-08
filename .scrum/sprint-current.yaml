@@ -143,7 +143,7 @@ stories:
       - "Toggle-OFF PUT-body assertion + keyboard-Enter-on-switch not re-created verbatim (hook test covers off; native button = intrinsic keyboard) — symmetric variants, non-blocking."
   - id: STORY-057
     points: 5
-    board: in_progress     # attempt 2 (main tree). attempt 1 (worktree) died on session limit mid step-3;
+    board: done            # awaiting PO verdict at review. attempt 2 (main tree). attempt 1 (worktree) died on session limit mid step-3;
                            # its committed steps 1-2 (feature hooks summary/useTopology/useComponentSignals/
                            # useComponentUptime + tests) were RECOVERED by merging its branch into sprint-38
                            # @ 5a7f099 (gate 309 green), scrap discarded (crash-recovery 2026-06-25).
@@ -153,6 +153,30 @@ stories:
     wave: 2
     attempts: 2
     blocked_question: null
+    dod_evidence:
+      - command: "frontend three-gate DoD run by the 057-completion implementer + re-confirmed by both Opus reviewers at HEAD 903af13 (integrated on sprint-38); empty backend diff"
+        exit_code: 0
+        output_tail: "npm test 315/315 (48 files, no false-red on the implementer's run); all 42
+          STORY-057 story tests green in isolation (reviewer-confirmed); build OK (241ms); lint clean;
+          backend diff 0e6314e..HEAD empty. Only full-suite red seen by a reviewer = the UNRELATED
+          CheckHistoryPage STORY-054 parallelism false-red (STORY-060 in flight resolves it)."
+        commit: 903af13
+        at: 2026-07-08T08:41:00+05:30
+    review:
+      spec: "PASS — AC1-AC5 MET (Opus). SummaryCard row from real getComponents counts; keyboard
+        aria-expanded rows → real topology+history drill-down w/ graceful per-row degradation; uptime %
+        from real availability rollup + UptimeBar from real history with the bar OMITTED (no fabricated
+        segments) where no data (driven+asserted); ONE group (no group field → 067); maintenance badge
+        preserved (deriveWindowState, dot+label, coexists). Data-adaptation honest. h1='Dashboard' (not
+        mock's 'System health') kept to satisfy shell tests — PO note, not an AC failure."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Clean strict-typed hooks; no-data/failure paths
+        genuinely derived+tested; a11y intact (button expander over mock's div, dot+text, reduced-motion
+        guard); token discipline holds; coverage grew. 4 MINOR cleanup follow-ups."
+    po_note: "Dashboard h1 reads 'Dashboard' not the mock's 'System health' (shell tests tie h1 to the
+      nav-tab label); change would need a coordinated shell-test update. PO decides at review."
+    open_minors:
+      - "useTopology.ts duplicates history/useSignalOptions (both thin useFetch(getTopology)) — consolidate post-sprint."
+      - "useComponentUptime redundant .slice(); DashboardPage.css dimensional literals could use --space-1; expander could add aria-controls."
     paused_at_commit: null
     dod_evidence: []
     review: null
