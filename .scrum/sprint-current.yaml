@@ -143,14 +143,15 @@ stories:
       - "Toggle-OFF PUT-body assertion + keyboard-Enter-on-switch not re-created verbatim (hook test covers off; native button = intrinsic keyboard) — symmetric variants, non-blocking."
   - id: STORY-057
     points: 5
-    board: todo            # attempt 1 (parallel worktree) DIED on session limit (resets 1am IST 07-08)
-                           # mid step-3; steps 1-2 (feature hooks: summary/topology/uptime + drill-down)
-                           # committed on branch worktree-agent-aaa91698c95023706 (a37e975,d545f49) + an
-                           # incomplete uncommitted step-3 scrap. Re-dispatch FRESH from sprint-38 tip
-                           # when budget returns (crash-recovery 2026-06-25: keep committed, discard scrap).
+    board: in_progress     # attempt 2 (main tree). attempt 1 (worktree) died on session limit mid step-3;
+                           # its committed steps 1-2 (feature hooks summary/useTopology/useComponentSignals/
+                           # useComponentUptime + tests) were RECOVERED by merging its branch into sprint-38
+                           # @ 5a7f099 (gate 309 green), scrap discarded (crash-recovery 2026-06-25).
+                           # Remaining: rebuild DashboardPage.tsx/.css/.test.tsx to consume the hooks
+                           # (summary cards + grouped expandable rows + UptimeBar + drill-down + maint badge).
     pipeline: full
     wave: 2
-    attempts: 1
+    attempts: 2
     blocked_question: null
     paused_at_commit: null
     dod_evidence: []
