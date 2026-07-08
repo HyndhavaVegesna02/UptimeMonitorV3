@@ -411,7 +411,7 @@ stories:
   - id: STORY-054
     title: Flaky frontend DoD gate — CheckHistoryPage 1000-cap render times out under npm test parallelism
     file: docs/scrum/stories/STORY-054-flaky-frontend-test-timeout.md
-    status: draft   # found at sprint-37 STORY-046 gate verification (2026-07-06): npm test intermittently false-reds (exit 1) on a PRE-EXISTING unrelated test's 5000ms timeout under CPU contention; passes in isolation + single-threaded (230). Refine (timeout bump vs fixture-size vs parallelism pin) before scheduling. Retro input for sprint 37.
+    status: done    # RESOLVED by STORY-060 (sprint 38): CheckHistory rebuilt with injectable render cap; flake gone. Accepted 2026-07-08.
     points: 2
     priority: 22
     type: defect
@@ -430,7 +430,7 @@ stories:
   - id: STORY-055
     title: Design-system foundation — Geist fonts, retuned tokens (both themes), 7-status palette, shadow token, icon set, restyled base components + shared Table/UptimeBar/SummaryCard/Timeline primitives
     file: docs/scrum/stories/STORY-055-design-system-foundation.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07; re-pointed 3->5 to pull shared primitives forward for parallel Wave 2
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
     priority: 15
     type: feature
@@ -438,7 +438,7 @@ stories:
   - id: STORY-056
     title: App shell redesign — collapsible left icon sidebar, top bar (theme toggle + relocated sample-mode trigger), banner, Approvals count badge
     file: docs/scrum/stories/STORY-056-app-shell-sidebar.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
     priority: 16
     type: feature
@@ -446,7 +446,7 @@ stories:
   - id: STORY-057
     title: Dashboard redesign — summary stat cards + grouped expandable component rows + signal drill-down + uptime sparkline (adapt to real data)
     file: docs/scrum/stories/STORY-057-dashboard-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
     priority: 17
     type: feature
@@ -454,7 +454,7 @@ stories:
   - id: STORY-058
     title: Availability redesign — grid layout, segment bars + hatched completeness + legend, window toggle, per-signal drill-down
     file: docs/scrum/stories/STORY-058-availability-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 3
     priority: 18
     type: feature
@@ -462,7 +462,7 @@ stories:
   - id: STORY-059
     title: Approvals redesign — card layout with severity stripe, from→to pills, confirm flow, "Queue clear" empty state (adapt to real data)
     file: docs/scrum/stories/STORY-059-approvals-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
     priority: 19
     type: feature
@@ -470,7 +470,7 @@ stories:
   - id: STORY-060
     title: Check History redesign — filter toolbar (search + result + location), dense mono grid; resolve STORY-054 flaky render
     file: docs/scrum/stories/STORY-060-check-history-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07; subsumes STORY-054
+    status: done    # accepted at Sprint 38 review (2026-07-08); subsumed STORY-054
     points: 3
     priority: 20
     type: feature
@@ -478,7 +478,7 @@ stories:
   - id: STORY-061
     title: Maintenance redesign — two-column form-card + windows list with state badges, inline 422 field mapping preserved
     file: docs/scrum/stories/STORY-061-maintenance-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 3
     priority: 21
     type: feature
@@ -486,7 +486,7 @@ stories:
   - id: STORY-062
     title: Publications redesign — vertical timeline layout (adapt to real data)
     file: docs/scrum/stories/STORY-062-publications-redesign.md
-    status: ready   # refined + approved at sprint-38 planning 2026-07-07
+    status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 2
     priority: 22
     type: feature
@@ -552,7 +552,7 @@ stories:
   - id: STORY-071
     title: Defect — approve/reject 500s (approval_events.action 'approve'/'reject' violates the ck_approval_events_action constraint 'approved'/'rejected')
     file: docs/scrum/stories/STORY-071-decision-action-check-violation.md
-    status: ready   # found live 2026-07-08 (sprint-38 walkthrough surfaced a real proposal; approving 500s).
+    status: done    # accepted at Sprint 39 review (2026-07-08), merged to main
                     # Root cause: core/services/approval.py writes action="approve"/"reject" but the spine
                     # constraint allows only 'approved'/'rejected'. Latent fake/adapter-parity gap. Sprint 39.
     points: 2
@@ -562,7 +562,7 @@ stories:
   - id: STORY-072
     title: Publication outcome — record every approve publish attempt (succeeded/failed) independent of Statuspage publish + surface it in the Publications tab
     file: docs/scrum/stories/STORY-072-publication-outcome-record-always.md
-    status: ready   # PO-directed 2026-07-08 (via AskUserQuestion). Found live: approve -> Statuspage 401 ->
+    status: done    # accepted at Sprint 40 review (2026-07-08), merged to main
                     # RecordingPublisher records SUCCESSES ONLY -> no publication row. PO wants the record
                     # independent of publish, with a success/failed outcome column. Statuspage publish stays
                     # best-effort (401 credential deferred to the PO). Delivers STORY-066's outcome portion.
