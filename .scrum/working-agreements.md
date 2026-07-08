@@ -498,6 +498,29 @@
   invocation starving itself, so the handling relied on judgment — this makes it a rule, with
   the mandatory proof step so a GENUINE red can never be waved off as "just contention.")
 
+- 2026-07-08 — **Parallel implementer subagents in isolated git worktrees SYNC the integration
+  branch first.** When the orchestrator dispatches implementer subagents with worktree isolation,
+  the brief MUST direct the agent to `git merge <sprint-branch>` (the integration branch's current
+  tip) into its worktree BEFORE doing any work — a worktree is cut from the branch's BASE commit,
+  not its tip, so without the sync the agent builds against a stale foundation (missing earlier
+  same-sprint stories' code). The build gate catches a missed sync (imports of not-yet-present
+  modules fail to compile), but only after wasting a full dispatch. (Motivated by Sprint 38 Wave 2:
+  the parallel worktrees were cut from `sprint-38-start` and lacked STORY-055/056; the batch-1
+  agents self-corrected by merging on their own diligence, and an explicit sync STEP 0 was added to
+  the batch-2 briefs after the fact — making it a standing brief requirement removes the luck.)
+- 2026-07-08 — **Config that references a live external vendor resource id carries a drift check.**
+  A `config/apps/*.yaml` value naming a live provider resource (Dynatrace monitor `native_id`,
+  Statuspage component id) must be verifiable against the live provider: any story that adds or
+  changes such an id probes that it resolves to live data before the story is Done, and the review
+  live-render spot-check (2026-07-04 agreement) probes each configured monitor id for rows. A
+  standing boot-time/periodic health signal that surfaces "configured id returns 0 rows" LOUDLY
+  (instead of silently ingesting nothing) is filed as STORY-070. (Motivated by the Sprint 38
+  hotfix: `config/apps/httpcheck.yaml` pointed at `HTTP_CHECK-DB5792CB88D14CF4`, which had produced
+  ZERO executions in 30 days — the pull loop polled Dynatrace correctly every cycle (async
+  execute+poll, HTTP 200) but ingested nothing, undetected until the Sprint 38 review browser
+  walkthrough probed Grail directly and found the live monitor was `HTTP_CHECK-38B092E93932C002`,
+  2,882 runs/24h. A silent no-data pipeline is exactly the "trusted-and-wrong" failure to avoid.)
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
