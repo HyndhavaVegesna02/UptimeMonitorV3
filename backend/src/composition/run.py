@@ -47,6 +47,7 @@ from src.composition.settings import (
     load_settings,
     to_psycopg_url,
 )
+from src.composition.vendor_health import check_vendor_id_health
 from src.core.ports.clock import ClockPort
 from src.core.services.decide import DecideService
 from src.core.services.ingest_service import IngestService
@@ -163,6 +164,19 @@ async def main() -> None:
     secrets = load_live_secrets()
     config = load_config(settings.config_dir)
     clock = SystemClock()
+
+    # STORY-070: loud (NOT fail-fast) vendor-id drift probe, run once here
+    # before the engine/loops are built, so a configured-but-empty Dynatrace
+    # monitor id surfaces as early in startup as possible. Uses its own Grail
+    # executor instance (cheap: just a closure over the endpoint/headers, no
+    # network call until invoked) so this never depends on `build_live_loop`
+    # having run yet. `check_vendor_id_health` never raises -- a probe error
+    # for one monitor is caught and logged internally, never propagated here.
+    health_executor = make_grail_executor(
+        env_url=secrets.dynatrace_env_url,
+        api_token=secrets.dynatrace_api_token,
+    )
+    check_vendor_id_health(config=config, executor=health_executor)
 
     db_url = to_psycopg_url(settings.database_url)
     engine = sa.create_engine(db_url)

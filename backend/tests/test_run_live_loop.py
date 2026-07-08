@@ -401,6 +401,61 @@ def test_main_calls_load_dotenv_before_settings_and_secrets(
     assert call_names.index("load_settings") < call_names.index("load_live_secrets")
 
 
+@patch("src.composition.run.load_dotenv")
+@patch("src.composition.run.load_settings")
+@patch("src.composition.run.load_live_secrets")
+@patch("src.composition.run.load_config")
+@patch("sqlalchemy.create_engine")
+@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.build_live_loop")
+@patch("src.composition.run.check_vendor_id_health")
+def test_main_probes_vendor_id_health_before_loops_start(
+    mock_check_vendor_id_health,
+    mock_build_loop,
+    mock_seed_topology,
+    mock_create_engine,
+    mock_load_config,
+    mock_load_secrets,
+    mock_load_settings,
+    mock_load_dotenv,
+):
+    """STORY-070: `main()` runs the vendor-id drift health probe at startup,
+    passing it the loaded `config` and a real (never-called-in-this-test)
+    Grail executor -- BEFORE the loops are built, so a dead monitor id
+    surfaces immediately. This is a loud WARNING mechanism, not fail-fast
+    (decided sprint-41 planning): `check_vendor_id_health` itself never
+    raises, and `main()` must not wrap it in anything that changes that.
+    """
+    mock_engine = MagicMock(spec=sa.Engine)
+    mock_create_engine.return_value = mock_engine
+
+    mock_load_settings.return_value = Settings(
+        database_url="postgresql://host/db", config_dir="dir"
+    )
+    mock_load_secrets.return_value = LiveSecrets("dt", "dt-token", "sp", "sp-token")
+    the_config = Config([])
+    mock_load_config.return_value = the_config
+
+    mock_build_loop.return_value = []
+
+    manager = MagicMock()
+    manager.attach_mock(mock_check_vendor_id_health, "check_vendor_id_health")
+    manager.attach_mock(mock_build_loop, "build_live_loop")
+
+    asyncio.run(main())
+
+    mock_check_vendor_id_health.assert_called_once()
+    _, kwargs = mock_check_vendor_id_health.call_args
+    assert kwargs["config"] is the_config
+    assert callable(kwargs["executor"])
+
+    # Runs before the loops are assembled/started.
+    call_names = [call[0] for call in manager.mock_calls]
+    assert call_names.index("check_vendor_id_health") < call_names.index(
+        "build_live_loop"
+    )
+
+
 def test_dotenv_loading_resolves_live_secrets_not_previously_exported(
     tmp_path, monkeypatch
 ):
