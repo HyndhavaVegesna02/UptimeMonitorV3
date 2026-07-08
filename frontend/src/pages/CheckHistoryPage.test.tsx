@@ -239,22 +239,24 @@ describe('CheckHistoryPage', () => {
   })
 
   /**
-   * STORY-054 resolution (AC3): the pre-060 version of this test generated
-   * 1,500 rows for a SINGLE signal and asserted a 1,000-row render, which
-   * was slow enough under `npm test` file-parallelism/CPU contention to
-   * occasionally exceed Vitest's per-test timeout (a false-red, not a real
-   * failure — the flake STORY-054 filed). The rebuild resolves this by (a)
-   * lowering the client-render cap itself to 200 (`MAX_RENDERED_ROWS`,
-   * still generous for a glance at recent history) and (b) keeping this
-   * fixture just over that smaller cap (250, not 1,500) — a deterministic,
-   * fast render regardless of contention, while still exercising the exact
-   * same cap-caption behavior. Only ONE signal (`frontend-http`) returns the
-   * bulk fixture; every other topology signal returns `[]`, so the merged
-   * total is exactly 250 regardless of how many signals the topology fixture
+   * STORY-054 resolution, re-fixed by the STORY-060 quality review (AC3):
+   * production restores the pre-060 STORY-015e 1,000-row cap
+   * (`DEFAULT_MAX_RENDERED_ROWS` in `CheckHistoryPage.tsx`, the "preserve all
+   * existing functionality" rule) — see the sibling test below for that. The
+   * STORY-054 flake was never really about the cap NUMBER, it was this TEST
+   * rendering ~1,000-1,500 real DOM rows, which was slow enough under
+   * `npm test` file-parallelism/CPU contention to occasionally exceed
+   * Vitest's per-test timeout. The real fix is making the cap injectable via
+   * the `maxRenderedRows` prop and exercising the exact same
+   * truncation+caption logic against a tiny fixture (8 rows, cap 5) — this
+   * renders in milliseconds regardless of contention, with NO 1,000-row
+   * render anywhere in the suite. Only ONE signal (`frontend-http`) returns
+   * the fixture; every other topology signal returns `[]`, so the merged
+   * total is exactly 8 regardless of how many signals the topology fixture
    * enumerates.
    */
-  it('caps rendering at the latest 200 observations with a visible count note when the window returns more (AC3)', async () => {
-    const TOTAL = 250
+  it('caps rendering at an injected row limit with a visible count note when the window returns more (AC3)', async () => {
+    const TOTAL = 8
     const generated = Array.from({ length: TOTAL }, (_, index) => ({
       signal_key: 'frontend-http',
       observed_at: new Date(Date.UTC(2026, 6, 3, 0, 0, 0) - index * 1000).toISOString(),
@@ -272,17 +274,47 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage />)
+    render(<CheckHistoryPage maxRenderedRows={5} />)
 
-    expect(
-      await screen.findByText('showing latest 200 of 250 observations'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('showing latest 5 of 8 observations')).toBeInTheDocument()
 
     const table = screen.getByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
-    expect(rows).toHaveLength(200)
-    // The rendered subset is the NEWEST 200 — the first row is the array's
+    expect(rows).toHaveLength(5)
+    // The rendered subset is the NEWEST 5 — the first row is the array's
     // first (newest-first) element, unchanged.
     expect(within(rows[0]).getByText(generated[0].observed_at)).toBeInTheDocument()
+  })
+
+  /**
+   * Confirms the PRODUCTION default (no `maxRenderedRows` prop, exactly as
+   * the router renders it) is the restored 1,000-row cap, not the injected
+   * test value — a fixture of 1,001 single-signal rows would be exactly the
+   * slow render the STORY-054 fix avoids, so this asserts the cap NUMBER via
+   * a small fixture (`TOTAL` under the cap) plus a direct read of the
+   * caption logic instead: with `TOTAL` below 1,000, nothing is truncated,
+   * proving the default is >= this fixture size, while the module docstring
+   * and the injected-cap test above pin the exact value (1,000) and the
+   * truncation/caption mechanics respectively.
+   */
+  it('uses a 1,000-row cap by default (no maxRenderedRows prop) — untruncated below that size', async () => {
+    render(<CheckHistoryPage />)
+
+    const table = await screen.findByRole('table')
+    const rows = within(table).getAllByRole('row').slice(1)
+    // The default fixture set is well under 1,000, so nothing is truncated
+    // and no cap-note renders — the production default is not the small
+    // test-only value used elsewhere in this file.
+    expect(rows).toHaveLength(TOTAL_MERGED_ROWS)
+    expect(screen.queryByText(/showing latest/)).not.toBeInTheDocument()
+  })
+
+  it('shows the shared EmptyState "no observations in this window" when the topology itself is empty (AC4)', async () => {
+    server.use(http.get('/api/v1/topology', () => HttpResponse.json([])))
+
+    render(<CheckHistoryPage />)
+
+    expect(await screen.findByText('No observations in this window')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 })
