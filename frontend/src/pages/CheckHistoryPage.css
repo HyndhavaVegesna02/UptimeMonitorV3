@@ -81,6 +81,12 @@
     color 0.12s ease;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .check-history-page__window-button {
+    transition: none;
+  }
+}
+
 .check-history-page__window-button:hover {
   background: var(--color-surface-2);
 }
