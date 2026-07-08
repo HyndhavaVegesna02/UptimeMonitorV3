@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 40
-status: review        # none | active | review | closed | aborted — STORY-072 Done; awaiting PO accept + merge
+status: closed        # PO verdict 2026-07-08: ACCEPT STORY-072 (5/5). Merged to main.
 started: 2026-07-08
 goal: "Make approve record a Publications entry INDEPENDENT of the Statuspage publish, carrying a
   success/failed outcome (PO-directed 2026-07-08). Statuspage publish stays best-effort (the 401
