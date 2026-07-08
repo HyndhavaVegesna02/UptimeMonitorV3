@@ -36,3 +36,12 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
+01-dashboard.png
+02-availability.png
+03-approvals.png
+04-checkhistory.png
+05-maintenance.png
+06-publications.png
+07-dashboard-dark.png
+08-maintenance-dark.png
+.playwright-mcp/

@@ -47,9 +47,22 @@ gap captured above.
 - **068** (defect) `useAvailability.test.tsx` parallelism false-red — make the gate deterministic.
 - **069** (chore) redesign consolidation minors (uptimeSegments dedup, stale docstrings, token/a11y nits).
 
-## Not done at review (honest)
-- **Live render-vs-wire spot check deferred** — the backend was not running (`:8000` down) at close.
-  Low risk here: empty backend diff (no DTO change), the historical scale-drift risk was
-  reviewer-verified, and all pages are MSW-tested against real-shape fixtures. Recommend the PO run
-  `npm run dev` + the local stack (CLAUDE.md recipe) to click through, or ask the orchestrator to
-  bring the stack up and drive a browser pass.
+## Live browser walkthrough (done at PO request)
+Brought up the full local stack (throwaway Postgres @ :55432 + API @ :8000 + live loop + Vite @
+:5173) and drove a Playwright browser pass of all six tabs in BOTH themes:
+- **Dashboard** — icon sidebar, summary stat cards (1/1 operational), component row with `UptimeBar`
+  "no data" state + `Up` badge; after creating a live maintenance window, the row correctly shows
+  `Up` + `Under maintenance` (coexisting, dot+text).
+- **Availability** — grid + 24h/7d/30d toggle + Down/Missing-data legend + hatched completeness bar.
+- **Approvals** — "Queue clear" empty state.
+- **Check History** — search + result + location filter toolbar + window toggle.
+- **Maintenance** — two-column form + list; the created window shows with an "Active" state badge.
+- **Publications** — "latest 50" caption + timeline (empty).
+- **Dark mode** verified — faithful to the mock's dark-first palette (near-black canvas, hairline
+  panels, lavender accent, Geist).
+- **Live-data caveat (honest):** across 5 loop cycles the real Dynatrace synthetic monitor returned
+  NO in-window observations, so History/Availability legitimately show "no data" (real state, not a
+  redesign defect). Populated rendering paths are covered by the MSW tests + reviewer scale-check.
+  The render-vs-wire risk is structurally low (empty backend diff; no DTO change).
+Stack left running for PO exploration at http://localhost:5173 (stop with `scripts/dev_db.py down`
++ kill the uvicorn/loop/vite processes).
