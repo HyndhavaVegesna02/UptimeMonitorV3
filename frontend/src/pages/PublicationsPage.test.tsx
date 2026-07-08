@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -7,62 +7,73 @@ import { FIXTURE_PUBLICATIONS } from '../mocks/handlers'
 import { PublicationsPage } from './PublicationsPage'
 
 describe('PublicationsPage', () => {
-  it('shows a loading state, then a table with one row per publication, newest-first (AC1)', async () => {
+  it('shows a loading state, then a vertical timeline with one item per publication, newest-first (AC1)', async () => {
     render(<PublicationsPage />)
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
-    const table = await screen.findByRole('table')
-    expect(table).toBeInTheDocument()
+    const list = await screen.findByRole('list', { name: 'Publication log' })
+    expect(list).toBeInTheDocument()
 
-    expect(
-      screen.getByRole('columnheader', { name: 'Published at' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('columnheader', { name: 'Component' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Status' })).toBeInTheDocument()
-    expect(screen.getByRole('columnheader', { name: 'Proposal' })).toBeInTheDocument()
+    // Exactly one listitem per fixture publication, in the API's own
+    // (already newest-first) order — never re-sorted client-side.
+    const items = screen.getAllByRole('listitem')
+    expect(items).toHaveLength(FIXTURE_PUBLICATIONS.length)
 
-    // Exactly one data row per fixture publication, in the API's own order.
-    const rows = screen.getAllByRole('row')
-    expect(rows).toHaveLength(FIXTURE_PUBLICATIONS.length + 1)
-
-    // Row order matches the fixture's (already newest-first) order — never
-    // re-sorted client-side.
-    for (const publication of FIXTURE_PUBLICATIONS) {
-      expect(screen.getByText(publication.published_at)).toBeInTheDocument()
-    }
-    expect(screen.getAllByText('checkout')).toHaveLength(2)
-    expect(screen.getByText('login')).toBeInTheDocument()
+    FIXTURE_PUBLICATIONS.forEach((publication, index) => {
+      expect(
+        within(items[index]).getByText(publication.published_at),
+      ).toBeInTheDocument()
+      expect(
+        within(items[index]).getByText(publication.component_id),
+      ).toBeInTheDocument()
+    })
   })
 
-  it('maps a non-operational published status onto the correct badge label (AC1, AC3)', async () => {
+  it('shows scope (component name) then status via toHealthStatus, dot + text never color-only (AC1)', async () => {
     render(<PublicationsPage />)
-    await screen.findByRole('table')
+    const list = await screen.findByRole('list', { name: 'Publication log' })
 
-    // FIXTURE_PUBLICATIONS[1] is login / major_outage -> "Down".
-    expect(screen.getByText('Down')).toBeInTheDocument()
     // FIXTURE_PUBLICATIONS[0] is checkout / operational -> "Up".
-    expect(screen.getByText('Up')).toBeInTheDocument()
+    // FIXTURE_PUBLICATIONS[1] is login / major_outage -> "Down".
     // FIXTURE_PUBLICATIONS[2] is checkout / degraded -> "Degraded".
-    expect(screen.getByText('Degraded')).toBeInTheDocument()
+    expect(within(list).getByText('Up')).toBeInTheDocument()
+    expect(within(list).getByText('Down')).toBeInTheDocument()
+    expect(within(list).getByText('Degraded')).toBeInTheDocument()
+
+    const items = screen.getAllByRole('listitem')
+    expect(within(items[1]).getByText('login')).toBeInTheDocument()
+    expect(within(items[1]).getByText('Down')).toBeInTheDocument()
   })
 
   it('renders a null proposal_id as an em-dash, never a sentinel 0 (AC1)', async () => {
     render(<PublicationsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list', { name: 'Publication log' })
 
+    const items = screen.getAllByRole('listitem')
     // FIXTURE_PUBLICATIONS[0] has proposal_id: null.
-    expect(screen.getByText('—')).toBeInTheDocument()
+    expect(within(items[0]).getByText('Proposal —')).toBeInTheDocument()
     // FIXTURE_PUBLICATIONS[1]/[2] carry real proposal ids.
-    expect(screen.getByText('5')).toBeInTheDocument()
-    expect(screen.getByText('42')).toBeInTheDocument()
+    expect(within(items[1]).getByText('Proposal 5')).toBeInTheDocument()
+    expect(within(items[2]).getByText('Proposal 42')).toBeInTheDocument()
   })
 
-  it('states the 50-item cap visibly in the header copy (AC3)', async () => {
+  it('omits the connector line below the last item only (AC1)', async () => {
+    const { container } = render(<PublicationsPage />)
+    await screen.findByRole('list', { name: 'Publication log' })
+
+    const rails = container.querySelectorAll('.timeline__item')
+    expect(rails).toHaveLength(FIXTURE_PUBLICATIONS.length)
+    // Every item but the last has a connector line below its dot.
+    for (let i = 0; i < rails.length - 1; i += 1) {
+      expect(rails[i].querySelector('.timeline__line')).not.toBeNull()
+    }
+    expect(rails[rails.length - 1].querySelector('.timeline__line')).toBeNull()
+  })
+
+  it('states the 50-item cap visibly in the header copy (AC2)', async () => {
     render(<PublicationsPage />)
-    await screen.findByRole('table')
+    await screen.findByRole('list', { name: 'Publication log' })
 
     expect(screen.getByText(/latest 50 publications/i)).toBeInTheDocument()
   })
@@ -73,7 +84,7 @@ describe('PublicationsPage', () => {
     render(<PublicationsPage />)
 
     expect(await screen.findByText('Nothing published yet')).toBeInTheDocument()
-    expect(screen.queryByRole('table')).not.toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Publication log' })).not.toBeInTheDocument()
   })
 
   it('shows an error state on failure, then recovers via retry (AC2)', async () => {
@@ -97,7 +108,9 @@ describe('PublicationsPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
-    expect(await screen.findByRole('table')).toBeInTheDocument()
+    expect(
+      await screen.findByRole('list', { name: 'Publication log' }),
+    ).toBeInTheDocument()
     expect(callCount).toBe(2)
   })
 })
