@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 40
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted — STORY-072 Done; awaiting PO accept + merge
 started: 2026-07-08
 goal: "Make approve record a Publications entry INDEPENDENT of the Statuspage publish, carrying a
   success/failed outcome (PO-directed 2026-07-08). Statuspage publish stays best-effort (the 401
@@ -30,12 +30,35 @@ start_tag: sprint-40-start
 stories:
   - id: STORY-072
     points: 5
-    board: in_progress     # todo | in_progress | done | blocked
-    pipeline: full             # 5 pts -> implementer + spec + quality reviewers + gate
-    attempts: 1
+    board: done            # awaiting PO verdict + merge
+    pipeline: full
+    attempts: 1            # clean single Sonnet dispatch (29cc6ff); + wiki sweep
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    dod_evidence:
+      - command: "nine-gate DoD orchestrator-run on clean committed HEAD 29cc6ff against a FRESH throwaway DB (dev_db down+up; DATABASE_URL/_DIRECT reused; single invocation)"
+        exit_code: 0
+        output_tail: "backend: pytest 522 passed (73s; +7 over sprint-39's 515: record-always both paths,
+          outcome CHECK allowed/rejected, DTO, migration round-trip), lint-imports 5/0, fk 11/0, alembic OK,
+          ruff check clean, ruff format 182. frontend: npm test 356 passed, build OK, lint clean.
+          NOTE: a first gate run on the session-hammered DB gave 78 'alembic upgrade head failed' DB-gated
+          errors — proven ENVIRONMENTAL (fresh DB = 522 green; implementer + spec reviewer also green at
+          29cc6ff) per the 2026-07-06 contention agreement; valid signal is the fresh-DB run."
+        commit: 29cc6ff
+        at: 2026-07-08T20:36:00+05:30
+    review:
+      spec: "PASS — AC1-AC5 MET (Opus). Record-always: DB-gated test drives the REAL RecordingPublisher+
+        BestEffortPublisher+Postgres chain on BOTH success (->succeeded) and raising-delegate (->failed)
+        paths, exactly one row each, caller sees no exception (best-effort intact). Migration up/down/up
+        + CHECK allowed/rejected DB test. DTO exposes outcome; frontend chip drives both. outcome not
+        conflated with status. No coverage dropped (success-only tests rewritten)."
+      quality: "APPROVE — no CRITICAL/MAJOR (Opus). Migration clean (backfill->NOT NULL->CHECK, reversible);
+        record-always try/except/else = exactly-one-row + bare re-raise (best-effort preserved); closed
+        PublicationOutcome enum; fake/adapter parity holds (model_copy round-trips); clean five-file API;
+        OutcomeChip reuses StatusBadge (dot+text, token-only)."
+    open_minors:
+      - "publish_helper failure path: if record() itself raises, it masks the original delegate error (BestEffort still swallows, approve stays 200) — benign edge, follow-up note only."
+    po_note: "Statuspage publish stays best-effort (401 credential deferred to PO). Until STATUSPAGE_API_KEY
+      is refreshed, approve records a publication with outcome='failed' (the visible audit trail requested)."
 hotfixes: []
 interrupts: []
