@@ -10,22 +10,24 @@ import {
 } from '../mocks/handlers'
 import { CheckHistoryPage } from './CheckHistoryPage'
 
+const TOTAL_MERGED_ROWS =
+  FIXTURE_HISTORY_FRONTEND_HTTP.length + FIXTURE_HISTORY_FRONTEND_TLS.length
+
 describe('CheckHistoryPage', () => {
-  it('defaults to the first enumerated signal and renders its observations newest-first with mapped badges (AC1, AC3)', async () => {
+  it('renders every topology signal\'s observations merged newest-first, tagged with their component (AC1, AC2)', async () => {
     render(<CheckHistoryPage />)
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1) // drop the header row
-    expect(rows).toHaveLength(FIXTURE_HISTORY_FRONTEND_HTTP.length)
+    expect(rows).toHaveLength(TOTAL_MERGED_ROWS)
 
-    const select = screen.getByLabelText('Signal') as HTMLSelectElement
-    expect(select.value).toBe('frontend-http')
-
-    // Order preserved exactly as returned — never re-sorted.
-    rows.forEach((row, index) => {
-      const observation = FIXTURE_HISTORY_FRONTEND_HTTP[index]
-      expect(within(row).getByText(observation.observed_at)).toBeInTheDocument()
-      expect(within(row).getByText(observation.location)).toBeInTheDocument()
+    const frontendComponentName = FIXTURE_TOPOLOGY[0].name
+    // The frontend-http fixture is newest overall, so it occupies the first
+    // rows exactly in its own newest-first order.
+    FIXTURE_HISTORY_FRONTEND_HTTP.forEach((observation, index) => {
+      expect(within(rows[index]).getByText(observation.observed_at)).toBeInTheDocument()
+      expect(within(rows[index]).getByText(observation.location)).toBeInTheDocument()
+      expect(within(rows[index]).getByText(frontendComponentName)).toBeInTheDocument()
     })
 
     // Health badges: dot + ink label, never color-alone — assert the label text.
@@ -34,58 +36,113 @@ describe('CheckHistoryPage', () => {
     expect(within(rows[2]).getByText('Down')).toBeInTheDocument()
   })
 
-  it('renders latency in the mono token as integer milliseconds, and a null latency as an em-dash (never "0 ms") (AC3)', async () => {
+  it('omits Type and HTTP Code columns (not on ObservationDTO) (AC2)', async () => {
+    render(<CheckHistoryPage />)
+    await screen.findByRole('table')
+
+    expect(screen.queryByRole('columnheader', { name: 'Type' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('columnheader', { name: 'Code' })).not.toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Timestamp' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Component' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Location' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Result' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Latency' })).toBeInTheDocument()
+  })
+
+  it('renders latency in the mono token as integer milliseconds, and a null latency as an em-dash (never "0 ms") (AC2)', async () => {
     render(<CheckHistoryPage />)
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
 
-    // First fixture row: latency_ms 571.
+    // frontend-http row 0: latency_ms 571.
     expect(within(rows[0]).getByText('571 ms')).toBeInTheDocument()
 
-    // Third fixture row: latency_ms null.
+    // frontend-http row 2: latency_ms null.
     expect(within(rows[2]).getByText('—')).toBeInTheDocument()
     expect(within(rows[2]).queryByText('0 ms')).not.toBeInTheDocument()
     expect(within(rows[2]).queryByText('null ms')).not.toBeInTheDocument()
   })
 
-  it('lists every enumerated signal in the selector, labeled with its owning component', async () => {
+  it('has accessible names for the search input and both filter selects (AC1)', async () => {
     render(<CheckHistoryPage />)
     await screen.findByRole('table')
 
-    const select = screen.getByLabelText('Signal') as HTMLSelectElement
-    const optionLabels = Array.from(select.options).map((option) => option.textContent)
-
-    const multiSignal = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-frontend')!
-    for (const signal of multiSignal.signals) {
-      expect(optionLabels).toContain(`${multiSignal.name} — ${signal.name}`)
-    }
+    expect(screen.getByLabelText('Search')).toBeInTheDocument()
+    expect(screen.getByLabelText('Result')).toBeInTheDocument()
+    expect(screen.getByLabelText('Location')).toBeInTheDocument()
+    expect(screen.getByRole('group', { name: 'Time window' })).toBeInTheDocument()
   })
 
-  it('switching the signal selector loads and renders the newly-selected signal\'s observations (AC1, AC2)', async () => {
+  it('the search input filters rows by component, location, or signal_key text, client-side (AC1)', async () => {
+    const user = userEvent.setup()
+    let historyCallCount = 0
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        historyCallCount += 1
+        const url = new URL(request.url)
+        const signalKey = url.searchParams.get('signal_key')
+        if (signalKey === 'frontend-http') return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+        if (signalKey === 'frontend-tls') return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_TLS)
+        return HttpResponse.json([])
+      }),
+    )
+
+    render(<CheckHistoryPage />)
+    await screen.findByRole('table')
+    const callsAfterLoad = historyCallCount
+
+    await user.type(screen.getByLabelText('Search'), 'frontend-tls')
+
+    const table = screen.getByRole('table')
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(FIXTURE_HISTORY_FRONTEND_TLS.length)
+    expect(
+      within(table).queryByText(FIXTURE_HISTORY_FRONTEND_HTTP[0].observed_at),
+    ).not.toBeInTheDocument()
+
+    // Filtering is purely client-side — never triggers a refetch.
+    expect(historyCallCount).toBe(callsAfterLoad)
+  })
+
+  it('the result filter narrows rows to the selected health value (AC1)', async () => {
+    const user = userEvent.setup()
+    render(<CheckHistoryPage />)
+    const table = await screen.findByRole('table')
+
+    await user.selectOptions(screen.getByLabelText('Result'), 'degraded')
+
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(1)
+    expect(within(rows[0]).getByText('Degraded')).toBeInTheDocument()
+  })
+
+  it('the location filter narrows rows to the selected location (AC1)', async () => {
+    const user = userEvent.setup()
+    render(<CheckHistoryPage />)
+    const table = await screen.findByRole('table')
+
+    const targetLocation = FIXTURE_HISTORY_FRONTEND_TLS[0].location
+    await user.selectOptions(screen.getByLabelText('Location'), targetLocation)
+
+    const rows = within(table).getAllByRole('row').slice(1)
+    rows.forEach((row) => {
+      expect(within(row).getByText(targetLocation)).toBeInTheDocument()
+    })
+  })
+
+  it('shows a distinct empty state when filters match nothing, without hiding that data exists (AC1, AC4)', async () => {
     const user = userEvent.setup()
     render(<CheckHistoryPage />)
     await screen.findByRole('table')
 
-    const select = screen.getByLabelText('Signal')
-    await user.selectOptions(select, 'frontend-tls')
+    await user.type(screen.getByLabelText('Search'), 'no-such-signal-or-component')
 
-    await waitFor(async () => {
-      const table = screen.getByRole('table')
-      const rows = within(table).getAllByRole('row').slice(1)
-      expect(rows).toHaveLength(FIXTURE_HISTORY_FRONTEND_TLS.length)
-    })
-
-    const table = screen.getByRole('table')
-    expect(
-      within(table).getByText(FIXTURE_HISTORY_FRONTEND_TLS[0].observed_at),
-    ).toBeInTheDocument()
-    expect(
-      within(table).queryByText(FIXTURE_HISTORY_FRONTEND_HTTP[0].observed_at),
-    ).not.toBeInTheDocument()
+    expect(await screen.findByText('No observations match your filters')).toBeInTheDocument()
+    expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it('driving the window selector refetches with a NEW tz-aware since/until (AC2)', async () => {
+  it('driving the window selector refetches every signal with a NEW tz-aware since/until (AC1)', async () => {
     const user = userEvent.setup()
     const seenRanges: Array<{ since: string; until: string }> = []
     server.use(
@@ -95,54 +152,35 @@ describe('CheckHistoryPage', () => {
           since: url.searchParams.get('since') ?? '',
           until: url.searchParams.get('until') ?? '',
         })
-        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+        return HttpResponse.json([])
       }),
     )
 
     render(<CheckHistoryPage />)
-    await screen.findByRole('table')
+    await screen.findByText('No observations in this window')
 
-    expect(seenRanges).toHaveLength(1)
-    const initialRange = seenRanges[0]
+    const initialSince = seenRanges[0].since
 
     await user.click(screen.getByRole('button', { name: '7d' }))
 
     await waitFor(() => {
-      expect(seenRanges.length).toBeGreaterThan(1)
+      expect(seenRanges.some((r) => r.since !== initialSince)).toBe(true)
     })
 
     expect(screen.getByRole('button', { name: '7d' })).toHaveAttribute('aria-pressed', 'true')
     expect(screen.getByRole('button', { name: '24h' })).toHaveAttribute('aria-pressed', 'false')
 
     const newRange = seenRanges[seenRanges.length - 1]
-    expect(newRange.since).not.toBe(initialRange.since)
     expect(new Date(newRange.since).toString()).not.toBe('Invalid Date')
     expect(newRange.since).toMatch(/Z$/)
   })
 
-  it('shows the shared LoadingState while signals are loading (AC4)', () => {
+  it('shows the shared LoadingState while the merged history is loading (AC4)', () => {
     render(<CheckHistoryPage />)
-    expect(screen.getByRole('status')).toHaveTextContent('Loading signals…')
-  })
-
-  it('shows the shared LoadingState while observations are loading, once a signal is selected (AC4)', async () => {
-    server.use(
-      http.get('/api/v1/history', async () => {
-        await new Promise((resolve) => setTimeout(resolve, 20))
-        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
-      }),
-    )
-
-    render(<CheckHistoryPage />)
-
-    // Topology loads fast (no artificial delay); the selector appears while
-    // the (artificially slowed) observations fetch is still in flight.
-    await screen.findByLabelText('Signal')
     expect(screen.getByRole('status')).toHaveTextContent('Loading observations…')
-    await screen.findByRole('table')
   })
 
-  it('shows the shared EmptyState "no observations in this window" when the signal has none (AC4)', async () => {
+  it('shows the shared EmptyState "no observations in this window" when nothing loaded at all (AC4)', async () => {
     server.use(http.get('/api/v1/history', () => HttpResponse.json([])))
 
     render(<CheckHistoryPage />)
@@ -151,7 +189,7 @@ describe('CheckHistoryPage', () => {
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 
-  it('shows the shared ErrorState on a signal-enumeration failure, then recovers via retry (AC4)', async () => {
+  it('shows the shared ErrorState on a topology-fetch failure, then recovers via retry (AC4)', async () => {
     const user = userEvent.setup()
     let callCount = 0
     server.use(
@@ -166,7 +204,7 @@ describe('CheckHistoryPage', () => {
 
     render(<CheckHistoryPage />)
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load signals')
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not load check history')
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
@@ -178,12 +216,15 @@ describe('CheckHistoryPage', () => {
     const user = userEvent.setup()
     let callCount = 0
     server.use(
-      http.get('/api/v1/history', () => {
-        callCount += 1
-        if (callCount === 1) {
-          return HttpResponse.json({ detail: 'boom' }, { status: 500 })
+      http.get('/api/v1/history', ({ request }) => {
+        const url = new URL(request.url)
+        if (url.searchParams.get('signal_key') === 'frontend-http') {
+          callCount += 1
+          if (callCount === 1) {
+            return HttpResponse.json({ detail: 'boom' }, { status: 500 })
+          }
         }
-        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+        return HttpResponse.json([])
       }),
     )
 
@@ -193,12 +234,27 @@ describe('CheckHistoryPage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Retry' }))
 
-    await screen.findByRole('table')
+    await screen.findByText('No observations in this window')
     expect(callCount).toBe(2)
   })
 
-  it('caps rendering at the latest 1,000 observations with a visible count note when the window returns more (AC4)', async () => {
-    const TOTAL = 1500
+  /**
+   * STORY-054 resolution (AC3): the pre-060 version of this test generated
+   * 1,500 rows for a SINGLE signal and asserted a 1,000-row render, which
+   * was slow enough under `npm test` file-parallelism/CPU contention to
+   * occasionally exceed Vitest's per-test timeout (a false-red, not a real
+   * failure — the flake STORY-054 filed). The rebuild resolves this by (a)
+   * lowering the client-render cap itself to 200 (`MAX_RENDERED_ROWS`,
+   * still generous for a glance at recent history) and (b) keeping this
+   * fixture just over that smaller cap (250, not 1,500) — a deterministic,
+   * fast render regardless of contention, while still exercising the exact
+   * same cap-caption behavior. Only ONE signal (`frontend-http`) returns the
+   * bulk fixture; every other topology signal returns `[]`, so the merged
+   * total is exactly 250 regardless of how many signals the topology fixture
+   * enumerates.
+   */
+  it('caps rendering at the latest 200 observations with a visible count note when the window returns more (AC3)', async () => {
+    const TOTAL = 250
     const generated = Array.from({ length: TOTAL }, (_, index) => ({
       signal_key: 'frontend-http',
       observed_at: new Date(Date.UTC(2026, 6, 3, 0, 0, 0) - index * 1000).toISOString(),
@@ -206,18 +262,26 @@ describe('CheckHistoryPage', () => {
       location: 'SYNTHETIC_LOCATION-0000000000000060',
       latency_ms: 500,
     }))
-    server.use(http.get('/api/v1/history', () => HttpResponse.json(generated)))
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        const url = new URL(request.url)
+        if (url.searchParams.get('signal_key') === 'frontend-http') {
+          return HttpResponse.json(generated)
+        }
+        return HttpResponse.json([])
+      }),
+    )
 
     render(<CheckHistoryPage />)
 
     expect(
-      await screen.findByText('showing latest 1,000 of 1,500 observations'),
+      await screen.findByText('showing latest 200 of 250 observations'),
     ).toBeInTheDocument()
 
     const table = screen.getByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
-    expect(rows).toHaveLength(1000)
-    // The rendered subset is the NEWEST 1,000 — the first row is the array's
+    expect(rows).toHaveLength(200)
+    // The rendered subset is the NEWEST 200 — the first row is the array's
     // first (newest-first) element, unchanged.
     expect(within(rows[0]).getByText(generated[0].observed_at)).toBeInTheDocument()
   })
