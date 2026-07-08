@@ -28,6 +28,7 @@ class PublicationsService:
                 status=p.status.value,
                 published_at=p.published_at,
                 proposal_id=p.proposal_id,
+                outcome=p.outcome.value,
             )
             for p in pubs
         ]

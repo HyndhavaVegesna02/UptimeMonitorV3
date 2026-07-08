@@ -1,16 +1,17 @@
-"""Tests for the publications API feature (STORY-037, Phase D — AC3).
+"""Tests for the publications API feature (STORY-037, Phase D — AC3; STORY-072 AC3).
 
 GET /api/v1/publications → list of PublicationDTO, most-recent-first.
 Empty repo → 200 + [].
 Five-file shape test.
 lint-imports 5 kept / 0 broken (publications added to api-feature-independence).
+STORY-072: PublicationDTO carries `outcome` (succeeded/failed).
 """
 
 from datetime import datetime, timezone
 
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
-from src.core.domain.publication import Publication
+from src.core.domain.publication import Publication, PublicationOutcome
 from src.core.domain.status import ComponentStatus
 from tests.fakes import FakeProposalRepository, FakePublicationRepository
 
@@ -65,13 +66,15 @@ def test_get_publications_most_recent_first():
 
 
 def test_get_publications_dto_shape():
-    """AC3: PublicationDTO has the expected fields (distinct from domain Publication)."""
+    """AC3/STORY-072 AC3: PublicationDTO has the expected fields (distinct from
+    domain Publication), including `outcome`."""
     pub_repo = FakePublicationRepository()
     pub = Publication(
         component_id="login",
         status=ComponentStatus.MAJOR_OUTAGE,
         published_at=_utc(8),
         proposal_id=5,
+        outcome=PublicationOutcome.FAILED,
     )
     saved = pub_repo.record(pub)
 
@@ -89,8 +92,32 @@ def test_get_publications_dto_shape():
     assert item["component_id"] == "login"
     assert item["status"] == "major_outage"
     assert item["proposal_id"] == 5
+    assert item["outcome"] == "failed"
     assert item["id"] == saved.id
     assert "published_at" in item
+
+
+def test_get_publications_outcome_defaults_to_succeeded():
+    """STORY-072 AC3: a Publication recorded without an explicit outcome
+    (the historical/success-only shape) still round-trips as 'succeeded'."""
+    pub_repo = FakePublicationRepository()
+    pub = Publication(
+        component_id="checkout",
+        status=ComponentStatus.OPERATIONAL,
+        published_at=_utc(9),
+    )
+    pub_repo.record(pub)
+
+    app = create_app(
+        proposal_repo=FakeProposalRepository(),
+        publication_repo=pub_repo,
+    )
+    client = TestClient(app)
+
+    response = client.get("/api/v1/publications")
+    assert response.status_code == 200
+    data = response.json()
+    assert data[0]["outcome"] == "succeeded"
 
 
 def test_publications_module_five_file_shape():

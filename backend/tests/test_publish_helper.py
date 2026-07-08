@@ -2,16 +2,19 @@
 + StatusWritebackPublisher + build_publisher.
 
 STORY-037 Phase C — AC2. STORY-045 — AC1/AC2/AC3/AC4 (write-back decorator + the
-shared publisher-chain assembly used by both composition roots).
+shared publisher-chain assembly used by both composition roots). STORY-072 —
+AC1 (record-always with succeeded/failed outcome).
 
 Tests cover:
-- RecordingPublisher records on successful delegate publish.
-- RecordingPublisher records NOTHING and re-raises when delegate raises.
-- BestEffortPublisher(RecordingPublisher(raising_delegate)) logs+swallows,
-  records nothing (the full composition chain).
+- RecordingPublisher records with outcome=SUCCEEDED on a successful delegate publish.
+- RecordingPublisher records with outcome=FAILED and re-raises when delegate raises
+  (STORY-072 AC1: recorded independent of the Statuspage result).
+- BestEffortPublisher(RecordingPublisher(raising_delegate)) logs+swallows for the
+  caller, while a FAILED publication is still recorded (the full composition chain).
 - StatusWritebackPublisher writes component_repo.set_status BEFORE delegating,
-  survives a best-effort delegate failure, and propagates an unknown-component
-  ComponentNotFoundError without ever reaching the delegate.
+  survives a best-effort delegate failure (recording a FAILED publication), and
+  propagates an unknown-component ComponentNotFoundError without ever reaching
+  the delegate.
 - build_publisher assembles the D2 chain shapes (creds+mapping present vs absent).
 """
 
@@ -19,6 +22,7 @@ from datetime import datetime, timezone
 
 import pytest
 from src.core.domain.component import Component, ComponentNotFoundError
+from src.core.domain.publication import PublicationOutcome
 from src.core.domain.status import ComponentStatus, StatusChange
 from tests.fakes import (
     FakeClock,
@@ -43,7 +47,8 @@ class RaisingPublisher:
 
 
 def test_recording_publisher_records_after_successful_publish():
-    """AC2: On a successful delegate publish, a Publication is recorded."""
+    """AC2/STORY-072 AC1: On a successful delegate publish, a Publication is
+    recorded with outcome=SUCCEEDED."""
     from src.composition.publish_helper import RecordingPublisher
 
     delegate = RecordingStatusPublisher()
@@ -64,11 +69,13 @@ def test_recording_publisher_records_after_successful_publish():
     assert pubs[0].component_id == "checkout"
     assert pubs[0].status == ComponentStatus.DEGRADED
     assert pubs[0].published_at == _utc(12)
+    assert pubs[0].outcome == PublicationOutcome.SUCCEEDED
     assert pubs[0].id is not None
 
 
-def test_recording_publisher_records_nothing_when_delegate_raises():
-    """AC2: If the delegate raises, nothing is recorded and the error propagates."""
+def test_recording_publisher_records_failed_outcome_when_delegate_raises():
+    """STORY-072 AC1: If the delegate raises, a Publication IS still recorded
+    with outcome=FAILED, and the original error still propagates unchanged."""
     from src.composition.publish_helper import RecordingPublisher
 
     delegate = RaisingPublisher()
@@ -81,12 +88,18 @@ def test_recording_publisher_records_nothing_when_delegate_raises():
     with pytest.raises(RuntimeError, match="Statuspage is down"):
         publisher.publish(change)
 
-    # Nothing was recorded (the error propagated BEFORE recording)
-    assert repo.list_recent() == []
+    # Recorded independent of the Statuspage result (STORY-072 AC1).
+    pubs = repo.list_recent()
+    assert len(pubs) == 1
+    assert pubs[0].component_id == "checkout"
+    assert pubs[0].status == ComponentStatus.DEGRADED
+    assert pubs[0].outcome == PublicationOutcome.FAILED
+    assert pubs[0].id is not None
 
 
-def test_best_effort_publisher_wrapping_recording_publisher_swallows_and_records_nothing():
-    """AC2: BestEffortPublisher(RecordingPublisher(raising)) logs+swallows, records nothing."""
+def test_best_effort_publisher_wrapping_recording_publisher_swallows_but_records_failed():
+    """STORY-072 AC1: BestEffortPublisher(RecordingPublisher(raising)) logs+swallows
+    for the caller, but a FAILED publication is still recorded."""
     from src.composition.publish_helper import BestEffortPublisher, RecordingPublisher
 
     delegate = RaisingPublisher()
@@ -101,8 +114,12 @@ def test_best_effort_publisher_wrapping_recording_publisher_swallows_and_records
     # Should NOT raise (BestEffortPublisher swallows)
     best_effort.publish(change)
 
-    # Nothing recorded (delegate raised before record happened)
-    assert repo.list_recent() == []
+    # A FAILED publication was recorded (STORY-072 AC1) even though the
+    # caller (approve) never sees the exception.
+    pubs = repo.list_recent()
+    assert len(pubs) == 1
+    assert pubs[0].outcome == PublicationOutcome.FAILED
+    assert pubs[0].status == ComponentStatus.MAJOR_OUTAGE
 
 
 def test_recording_publisher_publish_uses_clock_for_published_at():
@@ -159,9 +176,9 @@ def test_status_writeback_publisher_writes_before_delegating():
 
 
 def test_status_writeback_publisher_survives_best_effort_delegate_failure():
-    """D1/D2: write-back is OUTSIDE BestEffortPublisher — a delegate failure
-    (swallowed by BestEffortPublisher) does not undo the already-done write-back,
-    and (per RecordingPublisher semantics) nothing is recorded in publications."""
+    """D1/D2/STORY-072 AC1: write-back is OUTSIDE BestEffortPublisher — a delegate
+    failure (swallowed by BestEffortPublisher) does not undo the already-done
+    write-back, and a FAILED publication IS still recorded (record-always)."""
     from src.composition.publish_helper import (
         BestEffortPublisher,
         RecordingPublisher,
@@ -182,7 +199,9 @@ def test_status_writeback_publisher_survives_best_effort_delegate_failure():
     writeback.publish(change)
 
     assert component_repo.get("checkout").status == ComponentStatus.MAJOR_OUTAGE
-    assert publication_repo.list_recent() == []
+    pubs = publication_repo.list_recent()
+    assert len(pubs) == 1
+    assert pubs[0].outcome == PublicationOutcome.FAILED
 
 
 def test_status_writeback_publisher_unknown_component_propagates():
