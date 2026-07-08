@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 0ea652e
-verified_sprint: sprint-31
+verified_sha: a1bacab
+verified_sprint: sprint-40
 status: verified          # verified | stale | archived
 ---
 
@@ -73,8 +73,17 @@ status: verified          # verified | stale | archived
   or seeded without a configured interval, respectively.
 - `MaintenanceWindow` (frozen) models a scheduled maintenance window for a component (`maintenance.py::MaintenanceWindow`).
   Fields: `component_id:str`, `starts_at:datetime`, `ends_at:datetime`, `reason:str|None=None`, `id:int|None=None`. Timezones for starts_at and ends_at are validated to be UTC (`maintenance.py::MaintenanceWindow`). Enforces `ends_at > starts_at` invariant via a `model_validator(mode="after")` (`maintenance.py::MaintenanceWindow._require_ends_after_starts`) (STORY-036).
-- `Publication` (frozen) records a SUCCESSFUL Statuspage publish (§9, §12/T1.1, §17) (`publication.py::Publication`).
-  Fields: `component_id:str`, `status:ComponentStatus`, `published_at:datetime` (UTC-validated via `field_validator`, same pattern as `MaintenanceWindow`), `proposal_id:int|None=None`, `id:int|None=None`. The table has no error column — only successful publishes are recorded (STORY-037). Naive or non-UTC `published_at` is rejected at construction (`publication.py::Publication._require_published_at_utc`).
+- `Publication` (frozen) records a Statuspage publish ATTEMPT (§9, §12/T1.1, §17, STORY-037; STORY-072
+  changed it to record-always) (`publication.py::Publication`).
+  Fields: `component_id:str`, `status:ComponentStatus` (the status attempted, not necessarily
+  published), `published_at:datetime` (UTC-validated via `field_validator`, same pattern as
+  `MaintenanceWindow`), `proposal_id:int|None=None`, `outcome:PublicationOutcome=SUCCEEDED` (STORY-072
+  — whether the Statuspage call itself succeeded or raised; defaults to `SUCCEEDED` matching the
+  migration backfill, but production code always sets it explicitly), `id:int|None=None`. Naive or
+  non-UTC `published_at` is rejected at construction (`publication.py::Publication._require_published_at_utc`).
+  `PublicationOutcome` (`publication.py::PublicationOutcome`, STORY-072) is a closed `str, Enum` —
+  `SUCCEEDED = "succeeded"` / `FAILED = "failed"` — DISTINCT from `ComponentStatus` (which health
+  status was attempted vs. whether the publish call itself succeeded).
 - STORY-012: status proposal cross-field coherence is ENFORCED at construction: a
   `model_validator(mode="after")` (`proposal.py::StatusProposal._require_resolved_at_coherence`)
   enforces that `resolved_at` is set if and only if the state is terminal (i.e. not `open`).
@@ -118,8 +127,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   Provides `list_components() -> list[Component]` (STORY-014b), `get(component_id) -> Component | None` (STORY-016a: returns `None` on not-found), and `set_status(component_id, status) -> None` (STORY-045: writes the published status back; raises `ComponentNotFoundError` on an unknown id — see [[persistence-adapters]] for the adapter implementation and the shared fake/Postgres parity contract test).
 - `MaintenanceRepository` — persistence interface for managing maintenance windows (`maintenance_repository.py::MaintenanceRepository`).
   Provides `list_windows() -> list[MaintenanceWindow]` (ordered by starts_at), `create(window) -> MaintenanceWindow`, and `is_under_maintenance(component_id, at) -> bool` (inclusive start / exclusive end bounds) (STORY-036).
-- `PublicationRepository` — persistence interface for recording and listing Statuspage publications (`publication_repository.py::PublicationRepository`).
-  Provides `record(publication) -> Publication` (INSERTs a new row, returns it with the db-assigned id; called ONLY after a successful publish — table has no error column) and `list_recent(limit: int = 50) -> list[Publication]` (most-recent-first by `published_at DESC`; `[]` when none exist) (STORY-037).
+- `PublicationRepository` — persistence interface for recording and listing publish attempts (`publication_repository.py::PublicationRepository`, STORY-037; STORY-072 record-always).
+  Provides `record(publication) -> Publication` (INSERTs a new row, returns it with the db-assigned id; called on EVERY publish ATTEMPT — `publication.outcome` distinguishes success from a raising delegate) and `list_recent(limit: int = 50) -> list[Publication]` (most-recent-first by `published_at DESC`; `[]` when none exist).
 - `SignalRepository` — read-only persistence for the seeded-topology signal read model
   (`signal_repository.py::SignalRepository`, STORY-044). Provides `list_signals() -> list[Signal]`
   (ordered by `signal_key`, `[]` when none exist, never raises) and `get(signal_key) ->
@@ -219,3 +228,9 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   per-signal default-interval fix (audit finding H2) reads. `FakeSignalRepository` added to
   `backend/tests/fakes.py`; `PostgresSignalRepository` added (see [[persistence-adapters]]). Both
   exported from their respective `__init__.py` modules. verified_sha → 280c1e3.
+- sprint-40 (STORY-072, record-always publication outcome): `Publication` gains `outcome:
+  PublicationOutcome = SUCCEEDED` and the new closed `PublicationOutcome` enum (`succeeded`/`failed`)
+  — DISTINCT from `status` (Facts updated above); `PublicationRepository.record` is now called on
+  EVERY publish attempt, not only successes. Both exported from `core/domain/__init__.py`. See
+  [[statuspage-publish]] for the `RecordingPublisher` behavior change and the new migration, and
+  [[persistence-adapters]] for the adapter/fake implementations. verified_sha → a1bacab.
