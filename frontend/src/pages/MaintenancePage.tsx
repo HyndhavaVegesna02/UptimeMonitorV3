@@ -17,14 +17,14 @@ const WINDOW_STATE_LABEL: Record<WindowState, string> = {
 }
 
 /**
- * Tokens-only dot+label state badge (STORY-015f AC1) — deliberately kept
- * SEPARATE from the shell `StatusBadge`/`HealthStatus` vocabulary (which
- * models COMPONENT health: up/down/degraded/maintenance/unknown) rather than
- * a WINDOW's own scheduling state; conflating the two would let an
- * unrelated component-health contract change ripple into this badge's
- * meaning (the same reasoning `observationHealth.ts` documents for keeping
- * ITS vocabulary separate from `toHealthStatus`). The dot is `aria-hidden`
- * — the text label is the sole accessible name, never color alone.
+ * Tokens-only dot+label state badge (STORY-015f AC1, carried into the
+ * STORY-061 list redesign unchanged) — deliberately kept SEPARATE from the
+ * shell `StatusBadge`/`HealthStatus` vocabulary (which models COMPONENT
+ * health: up/down/degraded/maintenance/unknown) rather than a WINDOW's own
+ * scheduling state; conflating the two would let an unrelated
+ * component-health contract change ripple into this badge's meaning. The
+ * dot is `aria-hidden` — the text label is the sole accessible name, never
+ * color alone.
  */
 function WindowStateBadge({ state }: { state: WindowState }) {
   return (
@@ -37,7 +37,8 @@ function WindowStateBadge({ state }: { state: WindowState }) {
 
 /** `reason` is nullable on the wire — render an explicit em-dash rather than
  * a blank cell or the literal string "null" (STORY-015f conventions
- * checklist (h)). */
+ * checklist (h)). The mock's "Title" field maps directly onto this field
+ * (AC1 — the DTO has no separate title). */
 function formatReason(reason: string | null): string {
   return reason ?? '—'
 }
@@ -49,26 +50,30 @@ interface ScheduleFormProps {
 }
 
 /**
- * The schedule-maintenance form (STORY-015f AC2, AC3, AC4). Component
- * options come from the EXISTING `GET /api/v1/components` (`useComponents`,
- * the same source the Dashboard tab uses) — no new fetch shape, per the
- * sprint-34 plan. `starts_at`/`ends_at` are entered as local time
- * (`<input type="datetime-local">`); on submit each is converted to a
+ * The "New window" schedule form (STORY-061 AC1/AC2, rebuilt from STORY-015f/
+ * STORY-052's field-mapping logic onto the mock's field order/labels: Title,
+ * Component, Start, End). "Title" is a client-only label — there is no
+ * separate title field on `CreateMaintenanceRequest`; it is submitted as
+ * `reason` (AC1). Component options come from the EXISTING
+ * `GET /api/v1/components` (`useComponents`, the same source the Dashboard
+ * tab uses) — no new fetch shape. `starts_at`/`ends_at` are entered as local
+ * time (`<input type="datetime-local">`); on submit each is converted to a
  * tz-aware ISO string via `new Date(value).toISOString()` before POSTing —
- * the tz-discipline the backend requires (AC2). A 422's `ApiError.detail` is
- * mapped via `fieldErrorFromDetail` onto the specific field it concerns and
- * rendered INLINE next to that field (AC3, not toast/console-only); a
- * detail naming none of the three fields falls back to a general
- * form-level error banner instead of being silently dropped. On a
- * successful submit the form resets (STORY-015f AC2 — a fresh empty form
- * ready for the next window).
+ * the tz-discipline the backend requires (AC2, unchanged from STORY-015f).
+ * A 422's `ApiError.detail` is mapped via `fieldErrorFromDetail` onto the
+ * specific field it concerns and rendered INLINE next to that field (AC2,
+ * not toast/console-only); a detail naming none of the three fields
+ * (`component_id`/`starts_at`/`ends_at` — `reason`/Title is never a 422
+ * target) falls back to a general form-level error banner instead of being
+ * silently dropped. On a successful submit the form resets (AC2 — a fresh
+ * empty form ready for the next window).
  */
 function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps) {
   const { state: componentsState, retry: retryComponents } = useComponents()
+  const [title, setTitle] = useState('')
   const [componentId, setComponentId] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
-  const [reason, setReason] = useState('')
 
   const erroredField = fieldErrorFromDetail(mutationError?.detail)
 
@@ -78,19 +83,31 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
       component_id: componentId,
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
-      reason: reason.trim() === '' ? null : reason,
+      reason: title.trim() === '' ? null : title,
     })
     if (ok) {
+      setTitle('')
       setComponentId('')
       setStartsAt('')
       setEndsAt('')
-      setReason('')
     }
   }
 
   return (
     <form className="maintenance-form" onSubmit={(event) => void handleSubmit(event)}>
-      <h2 className="maintenance-form__title text-h3">Schedule maintenance</h2>
+      <div className="maintenance-form__field">
+        <label className="maintenance-form__label" htmlFor="maintenance-title">
+          Title
+        </label>
+        <input
+          id="maintenance-title"
+          className="maintenance-form__input"
+          type="text"
+          value={title}
+          onChange={(event) => setTitle(event.target.value)}
+          placeholder="e.g. Postgres upgrade"
+        />
+      </div>
 
       <div className="maintenance-form__field">
         <label className="maintenance-form__label" htmlFor="maintenance-component">
@@ -110,7 +127,7 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
             onChange={(event) => setComponentId(event.target.value)}
             required
           >
-            <option value="">Select a component…</option>
+            <option value="">Select component…</option>
             {componentsState.data.map((component) => (
               <option key={component.id} value={component.id}>
                 {component.name}
@@ -129,11 +146,11 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
       </div>
 
       <div className="maintenance-form__field">
-        <label className="maintenance-form__label" htmlFor="maintenance-starts-at">
-          Starts
+        <label className="maintenance-form__label" htmlFor="maintenance-start">
+          Start
         </label>
         <input
-          id="maintenance-starts-at"
+          id="maintenance-start"
           className="maintenance-form__input"
           type="datetime-local"
           value={startsAt}
@@ -151,11 +168,11 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
       </div>
 
       <div className="maintenance-form__field">
-        <label className="maintenance-form__label" htmlFor="maintenance-ends-at">
-          Ends
+        <label className="maintenance-form__label" htmlFor="maintenance-end">
+          End
         </label>
         <input
-          id="maintenance-ends-at"
+          id="maintenance-end"
           className="maintenance-form__input"
           type="datetime-local"
           value={endsAt}
@@ -170,19 +187,6 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
             {mutationError.detail}
           </p>
         ) : null}
-      </div>
-
-      <div className="maintenance-form__field">
-        <label className="maintenance-form__label" htmlFor="maintenance-reason">
-          Reason
-        </label>
-        <input
-          id="maintenance-reason"
-          className="maintenance-form__input"
-          type="text"
-          value={reason}
-          onChange={(event) => setReason(event.target.value)}
-        />
       </div>
 
       {mutationError && !erroredField ? (
@@ -202,64 +206,78 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
 }
 
 /**
- * The Maintenance tab (STORY-015f, dossier §17, split-child of STORY-015):
- * lists scheduled maintenance windows (component, start/end, reason, and a
- * client-derived upcoming/active/past state badge — an active window
- * suppresses degradation proposals, so its state must be unmistakable) and
- * a form to schedule a new one. The second mutating tab (015c Approvals
- * precedent): `useMaintenance` owns both the list `useFetch` and the create
- * mutation, calling the list's `retry()` on a successful create so the view
- * always reconciles with the server (AC2).
+ * The Maintenance tab (STORY-061, sprint-38 Operator Dashboard redesign;
+ * rebuilds STORY-015f/STORY-052's single-column form+table onto the mock's
+ * two-column layout — dossier §17, reference mock's `isMaintenance`
+ * section): a "New window" form card on the left, and a windows list on the
+ * right — each entry showing its title/reason, a client-derived
+ * upcoming/active/past state badge (`deriveWindowState` — an active window
+ * suppresses degradation proposals, so its state must be unmistakable), and
+ * `component · range`. The per-window delete control is OMITTED (AC3 — no
+ * `DELETE /api/v1/maintenance/{id}` on the wire) → deferred to STORY-065.
+ * `useMaintenance` owns both the list `useFetch` and the create mutation,
+ * calling the list's `retry()` on a successful create so the view always
+ * reconciles with the server (AC2, unchanged from STORY-015f/015c).
  */
 export function MaintenancePage() {
   const { state, retry, schedule, scheduling, mutationError } = useMaintenance()
 
   return (
-    <Panel title="Maintenance" headingLevel="h1">
-      <ScheduleForm onSubmit={schedule} scheduling={scheduling} mutationError={mutationError} />
+    <div className="maintenance-page">
+      <div className="maintenance-page__header">
+        <h1 className="text-h1 maintenance-page__title">Maintenance</h1>
+        <p className="text-caption maintenance-page__subtitle">
+          Windows suppress alerting for affected components to prevent false proposals.
+        </p>
+      </div>
 
-      {state.phase === 'loading' && <LoadingState label="Loading maintenance windows…" />}
+      <div className="maintenance-page__layout">
+        <Panel
+          title="New window"
+          headingLevel="h2"
+          className="maintenance-page__form-panel"
+        >
+          <ScheduleForm onSubmit={schedule} scheduling={scheduling} mutationError={mutationError} />
+        </Panel>
 
-      {state.phase === 'error' && (
-        <ErrorState message="Could not load maintenance windows" onRetry={retry} />
-      )}
+        <Panel className="maintenance-page__list-panel">
+          <h2 className="sr-only">Scheduled windows</h2>
 
-      {state.phase === 'success' && state.data.length === 0 && (
-        <EmptyState message="No maintenance scheduled" />
-      )}
+          {state.phase === 'loading' && <LoadingState label="Loading maintenance windows…" />}
 
-      {state.phase === 'success' && state.data.length > 0 && (
-        <table className="maintenance-table">
-          <thead>
-            <tr>
-              <th scope="col">Component</th>
-              <th scope="col">Starts</th>
-              <th scope="col">Ends</th>
-              <th scope="col">Reason</th>
-              <th scope="col">State</th>
-            </tr>
-          </thead>
-          <tbody>
-            {state.data.map((window) => (
-              <tr key={window.id}>
-                <td>{window.component_id}</td>
-                <td>
-                  <span className="text-mono">{window.starts_at}</span>
-                </td>
-                <td>
-                  <span className="text-mono">{window.ends_at}</span>
-                </td>
-                <td>{formatReason(window.reason)}</td>
-                <td>
-                  <WindowStateBadge
-                    state={deriveWindowState(window.starts_at, window.ends_at)}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Panel>
+          {state.phase === 'error' && (
+            <ErrorState message="Could not load maintenance windows" onRetry={retry} />
+          )}
+
+          {state.phase === 'success' && state.data.length === 0 && (
+            <EmptyState message="No maintenance scheduled" />
+          )}
+
+          {state.phase === 'success' && state.data.length > 0 && (
+            <ul className="maintenance-window-list">
+              {state.data.map((window) => (
+                <li key={window.id} className="maintenance-window">
+                  <div className="maintenance-window__head">
+                    <span className="maintenance-window__title text-body">
+                      {formatReason(window.reason)}
+                    </span>
+                    <WindowStateBadge
+                      state={deriveWindowState(window.starts_at, window.ends_at)}
+                    />
+                  </div>
+                  <div className="maintenance-window__meta text-mono text-caption">
+                    <span>{window.component_id}</span>
+                    <span aria-hidden="true"> · </span>
+                    <span>
+                      {window.starts_at}–{window.ends_at}
+                    </span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Panel>
+      </div>
+    </div>
   )
 }
