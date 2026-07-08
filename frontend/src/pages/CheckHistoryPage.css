@@ -1,18 +1,27 @@
-.check-history-page__controls {
+.check-history-page__toolbar {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: var(--space-6);
+  gap: var(--space-4);
   margin-bottom: var(--space-4);
 }
 
-.check-history-page__signal {
+.check-history-page__search {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  flex: 1 1 240px;
+  min-width: 220px;
+  max-width: 340px;
+}
+
+.check-history-page__filter {
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-.check-history-page__signal-label {
+.check-history-page__label {
   color: var(--color-ink-subtle);
   font-size: var(--fs-caption);
   font-weight: var(--fw-h3);
@@ -20,9 +29,13 @@
   letter-spacing: 0.04em;
 }
 
-.check-history-page__signal-select {
+/* Shared text-input/select spec (matches `maintenance-form__input`): >=40px
+   target height, 8px radius, hairline border, surface-1 background. Focus
+   ring comes from global.css's `input:focus-visible`/`select:focus-visible`
+   rule; nothing here overrides it. */
+.check-history-page__search-input,
+.check-history-page__select {
   min-height: var(--target-min);
-  min-width: 260px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-control);
   border: 1px solid var(--color-hairline);
@@ -32,9 +45,18 @@
   font-size: var(--fs-body);
 }
 
+.check-history-page__search-input {
+  width: 100%;
+}
+
+.check-history-page__select {
+  min-width: 160px;
+}
+
 .check-history-page__window {
   display: inline-flex;
   gap: var(--space-2);
+  margin-left: auto;
 }
 
 .check-history-page__window-button {
@@ -72,35 +94,4 @@
 .check-history-page__cap-note {
   color: var(--color-ink-subtle);
   margin-bottom: var(--space-2);
-}
-
-.check-history-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.check-history-table th,
-.check-history-table td {
-  text-align: left;
-  padding: var(--space-2) var(--space-3);
-  border-bottom: 1px solid var(--color-hairline);
-  font-family: var(--font-sans);
-  color: var(--color-ink);
-  vertical-align: middle;
-}
-
-.check-history-table th {
-  color: var(--color-ink-subtle);
-  font-size: var(--fs-caption);
-  font-weight: var(--fw-h3);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.check-history-table td {
-  font-size: var(--fs-body);
-}
-
-.check-history-table tbody tr:last-child td {
-  border-bottom: none;
 }
