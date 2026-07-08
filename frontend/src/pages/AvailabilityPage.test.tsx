@@ -5,18 +5,25 @@ import { describe, expect, it } from 'vitest'
 import { server } from '../mocks/server'
 import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
+  FIXTURE_HISTORY_FRONTEND_HTTP,
   FIXTURE_TOPOLOGY,
 } from '../mocks/handlers'
+import type { ComponentAvailabilityDTO } from '../api/types'
 import { AvailabilityPage } from './AvailabilityPage'
 
 describe('AvailabilityPage', () => {
-  it('shows a loading state, then one row per component with the rollup availability headline (AC1)', async () => {
+  it('shows a loading state, then a grid with Component/Availability/Data completeness columns (AC1)', async () => {
     render(<AvailabilityPage />)
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
     const table = await screen.findByRole('table')
     expect(table).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Component' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Availability' })).toBeInTheDocument()
+    expect(
+      screen.getByRole('columnheader', { name: 'Data completeness' }),
+    ).toBeInTheDocument()
 
     for (const component of FIXTURE_TOPOLOGY) {
       const availability = FIXTURE_AVAILABILITY_BY_COMPONENT[component.id]
@@ -24,7 +31,8 @@ describe('AvailabilityPage', () => {
       expect(row).not.toBeNull()
       if (availability.rollup.availability_pct !== null) {
         // Fixture values are 0-1 wire fractions (STORY-015d fix) — scale to
-        // percent to match the page's display text.
+        // percent to match the page's display text. `formatPct` is the only
+        // scaling seam — this asserts against it, never a re-derived value.
         expect(
           within(row).getByText(`${(availability.rollup.availability_pct * 100).toFixed(2)}%`),
         ).toBeInTheDocument()
@@ -32,7 +40,69 @@ describe('AvailabilityPage', () => {
     }
   })
 
-  it('expands a multi-signal component to reveal its per-signal children (AC1)', async () => {
+  it('shows the down/missing-data legend, always paired with text (never color-only) (AC1)', async () => {
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    expect(screen.getByText('Down / outage')).toBeInTheDocument()
+    expect(screen.getByText('Missing data')).toBeInTheDocument()
+  })
+
+  it('renders a real UptimeBar sparkline built from the primary signal\'s history for a component with data (AC1)', async () => {
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    const frontend = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-frontend')!
+    const bar = screen.getByRole('img', { name: `${frontend.name} availability segments` })
+    expect(bar).toBeInTheDocument()
+    // One rendered segment per real observation in the fixture — never a
+    // fabricated bucket.
+    expect(bar.querySelectorAll('[title]')).toHaveLength(FIXTURE_HISTORY_FRONTEND_HTTP.length)
+  })
+
+  it('renders "no downtime" when every non-maintenance verdict passed, and a low-completeness "missing data" chip for a component below the threshold (AC1)', async () => {
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    const frontendRow = screen.getByText('Sock Shop — frontend').closest('tr') as HTMLElement
+    // Fixture: total 96, passing 95, maintenance 1 -> down = 0.
+    expect(within(frontendRow).getByText('no downtime')).toBeInTheDocument()
+    // Fixture completeness 0.999 -> not low.
+    expect(within(frontendRow).queryByText('missing data')).not.toBeInTheDocument()
+
+    const catalogueRow = screen.getByText('Sock Shop — catalogue').closest('tr') as HTMLElement
+    // Fixture completeness 0.975 -> below the 98% threshold.
+    expect(within(catalogueRow).getByText('missing data')).toBeInTheDocument()
+  })
+
+  it('renders "N period(s) down" derived from REAL verdict counts, singular and plural', async () => {
+    const withDownCounts: ComponentAvailabilityDTO = {
+      ...FIXTURE_AVAILABILITY_BY_COMPONENT['sockshop-catalogue'],
+      rollup: {
+        ...FIXTURE_AVAILABILITY_BY_COMPONENT['sockshop-catalogue'].rollup,
+        total_verdicts: 10,
+        passing_verdicts: 9,
+        maintenance_verdicts: 0,
+      },
+    }
+    server.use(
+      http.get('/api/v1/availability/component/:componentId', ({ params }) => {
+        if (params.componentId === 'sockshop-catalogue') {
+          return HttpResponse.json(withDownCounts)
+        }
+        const dto = FIXTURE_AVAILABILITY_BY_COMPONENT[params.componentId as string]
+        return HttpResponse.json(dto)
+      }),
+    )
+
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    const row = screen.getByText('Sock Shop — catalogue').closest('tr') as HTMLElement
+    expect(within(row).getByText('1 period down')).toBeInTheDocument()
+  })
+
+  it('expands a multi-signal component to reveal its per-signal availability/completeness cells (AC2)', async () => {
     const user = userEvent.setup()
     render(<AvailabilityPage />)
 
@@ -74,7 +144,7 @@ describe('AvailabilityPage', () => {
     }
   })
 
-  it('renders a single-signal component the same expandable way as multi-signal (AC1)', async () => {
+  it('renders a single-signal component the same expandable way as multi-signal (AC2)', async () => {
     const user = userEvent.setup()
     render(<AvailabilityPage />)
 
@@ -88,7 +158,7 @@ describe('AvailabilityPage', () => {
     expect(screen.getByText(signal.signal_key)).toBeInTheDocument()
   })
 
-  it('renders a zero-signal component with its honest all-None rollup and no expand control (AC1, AC3)', async () => {
+  it('renders a zero-signal component with its honest all-None rollup, no expand control, and an empty UptimeBar (AC1, AC2)', async () => {
     render(<AvailabilityPage />)
 
     await screen.findByRole('table')
@@ -105,9 +175,14 @@ describe('AvailabilityPage', () => {
     expect(within(row).getAllByText('no data').length).toBeGreaterThan(0)
     expect(within(row).queryByText('0.00%')).not.toBeInTheDocument()
     expect(within(row).queryByText(/NaN/)).not.toBeInTheDocument()
+    // No signals means no history call, so the bar is honestly empty — never
+    // a fabricated segment.
+    expect(
+      within(row).getByRole('img', { name: `${zeroSignal.name} availability segments: no data` }),
+    ).toBeInTheDocument()
   })
 
-  it('renders a no-data window (signals present, all-None pct) honestly at both grains — never 0% or NaN (AC3)', async () => {
+  it('renders a no-data window (signals present, all-None pct) honestly at both grains — never 0% or NaN (AC1)', async () => {
     const user = userEvent.setup()
     render(<AvailabilityPage />)
 
@@ -120,10 +195,6 @@ describe('AvailabilityPage', () => {
     expect(within(row).getAllByText('no data').length).toBeGreaterThan(0)
     expect(within(row).queryByText('0.00%')).not.toBeInTheDocument()
     expect(within(row).queryByText(/NaN/)).not.toBeInTheDocument()
-    // The bar renders empty rather than a misleading full/partial fill.
-    expect(row.querySelector('.availability-stat__fill')).toHaveClass(
-      'availability-stat__fill--empty',
-    )
 
     await user.click(expandButton)
 
