@@ -99,7 +99,7 @@ export type UseComponentSignalsResult = UseFetchResult<SignalRow[]>
  * Read hook for one expanded component's signal drill-down (STORY-057 AC2).
  * Mounted lazily — only while a row is expanded — so a collapsed component
  * never fires its per-signal history requests. Built on the shared
- * `useFetch<T>` via the parameterized-fetch pattern (`useHistory.ts`): the
+ * `useFetch<T>` via the parameterized-fetch pattern: the
  * fetcher is `useCallback`-keyed on `[signals, range]`, so the caller MUST
  * pass a stable `signals` reference (the component's own `signals` array from
  * the memoized topology) and a memoized `range`. A drill-down fetch failure
