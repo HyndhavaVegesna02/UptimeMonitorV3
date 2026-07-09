@@ -37,6 +37,21 @@
   its worth and now feeds the subagent brief instead of an external prompt. (PO directive,
   2026-07-02, stated at the Sprint 25 lock.)
 
+- 2026-07-09 — **Subagent model tiering for non-pipeline work.** Outside the implementer/reviewer
+  pipeline (which the 2026-06-24 + 2026-07-02 rules govern), exploration/inventory subagents run on
+  **Haiku**; deep-analysis / architecture / verification subagents run on **Opus-tier** models.
+  (PO directive, 2026-07-09, stated during the API-restructure planning exercise.)
+- 2026-07-10 — **Sprint 42 runs EXTERNAL implementation, per explicit PO directive.** The PO
+  executes sprint 42's stories with an external AI agent, built to a self-contained implementation
+  prompt derived from `plan.md` (the 2026-06-27 self-containment + conventions-checklist discipline
+  applies in full). The orchestrator session does planning, board keeping, and — after the PO
+  reports implementation complete — post-implementation verification: Opus spec reviewer + Opus
+  quality reviewer per story, plus an independent full DoD gate re-run, before any story is marked
+  done. The external agent works ONLY on the `sprint-42` branch and never merges to main — merge
+  waits for PO acceptance at review, per the standing merge-last agreement. This is a one-sprint
+  exception; the 2026-07-02 in-process rule resumes after sprint 42 unless the PO says otherwise.
+  (PO directive, 2026-07-10.)
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the
