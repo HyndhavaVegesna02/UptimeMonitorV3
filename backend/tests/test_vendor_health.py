@@ -17,10 +17,15 @@ from __future__ import annotations
 import logging
 
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
-from src.composition.vendor_health import build_vendor_health_query, check_vendor_id_health
+from src.composition.vendor_health import (
+    build_vendor_health_query,
+    check_vendor_id_health,
+)
 
 
-def _one_signal_config(*, native_id: str = "HTTP_CHECK-DEAD", signal_key: str = "sig-1") -> Config:
+def _one_signal_config(
+    *, native_id: str = "HTTP_CHECK-DEAD", signal_key: str = "sig-1"
+) -> Config:
     return Config(
         [
             AppConfig(
@@ -88,7 +93,9 @@ def test_zero_rows_logs_loud_warning_naming_the_monitor(caplog):
     """AC1: a configured native_id that returns 0 rows over the check window
     produces a LOUD, testable WARNING naming the monitor (not a silent no-op).
     """
-    config = _one_signal_config(native_id="HTTP_CHECK-DB5792CB88D14CF4", signal_key="httpcheck")
+    config = _one_signal_config(
+        native_id="HTTP_CHECK-DB5792CB88D14CF4", signal_key="httpcheck"
+    )
 
     def fake_executor(query: str) -> list[dict]:
         return []
@@ -122,7 +129,9 @@ def test_zero_count_row_also_logs_warning(caplog):
 
 def test_healthy_id_logs_no_warning(caplog):
     """A monitor id with live executions in the window produces NO warning."""
-    config = _one_signal_config(native_id="HTTP_CHECK-38B092E93932C002", signal_key="sig-1")
+    config = _one_signal_config(
+        native_id="HTTP_CHECK-38B092E93932C002", signal_key="sig-1"
+    )
 
     def fake_executor(query: str) -> list[dict]:
         return [{"count()": 2882}]
