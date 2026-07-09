@@ -1,8 +1,9 @@
 """Centralized domain exception to HTTP response mapping registry.
 
 Cites: Proposal (2026-07-10) §3.4 G2, §6.2.
-Provides ONE registry to map domain/syntactic exceptions to their corresponding
-HTTP status codes and {"detail": ...} response bodies at the API edge.
+ONE registry: a dict of exception type -> HTTP status, installed as FastAPI
+exception handlers via a single handler factory. Every response body stays
+`{"detail": str(exc)}`.
 """
 
 from fastapi import FastAPI, Request
@@ -18,43 +19,29 @@ from src.core.services.approval import (
     ProposalNotOpenError,
 )
 
+_STATUS_BY_EXCEPTION: dict[type[Exception], int] = {
+    ValueError: 422,
+    SignalNotFoundError: 404,
+    ComponentNotFoundError: 404,
+    ProposalNotFoundError: 404,
+    SignalIntervalUnconfiguredError: 409,
+    ProposalNotOpenError: 409,
+}
+
+
+def _make_handler(status_code: int):
+    """Build a FastAPI exception handler closing over a fixed HTTP status code."""
+
+    async def handler(request: Request, exc: Exception) -> JSONResponse:
+        return JSONResponse(status_code=status_code, content={"detail": str(exc)})
+
+    return handler
+
 
 def install_error_handlers(app: FastAPI) -> None:
     """Register centralized exception handlers on the FastAPI application instance.
 
     Cites: Proposal (2026-07-10) §6.2.
     """
-
-    @app.exception_handler(ValueError)
-    async def value_error_handler(request: Request, exc: ValueError) -> JSONResponse:
-        return JSONResponse(status_code=422, content={"detail": str(exc)})
-
-    @app.exception_handler(SignalNotFoundError)
-    async def signal_not_found_handler(
-        request: Request, exc: SignalNotFoundError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=404, content={"detail": str(exc)})
-
-    @app.exception_handler(ComponentNotFoundError)
-    async def component_not_found_handler(
-        request: Request, exc: ComponentNotFoundError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=404, content={"detail": str(exc)})
-
-    @app.exception_handler(ProposalNotFoundError)
-    async def proposal_not_found_handler(
-        request: Request, exc: ProposalNotFoundError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=404, content={"detail": str(exc)})
-
-    @app.exception_handler(SignalIntervalUnconfiguredError)
-    async def signal_interval_unconfigured_handler(
-        request: Request, exc: SignalIntervalUnconfiguredError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=409, content={"detail": str(exc)})
-
-    @app.exception_handler(ProposalNotOpenError)
-    async def proposal_not_open_handler(
-        request: Request, exc: ProposalNotOpenError
-    ) -> JSONResponse:
-        return JSONResponse(status_code=409, content={"detail": str(exc)})
+    for exc_type, status_code in _STATUS_BY_EXCEPTION.items():
+        app.add_exception_handler(exc_type, _make_handler(status_code))
