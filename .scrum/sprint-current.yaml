@@ -47,7 +47,7 @@ stories:
         at: 2026-07-09T13:10:00+05:30
   - id: STORY-069
     points: 3
-    board: todo
+    board: in_progress
     pipeline: full
     blocked_question: null
     paused_at_commit: null
