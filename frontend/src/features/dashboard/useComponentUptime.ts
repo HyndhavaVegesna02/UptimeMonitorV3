@@ -3,13 +3,9 @@ import { getComponentAvailability, getHistory } from '../../api/client'
 import type { ComponentTopologyDTO, ObservationDTO } from '../../api/types'
 import type { UptimeSegment } from '../../components'
 import type { AvailabilityRange } from '../availability/windowRange'
-import { observationHealth } from '../history/observationHealth'
 import { useFetch } from '../../lib/useFetch'
 import type { UseFetchResult } from '../../lib/useFetch'
-
-/** The most segments a sparkline ever renders (STORY-057 AC3) — mirrors the
- * sprint-38 mock's ~30-segment strip. */
-export const MAX_UPTIME_SEGMENTS = 30
+import { buildUptimeSegments, MAX_UPTIME_SEGMENTS } from '../history/uptimeSegments'
 
 export interface ComponentUptime {
   /** The rollup `availability_pct` (a 0-1 fraction, or `null` on a
@@ -23,24 +19,6 @@ export interface ComponentUptime {
    * `UptimeBar`, whose own empty-segments branch renders the explicit
    * "No data" state instead of a zero-segment bar. */
   segments: UptimeSegment[]
-}
-
-/**
- * Builds sparkline segments from ONE signal's raw observations (STORY-057
- * AC3) — real per-check history, never a fabricated bucket. `getHistory`
- * returns newest-first; this takes the most recent `MAX_UPTIME_SEGMENTS`
- * and reverses them so the bar reads oldest (left) -> newest (right),
- * matching the reference mock's left-to-right timeline.
- */
-export function buildUptimeSegments(observations: ObservationDTO[]): UptimeSegment[] {
-  return observations
-    .slice(0, MAX_UPTIME_SEGMENTS)
-    .slice()
-    .reverse()
-    .map((observation) => ({
-      status: observationHealth(observation.health),
-      title: `${observation.location} — ${observation.health} @ ${observation.observed_at}`,
-    }))
 }
 
 /**

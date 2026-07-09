@@ -8,7 +8,8 @@ import {
   FIXTURE_TOPOLOGY,
 } from '../../mocks/handlers'
 import type { AvailabilityRange } from '../availability/windowRange'
-import { buildUptimeSegments, useComponentUptime } from './useComponentUptime'
+import { useComponentUptime } from './useComponentUptime'
+import { buildUptimeSegments } from '../history/uptimeSegments'
 
 const RANGE: AvailabilityRange = {
   since: '2026-07-02T00:00:00.000Z',
