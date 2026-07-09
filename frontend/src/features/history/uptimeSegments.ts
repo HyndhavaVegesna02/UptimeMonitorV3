@@ -16,7 +16,6 @@ export const MAX_UPTIME_SEGMENTS = 30
 export function buildUptimeSegments(observations: ObservationDTO[]): UptimeSegment[] {
   return observations
     .slice(0, MAX_UPTIME_SEGMENTS)
-    .slice()
     .reverse()
     .map((observation) => ({
       status: observationHealth(observation.health),

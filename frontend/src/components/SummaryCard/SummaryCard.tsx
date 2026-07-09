@@ -8,7 +8,7 @@ export interface SummaryCardProps {
   label: string
   value: ReactNode
   sub?: ReactNode
-  /** Which token-driven color paints the dot + value (STORY-055 AC5). */
+  /** Which token-driven color paints the dot + value (STORY-055 AC5). Both 'ok' and 'up' are supported and map to the same token-driven up status color. */
   tone?: SummaryCardTone
   className?: string
 }
