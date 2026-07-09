@@ -20,11 +20,11 @@ zone-layout meta-test that mechanically ties the `api/v1/` directory listing to 
 `api-feature-independence` contract list and the v1 router aggregator.
 
 ## Acceptance Criteria
-- [ ] `pyproject.toml` gains the two contracts verbatim from proposal §6.3:
+- [x] `pyproject.toml` gains the two contracts verbatim from proposal §6.3:
       `api-outward-independence` (forbidden: `src.api` → `src.adapters`, `src.composition`,
       `sqlalchemy`, `psycopg`, `httpx`) and `adapters-edge-only` (forbidden: `src.adapters` →
       `src.api`, `src.composition`). `lint-imports` exits 0 reporting **7 kept, 0 broken**.
-- [ ] A new `backend/tests/test_zone_layout.py` asserts: every package directory under
+- [x] A new `backend/tests/test_zone_layout.py` asserts: every package directory under
       `backend/src/api/v1/` whose name does NOT start with `_` (i) appears in the
       `api-feature-independence` contract's module list in `pyproject.toml`, and (ii) has its
       router included by the v1 aggregator (`backend/src/api/v1/__init__.py`). The test FAILS when
@@ -32,8 +32,8 @@ zone-layout meta-test that mechanically ties the `api/v1/` directory listing to 
       it derives the expected set from the filesystem, the contract list from parsing
       `pyproject.toml`, and the mounted routes from the aggregated router; underscore-prefixed
       packages are knowingly excluded so the future `_shared` package cannot false-fail it).
-- [ ] Backend six-gate DoD green; wiki blast radius resolved via the mechanical staleness sweep
-      (note: `architecture-boundary.md` lists `pyproject.toml` in its `code_refs` and documents the
+- [x] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (note:
+      `architecture-boundary.md` lists `pyproject.toml` in its `code_refs` and documents the
       contract inventory — expect it stale and update its contract count/Facts).
 
 ## Open Questions
@@ -45,3 +45,12 @@ None — the contracts are pre-verified green and quoted verbatim in the proposa
 
 ## History
 - 2026-07-10: filed + refined from the accepted API restructure proposal (Phase 1). Status: ready (2 pts).
+- 2026-07-10: Completed implementation. Final commit SHA: 6035e12
+  DoD Gate Results:
+  - pytest: exit 0 (534 passed in 40.33s)
+  - lint-imports: exit 0 (7 kept, 0 broken)
+  - python scripts/check_fk_direction.py: exit 0 (11 foreign keys checked, 0 violations)
+  - alembic upgrade head: exit 0
+  - ruff check .: exit 0
+  - ruff format --check .: exit 0
+  Wiki articles updated: architecture-boundary.md (and re-verified others: api-five-file-convention.md, config-layer.md, dev-setup-and-dod.md, frontend-zone.md, sample-mode.md).

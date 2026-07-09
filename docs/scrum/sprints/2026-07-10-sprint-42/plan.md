@@ -64,7 +64,7 @@
 
 AC: see `docs/scrum/stories/STORY-074-api-enforcement-contracts.md` (binding).
 
-- [ ] **Step 1 (test first):** write `backend/tests/test_zone_layout.py`:
+- [x] **Step 1 (test first):** write `backend/tests/test_zone_layout.py`:
   - derives the feature set from the filesystem: package dirs under `backend/src/api/v1/` whose
     name does not start with `_` (today: decisions, health, components, approvals, maintenance,
     availability, history, publications, topology, sample_mode);
@@ -79,19 +79,19 @@ AC: see `docs/scrum/stories/STORY-074-api-enforcement-contracts.md` (binding).
     helper against a tmp dir, or a comment-pinned filter test), so STORY-075 cannot false-fail it.
   - Run: test passes against today's tree (it is an invariant test, not red/green TDD — its
     "red" is demonstrated by the mutation check in Step 2).
-- [ ] **Step 2 (prove the guard):** temporarily (in-memory / not committed) verify the test FAILS
+- [x] **Step 2 (prove the guard):** temporarily (in-memory / not committed) verify the test FAILS
   when a feature is removed from the parsed contract list — e.g. parametrize the assertion helper
   and unit-test it with a doctored list. The committed form must prove the failure mode without a
   committed broken state.
-- [ ] **Step 3:** add the two contracts to `pyproject.toml`, verbatim from proposal §6.3:
+- [x] **Step 3:** add the two contracts to `pyproject.toml`, verbatim from proposal §6.3:
   `api-outward-independence` (forbidden: `src.api` → `src.adapters`, `src.composition`,
   `sqlalchemy`, `psycopg`, `httpx`) and `adapters-edge-only` (forbidden: `src.adapters` →
   `src.api`, `src.composition`). Run `lint-imports`: expect **7 kept, 0 broken**. Commit.
-- [ ] **Step 4:** full six-gate run on the clean tree; then the mechanical wiki sweep. Expected
+- [x] **Step 4:** full six-gate run on the clean tree; then the mechanical wiki sweep. Expected
   stale: `architecture-boundary.md` (its `code_refs` include `pyproject.toml`; its Facts state the
   contract inventory — update the count 5→7 and add the two new contracts as Facts with symbol
   citations). Update/re-verify every article the sweep reports, commit article-by-article.
-- [ ] **Step 5:** append the story-file History entry (what was done, final SHA), tick these boxes.
+- [x] **Step 5:** append the story-file History entry (what was done, final SHA), tick these boxes.
 
 ## STORY-075 — `_shared` foundation: central error registry (3pt)
 
