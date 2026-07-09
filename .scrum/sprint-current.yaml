@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 41
-status: active        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-08
 goal: "Quick cleanup sprint: make the frontend gate deterministic (068), consolidate the redesign
   worktree-duplication + nits (069), and add a loud startup warning when a configured Dynatrace
