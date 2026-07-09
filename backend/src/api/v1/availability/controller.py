@@ -8,7 +8,7 @@ Returns component-grain availability: the rollup_group plus per-signal
 children, each computed with its own configured interval (STORY-044 AC2).
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.availability.models import AvailabilityDTO, ComponentAvailabilityDTO
 from src.api.v1.availability.service import (
@@ -16,14 +16,8 @@ from src.api.v1.availability.service import (
     get_availability_service,
 )
 from src.api.v1.availability.validation import (
-    SyntacticValidationError,
     validate_availability_request,
     validate_component_availability_request,
-)
-from src.core.domain.component import ComponentNotFoundError
-from src.core.domain.topology import (
-    SignalIntervalUnconfiguredError,
-    SignalNotFoundError,
 )
 
 router = APIRouter()
@@ -57,27 +51,19 @@ def get_availability(
     An unknown signal_key on the default-interval path → 404; a seeded signal
     with no configured interval → 409 (STORY-044 AC3).
     """
-    try:
-        validate_availability_request(
-            signal_key=signal_key,
-            since=since,
-            until=until,
-            interval_seconds=interval_seconds,
-        )
-    except SyntacticValidationError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
+    validate_availability_request(
+        signal_key=signal_key,
+        since=since,
+        until=until,
+        interval_seconds=interval_seconds,
+    )
 
-    try:
-        return service.get_availability(
-            signal_key,
-            since_str=since,
-            until_str=until,
-            interval_seconds=interval_seconds,
-        )
-    except SignalNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except SignalIntervalUnconfiguredError as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
+    return service.get_availability(
+        signal_key,
+        since_str=since,
+        until_str=until,
+        interval_seconds=interval_seconds,
+    )
 
 
 @router.get(
@@ -101,18 +87,10 @@ def get_component_availability(
     nulls, not a 500. A child signal with no configured interval → 409
     (unreachable once fully seeded).
     """
-    try:
-        validate_component_availability_request(
-            component_id=component_id, since=since, until=until
-        )
-    except SyntacticValidationError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
+    validate_component_availability_request(
+        component_id=component_id, since=since, until=until
+    )
 
-    try:
-        return service.get_component_availability(
-            component_id, since_str=since, until_str=until
-        )
-    except ComponentNotFoundError as e:
-        raise HTTPException(status_code=404, detail=str(e)) from e
-    except SignalIntervalUnconfiguredError as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
+    return service.get_component_availability(
+        component_id, since_str=since, until_str=until
+    )
