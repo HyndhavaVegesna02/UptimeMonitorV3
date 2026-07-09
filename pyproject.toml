@@ -73,6 +73,20 @@ modules = [
     "src.api.v1.sample_mode",
 ]
 
+# The api zone's thinness becomes a build failure (closes G1)
+[[tool.importlinter.contracts]]
+name = "api-outward-independence"
+type = "forbidden"
+source_modules = ["src.api"]
+forbidden_modules = ["src.adapters", "src.composition", "sqlalchemy", "psycopg", "httpx"]
+
+# Adapters are edge-only: they implement ports, they never reach up
+[[tool.importlinter.contracts]]
+name = "adapters-edge-only"
+type = "forbidden"
+source_modules = ["src.adapters"]
+forbidden_modules = ["src.api", "src.composition"]
+
 [[tool.importlinter.contracts]]
 name = "src-no-tests"
 type = "forbidden"
