@@ -150,6 +150,59 @@ def test_post_maintenance_end_equals_start_clean_detail():
     assert "pydantic" not in detail
 
 
+def test_post_maintenance_non_utc_starts_at_clean_detail():
+    # STORY-075: a tz-aware-but-non-UTC starts_at (e.g. +05:30) must be
+    # rejected syntactically (422, clean one-line detail) rather than
+    # slipping past validate_maintenance_request into domain construction,
+    # where pydantic.ValidationError would render a raw multi-line blob.
+    maintenance_repo = FakeMaintenanceRepository()
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    payload = {
+        "component_id": "checkout",
+        "starts_at": "2026-07-10T10:00:00+05:30",
+        "ends_at": "2026-07-10T12:00:00+05:30",
+        "reason": "Non-UTC offset",
+    }
+    response = client.post("/api/v1/maintenance", json=payload)
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail == "starts_at must be in UTC."
+    assert "validation error for" not in detail
+    assert "input_value" not in detail
+    assert "pydantic" not in detail
+
+
+def test_post_maintenance_non_utc_ends_at_clean_detail():
+    # STORY-075: same as above but only ends_at carries the non-UTC offset.
+    maintenance_repo = FakeMaintenanceRepository()
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    payload = {
+        "component_id": "checkout",
+        "starts_at": "2026-07-10T10:00:00Z",
+        "ends_at": "2026-07-10T12:00:00+05:30",
+        "reason": "Non-UTC offset",
+    }
+    response = client.post("/api/v1/maintenance", json=payload)
+    assert response.status_code == 422
+    detail = response.json()["detail"]
+    assert detail == "ends_at must be in UTC."
+    assert "validation error for" not in detail
+    assert "input_value" not in detail
+    assert "pydantic" not in detail
+
+
 def test_post_maintenance_malformed():
     maintenance_repo = FakeMaintenanceRepository()
     app = create_app(

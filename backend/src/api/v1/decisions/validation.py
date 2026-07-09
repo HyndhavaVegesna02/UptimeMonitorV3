@@ -1,11 +1,14 @@
 """Syntactic checks for decisions (api/v1/decisions zone).
 
-Uses stdlib only (no service/core imports). Cites dossier §13.
+No service/core imports. Cites dossier §13. `SyntacticValidationError` is
+re-exported here for back-compat (STORY-075, Proposal (2026-07-10) §6.2/§6.4)
+— it is now defined once in `_shared/validation.py` so `_shared/errors.py` can
+map it to HTTP 422 without importing this feature package.
 """
 
+from src.api.v1._shared.validation import SyntacticValidationError
 
-class SyntacticValidationError(ValueError):
-    """Raised when incoming decision request fails syntactic validation."""
+__all__ = ["SyntacticValidationError", "validate_decision_request"]
 
 
 def validate_decision_request(action: str, actor: str) -> None:

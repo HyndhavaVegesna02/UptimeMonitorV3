@@ -9,6 +9,7 @@ exception handlers via a single handler factory. Every response body stays
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
+from src.api.v1._shared.validation import SyntacticValidationError
 from src.core.domain.component import ComponentNotFoundError
 from src.core.domain.topology import (
     SignalIntervalUnconfiguredError,
@@ -21,6 +22,7 @@ from src.core.services.approval import (
 
 _STATUS_BY_EXCEPTION: dict[type[Exception], int] = {
     ValueError: 422,
+    SyntacticValidationError: 422,
     SignalNotFoundError: 404,
     ComponentNotFoundError: 404,
     ProposalNotFoundError: 404,

@@ -1,13 +1,16 @@
 """Syntactic validation for the history read endpoint (dossier §13).
 
-Uses stdlib only. Raises structured errors → 422 before any core call.
+Raises structured errors → 422 before any core call. `SyntacticValidationError`
+is re-exported here for back-compat (STORY-075, Proposal (2026-07-10) §6.2/§6.4)
+— it is now defined once in `_shared/validation.py` so `_shared/errors.py` can
+map it to HTTP 422 without importing this feature package.
 """
 
 from datetime import datetime
 
+from src.api.v1._shared.validation import SyntacticValidationError
 
-class SyntacticValidationError(ValueError):
-    """Raised when incoming request fails syntactic validation."""
+__all__ = ["SyntacticValidationError", "validate_history_request"]
 
 
 def validate_history_request(
