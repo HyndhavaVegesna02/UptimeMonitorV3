@@ -5,18 +5,15 @@ service via the composition container, and shapes the HTTP result — it holds n
 business logic and imports no other feature.
 """
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 
 from src.api.dependencies import get_approval_service
 from src.api.v1.decisions.models import DecisionRequest, DecisionResponse
 from src.api.v1.decisions.validation import (
-    SyntacticValidationError,
     validate_decision_request,
 )
 from src.core.services.approval import (
     ApprovalService,
-    ProposalNotFoundError,
-    ProposalNotOpenError,
 )
 
 
@@ -31,31 +28,21 @@ class DecisionService:
     ) -> DecisionResponse:
         """Validate, delegate to ApprovalService, and shape the HTTP response."""
         # 1. Syntactic validation
-        try:
-            validate_decision_request(action=request.action, actor=request.actor)
-        except SyntacticValidationError as e:
-            raise HTTPException(status_code=422, detail=str(e)) from e
+        validate_decision_request(action=request.action, actor=request.actor)
 
-        # 2. Delegate to ApprovalService & map domain errors
-        try:
-            if request.action == "approve":
-                result = self._approval_service.approve(
-                    proposal_id=proposal_id,
-                    actor=request.actor,
-                    notes=request.notes,
-                )
-            else:
-                result = self._approval_service.reject(
-                    proposal_id=proposal_id,
-                    actor=request.actor,
-                    notes=request.notes,
-                )
-        except ProposalNotFoundError as e:
-            raise HTTPException(status_code=404, detail=str(e)) from e
-        except ProposalNotOpenError as e:
-            # Covers both the up-front guard and a lost-race resolve (concurrent
-            # double-submit) surfaced by the repository — both map to 409.
-            raise HTTPException(status_code=409, detail=str(e)) from e
+        # 2. Delegate to ApprovalService
+        if request.action == "approve":
+            result = self._approval_service.approve(
+                proposal_id=proposal_id,
+                actor=request.actor,
+                notes=request.notes,
+            )
+        else:
+            result = self._approval_service.reject(
+                proposal_id=proposal_id,
+                actor=request.actor,
+                notes=request.notes,
+            )
 
         # 3. Shape the HTTP result (result is the persisted proposal, id present)
         return DecisionResponse(
