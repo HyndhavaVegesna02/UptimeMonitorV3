@@ -1,118 +1,58 @@
 # YourTeam active sprint board.
-sprint: 41
-status: closed        # none | active | review | closed | aborted
-started: 2026-07-08
-goal: "Quick cleanup sprint: make the frontend gate deterministic (068), consolidate the redesign
-  worktree-duplication + nits (069), and add a loud startup warning when a configured Dynatrace
-  monitor id returns no data (070 — from the stale-monitor-id hotfix retro)."
-branch: sprint-41
-start_tag: sprint-41-start
-# PO-approved 2026-07-08 (with the 070 mechanism = loud WARNING at loop startup, not fail-fast).
-# PIPELINE: 068 (2pt) gate-only; 069 (3pt) + 070 (3pt) full pipeline (Sonnet 5/HIGH implementer +
-# Opus spec + Opus quality + gate). Total 8 pts (slightly above the ~5.3 mean; all low-risk cleanup).
+sprint: 42
+status: active        # none | active | review | closed | aborted
+started: 2026-07-10
+goal: "Land the API-restructure 'now' phase (2026-07-10 proposal): mechanically enforce the api
+  zone's thinness (074), give cross-feature HTTP policy an owned home — central error registry
+  (075) and one window-policy home (076) — with the error contract and endpoint tests frozen."
+branch: sprint-42
+start_tag: sprint-42-start
+# PO-approved 2026-07-10. Source spec: docs/superpowers/specs/2026-07-10-api-restructure-design.md
+# (committed 28b8592). 7 pts total (recent velocity: 8/2/5 over sprints 39-41; mean ~5 — slightly
+# above mean but all low-risk enforcement/consolidation chores with pre-verified contracts).
 #
-# EXECUTION: 070 is BACKEND (independent zone); 068 + 069 are FRONTEND and BOTH touch
-# features/availability, so 068 precedes 069 (no parallel overlap). Plan: 070 (backend) runs in
-# PARALLEL with 068 (frontend) in isolated worktrees; 069 (frontend) after 068 integrates.
-# DB: the throwaway Postgres (55432) is up; the live loop/API WRITERS ARE PAUSED for this sprint so
-# 070's backend gate runs single-invocation (2026-07-02); frontend gates need no DB. Worktree agents
-# sync `git merge sprint-41` first (2026-07-08 amendment) — though sprint-41 has no code beyond main.
+# EXECUTION MODE (2026-07-10 working agreement): EXTERNAL implementation — the PO runs the sprint
+# with an external AI agent built to the self-contained prompt derived from plan.md. This
+# orchestrator session did planning and will do post-implementation verification: Opus spec +
+# Opus quality reviewers per story + an independent full DoD gate re-run, before board=done.
+# The external agent works ONLY on sprint-42 and NEVER merges to main.
 #
-# BASELINE: sprint-41 cut from main @ 3274eed (tag sprint-41-start) — includes redesign + all fixes.
+# ORDER: 074 -> 075 -> 076, strictly sequential (074 is the meta-test/contract foundation; 075
+# creates _shared/; 076 extends _shared/ and touches the same two feature services as 075).
+# All three stories are backend-only: the six backend gates are the DoD gate (precedent:
+# STORY-070, sprint 41). frontend/ is untouched by every AC — any frontend diff is out-of-scope
+# by definition and a review flag.
 stories:
-  - id: STORY-068
+  - id: STORY-074
     points: 2
-    board: done            # merged to sprint-41 @ e5111cd (--no-ff); story commit 7589c9a
-    pipeline: gate
-    attempts: 1
+    board: todo
+    pipeline: full        # PO-directed: external implementation => every story gets Opus spec +
+                          # quality review at verification, regardless of the 1-2pt default.
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # only frontend/src/features/availability/useAvailability.test.tsx changed; no wiki code_refs list a .test.tsx (frontend-zone code_refs are source-only) — nothing to update.
-    review: null            # gate-only pipeline (2pt); no spec/quality reviewers
-    dod_evidence:
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files 50 passed (50); Tests 356 passed (356). Determinism confirmed: orchestrator ran twice green (356/356 @40.6s + @44.3s) at default parallelism; implementer ran 5 consecutive clean + 3 more under induced CPU load, all 356/356. Root cause = PROVEN contention (not a hook leak): empty diff since sprint cut, green in --no-file-parallelism isolation, and --testTimeout=1 forced-abort produced plain timeouts with ZERO unhandled rejections. Fix = scoped 15s testTimeout to this file only via vi.setConfig/vi.resetConfig (2026-07-06 sanctioned remedy; not a global bump)."
-        commit: 7589c9a
-        at: 2026-07-09T13:10:00+05:30
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "tsc -b && vite build -> built in 267ms (index 274.99 kB / gzip 84.76 kB). exit 0."
-        commit: 7589c9a
-        at: 2026-07-09T13:10:00+05:30
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . -> exit 0, no errors."
-        commit: 7589c9a
-        at: 2026-07-09T13:10:00+05:30
-  - id: STORY-069
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
+  - id: STORY-075
     points: 3
-    board: done
+    board: todo
     pipeline: full
-    attempts: 1
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true
-    review:
-      spec: "PASS — AC1 MET (buildUptimeSegments extracted into shared history module and consumed by both components and availability; tests pass), AC2 MET (stale docstrings in useTopology and useComponentSignals corrected; tokenized SummaryCard values to --fs-stat, ApprovalCard chip to --fs-chip, Approvals badge radius to --radius-badge, and maintenance window title weight to --fw-semibold; added aria-controls to row expanders, aria-invalid/describedby to Maintenance form, and SR-only count summary to UptimeBar; tests pass)."
-      quality: "APPROVE — 0 critical, 0 major. All extracted logic is cleanly structured, types are fully verified, and accessibility enhancements match standards. Empty backend diff confirmed."
-    dod_evidence:
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files 51 passed (51); Tests 360 passed (360). Duration 38.88s"
-        commit: 784f82c
-        at: 2026-07-09T13:41:00+05:30
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "tsc -b && vite build -> built in 430ms. exit 0."
-        commit: 784f82c
-        at: 2026-07-09T13:41:00+05:30
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . -> exit 0, no errors."
-        commit: 784f82c
-        at: 2026-07-09T13:41:00+05:30
-  - id: STORY-070
-    points: 3
-    board: done            # integrated to sprint-41 @ 4d3fd7a (ff); wiki resolved @ d223b3d
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
+  - id: STORY-076
+    points: 2
+    board: todo
     pipeline: full
-    attempts: 1
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # 4 articles: ingest-service-and-pull-loop updated (+vendor_health.py/test_vendor_health.py code_refs, new probe Fact); statuspage-publish/sample-mode/dev-setup-and-dod re-verified. All -> verified_sha 4d3fd7a. Commits 3c1e592/11690d0/31f76fd/d223b3d.
-    review:
-      spec: "PASS — AC1 MET (0-rows -> WARNING naming monitor; healthy id no warning; asserted in test_vendor_health.py), AC2 MET (faked executor; wired into run.py::main before build_live_loop; wiring test not over-mocked; non-fail-fast tested), AC3 MET after the ruff gate fix. Initial FAIL was only the ruff gate (I001 import-sort + format on test_vendor_health.py); fixed @ 4d3fd7a, no logic change."
-      quality: "APPROVE — 0 critical, 0 major. Minors (non-blocking, not fixed): (1) build_vendor_health_query interpolates native_id without the InvalidNativeIdError guard its sibling query.py uses (safe: trusted config, malformed-query error caught by the probe's broad except -> logged WARNING, never crashes); (2) probe counts all dt.synthetic.events for the id rather than scoping to event.type==http_monitor_execution (deliberate lenient existence probe, documented). Candidate backlog nits only."
-    dod_evidence:
-      - command: "pytest (full suite)"
-        exit_code: 0
-        output_tail: "VALID resource-isolated signal per 2026-07-06 agreement. Canonical single `pytest` false-reds on the self-container-spawning DB-lifecycle tests (test_dev_db_cli.py + test_dev_db_fixture.py) under Docker contention: each run a DIFFERENT one times out (2 failed / 1 failed / 1 different failed across 3 runs). PROVEN contention: both files have EMPTY diff since sprint-41-start (untouched by STORY-070) AND pass in single-file isolation (cli 2/2 @15s; fixture 6/6 @9s warm Docker). Valid signal: `pytest --ignore=test_dev_db_cli.py --ignore=test_dev_db_fixture.py` = 523 passed; the two lifecycle files green in isolation; STORY-070's own 17 tests green. Every test passes; they cannot share one Docker host concurrently. Filed as defect STORY-073 (backend flaky-gate, analog of STORY-054/068)."
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "5 kept, 0 broken (core-independence/core-internal-layering/adapters-independence/api-feature-independence/src-no-tests). vendor_health.py in composition zone importing adapters is allowed; core stays vendor-free."
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
-      - command: "python scripts/check_fk_direction.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
-      - command: "alembic upgrade head"
-        exit_code: 0
-        output_tail: "Context impl PostgresqlImpl; will assume transactional DDL. (head already applied; exit 0)"
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "184 files already formatted"
-        commit: 4d3fd7a
-        at: 2026-07-09T12:35:00+05:30
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
 hotfixes: []
 interrupts: []
