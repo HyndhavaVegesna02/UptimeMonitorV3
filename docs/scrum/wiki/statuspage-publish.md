@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, migrations/versions/ecda752c8865_add_publications_outcome.py]
-verified_sha: a1bacab
-verified_sprint: sprint-40
+verified_sha: 4d3fd7a
+verified_sprint: sprint-41
 status: verified
 ---
 
@@ -84,3 +84,6 @@ status: verified
   (see [[dev-setup-and-dod]] and [[ingest-service-and-pull-loop]]) — `build_live_loop` and
   `build_publisher` themselves are byte-identical. Re-verified; no Fact in this article changed.
   verified_sha → 6a33edb.
+- sprint-41 (STORY-070): re-verified. `run.py::main` gained a vendor-id drift probe call at startup
+  (see [[ingest-service-and-pull-loop]]), which does NOT touch `build_live_loop`, `build_publisher`,
+  or the publisher chain this article describes. No Fact changed. verified_sha → 4d3fd7a.
