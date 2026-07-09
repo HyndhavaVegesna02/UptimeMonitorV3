@@ -35,14 +35,18 @@ describe('UptimeBar', () => {
     expect(container.querySelector('.uptime-bar__segment--missing')).not.toBeNull()
   })
 
-  it('renders an accessible label for the whole bar', () => {
+  it('renders an accessible label for the whole bar containing a per-status summary', () => {
     render(
       <UptimeBar
         label="30-day uptime"
-        segments={[{ status: 'up', title: 'up' }]}
+        segments={[
+          { status: 'up', title: 'up' },
+          { status: 'down', title: 'down' },
+          { status: 'up', title: 'up' },
+        ]}
       />,
     )
-    expect(screen.getByRole('img', { name: '30-day uptime' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: '30-day uptime (2 up, 1 down)' })).toBeInTheDocument()
   })
 
   it('renders an explicit no-data state instead of a fabricated empty bar', () => {

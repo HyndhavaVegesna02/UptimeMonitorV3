@@ -126,6 +126,8 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
             value={componentId}
             onChange={(event) => setComponentId(event.target.value)}
             required
+            aria-invalid={erroredField === 'component_id'}
+            aria-describedby={erroredField === 'component_id' ? 'maintenance-component-error' : undefined}
           >
             <option value="">Select component…</option>
             {componentsState.data.map((component) => (
@@ -136,7 +138,7 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
           </select>
         )}
         {erroredField === 'component_id' && mutationError?.detail ? (
-          <p className="maintenance-form__error" role="alert">
+          <p id="maintenance-component-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>
@@ -156,9 +158,11 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
           value={startsAt}
           onChange={(event) => setStartsAt(event.target.value)}
           required
+          aria-invalid={erroredField === 'starts_at'}
+          aria-describedby={erroredField === 'starts_at' ? 'maintenance-start-error' : undefined}
         />
         {erroredField === 'starts_at' && mutationError?.detail ? (
-          <p className="maintenance-form__error" role="alert">
+          <p id="maintenance-start-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>
@@ -178,9 +182,11 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
           value={endsAt}
           onChange={(event) => setEndsAt(event.target.value)}
           required
+          aria-invalid={erroredField === 'ends_at'}
+          aria-describedby={erroredField === 'ends_at' ? 'maintenance-end-error' : undefined}
         />
         {erroredField === 'ends_at' && mutationError?.detail ? (
-          <p className="maintenance-form__error" role="alert">
+          <p id="maintenance-end-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>

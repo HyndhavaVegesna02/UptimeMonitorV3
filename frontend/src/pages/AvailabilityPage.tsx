@@ -234,6 +234,7 @@ export function AvailabilityPage() {
                             type="button"
                             className="availability-table__expand"
                             aria-expanded={expanded}
+                            aria-controls={availability.signals.map((sig) => `detail-${component.id}-${sig.signal_key}`).join(' ')}
                             onClick={() => toggleExpanded(component.id)}
                           >
                             <Icon
@@ -269,7 +270,11 @@ export function AvailabilityPage() {
                       availability.signals.map((signal) => {
                         const signalName = signalNameByKey.get(signal.signal_key) ?? signal.signal_key
                         return (
-                          <TableRow key={signal.signal_key} className="availability-table__child">
+                          <TableRow
+                            id={`detail-${component.id}-${signal.signal_key}`}
+                            key={signal.signal_key}
+                            className="availability-table__child"
+                          >
                             <TableCell>
                               <span className="availability-table__signal-name">
                                 {signalName}

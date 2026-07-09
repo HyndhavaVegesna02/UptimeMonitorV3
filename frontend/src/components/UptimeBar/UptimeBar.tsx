@@ -38,8 +38,19 @@ export function UptimeBar({ segments, label = 'Uptime segments', className }: Up
     )
   }
 
+  const order: HealthStatus[] = ['up', 'down', 'degraded', 'partial', 'maintenance', 'unknown', 'missing']
+  const summary = order
+    .map((status) => {
+      const count = segments.filter((s) => s.status === status).length
+      return count > 0 ? `${count} ${status}` : null
+    })
+    .filter(Boolean)
+    .join(', ')
+
+  const fullLabel = summary ? `${label} (${summary})` : label
+
   return (
-    <div className={cx('uptime-bar', className)} role="img" aria-label={label}>
+    <div className={cx('uptime-bar', className)} role="img" aria-label={fullLabel}>
       {segments.map((segment, index) => (
         <span
           key={index}

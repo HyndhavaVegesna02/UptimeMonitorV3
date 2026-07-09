@@ -133,7 +133,7 @@ describe('DashboardPage', () => {
     // sparkline built from FIXTURE_HISTORY_FRONTEND_HTTP.
     expect(await screen.findByText('99.50%')).toBeInTheDocument()
     expect(
-      screen.getByRole('img', { name: 'Sock Shop — frontend uptime' }),
+      screen.getByRole('img', { name: /Sock Shop — frontend uptime/ }),
     ).toBeInTheDocument()
 
     // sockshop-catalogue: real availability_pct (0.982), but its primary

@@ -53,7 +53,7 @@ describe('AvailabilityPage', () => {
     await screen.findByRole('table')
 
     const frontend = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-frontend')!
-    const bar = screen.getByRole('img', { name: `${frontend.name} availability segments` })
+    const bar = screen.getByRole('img', { name: new RegExp(frontend.name + ' availability segments') })
     expect(bar).toBeInTheDocument()
     // One rendered segment per real observation in the fixture — never a
     // fabricated bucket.

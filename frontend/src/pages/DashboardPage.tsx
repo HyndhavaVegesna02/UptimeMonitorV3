@@ -73,6 +73,7 @@ function isUnderActiveMaintenance(
 }
 
 interface SignalsDrilldownProps {
+  id: string
   signals: TopologySignalDTO[]
   range: AvailabilityRange
   colSpan: number
@@ -85,11 +86,11 @@ interface SignalsDrilldownProps {
  * failure here is scoped to this region alone (its own `ErrorState`) —
  * it never blocks or clears the primary components table above it.
  */
-function SignalsDrilldown({ signals, range, colSpan }: SignalsDrilldownProps) {
+function SignalsDrilldown({ id, signals, range, colSpan }: SignalsDrilldownProps) {
   const { state, retry } = useComponentSignals(signals, range)
 
   return (
-    <TableRow className="dashboard-page__drilldown-row">
+    <TableRow id={id} className="dashboard-page__drilldown-row">
       <TableCell colSpan={colSpan} className="dashboard-page__drilldown-cell">
         <div className="dashboard-page__drilldown-label text-caption">
           Signals feeding this component
@@ -181,6 +182,7 @@ function ComponentRow({
               type="button"
               className="dashboard-page__expand"
               aria-expanded={expanded}
+              aria-controls={`drilldown-${component.id}`}
               onClick={onToggle}
             >
               <Icon
@@ -216,7 +218,7 @@ function ComponentRow({
         </TableCell>
       </TableRow>
       {expanded && canExpand && (
-        <SignalsDrilldown signals={signals} range={range} colSpan={3} />
+        <SignalsDrilldown id={`drilldown-${component.id}`} signals={signals} range={range} colSpan={3} />
       )}
     </Fragment>
   )
