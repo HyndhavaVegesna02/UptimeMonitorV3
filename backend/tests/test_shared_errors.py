@@ -143,6 +143,29 @@ def test_shared_errors_proposal_not_open_409(migrated_db) -> None:
     assert "cannot transition" in response.json()["detail"].lower()
 
 
+def test_shared_errors_bare_value_error_500(migrated_db) -> None:
+    """A bare ValueError (not the registered SyntacticValidationError) must
+    surface as a 500, NOT be caught and downgraded to a 422.
+
+    Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2. STORY-075 review fix
+    (MAJOR-1): the base `@app.exception_handler(ValueError)` catch-all used
+    to mask genuine server-side bugs (and pydantic.ValidationError, which
+    subclasses ValueError) as 422 client errors. It has been removed —
+    only the specific `SyntacticValidationError` subclass is mapped to 422
+    now, so an unrelated bare ValueError propagates to FastAPI's default
+    unhandled-exception handling (500).
+    """
+    app = create_app()
+
+    @app.get("/test-bare-value-error")
+    def trigger_bare_value_error() -> None:
+        raise ValueError("Some unrelated server-side bug, not a client error")
+
+    client = TestClient(app, raise_server_exceptions=False)
+    response = client.get("/test-bare-value-error")
+    assert response.status_code == 500
+
+
 def test_shared_errors_unregistered_propagates(migrated_db) -> None:
     """Verify that an unregistered exception propagates normally and is not swallowed.
 

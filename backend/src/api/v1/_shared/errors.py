@@ -21,7 +21,6 @@ from src.core.services.approval import (
 )
 
 _STATUS_BY_EXCEPTION: dict[type[Exception], int] = {
-    ValueError: 422,
     SyntacticValidationError: 422,
     SignalNotFoundError: 404,
     ComponentNotFoundError: 404,
