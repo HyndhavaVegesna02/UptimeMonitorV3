@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 298f170
-verified_sprint: sprint-38
+verified_sha: 4d3fd7a
+verified_sprint: sprint-41
 status: verified
 ---
 
@@ -177,3 +177,6 @@ status: verified
   INDEPENDENT of the six backend commands, and `package.json`'s `dependencies` shape (a `dependencies`
   + `devDependencies` split with the three scripts) is unchanged — only which font packages sit in
   `dependencies`. No DoD-gate or command change. verified_sha → 298f170.
+- sprint-41 (STORY-070): re-verified. `run.py::main` gained a vendor-id drift probe call at startup
+  (see [[ingest-service-and-pull-loop]]); no dev-setup, DoD command, or `run.py`-as-entrypoint Fact
+  this article describes changed. verified_sha → 4d3fd7a.
