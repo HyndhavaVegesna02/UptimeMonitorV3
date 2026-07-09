@@ -5,7 +5,7 @@ import type { UptimeSegment } from '../../components'
 import type { AvailabilityRange } from '../availability/windowRange'
 import { useFetch } from '../../lib/useFetch'
 import type { UseFetchResult } from '../../lib/useFetch'
-import { buildUptimeSegments, MAX_UPTIME_SEGMENTS } from '../history/uptimeSegments'
+import { buildUptimeSegments } from '../history/uptimeSegments'
 
 export interface ComponentUptime {
   /** The rollup `availability_pct` (a 0-1 fraction, or `null` on a
