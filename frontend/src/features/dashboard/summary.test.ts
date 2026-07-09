@@ -51,7 +51,7 @@ describe('summarizeComponents', () => {
     const byKey = new Map(cards.map((card) => [card.key, card]))
 
     expect(byKey.get('total')?.tone).toBe('accent')
-    expect(byKey.get('up')?.tone).toBe('ok')
+    expect(byKey.get('up')?.tone).toBe('up')
     expect(byKey.get('degraded')?.tone).toBe('degraded')
     expect(byKey.get('partial')?.tone).toBe('partial')
     expect(byKey.get('down')?.tone).toBe('down')

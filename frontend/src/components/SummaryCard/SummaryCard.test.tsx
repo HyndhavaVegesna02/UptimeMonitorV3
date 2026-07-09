@@ -28,8 +28,11 @@ describe('SummaryCard', () => {
   })
 
   it('applies the tone modifier class driving the token-based color', () => {
-    const { container } = render(<SummaryCard label="30d uptime" value="99.98%" tone="ok" />)
-    expect(container.querySelector('.summary-card--ok')).not.toBeNull()
+    const { container: containerOk } = render(<SummaryCard label="30d uptime" value="99.98%" tone="ok" />)
+    expect(containerOk.querySelector('.summary-card--ok')).not.toBeNull()
+
+    const { container: containerUp } = render(<SummaryCard label="30d uptime" value="99.98%" tone="up" />)
+    expect(containerUp.querySelector('.summary-card--up')).not.toBeNull()
   })
 
   it('defaults to the neutral tone when none is given', () => {

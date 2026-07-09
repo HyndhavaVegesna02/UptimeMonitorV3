@@ -40,7 +40,7 @@ export function summarizeComponents(components: ComponentDTO[]): SummaryCardView
 
   const cards: SummaryCardViewModel[] = [
     { key: 'total', label: 'Components', value: total, sub: 'monitored', tone: 'accent' },
-    { key: 'up', label: 'Operational', value: counts.up, sub: `of ${total}`, tone: 'ok' },
+    { key: 'up', label: 'Operational', value: counts.up, sub: `of ${total}`, tone: 'up' },
     {
       key: 'degraded',
       label: 'Degraded',

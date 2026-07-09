@@ -47,10 +47,12 @@
   white-space: nowrap;
 }
 
-.summary-card--ok .summary-card__dot {
+.summary-card--ok .summary-card__dot,
+.summary-card--up .summary-card__dot {
   background: var(--color-health-up);
 }
-.summary-card--ok .summary-card__value {
+.summary-card--ok .summary-card__value,
+.summary-card--up .summary-card__value {
   color: var(--color-health-up);
 }
 

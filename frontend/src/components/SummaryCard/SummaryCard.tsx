@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { cx } from '../../lib/cx'
 import './SummaryCard.css'
 
-export type SummaryCardTone = 'ok' | 'degraded' | 'partial' | 'down' | 'accent' | 'neutral'
+export type SummaryCardTone = 'ok' | 'up' | 'degraded' | 'partial' | 'down' | 'accent' | 'neutral'
 
 export interface SummaryCardProps {
   label: string
