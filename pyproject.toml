@@ -87,6 +87,18 @@ type = "forbidden"
 source_modules = ["src.adapters"]
 forbidden_modules = ["src.api", "src.composition"]
 
+# Shared edge infra can never reach into a feature
+[[tool.importlinter.contracts]]
+name = "api-shared-no-feature-imports"
+type = "forbidden"
+source_modules = ["src.api.v1._shared"]
+forbidden_modules = [
+    "src.api.v1.decisions", "src.api.v1.health", "src.api.v1.components",
+    "src.api.v1.approvals", "src.api.v1.maintenance", "src.api.v1.availability",
+    "src.api.v1.history", "src.api.v1.publications", "src.api.v1.topology",
+    "src.api.v1.sample_mode",
+]
+
 [[tool.importlinter.contracts]]
 name = "src-no-tests"
 type = "forbidden"
