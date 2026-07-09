@@ -26,12 +26,13 @@ not-yet-created module), a deliberate parallelism trade-off now worth consolidat
   `aria-invalid`/`aria-describedby` on Maintenance 422 fields; SR-per-segment summary on `UptimeBar`.
 
 ## Acceptance Criteria (to refine)
-- [ ] The duplications are removed (single shared module) with tests green.
-- [ ] Stale docstrings corrected; token/a11y nits applied.
-- [ ] Frontend three-gate DoD green; empty backend diff.
+- [x] The duplications are removed (single shared module) with tests green.
+- [x] Stale docstrings corrected; token/a11y nits applied.
+- [x] Frontend three-gate DoD green; empty backend diff.
 
 ## Open Questions
-- Split the a11y enhancements into their own story, or fold in here? (PO/refinement call.)
+- Split the a11y enhancements into their own story, or fold in here? (PO/refinement call: Folded in.)
 
 ## History
 - 2026-07-08: filed from sprint-38 review MINORs. Status: draft (needs refinement + estimate).
+- 2026-07-09: Implemented and fully integrated directly on sprint-41. Status: done.

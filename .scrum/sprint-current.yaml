@@ -47,12 +47,31 @@ stories:
         at: 2026-07-09T13:10:00+05:30
   - id: STORY-069
     points: 3
-    board: in_progress
+    board: done
     pipeline: full
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    blast_radius_resolved: true
+    review:
+      spec: "PASS — AC1 MET (buildUptimeSegments extracted into shared history module and consumed by both components and availability; tests pass), AC2 MET (stale docstrings in useTopology and useComponentSignals corrected; tokenized SummaryCard values to --fs-stat, ApprovalCard chip to --fs-chip, Approvals badge radius to --radius-badge, and maintenance window title weight to --fw-semibold; added aria-controls to row expanders, aria-invalid/describedby to Maintenance form, and SR-only count summary to UptimeBar; tests pass)."
+      quality: "APPROVE — 0 critical, 0 major. All extracted logic is cleanly structured, types are fully verified, and accessibility enhancements match standards. Empty backend diff confirmed."
+    dod_evidence:
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files 51 passed (51); Tests 360 passed (360). Duration 38.88s"
+        commit: 784f82c
+        at: 2026-07-09T13:41:00+05:30
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "tsc -b && vite build -> built in 430ms. exit 0."
+        commit: 784f82c
+        at: 2026-07-09T13:41:00+05:30
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . -> exit 0, no errors."
+        commit: 784f82c
+        at: 2026-07-09T13:41:00+05:30
   - id: STORY-070
     points: 3
     board: done            # integrated to sprint-41 @ 4d3fd7a (ff); wiki resolved @ d223b3d
