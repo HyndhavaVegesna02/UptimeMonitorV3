@@ -97,35 +97,35 @@ AC: see `docs/scrum/stories/STORY-074-api-enforcement-contracts.md` (binding).
 
 AC: see `docs/scrum/stories/STORY-075-api-shared-error-registry.md` (binding).
 
-- [ ] **Step 0 (inventory, committed as a note in the story file History):** read ALL 10 feature
+- [x] **Step 0 (inventory, committed as a note in the story file History):** read ALL 10 feature
   packages; enumerate every `(domain exception → status, message shape)` mapping that exists today
   and WHERE it lives (known: `availability/controller.py` maps SyntacticValidationError→422 and
   SignalNotFoundError→404 and SignalIntervalUnconfiguredError→409, duplicated across its two
   endpoints; `history/controller.py` maps its validation error→422; `decisions/service.py` and
   `maintenance/service.py` map in the service layer). The registry covers EXACTLY this inventory —
   nothing invented (2026-06-29 "do not invent" precedent).
-- [ ] **Step 1 (tests first):** new `backend/tests/test_shared_errors.py`: builds a minimal app
+- [x] **Step 1 (tests first):** new `backend/tests/test_shared_errors.py`: builds a minimal app
   via `create_app` with fakes (mirror `test_availability_endpoint.py`'s pattern), drives each
   registered exception through a real endpoint, asserts status + `{"detail": <today's exact
   message>}`. Also asserts an UNREGISTERED exception still propagates (500 via TestClient
   `raise_server_exceptions` behavior unchanged) — the registry must not become a catch-all.
-- [ ] **Step 2:** implement `backend/src/api/v1/_shared/__init__.py` + `errors.py`
+- [x] **Step 2:** implement `backend/src/api/v1/_shared/__init__.py` + `errors.py`
   (registry dict + `install_error_handlers(app)`; docstrings cite proposal §3.4 G2/§6.2) and the
   documented empty `middleware.py` seam (docstring names STORY-017; no logic). Wire
   `install_error_handlers(app)` into `composition/app.py::create_app`. Commit on green.
-- [ ] **Step 3 (strip, one feature per commit):** remove the local mapping from
+- [x] **Step 3 (strip, one feature per commit):** remove the local mapping from
   `availability/controller.py`, `history/controller.py`, `decisions/service.py`,
   `maintenance/service.py` — the feature code lets domain exceptions propagate. After EACH
   feature's strip: its endpoint tests pass UNMODIFIED; commit. Edge rule: if any stripped site
   turns out to add per-feature information to the message (not just `str(exc)`), STOP — record a
   blocker in the story History rather than changing the wire message.
-- [ ] **Step 4:** add the `api-shared-no-feature-imports` contract (proposal §6.3 verbatim);
+- [x] **Step 4:** add the `api-shared-no-feature-imports` contract (proposal §6.3 verbatim);
   `lint-imports` → **8 kept, 0 broken**. Confirm `_shared` is NOT in `api-feature-independence`
   and `test_zone_layout.py` (from 074) stays green. Commit.
-- [ ] **Step 5:** grep-proof: no `HTTPException` construction remains under
+- [x] **Step 5:** grep-proof: no `HTTPException` construction remains under
   `backend/src/api/v1/` feature packages (health's plain 200 and any FastAPI-internal uses are
   fine; record the grep output in the story History). Full six-gate run on the clean tree.
-- [ ] **Step 6:** mechanical wiki sweep. Expected stale: `api-five-file-convention.md` (revise to
+- [x] **Step 6:** mechanical wiki sweep. Expected stale: `api-five-file-convention.md` (revise to
   "five files + `_shared`", admission criteria = cross-feature HTTP policy only, per proposal
   §6.4) and possibly `architecture-boundary.md` (pyproject touch). Commit article-by-article;
   History entry; tick boxes.
