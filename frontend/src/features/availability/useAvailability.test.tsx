@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { server } from '../../mocks/server'
 import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
@@ -9,6 +9,33 @@ import {
 } from '../../mocks/handlers'
 import { useAvailability } from './useAvailability'
 import type { AvailabilityRange } from './windowRange'
+
+/**
+ * STORY-068: this file's `<Harness>` drives the heaviest fan-out of any
+ * `useFetch`-based hook in the suite — one `getTopology()` hop, THEN (in
+ * parallel) `FIXTURE_TOPOLOGY.length` `getComponentAvailability` calls AND
+ * `FIXTURE_TOPOLOGY.length` `getHistory` segment calls (STORY-058) — nine
+ * MSW round trips per render versus one or two for most other hooks' tests.
+ * Under `npm test`'s default file-parallelism, CPU contention across
+ * workers can inflate this file's wall-clock past Vitest's 5000ms default
+ * even though every individual round trip is a synchronous MSW mock (no
+ * artificial delay) — proven contention, not a hook-level leak: this file
+ * has an EMPTY diff since the sprint-41 cut, passes reliably in isolation
+ * (`--no-file-parallelism`), and forcing every test to time out immediately
+ * (`--testTimeout=1`) produces plain timeouts with ZERO unhandled
+ * rejections — there is no pending promise this hook leaves uncaught. Per
+ * the 2026-07-06 contention-verdict agreement, the sanctioned remedy for a
+ * PROVEN-contention gate is an appropriate per-test timeout (NOT a leak
+ * papered over) — scoped to just this file via `vi.setConfig`, not a global
+ * bump, so unrelated files' 5000ms expectations are untouched.
+ */
+beforeAll(() => {
+  vi.setConfig({ testTimeout: 15000 })
+})
+
+afterAll(() => {
+  vi.resetConfig()
+})
 
 /** Minimal harness rendering every `useAvailability` phase, mirroring how
  * `AvailabilityPage` will drive it. */
