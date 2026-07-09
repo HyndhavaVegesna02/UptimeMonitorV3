@@ -33,7 +33,7 @@
 
 .summary-card__value {
   font-family: var(--font-mono);
-  font-size: 24px;
+  font-size: var(--fs-stat);
   font-weight: 600;
   letter-spacing: -0.02em;
   margin-top: var(--space-2);

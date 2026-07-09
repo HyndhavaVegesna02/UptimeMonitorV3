@@ -129,7 +129,7 @@
 
 .maintenance-window__title {
   color: var(--color-ink);
-  font-weight: 600;
+  font-weight: var(--fw-semibold);
 }
 
 .maintenance-window__meta {

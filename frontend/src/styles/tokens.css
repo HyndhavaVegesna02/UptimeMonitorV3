@@ -175,6 +175,11 @@
   --lh-label: 1.4;
   --ls-label: 0.05em;
 
+  /* Stat and chip typography (STORY-069) */
+  --fs-stat: 24px;
+  --fs-chip: 10.5px;
+  --fw-semibold: 600;
+
   /* Spacing — 4px base */
   --space-1: 4px;
   --space-2: 8px;
@@ -189,6 +194,10 @@
   --radius-panel: 8px;
   --radius-chip: 4px;
   --radius-pill: 9999px;
+  --radius-badge: 8px;
+
+  /* Borders (STORY-069) */
+  --border-badge-width: 1.5px;
 
   /* Focus ring — accent, offset by a canvas-colored ring for legibility on
      any surface (AC6: visible focus ring on every interactive element). */
