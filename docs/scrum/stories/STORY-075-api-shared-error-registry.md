@@ -22,25 +22,25 @@ an empty `middleware.py` seam (module + docstring only — STORY-017 lands there
 now). Fence `_shared` with its own contract.
 
 ## Acceptance Criteria
-- [ ] `backend/src/api/v1/_shared/errors.py` holds ONE mapping registry covering at least:
+- [x] `backend/src/api/v1/_shared/errors.py` holds ONE mapping registry covering at least:
       `SyntacticValidationError→422`, `SignalNotFoundError→404`, `SignalIntervalUnconfiguredError→409`,
       `ProposalNotFoundError→404`, `ProposalNotOpenError→409`, and the maintenance validation
       error(s) currently mapped in `maintenance/service.py` — i.e. every domain exception any
       feature maps today, discovered by reading all 10 features, none invented. `install_error_handlers(app)`
       registers FastAPI exception handlers producing EXACTLY the current body shape
       (`{"detail": <same message text as today>}`) and status codes.
-- [ ] `composition/app.py::create_app` calls `install_error_handlers(app)`. After the strip, NO
+- [x] `composition/app.py::create_app` calls `install_error_handlers(app)`. After the strip, NO
       feature controller or feature service maps a domain exception to an HTTPException/status
       itself (grep-provable: no `HTTPException` construction inside `api/v1/{feature}/` except
       where a handler genuinely cannot apply — none expected).
-- [ ] `pyproject.toml` gains `api-shared-no-feature-imports` (proposal §6.3, verbatim: `_shared`
+- [x] `pyproject.toml` gains `api-shared-no-feature-imports` (proposal §6.3, verbatim: `_shared`
       forbidden from importing any of the 10 feature modules); `_shared` is NOT added to the
       `api-feature-independence` list. `lint-imports` exits 0 (**8 kept, 0 broken**).
-- [ ] **Frozen error contract:** ALL existing endpoint tests pass UNMODIFIED. Any edit to an
+- [x] **Frozen error contract:** ALL existing endpoint tests pass UNMODIFIED. Any edit to an
       existing endpoint test is a spec-review red flag requiring explicit justification.
-- [ ] `_shared/middleware.py` exists as a documented empty seam (docstring naming STORY-017 as the
+- [x] `_shared/middleware.py` exists as a documented empty seam (docstring naming STORY-017 as the
       intended occupant, per proposal §6.2); no middleware logic in this story.
-- [ ] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (expect
+- [x] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (expect
       `api-five-file-convention.md` stale — revise it to "five files + `_shared`" per proposal §6.2
       and re-verify).
 
@@ -54,3 +54,4 @@ decision table (§6.4) and go into the wiki article revision.
 
 ## History
 - 2026-07-10: filed + refined from the accepted API restructure proposal (Phase 2). Status: ready (3 pts).
+- 2026-07-10: Implemented in sprint-42. All tests passed, import linter verified, and wiki updated. final commit: `29ba79d` (and dependencies).
