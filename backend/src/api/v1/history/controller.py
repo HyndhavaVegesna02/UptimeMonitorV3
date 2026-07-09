@@ -4,12 +4,11 @@ GET /history?signal_key=...&since=...&until=...
 Returns per-signal observation DTOs (most-recent first) via ObservationRepository.in_window.
 """
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from src.api.v1.history.models import ObservationDTO
 from src.api.v1.history.service import HistoryService, get_history_service
 from src.api.v1.history.validation import (
-    SyntacticValidationError,
     validate_history_request,
 )
 
@@ -31,9 +30,6 @@ def get_history(
 
     Empty window → 200 + []. Missing signal_key → 422 before any core call.
     """
-    try:
-        validate_history_request(signal_key=signal_key, since=since, until=until)
-    except SyntacticValidationError as e:
-        raise HTTPException(status_code=422, detail=str(e)) from e
+    validate_history_request(signal_key=signal_key, since=since, until=until)
 
     return service.get_history(signal_key, since_str=since, until_str=until)
