@@ -159,8 +159,8 @@ AC: see `docs/scrum/stories/STORY-076-api-shared-windowing.md` (binding).
 
 ## Sprint-end (external agent's last act)
 
-- [ ] All three stories' boxes ticked, tree clean, all commits pushed to `origin/sprint-42`.
-- [ ] A final summary appended to each story file's History: final SHA, gate results
+- [x] All three stories' boxes ticked, tree clean, all commits pushed to `origin/sprint-42`.
+- [x] A final summary appended to each story file's History: final SHA, gate results
   (command + exit code + output tail), the wiki articles updated, and any deviations/blockers.
-- [ ] Do NOT merge to main. Do NOT close the sprint. Report back to the PO — the orchestrator
+- [x] Do NOT merge to main. Do NOT close the sprint. Report back to the PO — the orchestrator
   session then runs Opus spec + quality reviews and the independent gate re-run.
