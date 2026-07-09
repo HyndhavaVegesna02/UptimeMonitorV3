@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx]
-verified_sha: 4d3fd7a
-verified_sprint: sprint-41
+verified_sha: 4dc2848
+verified_sprint: sprint-42
 status: verified          # verified | stale | archived
 ---
 
