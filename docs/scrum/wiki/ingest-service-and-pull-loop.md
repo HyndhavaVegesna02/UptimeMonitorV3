@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py]
-verified_sha: 6a33edb
-verified_sprint: sprint-36
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py]
+verified_sha: 4d3fd7a
+verified_sprint: sprint-41
 status: verified          # verified | stale | archived
 ---
 
@@ -118,6 +118,22 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   fail-fast-before-any-loop test stays green with `load_dotenv` patched in
   `backend/tests/test_run_live_loop.py`). See [[dev-setup-and-dod]] for the full correction of the
   CLAUDE.md/wiki claims this fixed.
+- **Vendor-id drift probe at startup (STORY-070, `composition/vendor_health.py`):** `main()` now
+  runs `check_vendor_id_health(config=..., executor=make_grail_executor(...))` (`run.py::main`) ONCE
+  at startup, BEFORE `build_live_loop`/`run_periodic` are built. `check_vendor_id_health`
+  (`vendor_health.py::check_vendor_id_health`) iterates every configured signal and runs a bounded
+  DQL count (`vendor_health.py::build_vendor_health_query` — a cheap `fetch dt.synthetic.events,
+  from:now()-2h | filter monitor.id == <native_id> | summarize count()` existence probe, distinct
+  from the ingest fetch in [[dynatrace-adapter]]) through the SAME injected `Executor` seam the pull
+  loop uses; a 0-row/0-count result (`vendor_health.py::_extract_count`) logs a PROMINENT WARNING
+  naming the `native_id` + `signal_key`, a healthy id logs only INFO. This is a **loud WARNING, NOT
+  fail-fast** (PO-decided, sprint-41): it must surface a configured-but-empty monitor id immediately
+  but must never block the live loop from starting. Each signal's probe is wrapped in
+  `try/except Exception` that logs a WARNING and `continue`s, so a probe error for one signal never
+  stops the others and never propagates to `main()` — the probe cannot take down the loop it protects.
+  It closes the Sprint 38 silent-no-data-pipeline gap (a monitor id recreated in Dynatrace, hotfix
+  `79bfbb3`; see the 2026-07-08 retro working agreement). Uses its own `make_grail_executor` instance
+  (a cheap closure, no network until invoked) so it never depends on `build_live_loop` having run.
 - **STORY-048 sample-mode seam (temporary — see [[sample-mode]]):** `build_live_loop` step 2's
   `ingest_port` is now `composition/sample_mode.py::SampleModeIngest(delegate=IngestService(...),
   sample_mode_repo=PostgresSampleModeRepository(engine))` instead of a bare `IngestService` — a
@@ -159,6 +175,15 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   [[sample-mode]]) additionally asserts `ingest_port` is a `SampleModeIngest` wrapping the REAL
   `IngestService` wired to the real repos, and that the SAME `ingest_port` instance threads into
   every per-signal `run_periodic` call.
+- `backend/tests/test_vendor_health.py` (STORY-070) exercises `check_vendor_id_health` with FAKE
+  executors (no live Dynatrace): a 0-rows and a `[{"count()":0}]` result each assert exactly one
+  WARNING record naming the monitor id; a `[{"count()":2882}]` result asserts NO warning; a raising
+  executor asserts the error is caught+logged and does NOT propagate, and that one signal's probe
+  error does not block the others; an empty config is a no-op (executor never called).
+  `backend/tests/test_run_live_loop.py` adds `test_main_probes_vendor_id_health_before_loops_start`,
+  which pins the wiring WITHOUT patching it away — it passes the REAL `make_grail_executor` closure,
+  asserts the executor is callable and the real loaded `config` is threaded, and asserts ordering
+  (`check_vendor_id_health` runs before `build_live_loop`) via an attached manager mock.
 - The DB-gated persistence side (the actual `rejected_observations` row write) is covered in
   `backend/tests/test_persistence_adapters.py` — see [[persistence-adapters]].
 
@@ -216,3 +241,10 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   errors that used to crash the whole process. `on_cycle`'s type and `run_cycle` itself are
   UNCHANGED. `test_run_live_loop.py` gains one test pinning that AC2's startup fail-fast (missing
   secrets) is untouched by this change. verified_sha → 80df0c2.
+- sprint-41 (STORY-070, feature): `main()` (`composition/run.py`) now runs `check_vendor_id_health`
+  (new module `composition/vendor_health.py`) ONCE at startup before `build_live_loop`, logging a loud
+  WARNING for any configured monitor `native_id` that returns 0 executions in a bounded 2h DQL count
+  probe — the drift-detection the Sprint 38 silent-no-data incident motivated (loud, NOT fail-fast;
+  PO-decided). `code_refs` += `vendor_health.py` + `test_vendor_health.py`; the ingest service, pull
+  loop, and the existing `build_live_loop` publisher/sample-mode wiring are all UNCHANGED. verified_sha
+  → 4d3fd7a.
