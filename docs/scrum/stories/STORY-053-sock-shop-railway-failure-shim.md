@@ -72,3 +72,4 @@ frequency, short pull-loop poll interval via config).
   control the app's source). Estimate held at 3 (a deployed proxy service + repoint +
   live verify). Stays DRAFT and console-gated — belongs with STORY-017's deploy work, not
   a console-free sprint; kept out of sprint 37 for that reason.
+- 2026-07-09: marked archived by Product Owner directive (not required).

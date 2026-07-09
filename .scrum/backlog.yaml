@@ -407,7 +407,7 @@ stories:
   - id: STORY-053
     title: Failure shim for the existing Railway demo app + demo cadence tuning
     file: docs/scrum/stories/STORY-053-sock-shop-railway-failure-shim.md
-    status: draft   # PO clarified 2026-07-06 post-sprint-36: demo app + Dynatrace monitor ALREADY live on Railway (today's metrics source); NO sample-mode-removal linkage. Residual question: shim mechanism (do we control the app's source/deploy?) — refine before scheduling; likely 3 -> 2
+    status: archived # PO directive 2026-07-09: not required.
   - id: STORY-054
     title: Flaky frontend DoD gate — CheckHistoryPage 1000-cap render times out under npm test parallelism
     file: docs/scrum/stories/STORY-054-flaky-frontend-test-timeout.md
