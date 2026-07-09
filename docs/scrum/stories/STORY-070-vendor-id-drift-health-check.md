@@ -39,6 +39,27 @@ stays vendor-free). No live Dynatrace call in tests (fake the executor).
 ## Open Questions
 None — mechanism decided above.
 
+## Review outcome (sprint-41, 2026-07-09)
+- **Spec (Opus): PASS.** AC1 MET (0-rows → loud WARNING naming the monitor; healthy id logs no
+  warning; driven+asserted in `test_vendor_health.py`). AC2 MET (faked executor; probe wired into
+  `run.py::main` before `build_live_loop`; the wiring test does NOT patch away the wiring; non-fail-fast
+  behavior tested). AC3 (six-gate) MET after a trivial ruff gate fix.
+- **Quality (Opus): APPROVE** (0 critical / 0 major). Non-blocking MINORS captured as candidate nits
+  (not fixed — no follow-up story unless the PO wants one):
+  1. `build_vendor_health_query` interpolates `native_id` without the `InvalidNativeIdError` guard its
+     sibling `adapters/inbound/dynatrace/query.py::build_dql_query` uses. Safe: `native_id` is trusted
+     config and any malformed-query error is caught by the probe's broad `except` → logged WARNING,
+     never a crash. Divergence noted for consistency only.
+  2. The probe counts all `dt.synthetic.events` for the id rather than scoping to
+     `event.type == "http_monitor_execution"` like the ingest query — deliberate lenient existence
+     probe, documented in the docstring.
+- **Gate note:** the canonical `pytest` false-red on the sprint-untouched, Docker-contention-flaky
+  DB-lifecycle tests (`test_dev_db_cli.py` + `test_dev_db_fixture.py`); proven contention and handled
+  per the 2026-07-06 agreement; filed as defect **STORY-073**. STORY-070's own 17 tests + 523 others
+  green; gates 2–6 green. Integrated to sprint-41 @ `4d3fd7a`; wiki resolved @ `d223b3d`.
+
 ## History
 - 2026-07-08: filed from the Sprint 38 retro (working agreement on live vendor-id drift).
   Status: draft (needs refinement + estimate).
+- 2026-07-09: implemented (Sonnet worktree), reviewed (spec PASS / quality APPROVE), six-gate green
+  (pytest via the resource-isolated valid signal), board → done. Awaiting PO acceptance at review.

@@ -39,12 +39,45 @@ stories:
     review: null
   - id: STORY-070
     points: 3
-    board: in_progress     # Wave 1 (parallel worktree) with 068
+    board: done            # integrated to sprint-41 @ 4d3fd7a (ff); wiki resolved @ d223b3d
     pipeline: full
     attempts: 1
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    blast_radius_resolved: true   # 4 articles: ingest-service-and-pull-loop updated (+vendor_health.py/test_vendor_health.py code_refs, new probe Fact); statuspage-publish/sample-mode/dev-setup-and-dod re-verified. All -> verified_sha 4d3fd7a. Commits 3c1e592/11690d0/31f76fd/d223b3d.
+    review:
+      spec: "PASS — AC1 MET (0-rows -> WARNING naming monitor; healthy id no warning; asserted in test_vendor_health.py), AC2 MET (faked executor; wired into run.py::main before build_live_loop; wiring test not over-mocked; non-fail-fast tested), AC3 MET after the ruff gate fix. Initial FAIL was only the ruff gate (I001 import-sort + format on test_vendor_health.py); fixed @ 4d3fd7a, no logic change."
+      quality: "APPROVE — 0 critical, 0 major. Minors (non-blocking, not fixed): (1) build_vendor_health_query interpolates native_id without the InvalidNativeIdError guard its sibling query.py uses (safe: trusted config, malformed-query error caught by the probe's broad except -> logged WARNING, never crashes); (2) probe counts all dt.synthetic.events for the id rather than scoping to event.type==http_monitor_execution (deliberate lenient existence probe, documented). Candidate backlog nits only."
+    dod_evidence:
+      - command: "pytest (full suite)"
+        exit_code: 0
+        output_tail: "VALID resource-isolated signal per 2026-07-06 agreement. Canonical single `pytest` false-reds on the self-container-spawning DB-lifecycle tests (test_dev_db_cli.py + test_dev_db_fixture.py) under Docker contention: each run a DIFFERENT one times out (2 failed / 1 failed / 1 different failed across 3 runs). PROVEN contention: both files have EMPTY diff since sprint-41-start (untouched by STORY-070) AND pass in single-file isolation (cli 2/2 @15s; fixture 6/6 @9s warm Docker). Valid signal: `pytest --ignore=test_dev_db_cli.py --ignore=test_dev_db_fixture.py` = 523 passed; the two lifecycle files green in isolation; STORY-070's own 17 tests green. Every test passes; they cannot share one Docker host concurrently. Filed as defect STORY-073 (backend flaky-gate, analog of STORY-054/068)."
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
+      - command: "lint-imports"
+        exit_code: 0
+        output_tail: "5 kept, 0 broken (core-independence/core-internal-layering/adapters-independence/api-feature-independence/src-no-tests). vendor_health.py in composition zone importing adapters is allowed; core stays vendor-free."
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
+      - command: "python scripts/check_fk_direction.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
+      - command: "alembic upgrade head"
+        exit_code: 0
+        output_tail: "Context impl PostgresqlImpl; will assume transactional DDL. (head already applied; exit 0)"
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "184 files already formatted"
+        commit: 4d3fd7a
+        at: 2026-07-09T12:35:00+05:30
 hotfixes: []
 interrupts: []

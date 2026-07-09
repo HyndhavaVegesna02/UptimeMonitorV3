@@ -551,6 +551,21 @@ stories:
     points: 3
     type: feature
     sprint: 41
+  - id: STORY-073
+    title: Defect — dev_db container-lifecycle tests (test_dev_db_cli.py + test_dev_db_fixture.py) flake under full-suite Docker contention
+    file: docs/scrum/stories/STORY-073-dev-db-lifecycle-tests-flaky.md
+    status: draft   # found at sprint-41 STORY-070 DoD gate (2026-07-09). Under a single canonical `pytest`,
+                    # the self-container-spawning DB-lifecycle tests intermittently time out / RuntimeError
+                    # (docker exec pg_isready timeout; alembic-in-subprocess fail) — a DIFFERENT one each run
+                    # (2 failed / 1 failed / 1-different failed across 3 runs). PROVEN contention per 2026-07-06:
+                    # empty diff since sprint cut + green in single-file isolation (cli 2/2 @15s; fixture 6/6 @9s).
+                    # Backend analog of STORY-054 (CheckHistoryPage) + STORY-068 (useAvailability). Make the
+                    # canonical `pytest` deterministic — e.g. serialize/xdist-group the container-spawning
+                    # lifecycle tests, or gate them behind a marker + longer readiness timeout. Refine + estimate.
+    points: 2
+    priority: 22
+    type: defect
+    sprint: null
   - id: STORY-071
     title: Defect — approve/reject 500s (approval_events.action 'approve'/'reject' violates the ck_approval_events_action constraint 'approved'/'rejected')
     file: docs/scrum/stories/STORY-071-decision-action-check-violation.md
