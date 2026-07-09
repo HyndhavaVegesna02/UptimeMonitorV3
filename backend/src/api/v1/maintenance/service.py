@@ -4,7 +4,7 @@ Cites dossier §13, §10, §17: the edge service validates HTTP input,
 delegates to the core repository, and shapes the HTTP DTO response.
 """
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 
 from src.api.dependencies import get_maintenance_repo
 from src.api.v1.maintenance.models import (
@@ -12,7 +12,6 @@ from src.api.v1.maintenance.models import (
     MaintenanceWindowDTO,
 )
 from src.api.v1.maintenance.validation import (
-    SyntacticValidationError,
     validate_maintenance_request,
 )
 from src.core.domain.maintenance import MaintenanceWindow
@@ -42,25 +41,19 @@ class MaintenanceService:
     def create_window(self, request: CreateMaintenanceRequest) -> MaintenanceWindowDTO:
         """Validate, construct domain model, and persist the maintenance window."""
         # 1. Syntactic validation
-        try:
-            validate_maintenance_request(
-                component_id=request.component_id,
-                starts_at=request.starts_at,
-                ends_at=request.ends_at,
-            )
-        except SyntacticValidationError as e:
-            raise HTTPException(status_code=422, detail=str(e)) from e
+        validate_maintenance_request(
+            component_id=request.component_id,
+            starts_at=request.starts_at,
+            ends_at=request.ends_at,
+        )
 
         # 2. Domain model construction (enforces invariant)
-        try:
-            window = MaintenanceWindow(
-                component_id=request.component_id,
-                starts_at=request.starts_at,
-                ends_at=request.ends_at,
-                reason=request.reason,
-            )
-        except ValueError as e:
-            raise HTTPException(status_code=422, detail=str(e)) from e
+        window = MaintenanceWindow(
+            component_id=request.component_id,
+            starts_at=request.starts_at,
+            ends_at=request.ends_at,
+            reason=request.reason,
+        )
 
         # 3. Persist and return DTO
         saved = self._maintenance_repo.create(window)
