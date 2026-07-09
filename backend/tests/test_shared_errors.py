@@ -4,17 +4,13 @@ Cites: Proposal (2026-07-10) §3.4 G2/G5, §6.2, §10 Phase 2.
 """
 
 from datetime import datetime, timezone
+
 import pytest
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from src.core.domain import Signal
-from src.core.domain.component import ComponentNotFoundError
 from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.domain.status import ComponentStatus
-from src.core.domain.topology import (
-    SignalIntervalUnconfiguredError,
-    SignalNotFoundError,
-)
 from tests.fakes import (
     FakeComponentRepository,
     FakeProposalRepository,

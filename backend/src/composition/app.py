@@ -205,6 +205,7 @@ def create_app(
 
     # Install exception handlers (STORY-075)
     from src.api.v1._shared.errors import install_error_handlers
+
     install_error_handlers(app)
 
     return app
