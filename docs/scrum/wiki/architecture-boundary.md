@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: d441468
-verified_sprint: sprint-36
+verified_sha: 257dbda
+verified_sprint: sprint-42
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -19,7 +19,7 @@ status: verified
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
 - **Import boundary (dossier §4)** is enforced by import-linter, run as the bare command
-  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with five contracts:
+  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with seven contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
     `src.composition`, `src.api`, `sqlalchemy`, or `httpx` (`pyproject.toml` ("core-independence")).
   - `core-internal-layering` (layers): `src.core.services` → `src.core.ports` →
@@ -31,6 +31,10 @@ status: verified
     `src.api.v1.availability`, `src.api.v1.history`, `src.api.v1.publications`,
     `src.api.v1.topology`, and `src.api.v1.sample_mode` may not import one another
     (`pyproject.toml` ("api-feature-independence")).
+  - `api-outward-independence` (forbidden): `src.api` may not import `src.adapters`,
+    `src.composition`, `sqlalchemy`, `psycopg`, or `httpx` (`pyproject.toml` ("api-outward-independence")).
+  - `adapters-edge-only` (forbidden): `src.adapters` may not import `src.api` or
+    `src.composition` (`pyproject.toml` ("adapters-edge-only")).
   - `src-no-tests` (forbidden): `src` may not import `tests` (`pyproject.toml` ("src-no-tests")).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
@@ -135,3 +139,7 @@ status: verified
   `BestEffortPublisher` — see [[statuspage-publish]]) — still a plain package
   `__init__.py`, no zone/contract change. 5 contracts kept / 0 broken, FK
   11/0 unchanged. verified_sha → d441468.
+- sprint-42 (STORY-074): Added two contracts to `pyproject.toml`: `api-outward-independence`
+  and `adapters-edge-only` to mechanically enforce the API zone's thinness and the adapters'
+  edge-only roles. Added a new zone layout meta-test (`backend/tests/test_zone_layout.py`).
+  `lint-imports`: 7 kept / 0 broken, FK 11/0 unchanged. verified_sha → 257dbda.
