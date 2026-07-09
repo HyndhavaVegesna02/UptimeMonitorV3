@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: d64d91d
-verified_sprint: sprint-41
+verified_sha: 18722e2
+verified_sprint: sprint-42
 status: verified
 ---
 
