@@ -22,13 +22,29 @@ start_tag: sprint-41-start
 stories:
   - id: STORY-068
     points: 2
-    board: in_progress     # Wave 1 (parallel worktree) with 070
+    board: done            # merged to sprint-41 @ e5111cd (--no-ff); story commit 7589c9a
     pipeline: gate
     attempts: 1
     blocked_question: null
     paused_at_commit: null
-    dod_evidence: []
-    review: null
+    blast_radius_resolved: true   # only frontend/src/features/availability/useAvailability.test.tsx changed; no wiki code_refs list a .test.tsx (frontend-zone code_refs are source-only) — nothing to update.
+    review: null            # gate-only pipeline (2pt); no spec/quality reviewers
+    dod_evidence:
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files 50 passed (50); Tests 356 passed (356). Determinism confirmed: orchestrator ran twice green (356/356 @40.6s + @44.3s) at default parallelism; implementer ran 5 consecutive clean + 3 more under induced CPU load, all 356/356. Root cause = PROVEN contention (not a hook leak): empty diff since sprint cut, green in --no-file-parallelism isolation, and --testTimeout=1 forced-abort produced plain timeouts with ZERO unhandled rejections. Fix = scoped 15s testTimeout to this file only via vi.setConfig/vi.resetConfig (2026-07-06 sanctioned remedy; not a global bump)."
+        commit: 7589c9a
+        at: 2026-07-09T13:10:00+05:30
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "tsc -b && vite build -> built in 267ms (index 274.99 kB / gzip 84.76 kB). exit 0."
+        commit: 7589c9a
+        at: 2026-07-09T13:10:00+05:30
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . -> exit 0, no errors."
+        commit: 7589c9a
+        at: 2026-07-09T13:10:00+05:30
   - id: STORY-069
     points: 3
     board: todo
