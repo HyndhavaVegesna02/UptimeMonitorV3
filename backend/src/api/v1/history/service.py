@@ -5,15 +5,12 @@ app.state), applies window defaulting, calls in_window, maps domain types →
 ObservationDTOs sorted most-recent first. No business logic here.
 """
 
-from datetime import datetime, timedelta
-
 from fastapi import Depends
 
 from src.api.dependencies import get_clock, get_observation_repo
+from src.api.v1._shared.windowing import resolve_window
 from src.api.v1.history.models import ObservationDTO
 from src.core.ports import ClockPort, ObservationRepository
-
-_DEFAULT_WINDOW_HOURS = 24
 
 
 class HistoryService:
@@ -41,16 +38,7 @@ class HistoryService:
           since = until − 24 h if not supplied
         """
         now = self._clock.now()
-
-        if until_str is not None:
-            until = datetime.fromisoformat(until_str)
-        else:
-            until = now
-
-        if since_str is not None:
-            since = datetime.fromisoformat(since_str)
-        else:
-            since = until - timedelta(hours=_DEFAULT_WINDOW_HOURS)
+        since, until = resolve_window(since_str, until_str, now)
 
         observations = self._observation_repo.in_window(signal_key, since, until)
 

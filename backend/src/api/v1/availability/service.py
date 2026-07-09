@@ -30,6 +30,7 @@ from src.api.dependencies import (
     get_observation_repo,
     get_signal_repo,
 )
+from src.api.v1._shared.windowing import DEFAULT_WINDOW_HOURS, resolve_window
 from src.api.v1.availability.models import (
     AvailabilityDTO,
     ComponentAvailabilityDTO,
@@ -52,8 +53,6 @@ from src.core.services.availability import (
     rollup_group,
 )
 
-_DEFAULT_WINDOW_HOURS = 24
-
 
 def _resolve_window(
     *, since_str: str | None, until_str: str | None, now: datetime
@@ -65,18 +64,10 @@ def _resolve_window(
     window label is "24h" only when NEITHER was supplied, else the explicit
     ISO pair.
     """
-    if until_str is not None:
-        until = datetime.fromisoformat(until_str)
-    else:
-        until = now
-
-    if since_str is not None:
-        since = datetime.fromisoformat(since_str)
-    else:
-        since = until - timedelta(hours=_DEFAULT_WINDOW_HOURS)
+    since, until = resolve_window(since_str, until_str, now)
 
     if since_str is None and until_str is None:
-        window = f"{_DEFAULT_WINDOW_HOURS}h"
+        window = f"{DEFAULT_WINDOW_HOURS}h"
     else:
         window = f"{since.isoformat()}..{until.isoformat()}"
 
