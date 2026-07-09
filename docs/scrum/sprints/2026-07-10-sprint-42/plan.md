@@ -134,7 +134,7 @@ AC: see `docs/scrum/stories/STORY-075-api-shared-error-registry.md` (binding).
 
 AC: see `docs/scrum/stories/STORY-076-api-shared-windowing.md` (binding).
 
-- [ ] **Step 1 (tests first):** `backend/tests/test_shared_windowing.py` for
+- [x] **Step 1 (tests first):** `backend/tests/test_shared_windowing.py` for
   `resolve_window(since, until, now) -> (since, until)`:
   - both None → exactly `(now − 24h, now)`;
   - only `until` given → `(until − 24h, until)`;
@@ -142,16 +142,16 @@ AC: see `docs/scrum/stories/STORY-076-api-shared-windowing.md` (binding).
   - both given → passthrough unchanged;
   - inputs are tz-aware datetimes (validators upstream guarantee this — do NOT re-validate here;
     document that contract in the docstring).
-- [ ] **Step 2:** implement `backend/src/api/v1/_shared/windowing.py` with the constant
+- [x] **Step 2:** implement `backend/src/api/v1/_shared/windowing.py` with the constant
   (`DEFAULT_WINDOW_HOURS = 24`) + `resolve_window`, semantics IDENTICAL to today's
   `availability/service.py::_resolve_window` defaulting (read it first; the window LABEL logic
   stays in availability — only defaulting moves). Docstring cites proposal §3.4 G3. Commit on
   green.
-- [ ] **Step 3:** consume it from `availability/service.py` (delete `_resolve_window`'s
+- [x] **Step 3:** consume it from `availability/service.py` (delete `_resolve_window`'s
   defaulting + the private constant; keep label computation feature-local) and from
   `history/service.py` (delete the inlined defaulting + its `_DEFAULT_WINDOW_HOURS`). After EACH:
   that feature's endpoint tests pass UNMODIFIED; commit per feature.
-- [ ] **Step 4:** grep-proof: `_DEFAULT_WINDOW_HOURS`/duplicated defaulting exists nowhere under
+- [x] **Step 4:** grep-proof: `_DEFAULT_WINDOW_HOURS`/duplicated defaulting exists nowhere under
   `api/v1/` except `_shared/windowing.py` (record in story History). Full six-gate run
   (lint-imports still 8/0). Mechanical wiki sweep (expect `api-five-file-convention.md` and/or
   availability-related articles if their `code_refs` cover the touched services). History entry;
