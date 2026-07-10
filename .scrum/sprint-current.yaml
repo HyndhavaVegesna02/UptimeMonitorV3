@@ -1,114 +1,56 @@
 # YourTeam active sprint board.
-sprint: 42
-status: closed        # none | active | review | closed | aborted
+sprint: 43
+status: active        # none | active | review | closed | aborted
 started: 2026-07-10
-goal: "Land the API-restructure 'now' phase (2026-07-10 proposal): mechanically enforce the api
-  zone's thinness (074), give cross-feature HTTP policy an owned home — central error registry
-  (075) and one window-policy home (076) — with the error contract and endpoint tests frozen."
-branch: sprint-42
-start_tag: sprint-42-start
-# PO-approved 2026-07-10. Source spec: docs/superpowers/specs/2026-07-10-api-restructure-design.md
-# (committed 28b8592). 7 pts total (recent velocity: 8/2/5 over sprints 39-41; mean ~5 — slightly
-# above mean but all low-risk enforcement/consolidation chores with pre-verified contracts).
+goal: "Harden the mechanical floor and name the read side: make the flaky dev_db lifecycle gate
+  deterministic (073), clear the sprint-42 review minors (077), and land the core/queries CQRS-lite
+  move (078 — proposal §8, PO-triggered) so the availability read-model is a fenced 4th core
+  subpackage and 'the pipeline never consults availability' becomes a build failure."
+branch: sprint-43
+start_tag: sprint-43-start
+# PO-approved 2026-07-10. 8 pts (073:3 + 077:2 + 078:3) — above the ~6.7 mean (last-3 accepted
+# 5/8/7) but matches sprint-41's delivered 8/8; all low-medium risk. PO explicitly scoped all three.
 #
-# EXECUTION MODE (2026-07-10 working agreement): EXTERNAL implementation — the PO runs the sprint
-# with an external AI agent built to the self-contained prompt derived from plan.md. This
-# orchestrator session did planning and will do post-implementation verification: Opus spec +
-# Opus quality reviewers per story + an independent full DoD gate re-run, before board=done.
-# The external agent works ONLY on sprint-42 and NEVER merges to main.
+# EXECUTION MODE (2026-07-10 working agreement): EXTERNAL implementation continues for sprint 43 —
+# PO runs an external AI agent on sprint-43 to the self-contained plan.md; orchestrator did planning
+# and will verify post-implementation (Opus spec + Opus quality per story + independent six-gate
+# re-run) before board=done. The external agent works ONLY on sprint-43 and NEVER merges to main.
 #
-# ORDER: 074 -> 075 -> 076, strictly sequential (074 is the meta-test/contract foundation; 075
-# creates _shared/; 076 extends _shared/ and touches the same two feature services as 075).
-# All three stories are backend-only: the six backend gates are the DoD gate (precedent:
-# STORY-070, sprint 41). frontend/ is untouched by every AC — any frontend diff is out-of-scope
-# by definition and a review flag.
+# ORDER: 073 FIRST (fixes the DoD gate flake -> every subsequent story's gate run is trustworthy),
+# then 078 (biggest/highest-blast-radius: core layering + import moves + contract), then 077
+# (low-risk cleanup tail). All BACKEND-only; frontend/ untouched by every AC (any frontend diff is
+# out-of-scope). 078 note: scope is the MOVE + layering contract ONLY — the read/write feature
+# contracts + api/dependencies.py ApprovalService-decoupling stay DEFERRED/REJECTED (proposal §8).
 stories:
-  - id: STORY-074
-    points: 2
-    board: done            # contracts + meta-test; six-gate green @ 3ea7e31
-    pipeline: full        # PO-directed: external implementation => every story gets Opus spec +
-                          # quality review at verification, regardless of the 1-2pt default.
-    attempts: 1
-    blocked_question: null
-    paused_at_commit: null
-    blast_radius_resolved: true   # architecture-boundary.md updated 5->8 contracts + re-verified; others re-verified (external impl; sweep confirmed by orchestrator at HEAD 3ea7e31).
-    review:
-      spec: "PASS — AC1 MET (both contracts verbatim §6.3, lint-imports 8 kept/0 broken), AC2 MET (test_zone_layout.py non-vacuous: fs-derived feature set == parsed contract list == aggregated routers; all 3 drift directions raise; underscore packages excluded), AC3 MET (architecture-boundary.md -> 8 contracts, symbol citations, verified_sha bumped)."
-      quality: "APPROVE — clean; meta-test leans on FastAPI private _IncludedRouter (MINOR-1, non-blocking, fail-loud)."
-    dod_evidence:
-      - command: "pytest (valid signal: --ignore the 2 STORY-073 lifecycle files; both pass 8/8 in isolation)"
-        exit_code: 0
-        output_tail: "540 passed (excl. lifecycle); lifecycle files 8/8 in isolation (Docker-contention flake proven: empty diff since sprint-42-start + green isolated, different file fails each contended run)."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "Contracts: 8 kept, 0 broken."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "python scripts/check_fk_direction.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "alembic upgrade head"
-        exit_code: 0
-        output_tail: "exit 0."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "558 files already formatted."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-  - id: STORY-075
+  - id: STORY-073
     points: 3
-    board: done            # implemented 29ba79d; review found 2 MAJORs; fix loop (ebcc1d5/4fd8687/f21ae5a/3ea7e31) -> re-verified green.
+    board: todo
     pipeline: full
-    attempts: 2            # attempt 1 external impl; attempt 2 orchestrator fix loop for the 2 MAJOR quality findings.
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # api-five-file-convention.md updated (+_shared, dict registry, shared SyntacticValidationError) + re-verified at 3ea7e31.
-    review:
-      spec: "PASS — all 6 ACs MET; frozen contract reproduced exactly (status + message) for all 4 pre-strip mapping sites, none invented/missed."
-      quality: "APPROVE (after fix loop). Initial REQUEST-CHANGES: MAJOR-1 base ValueError->422 catch-all masked 500s; MAJOR-2 'registry' was 7 copy-pasted closures. FIXED: dict-driven registry + factory; base ValueError handler dropped; shared SyntacticValidationError hoisted to _shared/validation.py (features re-export; boundary intact — lint-imports 8/0); maintenance non-UTC gap closed syntactically (clean 422, not a pydantic blob; no core touch). NEW tests: bare-ValueError->500 + non-UTC maintenance->422. MINOR-2 (dropped decisions concurrency comment) not restored — non-blocking."
-    dod_evidence:
-      - command: "pytest (valid signal; incl. 18 shared-errors + maintenance tests green)"
-        exit_code: 0
-        output_tail: "540 passed (excl. 2 lifecycle flakes); test_shared_errors.py + test_maintenance_endpoint.py 18 passed. New: bare-ValueError->500, non-UTC maintenance->422 clean detail."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "lint-imports"
-        exit_code: 0
-        output_tail: "8 kept, 0 broken (api-shared-no-feature-imports intact after the SyntacticValidationError hoist)."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-      - command: "check_fk_direction / alembic / ruff check / ruff format"
-        exit_code: 0
-        output_tail: "11 FKs 0 violations; alembic exit 0; ruff check clean; ruff format 558 files."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
-  - id: STORY-076
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
+  - id: STORY-078
+    points: 3
+    board: todo
+    pipeline: full
+    attempts: 0
+    blocked_question: null
+    paused_at_commit: null
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
+  - id: STORY-077
     points: 2
-    board: done
-    pipeline: full
-    attempts: 1
+    board: todo
+    pipeline: full        # external impl => Opus spec + quality at verification regardless of size.
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # api-five-file-convention.md windowing facts updated + re-verified.
-    review:
-      spec: "PASS — AC1-5 MET; resolve_window semantics identical to old inline code; availability window LABEL stays feature-local; no residual duplication (grep-clean)."
-      quality: "APPROVE — genuine de-dup, not indirection; degenerate both-None boundary tested; docstring cites §3.4 G3."
-    dod_evidence:
-      - command: "six-gate DoD (shared with 074/075 at HEAD 3ea7e31)"
-        exit_code: 0
-        output_tail: "540 passed (valid signal); lint-imports 8/0; fk 11/0; alembic 0; ruff check + format clean. No _DEFAULT_WINDOW_HOURS/duplicated defaulting remains outside _shared/windowing.py."
-        commit: 3ea7e31
-        at: 2026-07-10T00:00:00+05:30
+    blast_radius_resolved: false
+    review: null
+    dod_evidence: []
 hotfixes: []
 interrupts: []
