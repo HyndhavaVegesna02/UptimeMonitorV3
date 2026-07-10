@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 9b90d38
+verified_sha: 10a2d73
 verified_sprint: sprint-43
 status: verified
 ---
@@ -184,3 +184,9 @@ status: verified
 - sprint-41 (STORY-070): re-verified. `run.py::main` gained a vendor-id drift probe call at startup
   (see [[ingest-service-and-pull-loop]]); no dev-setup, DoD command, or `run.py`-as-entrypoint Fact
   this article describes changed. verified_sha → 4d3fd7a.
+- sprint-43 (quality-review fix loop, M1): `scripts/dev_db.py`'s `DEV_DB_READY_TIMEOUT_SECONDS`
+  parse moved from a bare module-scope `float(...)` (which crashed pytest collection on an
+  empty/garbage value, since `conftest.py` imports `dev_db` at collection time) to a lazy
+  `_ready_timeout_seconds()` function called from `wait_for_postgres` at call time. The knob name
+  and 60s default this article documents are UNCHANGED — no Fact edit needed; re-verified only.
+  verified_sha → 10a2d73.
