@@ -90,3 +90,16 @@ None — mechanism decided above (robust readiness; serialize as fallback; no ma
   * Run 1: 548 passed in 89.05s (task-94)
   * Run 2: 548 passed in 81.10s (task-98)
   * Run 3: 548 passed in 91.96s (task-102)
+- 2026-07-11: Sprint 43 quality-review fix-forward (MAJOR-1 + minor-5). The module-scope
+  `DEV_DB_READY_TIMEOUT_SECONDS = float(os.environ.get(...))` parse in `scripts/dev_db.py` raised
+  `ValueError` at IMPORT time on an empty/garbage env value — since `backend/tests/conftest.py`
+  imports `dev_db` at collection time, this crashed the entire `pytest` session instead of the
+  graceful skip the harness is built around. Fixed by making the parse lazy: a new
+  `_ready_timeout_seconds()` function (returns the default 60.0 on missing/empty/non-numeric values)
+  called from `wait_for_postgres` at CALL time (default arg changed from the old module constant to
+  `None`, resolved inside the function body) — zero import-time risk, override still works
+  per-invocation. Added `backend/tests/test_dev_db_readiness.py` (8 hermetic tests, no Docker): env
+  parsing (unset/valid/empty/non-numeric/lazy-per-call) plus `wait_for_postgres` retry/timeout via a
+  stubbed `subprocess.run` (asserts `TimeoutError` without spawning a container, and a happy-path
+  return). CLAUDE.md's `DEV_DB_READY_TIMEOUT_SECONDS` doc phrasing (knob name + 60s default) is
+  unchanged and still accurate — no update needed.

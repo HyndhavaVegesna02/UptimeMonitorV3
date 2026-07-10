@@ -42,11 +42,25 @@ HOST_PORT = 55432
 POSTGRES_PASSWORD = "postgres"
 POSTGRES_DB = "uptime"
 
-DEV_DB_READY_TIMEOUT_SECONDS = float(
-    os.environ.get("DEV_DB_READY_TIMEOUT_SECONDS", "60.0")
-)
-READY_TIMEOUT_SECONDS = DEV_DB_READY_TIMEOUT_SECONDS
+_DEFAULT_READY_TIMEOUT_SECONDS = 60.0
 READY_POLL_INTERVAL_SECONDS = 0.5
+
+
+def _ready_timeout_seconds() -> float:
+    """Read `DEV_DB_READY_TIMEOUT_SECONDS`; fall back to the default (60.0s) on
+    a missing, empty, or non-numeric value.
+
+    Called LAZILY (at `wait_for_postgres` call time, not at import time) so a
+    bad env value can never crash test collection (`backend/tests/conftest.py`
+    imports this module at collection time) — it degrades to the default
+    instead (STORY-073 fix-forward)."""
+    raw = os.environ.get("DEV_DB_READY_TIMEOUT_SECONDS")
+    if not raw:
+        return _DEFAULT_READY_TIMEOUT_SECONDS
+    try:
+        return float(raw)
+    except ValueError:
+        return _DEFAULT_READY_TIMEOUT_SECONDS
 
 
 # --------------------------------------------------------------------------
@@ -120,13 +134,19 @@ def start_container(
 
 def wait_for_postgres(
     name: str = CONTAINER_NAME,
-    timeout_seconds: float = READY_TIMEOUT_SECONDS,
+    timeout_seconds: float | None = None,
     poll_interval_seconds: float = READY_POLL_INTERVAL_SECONDS,
 ) -> None:
     """Poll `pg_isready` inside the container until ready or timeout.
 
+    `timeout_seconds` defaults to `_ready_timeout_seconds()` (the current
+    `DEV_DB_READY_TIMEOUT_SECONDS` env value, or 60.0s), read LAZILY here at
+    call time rather than baked in at import time (STORY-073 fix-forward, M1).
+
     Cites: STORY-073
     """
+    if timeout_seconds is None:
+        timeout_seconds = _ready_timeout_seconds()
     deadline = time.monotonic() + timeout_seconds
     current_poll = poll_interval_seconds
     while time.monotonic() < deadline:
