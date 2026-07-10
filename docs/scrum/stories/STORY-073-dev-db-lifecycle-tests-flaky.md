@@ -64,18 +64,18 @@ the rest of the suite. Candidate approaches (refine/choose at planning):
   the real spawn/teardown lifecycle).
 
 ## Acceptance Criteria (refined, sprint-43)
-- [ ] Root cause characterized in the story/PR (readiness timeout under load vs container-start
+- [x] Root cause characterized in the story/PR (readiness timeout under load vs container-start
       failure), with evidence.
-- [ ] The canonical `pytest` (single invocation, warm Docker host, NO `--ignore`) passes
+- [x] The canonical `pytest` (single invocation, warm Docker host, NO `--ignore`) passes
       deterministically INCLUDING `test_dev_db_cli.py` + `test_dev_db_fixture.py` — demonstrated by
       repeated full-suite runs (≥3) all green. (This retires the "resource-isolated valid signal"
       workaround used in sprints 41–42.)
-- [ ] The lifecycle guarantees are UNCHANGED: teardown-on-failure, idempotent `up` against a
+- [x] The lifecycle guarantees are UNCHANGED: teardown-on-failure, idempotent `up` against a
       leftover container, no leaked container on partial-setup failure — the same assertions still
       hold (tests not weakened/skipped).
-- [ ] If `scripts/dev_db.py` gains a tunable timeout knob or any command/behavior change, CLAUDE.md
+- [x] If `scripts/dev_db.py` gains a tunable timeout knob or any command/behavior change, CLAUDE.md
       is updated in the same commit (command-sync agreement 2026-06-23).
-- [ ] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (expect
+- [x] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (expect
       `dev-setup-and-dod` — `scripts/dev_db.py` is in its `code_refs`).
 
 ## Open Questions
@@ -85,3 +85,8 @@ None — mechanism decided above (robust readiness; serialize as fallback; no ma
 - 2026-07-09: filed from sprint-41 STORY-070 DoD gate. Status: draft (needs refinement + estimate).
 - 2026-07-10: refined at sprint-43 planning; mechanism = robust tunable readiness (keep the tests in
   the canonical gate). Estimate 3 pts. Status: ready.
+- 2026-07-10: Resolved via implementation of robust container readiness checks in scripts/dev_db.py. Bounded each docker exec pg_isready attempt to 5.0s and introduced a retry/backoff sleep loop (up to 5.0s max sleep per iteration) with a raised budget (60s default, overridable via DEV_DB_READY_TIMEOUT_SECONDS). Teardown-on-failure is preserved. Checked in 3 green full-suite runs on a warm host. Wiki updated for dev-setup-and-dod.md. Final SHA: 335a71e (code) and 335a71e (wiki).
+  Green run log outputs:
+  * Run 1: 548 passed in 89.05s (task-94)
+  * Run 2: 548 passed in 81.10s (task-98)
+  * Run 3: 548 passed in 91.96s (task-102)
