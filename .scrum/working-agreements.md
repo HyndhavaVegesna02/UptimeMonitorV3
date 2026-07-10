@@ -52,6 +52,13 @@
   exception; the 2026-07-02 in-process rule resumes after sprint 42 unless the PO says otherwise.
   (PO directive, 2026-07-10.)
 
+- 2026-07-10 — **Sprint 43 continues EXTERNAL implementation** (PO directive — the PO requested an
+  implementer prompt for sprint 43). Same shape as the sprint-42 exception: external AI agent
+  implements on `sprint-43` to a self-contained plan.md, never merges to main; orchestrator does
+  planning + post-implementation verification (Opus spec + Opus quality reviewers + independent
+  six-gate re-run) before board=done and PO accept. The 2026-07-02 in-process rule resumes after
+  sprint 43 unless the PO renews. (PO directive, 2026-07-10.)
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the

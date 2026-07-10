@@ -48,8 +48,40 @@ the rest of the suite. Candidate approaches (refine/choose at planning):
 - [ ] No loss of the lifecycle behaviors these tests protect (teardown-on-failure, idempotent
       up, no leaked container) — they still assert the same guarantees.
 
+## Decided (sprint-43 planning, PO 2026-07-10)
+- **Mechanism = robust, tunable readiness (not marker-gating the tests out of the canonical
+  gate).** The lifecycle tests MUST keep running inside the canonical `pytest` (marker-gating them
+  into a separate step would weaken the single-command DoD floor). Make container readiness survive
+  a loaded Docker host: in `scripts/dev_db.py::wait_for_postgres`, raise the default readiness
+  budget and add a patient retry/backoff loop (each `docker exec … pg_isready` attempt bounded, the
+  overall wait tunable via an env var / module constant, e.g. `DEV_DB_READY_TIMEOUT_SECONDS`), so a
+  slow-to-ready container under concurrent Docker load is waited-out rather than failing. If a
+  container genuinely fails to start (not just slow), still raise cleanly and tear down (preserve the
+  teardown-on-failure guarantee — 2026-06-25 agreement).
+- If robust readiness alone does not make it deterministic, the sanctioned fallback is to SERIALIZE
+  the container-spawning lifecycle tests relative to each other (a shared file lock / ordering), NOT
+  to remove them from the gate. Container-reuse is rejected (the tests' whole intent is to exercise
+  the real spawn/teardown lifecycle).
+
+## Acceptance Criteria (refined, sprint-43)
+- [ ] Root cause characterized in the story/PR (readiness timeout under load vs container-start
+      failure), with evidence.
+- [ ] The canonical `pytest` (single invocation, warm Docker host, NO `--ignore`) passes
+      deterministically INCLUDING `test_dev_db_cli.py` + `test_dev_db_fixture.py` — demonstrated by
+      repeated full-suite runs (≥3) all green. (This retires the "resource-isolated valid signal"
+      workaround used in sprints 41–42.)
+- [ ] The lifecycle guarantees are UNCHANGED: teardown-on-failure, idempotent `up` against a
+      leftover container, no leaked container on partial-setup failure — the same assertions still
+      hold (tests not weakened/skipped).
+- [ ] If `scripts/dev_db.py` gains a tunable timeout knob or any command/behavior change, CLAUDE.md
+      is updated in the same commit (command-sync agreement 2026-06-23).
+- [ ] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep (expect
+      `dev-setup-and-dod` — `scripts/dev_db.py` is in its `code_refs`).
+
 ## Open Questions
-- Serialize vs marker-gate vs container-reuse — which best preserves the tests' intent?
+None — mechanism decided above (robust readiness; serialize as fallback; no marker-gating, no reuse).
 
 ## History
 - 2026-07-09: filed from sprint-41 STORY-070 DoD gate. Status: draft (needs refinement + estimate).
+- 2026-07-10: refined at sprint-43 planning; mechanism = robust tunable readiness (keep the tests in
+  the canonical gate). Estimate 3 pts. Status: ready.
