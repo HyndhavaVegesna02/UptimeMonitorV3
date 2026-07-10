@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py]
-verified_sha: 05f640e
+verified_sha: 10a2d73
 verified_sprint: sprint-43
 status: verified
 ---
@@ -199,5 +199,10 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `RecordingPublisher`+`BestEffortPublisher` chain against real Postgres, both paths, exactly one row
   each). verified_sha → a1bacab.
 - sprint-43 (STORY-078): Repointed availability file references to core/queries/availability.py. verified_sha → 05f640e.
+- sprint-43 (quality-review fix loop, M2/m3): `observation_repository.py`'s `in_window` docstring's
+  remaining stale `core/services/availability.py` reference repointed to
+  `core/queries/availability.py` (STORY-078 follow-up); `core/queries/availability.py`'s module
+  docstring restored (see [[core-pipeline-and-availability]] for detail). No SQL or repository
+  behavior changed. verified_sha → 10a2d73.
 
 
