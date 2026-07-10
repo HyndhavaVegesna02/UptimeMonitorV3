@@ -199,6 +199,8 @@ fails), else skips the DB-gated tests cleanly. DB-gated tests (e.g.
 `backend/tests/test_spine_schema.py`) depend on this fixture instead of
 rolling their own `skipif`/connection setup.
 
+Container readiness timeout is tunable via the `DEV_DB_READY_TIMEOUT_SECONDS` environment variable (defaults to `60.0` seconds).
+
 The manual one-liner that `scripts/dev_db.py` wraps (kept here for reference,
 or for anyone who wants to drive Docker directly without the helper):
 

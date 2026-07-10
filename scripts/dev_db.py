@@ -42,7 +42,10 @@ HOST_PORT = 55432
 POSTGRES_PASSWORD = "postgres"
 POSTGRES_DB = "uptime"
 
-READY_TIMEOUT_SECONDS = 30
+DEV_DB_READY_TIMEOUT_SECONDS = float(
+    os.environ.get("DEV_DB_READY_TIMEOUT_SECONDS", "60.0")
+)
+READY_TIMEOUT_SECONDS = DEV_DB_READY_TIMEOUT_SECONDS
 READY_POLL_INTERVAL_SECONDS = 0.5
 
 
@@ -120,17 +123,29 @@ def wait_for_postgres(
     timeout_seconds: float = READY_TIMEOUT_SECONDS,
     poll_interval_seconds: float = READY_POLL_INTERVAL_SECONDS,
 ) -> None:
-    """Poll `pg_isready` inside the container until ready or timeout."""
+    """Poll `pg_isready` inside the container until ready or timeout.
+
+    Cites: STORY-073
+    """
     deadline = time.monotonic() + timeout_seconds
+    current_poll = poll_interval_seconds
     while time.monotonic() < deadline:
-        result = subprocess.run(
-            ["docker", "exec", name, "pg_isready", "-U", "postgres"],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode == 0:
-            return
-        time.sleep(poll_interval_seconds)
+        try:
+            # Bounded attempt with a 5-second timeout (STORY-073)
+            result = subprocess.run(
+                ["docker", "exec", name, "pg_isready", "-U", "postgres"],
+                capture_output=True,
+                text=True,
+                timeout=5.0,
+            )
+            if result.returncode == 0:
+                return
+        except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
+            # If docker exec times out or fails under Docker host contention,
+            # we treat it as not ready and continue the loop.
+            pass
+        time.sleep(current_poll)
+        current_poll = min(current_poll * 1.5, 5.0)
     raise TimeoutError(
         f"Postgres in container {name!r} did not become ready within {timeout_seconds}s"
     )
