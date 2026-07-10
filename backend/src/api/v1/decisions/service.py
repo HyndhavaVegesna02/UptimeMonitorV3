@@ -31,6 +31,9 @@ class DecisionService:
         validate_decision_request(action=request.action, actor=request.actor)
 
         # 2. Delegate to ApprovalService
+        # NOTE: ProposalNotOpenError -> HTTP 409 covers both the up-front open-state
+        # guard and a lost-race resolve (concurrent double-submit surfaced by the
+        # repository, per the 2026-06-28 TOCTOU agreement).
         if request.action == "approve":
             result = self._approval_service.approve(
                 proposal_id=proposal_id,

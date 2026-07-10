@@ -71,6 +71,39 @@ def test_assert_features_match_validation() -> None:
     assert_features_match({"health", "decisions"}, {"health", "decisions"})
 
 
+def test_zone_layout_detects_unmounted_router() -> None:
+    """Verify that if a feature's routes are not in openapi_paths, we fail.
+
+    Cites: STORY-077 MINOR-1.
+    """
+    # Fake openapi paths that lack decisions
+    openapi_paths = {"/api/v1/health"}
+
+    # We will check that asserting 'decisions' routes will fail
+    import importlib
+
+    feature_module = importlib.import_module("src.api.v1.decisions")
+    feature_router = getattr(feature_module, "router", None)
+    assert feature_router is not None
+
+    with pytest.raises(AssertionError) as exc_info:
+        for child_route in feature_router.routes:
+            prefix = getattr(feature_router, "prefix", "") or ""
+            route_path = getattr(child_route, "path", "") or ""
+            expected_path = f"/api/v1{prefix}{route_path}".replace("//", "/")
+            if expected_path.endswith("/") and len(expected_path) > 1:
+                expected_path_alt = expected_path.rstrip("/")
+            else:
+                expected_path_alt = expected_path + "/"
+
+            assert (expected_path in openapi_paths) or (
+                expected_path_alt in openapi_paths
+            ), (
+                f"Feature router 'decisions' route '{expected_path}' is not registered in the FastAPI application"
+            )
+    assert "Feature router 'decisions' route" in str(exc_info.value)
+
+
 def test_zone_layout_agreements() -> None:
     """Assert filesystem matches pyproject.toml contracts and aggregated v1 router.
 
@@ -108,15 +141,9 @@ def test_zone_layout_agreements() -> None:
     assert_features_match(contract_features, filesystem_features)
 
     # 6. Assert each feature's router is reachable in the aggregated v1 router
-    from fastapi.routing import _IncludedRouter
-    from src.api.v1 import router as aggregated_router
+    from src.composition.asgi import app
 
-    # Collect all included router objects from the aggregated router
-    included_routers = [
-        r.original_router
-        for r in aggregated_router.routes
-        if isinstance(r, _IncludedRouter)
-    ]
+    openapi_paths = set(app.openapi()["paths"].keys())
 
     for feature in filesystem_features:
         # Dynamically import the feature module
@@ -124,7 +151,18 @@ def test_zone_layout_agreements() -> None:
         feature_router = getattr(feature_module, "router", None)
         assert feature_router is not None, f"Feature {feature} does not expose a router"
 
-        # Assert that the feature router is in the set of included routers
-        assert any(feature_router is r for r in included_routers), (
-            f"Feature router '{feature}' is not included in the aggregated v1 router"
-        )
+        # Assert that each route of the feature router is registered under the correct path in OpenAPI
+        for child_route in feature_router.routes:
+            prefix = getattr(feature_router, "prefix", "") or ""
+            route_path = getattr(child_route, "path", "") or ""
+            expected_path = f"/api/v1{prefix}{route_path}".replace("//", "/")
+            if expected_path.endswith("/") and len(expected_path) > 1:
+                expected_path_alt = expected_path.rstrip("/")
+            else:
+                expected_path_alt = expected_path + "/"
+
+            assert (expected_path in openapi_paths) or (
+                expected_path_alt in openapi_paths
+            ), (
+                f"Feature router '{feature}' route '{expected_path}' is not registered in the FastAPI application"
+            )

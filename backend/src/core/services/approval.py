@@ -105,6 +105,9 @@ class ApprovalService:
         if proposal is None:
             raise ProposalNotFoundError(f"Proposal {proposal_id} not found.")
 
+        # NOTE: ProposalNotOpenError -> HTTP 409 covers both the up-front open-state
+        # guard and a lost-race resolve (concurrent double-submit surfaced by the
+        # repository, per the 2026-06-28 TOCTOU agreement).
         if not is_valid_transition(proposal.state, to_state):
             raise ProposalNotOpenError(
                 f"Proposal {proposal_id} is in state {proposal.state.value} and cannot transition to {to_state.value}."
