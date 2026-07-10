@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 280c1e3
-verified_sprint: sprint-30
+verified_sha: 10a2d73
+verified_sprint: sprint-43
 status: verified
 ---
 
@@ -110,3 +110,9 @@ status: verified
   (new head, `down_revision = "eec78d2e8cbe"`) — a nullable `signals.interval_seconds` Integer
   column, backfilled by the boot seed rather than a migration-time default (D1). No DB-split
   change. `verified_sha` re-stamped to `280c1e3`.
+- sprint-43 (STORY-073, re-verify): `scripts/dev_db.py` gained the robust tunable container
+  readiness (`DEV_DB_READY_TIMEOUT_SECONDS`, retry/backoff) — this article's shared-harness
+  description was unaffected (see [[dev-setup-and-dod]] for the readiness-specific Facts); no
+  migration or two-connection-split Fact changed. `verified_sha` re-stamped to `10a2d73` (this
+  article had drifted un-bumped through the STORY-073 code change; caught by the Sprint 43
+  quality-review wiki sweep).
