@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 219af4a
-verified_sprint: sprint-42
+verified_sha: 05f640e
+verified_sprint: sprint-43
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -12,8 +12,8 @@ status: verified
 ---
 
 ## Facts (verified against code)
-- The backend is four zones under `backend/src/`: `core/` (with `domain/`, `ports/`,
-  `services/`), `adapters/` (with `inbound/`, `outbound/`, `persistence/`),
+- The backend is four zones under `backend/src/`: `core/` (with `queries/`, `services/`,
+  `ports/`, `domain/`), `adapters/` (with `inbound/`, `outbound/`, `persistence/`),
   `composition/`, `api/`. Each is an importable package (`__init__.py` present).
 - `src` is the importable top-level package; it physically lives at `backend/src` and is
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
@@ -22,8 +22,8 @@ status: verified
   `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with eight contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
     `src.composition`, `src.api`, `sqlalchemy`, or `httpx` (`pyproject.toml` ("core-independence")).
-  - `core-internal-layering` (layers): `src.core.services` → `src.core.ports` →
-    `src.core.domain` (`pyproject.toml` ("core-internal-layering")).
+  - `core-internal-layering` (layers): `src.core.queries` → `src.core.services` →
+    `src.core.ports` → `src.core.domain` (`pyproject.toml` ("core-internal-layering")).
   - `adapters-independence` (independence): `src.adapters.{inbound,outbound,persistence}`
     may not import one another (`pyproject.toml` ("adapters-independence")).
   - `api-feature-independence` (independence): `src.api.v1.decisions`, `src.api.v1.health`,
@@ -148,3 +148,5 @@ status: verified
 - sprint-42 (STORY-075): Added the `api-shared-no-feature-imports` contract to fence the new
   `api/v1/_shared/` package from importing any feature package. `lint-imports`: 8 kept / 0 broken,
   FK 11/0 unchanged. verified_sha → 219af4a.
+- sprint-43 (STORY-078): Relocated availability read model whole to a new `core/queries/` subpackage (CQRS-lite). `core-internal-layering` contract updated to: queries → services → ports → domain. verified_sha → 05f640e.
+
