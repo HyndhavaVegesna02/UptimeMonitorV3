@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/services/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py]
-verified_sha: a1bacab
-verified_sprint: sprint-40
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py]
+verified_sha: 05f640e
+verified_sprint: sprint-43
 status: verified
 ---
 
@@ -43,7 +43,7 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `observed_at >= since AND observed_at < until` (`observation_repository.py::PostgresObservationRepository.in_window`), run on
   `sa.Engine.connect` (read-only, no transaction needed) — mirrors `PostgresWatermarkRepository.get`'s read-path convention. Half-open `[since, until)` means adjacent calendar windows
   (e.g. two consecutive 24h reporting windows) never double-count the boundary instant.
-- This is the ONLY read path `core/services/availability.py`'s `AvailabilityCalculator` uses
+- This is the ONLY read path `core/queries/availability.py`'s `AvailabilityCalculator` uses
   (see [[canonical-types-and-ports]]) — all SQL for the availability engine's data access
   lives here, never in core.
 - Reconstructs canonical `SignalObservation`s row-by-row (`observation_repository.py::PostgresObservationRepository.in_window`): `health` from its
@@ -159,7 +159,7 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - sprint-5: STORY-009 adds `PostgresRejectedObservationRepository` (the quarantine-sink
   adapter) and its no-FK testing convention.
 - sprint-7: STORY-011 adds `PostgresObservationRepository.in_window` — the half-open-range
-  `SELECT` the new availability engine (`core/services/availability.py`) reads through; no
+  `SELECT` the new availability engine (`core/queries/availability.py`) reads through; no
   schema change, no new migration.
 - sprint-9: STORY-012 adds `PostgresProposalRepository` for workflow proposal storage and resolution.
 - sprint-12: STORY-014 adds `PostgresProposalRepository.get(proposal_id)`; `resolve` now raises the
@@ -198,4 +198,6 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `test_recording_publisher_records_exactly_one_row_via_real_postgres_success_and_failure` (the real
   `RecordingPublisher`+`BestEffortPublisher` chain against real Postgres, both paths, exactly one row
   each). verified_sha → a1bacab.
+- sprint-43 (STORY-078): Repointed availability file references to core/queries/availability.py. verified_sha → 05f640e.
+
 
