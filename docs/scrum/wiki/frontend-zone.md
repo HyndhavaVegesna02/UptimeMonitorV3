@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 7609fb5
-verified_sprint: sprint-42
+verified_sha: 05f640e
+verified_sprint: sprint-43
 status: verified
 ---
 
@@ -432,7 +432,7 @@ status: verified
   untouched-green (empty diff — no backend source change). `code_refs` +=
   mocks/handlers/sampleMode.ts, features/dashboard/useSampleMode.ts. verified_sha = 63886bc.
 - sprint-32: fix — STORY-015d shipped with a WRONG scale assumption. The backend
-  (`core/services/availability.py`) puts `availability_pct`/`completeness_pct` on the wire as 0–1
+  (`core/queries/availability.py`) puts `availability_pct`/`completeness_pct` on the wire as 0–1
   FRACTIONS (`1.0` = 100%, never pre-multiplied), confirmed against a live response; the frontend
   had been treating them as already percent-scale, so `formatPct` rendered `1.0` as `1.00%` and the
   Availability bar drew a fully-up component at ~1% width. Fixed `features/availability/format.ts::
@@ -552,3 +552,5 @@ status: verified
   the paired backend change (migration + record-always `RecordingPublisher` + `PublicationDTO`) is
   tracked in [[statuspage-publish]]/[[persistence-adapters]]/[[canonical-types-and-ports]], not this
   article's code_refs. `code_refs` unchanged (no new file paths). verified_sha = 144bcc0.
+- sprint-43 (STORY-078): Repointed availability path from core/services/ to core/queries/ in text. verified_sha = 05f640e.
+
