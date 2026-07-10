@@ -1,7 +1,7 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: e4566fc
+verified_sha: 6859f17
 verified_sprint: sprint-42
 status: verified
 ---
@@ -144,6 +144,11 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - `create_app` (`app.py::create_app`) triggers fail-fast config loading at construction time from `CONFIG_DIR` (default: `"config/apps"`). If configuration is invalid, it raises `ValueError` immediately, blocking server boot (dossier §17).
 
 ## History
+- sprint-43 (STORY-078, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `pyproject.toml`, which changed only in the `core-internal-layering`
+  import-linter contract (added the `src.core.queries` layer — the CQRS-lite move, see
+  [[architecture-boundary]]). Nothing about the config layer / `config/apps` loading changed.
+  No Facts changed. verified_sha = 6859f17.
 - sprint-16: created (STORY-040a — config layer bootstrap: models + loader +
   resolvers + sample config/apps/sockshop.yaml). verified_sha = 9b60fac.
 - sprint-17: updated (STORY-016a — config layer updated to support `interval_seconds` for signal cadences). verified_sha = b062132.

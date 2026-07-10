@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 43
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-10
 goal: "Harden the mechanical floor and name the read side: make the flaky dev_db lifecycle gate
   deterministic (073), clear the sprint-42 review minors (077), and land the core/queries CQRS-lite

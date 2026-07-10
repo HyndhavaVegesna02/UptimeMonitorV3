@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx]
-verified_sha: 3ea7e31
-verified_sprint: sprint-42
+verified_sha: 6859f17
+verified_sprint: sprint-43
 status: verified          # verified | stale | archived
 ---
 
@@ -325,6 +325,10 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-43 (STORY-078, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `pyproject.toml`, which changed only in the `core-internal-layering`
+  contract (added the `src.core.queries` layer for the CQRS-lite move — unrelated to the
+  `api-feature-independence` `sample_mode` entry). No Facts changed. verified_sha = 6859f17.
 - sprint-42 (STORY-075, unrelated story — mechanical staleness sweep only): this article's
   `code_refs` include `backend/src/composition/app.py`, which changed only cosmetically — a
   ruff-inserted blank line before the STORY-075 `install_error_handlers(app)` call (the

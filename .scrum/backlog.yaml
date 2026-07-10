@@ -554,7 +554,7 @@ stories:
   - id: STORY-073
     title: Defect — dev_db container-lifecycle tests (test_dev_db_cli.py + test_dev_db_fixture.py) flake under full-suite Docker contention
     file: docs/scrum/stories/STORY-073-dev-db-lifecycle-tests-flaky.md
-    status: ready   # refined 2026-07-10 sprint-43 planning; robust-readiness mechanism.
+    status: done    # accepted at Sprint 43 review (2026-07-11)
                     # the self-container-spawning DB-lifecycle tests intermittently time out / RuntimeError
                     # (docker exec pg_isready timeout; alembic-in-subprocess fail) — a DIFFERENT one each run
                     # (2 failed / 1 failed / 1-different failed across 3 runs). PROVEN contention per 2026-07-06:
@@ -752,7 +752,7 @@ stories:
   - id: STORY-077
     title: Chore — sprint-42 review minors (zone-layout meta-test private-API coupling; decisions concurrency comment)
     file: docs/scrum/stories/STORY-077-sprint42-review-minors.md
-    status: ready   # refined 2026-07-10 sprint-43 planning.
+    status: done    # accepted at Sprint 43 review (2026-07-11)
     points: 2
     priority: 37
     type: chore
@@ -760,7 +760,7 @@ stories:
   - id: STORY-078
     title: core/queries/ — move the availability read-model into a fenced 4th core subpackage (CQRS-lite, proposal §8)
     file: docs/scrum/stories/STORY-078-core-queries-cqrs-lite.md
-    status: ready   # refined 2026-07-10 sprint-43 planning; PO elected to trigger proposal §8.
+    status: done    # accepted at Sprint 43 review (2026-07-11)
     points: 3
     priority: 38
     type: chore
