@@ -24,12 +24,12 @@ acceptance; grouped here for a cleanup pass.
   isn't lost — `_shared/errors.py` is now a bare mapping and carries no such context.
 
 ## Acceptance Criteria
-- [ ] `test_zone_layout.py` no longer imports a FastAPI private symbol (or the FastAPI floor is
+- [x] `test_zone_layout.py` no longer imports a FastAPI private symbol (or the FastAPI floor is
       pinned with a comment); the test still fails on all three drift directions (feature missing
       from the contract list; feature missing from the aggregator; extra unregistered feature dir).
-- [ ] The decisions concurrency nuance is documented in code again (comment beside the relevant
+- [x] The decisions concurrency nuance is documented in code again (comment beside the relevant
       flow), citing the lost-race/TOCTOU behavior.
-- [ ] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep.
+- [x] Backend six-gate DoD green; wiki blast radius resolved via the mechanical sweep.
 
 ## Open Questions
 None.
@@ -40,3 +40,4 @@ None.
 
 ## History
 - 2026-07-10: filed from Sprint 42 review MINORs (PO accepted 074/075/076 + requested this follow-up). Status: draft (needs estimate at refinement).
+- 2026-07-10: Resolved. Rewrote test_zone_layout.py's router inclusion check to use public app.openapi() routes paths verification and added a test test_zone_layout_detects_unmounted_router to verify unmounted failure mode. Restored concurrency/TOCTOU nuance comments in decisions/service.py and core/services/approval.py. Updated api-five-file-convention.md. All tests green (549/549). Final SHA: be886af (code) and e214db1 (wiki).
