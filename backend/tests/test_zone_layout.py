@@ -71,6 +71,37 @@ def test_assert_features_match_validation() -> None:
     assert_features_match({"health", "decisions"}, {"health", "decisions"})
 
 
+def assert_router_routes_registered(
+    feature_name: str, feature_router, openapi_paths: set[str]
+) -> None:
+    """Assert every route on `feature_router` is registered under
+    `openapi_paths` (either trailing-slash form).
+
+    Shared by the real drift check (`test_zone_layout_agreements`) and the
+    meta-test that proves the check itself fails on an unmounted router
+    (`test_zone_layout_detects_unmounted_router`) — extracted (Sprint 43
+    review m4) so the meta-test exercises the SAME code path as the real
+    check instead of a separate inline re-implementation that could drift
+    out of sync with it and stop catching a real regression.
+
+    Cites: STORY-077 MINOR-1; Sprint 43 review m4.
+    """
+    for child_route in feature_router.routes:
+        prefix = getattr(feature_router, "prefix", "") or ""
+        route_path = getattr(child_route, "path", "") or ""
+        expected_path = f"/api/v1{prefix}{route_path}".replace("//", "/")
+        if expected_path.endswith("/") and len(expected_path) > 1:
+            expected_path_alt = expected_path.rstrip("/")
+        else:
+            expected_path_alt = expected_path + "/"
+
+        assert (expected_path in openapi_paths) or (
+            expected_path_alt in openapi_paths
+        ), (
+            f"Feature router '{feature_name}' route '{expected_path}' is not registered in the FastAPI application"
+        )
+
+
 def test_zone_layout_detects_unmounted_router() -> None:
     """Verify that if a feature's routes are not in openapi_paths, we fail.
 
@@ -87,20 +118,7 @@ def test_zone_layout_detects_unmounted_router() -> None:
     assert feature_router is not None
 
     with pytest.raises(AssertionError) as exc_info:
-        for child_route in feature_router.routes:
-            prefix = getattr(feature_router, "prefix", "") or ""
-            route_path = getattr(child_route, "path", "") or ""
-            expected_path = f"/api/v1{prefix}{route_path}".replace("//", "/")
-            if expected_path.endswith("/") and len(expected_path) > 1:
-                expected_path_alt = expected_path.rstrip("/")
-            else:
-                expected_path_alt = expected_path + "/"
-
-            assert (expected_path in openapi_paths) or (
-                expected_path_alt in openapi_paths
-            ), (
-                f"Feature router 'decisions' route '{expected_path}' is not registered in the FastAPI application"
-            )
+        assert_router_routes_registered("decisions", feature_router, openapi_paths)
     assert "Feature router 'decisions' route" in str(exc_info.value)
 
 
@@ -152,17 +170,4 @@ def test_zone_layout_agreements() -> None:
         assert feature_router is not None, f"Feature {feature} does not expose a router"
 
         # Assert that each route of the feature router is registered under the correct path in OpenAPI
-        for child_route in feature_router.routes:
-            prefix = getattr(feature_router, "prefix", "") or ""
-            route_path = getattr(child_route, "path", "") or ""
-            expected_path = f"/api/v1{prefix}{route_path}".replace("//", "/")
-            if expected_path.endswith("/") and len(expected_path) > 1:
-                expected_path_alt = expected_path.rstrip("/")
-            else:
-                expected_path_alt = expected_path + "/"
-
-            assert (expected_path in openapi_paths) or (
-                expected_path_alt in openapi_paths
-            ), (
-                f"Feature router '{feature}' route '{expected_path}' is not registered in the FastAPI application"
-            )
+        assert_router_routes_registered(feature, feature_router, openapi_paths)

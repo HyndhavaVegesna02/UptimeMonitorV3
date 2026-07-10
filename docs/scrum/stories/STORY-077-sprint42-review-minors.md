@@ -41,3 +41,9 @@ None.
 ## History
 - 2026-07-10: filed from Sprint 42 review MINORs (PO accepted 074/075/076 + requested this follow-up). Status: draft (needs estimate at refinement).
 - 2026-07-10: Resolved. Rewrote test_zone_layout.py's router inclusion check to use public app.openapi() routes paths verification and added a test test_zone_layout_detects_unmounted_router to verify unmounted failure mode. Restored concurrency/TOCTOU nuance comments in decisions/service.py and core/services/approval.py. Updated api-five-file-convention.md. All tests green (549/549). Final SHA: be886af (code) and e214db1 (wiki).
+- 2026-07-11: Sprint 43 quality-review fix-forward (minor-4). `test_zone_layout_detects_unmounted_router`
+  re-implemented the route-in-openapi check inline against a fake, so it could not catch a regression
+  in the real `test_zone_layout_agreements` loop — extracted the shared check into
+  `assert_router_routes_registered(feature_name, feature_router, openapi_paths)` in
+  `backend/tests/test_zone_layout.py`, called from both tests. Verified both tests still pass and the
+  meta-test still fails with the same message on the unmounted-router fake.
