@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: a1bacab
-verified_sprint: sprint-40
+verified_sha: 05f640e
+verified_sprint: sprint-43
 status: verified          # verified | stale | archived
 ---
 
@@ -198,7 +198,7 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   empty `observations` sequence instead of leaking a stdlib `max()`/`IndexError`;
   re-verified, Fact text above was already accurate (made no empty-input claim).
 - sprint-7: STORY-011 adds `ObservationRepository.in_window` (the read side; Postgres
-  implementation in [[persistence-adapters]]) and `core/services/availability.py`'s
+  implementation in [[persistence-adapters]]) and `core/queries/availability.py`'s
   `AvailabilityResult`/`AvailabilityCalculator`/`rollup_group` — the two-grain
   availability/completeness calculator and min-of-children group rollup (dossier §11).
   The skew flag is split to STORY-026 (out of scope here).
@@ -234,3 +234,5 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   EVERY publish attempt, not only successes. Both exported from `core/domain/__init__.py`. See
   [[statuspage-publish]] for the `RecordingPublisher` behavior change and the new migration, and
   [[persistence-adapters]] for the adapter/fake implementations. verified_sha → a1bacab.
+- sprint-43 (STORY-078): Relocated availability read-model to a new core/queries/ package. verified_sha → 05f640e.
+
