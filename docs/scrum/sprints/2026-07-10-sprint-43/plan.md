@@ -52,23 +52,23 @@ AC & decided mechanism: `docs/scrum/stories/STORY-073-dev-db-lifecycle-tests-fla
 Mechanism = robust, tunable container readiness in `scripts/dev_db.py::wait_for_postgres` (keep the
 lifecycle tests IN the canonical gate; do NOT marker-gate them out; container-reuse rejected).
 
-- [ ] **Step 1 (characterize):** reproduce the flake (full-suite run on a warm host), capture the
+- [x] **Step 1 (characterize):** reproduce the flake (full-suite run on a warm host), capture the
   exact failure (readiness timeout at `wait_for_postgres` vs container-start/alembic-subprocess
   failure). Record the root cause in the story History.
-- [ ] **Step 2 (robust readiness):** in `scripts/dev_db.py`, make readiness survive a loaded Docker
+- [x] **Step 2 (robust readiness):** in `scripts/dev_db.py`, make readiness survive a loaded Docker
   host — a patient retry/backoff loop with a tunable overall budget (module constant + env override,
   e.g. `DEV_DB_READY_TIMEOUT_SECONDS`; sensible default raised from today's). A genuinely-failed
   container still raises cleanly AND tears down (teardown-on-failure preserved — 2026-06-25). If a
   behavior/knob/command changes, update CLAUDE.md same commit (2026-06-23).
-- [ ] **Step 3 (prove determinism):** run the canonical `pytest` (single invocation, NO `--ignore`,
+- [x] **Step 3 (prove determinism):** run the canonical `pytest` (single invocation, NO `--ignore`,
   warm host) ≥3 times INCLUDING `test_dev_db_cli.py` + `test_dev_db_fixture.py`; all green. Record
   the runs as evidence. If robust readiness alone is insufficient, apply the sanctioned fallback:
   SERIALIZE the container-spawning lifecycle tests relative to each other (file lock / ordering) —
   still in the gate, not removed.
-- [ ] **Step 4:** confirm the lifecycle assertions are UNCHANGED (teardown-on-failure, idempotent
+- [x] **Step 4:** confirm the lifecycle assertions are UNCHANGED (teardown-on-failure, idempotent
   up, no leaked container). Full six-gate on the clean tree. Mechanical wiki sweep (expect
   `dev-setup-and-dod` — `scripts/dev_db.py` is in its `code_refs`). Commit article-by-article.
-- [ ] **Step 5:** story History entry (root cause, final SHA, the ≥3 green full-suite runs); tick boxes.
+- [x] **Step 5:** story History entry (root cause, final SHA, the ≥3 green full-suite runs); tick boxes.
 
 ## STORY-078 — core/queries CQRS-lite move (3pt)
 AC: `docs/scrum/stories/STORY-078-core-queries-cqrs-lite.md` (binding). Proposal §8. **Scope = the
