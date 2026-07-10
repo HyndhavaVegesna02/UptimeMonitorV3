@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/queries/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: 05f640e
+verified_sha: 10a2d73
 verified_sprint: sprint-43
 status: verified          # verified | stale | archived
 ---
@@ -69,19 +69,19 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   - Pure: no I/O, no config/DB read, imports only `src.core.domain` types + `pydantic`/stdlib (AC3).
 
 ### The availability query engine (`core/queries/availability.py`, STORY-011, dossier §11, proposal §8)
-- `AvailabilityResult` (frozen Pydantic, `availability.py:37`) — the §11 result shape:
+- `AvailabilityResult` (frozen Pydantic, `availability.py:40`) — the §11 result shape:
   `availability_pct: float|None`, `completeness_pct: float|None`, `total_verdicts: int`,
   `passing_verdicts: int`, `maintenance_verdicts: int`, `gap_verdicts: int`,
   `distinct_locations: int`, `window: str`, `computed_at: datetime`. Either percentage is `None` on
   a degenerate denominator (AC6) — never a sentinel `0.0`/`-1`, never a `ZeroDivisionError`.
-- `AvailabilityCalculator` (`availability.py:113`) — the entry point, constructed with
+- `AvailabilityCalculator` (`availability.py:168`) — the entry point, constructed with
   `observation_repo: ObservationRepository` injected (no global, no SQL). `compute(signal_key, *,
   since, until, interval, window, maintenance, computed_at)` is the only method; `interval`,
   `window`, `maintenance` (a predicate over a cycle's start instant — injected, never a DB lookup,
   mirroring `collapse`'s `under_maintenance`), and `computed_at` are ALL injected parameters — no
   per-app config read, no wall-clock read, inside this service.
 - **Cycle bucketing** (a calculator design call, since §11 leaves the mechanism open):
-  `bucket_into_cycles` (`availability.py:127`) slices `[since, until)` into consecutive
+  `bucket_into_cycles` (`availability.py:133`) slices `[since, until)` into consecutive
   `interval`-wide buckets keyed by their start instant (`since + k*interval`); every observation
   lands in exactly one bucket by `observed_at`. A bucket with zero observations never appears in
   the map — it is a gap. Each non-empty bucket is one cycle, collapsed via `collapse`, with
@@ -102,7 +102,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   observed-distinct, not a configured set, so a 3-location signal with full coverage reads exactly
   100%, never 300% (the multi-location fix, §11/T2.5).
 - **Group rollup** — `rollup_group(children: Sequence[AvailabilityResult], *, window, computed_at)
-  -> AvailabilityResult` (`availability.py:232`), a free function (combines already-computed
+  -> AvailabilityResult` (`availability.py:285`), a free function (combines already-computed
   results, not raw observations). `availability_pct`/`completeness_pct` are each `min()` over the
   children whose value is not `None` (a no-data child can't drag a healthy group to "unknown"); if
   every child is `None`, the rollup's percentage is `None`. `total_verdicts`, `passing_verdicts`,
@@ -220,3 +220,11 @@ boundary CI floors are catalogued in [[architecture-boundary]].
 - sprint-11 (STORY-032): refactored DecideService to extract _open_proposal helper and add assertions on open proposal IDs. Verified at a93341d.
 - sprint-29 (STORY-045): no code change to `decide.py`/`orchestrate.py` (D5 — pinned in the sprint plan); added the recovery-reachability regression Facts above and two new `test_orchestrate.py` tests proving `components.status` write-back at the recovery trigger and the full degrade→approve→recover loop. verified_sha → 7cabee7.
 - sprint-43 (STORY-078): Relocated availability read-model from core/services/ to core/queries/. verified_sha → 05f640e.
+- sprint-43 (quality-review fix loop, M2/m3): `core/queries/availability.py`'s module docstring —
+  truncated to a 3-line stub by the STORY-078 move — was restored to the original two-grain/
+  denominator/D-1/P4 prose with the relocation note appended beneath it; `skew.py` and
+  `test_availability.py` had the same stale `core/services/availability.py` path reference
+  repointed. The restored docstring shifted the module's line numbers, so this article's
+  line-anchored citations were corrected: `AvailabilityResult` 37→40, `AvailabilityCalculator`
+  113→168, `bucket_into_cycles` 127→133, `rollup_group` 232→285. No behavior/Fact changed.
+  verified_sha → 10a2d73.
