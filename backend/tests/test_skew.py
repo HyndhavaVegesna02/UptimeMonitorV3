@@ -16,7 +16,7 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.services.availability import AvailabilityCalculator
+from src.core.queries.availability import AvailabilityCalculator
 from src.core.services.skew import SignalFeeder, SkewResult, skew
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))

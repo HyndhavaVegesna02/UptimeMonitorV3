@@ -15,7 +15,7 @@ from pathlib import Path
 
 import pytest
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.services.availability import (
+from src.core.queries.availability import (
     AvailabilityCalculator,
     AvailabilityResult,
     rollup_group,

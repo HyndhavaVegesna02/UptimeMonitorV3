@@ -47,7 +47,7 @@ from src.core.ports import (
     ObservationRepository,
     SignalRepository,
 )
-from src.core.services.availability import (
+from src.core.queries.availability import (
     AvailabilityCalculator,
     AvailabilityResult,
     rollup_group,

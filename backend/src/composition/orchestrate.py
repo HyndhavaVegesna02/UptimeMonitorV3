@@ -26,7 +26,7 @@ from src.core.ports.clock import ClockPort
 from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.maintenance_repository import MaintenanceRepository
 from src.core.ports.observation_repository import ObservationRepository
-from src.core.services.availability import bucket_into_cycles
+from src.core.queries.availability import bucket_into_cycles
 from src.core.services.decide import DecideAction, DecideService
 from src.core.services.pipeline import anti_flap, collapse, streak
 

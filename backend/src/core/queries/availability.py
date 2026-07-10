@@ -1,24 +1,7 @@
-"""The availability engine — two-grain math + group rollup (dossier §11).
+"""The availability query engine — two-grain math + group rollup (dossier §11, proposal §8).
 
-Zone 4 / pure core. The system's first CALCULATOR: compute-only, no tables,
-part of the constant core. It reads observations through the
-`ObservationRepository.in_window` port and computes two percentages on
-demand, persisting nothing (D-1). It runs in parallel to the four-stage
-pipeline (`core/services/pipeline.py`) and never consults the streak (P4).
-
-Two metrics, two grains, never sharing a denominator:
-  - Availability % is computed over COLLAPSED VERDICTS (cycles): `passing ÷
-    (total − maintenance)`. `up` passes; `down`/`degraded` don't; maintenance
-    is excluded BOTH sides; gaps are excluded from the denominator (the
-    default `exclude` policy). Reuses `collapse` (STORY-010).
-  - Completeness % is computed over RAW OBSERVATIONS: `actual ÷ (intervals ×
-    distinct_locations)` where `intervals = window ÷ interval` and
-    `distinct_locations = COUNT(DISTINCT location)`. The location-aware
-    denominator is the multi-location fix: it stops a 3-location signal
-    reporting 300% completeness.
-
-This module imports ONLY `src.core.*` — no SQL, no vendor types, no I/O. The
-skew flag (dossier §11 "Skew, surfaced") is OUT OF SCOPE here (STORY-026).
+Zone 4 / pure core. Fenced read-side queries subpackage (CQRS-lite, proposal §8).
+Relocated from core/services/availability.py.
 """
 
 from __future__ import annotations
@@ -35,7 +18,7 @@ from src.core.services.pipeline import collapse
 
 
 class AvailabilityResult(BaseModel):
-    """The frozen result of one availability computation (dossier §11).
+    """The frozen result of one availability computation (dossier §11, proposal §8).
 
     Two independent percentages at deliberately different grains
     (`availability_pct` over verdicts, `completeness_pct` over observations),
@@ -79,7 +62,10 @@ class AvailabilityResult(BaseModel):
 
     @model_validator(mode="after")
     def _require_coherence(self) -> "AvailabilityResult":
-        """Enforce coherence invariants for availability and completeness."""
+        """Enforce coherence invariants for availability and completeness.
+
+        Cites: dossier §11, proposal §8
+        """
         if self.total_verdicts < 0:
             raise ValueError("total_verdicts must be non-negative")
         if self.passing_verdicts < 0:
@@ -129,7 +115,7 @@ def bucket_into_cycles(
 ) -> dict[datetime, list[SignalObservation]]:
     """Slice `observations` into consecutive `interval`-wide cycles starting at `since`.
 
-    Public API — consumed by both the availability engine (dossier §11) and
+    Public API — consumed by both the availability engine (dossier §11, proposal §8) and
     the pipeline orchestrator (dossier §8 step 5: "hand rows to the pipeline").
 
     Cycle bucketing design (a calculator design call, dossier §11 leaves the
@@ -160,7 +146,7 @@ def bucket_into_cycles(
 
 
 class AvailabilityCalculator:
-    """Computes availability% and completeness% on demand (dossier §11). Zone 4.
+    """Computes availability% and completeness% on demand (dossier §11, proposal §8). Zone 4.
 
     Constructed with the `ObservationRepository` port injected — no global,
     no SQL — so it is fully exercisable with an in-memory fake. `compute` is
@@ -231,7 +217,7 @@ class AvailabilityCalculator:
         # ones that land in that partial tail -- which can push
         # len(buckets) past a floor-based expected_cycles and drive
         # gap_verdicts negative. Computed via integer floor-division of the
-        # NEGATED span (then negated back) to avoid float-rounding bugs:
+        # negated span (then negated back) to avoid float-rounding bugs:
         # -((since - until) // interval) == ceil((until - since) / interval).
         # When (until - since) is an exact multiple of interval, ceil ==
         # floor, so this is unchanged for every previously-passing case.
@@ -279,7 +265,7 @@ class AvailabilityCalculator:
 def rollup_group(
     children: Sequence[AvailabilityResult], *, window: str, computed_at: datetime
 ) -> AvailabilityResult:
-    """Roll up a group's `AvailabilityResult` from its children's (dossier §11, AC3).
+    """Roll up a group's `AvailabilityResult` from its children's (dossier §11, proposal §8, AC3).
 
     A group is only as available as its worst component: `availability_pct`
     and `completeness_pct` are each the MIN of the children that have a
