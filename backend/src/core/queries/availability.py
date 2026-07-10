@@ -1,7 +1,27 @@
-"""The availability query engine — two-grain math + group rollup (dossier §11, proposal §8).
+"""The availability engine — two-grain math + group rollup (dossier §11).
 
-Zone 4 / pure core. Fenced read-side queries subpackage (CQRS-lite, proposal §8).
-Relocated from core/services/availability.py.
+Zone 4 / pure core. The system's first CALCULATOR: compute-only, no tables,
+part of the constant core. It reads observations through the
+`ObservationRepository.in_window` port and computes two percentages on
+demand, persisting nothing (D-1). It runs in parallel to the four-stage
+pipeline (`core/services/pipeline.py`) and never consults the streak (P4).
+
+Two metrics, two grains, never sharing a denominator:
+  - Availability % is computed over COLLAPSED VERDICTS (cycles): `passing ÷
+    (total − maintenance)`. `up` passes; `down`/`degraded` don't; maintenance
+    is excluded BOTH sides; gaps are excluded from the denominator (the
+    default `exclude` policy). Reuses `collapse` (STORY-010).
+  - Completeness % is computed over RAW OBSERVATIONS: `actual ÷ (intervals ×
+    distinct_locations)` where `intervals = window ÷ interval` and
+    `distinct_locations = COUNT(DISTINCT location)`. The location-aware
+    denominator is the multi-location fix: it stops a 3-location signal
+    reporting 300% completeness.
+
+This module imports ONLY `src.core.*` — no SQL, no vendor types, no I/O. The
+skew flag (dossier §11 "Skew, surfaced") is OUT OF SCOPE here (STORY-026).
+
+Zone 4 / pure core. Fenced read-side queries subpackage (CQRS-lite, proposal
+§8). Relocated from core/services/availability.py (STORY-078).
 """
 
 from __future__ import annotations

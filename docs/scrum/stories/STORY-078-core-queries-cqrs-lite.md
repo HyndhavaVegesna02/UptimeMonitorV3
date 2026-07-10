@@ -62,3 +62,16 @@ a legal composition→core arrow.
 ## History
 - 2026-07-10: filed + refined from proposal §8 at PO election to trigger the phase. Status: ready (3 pts).
 - 2026-07-10: Relocated AvailabilityCalculator, AvailabilityResult, rollup_group, and bucket_into_cycles from core/services/availability.py to core/queries/availability.py (CQRS-lite). Repointed all imports. Contract updated in pyproject.toml and verified green (8 contracts kept). Updated five wiki articles. All tests green (548/548). Final SHA: 05f640e (code) and f50d90f (wiki).
+- 2026-07-11: Sprint 43 quality-review fix-forward (MAJOR-2 + minor-3). The move left five stale
+  prose/docstring path references to the deleted `core/services/availability.py`; repointed to
+  `core/queries/availability.py` in: `backend/src/adapters/persistence/observation_repository.py:14`,
+  `backend/src/api/v1/availability/models.py:3`, `backend/src/core/ports/observation_repository.py:11`,
+  `backend/src/core/services/skew.py:4`, `backend/tests/test_availability.py:3`. Confirmed via
+  `grep -rn "core/services/availability\.py\|core\.services\.availability" backend/` that the ONLY
+  remaining hit in `backend/` is the intentional provenance line in
+  `core/queries/availability.py` ("Relocated from core/services/availability.py (STORY-078).") —
+  historical references under `docs/scrum/sprints/*` and `docs/scrum/stories/*` are records and were
+  left untouched. Also restored `core/queries/availability.py`'s module docstring, which the "pure
+  move" had replaced with a 3-line stub — recovered the original two-grain/denominator/D-1/P4 prose
+  from `git show sprint-43-start:backend/src/core/services/availability.py` and appended the
+  relocation note (CQRS-lite, proposal §8) below it; no code below the docstring changed.

@@ -11,7 +11,7 @@ read-then-write in application code.
 `in_window` (STORY-011) is the read side the availability engine derives
 from: a plain `SELECT` over `[since, until)`, using the
 `ix_observations_signal_key_observed_at` index. All SQL for this read lives
-here, never in `core/services/availability.py`.
+here, never in `core/queries/availability.py`.
 """
 
 from __future__ import annotations

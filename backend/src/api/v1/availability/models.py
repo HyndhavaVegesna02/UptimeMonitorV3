@@ -1,6 +1,6 @@
 """Pydantic DTOs for the availability API feature (dossier §11, §13).
 
-`AvailabilityDTO` mirrors `core/services/availability.py::AvailabilityResult`
+`AvailabilityDTO` mirrors `core/queries/availability.py::AvailabilityResult`
 fields but is a distinct DTO — never the domain result type itself.
 """
 

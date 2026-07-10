@@ -8,7 +8,7 @@ adapter leaking SQL into the core.
 
 `in_window` (STORY-011, dossier §11) is the READ side: it returns the raw
 observations for one signal in `[since, until)` so the availability engine
-(`core/services/availability.py`) can derive availability% and completeness%
+(`core/queries/availability.py`) can derive availability% and completeness%
 on demand. ALL SQL for this read stays behind the adapter implementing this
 method — the core never sees a query.
 """

@@ -1,7 +1,7 @@
 """The per-component skew flag (dossier §11 "Skew, surfaced" + Tier-2 T2.7).
 
 Zone 4 / pure core. Split out of the availability calculator
-(`core/services/availability.py`) at refinement: skew is a cross-signal
+(`core/queries/availability.py`) at refinement: skew is a cross-signal
 WATERMARK comparison, distinct from the two-grain availability/completeness
 math, and rides alongside completeness as a SEPARATE signal rather than a
 field bolted onto `AvailabilityResult` — completeness can be low for reasons

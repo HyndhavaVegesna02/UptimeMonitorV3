@@ -1,6 +1,6 @@
 """STORY-011: the availability engine — two-grain math + group rollup (dossier §11).
 
-Zone 4 / pure core. `core/services/availability.py` computes availability%
+Zone 4 / pure core. `core/queries/availability.py` computes availability%
 (over collapsed verdicts) and completeness% (over raw observations) on
 demand, plus a group rollup — derive-on-read, nothing persisted. Tested with
 IN-MEMORY FAKE repositories only (no DB, no Dynatrace — working agreement).
