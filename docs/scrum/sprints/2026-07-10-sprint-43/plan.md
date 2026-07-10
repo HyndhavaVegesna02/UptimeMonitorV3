@@ -118,7 +118,7 @@ AC: `docs/scrum/stories/STORY-077-sprint42-review-minors.md` (binding).
   story History entry; tick boxes.
 
 ## Sprint-end (external agent's last act)
-- [ ] All boxes ticked, tree clean, everything pushed to `origin/sprint-43`.
-- [ ] Each story file History updated: final SHA, six-gate results (command + exit code + tail), wiki
+- [x] All boxes ticked, tree clean, everything pushed to `origin/sprint-43`.
+- [x] Each story file History updated: final SHA, six-gate results (command + exit code + tail), wiki
   articles updated, deviations/blockers. For 073: paste the ≥3 green full-suite (no-`--ignore`) runs.
-- [ ] Do NOT merge to main. Do NOT close the sprint. Report back to the PO for orchestrator review.
+- [x] Do NOT merge to main. Do NOT close the sprint. Report back to the PO for orchestrator review.
