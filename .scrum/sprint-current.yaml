@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 43
-status: active        # none | active | review | closed | aborted
+status: review        # none | active | review | closed | aborted
 started: 2026-07-10
 goal: "Harden the mechanical floor and name the read side: make the flaky dev_db lifecycle gate
   deterministic (073), clear the sprint-42 review minors (077), and land the core/queries CQRS-lite
@@ -24,33 +24,64 @@ start_tag: sprint-43-start
 stories:
   - id: STORY-073
     points: 3
-    board: todo
+    board: done            # external impl 9b90d38; fix loop (M1 env-parse crash + m5 test) -> ecf614a; re-verified green.
     pipeline: full
-    attempts: 0
+    attempts: 2            # attempt 1 external impl; attempt 2 orchestrator fix loop (M1 blocking + m5).
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
-    review: null
-    dod_evidence: []
+    blast_radius_resolved: true   # dev-setup-and-dod.md updated + re-verified.
+    review:
+      spec: "PASS — all 5 refined ACs MET: robust tunable readiness (retry/backoff, DEV_DB_READY_TIMEOUT_SECONDS 60s), teardown-on-failure preserved on every path, lifecycle tests unweakened, CLAUDE.md synced, canonical pytest deterministic (no --ignore)."
+      quality: "APPROVE (after fix loop). Initial REQUEST-CHANGES MAJOR M1: module-scope float(env) crashed pytest COLLECTION on a bad/empty DEV_DB_READY_TIMEOUT_SECONDS (confirmed by orchestrator repro). FIXED: lazy guarded _ready_timeout_seconds() (missing/empty/non-numeric -> 60s default), resolved at call time. m5 FIXED: new hermetic test_dev_db_readiness.py (8 tests) covering the parse + retry/timeout, regression-guarding M1. Retry loop + teardown verified correct."
+    dod_evidence:
+      - command: "pytest (canonical, NO --ignore, x2 for determinism)"
+        exit_code: 0
+        output_tail: "557 passed x2 (73.2s / 68.8s) INCLUDING test_dev_db_cli.py + test_dev_db_fixture.py — the STORY-073 goal: canonical single command now deterministic, --ignore carve-out retired. Empty-env import no longer crashes (resolves to 60.0)."
+        commit: ecf614a
+        at: 2026-07-11T00:00:00+05:30
+      - command: "lint-imports / check_fk_direction / alembic / ruff check / ruff format"
+        exit_code: 0
+        output_tail: "8 kept 0 broken; 11 FKs 0 violations; alembic 0; ruff check clean; ruff format 560 files."
+        commit: ecf614a
+        at: 2026-07-11T00:00:00+05:30
   - id: STORY-078
     points: 3
-    board: todo
+    board: done            # external impl 05f640e (pure move); fix loop (M2 stale refs + m3 docstring) -> ecf614a.
     pipeline: full
-    attempts: 0
+    attempts: 2
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
-    review: null
-    dod_evidence: []
+    blast_radius_resolved: true   # 6 wiki articles updated/re-verified incl. line-anchor fixes + a pre-existing migrations-and-db drift.
+    review:
+      spec: "PASS — move is provably behavior-frozen (AvailabilityResult validator + all computation byte-identical; collapse still from services); layering contract queries>services>ports>domain enforces P4 as a build failure; core-independence inherited. AC3 was PARTIAL (stale doc refs) -> fixed in the loop."
+      quality: "APPROVE (after fix loop). Initial REQUEST-CHANGES MAJOR M2: 5 source/test files kept prose pointers to the deleted core/services/availability.py, contradicting the story's grep-proof claim. FIXED: all 5 repointed to core/queries/availability.py (grep clean except the intentional provenance line). m3 FIXED: truncated module docstring restored from the pre-move original + relocation note."
+    dod_evidence:
+      - command: "pytest (canonical, no --ignore) + lint-imports"
+        exit_code: 0
+        output_tail: "557 passed; lint-imports 8 kept 0 broken with core-internal-layering = [queries, services, ports, domain]; nothing in core/services imports core.queries."
+        commit: ecf614a
+        at: 2026-07-11T00:00:00+05:30
+      - command: "check_fk_direction / alembic / ruff check / ruff format"
+        exit_code: 0
+        output_tail: "11 FKs 0 violations; alembic 0; ruff check clean; ruff format 560 files. Frontend diff empty; move is pure (docstring/comment only)."
+        commit: ecf614a
+        at: 2026-07-11T00:00:00+05:30
   - id: STORY-077
     points: 2
-    board: todo
+    board: done
     pipeline: full        # external impl => Opus spec + quality at verification regardless of size.
-    attempts: 0
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
-    review: null
-    dod_evidence: []
+    blast_radius_resolved: true   # api-five-file-convention.md updated + re-verified.
+    review:
+      spec: "PASS — AC1/AC2 MET: test_zone_layout.py dropped the private FastAPI _IncludedRouter for public app.openapi(); non-vacuous on all 3 drift directions. Concurrency TOCTOU comment restored in decisions/service.py + approval.py."
+      quality: "APPROVE — clean. m4 (near-tautological meta-test) folded into the fix loop: router-inclusion check extracted to a shared helper both the real test and the meta-test call."
+    dod_evidence:
+      - command: "six-gate DoD (shared at HEAD ecf614a)"
+        exit_code: 0
+        output_tail: "557 passed (no --ignore); lint-imports 8/0; fk 11/0; alembic 0; ruff check + format clean. No private FastAPI API in test_zone_layout.py."
+        commit: ecf614a
+        at: 2026-07-11T00:00:00+05:30
 hotfixes: []
 interrupts: []
