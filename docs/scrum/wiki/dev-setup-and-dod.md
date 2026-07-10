@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 78fcc58
-verified_sprint: sprint-42
+verified_sha: 9b90d38
+verified_sprint: sprint-43
 status: verified
 ---
 
@@ -63,6 +63,10 @@ status: verified
   `python scripts/dev_db.py up` is idempotent: it force-removes any pre-existing
   container of the same name before attempting `docker run`, so a leftover/stuck
   container no longer blocks startup (STORY-030).
+  Container readiness timeout is tunable via the `DEV_DB_READY_TIMEOUT_SECONDS`
+  environment variable (defaults to `60.0` seconds), which leverages a patient
+  retry/backoff loop with a 5-second bounded exec timeout under concurrent load
+  (STORY-073).
 - Under `pytest`, the same logic is the session-scoped `migrated_db` fixture
   (`backend/tests/conftest.py`, via `dev_db.resolve_db()`): reuses
   `DATABASE_URL`/`DATABASE_URL_DIRECT` if both are already set externally
