@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
-code_refs: [backend/src/core/services/pipeline.py, backend/src/core/services/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: 7cabee7
-verified_sprint: sprint-29
+code_refs: [backend/src/core/services/pipeline.py, backend/src/core/queries/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
+verified_sha: 05f640e
+verified_sprint: sprint-43
 status: verified          # verified | stale | archived
 ---
 
@@ -68,7 +68,7 @@ boundary CI floors are catalogued in [[architecture-boundary]].
     mis-bucket; they fall through to the documented branch.
   - Pure: no I/O, no config/DB read, imports only `src.core.domain` types + `pydantic`/stdlib (AC3).
 
-### The availability engine (`core/services/availability.py`, STORY-011, dossier §11)
+### The availability query engine (`core/queries/availability.py`, STORY-011, dossier §11, proposal §8)
 - `AvailabilityResult` (frozen Pydantic, `availability.py:37`) — the §11 result shape:
   `availability_pct: float|None`, `completeness_pct: float|None`, `total_verdicts: int`,
   `passing_verdicts: int`, `maintenance_verdicts: int`, `gap_verdicts: int`,
@@ -219,3 +219,4 @@ boundary CI floors are catalogued in [[architecture-boundary]].
 - sprint-10 (STORY-029): enforced AvailabilityResult cross-field coherence validator. Verified at 32e24de.
 - sprint-11 (STORY-032): refactored DecideService to extract _open_proposal helper and add assertions on open proposal IDs. Verified at a93341d.
 - sprint-29 (STORY-045): no code change to `decide.py`/`orchestrate.py` (D5 — pinned in the sprint plan); added the recovery-reachability regression Facts above and two new `test_orchestrate.py` tests proving `components.status` write-back at the recovery trigger and the full degrade→approve→recover loop. verified_sha → 7cabee7.
+- sprint-43 (STORY-078): Relocated availability read-model from core/services/ to core/queries/. verified_sha → 05f640e.
