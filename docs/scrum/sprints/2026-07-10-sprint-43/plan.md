@@ -75,28 +75,28 @@ AC: `docs/scrum/stories/STORY-078-core-queries-cqrs-lite.md` (binding). Proposal
 MOVE + the layering contract ONLY.** Do NOT add the read/write feature contracts or touch
 `api/dependencies.py`'s ApprovalService wiring (deferred/rejected — proposal §8, §5.3).
 
-- [ ] **Step 1 (create + move):** create `backend/src/core/queries/__init__.py` +
+- [x] **Step 1 (create + move):** create `backend/src/core/queries/__init__.py` +
   `core/queries/availability.py`; move `AvailabilityCalculator`, `AvailabilityResult`,
   `rollup_group`, `bucket_into_cycles` (and their private helpers) WHOLE from
   `core/services/availability.py` (delete from there). Keep the `collapse` import from
-  `core/services/pipeline.py` (queries→services pure fn is allowed). Preserve `AvailabilityResult`'s
+  `core/services/pipeline.py` (queries→services pure fn is allowed). Preserve `AvailabilityResult`s
   `model_validator` + docstrings verbatim (relocated, not rewritten). Module docstring cites proposal §8.
-- [ ] **Step 2 (update import sites):** repoint every importer to `core.queries.availability`:
+- [x] **Step 2 (update import sites):** repoint every importer to `core.queries.availability`:
   `composition/orchestrate.py` (`bucket_into_cycles`), `api/v1/availability/service.py`
   (`AvailabilityCalculator`), and all test imports (`backend/tests/test_availability.py` et al.).
   Grep-proof: NO reference to `core.services.availability` remains anywhere (record the grep).
   Test import-path updates are a mechanical move — allowed; do NOT change any assertion/behavior.
-- [ ] **Step 3 (layering contract):** change `pyproject.toml` `core-internal-layering` to
+- [x] **Step 3 (layering contract):** change `pyproject.toml` `core-internal-layering` to
   `layers = ["src.core.queries", "src.core.services", "src.core.ports", "src.core.domain"]`.
   `lint-imports` → **8 kept, 0 broken**. Verify nothing in `core/services/` imports `core.queries`
   (services-below-queries; the P4 "pipeline never consults availability" is now a build failure) and
   `core-independence` still holds (core.queries inherits vendor-freedom).
-- [ ] **Step 4:** full six-gate on the clean tree (canonical `pytest`, no `--ignore` — 073 already
+- [x] **Step 4:** full six-gate on the clean tree (canonical `pytest`, no `--ignore` — 073 already
   landed). Behavior frozen: every test passes (import paths updated only). Mechanical wiki sweep —
   expect `core-pipeline-and-availability`, `canonical-types-and-ports`, `architecture-boundary` (add
   the `queries` layer fact + the 4th-subpackage tree) and any article whose `code_refs` list
   `core/services/availability.py` (update the path). Commit article-by-article.
-- [ ] **Step 5:** story History entry (files moved, final SHA, grep-proof, gate results); tick boxes.
+- [x] **Step 5:** story History entry (files moved, final SHA, grep-proof, gate results); tick boxes.
 
 ## STORY-077 — sprint-42 review minors (2pt)
 AC: `docs/scrum/stories/STORY-077-sprint42-review-minors.md` (binding).
