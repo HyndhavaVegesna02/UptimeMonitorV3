@@ -101,7 +101,7 @@ MOVE + the layering contract ONLY.** Do NOT add the read/write feature contracts
 ## STORY-077 — sprint-42 review minors (2pt)
 AC: `docs/scrum/stories/STORY-077-sprint42-review-minors.md` (binding).
 
-- [ ] **Step 1 (MINOR-1, test first):** rewrite `backend/tests/test_zone_layout.py`'s router-inclusion
+- [x] **Step 1 (MINOR-1, test first):** rewrite `backend/tests/test_zone_layout.py`'s router-inclusion
   check to use a PUBLIC FastAPI API (inspect `app.routes` / mounted path prefixes) instead of the
   private `fastapi.routing._IncludedRouter` / `.original_router`. It MUST still fail on all three
   drift directions: (i) a feature dir missing from the `api-feature-independence` contract list;
@@ -109,12 +109,12 @@ AC: `docs/scrum/stories/STORY-077-sprint42-review-minors.md` (binding).
   feature dir. Prove each failure mode (parametrized helper / doctored inputs), not just the happy
   path. If no clean public equivalent exists, INSTEAD pin the FastAPI lower bound in `pyproject.toml`
   + add a comment flagging the private-API dependency (and say why in the story History).
-- [ ] **Step 2 (MINOR-2):** restore the concurrency-nuance comment to
+- [x] **Step 2 (MINOR-2):** restore the concurrency-nuance comment to
   `backend/src/api/v1/decisions/service.py` (or `core/services/approval.py`) — that
   `ProposalNotOpenError → 409` covers BOTH the up-front open-state guard AND a lost-race resolve
   (concurrent double-submit surfaced by the repo; 2026-06-28 TOCTOU agreement). `_shared/errors.py`
   is now a bare mapping and carries no such context.
-- [ ] **Step 3:** full six-gate on the clean tree; mechanical wiki sweep; commit article-by-article;
+- [x] **Step 3:** full six-gate on the clean tree; mechanical wiki sweep; commit article-by-article;
   story History entry; tick boxes.
 
 ## Sprint-end (external agent's last act)
