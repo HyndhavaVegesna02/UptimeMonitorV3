@@ -1,7 +1,7 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx]
-verified_sha: 5dd5bd2
+verified_sha: 3ea7e31
 verified_sprint: sprint-42
 status: verified          # verified | stale | archived
 ---
@@ -325,6 +325,12 @@ publisher/approval chain needs no change either way — sample mode only ever
 produced ordinary data flowing through it.
 
 ## History
+- sprint-42 (STORY-075, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `backend/src/composition/app.py`, which changed only cosmetically — a
+  ruff-inserted blank line before the STORY-075 `install_error_handlers(app)` call (the
+  centralized error-registry wiring, see [[api-five-file-convention]]). The `sample_mode_repo`
+  param/wiring Facts and the REMOVAL recipe's `app.py` bullet are untouched. No Facts changed.
+  verified_sha = 3ea7e31.
 - sprint-38 (STORY-056, Wave 1 of the Operator Dashboard redesign — the app shell): relocated the
   frontend consumer OUT of `DashboardPage` and into the shell (see the rewritten "The frontend
   consumer" section above). `features/dashboard/useSampleMode.ts` itself is BYTE-IDENTICAL — only

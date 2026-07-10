@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 42
-status: review        # none | active | review | closed | aborted
+status: closed        # none | active | review | closed | aborted
 started: 2026-07-10
 goal: "Land the API-restructure 'now' phase (2026-07-10 proposal): mechanically enforce the api
   zone's thinness (074), give cross-feature HTTP policy an owned home — central error registry
