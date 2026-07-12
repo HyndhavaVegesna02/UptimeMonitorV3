@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py]
-verified_sha: 10a2d73
-verified_sprint: sprint-43
+code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, CLAUDE.md, backend/tests/test_spine_schema.py]
+verified_sha: 678ff0d
+verified_sprint: sprint-44
 status: verified
 ---
 
@@ -116,3 +116,9 @@ status: verified
   migration or two-connection-split Fact changed. `verified_sha` re-stamped to `10a2d73` (this
   article had drifted un-bumped through the STORY-073 code change; caught by the Sprint 43
   quality-review wiki sweep).
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged two uncovered
+  citations: `CLAUDE.md` (cited alongside the URL-dialect-split gotcha as also documenting it) and
+  `backend/tests/test_spine_schema.py` (the DB-gated migration round-trip test — `upgrade head` →
+  `downgrade base` → `upgrade head`). Both genuinely define this article's subject (the migration
+  schema and its documented two-connection split); added to `code_refs`. No Fact text changed.
+  `verified_sha` re-stamped to `678ff0d`.
