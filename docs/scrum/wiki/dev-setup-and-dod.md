@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 10a2d73
-verified_sprint: sprint-43
+verified_sha: 0da9568
+verified_sprint: sprint-44
 status: verified
 ---
 
@@ -20,7 +20,11 @@ status: verified
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
 - **The DoD gate is six bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
   1. `pytest`
-  2. `lint-imports` (5 import-linter contracts; the 4th, `api-feature-independence`, added STORY-014; the 5th, `src-no-tests`, added STORY-038 to forbid `src` importing `tests`)
+  2. `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
+     (2026-07-12, sprint-44: invocation moved OFF the `lint-imports` exe shim — a Windows
+     Application Control policy now blocks it on this machine; same 5 import-linter contracts,
+     same check, module-path invocation instead; the 4th contract, `api-feature-independence`,
+     added STORY-014; the 5th, `src-no-tests`, added STORY-038 to forbid `src` importing `tests`)
   3. `python scripts/check_fk_direction.py` (needs `DATABASE_URL` → migrated Postgres)
   4. `alembic upgrade head` (needs `DATABASE_URL_DIRECT`)
   5. `ruff check .`
@@ -85,12 +89,17 @@ status: verified
   `docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16`
   (full one-liner + env exports in `CLAUDE.md` "Database & migrations").
 - The console script is `lint-imports` (`.venv/Scripts/lint-imports.exe`); `python -m importlinter`
-  does NOT work (it is a package with no `__main__`). **Gotcha (operational):** the `.exe` launcher
-  occasionally fails to start with `Permission denied` / `ApplicationFailed` (a corrupted/locked
-  Windows launcher, not a contract break). Regenerate it with
-  `.venv/Scripts/python.exe -m pip install --force-reinstall --no-deps import-linter` and re-run;
-  to confirm the contracts independently of the launcher,
+  does NOT work (it is a package with no `__main__`). **Gotcha (operational, superseded
+  2026-07-12):** the `.exe` launcher used to occasionally fail with `Permission denied` /
+  `ApplicationFailed` (a corrupted/locked Windows launcher); the fix was to regenerate it via
+  `.venv/Scripts/python.exe -m pip install --force-reinstall --no-deps import-linter`, or confirm
+  the contracts independently of the launcher via
   `.venv/Scripts/python.exe -c "import sys; from importlinter.cli import lint_imports; sys.exit(lint_imports())"`.
+  **This module-path form is now the STANDING DoD command #2** (sprint-44 gate hygiene fix): a
+  Windows Application Control policy started blocking the `.exe` shim outright (not merely a
+  corrupted-launcher flake), so `CLAUDE.md` and `.scrum/definition-of-done.md` were updated to
+  invoke `lint_imports_command()` (not the lower-level `lint_imports()` this gotcha note used)
+  directly rather than treating the module path as a fallback.
 - No `psql` client installed. Neon/Dynatrace/Statuspage credentials were not needed through the
   pure-backend sprints; the live loop (`python -m src.composition.run`, STORY-016) reads four secrets
   from the environment via `composition/settings.py::load_live_secrets()` (`DYNATRACE_ENV_URL`,
@@ -190,3 +199,12 @@ status: verified
   `_ready_timeout_seconds()` function called from `wait_for_postgres` at call time. The knob name
   and 60s default this article documents are UNCHANGED — no Fact edit needed; re-verified only.
   verified_sha → 10a2d73.
+- sprint-44 (STORY-064 wiki-blast-radius sweep, pilot): the mechanical sweep flagged this article
+  for the sprint-44 gate-hygiene commit (0889259) that moved DoD command #2 OFF the `lint-imports`
+  exe shim — a Windows Application Control policy now blocks it outright (not the old
+  corrupted-launcher flake this article's gotcha used to describe) — onto the module-path
+  invocation `python -c "from importlinter.cli import lint_imports_command;
+  lint_imports_command()"` (same 5 contracts, same check). `CLAUDE.md`/`.scrum/definition-of-done.md`
+  both updated in that commit; this article's Fact #2 and the `lint-imports` gotcha note were the
+  only stale text (no other DoD command or dependency changed). No STORY-064 backend/frontend code
+  change touches this article's `code_refs`. verified_sha → 0da9568.
