@@ -63,6 +63,9 @@ def test_http_normalizer_maps_one_location_execution_row():
     assert obs.source.native_kind == "http"
     assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
     assert obs.latency_ms == 755
+    # STORY-064: real wire carries response_status_code as a STRING ("200");
+    # the normalizer parses it to int.
+    assert obs.response_status_code == 200
 
 
 # --- HTTP health mapping success/failure/partial -> up/down/degraded ---
@@ -421,6 +424,39 @@ def test_assemble_observation_builds_canonical_shape_from_a_bare_row():
     assert obs.location == "SYNTHETIC_LOCATION-000000000000005C"
     assert obs.latency_ms == 755
     assert obs.raw_ref is None
+    # STORY-064: string wire value parsed to int.
+    assert obs.response_status_code == 200
+
+
+# --- STORY-064: response_status_code str->int parse (AC1) ----------------------
+
+
+def test_assemble_observation_response_status_code_none_when_absent():
+    from src.adapters.inbound.dynatrace._assembly import assemble_observation
+
+    rows = _load("grail_response_status_code_variants.json")["records"]
+    row = rows[0]  # no result.statistics.response_status_code key at all
+    assert "result.statistics.response_status_code" not in row
+
+    obs = assemble_observation(
+        row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+    )
+
+    assert obs.response_status_code is None
+
+
+def test_assemble_observation_response_status_code_none_when_unparsable():
+    from src.adapters.inbound.dynatrace._assembly import assemble_observation
+
+    rows = _load("grail_response_status_code_variants.json")["records"]
+    row = rows[1]  # response_status_code == "N/A", a non-numeric string
+    assert row["result.statistics.response_status_code"] == "N/A"
+
+    obs = assemble_observation(
+        row, signal_key="checkout-http", health=Health.UP, native_kind="http"
+    )
+
+    assert obs.response_status_code is None
 
 
 # --- build_dql_query: real Grail schema (AC1, STORY-016b) ---

@@ -13,7 +13,7 @@
       "result.status.message": "HEALTHY",
       "result.status.code": "0",
       "result.statistics.duration": "755000000",
-      "result.statistics.response_status_code": 200,
+      "result.statistics.response_status_code": "200",
       "monitor.name": "TodoMVC Homepage Monitor"
     },
     {
@@ -29,7 +29,7 @@
       "result.status.message": "HEALTHY",
       "result.status.code": "0",
       "result.statistics.duration": "820000000",
-      "result.statistics.response_status_code": 200,
+      "result.statistics.response_status_code": "200",
       "monitor.name": "TodoMVC Homepage Monitor"
     }
   ]

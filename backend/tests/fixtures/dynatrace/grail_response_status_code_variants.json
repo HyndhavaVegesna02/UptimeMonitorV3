@@ -1,0 +1,36 @@
+{
+  "_provenance": "Rows derived from the real live-Grail probe sample captured 2026-07-12 (sprint-44 planning probe, tenant monitor HTTP_CHECK-38B092E93932C002, docs/scrum/sprints/2026-07-12-sprint-44/probe-sample-http-monitor-execution.json) — same required fields, response_status_code varied to exercise STORY-064's two edge cases: absent and non-numeric. The real wire value itself is the string \"200\" (see grail_synthetic_events.json).",
+  "records": [
+    {
+      "timestamp": "2026-07-12T10:27:47.856000000Z",
+      "event.id": "157222362794",
+      "event.kind": "SYNTHETIC_EVENT",
+      "event.type": "http_monitor_execution",
+      "result.state": "SUCCESS",
+      "result.executed_steps_count": "1",
+      "dt.entity.http_check": "HTTP_CHECK-38B092E93932C002",
+      "dt.synthetic.monitor.id": "HTTP_CHECK-38B092E93932C002",
+      "dt.entity.synthetic_location": "SYNTHETIC_LOCATION-0000000000000047",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "271000000",
+      "monitor.name": "TodoMVC Homepage Monitor"
+    },
+    {
+      "timestamp": "2026-07-12T10:27:47.856000000Z",
+      "event.id": "157222362795",
+      "event.kind": "SYNTHETIC_EVENT",
+      "event.type": "http_monitor_execution",
+      "result.state": "SUCCESS",
+      "result.executed_steps_count": "1",
+      "dt.entity.http_check": "HTTP_CHECK-38B092E93932C002",
+      "dt.synthetic.monitor.id": "HTTP_CHECK-38B092E93932C002",
+      "dt.entity.synthetic_location": "SYNTHETIC_LOCATION-0000000000000047",
+      "result.status.message": "HEALTHY",
+      "result.status.code": "0",
+      "result.statistics.duration": "271000000",
+      "result.statistics.response_status_code": "N/A",
+      "monitor.name": "TodoMVC Homepage Monitor"
+    }
+  ]
+}

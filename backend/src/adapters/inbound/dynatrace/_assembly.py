@@ -77,7 +77,11 @@ def assemble_observation(
     """Flatten one real DQL row + an already-computed `Health` into a `SignalObservation` (dossier §5).
 
     Maps the real Grail fields: `timestamp`, `event.id`, `dt.synthetic.monitor.id`,
-    `dt.entity.synthetic_location`, and `result.statistics.duration`.
+    `dt.entity.synthetic_location`, `result.statistics.duration`, and (STORY-064)
+    `result.statistics.response_status_code` (a STRING-typed number on the real
+    wire, e.g. `"200"`) -> optional int `response_status_code`. Missing or
+    unparsable -> `None`, never a crash — mirrors the `latency_ms` optional-parse
+    style above.
     """
     observed_at = parse_ns_timestamp(require_field(row, "timestamp"))
 
@@ -86,6 +90,14 @@ def assemble_observation(
     if duration_val is not None:
         try:
             latency_ms = int(duration_val) // 1_000_000
+        except (ValueError, TypeError):
+            pass
+
+    status_code_val = row.get("result.statistics.response_status_code")
+    response_status_code = None
+    if status_code_val is not None:
+        try:
+            response_status_code = int(status_code_val)
         except (ValueError, TypeError):
             pass
 
@@ -101,5 +113,6 @@ def assemble_observation(
         ),
         location=require_field(row, "dt.entity.synthetic_location"),
         latency_ms=latency_ms,
+        response_status_code=response_status_code,
         raw_ref=raw_ref,
     )
