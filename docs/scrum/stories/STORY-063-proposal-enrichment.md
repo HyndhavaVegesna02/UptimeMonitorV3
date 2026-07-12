@@ -27,3 +27,12 @@ distinction, tz-aware datetimes. Then a small frontend follow-up surfaces them i
 
 ## History
 - 2026-07-07: filed from the redesign data-gap analysis. Status: draft (needs refinement + estimate).
+- 2026-07-12: probe findings recorded (pilot sprint 44 refinement pass; stays DRAFT — deferred):
+  `StatusProposal.reason` exists but is populated only at resolve (`decide.py::DecideService`
+  resolve paths), never at creation; severity / triggering-signals / check-counts need NEW
+  capture — the observation batch is in scope in `orchestrate.py::orchestrate_signal` but only
+  `component_id/proposed_status/current_status/now` reach `decide`. So this is producer-side
+  design + persistence (likely 5 pts): decide-time capture of reason/severity/triggering signal
+  ids, schema addition, then DTO threading. Open design questions for next refinement: severity
+  semantics (derived from to_status transition vs computed), triggering signals as list vs
+  representative id, and whether reason becomes a creation-time field or a separate audit field.
