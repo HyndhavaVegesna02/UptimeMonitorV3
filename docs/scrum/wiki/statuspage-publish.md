@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
-code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, migrations/versions/ecda752c8865_add_publications_outcome.py]
-verified_sha: d64d91d
-verified_sprint: sprint-41
+code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, migrations/versions/ecda752c8865_add_publications_outcome.py, backend/tests/test_run_live_loop.py, backend/tests/test_persistence_adapters.py]
+verified_sha: 678ff0d
+verified_sprint: sprint-44
 status: verified
 ---
 
@@ -87,3 +87,10 @@ status: verified
 - sprint-41 (STORY-070): re-verified. `run.py::main` gained a vendor-id drift probe call at startup
   (see [[ingest-service-and-pull-loop]]), which does NOT touch `build_live_loop`, `build_publisher`,
   or the publisher chain this article describes. No Fact changed. verified_sha → 4d3fd7a.
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged two uncovered
+  citations: `backend/tests/test_run_live_loop.py` (`test_build_live_loop_assembly`, which pins the
+  exact `StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))`
+  chain nesting this article documents) and `backend/tests/test_persistence_adapters.py` (the
+  DB-gated regression driving the real `RecordingPublisher`+`PostgresPublicationRepository` chain
+  through both outcomes). Both are defining pinning tests for this article's central publisher-chain
+  claims; added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
