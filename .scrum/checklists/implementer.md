@@ -1,0 +1,45 @@
+# Implementer Checklist — Uptime Monitor V3
+
+> YourTeam v2, generated 2026-07-12 from `.scrum/working-agreements.md`. Dates cite the
+> motivating agreement. The agreements file remains authoritative until the PO approves
+> `YOURTEAM_V2_MIGRATION_MAP.md`; after that, this checklist is the binding home for these
+> items. New items enter via retro (enforcement-ladder routing) or immediate PO direction.
+
+## Process discipline
+
+- [ ] Commit after every green TDD step; the wiki blast-radius pass commits **article-by-article** (2026-07-03). Keep uncommitted work under ~30 minutes, always.
+- [ ] Scoped staging only — never `git add -A` / `git add .` (2026-06-24; hook-enforced).
+- [ ] Current branch equals the sprint branch before every commit (edge-case #12; hook-enforced). Worktree dispatch: `git merge <sprint-branch>` FIRST (2026-07-08).
+- [ ] Never write `.scrum/` state — report; the orchestrator records (2026-06-25).
+- [ ] Report green only from a CLEAN committed tree — a gate result over uncommitted changes does not count (2026-06-29).
+- [ ] A story that changes DoD/build/test/run commands updates CLAUDE.md in the same commit (2026-06-23).
+- [ ] A story that deletes code records the why in the story file History — it feeds the wiki tombstone.
+
+## Test discipline
+
+- [ ] Every function over a collection has an explicit, tested empty-input behavior: a named domain error or a documented default — never a leaked stdlib message (2026-06-25).
+- [ ] Range/window/interval math tests a NON-aligned boundary case (window not an integer multiple, partial trailing bucket), not just clean inputs (2026-06-25).
+- [ ] A port's in-memory fake and its real adapter agree on edge behavior — the SAME contract test runs against both; both raise the same named domain errors, including the lost-race path (2026-06-26, 2026-06-28).
+- [ ] Check-then-act across a port: the write side raises a NAMED domain error on the 0-row race, the edge maps it (e.g. HTTP 409), and a test FORCES the race (2026-06-28).
+- [ ] Composition/assembly tests construct the REAL wired objects and assert actual structure — mock only genuine I/O edges; never patch the `__init__` of a thing under assembly (2026-06-29).
+- [ ] A contract change REWRITES the covering tests to the new contract; deleting one to a coverage gap is review-blocking (2026-06-29).
+- [ ] Fixtures derive from a REAL captured sample (live call or the producer's own fixtures) — never invented at a plausible-looking scale (2026-07-04).
+- [ ] A story adding side effects to a process entrypoint (env loads, file reads, network, seeding) enumerates every existing test driving that entrypoint and proves each stays hermetic, stated in the report (2026-07-06).
+- [ ] Resource-lifecycle code tears down on EVERY failure path — including partial setup before any finalizer exists — with a leak regression test (2026-06-25).
+
+## Code conventions (this project)
+
+- [ ] Module + public class/function docstrings citing the relevant dossier §, mirroring the peer modules (2026-06-27).
+- [ ] Frozen value/result types enforce cross-field coherence invariants with `model_validator(mode="after")` + tests for both the rejected and valid shapes, in the same story (2026-06-26).
+- [ ] N same-shape variants (per-type normalizers/handlers/parsers) share one assembly helper from the start; only genuinely per-variant logic lives per variant (2026-06-25).
+- [ ] A new five-file API feature ships its five-file-shape test (set equality on `{__init__, controller, models, validation, service}.py`) in the same story (2026-06-28).
+- [ ] Edge DTOs map a persisted entity's id directly — no `else 0` / sentinel fallback (2026-06-28).
+- [ ] API endpoints reject tz-naive datetime inputs with 422 at the edge (`validation.py`), with a naive-input regression test (2026-06-28).
+- [ ] No module-scope side effects that can crash import/collection (e.g. `float(os.environ[...])` at module scope) — resolve lazily with a guarded default (sprint-43 M1).
+- [ ] Config naming a live vendor resource id (monitor id, component id) carries a drift check — probe that it resolves to live data before Done (2026-07-08).
+
+## Wiki discipline
+
+- [ ] Blast radius is the MECHANICAL sweep over all articles (`python .claude/skills/yourteam/scripts/yt_wiki.py sweep`) — never hand-picked; shared `code_refs` files drift multiple articles (2026-06-28).
+- [ ] Facts cite SYMBOLS (`file.py::ClassName`, `file.py::function`) — bare line numbers only where no symbol applies (2026-06-27).
+- [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 ×2).
