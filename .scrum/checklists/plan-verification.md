@@ -1,8 +1,8 @@
 # Plan Verification Checklist (pre-lock) — Uptime Monitor V3
 
-> YourTeam v2, generated 2026-07-12 from `.scrum/working-agreements.md`. Run by yt-plan-verifier
-> once per sprint, after plan.md is drafted, BEFORE the PO is asked to lock. The agreements file
-> remains authoritative until the PO approves `YOURTEAM_V2_MIGRATION_MAP.md`.
+> YourTeam v2. Run by yt-plan-verifier once per sprint, after plan.md is drafted, BEFORE the
+> PO is asked to lock. Migration map PO-approved 2026-07-12 — this checklist is the BINDING
+> home for these items; dates cite the original motivating agreement (full text in git history).
 
 ## Contract precision (consumer stories)
 

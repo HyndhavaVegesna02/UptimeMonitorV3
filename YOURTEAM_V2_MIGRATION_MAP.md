@@ -1,10 +1,10 @@
 # YourTeam v2 — Working-Agreements Migration Map
 
-**Status: PROPOSED — awaiting PO approval entry-by-entry.** Until approved,
-`.scrum/working-agreements.md` remains fully authoritative and nothing is removed from it.
-On approval, retired entries are pruned per the existing prune convention (full text stays in
-git history; a prune record is appended). The v2 checklists (`.scrum/checklists/`) already
-contain their routed items, so during the approval window the rules are double-homed, not lost.
+**Status: APPROVED by the PO 2026-07-12 and EXECUTED** — the prune landed on `yourteam-v2`
+(retired entries live in git history: `git show b025b3c:.scrum/working-agreements.md`; a prune
+record documents the routing). `.scrum/checklists/` are now the binding home for routed items;
+`working-agreements.md` holds only the defaults, the PO inception rules, and the contention
+protocol. The map below is the approved routing record.
 
 Enforcement ladder: **gate/test → script → hook → agent definition → checklist → prose agreement.**
 

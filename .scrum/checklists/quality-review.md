@@ -1,7 +1,7 @@
 # Quality Review Checklist — Uptime Monitor V3
 
-> YourTeam v2, generated 2026-07-12 from `.scrum/working-agreements.md`. The agreements file
-> remains authoritative until the PO approves `YOURTEAM_V2_MIGRATION_MAP.md`.
+> YourTeam v2. Migration map PO-approved 2026-07-12 — this checklist is the BINDING home for
+> these items; dates cite the original motivating agreement (full text in git history).
 
 ## Tests-that-lie taxonomy — every member is CRITICAL
 

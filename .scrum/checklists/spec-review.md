@@ -1,7 +1,7 @@
 # Spec Review Checklist — Uptime Monitor V3
 
-> YourTeam v2, generated 2026-07-12 from `.scrum/working-agreements.md`. The agreements file
-> remains authoritative until the PO approves `YOURTEAM_V2_MIGRATION_MAP.md`.
+> YourTeam v2. Migration map PO-approved 2026-07-12 — this checklist is the BINDING home for
+> these items; dates cite the original motivating agreement (full text in git history).
 
 - [ ] **The test DRIVES the AC.** For every AC with a testable clause: the named test exercises the SCENARIO the AC names AND asserts the AC's OUTCOME. Read the test body and trace it to the AC's path — "an AC-named test exists and passes" is not verification (2026-06-29; the sprint-17 rigged test passed a name-matching review).
 - [ ] **Run the trace tests.** Every MET verdict cites a test you actually ran, or concrete code evidence where no test applies.
