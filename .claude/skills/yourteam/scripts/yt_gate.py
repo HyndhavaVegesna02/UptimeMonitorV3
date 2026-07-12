@@ -146,6 +146,12 @@ def emit_yaml(results: list[dict], commit: str) -> str:
 
 
 def main() -> int:
+    # Windows consoles default to cp1252; captured tails are UTF-8 (may carry
+    # npm's ✓ etc.), so force UTF-8 on our own streams or the evidence print
+    # crashes after a fully green run.
+    for stream in (sys.stdout, sys.stderr):
+        if hasattr(stream, "reconfigure"):
+            stream.reconfigure(encoding="utf-8", errors="replace")
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "--dod",
