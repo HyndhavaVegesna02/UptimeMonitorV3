@@ -83,6 +83,19 @@ def test_signal_observation_is_frozen():
         obs.signal_key = "mutated"
 
 
+# --- STORY-064: optional response_status_code (int|None, default None) ---------
+
+
+def test_signal_observation_response_status_code_defaults_to_none():
+    obs = SignalObservation(**_valid_observation())
+    assert obs.response_status_code is None
+
+
+def test_signal_observation_accepts_response_status_code():
+    obs = SignalObservation(**_valid_observation(response_status_code=200))
+    assert obs.response_status_code == 200
+
+
 # --- Step 7: invalid health raises ValidationError (AC2) ------------------------
 
 
@@ -125,6 +138,7 @@ _VENDOR_NEUTRAL_FIELDS = {
     "location",
     "latency_ms",
     "raw_ref",
+    "response_status_code",
 }
 
 

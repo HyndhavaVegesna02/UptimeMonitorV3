@@ -71,6 +71,10 @@ class SignalObservation(BaseModel):
     latency_ms: int | None = None
     """Optional measured latency in milliseconds."""
 
+    response_status_code: int | None = None
+    """Optional HTTP response status code (e.g. 200); `None` when the vendor
+    row omits it or it is unparsable (STORY-064)."""
+
     raw_ref: str | None = None
     """Optional pointer to the archived raw payload; the core never reads it."""
 
