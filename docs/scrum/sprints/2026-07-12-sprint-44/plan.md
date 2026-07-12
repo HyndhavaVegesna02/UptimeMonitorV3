@@ -74,12 +74,12 @@ Steps (TDD; commit after every green step):
 - [x] 3. Migration: new Alembic revision — nullable `Integer` column
         `observations.response_status_code`; upgrade green on fresh DB (migrated_db fixture);
         downgrade drops cleanly. Commit.
-- [ ] 4. Persistence parity: the SAME contract test against `PostgresObservationRepository` AND
+- [x] 4. Persistence parity: the SAME contract test against `PostgresObservationRepository` AND
         the in-memory fake — round-trip incl. `None`. Implement both mappings, green, commit.
-- [ ] 5. API: failing endpoint test — `/api/v1/history` rows carry `response_status_code`
+- [x] 5. API: failing endpoint test — `/api/v1/history` rows carry `response_status_code`
         (int|null) + `check_type` (from persisted `source.native_kind`); extend `ObservationDTO`
         + `HistoryService` mapping; all existing history validation tests stay green. Commit.
-- [ ] 6. Frontend: mirror DTO in `api/types.ts`; add Type + Code columns to the Check History
+- [x] 6. Frontend: mirror DTO in `api/types.ts`; add Type + Code columns to the Check History
         grid; MSW fixtures from the real wire sample; tests cover populated + null ("—").
         Commit.
 - [ ] 7. Gates + wiki blast radius: run `yt_wiki.py sweep`, update/re-verify every flagged
