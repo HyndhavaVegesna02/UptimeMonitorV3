@@ -8,7 +8,15 @@ import type { ObservationDTO } from '../../api/types'
  * `{"signal_key":"http-check","observed_at":"2026-07-03T13:29:17.931000Z",
  * "health":"up","location":"SYNTHETIC_LOCATION-0000000000000060",
  * "latency_ms":571}` — fractional-second ISO UTC timestamp, integer-ms
- * latency, raw vendor location id string.
+ * latency, raw vendor location id string. `response_status_code`/`check_type`
+ * (STORY-064) default to a real `/api/v1/history` response captured during
+ * implementation off the 2026-07-12 live-Grail probe sample
+ * (`{"response_status_code":200,"check_type":"http"}` for an `up` execution —
+ * see `docs/scrum/sprints/2026-07-12-sprint-44/probe-sample-http-monitor-execution.json`);
+ * only that one real status-code VALUE (200) is used anywhere below — a
+ * `degraded`/`down` row uses `response_status_code: null` (the real "no code
+ * captured" state, per `dynatrace-adapter.md`'s TBD-failure-code note) rather
+ * than inventing a failure status code that was never actually observed live.
  */
 function makeObservation(overrides: Partial<ObservationDTO> = {}): ObservationDTO {
   return {
@@ -17,6 +25,8 @@ function makeObservation(overrides: Partial<ObservationDTO> = {}): ObservationDT
     health: 'up',
     location: 'SYNTHETIC_LOCATION-0000000000000060',
     latency_ms: 571,
+    response_status_code: 200,
+    check_type: 'http',
     ...overrides,
   }
 }
@@ -25,8 +35,9 @@ function makeObservation(overrides: Partial<ObservationDTO> = {}): ObservationDT
  * `frontend-http` fixture (STORY-015e AC1, AC3, AC4) — the default signal
  * the tab selects first (matches `FIXTURE_TOPOLOGY`'s first component's
  * first signal in `availability.ts`). Newest-first; covers all three
- * observation-health values plus a `latency_ms: null` row (no measurement,
- * distinct from a real `0`).
+ * observation-health values, a `latency_ms: null` row (no measurement,
+ * distinct from a real `0`), and (STORY-064) a `response_status_code: null`
+ * pair (the degraded/down rows) alongside the real captured `200` value.
  */
 export const FIXTURE_HISTORY_FRONTEND_HTTP: ObservationDTO[] = [
   makeObservation({
@@ -34,24 +45,28 @@ export const FIXTURE_HISTORY_FRONTEND_HTTP: ObservationDTO[] = [
     health: 'up',
     location: 'SYNTHETIC_LOCATION-0000000000000060',
     latency_ms: 571,
+    response_status_code: 200,
   }),
   makeObservation({
     observed_at: '2026-07-03T13:28:17.812000Z',
     health: 'degraded',
     location: 'SYNTHETIC_LOCATION-0000000000000061',
     latency_ms: 2140,
+    response_status_code: null,
   }),
   makeObservation({
     observed_at: '2026-07-03T13:27:17.699000Z',
     health: 'down',
     location: 'SYNTHETIC_LOCATION-0000000000000060',
     latency_ms: null,
+    response_status_code: null,
   }),
   makeObservation({
     observed_at: '2026-07-03T13:26:17.544000Z',
     health: 'up',
     location: 'SYNTHETIC_LOCATION-0000000000000062',
     latency_ms: 498,
+    response_status_code: 200,
   }),
 ]
 

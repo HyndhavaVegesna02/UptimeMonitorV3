@@ -118,7 +118,12 @@ export interface ComponentAvailabilityDTO {
  * `features/history/observationHealth.ts` for the separate mapper and why it
  * exists). `latency_ms` is an INTEGER MILLISECONDS value or `null` (no
  * measurement) — render `null` as an em-dash, never `0 ms`. `location` is a
- * raw vendor location id string (e.g. `"SYNTHETIC_LOCATION-0000000000000060"`)
+ * raw vendor location id string (e.g. `"SYNTHETIC_LOCATION-0000000000000060"`);
+ * STORY-064 adds `response_status_code` (an INTEGER HTTP status code or
+ * `null` when missing/unparsable at the source, or a pre-migration row --
+ * render `null` as an em-dash, same convention as `latency_ms`) and
+ * `check_type` (a non-null string mapped from the persisted provenance
+ * `native_kind`, e.g. `"http"` -- always present; render uppercased, `"HTTP"`)
  * — render as-is, in the mono token.
  */
 export interface ObservationDTO {
@@ -127,6 +132,8 @@ export interface ObservationDTO {
   health: string
   location: string
   latency_ms: number | null
+  response_status_code: number | null
+  check_type: string
 }
 
 /**

@@ -21,6 +21,8 @@ function makeObservation(overrides: Partial<ObservationDTO> = {}): ObservationDT
     health: 'up',
     location: 'SYNTHETIC_LOCATION-0000000000000060',
     latency_ms: 571,
+    response_status_code: 200,
+    check_type: 'http',
     ...overrides,
   }
 }

@@ -68,6 +68,8 @@ describe('buildUptimeSegments', () => {
       health: 'up',
       location: `loc-${i}`,
       latency_ms: 100,
+      response_status_code: 200,
+      check_type: 'http',
     }))
     const segments = buildUptimeSegments(many)
     expect(segments).toHaveLength(30)

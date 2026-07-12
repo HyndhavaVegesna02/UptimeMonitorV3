@@ -66,6 +66,13 @@ function formatLatency(latencyMs: number | null): string {
   return latencyMs === null ? '—' : `${latencyMs} ms`
 }
 
+/** `response_status_code` (STORY-064) renders as its raw integer; `null`
+ * (missing/unparsable at the source, or a pre-migration row) renders as an
+ * em-dash — the same convention as `formatLatency` above. */
+function formatResponseStatusCode(code: number | null): string {
+  return code === null ? '—' : `${code}`
+}
+
 /**
  * The Check History tab (STORY-060, rebuilding STORY-015e): a dense,
  * system-wide, chronological observation ledger — the ingest ledger view
@@ -200,9 +207,11 @@ export function CheckHistoryPage({
             <TableHead>
               <TableRow>
                 <TableHeaderCell>Timestamp</TableHeaderCell>
+                <TableHeaderCell>Type</TableHeaderCell>
                 <TableHeaderCell>Component</TableHeaderCell>
                 <TableHeaderCell>Location</TableHeaderCell>
                 <TableHeaderCell>Result</TableHeaderCell>
+                <TableHeaderCell>Code</TableHeaderCell>
                 <TableHeaderCell>Latency</TableHeaderCell>
               </TableRow>
             </TableHead>
@@ -210,10 +219,14 @@ export function CheckHistoryPage({
               {rendered.map((row, index) => (
                 <TableRow key={`${row.signal_key}-${row.observed_at}-${index}`}>
                   <TableCell className="text-mono">{row.observed_at}</TableCell>
+                  <TableCell className="text-mono">{row.check_type.toUpperCase()}</TableCell>
                   <TableCell>{row.componentName}</TableCell>
                   <TableCell className="text-mono">{row.location}</TableCell>
                   <TableCell>
                     <StatusBadge status={observationHealth(row.health)} />
+                  </TableCell>
+                  <TableCell className="text-mono">
+                    {formatResponseStatusCode(row.response_status_code)}
                   </TableCell>
                   <TableCell className="text-mono">{formatLatency(row.latency_ms)}</TableCell>
                 </TableRow>

@@ -36,17 +36,32 @@ describe('CheckHistoryPage', () => {
     expect(within(rows[2]).getByText('Down')).toBeInTheDocument()
   })
 
-  it('omits Type and HTTP Code columns (not on ObservationDTO) (AC2)', async () => {
+  it('renders Type and Code columns from ObservationDTO (STORY-064)', async () => {
     render(<CheckHistoryPage />)
     await screen.findByRole('table')
 
-    expect(screen.queryByRole('columnheader', { name: 'Type' })).not.toBeInTheDocument()
-    expect(screen.queryByRole('columnheader', { name: 'Code' })).not.toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Timestamp' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Type' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Component' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Location' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Result' })).toBeInTheDocument()
+    expect(screen.getByRole('columnheader', { name: 'Code' })).toBeInTheDocument()
     expect(screen.getByRole('columnheader', { name: 'Latency' })).toBeInTheDocument()
+  })
+
+  it('renders check_type uppercased, and the HTTP status code in the mono token, with a null code as an em-dash (STORY-064)', async () => {
+    render(<CheckHistoryPage />)
+
+    const table = await screen.findByRole('table')
+    const rows = within(table).getAllByRole('row').slice(1)
+
+    // frontend-http row 0: check_type 'http' -> 'HTTP'; response_status_code 200.
+    expect(within(rows[0]).getByText('HTTP')).toBeInTheDocument()
+    expect(within(rows[0]).getByText('200')).toBeInTheDocument()
+
+    // frontend-http row 1: response_status_code null -> em-dash.
+    const row1Cells = within(rows[1]).getAllByText('—')
+    expect(row1Cells.length).toBeGreaterThan(0)
   })
 
   it('renders latency in the mono token as integer milliseconds, and a null latency as an em-dash (never "0 ms") (AC2)', async () => {
@@ -58,8 +73,9 @@ describe('CheckHistoryPage', () => {
     // frontend-http row 0: latency_ms 571.
     expect(within(rows[0]).getByText('571 ms')).toBeInTheDocument()
 
-    // frontend-http row 2: latency_ms null.
-    expect(within(rows[2]).getByText('—')).toBeInTheDocument()
+    // frontend-http row 2: latency_ms null (STORY-064: response_status_code
+    // is ALSO null on this row, so both cells render as an em-dash).
+    expect(within(rows[2]).getAllByText('—').length).toBeGreaterThan(0)
     expect(within(rows[2]).queryByText('0 ms')).not.toBeInTheDocument()
     expect(within(rows[2]).queryByText('null ms')).not.toBeInTheDocument()
   })
@@ -263,6 +279,8 @@ describe('CheckHistoryPage', () => {
       health: 'up',
       location: 'SYNTHETIC_LOCATION-0000000000000060',
       latency_ms: 500,
+      response_status_code: 200,
+      check_type: 'http',
     }))
     server.use(
       http.get('/api/v1/history', ({ request }) => {
