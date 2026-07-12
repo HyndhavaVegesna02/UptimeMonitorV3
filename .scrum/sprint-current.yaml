@@ -21,15 +21,80 @@ start_tag: sprint-44-start
 stories:
   - id: STORY-064
     points: 3
-    board: in-progress   # yt-implementer dispatched 2026-07-12
+    board: done          # impl steps 1-6 committed; implementer connection-drop crash after the
+                         # wiki pass (5 articles committed article-by-article; frontend-zone.md
+                         # frontmatter tail completed by the orchestrator per edge-case #13);
+                         # spec PASS + quality APPROVE (1 minor -> story file); reality gate PASS.
     pipeline: full
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
-    dod_evidence: []
+    blast_radius_resolved: true   # mechanical sweep CLEAN at d3dce88 (6 articles re-verified)
+    review:
+      spec: "PASS — all 5 ACs MET with run tests: AC1 str->int parse DRIVEN by string-typed
+        \"200\" fixture row (wire-type warning honored) + absent/N-A -> None variants; AC2
+        migration a2c1d89efcea + same-body parity test vs Postgres AND fake incl. None; AC3
+        endpoint serves both fields, validation untouched; AC4 populated + null (em-dash)
+        rendering, MSW from real wire; AC5 tracked carve-out executed by orchestrator (below).
+        Deletion check: column-omission test REWRITTEN not deleted. Zero scope additions."
+      quality: "APPROVE — zero critical, zero major. Fixtures flipped int->string with all tests
+        green (no hidden int assumption); parity test pins real SQL column mapping; frontend
+        refuses to invent failure codes never observed live. 1 minor -> story file (loose
+        null-code cell assertion)."
+    reality_gate: "PASS 2026-07-12 — live stack (throwaway DB :55432, uvicorn :8000, live loop
+      ingesting real Dynatrace, vite :5173). Wire row {observed_at 2026-07-12T17:08:46.505000Z,
+      location ...0060, response_status_code 200, check_type http, latency_ms 531} rendered as
+      Type=HTTP, Code=200, Latency=531 ms — exact render-vs-wire match; 120 live rows, code
+      distribution {200: 120}, check_type {http: 120}."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "564 passed in 83.76s"
+        commit: d3dce88
+        at: "2026-07-12T16:59:55+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 144 files, 413 dependencies. Contracts: 8 kept, 0 broken."
+        commit: d3dce88
+        at: "2026-07-12T17:01:20+00:00"
+      - command: "python scripts/check_fk_direction.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
+        commit: d3dce88
+        at: "2026-07-12T17:01:20+00:00"
+      - command: "alembic upgrade head"
+        exit_code: 0
+        output_tail: "Context impl PostgresqlImpl. Will assume transactional DDL."
+        commit: d3dce88
+        at: "2026-07-12T17:01:21+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: d3dce88
+        at: "2026-07-12T17:01:22+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "199 files already formatted"
+        commit: d3dce88
+        at: "2026-07-12T17:01:22+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files 51 passed (51) | Tests 361 passed (361)"
+        commit: d3dce88
+        at: "2026-07-12T17:01:22+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 491ms"
+        commit: d3dce88
+        at: "2026-07-12T17:02:24+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . (clean)"
+        commit: d3dce88
+        at: "2026-07-12T17:02:31+00:00"
   - id: STORY-079
     points: 2
-    board: todo
+    board: in-progress   # yt-implementer dispatched 2026-07-12 (post-064)
     pipeline: full        # pilot: full pipeline regardless of size, to exercise v2 end-to-end
     blocked_question: null
     paused_at_commit: null

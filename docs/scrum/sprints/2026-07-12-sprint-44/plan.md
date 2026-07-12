@@ -82,11 +82,12 @@ Steps (TDD; commit after every green step):
 - [x] 6. Frontend: mirror DTO in `api/types.ts`; add Type + Code columns to the Check History
         grid; MSW fixtures from the real wire sample; tests cover populated + null ("—").
         Commit.
-- [ ] 7. Gates + wiki blast radius: run `yt_wiki.py sweep`, update/re-verify every flagged
+- [x] 7. Gates + wiki blast radius: run `yt_wiki.py sweep`, update/re-verify every flagged
         article (commit per article); full `yt_gate.py` green; evidence recorded.
-- [ ] 8. Reality gate (AC5): local stack live (DB + uvicorn :8000 + live loop + vite :5173);
+- [x] 8. Reality gate (AC5): local stack live (DB + uvicorn :8000 + live loop + vite :5173);
         compare one rendered Check History row's Type + Code against the raw
         `/api/v1/history` wire values for the same record. Record the comparison.
+        (Executed by the orchestrator: exact match, evidence in sprint-current.yaml.)
 
 ## STORY-079 — Wiki Facts-coverage cleanup (2p, full pipeline for the pilot)
 
