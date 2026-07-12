@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py]
-verified_sha: 0da9568
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py]
+verified_sha: 678ff0d
 verified_sprint: sprint-44
 status: verified
 ---
@@ -219,5 +219,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   (`test_persistence_adapters.py::_assert_response_status_code_round_trips`) is run against BOTH
   implementations, proving a present int and an explicit `None` both round-trip identically (fake/
   adapter parity). `code_refs` += the new migration file. verified_sha -> 0da9568.
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged two uncovered
+  citations: `backend/tests/conftest.py` (the `clean_runtime_tables` fixture the FK-seeding testing
+  convention section describes) and `backend/tests/fakes.py` (`FakeComponentRepository.set_status`,
+  `FakeSignalRepository`, `FakeObservationRepository` — the fake halves of the parity contracts this
+  article documents). Both genuinely define the fake/adapter-parity subject; added to `code_refs`.
+  No Fact text changed. verified_sha -> 678ff0d.
 
 
