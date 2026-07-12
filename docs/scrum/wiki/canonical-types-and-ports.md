@@ -1,9 +1,9 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 10a2d73
-verified_sprint: sprint-43
-status: verified          # verified | stale | archived
+verified_sha: 0da9568
+verified_sprint: sprint-44
+status: verified
 ---
 
 ## Facts (verified against code)
@@ -13,7 +13,9 @@ status: verified          # verified | stale | archived
   from one location (`signal.py::SignalObservation`). Frozen via `model_config = ConfigDict(frozen=True)`
   (`signal.py::SignalObservation`). Fields: `signal_key:str`, `observed_at:datetime`,
   `health:Health`, `source_event_id:str`, `source:Provenance`,
-  `location:str`, `latency_ms:int|None=None`, `raw_ref:str|None=None` (`signal.py::SignalObservation`).
+  `location:str`, `latency_ms:int|None=None`, `response_status_code:int|None=None` (STORY-064 —
+  optional HTTP response status code; `None` when the vendor row omits it or it is unparsable),
+  `raw_ref:str|None=None` (`signal.py::SignalObservation`).
 - `observed_at` is validated to be tz-aware **UTC** — a naive datetime AND any non-zero
   UTC offset are both rejected (`signal.py::SignalObservation._require_utc`). Strict reading of §5
   "UTC run time"; keeps unnormalized wall-clock values out of the core.
@@ -238,5 +240,17 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - sprint-43 (quality-review fix loop, M2): `core/ports/observation_repository.py`'s `in_window`
   docstring repointed its `core/services/availability.py` reference to
   `core/queries/availability.py` (STORY-078 follow-up). No port signature or Fact changed.
-  verified_sha → 10a2d73.
+  verified_sha -> 10a2d73.
+- sprint-44 (STORY-064, pilot): `SignalObservation` gains an optional frozen
+  `response_status_code: int | None = None` field (Facts updated above), mirroring the existing
+  `latency_ms` optional-field style; no cross-field invariant, no new validator. Caught by manual
+  re-verification, not the mechanical sweep: this article's (and [[dynatrace-adapter]]'s)
+  frontmatter carried a trailing inline comment on the `status:` line
+  (`status: verified` followed by `# verified | stale | archived`) that `yt_wiki.py`'s frontmatter
+  parser reads as PART of the value, so `status != "verified"` and the sweep silently SKIPPED both
+  articles instead of reporting them stale; normalized both articles' `status:` lines to the plain
+  form other articles already use so future sweeps actually cover them (flagged as a candidate
+  backlog item: `yt_wiki.py`'s frontmatter parser should strip trailing `#` comments). See
+  [[persistence-adapters]]/[[migrations-and-db]] for the paired persistence/migration Facts and
+  [[api-five-file-convention]] for the DTO/service side. verified_sha -> 0da9568.
 
