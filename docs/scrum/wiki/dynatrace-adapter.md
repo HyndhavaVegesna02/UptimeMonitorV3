@@ -1,9 +1,9 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
-code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json]
-verified_sha: c1839e4
-verified_sprint: sprint-22
-status: verified          # verified | stale | archived
+code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
+verified_sha: 0da9568
+verified_sprint: sprint-44
+status: verified
 ---
 
 ## Facts (verified against code)
@@ -102,6 +102,12 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   (a location ENTITY id → `location`; display-name resolution is out of scope, needs
   `storage:entities:read`), `result.status.code`/`result.status.message` (→ health), and
   `result.statistics.duration` (**nanoseconds** → optional `latency_ms`, `int(ns)//1_000_000`).
+  STORY-064: `result.statistics.response_status_code` (a STRING-typed number on the real wire,
+  e.g. `"200"` — confirmed by the 2026-07-12 live probe, monitor
+  `HTTP_CHECK-38B092E93932C002`) -> optional int `response_status_code`
+  (`_assembly.py::assemble_observation`); missing or unparsable -> `None`, never a crash — same
+  optional-parse style as `latency_ms`. Previously this field was read nowhere and silently
+  dropped.
 - **Nanosecond-timestamp parse:** `parse_ns_timestamp` (`_assembly.py::parse_ns_timestamp`) truncates
   fractional seconds to 6 digits (µs) before `datetime.fromisoformat`, because Grail emits 9-digit ns
   precision (`…742000000Z`) which `fromisoformat` would otherwise reject. Handles a `Z` or explicit
@@ -126,17 +132,26 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   live HTTP scope (not in the live dispatch registry), so this path is retained but not exercised live.
 
 ### Tests + fixtures
-- `backend/tests/test_dynatrace_adapter.py` (31 tests) runs entirely off committed JSON fixtures
+- `backend/tests/test_dynatrace_adapter.py` (33 tests) runs entirely off committed JSON fixtures
   under `backend/tests/fixtures/dynatrace/` (`http_multi_location.json`,
   `clickpath_multi_location.json`, `mixed_monitor_types.json`, `unsupported_monitor_type.json`,
-  `grail_synthetic_events.json`, `grail_dual_event_types.json`).
+  `grail_synthetic_events.json`, `grail_dual_event_types.json`,
+  `grail_response_status_code_variants.json` — STORY-064).
 - `grail_synthetic_events.json` (STORY-016c): reconciled to the real live probe
   (2026-06-29) — two distinct `http_monitor_execution` records (event.id 156345503298/156345503299,
-  ns timestamp, ns duration, `result.state` present).
+  ns timestamp, ns duration, `result.state` present). STORY-064: its (and
+  `grail_dual_event_types.json`'s) `response_status_code` values were corrected from a JSON int
+  `200` to the real STRING shape `"200"` (a 2026-07-12 plan-verifier finding — an int-typed fixture
+  row never drives the normalizer's str->int parse, so it would have shipped green-but-untested).
 - `grail_dual_event_types.json` (STORY-016c): AC5 sibling fixture — one execution represented as
   BOTH its `http_monitor_execution` row AND its same-`event.id` `http_step_execution` companion.
   Used by the dedup demonstration test to prove exactly one observation results when the canonical
   row is fed to dispatch and the companion would raise if it reached dispatch.
+- `grail_response_status_code_variants.json` (STORY-064): two records derived from the 2026-07-12
+  live probe sample (`docs/scrum/sprints/2026-07-12-sprint-44/probe-sample-http-monitor-execution.json`,
+  monitor `HTTP_CHECK-38B092E93932C002`) covering `response_status_code`'s two edge cases: the
+  field entirely absent, and a non-numeric string (`"N/A"`) — both must normalize to `None`, never
+  raise.
 
 ## Inference (synthesis, not verified)
 - The HTTP path's data object (`dt.synthetic.events`), field names, async query shape, ns timestamps,
@@ -173,3 +188,17 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   total` so no `UNIQUE(source_event_id)` collision — the dedup works end to end). The real failure
   `result.status` code remains TBD (no failing run could be induced this sprint; `map_synthetic_status`
   stays fail-loud). Re-verified at ed19084.
+- sprint-44 (STORY-064, pilot): `assemble_observation` now also extracts
+  `result.statistics.response_status_code` (STRING-typed on the real wire) -> optional int
+  `response_status_code` (Facts updated above); previously read nowhere and dropped. The two
+  committed `grail_synthetic_events.json`/`grail_dual_event_types.json` fixtures' `200` values were
+  corrected from JSON int to the real string shape; added `grail_response_status_code_variants.json`
+  (absent/non-numeric edge cases, derived from the 2026-07-12 live probe sample). Test count 31 ->
+  33. Caught by manual re-verification, not the mechanical sweep: this article's (and
+  [[canonical-types-and-ports]]'s) frontmatter carried a trailing inline comment on the `status:`
+  line that `yt_wiki.py`'s frontmatter parser reads as part of the value, so the sweep silently
+  skipped both articles rather than reporting them stale — normalized the `status:` line to the
+  plain form and flagged the parser gap as a candidate backlog item. See
+  [[canonical-types-and-ports]] for the paired `SignalObservation` domain field,
+  [[persistence-adapters]]/[[migrations-and-db]] for persistence/migration, and
+  [[api-five-file-convention]] for the DTO/service side. verified_sha -> 0da9568.
