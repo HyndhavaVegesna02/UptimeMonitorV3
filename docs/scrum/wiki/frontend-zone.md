@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx]
-verified_sha: 05f640e
-verified_sprint: sprint-43
+verified_sha: 0da9568
+verified_sprint: sprint-44
 status: verified
 ---
 
@@ -118,7 +118,9 @@ status: verified
   `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
   `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`,
   `ObservationDTO`, `PublicationDTO`, `MaintenanceWindowDTO`, `CreateMaintenanceRequest`) mirror
-  the backend `api/v1/*/models.py` shapes — note `SignalAvailabilityDTO` (a per-signal availability
+  the backend `api/v1/*/models.py` shapes — `ObservationDTO` gained `response_status_code:
+  number | null` and `check_type: string` (STORY-064; Facts updated below in the Check History
+  bullet) — note `SignalAvailabilityDTO` (a per-signal availability
   result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
   response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
   `signal_key` to label a child row (STORY-015d AC1; see `AvailabilityPage.tsx`).
@@ -255,7 +257,17 @@ status: verified
     an INJECTABLE `maxRenderedRows` prop (default `DEFAULT_MAX_RENDERED_ROWS = 1000`) — added in the
     STORY-060 review fix so a test can pin a small cap without the STORY-054 flake (rendering
     ~1,000+ rows was slow enough under `npm test` file-parallelism to occasionally exceed Vitest's
-    per-test timeout); production always renders via the default. See `pages/CheckHistoryPage.tsx`,
+    per-test timeout); production always renders via the default. **STORY-064 (sprint-44):** the
+    grid gained Type and Code columns (between Timestamp/Component and Result/Latency
+    respectively) — `pages/CheckHistoryPage.tsx` renders `row.check_type.toUpperCase()` (e.g.
+    `"http"` -> `"HTTP"`) and `formatResponseStatusCode(row.response_status_code)` (raw int, or an
+    em-dash for `null` — the SAME convention as `formatLatency`, covering both a missing/unparsable
+    source value and a pre-migration row). `mocks/handlers/history.ts`'s `makeObservation` factory
+    defaults both fields to a REAL `/api/v1/history` response captured during implementation off
+    the 2026-07-12 live-Grail probe sample (`response_status_code: 200, check_type: 'http'`); the
+    degraded/down fixture rows use `response_status_code: null` (the real "no failure code
+    captured" state — see [[dynatrace-adapter]]'s TBD-failure-code note — never an invented
+    failure status). See `pages/CheckHistoryPage.tsx`,
     `features/history/{filterHistory,mergeObservations,useAllHistory}.ts`.
   - **Publications (STORY-062 rebuild of 015g; STORY-072 added the outcome chip):** a vertical
     `Timeline`/`TimelineItem` (the STORY-055 shared primitive) replacing the old changelog table —
@@ -284,7 +296,7 @@ status: verified
   - **The adapt-to-real-data decisions across all six rebuilds are tracked as explicit follow-up
     stories, never silently fabricated fields:** STORY-063 (Approvals: proposal
     reason/source/detected-ago/checks), STORY-064 (Check History: observation Code/Type columns —
-    not on `ObservationDTO`), STORY-065 (Maintenance: a real title field + delete), STORY-066
+    LANDED sprint-44, see the Check History bullet above), STORY-065 (Maintenance: a real title field + delete), STORY-066
     (Publications: author/incident metadata — `outcome` itself landed in STORY-072, see above),
     STORY-067 (component grouping on Dashboard —
     today's rebuild renders ONE flat section, no `group` field on the wire yet — and a dedicated
@@ -553,4 +565,11 @@ status: verified
   tracked in [[statuspage-publish]]/[[persistence-adapters]]/[[canonical-types-and-ports]], not this
   article's code_refs. `code_refs` unchanged (no new file paths). verified_sha = 144bcc0.
 - sprint-43 (STORY-078): Repointed availability path from core/services/ to core/queries/ in text. verified_sha = 05f640e.
+- sprint-44 (STORY-064, mechanical staleness sweep): Facts updated for the Check History Type +
+  Code columns — `api/types.ts::ObservationDTO` gained `response_status_code`/`check_type`,
+  `CheckHistoryPage.tsx` renders them ("—" for null code), `mocks/handlers/history.ts` fixtures
+  derive from the real 2026-07-12 wire capture (null code for degraded rows — no invented
+  failure status). `code_refs` unchanged (no new file paths). verified_sha = 0da9568. (Article
+  body was the implementer's; the frontmatter/History tail completed by the orchestrator after
+  the implementer's connection-drop crash — edge-case #13 trivial-tail completion.)
 
