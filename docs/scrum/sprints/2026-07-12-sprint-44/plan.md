@@ -59,10 +59,10 @@ log-spam — canonicalization stays total); DTO serializes `None` → JSON `null
 "—". `check_type` always present (provenance is mandatory).
 
 Steps (TDD; commit after every green step):
-- [ ] 1. Domain: failing test — `SignalObservation` gains frozen `response_status_code: int | None = None`
+- [x] 1. Domain: failing test — `SignalObservation` gains frozen `response_status_code: int | None = None`
         (no cross-field invariant → no validator; mirror existing optional-field style, e.g.
         `latency_ms`). Minimal code, green, commit.
-- [ ] 2. Normalizer: failing tests on probe-derived fixture rows — present STRING `"200"` → int
+- [x] 2. Normalizer: failing tests on probe-derived fixture rows — present STRING `"200"` → int
         `200` (the real wire shape; an int-typed fixture row does not satisfy this case);
         absent → `None`; non-numeric → `None`. Add the string-typed rows from the 2026-07-12
         probe sample to the fixtures. Implement extraction in the shared assembly path
@@ -71,7 +71,7 @@ Steps (TDD; commit after every green step):
         be aligned to the string wire shape while adding rows; if any existing test then fails,
         that reveals a real int assumption — fix within this step. Broader fixture-typing audit
         of other numeric fields is a candidate follow-up story, not this one.)
-- [ ] 3. Migration: new Alembic revision — nullable `Integer` column
+- [x] 3. Migration: new Alembic revision — nullable `Integer` column
         `observations.response_status_code`; upgrade green on fresh DB (migrated_db fixture);
         downgrade drops cleanly. Commit.
 - [ ] 4. Persistence parity: the SAME contract test against `PostgresObservationRepository` AND
