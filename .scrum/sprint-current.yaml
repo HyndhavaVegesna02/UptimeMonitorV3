@@ -21,7 +21,7 @@ start_tag: sprint-44-start
 stories:
   - id: STORY-064
     points: 3
-    board: todo
+    board: in-progress   # yt-implementer dispatched 2026-07-12
     pipeline: full
     blocked_question: null
     paused_at_commit: null
