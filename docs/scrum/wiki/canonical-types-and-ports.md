@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py]
-verified_sha: 0da9568
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
+verified_sha: 678ff0d
 verified_sprint: sprint-44
 status: verified
 ---
@@ -253,4 +253,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   backlog item: `yt_wiki.py`'s frontmatter parser should strip trailing `#` comments). See
   [[persistence-adapters]]/[[migrations-and-db]] for the paired persistence/migration Facts and
   [[api-five-file-convention]] for the DTO/service side. verified_sha -> 0da9568.
-
+- sprint-44 (STORY-079, Facts-coverage cleanup): the new `yt_wiki.py facts` lint flagged this
+  article's Facts citing `backend/tests/fakes.py` (the per-port fakes catalog) and
+  `backend/tests/test_ingest_service.py` (cited as the exception that defines its OWN local
+  fakes rather than extending `tests/fakes.py`) — neither was in `code_refs`, so the mechanical
+  sweep could never have caught either drifting. Both are genuinely defining test files for the
+  ports/fakes contract this article documents (2026-06-25 scoping rule: test files pinning a
+  documented contract qualify); added to `code_refs`. No Fact text changed. verified_sha -> 678ff0d.
