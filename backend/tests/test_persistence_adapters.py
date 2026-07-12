@@ -57,6 +57,7 @@ def _observation(
     observed_at: datetime | None = None,
     health: Health = Health.UP,
     location: str = "us-east",
+    response_status_code: int | None = None,
 ) -> SignalObservation:
     return SignalObservation(
         signal_key=signal_key,
@@ -65,10 +66,29 @@ def _observation(
         source_event_id=event_id,
         source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
         location=location,
+        response_status_code=response_status_code,
     )
 
 
 # --- ObservationRepository --------------------------------------------------
+
+
+def test_observations_response_status_code_column_exists_and_is_nullable(migrated_db):
+    """STORY-064 AC2: the migration adds a nullable Integer
+    `observations.response_status_code` column."""
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "SELECT data_type, is_nullable FROM information_schema.columns "
+                "WHERE table_name = 'observations' "
+                "AND column_name = 'response_status_code'"
+            )
+            row = cur.fetchone()
+
+    assert row is not None, "observations.response_status_code column is missing"
+    data_type, is_nullable = row
+    assert data_type == "integer"
+    assert is_nullable == "YES"
 
 
 def test_save_new_inserts_a_fresh_batch_and_reports_count(migrated_db, engine):
