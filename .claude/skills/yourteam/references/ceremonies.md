@@ -33,6 +33,12 @@ Runs once, when no `.scrum/` exists.
 3. **Conflict scan (mandatory):** read existing CLAUDE.md, AGENTS.md, and any agent config. List every instruction that contradicts YourTeam mechanics (e.g., "commit directly to main" vs branch-per-sprint, existing commit/PR conventions vs story commits, "always do X first" vs the standup). Because the PO's files outrank this skill, unresolved conflicts would silently disable parts of the methodology — so each one must be resolved explicitly at inception: the PO either amends the conflicting line or records a sanctioned exception in working-agreements.md. Never proceed to Sprint 0 with unresolved conflicts.
 4. Offer one optional extra: **wiki seeding** — a pass writing initial verified articles for core modules (each with `code_refs` and current `verified_sha`). PO may skip; the wiki then grows organically from sprint 1.
 5. CLAUDE.md handling: append the YourTeam section only. Never rewrite existing content. If AGENTS.md exists (other agents work on this repo), append the same pointer section there too — agents that don't know about `.scrum/` would otherwise commit outside the sprint flow.
+6. **Bootstrap the project-local machinery** (both fresh and existing projects), from the skill's `templates/`:
+   - Copy `templates/agents/yt-*.md` → `.claude/agents/` (confirm model tiers with the PO: default Sonnet implementer / Opus reviewers + verifier / Haiku scout).
+   - Copy `templates/hooks/yt_git_guard.py` → `.claude/hooks/` and **merge** the hooks block from `templates/hooks/settings-fragment.json` into `.claude/settings.json` — never overwrite an existing file; the conflict scan (step 3) covers pre-existing agents and hooks. PO confirms, since hooks affect permission behavior.
+   - Copy `templates/checklists/` → `.scrum/checklists/` (project-conventions sections start empty; they grow via retro routing).
+   - Every generated file keeps its `yourteam_version` marker; the standup drift-check compares it against the skill version and offers a PO-approved re-sync after skill upgrades.
+   - PO declines hooks, or the environment can't run them → prose rules are the fallback; note the degradation once.
 
 **Sprint 0** follows immediately: scaffold, test harness, CI, `.scrum/` files, CLAUDE.md. It is a real sprint — branch `sprint-0`, DoD applies, ends with a review where the PO sees a running skeleton with green tests.
 
@@ -51,18 +57,28 @@ Defect stories: repro steps in context, the fix expressed as AC ("given X, Y no 
 
 ## 3. Sprint Planning
 
-1. Compute capacity: mean of the last 3 entries in velocity.json. No history → under-commit deliberately (2–3 small stories). Never exceed capacity on hope.
+1. Shape scope to one focused session: `velocity.json` is a sanity reference (what recent
+   sprints actually delivered), never a formula. No history → under-commit deliberately
+   (2–3 small stories). Never exceed a comfortable session's shape on hope.
 2. Select `ready` stories by: PO priority order first, then dependency feasibility within the sprint.
-3. Propose to the PO in one message:
+3. Draft `docs/scrum/sprints/YYYY-MM-DD-sprint-N/plan.md`: per story, the task breakdown as
+   checkbox steps (2–5 minutes each, TDD-shaped: write failing test / see it fail / minimal
+   code / see it pass / commit), a "Verified API contracts" section for consumer stories, and
+   the proposed execution mode (see references/execution-modes.md).
+4. **Dispatch `yt-plan-verifier`** with the draft plan + story files. It refutes: units/scale
+   uncited from producing code, unproven producer-gap claims, unstated edge behavior, missing
+   fixture provenance, breakdown↔AC holes, informally deferred live ACs. Fix every GAP before
+   the PO sees the plan; re-dispatch until LOCK_READY. (This kills the wrong-assumption class
+   at the cheapest point — before anything is built on it.)
+5. Propose to the PO in one message:
    - **Sprint goal** (one sentence)
-   - **Stories** with points, summing within capacity
-   - **Execution order with reasoning** (see section 4)
+   - **Stories** with points, and the **execution mode**
+   - **Execution order with reasoning** (see section 4 below)
    - **Tooling gaps**, if any: "Story N would benefit from X MCP — install it, or I work around it?" This is one of only two moments tooling may change (the other is retro).
-4. PO may reorder, swap, or trim. Approval is required; planning is selection, never authoring — un-ready stories cannot be added on the spot (refine them first, even if that takes five minutes right now).
-5. On approval, verify preconditions: working tree clean (else commit/stash with the PO) and DoD commands green on main (else "restore green baseline" is the mandatory first story — see edge-cases.md #1, #9). Then:
+6. PO may reorder, swap, or trim. Approval is required; planning is selection, never authoring — un-ready stories cannot be added on the spot (refine them first, even if that takes five minutes right now).
+7. On approval, verify preconditions: working tree clean (else commit/stash with the PO) and DoD commands green on main via `yt_gate.py` (else "restore green baseline" is the mandatory first story — see edge-cases.md #1, #9). Then:
    - `git checkout main && git checkout -b sprint-N && git tag sprint-N-start`
-   - Write `sprint-current.yaml` (goal, stories, board all `todo`, lock metadata)
-   - Write `docs/scrum/sprints/YYYY-MM-DD-sprint-N/plan.md`: per story, the task breakdown as checkbox steps (2–5 minutes each, TDD-shaped: write failing test / see it fail / minimal code / see it pass / commit)
+   - Write `sprint-current.yaml` (goal, mode, stories, board all `todo`, lock metadata)
    - Announce the lock: "Sprint N is locked. See you at review."
 
 ## 4. Sprint Execution Order Rules
@@ -75,7 +91,7 @@ Order stories by, in priority:
 
 ## 5. Sprint Review
 
-Preconditions: every story Done or Blocked; the sprint branch rebased onto current main with full DoD re-run if main moved (edge-cases.md #2); inter-story commit dependencies checked so mixed verdicts don't cherry-pick through a dependency (edge-cases.md #3); AND the wiki compile pass has run (it blocks review — see wiki-protocol.md).
+Preconditions: every story Done or Blocked; each Done story's **reality-gate evidence recorded** (live render-vs-wire spot check for consumer/rendering stories, live vendor-path probe for adapter stories, no AC deferred informally — a story whose live path never ran is not Done); the sprint branch rebased onto current main with full DoD re-run if main moved (edge-cases.md #2); inter-story commit dependencies checked so mixed verdicts don't cherry-pick through a dependency (edge-cases.md #3); AND the wiki compile pass has run (it blocks review — see wiki-protocol.md; `yt_wiki.py` must exit 0).
 
 1. Prepare `review.md` in the sprint folder: per story — what was built, AC checklist with evidence (test output, DoD records from sprint-current.yaml), demo steps.
 2. Demo live where possible: run the app, execute the commands, show output. Evidence over claims.
@@ -92,9 +108,10 @@ Runs immediately after review. Inputs: blockers hit, effort-cap trips, estimate 
 
 1. Report honestly: what went well, what dragged, with the specific incidents.
 2. Propose **1–2** concrete amendments — not five. Each must be actionable and checkable. ("AC for list features must include the empty state" — good. "Be more careful" — useless.)
-3. Recurring tooling friction → propose an install here (the second of the two allowed moments).
-4. PO approves/rejects each. Approved → append to `working-agreements.md` with date and motivating incident. Rejected → note it; don't re-propose next sprint unless new evidence.
-5. Write `retro.md`, freeze the sprint folder. Future sessions obey the new agreements from their next standup.
+3. **Route each proposal down the enforcement ladder and name its rung:** DoD command / standing test → script (`yt_gate.py` / `yt_wiki.py` change) → hook → agent definition → `.scrum/checklists/` item → prose in `working-agreements.md`. Prose is the last resort — a lesson that can be a mechanical check becomes one. Checklist items carry the same date + motivating-incident provenance as agreements.
+4. Recurring tooling friction → propose an install here (the second of the two allowed moments).
+5. PO approves/rejects each. Approved → land it at its named rung. Rejected → note it; don't re-propose next sprint unless new evidence.
+6. Write `retro.md`, freeze the sprint folder. Future sessions obey the new rules from their next standup.
 
 ## 7. Sprint Abort
 

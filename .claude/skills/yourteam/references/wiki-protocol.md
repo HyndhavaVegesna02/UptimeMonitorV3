@@ -44,6 +44,11 @@ git diff --name-only <verified_sha>..HEAD -- <each code_ref>
 
 Any output → set `status: stale`. This check is mechanical on purpose — no LLM judgment, so no blind spots. A deleted file is a diff hit like any other change, so deletions auto-flag dependents.
 
+**v2: the check is a script** — `python .claude/skills/yourteam/scripts/yt_wiki.py` runs the
+sweep over all articles plus two lints: Facts-coverage (every file a Fact cites is inside the
+article's `code_refs`, else that Fact can rot invisibly) and internal links. `sweep --update`
+rewrites flagged articles to `status: stale`. Exit 0 is the compile-pass precondition.
+
 Run the check:
 - At every standup (over all `verified` articles — it's cheap)
 - Before building any subagent brief that would consume an article

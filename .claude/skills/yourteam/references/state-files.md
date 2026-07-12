@@ -35,7 +35,8 @@ goal: "Habits can be checked off daily and streaks are visible"
 branch: sprint-4
 start_tag: sprint-4-start
 started: 2026-06-10
-status: active               # active | review | closed | aborted
+status: active               # active | review | closed | aborted | parked
+mode: in-process             # in-process | external | parallel-waves (see references/execution-modes.md)
 stories:
   - id: STORY-012
     points: 3
@@ -100,6 +101,14 @@ Human-readable list where every item is a command + expected exit code, plus the
 ## working-agreements.md
 
 Append-only amendments with date + motivating incident. See `templates/working-agreements.md`. Standup loads this file; agreements bind all subagent briefs.
+
+## checklists/ (implementer.md, spec-review.md, quality-review.md, plan-verification.md)
+
+Role checklists, generated at inception from the skill's `templates/checklists/` and loaded by
+the agent that enforces each (`.claude/agents/yt-*.md` name their file). Items carry the same
+date + motivating-incident provenance as working agreements; new items enter via retro routing
+(enforcement ladder) or immediate PO direction. Generic core items ship with the template;
+project-conventions sections start empty and grow with the project.
 
 ## Story file (docs/scrum/stories/STORY-NNN-slug.md)
 
