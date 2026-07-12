@@ -1,9 +1,9 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
-code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx]
-verified_sha: 6859f17
-verified_sprint: sprint-43
-status: verified          # verified | stale | archived
+code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, scripts/check_fk_direction.py]
+verified_sha: 678ff0d
+verified_sprint: sprint-44
+status: verified
 ---
 
 ## PO directive (read first)
@@ -441,3 +441,14 @@ produced ordinary data flowing through it.
   and `test_run_live_loop.py` gained one wiring test (see [[ingest-service-and-pull-loop]]); neither
   touches the `SampleModeIngest` seam or the sample-mode wiring this article describes. No Fact
   changed. verified_sha → 4d3fd7a.
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged four uncovered
+  citations: `frontend/src/pages/DashboardPage.tsx` (the Fact stating it no longer imports/renders
+  anything sample-mode-related), `backend/tests/test_ingest_service.py` and
+  `backend/tests/test_pull_loop.py` (the "pre-existing BEHAVIOR tests... were NOT touched" Fact in
+  the seam section — note that Fact's own subordinate clause, "neither file appears in this
+  article's `code_refs` because neither changed," described a v1-era convention where only
+  in-story-changed files were added; the v2 facts-coverage lint supersedes that convention — a Fact
+  citing a file must be covered by `code_refs` regardless of whether the story changed it, so both
+  are added here even though the substantive claim, that they were untouched, remains true and
+  unedited), and `scripts/check_fk_direction.py` (the D1 migration's FK-direction-check-unaffected
+  claim). All four added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
