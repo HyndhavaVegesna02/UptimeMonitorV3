@@ -1,9 +1,9 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py]
-verified_sha: d64d91d
-verified_sprint: sprint-41
-status: verified          # verified | stale | archived
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, pyproject.toml, backend/tests/test_persistence_adapters.py]
+verified_sha: 678ff0d
+verified_sprint: sprint-44
+status: verified
 ---
 
 ## Facts (verified against code)
@@ -248,3 +248,13 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   PO-decided). `code_refs` += `vendor_health.py` + `test_vendor_health.py`; the ingest service, pull
   loop, and the existing `build_live_loop` publisher/sample-mode wiring are all UNCHANGED. verified_sha
   → 4d3fd7a.
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged two uncovered
+  citations: `pyproject.toml` (cited to prove no new dependency, e.g. APScheduler, was added for
+  the pull loop) and `backend/tests/test_persistence_adapters.py` (cited as covering the DB-gated
+  persistence side of the rejected-observations write). Both added to `code_refs` — genuinely
+  defining for the "plain asyncio, no new dep" and "rejected-row persistence" claims this article
+  makes. Also normalized this article's `status:` frontmatter line, which carried the same trailing
+  `# verified | stale | archived` inline comment the STORY-064 fix corrected on
+  [[canonical-types-and-ports]]/[[dynatrace-adapter]] — `yt_wiki.py`'s parser reads it as part of
+  the value, so the sweep was silently skipping this article too. No Fact text changed. verified_sha
+  → 678ff0d.
