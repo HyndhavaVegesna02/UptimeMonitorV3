@@ -24,7 +24,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-BULK_ADD_RE = re.compile(r"\bgit\s+add\s+(?:[^;&|]*\s)?(-A\b|--all\b|\.(?=\s*(?:$|[;&|])))")
+BULK_ADD_RE = re.compile(
+    r"\bgit\s+add\s+(?:[^;&|]*\s)?(-A\b|--all\b|\.(?=\s*(?:$|[;&|])))"
+)
 COMMIT_RE = re.compile(r"\bgit\s+commit\b")
 
 
@@ -65,7 +67,10 @@ def main() -> int:
         if sprint_branch and COMMIT_RE.search(command):
             cur = subprocess.run(
                 ["git", "branch", "--show-current"],
-                cwd=root, capture_output=True, text=True, timeout=10,
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=10,
             ).stdout.strip()
             if cur and cur != sprint_branch and not cur.startswith("hotfix/"):
                 print(

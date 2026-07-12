@@ -115,7 +115,7 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Install (editable)  | `.venv/Scripts/python.exe -m pip install -e ".[dev]"` |
 | Run tests           | `pytest`                                  |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
-| Import boundary     | `lint-imports` (5 contracts; must exit 0) |
+| Import boundary     | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` (must exit 0; the `lint-imports` exe shim is blocked by a Windows Application Control policy since 2026-07-12) |
 | Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
 | Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
 | Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |

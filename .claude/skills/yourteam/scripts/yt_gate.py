@@ -74,7 +74,11 @@ def parse_dod(dod_path: Path) -> list[dict]:
         m = CMD_RE.match(line)
         if m:
             commands.append(
-                {"label": m.group(1).strip(), "command": m.group(2).strip(), "cwd": section_cwd}
+                {
+                    "label": m.group(1).strip(),
+                    "command": m.group(2).strip(),
+                    "cwd": section_cwd,
+                }
             )
     return commands
 
@@ -141,17 +145,41 @@ def emit_yaml(results: list[dict], commit: str) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--dod", default=None, help="path to the DoD file (default .scrum/definition-of-done.md)")
-    ap.add_argument("--list", action="store_true", help="parse and list commands without running")
-    ap.add_argument("--only", action="append", default=[], help="run only commands containing this substring (repeatable)")
-    ap.add_argument("--allow-dirty", action="store_true", help="run despite a dirty tree (NOT valid DoD evidence)")
-    ap.add_argument("--timeout", type=int, default=1800, help="per-command timeout in seconds (default 1800)")
-    ap.add_argument("--out", default=None, help="also write the YAML fragment to this file")
+    ap.add_argument(
+        "--dod",
+        default=None,
+        help="path to the DoD file (default .scrum/definition-of-done.md)",
+    )
+    ap.add_argument(
+        "--list", action="store_true", help="parse and list commands without running"
+    )
+    ap.add_argument(
+        "--only",
+        action="append",
+        default=[],
+        help="run only commands containing this substring (repeatable)",
+    )
+    ap.add_argument(
+        "--allow-dirty",
+        action="store_true",
+        help="run despite a dirty tree (NOT valid DoD evidence)",
+    )
+    ap.add_argument(
+        "--timeout",
+        type=int,
+        default=1800,
+        help="per-command timeout in seconds (default 1800)",
+    )
+    ap.add_argument(
+        "--out", default=None, help="also write the YAML fragment to this file"
+    )
     args = ap.parse_args()
 
     root = find_root(Path.cwd().resolve())
     if root is None:
-        print("yt_gate: no .scrum/ directory found walking up from cwd", file=sys.stderr)
+        print(
+            "yt_gate: no .scrum/ directory found walking up from cwd", file=sys.stderr
+        )
         return 4
 
     dod_path = Path(args.dod) if args.dod else root / ".scrum" / "definition-of-done.md"
@@ -161,9 +189,16 @@ def main() -> int:
 
     commands = parse_dod(dod_path)
     if args.only:
-        commands = [c for c in commands if any(s.lower() in c["command"].lower() for s in args.only)]
+        commands = [
+            c
+            for c in commands
+            if any(s.lower() in c["command"].lower() for s in args.only)
+        ]
     if not commands:
-        print("yt_gate: no gate commands parsed (check the DoD file format)", file=sys.stderr)
+        print(
+            "yt_gate: no gate commands parsed (check the DoD file format)",
+            file=sys.stderr,
+        )
         return 4
 
     if args.list:
@@ -174,7 +209,10 @@ def main() -> int:
 
     dirty, untracked = tree_state(root)
     if untracked:
-        print(f"yt_gate: WARNING {len(untracked)} untracked file(s) present (not gating)", file=sys.stderr)
+        print(
+            f"yt_gate: WARNING {len(untracked)} untracked file(s) present (not gating)",
+            file=sys.stderr,
+        )
     if dirty:
         for ln in dirty:
             print(f"yt_gate: dirty: {ln}", file=sys.stderr)
@@ -186,7 +224,10 @@ def main() -> int:
                 file=sys.stderr,
             )
             return 3
-        print("yt_gate: --allow-dirty set — this run is NOT valid DoD evidence", file=sys.stderr)
+        print(
+            "yt_gate: --allow-dirty set — this run is NOT valid DoD evidence",
+            file=sys.stderr,
+        )
 
     # Make venv-sibling binaries (pytest, ruff, alembic, lint-imports) resolvable.
     env = dict(os.environ)
@@ -195,7 +236,11 @@ def main() -> int:
     commit = git(root, "rev-parse", "--short", "HEAD")
     results, all_green = [], True
     for i, entry in enumerate(commands, 1):
-        print(f"yt_gate: [{i}/{len(commands)}] {entry['command']}", file=sys.stderr, flush=True)
+        print(
+            f"yt_gate: [{i}/{len(commands)}] {entry['command']}",
+            file=sys.stderr,
+            flush=True,
+        )
         r = run_command(entry, root, env, args.timeout)
         status = "PASS" if r["exit_code"] == 0 else f"FAIL ({r['exit_code']})"
         print(f"yt_gate:   -> {status}", file=sys.stderr, flush=True)

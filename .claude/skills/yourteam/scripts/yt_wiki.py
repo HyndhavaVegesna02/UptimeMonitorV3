@@ -69,7 +69,9 @@ def facts_section(text: str) -> str:
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
-    return subprocess.run(["git", *args], cwd=root, capture_output=True, text=True, timeout=60)
+    return subprocess.run(
+        ["git", *args], cwd=root, capture_output=True, text=True, timeout=60
+    )
 
 
 def covered(path: str, refs: list[str]) -> bool:
@@ -92,14 +94,20 @@ def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str
             findings.append(f"{path.name}: verified but missing verified_sha/code_refs")
             continue
         if git(root, "cat-file", "-e", f"{sha}^{{commit}}").returncode != 0:
-            findings.append(f"{path.name}: UNRESOLVABLE verified_sha {sha} — treat as stale (edge-case #4)")
+            findings.append(
+                f"{path.name}: UNRESOLVABLE verified_sha {sha} — treat as stale (edge-case #4)"
+            )
             continue
         diff = git(root, "diff", "--name-only", f"{sha}..HEAD", "--", *refs)
         hits = [ln for ln in diff.stdout.splitlines() if ln.strip()]
         if diff.returncode != 0:
-            findings.append(f"{path.name}: git diff failed: {diff.stderr.strip()[:200]}")
+            findings.append(
+                f"{path.name}: git diff failed: {diff.stderr.strip()[:200]}"
+            )
         elif hits:
-            findings.append(f"{path.name}: STALE — {len(hits)} changed path(s): {', '.join(hits[:5])}")
+            findings.append(
+                f"{path.name}: STALE — {len(hits)} changed path(s): {', '.join(hits[:5])}"
+            )
             if update:
                 new = text.replace("status: verified", "status: stale", 1)
                 path.write_text(new, encoding="utf-8")
@@ -118,7 +126,9 @@ def check_facts(root: Path, articles: dict[Path, str]) -> list[str]:
             if not (root / cite_path).exists():
                 continue  # not a repo file (or already deleted — the sweep owns that)
             if not covered(cite_path, refs):
-                findings.append(f"{path.name}: Fact cites `{cite_path}` not covered by code_refs")
+                findings.append(
+                    f"{path.name}: Fact cites `{cite_path}` not covered by code_refs"
+                )
     return findings
 
 
@@ -126,21 +136,30 @@ def check_links(root: Path, wiki: Path, articles: dict[Path, str]) -> list[str]:
     findings = []
     for path, text in articles.items():
         for slug in set(LINK_RE.findall(text)):
-            if not ((wiki / f"{slug}.md").exists() or (wiki / "archive" / f"{slug}.md").exists()):
+            if not (
+                (wiki / f"{slug}.md").exists()
+                or (wiki / "archive" / f"{slug}.md").exists()
+            ):
                 findings.append(f"{path.name}: broken link [[{slug}]]")
     return findings
 
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("checks", nargs="*", default=[], help="sweep | facts | links (default: all)")
+    ap.add_argument(
+        "checks", nargs="*", default=[], help="sweep | facts | links (default: all)"
+    )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
-    ap.add_argument("--update", action="store_true", help="sweep: rewrite status to stale on hits")
+    ap.add_argument(
+        "--update", action="store_true", help="sweep: rewrite status to stale on hits"
+    )
     args = ap.parse_args()
 
     root = find_root(Path.cwd().resolve())
     if root is None:
-        print("yt_wiki: no .scrum/ directory found walking up from cwd", file=sys.stderr)
+        print(
+            "yt_wiki: no .scrum/ directory found walking up from cwd", file=sys.stderr
+        )
         return 4
     wiki = Path(args.wiki) if args.wiki else root / "docs" / "scrum" / "wiki"
     if not wiki.is_dir():
@@ -163,7 +182,9 @@ def main() -> int:
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4
-        print(f"== {check}: {'CLEAN' if not found else str(len(found)) + ' finding(s)'} ==")
+        print(
+            f"== {check}: {'CLEAN' if not found else str(len(found)) + ' finding(s)'} =="
+        )
         for f in found:
             print(f"  {f}")
         all_findings.extend(found)

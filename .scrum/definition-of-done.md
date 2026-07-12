@@ -25,7 +25,9 @@
 
 ## Commands (backend)
 - [ ] Tests pass: `pytest` -> exit 0
-- [ ] Import boundary holds: `lint-imports` -> exit 0
+- [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
+      (2026-07-12: invocation changed from the `lint-imports` exe shim, which a Windows
+       Application Control policy now blocks; same check, same 8 contracts, module path)
       (import-linter; the five contracts from dossier §4, §13, and Sprint 14:
        core-independence, core-internal-layering [domain<-ports<-services],
        adapter-independence, api-feature-independence, src-no-tests)
