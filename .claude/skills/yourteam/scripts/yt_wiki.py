@@ -55,6 +55,11 @@ def parse_frontmatter(text: str) -> dict:
         if not m:
             continue
         key, val = m.group(1), m.group(2).strip()
+        # Strip a trailing inline comment (e.g. "verified   # verified | stale") —
+        # without this, a commented status line makes the article invisibly skip
+        # the sweep, which is exactly the silent hole the sweep exists to prevent.
+        if "#" in val and key != "code_refs":
+            val = val.split("#", 1)[0].strip()
         if key == "code_refs":
             inner = val.strip("[]")
             meta[key] = [p.strip().strip("'\"") for p in inner.split(",") if p.strip()]

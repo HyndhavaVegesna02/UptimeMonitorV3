@@ -115,6 +115,8 @@ def run_command(entry: dict, root: Path, env: dict, timeout: int) -> dict:
             env=env,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
         )
         exit_code, output = proc.returncode, (proc.stdout or "") + (proc.stderr or "")
