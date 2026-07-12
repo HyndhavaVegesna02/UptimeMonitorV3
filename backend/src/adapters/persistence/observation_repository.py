@@ -36,6 +36,7 @@ _OBSERVATIONS = sa.table(
     sa.column("source", JSONB),
     sa.column("location"),
     sa.column("latency_ms"),
+    sa.column("response_status_code"),
     sa.column("raw_ref"),
 )
 
@@ -66,6 +67,7 @@ class PostgresObservationRepository(ObservationRepository):
                 "source": observation.source.model_dump(),
                 "location": observation.location,
                 "latency_ms": observation.latency_ms,
+                "response_status_code": observation.response_status_code,
                 "raw_ref": observation.raw_ref,
             }
             for observation in batch
@@ -99,6 +101,7 @@ class PostgresObservationRepository(ObservationRepository):
                 _OBSERVATIONS.c.source,
                 _OBSERVATIONS.c.location,
                 _OBSERVATIONS.c.latency_ms,
+                _OBSERVATIONS.c.response_status_code,
                 _OBSERVATIONS.c.raw_ref,
             )
             .where(_OBSERVATIONS.c.signal_key == signal_key)
@@ -118,6 +121,7 @@ class PostgresObservationRepository(ObservationRepository):
                 source=Provenance(**row.source),
                 location=row.location,
                 latency_ms=row.latency_ms,
+                response_status_code=row.response_status_code,
                 raw_ref=row.raw_ref,
             )
             for row in rows

@@ -257,6 +257,56 @@ def test_in_window_filters_by_signal_key_and_returns_empty_for_unknown_signal(
     assert result == []
 
 
+def _assert_response_status_code_round_trips(repo, signal_key: str) -> None:
+    """STORY-064 AC2 (fake/adapter parity): ONE assertion body driven against
+    BOTH `PostgresObservationRepository` and `FakeObservationRepository` —
+    a present int `response_status_code` and an explicit `None` must both
+    round-trip through `save_new` + `in_window` identically."""
+    since = datetime(2026, 7, 12, 9, 0, 0, tzinfo=timezone.utc)
+    until = datetime(2026, 7, 12, 11, 0, 0, tzinfo=timezone.utc)
+
+    repo.save_new(
+        [
+            _observation(
+                signal_key=signal_key,
+                event_id=f"{signal_key}-with-code",
+                observed_at=since + timedelta(minutes=1),
+                response_status_code=200,
+            ),
+            _observation(
+                signal_key=signal_key,
+                event_id=f"{signal_key}-without-code",
+                observed_at=since + timedelta(minutes=2),
+                response_status_code=None,
+            ),
+        ]
+    )
+
+    result = repo.in_window(signal_key, since, until)
+    by_event_id = {o.source_event_id: o for o in result}
+
+    assert by_event_id[f"{signal_key}-with-code"].response_status_code == 200
+    assert by_event_id[f"{signal_key}-without-code"].response_status_code is None
+
+
+def test_response_status_code_round_trips_for_real_and_fake_repository(
+    migrated_db, engine
+):
+    from src.adapters.persistence.observation_repository import (
+        PostgresObservationRepository,
+    )
+    from tests.fakes import FakeObservationRepository
+
+    seed_signal(migrated_db.database_url, "code-parity-real")
+    _assert_response_status_code_round_trips(
+        PostgresObservationRepository(engine), "code-parity-real"
+    )
+
+    _assert_response_status_code_round_trips(
+        FakeObservationRepository(), "code-parity-fake"
+    )
+
+
 # --- WatermarkRepository ----------------------------------------------------
 
 
