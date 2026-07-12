@@ -32,3 +32,12 @@ class ObservationDTO(BaseModel):
 
     latency_ms: int | None
     """Optional measured latency in milliseconds."""
+
+    response_status_code: int | None
+    """Optional HTTP response status code (STORY-064); `None` when the
+    normalizer's source row omitted it or it was unparsable."""
+
+    check_type: str
+    """The monitor's check type (STORY-064), mapped verbatim from the
+    persisted provenance `native_kind` (e.g. `"http"`). Always present —
+    provenance is mandatory on every observation."""

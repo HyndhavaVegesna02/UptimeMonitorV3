@@ -51,6 +51,8 @@ class HistoryService:
                 health=o.health.value,
                 location=o.location,
                 latency_ms=o.latency_ms,
+                response_status_code=o.response_status_code,
+                check_type=o.source.native_kind,
             )
             for o in sorted_obs
         ]

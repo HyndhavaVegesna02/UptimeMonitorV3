@@ -31,14 +31,17 @@ def _obs(
     observed_at: datetime | None = None,
     health: Health = Health.UP,
     location: str = "us-east",
+    response_status_code: int | None = None,
+    native_kind: str = "http",
 ) -> SignalObservation:
     return SignalObservation(
         signal_key=signal_key,
         observed_at=observed_at or (_NOW - timedelta(hours=1)),
         health=health,
         source_event_id=event_id,
-        source=Provenance(system="dynatrace", native_id="X-1", native_kind="http"),
+        source=Provenance(system="dynatrace", native_id="X-1", native_kind=native_kind),
         location=location,
+        response_status_code=response_status_code,
     )
 
 
@@ -171,6 +174,39 @@ def test_history_dto_omits_source_and_raw_ref():
     assert "observed_at" in item
     assert "health" in item
     assert "location" in item
+
+
+def test_history_dto_carries_response_status_code_and_check_type():
+    """STORY-064 AC3: ObservationDTO carries response_status_code (int|null)
+    and check_type (from the persisted provenance native_kind)."""
+    obs_repo = FakeObservationRepository()
+    obs_repo.save_new(
+        [
+            _obs(event_id="e-with-code", response_status_code=200, native_kind="http"),
+            _obs(
+                event_id="e-without-code", response_status_code=None, native_kind="http"
+            ),
+        ]
+    )
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    response = client.get("/api/v1/history?signal_key=checkout-http")
+
+    assert response.status_code == 200
+    data = response.json()
+    by_event = {}
+    for item in data:
+        assert "response_status_code" in item
+        assert "check_type" in item
+        assert item["check_type"] == "http"
+    for item in data:
+        # observed_at differs by event but signal_key is shared; disambiguate
+        # via response_status_code presence.
+        by_event[item["response_status_code"]] = item
+
+    assert by_event[200]["response_status_code"] == 200
+    assert by_event[None]["response_status_code"] is None
 
 
 def test_history_module_five_file_shape():
