@@ -91,11 +91,11 @@ Steps (TDD; commit after every green step):
 
 ## STORY-079 — Wiki Facts-coverage cleanup (2p, full pipeline for the pilot)
 
-- [ ] 1. Enumerate: `yt_wiki.py facts` findings at post-064 HEAD (~20 expected + any new).
-- [ ] 2. Per finding, per article: extend `code_refs` with the cited DEFINING file, or re-home
+- [x] 1. Enumerate: `yt_wiki.py facts` findings at post-064 HEAD (~20 expected + any new).
+- [x] 2. Per finding, per article: extend `code_refs` with the cited DEFINING file, or re-home
         the Fact to the covering article (claims text frozen — citations/refs only). Commit per
         article with a History line.
-- [ ] 3. Re-verify touched articles (bump `verified_sha` to HEAD); `yt_wiki.py` (all three
+- [x] 3. Re-verify touched articles (bump `verified_sha` to HEAD); `yt_wiki.py` (all three
         checks) exits 0. Full gate green (proves prose-only). Commit.
 
 ## Conventions
