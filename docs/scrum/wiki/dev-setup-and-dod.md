@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 0da9568
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py, backend/tests/test_spine_schema.py]
+verified_sha: 678ff0d
 verified_sprint: sprint-44
 status: verified
 ---
@@ -208,3 +208,8 @@ status: verified
   both updated in that commit; this article's Fact #2 and the `lint-imports` gotcha note were the
   only stale text (no other DoD command or dependency changed). No STORY-064 backend/frontend code
   change touches this article's `code_refs`. verified_sha → 0da9568.
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged the Fact citing
+  `backend/tests/test_spine_schema.py` as the named example of a DB-gated test consuming the
+  `migrated_db` fixture — not in `code_refs`, so the sweep could never have caught it drifting.
+  Added to `code_refs` (a defining exemplar of the fixture-consumption pattern this article
+  documents). No Fact text changed. verified_sha → 678ff0d.
