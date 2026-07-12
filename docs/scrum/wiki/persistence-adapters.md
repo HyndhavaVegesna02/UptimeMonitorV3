@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py]
-verified_sha: 10a2d73
-verified_sprint: sprint-43
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py]
+verified_sha: 0da9568
+verified_sprint: sprint-44
 status: verified
 ---
 
@@ -37,6 +37,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   specifies, enforced by the DB's `UNIQUE(source_event_id)` index, not a racy read-then-write.
 - Empty batch short-circuits to `0` (`observation_repository.py::PostgresObservationRepository.save_new`). `health` is stored as the enum's `.value`;
   `source` as `Provenance.model_dump()` (`observation_repository.py::PostgresObservationRepository.save_new`).
+- STORY-064: `_OBSERVATIONS` (`observation_repository.py::_OBSERVATIONS`) gained a
+  `response_status_code` column (nullable Integer, migration
+  `a2c1d89efcea_add_observations_response_status_code.py`, see [[migrations-and-db]]);
+  `save_new`'s values dict now includes `observation.response_status_code` verbatim (int or
+  `None`) — no serialization needed, unlike `source`/`health`.
 
 ### `PostgresObservationRepository.in_window` — the read side (STORY-011, dossier §11)
 - A plain `SELECT` over `_OBSERVATIONS` filtered to one `signal_key` and the half-open range
@@ -51,6 +56,8 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `Provenance(**row.source)`, and `observed_at` re-normalized to UTC via
   `.astimezone(timezone.utc)` — the same psycopg tz-aware-`timestamptz` convention `get`
   already relies on (`watermark_repository.py::PostgresWatermarkRepository.get`). The core never sees a raw row or a driver-specific type.
+  STORY-064: also selects/reconstructs `response_status_code` (int or `NULL` passed straight
+  through, no mapping).
 - An unknown/never-ingested `signal_key`, or a window with no matching rows, returns `[]` —
   no error, no `None` — consistent with the AC6 degenerate-input contract the availability
   engine depends on.
@@ -203,6 +210,14 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   remaining stale `core/services/availability.py` reference repointed to
   `core/queries/availability.py` (STORY-078 follow-up); `core/queries/availability.py`'s module
   docstring restored (see [[core-pipeline-and-availability]] for detail). No SQL or repository
-  behavior changed. verified_sha → 10a2d73.
+  behavior changed. verified_sha -> 10a2d73.
+- sprint-44 (STORY-064, pilot): `PostgresObservationRepository`'s `_OBSERVATIONS` table construct,
+  `save_new`, and `in_window` all gained `response_status_code` (nullable Integer, new migration
+  `a2c1d89efcea_add_observations_response_status_code.py`, new head off `ecda752c8865`) --
+  Facts updated above. `FakeObservationRepository` needed NO code change (it already round-trips
+  every `SignalObservation` field via storing the whole object) -- ONE shared contract test body
+  (`test_persistence_adapters.py::_assert_response_status_code_round_trips`) is run against BOTH
+  implementations, proving a present int and an explicit `None` both round-trip identically (fake/
+  adapter parity). `code_refs` += the new migration file. verified_sha -> 0da9568.
 
 
