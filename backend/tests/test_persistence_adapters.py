@@ -1076,6 +1076,52 @@ def test_postgres_maintenance_repository(migrated_db, engine):
     )
 
 
+def test_maintenance_repository_title_parity(migrated_db, engine):
+    from src.adapters.persistence.maintenance_repository import (
+        PostgresMaintenanceRepository,
+    )
+    from tests.fakes import FakeMaintenanceRepository
+    from src.core.domain.maintenance import MaintenanceWindow
+
+    # Clear tables for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "checkout", "app-1")
+
+    for repo in [PostgresMaintenanceRepository(engine), FakeMaintenanceRepository()]:
+        # 1. Title is None
+        w1 = MaintenanceWindow(
+            component_id="checkout",
+            starts_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+            ends_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+            reason="Update 1",
+            title=None,
+        )
+        saved1 = repo.create(w1)
+        assert saved1.title is None
+
+        # 2. Title is set
+        w2 = MaintenanceWindow(
+            component_id="checkout",
+            starts_at=datetime(2026, 6, 28, 15, 0, 0, tzinfo=timezone.utc),
+            ends_at=datetime(2026, 6, 28, 17, 0, 0, tzinfo=timezone.utc),
+            reason="Update 2",
+            title="Database Upgrade",
+        )
+        saved2 = repo.create(w2)
+        assert saved2.title == "Database Upgrade"
+
+        # Check list
+        windows = repo.list_windows()
+        w1_saved = next(w for w in windows if w.id == saved1.id)
+        w2_saved = next(w for w in windows if w.id == saved2.id)
+        assert w1_saved.title is None
+        assert w2_saved.title == "Database Upgrade"
+
+
 def test_postgres_publication_repository(migrated_db, engine):
     """DB-gated: PostgresPublicationRepository record + list_recent + fake parity.
 

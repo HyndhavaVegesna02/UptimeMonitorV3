@@ -17,6 +17,7 @@ _MAINTENANCE_WINDOWS = sa.table(
     sa.column("starts_at"),
     sa.column("ends_at"),
     sa.column("reason"),
+    sa.column("title"),
 )
 
 
@@ -34,6 +35,7 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
             _MAINTENANCE_WINDOWS.c.starts_at,
             _MAINTENANCE_WINDOWS.c.ends_at,
             _MAINTENANCE_WINDOWS.c.reason,
+            _MAINTENANCE_WINDOWS.c.title,
         ).order_by(_MAINTENANCE_WINDOWS.c.starts_at)
 
         with self._engine.connect() as conn:
@@ -46,6 +48,7 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
                 starts_at=row.starts_at.astimezone(timezone.utc),
                 ends_at=row.ends_at.astimezone(timezone.utc),
                 reason=row.reason,
+                title=row.title,
             )
             for row in rows
         ]
@@ -60,6 +63,7 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
                     "starts_at": window.starts_at,
                     "ends_at": window.ends_at,
                     "reason": window.reason,
+                    "title": window.title,
                 }
             )
             .returning(
@@ -68,6 +72,7 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
                 _MAINTENANCE_WINDOWS.c.starts_at,
                 _MAINTENANCE_WINDOWS.c.ends_at,
                 _MAINTENANCE_WINDOWS.c.reason,
+                _MAINTENANCE_WINDOWS.c.title,
             )
         )
 
@@ -81,6 +86,7 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
             starts_at=row.starts_at.astimezone(timezone.utc),
             ends_at=row.ends_at.astimezone(timezone.utc),
             reason=row.reason,
+            title=row.title,
         )
 
     def is_under_maintenance(self, component_id: str, at: datetime) -> bool:
