@@ -1,7 +1,7 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, scripts/check_fk_direction.py]
-verified_sha: 678ff0d
+verified_sha: adc002a
 verified_sprint: sprint-44
 status: verified
 ---
@@ -162,8 +162,7 @@ below for the mechanical deletion recipe.
   (constructed for real, only `run_periodic` mocked) rather than a bare
   `IngestService`. The pre-existing BEHAVIOR tests —
   `backend/tests/test_pull_loop.py` and `backend/tests/test_ingest_service.py`
-  — were NOT touched and pass unmodified; neither file appears in this
-  article's `code_refs` because neither changed.
+  — were NOT touched and pass unmodified.
 
 ### Operational gotchas (live-verified 2026-07-06 debug sprint)
 - **The flip is NOT retroactive.** Forced copies keep `source_event_id` unchanged (D4
@@ -452,3 +451,10 @@ produced ordinary data flowing through it.
   are added here even though the substantive claim, that they were untouched, remains true and
   unedited), and `scripts/check_fk_direction.py` (the D1 migration's FK-direction-check-unaffected
   claim). All four added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
+- sprint-44 (STORY-079 fix loop, quality review MAJOR / spec review non-blocking finding, both
+  converging on this fix): the seam-section clause "neither file appears in this article's
+  `code_refs` because neither changed" went stale the moment this same story's Facts-coverage pass
+  (above) added `backend/tests/test_pull_loop.py` and `backend/tests/test_ingest_service.py` to
+  `code_refs` — the clause then contradicted the frontmatter it sat next to. Deleted the clause;
+  the durable claim it was attached to (both files "were NOT touched and pass unmodified") is
+  unedited and remains true. `verified_sha` re-stamped to `adc002a`.
