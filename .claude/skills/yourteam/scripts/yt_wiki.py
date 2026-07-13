@@ -15,9 +15,20 @@ Mechanizes the wiki protocol's three mechanical checks over docs/scrum/wiki/:
            that Fact and it rots silently (agreement 2026-06-25).
   links  — link lint: every [[slug]] must resolve to wiki/<slug>.md or
            wiki/archive/<slug>.md.
+  refs   — staleness-amplifier lint (retro sprint-45, 2026-07-14): a file
+           cited as a code_ref by many articles quarantines them ALL on any
+           touch (one shared file once re-staled a third of a wiki). Notes
+           by default; findings under --strict-refs.
+
+The sweep skips LLM re-verification it can prove unnecessary: if the diff
+since verified_sha is whitespace-only (`git diff -w --ignore-blank-lines`
+empty), no Fact content can have changed — with --update the verified_sha is
+bumped mechanically instead of marking stale (retro sprint-45: one formatter
+commit re-staled 7 articles, costing two re-verification waves). Any
+non-whitespace change (even a quote-style swap) still stales normally.
 
 Usage:
-  python yt_wiki.py            # all three checks
+  python yt_wiki.py            # all four checks
   python yt_wiki.py sweep --update
   python yt_wiki.py facts links
 
@@ -124,12 +135,61 @@ def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str
                 f"{path.name}: git diff failed: {diff.stderr.strip()[:200]}"
             )
         elif hits:
+            # Format-only drift: content identical once whitespace is ignored →
+            # no Fact can have been invalidated; re-verifying with an LLM is
+            # pure waste. Conservative by construction — ANY non-whitespace
+            # change still stales. (Retro sprint-45, 2026-07-14.)
+            ws = git(
+                root, "diff", "-w", "--ignore-blank-lines", f"{sha}..HEAD", "--", *refs
+            )
+            if ws.returncode == 0 and not ws.stdout.strip():
+                if update:
+                    head = git(root, "rev-parse", "HEAD").stdout.strip()
+                    new = re.sub(
+                        rf"^(verified_sha:\s*){re.escape(sha)}",
+                        rf"\g<1>{head}",
+                        text,
+                        count=1,
+                        flags=re.M,
+                    )
+                    path.write_text(new, encoding="utf-8")
+                    print(
+                        f"  note: {path.name} format-only drift — verified_sha "
+                        f"auto-bumped to {head[:7]} (no LLM re-verify needed)"
+                    )
+                else:
+                    print(
+                        f"  note: {path.name} format-only drift in {len(hits)} "
+                        "path(s) — auto-verifiable with --update"
+                    )
+                continue
             findings.append(
                 f"{path.name}: STALE — {len(hits)} changed path(s): {', '.join(hits[:5])}"
             )
             if update:
                 new = text.replace("status: verified", "status: stale", 1)
                 path.write_text(new, encoding="utf-8")
+    return findings
+
+
+# A code_ref shared by this many articles is a staleness amplifier: one touch
+# of that file quarantines them all, and every quarantine is an LLM re-read.
+AMPLIFIER_THRESHOLD = 4
+
+
+def check_refs(articles: dict[Path, str]) -> list[str]:
+    counts: dict[str, list[str]] = {}
+    for path, text in articles.items():
+        for ref in set(parse_frontmatter(text).get("code_refs") or []):
+            counts.setdefault(ref.replace("\\", "/"), []).append(path.name)
+    findings = []
+    for ref, names in sorted(counts.items()):
+        if len(names) >= AMPLIFIER_THRESHOLD:
+            findings.append(
+                f"amplifier: `{ref}` is a code_ref in {len(names)} articles "
+                f"({', '.join(sorted(names)[:4])}...) — any touch quarantines all "
+                "of them; narrow it to the article(s) actually ABOUT it"
+            )
     return findings
 
 
@@ -166,11 +226,19 @@ def check_links(root: Path, wiki: Path, articles: dict[Path, str]) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
-        "checks", nargs="*", default=[], help="sweep | facts | links (default: all)"
+        "checks",
+        nargs="*",
+        default=[],
+        help="sweep | facts | links | refs (default: all)",
     )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
     ap.add_argument(
         "--update", action="store_true", help="sweep: rewrite status to stale on hits"
+    )
+    ap.add_argument(
+        "--strict-refs",
+        action="store_true",
+        help="refs: amplifier notes count as findings (exit 1)",
     )
     args = ap.parse_args()
 
@@ -189,24 +257,30 @@ def main() -> int:
         p: p.read_text(encoding="utf-8", errors="replace")
         for p in sorted(wiki.glob("*.md"))
     }
-    checks = args.checks or ["sweep", "facts", "links"]
+    checks = args.checks or ["sweep", "facts", "links", "refs"]
     all_findings: list[str] = []
     for check in checks:
+        advisory = False
         if check == "sweep":
             found = check_sweep(root, articles, args.update)
         elif check == "facts":
             found = check_facts(root, articles)
         elif check == "links":
             found = check_links(root, wiki, articles)
+        elif check == "refs":
+            found = check_refs(articles)
+            advisory = not args.strict_refs  # notes by default — never blocks
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4
-        print(
-            f"== {check}: {'CLEAN' if not found else str(len(found)) + ' finding(s)'} =="
+        label = "CLEAN" if not found else (
+            f"{len(found)} note(s)" if advisory else f"{len(found)} finding(s)"
         )
+        print(f"== {check}: {label} ==")
         for f in found:
             print(f"  {f}")
-        all_findings.extend(found)
+        if not advisory:
+            all_findings.extend(found)
 
     return 1 if all_findings else 0
 

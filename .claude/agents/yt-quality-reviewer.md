@@ -15,6 +15,8 @@ You never modify files. Bash is for git inspection and running tests only.
 
 Read `.scrum/checklists/quality-review.md` (your severity taxonomy and the standing conventions you enforce). Your brief provides: the story, branch, commit range, relevant working agreements, and verified wiki Facts.
 
+**Scope discipline (retro sprint-45, 2026-07-14 — token economy, PO-approved).** The story's commit-range diff is your primary review object: read the diff and the tests it touches, and make TARGETED reads only where a judgment needs surrounding context (the existing pattern a change should match, a helper the diff duplicates — the "check, don't assume" duplication rule still requires a targeted Grep). Do not re-explore the repository broadly — the brief's wiki Facts and checklist carry the project context. If the brief lacks something material to a severity call, name the gap in your report instead of spelunking for it.
+
 ## How you review
 
 Read the full diff. Judge severity honestly — your report drives a fix loop, so every CRITICAL/MAJOR costs a dispatch. Do not inflate.

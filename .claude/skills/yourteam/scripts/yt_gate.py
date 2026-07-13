@@ -98,9 +98,28 @@ def tree_state(root: Path) -> tuple[list[str], list[str]]:
     return dirty, untracked
 
 
+def _is_banner(line: str) -> bool:
+    """Decorative ASCII-art line (e.g. import-linter's box-drawing logo)?
+
+    Such lines carry zero evidence signal but cost bytes in sprint-current.yaml
+    forever (retro sprint-45, 2026-07-14). A line is a banner when box-drawing/
+    block/geometric glyphs (U+2500-U+25FF) dominate it; lines with a stray
+    glyph (vite's `140 kB │ gzip: 76 kB`) are kept.
+    """
+    solid = [ch for ch in line if not ch.isspace()]
+    if not solid:
+        return False
+    deco = sum(1 for ch in solid if "─" <= ch <= "◿")
+    return deco / len(solid) > 0.5
+
+
 def one_line_tail(text: str, limit: int = TAIL_CHARS) -> str:
     tail = text.strip()[-limit:]
-    tail = " | ".join(part.strip() for part in tail.splitlines() if part.strip())
+    tail = " | ".join(
+        part.strip()
+        for part in tail.splitlines()
+        if part.strip() and not _is_banner(part)
+    )
     return tail.replace("\\", "\\\\").replace('"', '\\"')
 
 

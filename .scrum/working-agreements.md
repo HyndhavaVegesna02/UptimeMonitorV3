@@ -63,6 +63,29 @@
   (Motivated by Sprint 37, STORY-046; generalizes the sprint-28 DB-concurrency incident.
   `yt_gate.py` prints this protocol on any red.)
 
+- 2026-07-14 — **Token-economy amendments** (PO-approved after the sprint-45 token audit — one
+  sprint consumed two 5-hour limit windows; constraint: no meaningful loss of quality/purpose).
+  (a) **Scoped story gates:** mid-sprint, per-story DoD gates MAY run `yt_gate.py --only <cmds>`,
+  limited to the commands the story's diff can affect; the FULL nine-command gate remains mandatory
+  — and is the evidence of record — at least once at sprint close on the final HEAD. A red at any
+  scope still blocks. (Rung: prose — orchestrator procedure; `--only` already exists in the script.)
+  (b) **Clean-container gates:** before any full gate run, stop idle dev-DB containers so only the
+  gate's own DB is running (the proven sprint-45 flake root cause was idle-container contention).
+  STORY-080 is the durable fix and is PO-prioritized for next refinement; no test is skipped in the
+  meantime. (Rung: prose until STORY-080 lands the test-rung fix.)
+  (c) **Board evidence hygiene:** at sprint close, superseded `dod_evidence`/`gate_notes` narrative
+  moves into the sprint's `review.md`; `sprint-current.yaml` carries only the final evidence block —
+  it is re-read at every standup. (Rung: prose.)
+  (d) Landed the same day at the script/agent rungs: `yt_wiki.py` format-only auto-verify (a
+  whitespace-only diff since `verified_sha` bumps the sha mechanically — one formatter commit had
+  re-staled 7 articles) + staleness-amplifier `refs` lint (advisory; `--strict-refs` to block);
+  `yt_gate.py` strips decorative banner lines from evidence tails; both reviewer agent defs scoped
+  to the story's diff pack (targeted context reads allowed, broad repo re-exploration prohibited).
+  PO quality constraints honored: spec/quality reviewers stay SEPARATE (independence), no coverage
+  skipped, format-only auto-verify is conservative (any non-whitespace change still stales).
+  (Motivated by: sprint-45 token audit — wiki churn was 10 of 33 commits; measured 285 code_refs /
+  239 files; `pyproject.toml` cited by 5 articles.)
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock

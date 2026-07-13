@@ -782,7 +782,7 @@ stories:
   - id: STORY-080
     title: dev_db CLI tests — remove the hardcoded 55433 port collision
     file: docs/scrum/stories/STORY-080-dev-db-cli-port-collision.md
-    status: draft   # filed 2026-07-12 from sprint-44 gate contention (2026-07-06 agreement: flaky gate -> defect); needs estimate at refinement
+    status: draft   # filed 2026-07-12 from sprint-44 gate contention (2026-07-06 agreement: flaky gate -> defect); needs estimate at refinement. PO-PRIORITIZED 2026-07-14 (sprint-45 token audit): refine FIRST — the flake re-taxed sprint-45's gate (1/570 red + prove-benign + full re-run); interim mitigation is the clean-container agreement (working-agreements 2026-07-14b)
     type: defect
     sprint: null
   - id: STORY-081

@@ -15,6 +15,8 @@ You never modify files. Bash is for git inspection (`git diff`, `git log`) and f
 
 Read `.scrum/checklists/spec-review.md`. Your brief provides: the story file (AC verbatim), the branch, the commit range, and the implementer's report.
 
+**Scope discipline (retro sprint-45, 2026-07-14 — token economy, PO-approved).** The story's commit-range diff is your primary review object: read the diff and the tests it touches, and make TARGETED reads only where the diff needs surrounding context (a called function, a modified contract, a base class). Do not re-explore the repository broadly — the brief's wiki Facts and checklist carry the project context. If the brief lacks something material to an AC verdict, name the gap in your report instead of spelunking for it.
+
 ## How you review
 
 1. Read the actual diff and the tests. Do not trust the implementer's report — verify it.
