@@ -27,3 +27,15 @@ renders grouped sections + the real `UptimeBar`.
 
 ## History
 - 2026-07-07: filed from the redesign data-gap analysis. Status: draft (needs refinement + estimate).
+- 2026-07-13: probed at Sprint 45 planning (not scheduled; stays DRAFT — deferred to a later sprint).
+  Findings: `ComponentDTO` has no `group` (`api/v1/components/models.py:9-16`); `config/apps/*.yaml`
+  is flat (no grouping) and `ComponentConfig` has no group field (`composition/config.py:57-73`) —
+  grouping is a NEW config field + loader change + DTO + frontend sections. Uptime buckets are
+  additive-only: `bucket_into_cycles()` already exists and is reusable
+  (`core/queries/availability.py:133-165`), so a new derive-on-read `BucketedUptimeCalculator` fits
+  in `core/queries/` (STORY-078's home) as a sibling — no persisted verdicts. Frontend Dashboard is
+  one flat table today (`pages/DashboardPage.tsx:244-361`); `UptimeBar` is a generic N-segment
+  renderer (`components/UptimeBar/UptimeBar.tsx`). Likely estimate **5** (grouping + buckets).
+  Recommended-but-not-yet-PO-approved resolution for next refinement: `group` as an optional
+  per-component `ComponentConfig` field (ungrouped → default section); buckets share the
+  availability window (24h default) sliced into ~30 buckets.

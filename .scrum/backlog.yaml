@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 81   # 080 = dev_db CLI port-collision defect (sprint-44 gate contention). 079 = wiki Facts-coverage cleanup (pilot sprint 44, from yt_wiki.py facts lint first run). 078 = core/queries CQRS-lite move (proposal §8, PO-triggered sprint 43). 077 = sprint-42 review minors (zone-layout private-API coupling + decisions concurrency comment). 074-076 = API restructure now-phase (sprint 42; from docs/superpowers/specs/2026-07-10-api-restructure-design.md). 073 pre-existed when counter said 73 (sprint-41 filing missed the bump — fixed here). 072 = publication record-always + outcome (approve records independent of Statuspage publish; sprint 40; delivers STORY-066's outcome part). 071 = decision CheckViolation defect (approval_events.action 'approve' vs constraint 'approved'/'rejected'); sprint 39. 070 = live vendor-id drift health check (sprint-38 retro, from the stale-monitor-id hotfix); 068 = useAvailability.test.tsx parallelism false-red (sprint-38 STORY-058); 069 = sprint-38 redesign consolidation chore. 055-062 = Operator Dashboard redesign (sprint 38, frontend-only, adapt-to-real-data); 063-067 = redesign backend-gap follow-ups (drafts, deferred per PO 2026-07-07). 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
+next_story_id: 82   # 081 = publication incident-id capture (split out of 066 at sprint-45 refinement; draft, blocked on a Statuspage design decision + live sample). 080 = dev_db CLI port-collision defect (sprint-44 gate contention). 079 = wiki Facts-coverage cleanup (pilot sprint 44, from yt_wiki.py facts lint first run). 078 = core/queries CQRS-lite move (proposal §8, PO-triggered sprint 43). 077 = sprint-42 review minors (zone-layout private-API coupling + decisions concurrency comment). 074-076 = API restructure now-phase (sprint 42; from docs/superpowers/specs/2026-07-10-api-restructure-design.md). 073 pre-existed when counter said 73 (sprint-41 filing missed the bump — fixed here). 072 = publication record-always + outcome (approve records independent of Statuspage publish; sprint 40; delivers STORY-066's outcome part). 071 = decision CheckViolation defect (approval_events.action 'approve' vs constraint 'approved'/'rejected'); sprint 39. 070 = live vendor-id drift health check (sprint-38 retro, from the stale-monitor-id hotfix); 068 = useAvailability.test.tsx parallelism false-red (sprint-38 STORY-058); 069 = sprint-38 redesign consolidation chore. 055-062 = Operator Dashboard redesign (sprint 38, frontend-only, adapt-to-real-data); 063-067 = redesign backend-gap follow-ups (drafts, deferred per PO 2026-07-07). 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
@@ -512,15 +512,19 @@ stories:
   - id: STORY-065
     title: Maintenance title field + DELETE endpoint (Maintenance form title + delete action)
     file: docs/scrum/stories/STORY-065-maintenance-title-delete.md
-    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-061's omitted title/delete
+    status: ready   # refined 2026-07-13 (sprint-45 planning): title = own nullable column; hard delete; inline confirm. Scheduled into sprint 45.
+    points: 3
+    priority: 15
     type: feature
-    sprint: null
+    sprint: 45
   - id: STORY-066
-    title: Publication author / outcome / incident metadata (Publications timeline)
+    title: Publication author metadata (Publications timeline)
     file: docs/scrum/stories/STORY-066-publication-metadata.md
-    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-062's omitted fields
+    status: ready   # refined 2026-07-13 (sprint-45 planning): scope narrowed to author-only (outcome done by 072; incident -> STORY-081). Author derived on read from approval_events.actor, no migration. Scheduled into sprint 45.
+    points: 3
+    priority: 16
     type: feature
-    sprint: null
+    sprint: 45
   - id: STORY-067
     title: Component grouping + per-component uptime-bucket API (Dashboard groups + richer sparklines)
     file: docs/scrum/stories/STORY-067-component-grouping-uptime-buckets.md
@@ -780,4 +784,10 @@ stories:
     file: docs/scrum/stories/STORY-080-dev-db-cli-port-collision.md
     status: draft   # filed 2026-07-12 from sprint-44 gate contention (2026-07-06 agreement: flaky gate -> defect); needs estimate at refinement
     type: defect
+    sprint: null
+  - id: STORY-081
+    title: Publication incident-id capture (Statuspage response → Publications timeline)
+    file: docs/scrum/stories/STORY-081-publication-incident-id.md
+    status: draft   # split out of STORY-066 at sprint-45 refinement (2026-07-13); genuinely new + speculative (Statuspage response discarded today; flow never creates incidents). Blocked on a Statuspage design decision + live response sample; needs refinement + estimate.
+    type: feature
     sprint: null

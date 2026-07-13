@@ -1,168 +1,35 @@
 # YourTeam active sprint board.
-sprint: 44
-status: closed        # PO accepted BOTH stories 2026-07-13 ("i accept both the stories") —
-                      # whole-branch merge to main (also lands YourTeam v2). Velocity: 5/5.
-                      # PO-stated rule recorded at review: skill changes stay project-GENERIC;
-                      # project specifics only in generated artifacts (-> working-agreements).
-started: 2026-07-12
-mode: in-process      # YourTeam v2 PILOT — first sprint on the v2 machinery
-goal: "Check History shows the real HTTP status code and check type from live Dynatrace data
-  (064), the wiki Facts-coverage gap class is closed (079) — executed end-to-end on YourTeam v2
-  as its pilot."
-branch: sprint-44
-start_tag: sprint-44-start
-# LOCK AUTHORIZATION: PO directive 2026-07-12 "run the pilot" with the recommended scope
-# (064 + wiki-coverage chore). Plan verified by yt-plan-verifier: round 1 GAPS (int-typed
-# fixture vs string wire — the S32 class, caught pre-lock), amended, round 2 LOCK_READY.
-# PILOT NOTES: sprint-44 cut from yourteam-v2 (v2 not on main yet — accepting this sprint also
-# lands v2 on main). Baseline: 7 gates green at 212f21f + 2 repaired at 0889259 (ruff format on
-# v2 scripts; lint-imports exe Device-Guard-blocked -> module-path DoD command, CLAUDE.md
-# synced). Hook note: .claude/settings.json was created THIS session, so the git-guard hook may
-# not be loaded until next session start — prose rules + agent-definition rules are the
-# documented fallback; observation for the pilot retro.
-# ORDER: 064 first (code, risk, blast radius), then 079 (prose tail lints post-064 wiki state).
+sprint: 45
+status: active
+started: 2026-07-13
+mode: in-process
+goal: "The Maintenance tab gains a real Title field and a per-window delete (STORY-065), and the
+  Publications timeline shows the real publish author (STORY-066, author-only) — closing two of the
+  Sprint 38 redesign data gaps against real API data."
+branch: sprint-45
+start_tag: sprint-45-start
+# LOCK AUTHORIZATION: PO directive 2026-07-13 "lock it" after scope approval (065 + 066 author-only,
+# 6 pts) via the planning question. Plan verified by yt-plan-verifier: round 1 GAPS (3 — fake author
+# seam not constructible, author-join row multiplication, title-render hole) -> amended -> round 2
+# LOCK_READY (zero gaps). Handoff of implementation to be confirmed with PO before dispatch.
+# ORDER: 065 first (schema migration + the codebase's first DELETE verb = highest novelty/risk),
+# then 066 (no migration, pure derive-on-read).
 stories:
-  - id: STORY-064
+  - id: STORY-065
     points: 3
-    board: done          # impl steps 1-6 committed; implementer connection-drop crash after the
-                         # wiki pass (5 articles committed article-by-article; frontend-zone.md
-                         # frontmatter tail completed by the orchestrator per edge-case #13);
-                         # spec PASS + quality APPROVE (1 minor -> story file); reality gate PASS.
+    board: todo
     pipeline: full
-    attempts: 1
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # mechanical sweep CLEAN at d3dce88 (6 articles re-verified)
-    review:
-      spec: "PASS — all 5 ACs MET with run tests: AC1 str->int parse DRIVEN by string-typed
-        \"200\" fixture row (wire-type warning honored) + absent/N-A -> None variants; AC2
-        migration a2c1d89efcea + same-body parity test vs Postgres AND fake incl. None; AC3
-        endpoint serves both fields, validation untouched; AC4 populated + null (em-dash)
-        rendering, MSW from real wire; AC5 tracked carve-out executed by orchestrator (below).
-        Deletion check: column-omission test REWRITTEN not deleted. Zero scope additions."
-      quality: "APPROVE — zero critical, zero major. Fixtures flipped int->string with all tests
-        green (no hidden int assumption); parity test pins real SQL column mapping; frontend
-        refuses to invent failure codes never observed live. 1 minor -> story file (loose
-        null-code cell assertion)."
-    reality_gate: "PASS 2026-07-12 — live stack (throwaway DB :55432, uvicorn :8000, live loop
-      ingesting real Dynatrace, vite :5173). Wire row {observed_at 2026-07-12T17:08:46.505000Z,
-      location ...0060, response_status_code 200, check_type http, latency_ms 531} rendered as
-      Type=HTTP, Code=200, Latency=531 ms — exact render-vs-wire match; 120 live rows, code
-      distribution {200: 120}, check_type {http: 120}."
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "564 passed in 83.76s"
-        commit: d3dce88
-        at: "2026-07-12T16:59:55+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Analyzed 144 files, 413 dependencies. Contracts: 8 kept, 0 broken."
-        commit: d3dce88
-        at: "2026-07-12T17:01:20+00:00"
-      - command: "python scripts/check_fk_direction.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-        commit: d3dce88
-        at: "2026-07-12T17:01:20+00:00"
-      - command: "alembic upgrade head"
-        exit_code: 0
-        output_tail: "Context impl PostgresqlImpl. Will assume transactional DDL."
-        commit: d3dce88
-        at: "2026-07-12T17:01:21+00:00"
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: d3dce88
-        at: "2026-07-12T17:01:22+00:00"
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "199 files already formatted"
-        commit: d3dce88
-        at: "2026-07-12T17:01:22+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files 51 passed (51) | Tests 361 passed (361)"
-        commit: d3dce88
-        at: "2026-07-12T17:01:22+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "built in 491ms"
-        commit: d3dce88
-        at: "2026-07-12T17:02:24+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . (clean)"
-        commit: d3dce88
-        at: "2026-07-12T17:02:31+00:00"
-  - id: STORY-079
-    points: 2
-    board: done          # 19 findings / 8 articles (aecefdb..10d4e54); quality FIX_REQUIRED
-                         # (3 MAJORs: 2 over-broad hot-file refs + 1 self-contradicting Fact
-                         # clause) -> fresh-agent fix loop (569265b/c500a5d/1d1500f) -> APPROVE.
-                         # Spec PASS first pass (ruled the sample-mode clause an AC-vs-hygiene
-                         # conflict, non-blocking; fix loop resolved it).
-    pipeline: full        # pilot: full pipeline regardless of size, to exercise v2 end-to-end
-    attempts: 2
+    blast_radius_resolved: false
+  - id: STORY-066
+    points: 3
+    board: todo
+    pipeline: full
+    attempts: 0
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true   # yt_wiki sweep+facts+links CLEAN at 1d1500f
-    review:
-      spec: "PASS — AC1/AC2 (all three yt_wiki checks run, exit 0; 8 articles re-verified with
-        resolvable SHAs + History lines), AC3 (diff confined to frontmatter + History; every
-        added ref cited in Facts; zero claim-text edits), gates line (story diff empty over
-        backend/frontend/scripts/migrations). Flagged the sample-mode self-contradiction
-        non-blocking; converged with quality on the fix."
-      quality: "APPROVE (after fix loop). 3 MAJORs: CLAUDE.md ref on migrations-and-db +
-        pyproject.toml ref on ingest (over-broad hot-file refs, S4/S5 false-stale mode — refs
-        dropped, citations re-homed) and sample-mode's now-false 'neither file appears in
-        code_refs' clause (deleted; durable claim kept). 2 minors recorded on the story file
-        (DESIGN-linear.app.md + check_fk_direction.py refs — low churn, non-blocking)."
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "564 passed"
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Contracts: 8 kept, 0 broken."
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "python scripts/check_fk_direction.py"
-        exit_code: 0
-        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "alembic upgrade head"
-        exit_code: 0
-        output_tail: "Will assume transactional DDL."
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "199 files already formatted"
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Tests 361 passed (361)"
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "built (green)"
-        commit: 1d1500f
-        at: "2026-07-13"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . (clean)"
-        commit: 1d1500f
-        at: "2026-07-13"
+    blast_radius_resolved: false
 hotfixes: []
 interrupts: []
