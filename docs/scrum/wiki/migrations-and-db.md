@@ -1,7 +1,7 @@
 ---
 title: Migrations and the two-connection database split
-code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, CLAUDE.md, backend/tests/test_spine_schema.py]
-verified_sha: 678ff0d
+code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, backend/tests/test_spine_schema.py]
+verified_sha: adc002a
 verified_sprint: sprint-44
 status: verified
 ---
@@ -61,7 +61,7 @@ status: verified
   `postgresql+psycopg://…` (`migrations/env.py` normalizes to it); `scripts/check_fk_direction.py` uses
   raw psycopg and needs the plain libpq form `postgresql://…` (the `+psycopg` prefix makes
   raw psycopg raise). So against the same DB, set `DATABASE_URL_DIRECT` to the `+psycopg`
-  form and `DATABASE_URL` to the plain form. (Documented in `CLAUDE.md`.) The plain→`+psycopg`
+  form and `DATABASE_URL` to the plain form. The plain→`+psycopg`
   normalization for the SQLAlchemy-2 runtime engine has ONE home: `settings.py::to_psycopg_url`
   (STORY-040) — the app factory, the `seed_topology` CLI, and the test `engine` fixture all route
   through it instead of re-implementing the prefix swap.
@@ -122,3 +122,10 @@ status: verified
   `downgrade base` → `upgrade head`). Both genuinely define this article's subject (the migration
   schema and its documented two-connection split); added to `code_refs`. No Fact text changed.
   `verified_sha` re-stamped to `678ff0d`.
+- sprint-44 (STORY-079 fix loop, quality review MAJOR): the sprint-44 quality review found
+  `CLAUDE.md` over-broad in `code_refs` — it is the hottest doc in the repo and the
+  URL-dialect-split contract is already pinned by `migrations/env.py`, `settings.py`, and
+  `check_fk_direction.py` refs, so a `CLAUDE.md` edit unrelated to this contract would falsely
+  flag this article stale. Removed `CLAUDE.md` from `code_refs`; struck the now-uncovered
+  parenthetical pointer "(Documented in `CLAUDE.md`.)" from the URL-dialect-split gotcha Fact
+  (the substantive claim text is unchanged). `verified_sha` re-stamped to `adc002a`.
