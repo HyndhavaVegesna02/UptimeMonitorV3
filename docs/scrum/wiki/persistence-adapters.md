@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py]
-verified_sha: 678ff0d
-verified_sprint: sprint-44
+verified_sha: f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787
+verified_sprint: sprint-45
 status: verified
 ---
 
@@ -106,11 +106,12 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 - `get` (`component_repository.py::PostgresComponentRepository.get`) SELECTs a component by `id` (STORY-016a), returning `None` if absent (fake/adapter parity).
 - `set_status` (`component_repository.py::PostgresComponentRepository.set_status`, STORY-045) is a single conditional `UPDATE components SET status = ... WHERE id = ...` run in `sa.Engine.begin`; `rowcount == 0` raises `ComponentNotFoundError` (`core/domain/component.py::ComponentNotFoundError`) rather than silently no-op'ing (2026-06-28 check-then-act agreement) — mirrors `PostgresProposalRepository.resolve`'s conditional-write-then-guard shape. `FakeComponentRepository.set_status` (`backend/tests/fakes.py`) raises the identical error on an unknown id (2026-06-26 fake/adapter parity agreement); ONE shared contract test body (`backend/tests/test_component_repository_contract.py::_assert_set_status_contract`) is run against BOTH implementations (the Postgres half DB-gated via `migrated_db`), proving a known id's update is visible via `get` and an unknown id raises `ComponentNotFoundError` from both. Called by the composition-layer `StatusWritebackPublisher` decorator (see [[statuspage-publish]]) right before the best-effort external publish, at both the approve trigger and the recovery trigger.
 
-### `PostgresMaintenanceRepository` — maintenance scheduling (STORY-036)
+### `PostgresMaintenanceRepository` — maintenance scheduling (STORY-036; STORY-065, sprint-45)
 - Implements `MaintenanceRepository` port against `maintenance_windows` table (`maintenance_repository.py::PostgresMaintenanceRepository`).
-- `list_windows` (`maintenance_repository.py::PostgresMaintenanceRepository.list_windows`) SELECTs scheduled windows ordered by `starts_at` and maps them to `MaintenanceWindow` domain objects. Returns `[]` if none exist.
-- `create` (`maintenance_repository.py::PostgresMaintenanceRepository.create`) INSERTs a new maintenance window and returns it with the database-assigned `id`.
+- `list_windows` (`maintenance_repository.py::PostgresMaintenanceRepository.list_windows`) SELECTs scheduled windows (including `title`) ordered by `starts_at` and maps them to `MaintenanceWindow` domain objects. Returns `[]` if none exist.
+- `create` (`maintenance_repository.py::PostgresMaintenanceRepository.create`) INSERTs a new maintenance window (including `title`) and returns it with the database-assigned `id`.
 - `is_under_maintenance` (`maintenance_repository.py::PostgresMaintenanceRepository.is_under_maintenance`) checks if a component is active under maintenance at a given timestamp using inclusive start and exclusive end boundaries (`starts_at <= at < ends_at`).
+- `delete` (`maintenance_repository.py::PostgresMaintenanceRepository.delete`, STORY-065, sprint-45) DELETEs a maintenance window by `id`; raises `MaintenanceWindowNotFoundError` if zero rows are affected. `FakeMaintenanceRepository` mirrors this behavior.
 
 ### `PostgresSignalRepository` — read-only seeded-topology signal access (STORY-044)
 - Implements `SignalRepository` port against the `signals` table (`signal_repository.py::PostgresSignalRepository`).
@@ -132,11 +133,11 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   SQL — topology seeding via `seed_topology` is a heavier alternative not needed for this
   read-only contract).
 
-### `PostgresPublicationRepository` — publish-attempt recording (STORY-037; STORY-072 record-always)
+### `PostgresPublicationRepository` — publish-attempt recording (STORY-037; STORY-072 record-always; STORY-066, sprint-45)
 - Implements `PublicationRepository` port against the `publications` table (`publication_repository.py::PostgresPublicationRepository`). The table's `outcome` column was added by `migrations/versions/ecda752c8865_add_publications_outcome.py` (STORY-072, see [[statuspage-publish]], [[migrations-and-db]]) — NOT the original spine migration.
 - `record` (`publication_repository.py::PostgresPublicationRepository.record`) INSERTs a new publication row (including `outcome`) via `INSERT … RETURNING` and returns the persisted `Publication` with the database-assigned `id`. Called on EVERY publish ATTEMPT (STORY-072) — `publication.outcome` (`PublicationOutcome.SUCCEEDED`/`FAILED`) distinguishes a successful publish from a raising delegate; the `ck_publications_outcome` CHECK constraint enforces the closed vocabulary at the DB level.
-- `list_recent` (`publication_repository.py::PostgresPublicationRepository.list_recent`) SELECTs up to `limit` (default 50) publications (including `outcome`) ordered by `published_at DESC` (most-recent-first). Returns `[]` when none exist. Used by the Publications tab (§17).
-- Fake/adapter parity (2026-06-26; re-verified STORY-072): `FakePublicationRepository` and `PostgresPublicationRepository` agree on: empty → `[]`, `record` returns a persisted row with `id`, `list_recent` is most-recent-first (ordered by `published_at DESC`), and (STORY-072) both agree on the `outcome` recorded for a given `Publication` — `FakePublicationRepository` needed NO code change (it already round-trips every field via `model_copy`), only the CHECK constraint is real-adapter-only (tested directly against Postgres, not via the fake — see [[statuspage-publish]]).
+- `list_recent` (`publication_repository.py::PostgresPublicationRepository.list_recent`) SELECTs up to `limit` (default 50) publications (including `outcome`) ordered by `published_at DESC` (most-recent-first), selecting `author` via a correlated scalar subquery over `approval_events`. Returns `[]` when none exist. Used by the Publications tab (§17).
+- Fake/adapter parity (2026-06-26; re-verified STORY-072, STORY-066): `FakePublicationRepository` and `PostgresPublicationRepository` agree on: empty → `[]`, `record` returns a persisted row with `id`, `list_recent` is most-recent-first (ordered by `published_at DESC`), both agree on `outcome` recorded, and (STORY-066) both agree on `author` derived on read — `FakePublicationRepository` accepts a `proposal_to_actor` map in its constructor to resolve `author` dynamically on `list_recent`.
 
 ### Testing convention (FK seeding)
 - `observations.signal_key` and `watermarks.signal_key` FK into `signals.signal_key` with
@@ -225,5 +226,6 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   `FakeSignalRepository`, `FakeObservationRepository` — the fake halves of the parity contracts this
   article documents). Both genuinely define the fake/adapter-parity subject; added to `code_refs`.
   No Fact text changed. verified_sha -> 678ff0d.
+- sprint-45 (STORY-065/STORY-066): verified after implementing Maintenance title + DELETE endpoint and Publication author metadata. MaintenanceRepository gained `delete`, and PublicationRepository.list_recent gained correlated subquery for author, both with fake/adapter parity tests. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 
 
