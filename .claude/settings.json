@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python .claude/hooks/yt_git_guard.py",
+            "command": "python \"$CLAUDE_PROJECT_DIR/.claude/hooks/yt_git_guard.py\"",
             "timeout": 15
           }
         ]
