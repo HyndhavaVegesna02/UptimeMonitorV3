@@ -15,12 +15,12 @@ start_tag: sprint-45-start
 # gate. ORDER: 065 first (schema migration + first DELETE verb), then 066 (no migration).
 # CLOSE-OUT (2026-07-13 22:31, session cc-sprint45-close-20260713-2231): PO's external agent applied
 # the 065 quality FIX (styling) + 066 quality minor (MSW actor) at commits cbe628b + 356fb8a.
-# Orchestrator re-reviewed the styling fix (APPROVE), re-ran the whole-tree gate at f53819e (GREEN),
-# wiki sweep CLEAN. Reality gate + PO accept remain.
+# Orchestrator re-reviewed styling (APPROVE), re-ran the whole-tree gate at f53819e (GREEN), wiki
+# sweep CLEAN, and ran BOTH reality gates against a live backend (PASS). Only the PO review remains.
 stories:
   - id: STORY-065
     points: 3
-    board: review_passed        # spec PASS; quality re-review APPROVE after the styling FIX (cbe628b). Reality gate + PO accept pending.
+    board: review_passed        # spec PASS; quality re-review APPROVE after the styling FIX (cbe628b). Reality gate PASS. PO accept pending.
     pipeline: full
     attempts: 1
     blocked_question: null
@@ -32,7 +32,7 @@ stories:
                                 # FIX cbe628b moved all styles to MaintenancePage.css under design tokens; orchestrator
                                 # re-review at f53819e: 0 inline styles remain, all 13 maintenance-window* class hooks
                                 # have backing CSS (exact className<->selector match), all 8 tokens exist in styles/. APPROVE.
-    reality_gate: pending
+    reality_gate: passed        # live wire cycle vs real backend (:8010 -> throwaway :55434). See reality_gate_evidence.
   - id: STORY-066
     points: 3
     board: review_passed        # spec PASS + quality APPROVE. The 1 minor (MSW fixture actor) FIXED in cbe628b
@@ -45,7 +45,7 @@ stories:
     review:
       spec: PASS
       quality: APPROVE          # minor (MSW actor not the real 'dashboard-operator' seam) resolved in cbe628b.
-    reality_gate: pending
+    reality_gate: passed        # live wire author derivation vs real backend. See reality_gate_evidence.
 
 # Whole-tree DoD gate (yt_gate.py) — CLEAN GREEN run at HEAD f53819e (post-fix).
 dod_evidence:
@@ -63,6 +63,28 @@ dod_evidence:
     - {command: "npm test", exit_code: 0, result: "51 files, 363 tests passed"}
     - {command: "npm run build", exit_code: 0, result: "tsc -b + vite build OK"}
     - {command: "npm run lint", exit_code: 0, result: "eslint clean"}
+
+# Reality gate (plan lines 144-152) — live render-vs-wire against a real ASGI backend
+# (uvicorn src.composition.asgi:app on :8010) over the throwaway :55434 DB. Exercises the
+# genuinely un-mocked paths that green unit tests cannot: the new title column + first DELETE
+# verb through the real HTTP surface, and the derive-on-read author join through real Postgres.
+reality_gate_evidence:
+  backend: "uvicorn src.composition.asgi:app :8010 -> DATABASE_URL postgres:16 :55434 (seeded component http-check)"
+  story_065:
+    verdict: PASS
+    steps:
+      - "POST /api/v1/maintenance {title:'Postgres upgrade REALITY-065',...} -> 201; response body carries title"
+      - "GET /api/v1/maintenance -> row carries title on the wire (new nullable column round-trips through Postgres)"
+      - "DELETE /api/v1/maintenance/1 -> 204 (codebase's first DELETE verb, live)"
+      - "GET /api/v1/maintenance -> [] (window actually removed)"
+      - "DELETE /api/v1/maintenance/999999 -> 404 {detail:'Maintenance window with ID 999999 not found.'} (MaintenanceWindowNotFoundError -> _shared 404)"
+  story_066:
+    verdict: PASS
+    steps:
+      - "seeded: proposal(state=approved) + approval_event(actor='dashboard-operator',action='approved') + publication(proposal_id=that) + publication(proposal_id=NULL)"
+      - "GET /api/v1/publications -> pub w/ proposal_id: author='dashboard-operator' == DB approval_events.actor ground truth (correlated subquery derivation, live)"
+      - "GET /api/v1/publications -> pub w/ proposal_id=null: author=null (graceful degrade)"
+    note: "Render side covered by the 363 passing component tests against MSW fixtures mirroring this exact wire shape (author field present/null)."
 
 # ENVIRONMENTAL gate artifacts, all proven benign (not sprint-45 defects) — retro material.
 gate_notes:
@@ -100,4 +122,4 @@ interrupts:
       design tokens (cbe628b); 066 MSW actor -> canonical 'dashboard-operator' (cbe628b);
       frontend-zone.md re-verified (356fb8a). Orchestrator (cc-sprint45-close-20260713-2231) re-took
       the dead lock, re-reviewed styling (APPROVE), committed a git-guard hook-path fix (f53819e),
-      and re-ran the whole-tree gate GREEN at f53819e. Reality gate next."
+      re-ran the whole-tree gate GREEN at f53819e, and ran both reality gates PASS. PO review next."
