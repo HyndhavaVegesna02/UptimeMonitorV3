@@ -1122,6 +1122,54 @@ def test_maintenance_repository_title_parity(migrated_db, engine):
         assert w2_saved.title == "Database Upgrade"
 
 
+def test_maintenance_repository_delete_parity(migrated_db, engine):
+    from src.adapters.persistence.maintenance_repository import (
+        PostgresMaintenanceRepository,
+    )
+    from tests.fakes import FakeMaintenanceRepository
+    from src.core.domain.maintenance import (
+        MaintenanceWindow,
+        MaintenanceWindowNotFoundError,
+    )
+
+    # Clear tables for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "checkout", "app-1")
+
+    for repo in [PostgresMaintenanceRepository(engine), FakeMaintenanceRepository()]:
+        # Create a window
+        w = MaintenanceWindow(
+            component_id="checkout",
+            starts_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+            ends_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+            reason="Delete Test",
+        )
+        saved = repo.create(w)
+        assert saved.id is not None
+
+        # Verify it exists in list_windows
+        windows = repo.list_windows()
+        assert any(x.id == saved.id for x in windows)
+
+        # Delete it
+        repo.delete(saved.id)
+
+        # Verify it is gone from list_windows
+        windows_after = repo.list_windows()
+        assert not any(x.id == saved.id for x in windows_after)
+
+        # Delete again/unknown -> raises MaintenanceWindowNotFoundError
+        with pytest.raises(MaintenanceWindowNotFoundError):
+            repo.delete(saved.id)
+
+        with pytest.raises(MaintenanceWindowNotFoundError):
+            repo.delete(999999)
+
+
 def test_postgres_publication_repository(migrated_db, engine):
     """DB-gated: PostgresPublicationRepository record + list_recent + fake parity.
 

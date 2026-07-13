@@ -50,3 +50,8 @@ class MaintenanceWindow(BaseModel):
         if self.ends_at <= self.starts_at:
             raise ValueError("ends_at must be strictly greater than starts_at")
         return self
+
+
+class MaintenanceWindowNotFoundError(ValueError):
+    """Raised when a maintenance window cannot be found by its ID."""
+

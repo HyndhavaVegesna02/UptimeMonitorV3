@@ -7,7 +7,10 @@ from datetime import datetime, timezone
 import sqlalchemy as sa
 from sqlalchemy.engine import Engine
 
-from src.core.domain.maintenance import MaintenanceWindow
+from src.core.domain.maintenance import (
+    MaintenanceWindow,
+    MaintenanceWindowNotFoundError,
+)
 from src.core.ports.maintenance_repository import MaintenanceRepository
 
 _MAINTENANCE_WINDOWS = sa.table(
@@ -101,3 +104,15 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
             result = conn.execute(stmt).first()
 
         return result is not None
+
+    def delete(self, window_id: int) -> None:
+        """Delete a maintenance window by its ID."""
+        stmt = sa.delete(_MAINTENANCE_WINDOWS).where(_MAINTENANCE_WINDOWS.c.id == window_id)
+
+        with self._engine.begin() as conn:
+            res = conn.execute(stmt)
+            if res.rowcount == 0:
+                raise MaintenanceWindowNotFoundError(
+                    f"Maintenance window with ID {window_id} not found."
+                )
+

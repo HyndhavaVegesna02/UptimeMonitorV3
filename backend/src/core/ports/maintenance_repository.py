@@ -45,3 +45,16 @@ class MaintenanceRepository(ABC):
             bool: True if the component is under maintenance, False otherwise.
         """
         raise NotImplementedError
+
+    @abstractmethod
+    def delete(self, window_id: int) -> None:
+        """Delete a maintenance window by its ID.
+
+        Args:
+            window_id: The ID of the maintenance window to delete.
+
+        Raises:
+            MaintenanceWindowNotFoundError: If the window ID does not exist.
+        """
+        raise NotImplementedError
+

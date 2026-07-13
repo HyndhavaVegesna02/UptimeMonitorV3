@@ -21,6 +21,7 @@ from src.core.domain import (
     StatusChange,
 )
 from src.core.domain.component import ComponentNotFoundError
+from src.core.domain.maintenance import MaintenanceWindowNotFoundError
 from src.core.domain.proposal import (
     ProposalNotOpenError,
     ProposalState,
@@ -340,3 +341,12 @@ class FakeMaintenanceRepository(MaintenanceRepository):
                 if w.starts_at <= at < w.ends_at:
                     return True
         return False
+
+    def delete(self, window_id: int) -> None:
+        """Delete a maintenance window by its ID."""
+        if window_id not in self._windows:
+            raise MaintenanceWindowNotFoundError(
+                f"Maintenance window with ID {window_id} not found."
+            )
+        del self._windows[window_id]
+
