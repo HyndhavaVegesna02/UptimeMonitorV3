@@ -21,6 +21,13 @@ _PUBLICATIONS = sa.table(
     sa.column("outcome"),
 )
 
+_APPROVAL_EVENTS = sa.table(
+    "approval_events",
+    sa.column("proposal_id"),
+    sa.column("action"),
+    sa.column("actor"),
+)
+
 
 class PostgresPublicationRepository(PublicationRepository):
     """Concrete Postgres adapter for recording and listing publications (dossier §9, §12/T1.1, §17, STORY-072).
@@ -80,6 +87,17 @@ class PostgresPublicationRepository(PublicationRepository):
 
         Returns `[]` when none exist (§17 Publications tab: empty state is valid).
         """
+        subq = (
+            sa.select(_APPROVAL_EVENTS.c.actor)
+            .where(
+                _APPROVAL_EVENTS.c.proposal_id == _PUBLICATIONS.c.proposal_id,
+                _APPROVAL_EVENTS.c.action == "approved",
+            )
+            .limit(1)
+            .scalar_subquery()
+            .label("author")
+        )
+
         stmt = (
             sa.select(
                 _PUBLICATIONS.c.id,
@@ -88,6 +106,7 @@ class PostgresPublicationRepository(PublicationRepository):
                 _PUBLICATIONS.c.status,
                 _PUBLICATIONS.c.published_at,
                 _PUBLICATIONS.c.outcome,
+                subq,
             )
             .order_by(_PUBLICATIONS.c.published_at.desc())
             .limit(limit)
@@ -104,6 +123,7 @@ class PostgresPublicationRepository(PublicationRepository):
                 status=ComponentStatus(row.status),
                 published_at=row.published_at.astimezone(timezone.utc),
                 outcome=PublicationOutcome(row.outcome),
+                author=row.author,
             )
             for row in rows
         ]

@@ -241,9 +241,10 @@ class FakePublicationRepository(PublicationRepository):
     Publication with an id; list_recent returns most-recent-first.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, proposal_to_actor: dict[int, str] | None = None) -> None:
         self._publications: dict[int, Publication] = {}
         self._next_id: int = 1
+        self._proposal_to_actor = proposal_to_actor or {}
 
     def record(self, publication: Publication) -> Publication:
         """Persist a publication and return it with an assigned id."""
@@ -260,7 +261,13 @@ class FakePublicationRepository(PublicationRepository):
             key=lambda p: p.published_at,
             reverse=True,
         )
-        return pubs[:limit]
+        result = []
+        for p in pubs[:limit]:
+            author = None
+            if p.proposal_id is not None:
+                author = self._proposal_to_actor.get(p.proposal_id)
+            result.append(p.model_copy(update={"author": author}))
+        return result
 
 
 class FakeSignalRepository(SignalRepository):

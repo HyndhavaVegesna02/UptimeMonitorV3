@@ -1234,6 +1234,153 @@ def test_postgres_publication_repository(migrated_db, engine):
     assert limited[0].id == saved2.id
 
 
+def test_publication_repository_author_parity(migrated_db, engine):
+    from src.adapters.persistence.publication_repository import PostgresPublicationRepository
+    from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+    from tests.fakes import FakePublicationRepository
+    from src.core.domain.publication import Publication, PublicationOutcome
+    from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.domain.status import ComponentStatus
+
+    # Clear tables for isolation
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute("TRUNCATE TABLE publications CASCADE;")
+            cur.execute("TRUNCATE TABLE approval_events CASCADE;")
+            cur.execute("TRUNCATE TABLE status_proposals CASCADE;")
+            cur.execute("TRUNCATE TABLE components CASCADE;")
+        conn.commit()
+
+    seed_component(migrated_db.database_url, "checkout", "app-1")
+    seed_component(migrated_db.database_url, "sockshop", "app-1")
+    seed_component(migrated_db.database_url, "billing", "app-1")
+
+    # Set up Postgres data
+    prop_repo = PostgresProposalRepository(engine)
+    
+    # 1. Proposal with approval
+    p1 = StatusProposal(
+        component_id="checkout",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    p1_saved = prop_repo.create_open(p1)
+    assert p1_saved is not None
+    prop_repo.record_approval_event(
+        p1_saved.id,
+        actor="Alice",
+        action="approved",
+        notes="Looks good",
+        occurred_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+    )
+
+    # 2. Proposal with no approval event
+    p2 = StatusProposal(
+        component_id="sockshop",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    p2_saved = prop_repo.create_open(p2)
+    assert p2_saved is not None
+
+    # 3. Defensive: Proposal with two approved events
+    p3 = StatusProposal(
+        component_id="billing",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    p3_saved = prop_repo.create_open(p3)
+    assert p3_saved is not None
+    prop_repo.record_approval_event(
+        p3_saved.id,
+        actor="Bob",
+        action="approved",
+        notes="First approval",
+        occurred_at=datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc),
+    )
+    # We insert directly to bypass duplicate approval model rules if any
+    with psycopg.connect(migrated_db.database_url) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                "INSERT INTO approval_events (proposal_id, actor, action, notes, occurred_at) "
+                "VALUES (%s, 'Charlie', 'approved', 'Second approval', %s)",
+                (p3_saved.id, datetime(2026, 6, 26, 12, 6, 0, tzinfo=timezone.utc)),
+            )
+        conn.commit()
+
+    # Now, set up repositories
+    pg_pub_repo = PostgresPublicationRepository(engine)
+    
+    # Injected map for Fake
+    fake_map = {
+        p1_saved.id: "Alice",
+        p3_saved.id: "Bob",
+    }
+    fake_pub_repo = FakePublicationRepository(proposal_to_actor=fake_map)
+
+    for repo in [pg_pub_repo, fake_pub_repo]:
+        # Record publications:
+        
+        # Pub 1: proposal_id = p1_saved.id -> author = "Alice"
+        pub1 = Publication(
+            component_id="checkout",
+            status=ComponentStatus.DEGRADED,
+            published_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+            proposal_id=p1_saved.id,
+        )
+        saved1 = repo.record(pub1)
+
+        # Pub 2: proposal_id = None -> author = None
+        pub2 = Publication(
+            component_id="checkout",
+            status=ComponentStatus.OPERATIONAL,
+            published_at=datetime(2026, 6, 28, 13, 0, 0, tzinfo=timezone.utc),
+            proposal_id=None,
+        )
+        saved2 = repo.record(pub2)
+
+        # Pub 3: proposal_id = p2_saved.id (no approved event) -> author = None
+        pub3 = Publication(
+            component_id="sockshop",
+            status=ComponentStatus.DEGRADED,
+            published_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+            proposal_id=p2_saved.id,
+        )
+        saved3 = repo.record(pub3)
+
+        # Pub 4: proposal_id = p3_saved.id (two approved events) -> author should be "Bob" or "Charlie"
+        pub4 = Publication(
+            component_id="billing",
+            status=ComponentStatus.DEGRADED,
+            published_at=datetime(2026, 6, 28, 15, 0, 0, tzinfo=timezone.utc),
+            proposal_id=p3_saved.id,
+        )
+        saved4 = repo.record(pub4)
+
+        # Verify on read!
+        recent = repo.list_recent()
+        assert len(recent) == 4
+        
+        assert recent[0].id == saved4.id
+        assert recent[0].author in ["Bob", "Charlie"]
+
+        assert recent[1].id == saved3.id
+        assert recent[1].author is None
+
+        assert recent[2].id == saved2.id
+        assert recent[2].author is None
+
+        assert recent[3].id == saved1.id
+        assert recent[3].author == "Alice"
+
+
+
 def test_postgres_publication_repository_records_failed_outcome(migrated_db, engine):
     """STORY-072 AC1/AC2: PostgresPublicationRepository persists an explicit
     outcome=FAILED record and round-trips it correctly."""
