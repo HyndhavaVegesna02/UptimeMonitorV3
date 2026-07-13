@@ -1,6 +1,6 @@
-# YourTeam active sprint board.
+# YourTeam sprint board.
 sprint: 45
-status: active
+status: done   # PO ACCEPT both (2026-07-13 review); velocity 6/6; merged to main (local). Retro next.
 started: 2026-07-13
 mode: in-process
 goal: "The Maintenance tab gains a real Title field and a per-window delete (STORY-065), and the
@@ -20,7 +20,7 @@ start_tag: sprint-45-start
 stories:
   - id: STORY-065
     points: 3
-    board: review_passed        # spec PASS; quality re-review APPROVE after the styling FIX (cbe628b). Reality gate PASS. PO accept pending.
+    board: accepted             # PO ACCEPT (2026-07-13). spec PASS; quality APPROVE (post styling fix); DoD GREEN; reality gate PASS.
     pipeline: full
     attempts: 1
     blocked_question: null
@@ -35,8 +35,8 @@ stories:
     reality_gate: passed        # live wire cycle vs real backend (:8010 -> throwaway :55434). See reality_gate_evidence.
   - id: STORY-066
     points: 3
-    board: review_passed        # spec PASS + quality APPROVE. The 1 minor (MSW fixture actor) FIXED in cbe628b
-                                # (ops-admin/infra-bot -> canonical 'dashboard-operator'; PublicationsPage.test.tsx assertions updated).
+    board: accepted             # PO ACCEPT (2026-07-13). spec PASS + quality APPROVE (minor MSW actor fixed in cbe628b);
+                                # DoD GREEN; reality gate PASS (live author derivation).
     pipeline: full
     attempts: 1
     blocked_question: null

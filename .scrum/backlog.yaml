@@ -512,7 +512,7 @@ stories:
   - id: STORY-065
     title: Maintenance title field + DELETE endpoint (Maintenance form title + delete action)
     file: docs/scrum/stories/STORY-065-maintenance-title-delete.md
-    status: ready   # refined 2026-07-13 (sprint-45 planning): title = own nullable column; hard delete; inline confirm. Scheduled into sprint 45.
+    status: done   # PO ACCEPT 2026-07-13 (sprint-45 review): spec PASS, quality APPROVE (after styling fix), DoD GREEN @f53819e, reality gate PASS (live wire). Merged to main.
     points: 3
     priority: 15
     type: feature
@@ -520,7 +520,7 @@ stories:
   - id: STORY-066
     title: Publication author metadata (Publications timeline)
     file: docs/scrum/stories/STORY-066-publication-metadata.md
-    status: ready   # refined 2026-07-13 (sprint-45 planning): scope narrowed to author-only (outcome done by 072; incident -> STORY-081). Author derived on read from approval_events.actor, no migration. Scheduled into sprint 45.
+    status: done   # PO ACCEPT 2026-07-13 (sprint-45 review): spec PASS, quality APPROVE, DoD GREEN @f53819e, reality gate PASS (live wire author derivation). Merged to main.
     points: 3
     priority: 16
     type: feature
