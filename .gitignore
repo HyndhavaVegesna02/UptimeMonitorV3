@@ -36,12 +36,7 @@ Thumbs.db
 *.swp
 .idea/
 .vscode/
-01-dashboard.png
-02-availability.png
-03-approvals.png
-04-checkhistory.png
-05-maintenance.png
-06-publications.png
-07-dashboard-dark.png
-08-maintenance-dark.png
+# stray review/demo screenshots at the repo root (never committed)
+/*.png
+session_summary.md
 .playwright-mcp/
