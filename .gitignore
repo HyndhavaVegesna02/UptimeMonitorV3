@@ -18,6 +18,7 @@ dist/
 .ruff_cache/
 .coverage
 htmlcov/
+.tokensave/
 
 # Node / frontend (activates from Zone 7)
 node_modules/
@@ -28,7 +29,12 @@ frontend/.vite/
 # Local agent/skill tooling artifacts (not project code)
 .agents/
 .claude/skills/council/
+.claude/skills/yourteam-main.zip
 skills-lock.json
+.import_linter_cache/
+.vercel/
+.eslintcache
+
 
 # OS / editor
 .DS_Store
