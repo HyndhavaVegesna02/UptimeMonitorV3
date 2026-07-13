@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, migrations/versions/ecda752c8865_add_publications_outcome.py, backend/tests/test_run_live_loop.py, backend/tests/test_persistence_adapters.py]
-verified_sha: 678ff0d
-verified_sprint: sprint-44
+verified_sha: f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787
+verified_sprint: sprint-45
 status: verified
 ---
 
@@ -94,3 +94,5 @@ status: verified
   DB-gated regression driving the real `RecordingPublisher`+`PostgresPublicationRepository` chain
   through both outcomes). Both are defining pinning tests for this article's central publisher-chain
   claims; added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
+- sprint-45 (STORY-065/STORY-066): re-verified, no changes to Statuspage publishing. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
+
