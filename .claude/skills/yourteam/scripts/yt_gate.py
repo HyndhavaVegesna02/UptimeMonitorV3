@@ -240,6 +240,11 @@ def main() -> int:
     # Make venv-sibling binaries (pytest, ruff, alembic, lint-imports) resolvable.
     env = dict(os.environ)
     env["PATH"] = str(Path(sys.executable).parent) + os.pathsep + env.get("PATH", "")
+    # Force UTF-8 in every gate subprocess (retro sprint-45, 2026-07-13): without it,
+    # import-linter's rich banner crashes the Windows cp1252 pipe writer
+    # (UnicodeEncodeError in rich/_win32_console.py) and reds an otherwise-green gate.
+    # setdefault so a deliberately-exported PYTHONUTF8 still wins.
+    env.setdefault("PYTHONUTF8", "1")
 
     commit = git(root, "rev-parse", "--short", "HEAD")
     results, all_green = [], True
