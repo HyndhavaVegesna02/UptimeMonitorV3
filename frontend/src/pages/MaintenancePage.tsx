@@ -243,8 +243,8 @@ function MaintenanceWindowRow({
 
   return (
     <li className="maintenance-window">
-      <div className="maintenance-window__row-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div className="maintenance-window__body" style={{ flex: 1 }}>
+      <div className="maintenance-window__row-content">
+        <div className="maintenance-window__body">
           <div className="maintenance-window__head">
             <span className="maintenance-window__title text-body">
               {window.title ?? '—'}
@@ -254,11 +254,11 @@ function MaintenanceWindowRow({
             />
           </div>
           {window.reason && (
-            <div className="maintenance-window__reason text-caption" style={{ color: 'var(--color-ink-muted)', marginTop: '2px' }}>
+            <div className="maintenance-window__reason text-caption">
               {window.reason}
             </div>
           )}
-          <div className="maintenance-window__meta text-mono text-caption" style={{ marginTop: '2px' }}>
+          <div className="maintenance-window__meta text-mono text-caption">
             <span>{window.component_id}</span>
             <span aria-hidden="true"> · </span>
             <span>
@@ -266,10 +266,10 @@ function MaintenanceWindowRow({
             </span>
           </div>
         </div>
-        <div className="maintenance-window__actions" style={{ marginLeft: 'var(--space-3)' }}>
+        <div className="maintenance-window__actions">
           {confirmDelete ? (
-            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
-              <span className="text-caption" style={{ color: 'var(--color-ink-subtle)' }}>Confirm?</span>
+            <div className="maintenance-window__confirm">
+              <span className="maintenance-window__confirm-label text-caption">Confirm?</span>
               <Button
                 variant="primary"
                 disabled={deleting}
@@ -347,8 +347,8 @@ export function MaintenancePage() {
           <h2 className="sr-only">Scheduled windows</h2>
 
           {deleteError && (
-            <div className="maintenance-window-error text-caption" role="alert" style={{ margin: 'var(--space-3) var(--space-4)', padding: 'var(--space-2)', background: 'var(--color-surface-2)', border: '1px solid var(--color-health-down)', borderRadius: 'var(--radius-control)', color: 'var(--color-ink)' }}>
-              <span style={{ color: 'var(--color-health-down)', marginRight: 'var(--space-2)' }}>⚠</span>
+            <div className="maintenance-window-error text-caption" role="alert">
+              <span className="maintenance-window-error__icon">⚠</span>
               {deleteError.detail ?? 'Could not delete the maintenance window'}
             </div>
           )}

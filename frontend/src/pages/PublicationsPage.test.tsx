@@ -81,10 +81,10 @@ describe('PublicationsPage', () => {
     const items = screen.getAllByRole('listitem')
     // FIXTURE_PUBLICATIONS[0] has author: null.
     expect(within(items[0]).getByText('Author —')).toBeInTheDocument()
-    // FIXTURE_PUBLICATIONS[1] has author: 'ops-admin'.
-    expect(within(items[1]).getByText('Author ops-admin')).toBeInTheDocument()
-    // FIXTURE_PUBLICATIONS[2] has author: 'infra-bot'.
-    expect(within(items[2]).getByText('Author infra-bot')).toBeInTheDocument()
+    // FIXTURE_PUBLICATIONS[1] has author: 'dashboard-operator'.
+    expect(within(items[1]).getByText('Author dashboard-operator')).toBeInTheDocument()
+    // FIXTURE_PUBLICATIONS[2] has author: 'dashboard-operator'.
+    expect(within(items[2]).getByText('Author dashboard-operator')).toBeInTheDocument()
   })
 
 

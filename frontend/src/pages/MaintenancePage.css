@@ -184,3 +184,55 @@
 .maintenance-state-badge--past .maintenance-state-badge__dot {
   background: var(--color-ink-tertiary);
 }
+
+/* Delete row and actions styling (STORY-065, sprint-45) */
+.maintenance-window__row-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.maintenance-window__body {
+  flex: 1;
+}
+
+.maintenance-window__reason {
+  color: var(--color-ink-muted);
+  margin-top: 2px;
+}
+
+.maintenance-window__meta {
+  margin-top: 2px;
+}
+
+.maintenance-window__actions {
+  margin-left: var(--space-3);
+}
+
+.maintenance-window__confirm {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.maintenance-window__confirm-label {
+  color: var(--color-ink-subtle);
+}
+
+/* Delete error banner (STORY-065, sprint-45) */
+.maintenance-window-error {
+  margin: var(--space-3) var(--space-4);
+  padding: var(--space-2);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-health-down);
+  border-radius: var(--radius-control);
+  color: var(--color-ink);
+  display: flex;
+  align-items: center;
+}
+
+.maintenance-window-error__icon {
+  color: var(--color-health-down);
+  margin-right: var(--space-2);
+}
+
