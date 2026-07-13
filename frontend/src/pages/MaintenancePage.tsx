@@ -71,6 +71,7 @@ interface ScheduleFormProps {
 function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps) {
   const { state: componentsState, retry: retryComponents } = useComponents()
   const [title, setTitle] = useState('')
+  const [reason, setReason] = useState('')
   const [componentId, setComponentId] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
@@ -83,10 +84,12 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
       component_id: componentId,
       starts_at: new Date(startsAt).toISOString(),
       ends_at: new Date(endsAt).toISOString(),
-      reason: title.trim() === '' ? null : title,
+      title: title.trim() === '' ? null : title,
+      reason: reason.trim() === '' ? null : reason,
     })
     if (ok) {
       setTitle('')
+      setReason('')
       setComponentId('')
       setStartsAt('')
       setEndsAt('')
@@ -106,6 +109,20 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="e.g. Postgres upgrade"
+        />
+      </div>
+
+      <div className="maintenance-form__field">
+        <label className="maintenance-form__label" htmlFor="maintenance-reason">
+          Reason / Notes
+        </label>
+        <input
+          id="maintenance-reason"
+          className="maintenance-form__input"
+          type="text"
+          value={reason}
+          onChange={(event) => setReason(event.target.value)}
+          placeholder="e.g. Postgres upgrade reason"
         />
       </div>
 
@@ -265,12 +282,17 @@ export function MaintenancePage() {
                 <li key={window.id} className="maintenance-window">
                   <div className="maintenance-window__head">
                     <span className="maintenance-window__title text-body">
-                      {formatReason(window.reason)}
+                      {window.title ?? '—'}
                     </span>
                     <WindowStateBadge
                       state={deriveWindowState(window.starts_at, window.ends_at)}
                     />
                   </div>
+                  {window.reason && (
+                    <div className="maintenance-window__reason text-caption" style={{ color: 'var(--color-ink-muted)', marginTop: '2px' }}>
+                      {window.reason}
+                    </div>
+                  )}
                   <div className="maintenance-window__meta text-mono text-caption">
                     <span>{window.component_id}</span>
                     <span aria-hidden="true"> · </span>

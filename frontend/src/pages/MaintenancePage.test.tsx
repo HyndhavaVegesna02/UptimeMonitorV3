@@ -72,7 +72,7 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />)
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
-    // FIXTURE_MAINTENANCE_WINDOWS[1] has reason: null -> em-dash title.
+    // FIXTURE_MAINTENANCE_WINDOWS[1] has reason/title: null -> em-dash title.
     const nullReasonWindow = FIXTURE_MAINTENANCE_WINDOWS[1]
     const item = windowItemFor(nullReasonWindow.component_id)
     expect(within(item).getByText('—')).toBeInTheDocument()
@@ -82,9 +82,10 @@ describe('MaintenancePage', () => {
       ),
     ).toBeInTheDocument()
 
-    // The other fixture window has a real reason string, rendered as its title.
+    // The other fixture window has a real title and reason string.
     const namedWindow = FIXTURE_MAINTENANCE_WINDOWS[0]
     const namedItem = windowItemFor(namedWindow.component_id)
+    expect(within(namedItem).getByText(namedWindow.title as string)).toBeInTheDocument()
     expect(within(namedItem).getByText(namedWindow.reason as string)).toBeInTheDocument()
   })
 
@@ -154,6 +155,7 @@ describe('MaintenancePage', () => {
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
     const titleInput = screen.getByLabelText('Title')
+    const reasonInput = screen.getByLabelText('Reason / Notes')
     const componentSelect = await screen.findByLabelText('Component')
     const startInput = screen.getByLabelText('Start')
     const endInput = screen.getByLabelText('End')
@@ -165,9 +167,11 @@ describe('MaintenancePage', () => {
     await user.selectOptions(componentSelect, FIXTURE_COMPONENTS[0].id)
     expect(componentSelect).toHaveValue(FIXTURE_COMPONENTS[0].id)
 
-    // Keyboard-operable, mock order: Title -> Component -> Start -> End -> submit.
+    // Keyboard-operable, mock order: Title -> Reason / Notes -> Component -> Start -> End -> submit.
     titleInput.focus()
     expect(titleInput).toHaveFocus()
+    await user.tab()
+    expect(reasonInput).toHaveFocus()
     await user.tab()
     expect(componentSelect).toHaveFocus()
     await user.tab()
@@ -178,10 +182,10 @@ describe('MaintenancePage', () => {
     expect(submitButton).toBeInTheDocument()
   })
 
-  it('POSTs a tz-aware payload with Title mapped to reason, refreshes the list, and resets the form on success (AC1, AC2)', async () => {
+  it('POSTs a tz-aware payload with Title and Reason, refreshes the list, and resets the form on success (AC1, AC2)', async () => {
     const user = userEvent.setup()
     let postedBody:
-      | { component_id: string; starts_at: string; ends_at: string; reason: string | null }
+      | { component_id: string; starts_at: string; ends_at: string; title: string | null; reason: string | null }
       | undefined
     let getCallCount = 0
     const created = {
@@ -189,7 +193,8 @@ describe('MaintenancePage', () => {
       component_id: FIXTURE_COMPONENTS[0].id,
       starts_at: '2026-07-09T09:00:00.000Z',
       ends_at: '2026-07-09T10:00:00.000Z',
-      reason: 'Routine check',
+      title: 'Routine check',
+      reason: 'Routine notes',
     }
     server.use(
       http.get('/api/v1/maintenance', () => {
@@ -209,9 +214,11 @@ describe('MaintenancePage', () => {
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
     const titleInput = screen.getByLabelText('Title')
+    const reasonInput = screen.getByLabelText('Reason / Notes')
     const componentSelect = await screen.findByLabelText('Component')
 
     await user.type(titleInput, 'Routine check')
+    await user.type(reasonInput, 'Routine notes')
     await user.selectOptions(componentSelect, FIXTURE_COMPONENTS[0].id)
     await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
     await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
@@ -221,8 +228,8 @@ describe('MaintenancePage', () => {
     await waitFor(() => expect(getCallCount).toBe(2))
     expect(postedBody).toBeDefined()
     expect(postedBody?.component_id).toBe(FIXTURE_COMPONENTS[0].id)
-    // Title -> reason mapping (AC1: the DTO has no separate title field).
-    expect(postedBody?.reason).toBe('Routine check')
+    expect(postedBody?.title).toBe('Routine check')
+    expect(postedBody?.reason).toBe('Routine notes')
     // Tz-aware and well-formed (AC2): trailing Z, parses.
     expect(postedBody?.starts_at.endsWith('Z')).toBe(true)
     expect(postedBody?.ends_at.endsWith('Z')).toBe(true)
@@ -232,11 +239,13 @@ describe('MaintenancePage', () => {
     expect(postedBody?.starts_at).toBe(new Date('2026-07-09T09:00').toISOString())
     expect(postedBody?.ends_at).toBe(new Date('2026-07-09T10:00').toISOString())
 
-    // Refreshed list now includes the newly-created window.
+    // Refreshed list now includes the newly-created window title and reason.
+    await screen.findByText(created.title)
     await screen.findByText(created.reason)
 
     // Form resets on success (AC2).
     expect(screen.getByLabelText('Title')).toHaveValue('')
+    expect(screen.getByLabelText('Reason / Notes')).toHaveValue('')
     expect(screen.getByLabelText('Component')).toHaveValue('')
     expect(screen.getByLabelText('Start')).toHaveValue('')
     expect(screen.getByLabelText('End')).toHaveValue('')

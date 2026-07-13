@@ -18,6 +18,7 @@ export const FIXTURE_MAINTENANCE_WINDOWS: MaintenanceWindowDTO[] = [
     starts_at: '2026-07-07T10:00:00Z',
     ends_at: '2026-07-07T11:00:00Z',
     reason: 'planning-time wire probe',
+    title: 'Database Upgrade',
   },
   {
     id: 2,
@@ -25,6 +26,7 @@ export const FIXTURE_MAINTENANCE_WINDOWS: MaintenanceWindowDTO[] = [
     starts_at: '2026-07-08T00:00:00Z',
     ends_at: '2026-07-08T01:00:00Z',
     reason: null,
+    title: null,
   },
 ]
 
@@ -48,6 +50,7 @@ export const maintenanceHandlers = [
       starts_at: body.starts_at,
       ends_at: body.ends_at,
       reason: body.reason ?? null,
+      title: body.title ?? null,
     }
     return HttpResponse.json(created, { status: 201 })
   }),

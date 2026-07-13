@@ -192,6 +192,7 @@ export interface MaintenanceWindowDTO {
   starts_at: string
   ends_at: string
   reason: string | null
+  title: string | null
 }
 
 /**
@@ -209,4 +210,5 @@ export interface CreateMaintenanceRequest {
   starts_at: string
   ends_at: string
   reason?: string | null
+  title?: string | null
 }
