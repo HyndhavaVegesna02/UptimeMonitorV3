@@ -90,6 +90,8 @@ export function PublicationsPage() {
                 <span>{publication.published_at}</span>
                 <span aria-hidden="true"> · </span>
                 <span>Proposal {formatProposalId(publication.proposal_id)}</span>
+                <span aria-hidden="true"> · </span>
+                <span>Author {publication.author ?? '—'}</span>
               </div>
             </TimelineItem>
           ))}

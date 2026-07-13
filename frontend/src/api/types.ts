@@ -163,6 +163,7 @@ export interface PublicationDTO {
   published_at: string
   proposal_id: number | null
   outcome: 'succeeded' | 'failed'
+  author: string | null
 }
 
 /**

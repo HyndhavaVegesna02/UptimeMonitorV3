@@ -25,6 +25,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     published_at: '2026-06-29T12:00:00Z',
     proposal_id: null,
     outcome: 'succeeded',
+    author: null,
   },
   {
     id: 2,
@@ -33,6 +34,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     published_at: '2026-06-29T10:00:00Z',
     proposal_id: 5,
     outcome: 'failed',
+    author: 'ops-admin',
   },
   {
     id: 3,
@@ -41,6 +43,7 @@ export const FIXTURE_PUBLICATIONS: PublicationDTO[] = [
     published_at: '2026-06-29T08:00:00Z',
     proposal_id: 42,
     outcome: 'succeeded',
+    author: 'infra-bot',
   },
 ]
 

@@ -74,6 +74,20 @@ describe('PublicationsPage', () => {
     expect(within(items[2]).getByText('Proposal 42')).toBeInTheDocument()
   })
 
+  it('renders the author metadata or an em-dash if null (STORY-066)', async () => {
+    render(<PublicationsPage />)
+    await screen.findByRole('list', { name: 'Publication log' })
+
+    const items = screen.getAllByRole('listitem')
+    // FIXTURE_PUBLICATIONS[0] has author: null.
+    expect(within(items[0]).getByText('Author —')).toBeInTheDocument()
+    // FIXTURE_PUBLICATIONS[1] has author: 'ops-admin'.
+    expect(within(items[1]).getByText('Author ops-admin')).toBeInTheDocument()
+    // FIXTURE_PUBLICATIONS[2] has author: 'infra-bot'.
+    expect(within(items[2]).getByText('Author infra-bot')).toBeInTheDocument()
+  })
+
+
   it('omits the connector line below the last item only (AC1)', async () => {
     const { container } = render(<PublicationsPage />)
     await screen.findByRole('list', { name: 'Publication log' })
