@@ -222,6 +222,71 @@ def test_post_maintenance_malformed():
     assert response.status_code == 422
 
 
+def test_post_maintenance_with_title():
+    maintenance_repo = FakeMaintenanceRepository()
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    # With title
+    payload1 = {
+        "component_id": "checkout",
+        "starts_at": "2026-06-28T12:00:00Z",
+        "ends_at": "2026-06-28T14:00:00Z",
+        "reason": "Database migration",
+        "title": "Upgrade DB",
+    }
+    response1 = client.post("/api/v1/maintenance", json=payload1)
+    assert response1.status_code == 201
+    assert response1.json()["title"] == "Upgrade DB"
+
+    # Omitted title -> null
+    payload2 = {
+        "component_id": "checkout",
+        "starts_at": "2026-06-28T15:00:00Z",
+        "ends_at": "2026-06-28T17:00:00Z",
+        "reason": "Database migration",
+    }
+    response2 = client.post("/api/v1/maintenance", json=payload2)
+    assert response2.status_code == 201
+    assert response2.json()["title"] is None
+
+
+def test_delete_maintenance_window():
+    w = MaintenanceWindow(
+        id=42,
+        component_id="checkout",
+        starts_at=datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc),
+        ends_at=datetime(2026, 6, 28, 14, 0, 0, tzinfo=timezone.utc),
+        reason="Test Delete",
+    )
+    maintenance_repo = FakeMaintenanceRepository(windows=[w])
+    app = create_app(
+        maintenance_repo=maintenance_repo,
+        proposal_repo=FakeProposalRepository(),
+        component_repo=FakeComponentRepository(),
+    )
+    client = TestClient(app)
+
+    # Success case
+    response = client.delete("/api/v1/maintenance/42")
+    assert response.status_code == 204
+    assert response.text == ""
+
+    # Already deleted -> 404
+    response = client.delete("/api/v1/maintenance/42")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+    # Unknown ID -> 404
+    response = client.delete("/api/v1/maintenance/999")
+    assert response.status_code == 404
+    assert "not found" in response.json()["detail"].lower()
+
+
 def test_maintenance_module_five_file_shape():
     # AC5: the feature follows the five-file convention exactly.
     from pathlib import Path

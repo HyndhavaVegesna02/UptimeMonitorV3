@@ -34,6 +34,7 @@ class MaintenanceService:
                 starts_at=w.starts_at,
                 ends_at=w.ends_at,
                 reason=w.reason,
+                title=w.title,
             )
             for w in windows
         ]
@@ -53,6 +54,7 @@ class MaintenanceService:
             starts_at=request.starts_at,
             ends_at=request.ends_at,
             reason=request.reason,
+            title=request.title,
         )
 
         # 3. Persist and return DTO
@@ -63,7 +65,12 @@ class MaintenanceService:
             starts_at=saved.starts_at,
             ends_at=saved.ends_at,
             reason=saved.reason,
+            title=saved.title,
         )
+
+    def delete_window(self, window_id: int) -> None:
+        """Delete a maintenance window."""
+        self._maintenance_repo.delete(window_id)
 
 
 def get_maintenance_service(

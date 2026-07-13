@@ -32,3 +32,13 @@ def schedule_maintenance_window(
 ) -> MaintenanceWindowDTO:
     """Schedule a new maintenance window."""
     return service.create_window(request)
+
+
+@router.delete("/maintenance/{window_id}", status_code=204)
+def delete_maintenance_window(
+    window_id: int,
+    service: MaintenanceService = Depends(get_maintenance_service),
+) -> None:
+    """Delete a scheduled maintenance window."""
+    service.delete_window(window_id)
+

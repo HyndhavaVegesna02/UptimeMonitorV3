@@ -11,6 +11,7 @@ from fastapi.responses import JSONResponse
 
 from src.api.v1._shared.validation import SyntacticValidationError
 from src.core.domain.component import ComponentNotFoundError
+from src.core.domain.maintenance import MaintenanceWindowNotFoundError
 from src.core.domain.topology import (
     SignalIntervalUnconfiguredError,
     SignalNotFoundError,
@@ -25,6 +26,7 @@ _STATUS_BY_EXCEPTION: dict[type[Exception], int] = {
     SignalNotFoundError: 404,
     ComponentNotFoundError: 404,
     ProposalNotFoundError: 404,
+    MaintenanceWindowNotFoundError: 404,
     SignalIntervalUnconfiguredError: 409,
     ProposalNotOpenError: 409,
 }
