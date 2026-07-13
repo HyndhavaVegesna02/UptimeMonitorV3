@@ -54,4 +54,11 @@ export const maintenanceHandlers = [
     }
     return HttpResponse.json(created, { status: 201 })
   }),
+  http.delete('/api/v1/maintenance/:id', ({ params }) => {
+    const id = Number(params.id)
+    if (id === 999) {
+      return HttpResponse.json({ detail: 'Maintenance window not found.' }, { status: 404 })
+    }
+    return new HttpResponse(null, { status: 204 })
+  }),
 ]

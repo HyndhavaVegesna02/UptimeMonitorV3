@@ -228,6 +228,84 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
   )
 }
 
+function MaintenanceWindowRow({
+  window,
+  onDelete,
+  deleting,
+}: {
+  window: MaintenanceWindowDTO
+  onDelete: (id: number) => Promise<boolean>
+  deleting: boolean
+}) {
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
+  async function handleDeleteClick() {
+    if (confirmDelete) {
+      await onDelete(window.id)
+      setConfirmDelete(false)
+    } else {
+      setConfirmDelete(true)
+    }
+  }
+
+  return (
+    <li className="maintenance-window">
+      <div className="maintenance-window__row-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div className="maintenance-window__body" style={{ flex: 1 }}>
+          <div className="maintenance-window__head">
+            <span className="maintenance-window__title text-body">
+              {window.title ?? '—'}
+            </span>
+            <WindowStateBadge
+              state={deriveWindowState(window.starts_at, window.ends_at)}
+            />
+          </div>
+          {window.reason && (
+            <div className="maintenance-window__reason text-caption" style={{ color: 'var(--color-ink-muted)', marginTop: '2px' }}>
+              {window.reason}
+            </div>
+          )}
+          <div className="maintenance-window__meta text-mono text-caption" style={{ marginTop: '2px' }}>
+            <span>{window.component_id}</span>
+            <span aria-hidden="true"> · </span>
+            <span>
+              {window.starts_at}–{window.ends_at}
+            </span>
+          </div>
+        </div>
+        <div className="maintenance-window__actions" style={{ marginLeft: 'var(--space-3)' }}>
+          {confirmDelete ? (
+            <div style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'center' }}>
+              <span className="text-caption" style={{ color: 'var(--color-ink-subtle)' }}>Confirm?</span>
+              <Button
+                variant="primary"
+                disabled={deleting}
+                onClick={() => void handleDeleteClick()}
+              >
+                Yes
+              </Button>
+              <Button
+                variant="secondary"
+                disabled={deleting}
+                onClick={() => setConfirmDelete(false)}
+              >
+                No
+              </Button>
+            </div>
+          ) : (
+            <Button
+              variant="secondary"
+              onClick={() => setConfirmDelete(true)}
+            >
+              Delete
+            </Button>
+          )}
+        </div>
+      </div>
+    </li>
+  )
+}
+
 /**
  * The Maintenance tab (STORY-061, sprint-38 Operator Dashboard redesign;
  * rebuilds STORY-015f/STORY-052's single-column form+table onto the mock's
@@ -243,7 +321,16 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
  * reconciles with the server (AC2, unchanged from STORY-015f/015c).
  */
 export function MaintenancePage() {
-  const { state, retry, schedule, scheduling, mutationError } = useMaintenance()
+  const {
+    state,
+    retry,
+    schedule,
+    scheduling,
+    mutationError,
+    deleteWindow,
+    deletingId,
+    deleteError,
+  } = useMaintenance()
 
   return (
     <div className="maintenance-page">
@@ -266,6 +353,13 @@ export function MaintenancePage() {
         <Panel className="maintenance-page__list-panel">
           <h2 className="sr-only">Scheduled windows</h2>
 
+          {deleteError && (
+            <div className="maintenance-window-error text-caption" role="alert" style={{ margin: 'var(--space-3) var(--space-4)', padding: 'var(--space-2)', background: 'var(--color-surface-2)', border: '1px solid var(--color-health-down)', borderRadius: 'var(--radius-control)', color: 'var(--color-ink)' }}>
+              <span style={{ color: 'var(--color-health-down)', marginRight: 'var(--space-2)' }}>⚠</span>
+              {deleteError.detail ?? 'Could not delete the maintenance window'}
+            </div>
+          )}
+
           {state.phase === 'loading' && <LoadingState label="Loading maintenance windows…" />}
 
           {state.phase === 'error' && (
@@ -279,28 +373,12 @@ export function MaintenancePage() {
           {state.phase === 'success' && state.data.length > 0 && (
             <ul className="maintenance-window-list">
               {state.data.map((window) => (
-                <li key={window.id} className="maintenance-window">
-                  <div className="maintenance-window__head">
-                    <span className="maintenance-window__title text-body">
-                      {window.title ?? '—'}
-                    </span>
-                    <WindowStateBadge
-                      state={deriveWindowState(window.starts_at, window.ends_at)}
-                    />
-                  </div>
-                  {window.reason && (
-                    <div className="maintenance-window__reason text-caption" style={{ color: 'var(--color-ink-muted)', marginTop: '2px' }}>
-                      {window.reason}
-                    </div>
-                  )}
-                  <div className="maintenance-window__meta text-mono text-caption">
-                    <span>{window.component_id}</span>
-                    <span aria-hidden="true"> · </span>
-                    <span>
-                      {window.starts_at}–{window.ends_at}
-                    </span>
-                  </div>
-                </li>
+                <MaintenanceWindowRow
+                  key={window.id}
+                  window={window}
+                  onDelete={deleteWindow}
+                  deleting={deletingId === window.id}
+                />
               ))}
             </ul>
           )}

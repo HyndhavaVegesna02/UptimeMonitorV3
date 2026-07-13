@@ -134,6 +134,26 @@ async function putJson<TResponse, TBody>(
   return readOkJson<TResponse>(response, path)
 }
 
+async function deleteRequest(path: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'DELETE',
+    })
+  } catch {
+    throw new ApiError(`Network error while requesting ${path}`)
+  }
+
+  if (!response.ok) {
+    const detail = await readDetail(response)
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+      detail,
+    )
+  }
+}
+
 /** The AC3 proving endpoint: `GET /api/v1/components`. */
 export function getComponents(): Promise<ComponentDTO[]> {
   return getJson<ComponentDTO[]>('/v1/components')
@@ -255,3 +275,12 @@ export function postMaintenance(
 ): Promise<MaintenanceWindowDTO> {
   return postJson<MaintenanceWindowDTO, CreateMaintenanceRequest>('/v1/maintenance', body)
 }
+
+/**
+ * `DELETE /api/v1/maintenance/{id}` (STORY-065 AC3/AC5) — deletes a scheduled
+ * maintenance window. Returns 204 (no body) on success, 404 on unknown ID.
+ */
+export function deleteMaintenance(id: number): Promise<void> {
+  return deleteRequest(`/v1/maintenance/${id}`)
+}
+

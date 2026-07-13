@@ -108,12 +108,75 @@ describe('MaintenancePage', () => {
     ).toBeInTheDocument()
   })
 
-  it('never renders a delete control on a window (AC3 — omitted, no DELETE endpoint)', async () => {
+  it('renders a delete control on each window and supports two-step confirm delete on success (AC5)', async () => {
+    const user = userEvent.setup()
+    let deleteCalledId: number | null = null
+    let getCallCount = 0
+    server.use(
+      http.get('/api/v1/maintenance', () => {
+        getCallCount += 1
+        if (getCallCount === 1) {
+          return HttpResponse.json(FIXTURE_MAINTENANCE_WINDOWS)
+        }
+        // Remove the deleted one
+        return HttpResponse.json([FIXTURE_MAINTENANCE_WINDOWS[1]])
+      }),
+      http.delete('/api/v1/maintenance/:id', ({ params }) => {
+        deleteCalledId = Number(params.id)
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
     render(<MaintenancePage />)
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
-    expect(screen.queryByRole('button', { name: /delete/i })).not.toBeInTheDocument()
+    const windowItem = windowItemFor(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    const deleteBtn = within(windowItem).getByRole('button', { name: /delete/i })
+    
+    // First click: enters inline confirm state (shows "Confirm?", "Yes", "No")
+    await user.click(deleteBtn)
+    expect(within(windowItem).getByText('Confirm?')).toBeInTheDocument()
+    const yesBtn = within(windowItem).getByRole('button', { name: /yes/i })
+    const noBtn = within(windowItem).getByRole('button', { name: /no/i })
+    expect(yesBtn).toBeInTheDocument()
+    expect(noBtn).toBeInTheDocument()
+
+    // Second click - Cancel/No: returns to normal state
+    await user.click(noBtn)
+    expect(within(windowItem).queryByText('Confirm?')).not.toBeInTheDocument()
+    expect(within(windowItem).queryByRole('button', { name: /yes/i })).not.toBeInTheDocument()
+
+    // Click Delete again, then Confirm/Yes
+    const deleteBtn2 = within(windowItem).getByRole('button', { name: /delete/i })
+    await user.click(deleteBtn2)
+    const yesBtn2 = within(windowItem).getByRole('button', { name: /yes/i })
+    await user.click(yesBtn2)
+
+    await waitFor(() => expect(deleteCalledId).toBe(FIXTURE_MAINTENANCE_WINDOWS[0].id))
+    await waitFor(() => expect(getCallCount).toBe(2))
+    
+    // The first item should now be gone from the list
+    expect(screen.queryByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)).not.toBeInTheDocument()
   })
+
+  it('renders a non-crashing error banner when a delete fails with 404 (AC5)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.delete('/api/v1/maintenance/:id', () => {
+        return HttpResponse.json({ detail: 'Maintenance window not found.' }, { status: 404 })
+      }),
+    )
+
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    const windowItem = windowItemFor(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    await user.click(within(windowItem).getByRole('button', { name: /delete/i }))
+    await user.click(within(windowItem).getByRole('button', { name: /yes/i }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Maintenance window not found.')
+  })
+
 
   it('renders the empty state when no windows are scheduled (AC4)', async () => {
     server.use(http.get('/api/v1/maintenance', () => HttpResponse.json([])))

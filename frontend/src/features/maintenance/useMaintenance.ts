@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ApiError, getMaintenance, postMaintenance } from '../../api/client'
+import { ApiError, getMaintenance, postMaintenance, deleteMaintenance } from '../../api/client'
 import type { CreateMaintenanceRequest, MaintenanceWindowDTO } from '../../api/types'
 import { useFetch } from '../../lib/useFetch'
 import type { FetchState } from '../../lib/useFetch'
@@ -34,6 +34,12 @@ export interface UseMaintenanceResult {
    * attempt has not yet failed, or after a successful one / a `retry()`.
    */
   mutationError: ApiError | null
+  /** DELETEs a maintenance window (STORY-065 AC5). */
+  deleteWindow: (id: number) => Promise<boolean>
+  /** The ID of the maintenance window currently being deleted, if any. */
+  deletingId: number | null
+  /** The most recent failed DELETE's `ApiError`, if any. */
+  deleteError: ApiError | null
 }
 
 /**
@@ -48,6 +54,8 @@ export function useMaintenance(): UseMaintenanceResult {
   const { state, retry } = useFetch(getMaintenance)
   const [scheduling, setScheduling] = useState(false)
   const [mutationError, setMutationError] = useState<ApiError | null>(null)
+  const [deletingId, setDeletingId] = useState<number | null>(null)
+  const [deleteError, setDeleteError] = useState<ApiError | null>(null)
 
   const schedule = useCallback(
     async (request: CreateMaintenanceRequest): Promise<boolean> => {
@@ -71,10 +79,42 @@ export function useMaintenance(): UseMaintenanceResult {
     [retry],
   )
 
+  const deleteWindow = useCallback(
+    async (id: number): Promise<boolean> => {
+      setDeletingId(id)
+      setDeleteError(null)
+      try {
+        await deleteMaintenance(id)
+        retry()
+        return true
+      } catch (err) {
+        setDeleteError(
+          err instanceof ApiError
+            ? err
+            : new ApiError('Could not delete the maintenance window'),
+        )
+        return false
+      } finally {
+        setDeletingId(null)
+      }
+    },
+    [retry],
+  )
+
   const retryFromScratch = useCallback(() => {
     setMutationError(null)
+    setDeleteError(null)
     retry()
   }, [retry])
 
-  return { state, retry: retryFromScratch, schedule, scheduling, mutationError }
+  return {
+    state,
+    retry: retryFromScratch,
+    schedule,
+    scheduling,
+    mutationError,
+    deleteWindow,
+    deletingId,
+    deleteError,
+  }
 }
