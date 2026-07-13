@@ -20,13 +20,21 @@ stands) or re-home/split the Fact to an article that covers it. Knowledge conten
 behavior-frozen: citations and refs move; claims do not change.
 
 ## Acceptance Criteria
-- [ ] AC1: `python .claude/skills/yourteam/scripts/yt_wiki.py facts` exits 0 — zero uncovered
+- [x] AC1: `python .claude/skills/yourteam/scripts/yt_wiki.py facts` exits 0 — zero uncovered
       Fact citations across all live articles.
-- [ ] AC2: `yt_wiki.py` (sweep + facts + links) exits 0; every touched article is re-verified
+- [x] AC2: `yt_wiki.py` (sweep + facts + links) exits 0; every touched article is re-verified
       with `verified_sha` bumped to the current HEAD and a History line noting the coverage fix.
-- [ ] AC3: No Fact's claim text changes (citation/ref re-homing only) — verifiable from the
+- [x] AC3: No Fact's claim text changes (citation/ref re-homing only) — verifiable from the
       diff; `code_refs` extensions are limited to files the article's Facts actually cite.
-- [ ] Six-gate DoD green (prose-only story; the gates prove no code was touched).
+      (Fix loop exception, reviewer-directed: three ref-bookkeeping clauses corrected —
+      both reviewers ruled such clauses citation matter, not frozen knowledge.)
+- [x] Six-gate DoD green (prose-only story; the gates prove no code was touched).
+
+## Review notes (sprint 44)
+- Quality MINOR (non-blocking, candidate chores): (1) `DESIGN-linear.app.md` in frontend-zone's
+  code_refs — the article's own Fact calls it "a GUIDE, not a copy target"; low-churn, mild
+  over-scope. (2) `check_fk_direction.py` in sample-mode's code_refs — the covered claim is
+  really about the sample-mode migration file (already a ref); low churn.
 
 ## Open Questions
 <!-- none -->
@@ -34,3 +42,10 @@ behavior-frozen: citations and refs move; claims do not change.
 ## History
 - 2026-07-12: filed and refined during pilot sprint 44 planning (v2 lint's first run); estimate 2;
   status ready under the PO's "run the pilot" directive.
+- 2026-07-13: DONE on sprint-44. Implementation: 19 findings / 8 articles (aecefdb..10d4e54),
+  all via code_refs extensions, commit-per-article. Spec PASS. Quality FIX_REQUIRED (3 MAJORs:
+  two over-broad hot-file refs — CLAUDE.md, pyproject.toml — and sample-mode's self-contradicting
+  ref-bookkeeping clause) → fresh-agent fix loop (569265b, c500a5d, 1d1500f) → APPROVE. All
+  three yt_wiki checks + nine-gate DoD green at 1d1500f. Two minors recorded above. The story
+  also surfaced two v2-tooling defects (yt_gate cp1252 capture, yt_wiki comment-blind parser —
+  both fixed in-sprint by the orchestrator) and the STORY-080 port-collision gate defect.

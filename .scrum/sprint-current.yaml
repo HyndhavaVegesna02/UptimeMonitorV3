@@ -1,6 +1,6 @@
 # YourTeam active sprint board.
 sprint: 44
-status: active        # none | active | review | closed | aborted | parked
+status: review        # none | active | review | closed | aborted | parked
 started: 2026-07-12
 mode: in-process      # YourTeam v2 PILOT — first sprint on the v2 machinery
 goal: "Check History shows the real HTTP status code and check type from live Dynatrace data
@@ -94,11 +94,72 @@ stories:
         at: "2026-07-12T17:02:31+00:00"
   - id: STORY-079
     points: 2
-    board: in-progress   # yt-implementer dispatched 2026-07-12 (post-064)
+    board: done          # 19 findings / 8 articles (aecefdb..10d4e54); quality FIX_REQUIRED
+                         # (3 MAJORs: 2 over-broad hot-file refs + 1 self-contradicting Fact
+                         # clause) -> fresh-agent fix loop (569265b/c500a5d/1d1500f) -> APPROVE.
+                         # Spec PASS first pass (ruled the sample-mode clause an AC-vs-hygiene
+                         # conflict, non-blocking; fix loop resolved it).
     pipeline: full        # pilot: full pipeline regardless of size, to exercise v2 end-to-end
+    attempts: 2
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
-    dod_evidence: []
+    blast_radius_resolved: true   # yt_wiki sweep+facts+links CLEAN at 1d1500f
+    review:
+      spec: "PASS — AC1/AC2 (all three yt_wiki checks run, exit 0; 8 articles re-verified with
+        resolvable SHAs + History lines), AC3 (diff confined to frontmatter + History; every
+        added ref cited in Facts; zero claim-text edits), gates line (story diff empty over
+        backend/frontend/scripts/migrations). Flagged the sample-mode self-contradiction
+        non-blocking; converged with quality on the fix."
+      quality: "APPROVE (after fix loop). 3 MAJORs: CLAUDE.md ref on migrations-and-db +
+        pyproject.toml ref on ingest (over-broad hot-file refs, S4/S5 false-stale mode — refs
+        dropped, citations re-homed) and sample-mode's now-false 'neither file appears in
+        code_refs' clause (deleted; durable claim kept). 2 minors recorded on the story file
+        (DESIGN-linear.app.md + check_fk_direction.py refs — low churn, non-blocking)."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "564 passed"
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Contracts: 8 kept, 0 broken."
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "python scripts/check_fk_direction.py"
+        exit_code: 0
+        output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "alembic upgrade head"
+        exit_code: 0
+        output_tail: "Will assume transactional DDL."
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "199 files already formatted"
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Tests 361 passed (361)"
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (green)"
+        commit: 1d1500f
+        at: "2026-07-13"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . (clean)"
+        commit: 1d1500f
+        at: "2026-07-13"
 hotfixes: []
 interrupts: []
