@@ -16,20 +16,28 @@ start_tag: sprint-45-start
 stories:
   - id: STORY-065
     points: 3
-    board: in_review            # implemented + committed; DoD gate GREEN; spec+quality review + reality gate pending
+    board: fix_required         # spec PASS; quality FIX_REQUIRED (1 major: styling-convention break). Handed back to PO's external agent (see fix-065-styling.md). Re-gate + re-review styling on push.
     pipeline: full
     attempts: 1
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: true # wiki re-verified by implementer (7 articles); sweep CLEAN at HEAD (orchestrator-confirmed)
+    blast_radius_resolved: true # sweep CLEAN at HEAD after the sprint-45 wiki compile pass (7 articles re-verified)
+    review:
+      spec: PASS
+      quality: FIX_REQUIRED     # 1 major: 9 static inline styles + 5 orphan BEM class hooks (no CSS) in MaintenancePage.tsx; move to MaintenancePage.css under design tokens
+    reality_gate: pending
   - id: STORY-066
     points: 3
-    board: in_review            # implemented + committed; DoD gate GREEN; spec+quality review + reality gate pending
+    board: review_passed        # spec PASS + quality APPROVE (0 crit/0 major/1 minor). Reality gate + PO accept pending.
     pipeline: full
     attempts: 1
     blocked_question: null
     paused_at_commit: null
     blast_radius_resolved: true
+    review:
+      spec: PASS
+      quality: APPROVE          # 1 minor (MSW fixture actor not the real 'dashboard-operator' seam); folded into the 065 hand-back brief
+    reality_gate: pending
 
 # Whole-tree DoD gate (yt_gate.py) at HEAD 48fba51 — both stories complete + committed.
 dod_evidence:
