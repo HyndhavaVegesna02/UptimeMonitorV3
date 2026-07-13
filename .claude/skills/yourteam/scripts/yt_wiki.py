@@ -88,11 +88,25 @@ def covered(path: str, refs: list[str]) -> bool:
     return False
 
 
+KNOWN_STATUSES = {"verified", "stale", "archived"}
+
+
 def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str]:
     findings = []
     for path, text in articles.items():
         meta = parse_frontmatter(text)
-        if meta.get("status") != "verified":
+        status = meta.get("status")
+        if status != "verified":
+            # Silent exclusion from the sweep is how knowledge rots invisibly:
+            # say WHY every unswept article is unswept. Unknown statuses are
+            # findings (typo/mangled frontmatter would otherwise hide an article).
+            if status in KNOWN_STATUSES:
+                print(f"  note: {path.name} not swept (status={status})")
+            else:
+                findings.append(
+                    f"{path.name}: UNRECOGNIZED status={status!r} — article is invisible "
+                    "to the sweep; fix the frontmatter"
+                )
             continue
         sha, refs = meta.get("verified_sha"), meta.get("code_refs") or []
         if not sha or not refs:

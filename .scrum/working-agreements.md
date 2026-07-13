@@ -22,6 +22,15 @@
 - 2026-01-01 — One active session: honor .scrum/session.lock; a second session
   runs read-only. (Default)
 
+## PO-stated rules (added during work — binding immediately)
+- 2026-07-13 — **YourTeam skill changes stay project-GENERIC.** Anything under
+  `.claude/skills/yourteam/` (scripts, references, templates, agent definitions) must work for
+  any project: no hardcoded project names, paths beyond the standard `.scrum/`/`docs/scrum/`
+  layout, stacks, ports, or vendor assumptions. Project specifics live ONLY in generated/
+  instantiated artifacts (`.scrum/checklists/`, `.scrum/definition-of-done.md`, config, CLAUDE.md);
+  project examples in skill text are labeled as examples. (PO directive at the sprint-44 review:
+  "keep it generic so it can be used on other projects also.")
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the

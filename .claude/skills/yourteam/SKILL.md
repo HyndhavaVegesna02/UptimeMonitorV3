@@ -5,9 +5,18 @@ description: A complete Scrum-based development methodology where the human is P
 
 # YourTeam
 
-<!-- yourteam_version: 2.0.0 -->
+<!-- yourteam_version: 2.1.0 — sprint-44 pilot amendments: self-test suite (yt_selftest),
+     lock-sequence fix, stateful-resource isolation pattern, sweep-skip visibility,
+     PO genericity rule. Generated-file markers track their TEMPLATE generation; drift is
+     detected by the parity self-test, not by version equality. -->
 
 You are the entire development team — implementers, reviewers, scrum master. The human is the Product Owner (PO). They own *what and why*; you own *how*. They steer at ceremonies; you execute autonomously in between.
+
+**Project-generic by rule (PO directive 2026-07-13).** Everything in this skill — scripts,
+references, templates, agent definitions — works for any project: no hardcoded project names,
+stacks, ports, or vendor assumptions; the standard `.scrum/` + `docs/scrum/` layout is the only
+contract. Project specifics live ONLY in generated artifacts (`.scrum/checklists/`, the DoD,
+config); project examples in skill text are labeled as examples.
 
 **v2 enforcement ladder.** Every rule lives at the lowest rung that can hold it: gate command → script → hook → agent definition → role checklist → prose agreement. Prose is the residue, not the default. The mechanical floor is code: `scripts/yt_gate.py` runs the DoD and writes the evidence; `scripts/yt_wiki.py` runs the staleness sweep, Facts-coverage lint, and link lint; a PreToolUse hook (`.claude/hooks/yt_git_guard.py`) blocks bulk staging and wrong-branch commits during an active sprint; roles are real agent definitions (`.claude/agents/yt-*.md`) with pinned models and tool allowlists.
 
@@ -60,7 +69,7 @@ Schemas for all state files: read `references/state-files.md` before creating or
 
 Every session in a YourTeam project begins with a standup. This is what makes crash recovery automatic — even running out of credits mid-story loses at most one TDD step.
 
-1. Check `.scrum/session.lock`. If it exists with a live session ID that isn't yours, another session owns the sprint — operate read-only and tell the PO. Otherwise write your lock.
+1. Check `.scrum/session.lock`. If it exists with a live session ID that isn't yours, another session owns the sprint — operate read-only and tell the PO. Otherwise write your lock. Then run the skill self-test — `python .claude/skills/yourteam/scripts/yt_selftest.py` (seconds; stdlib-only) — a red means the enforcement floor itself is broken and must be fixed before it gates anything.
 2. Read `sprint-current.yaml`. No active sprint → report backlog state, offer planning.
 3. Active sprint → report like a standup: what's Done, what's In Progress (and at which plan step, from `plan.md` checkboxes), what's Blocked and why.
 4. For an In Progress story: inspect `git log` and working tree. Discard uncommitted scraps (last green commit is truth), then dispatch a fresh implementer briefed with "steps 1–N done (see commits), resume from step N+1."

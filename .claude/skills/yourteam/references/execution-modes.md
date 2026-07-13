@@ -43,6 +43,19 @@ For sprints with several independent stories (no shared files, no dependency edg
 - Never run two DB-gated gate invocations at once (agreement 2026-07-02) — the serial
   integration point is where the gate runs.
 
+## Concurrency & stateful resources (applies in every mode)
+
+Every concurrently dispatched agent whose commands touch a **stateful resource** — a database,
+a container, a port, a shared file the tests mutate — gets its **own isolated instance** of that
+resource, provisioned by the orchestrator and named explicitly in the agent's brief. Two agents
+(or an agent and a live demo stack) sharing one instance produce invalid signals: interleaved
+writes, truncated tables mid-test, port collisions. The project's own tooling defines how to
+provision an instance (for example, this repo's `scripts/dev_db.py up --name <role> --port
+<free-port>` — a project detail, not a skill assumption); if the project has no such helper,
+provisioning one is early backlog material. Tear instances down at sprint close. A gate red
+caused by a shared resource is handled under the contention false-red protocol
+(working agreement: prove it, re-run isolated, file the determinism defect).
+
 ## 4. `debug` (no-points record)
 
 For investigation/firefighting that isn't a story: create

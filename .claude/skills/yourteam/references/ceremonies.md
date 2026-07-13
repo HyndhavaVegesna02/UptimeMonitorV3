@@ -76,9 +76,10 @@ Defect stories: repro steps in context, the fix expressed as AC ("given X, Y no 
    - **Execution order with reasoning** (see section 4 below)
    - **Tooling gaps**, if any: "Story N would benefit from X MCP — install it, or I work around it?" This is one of only two moments tooling may change (the other is retro).
 6. PO may reorder, swap, or trim. Approval is required; planning is selection, never authoring — un-ready stories cannot be added on the spot (refine them first, even if that takes five minutes right now).
-7. On approval, verify preconditions: working tree clean (else commit/stash with the PO) and DoD commands green on main via `yt_gate.py` (else "restore green baseline" is the mandatory first story — see edge-cases.md #1, #9). Then:
-   - `git checkout main && git checkout -b sprint-N && git tag sprint-N-start`
+7. On approval, verify preconditions: working tree clean (else commit/stash with the PO) and DoD commands green on main via `yt_gate.py` (else "restore green baseline" is the mandatory first story — see edge-cases.md #1, #9). Then, **in this order — cut the branch BEFORE writing the board, and never chain a checkout with a commit** (the git-guard hook reads `sprint-current.yaml` and blocks commits made off the named branch; writing `branch:` first then chaining checkout+commit triggers it — found live at the sprint-44 lock):
+   - `git checkout main && git checkout -b sprint-N && git tag sprint-N-start` (no commit in this chain)
    - Write `sprint-current.yaml` (goal, mode, stories, board all `todo`, lock metadata)
+   - Commit the lock records as a separate command, already on `sprint-N`
    - Announce the lock: "Sprint N is locked. See you at review."
 
 ## 4. Sprint Execution Order Rules
