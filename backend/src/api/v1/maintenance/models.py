@@ -15,6 +15,7 @@ class MaintenanceWindowDTO(BaseModel):
     starts_at: datetime
     ends_at: datetime
     reason: str | None
+    title: str | None = None
 
 
 class CreateMaintenanceRequest(BaseModel):
@@ -26,3 +27,4 @@ class CreateMaintenanceRequest(BaseModel):
     starts_at: datetime
     ends_at: datetime
     reason: str | None = None
+    title: str | None = None

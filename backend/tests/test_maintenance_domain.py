@@ -15,12 +15,14 @@ def test_valid_maintenance_window():
         starts_at=starts,
         ends_at=ends,
         reason="Upgrading database",
+        title="Database Upgrade",
         id=42,
     )
     assert window.component_id == "checkout"
     assert window.starts_at == starts
     assert window.ends_at == ends
     assert window.reason == "Upgrading database"
+    assert window.title == "Database Upgrade"
     assert window.id == 42
 
 

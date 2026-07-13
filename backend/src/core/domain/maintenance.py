@@ -22,6 +22,9 @@ class MaintenanceWindow(BaseModel):
     reason: str | None = None
     """Optional explanation for the maintenance."""
 
+    title: str | None = None
+    """Optional title for the maintenance window."""
+
     id: int | None = None
     """Optional database ID if persisted."""
 
