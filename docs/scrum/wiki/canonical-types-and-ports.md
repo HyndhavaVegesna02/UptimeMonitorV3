@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
-verified_sha: f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787
+verified_sha: 2db6c7098427752508b4b51f9691668a04f247ee
 verified_sprint: sprint-45
 status: verified
 ---
@@ -261,3 +261,4 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   ports/fakes contract this article documents (2026-06-25 scoping rule: test files pinning a
   documented contract qualify); added to `code_refs`. No Fact text changed. verified_sha -> 678ff0d.
 - sprint-45 (STORY-065/STORY-066): verified after implementing Maintenance title + DELETE endpoint and Publication author metadata. MaintenanceWindow gained optional `title`, Publication gained optional `author` derived on read, and MaintenanceRepository gained `delete(window_id: int)`. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
+- 2026-07-13 (sprint-45 gate closure): re-stale was the trailing ruff/lint commit 48fba51 (behavior-neutral — trailing-blank trims; MaintenancePage dropped the now-unused formatReason helper + added a type import). Facts unchanged. Re-verified; verified_sha -> 2db6c70.
