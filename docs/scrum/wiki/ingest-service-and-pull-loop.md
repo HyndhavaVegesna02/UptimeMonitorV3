@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, pyproject.toml, backend/tests/test_persistence_adapters.py]
-verified_sha: 678ff0d
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_persistence_adapters.py]
+verified_sha: adc002a
 verified_sprint: sprint-44
 status: verified
 ---
@@ -59,7 +59,7 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   It is synchronous (none of the calls are async in this codebase).
 - `run_periodic(...)` (`pull_loop.py::run_periodic`) is the thin asyncio driver:
   `while not stop_event.is_set(): run_cycle(); await asyncio.sleep(interval_seconds)`. Plain
-  `asyncio` — NO APScheduler, NO new dependency in `pyproject.toml` (AC5). `stop_event`
+  `asyncio` — NO APScheduler. `stop_event`
   (`asyncio.Event`) makes the loop deterministically stoppable in tests / future graceful shutdown;
   `on_cycle` is an optional hook for observing each cycle result. Neither carries domain logic.
 - **Orchestration threading (STORY-016 T4):** `run_periodic` accepts the same six optional
@@ -258,3 +258,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   [[canonical-types-and-ports]]/[[dynatrace-adapter]] — `yt_wiki.py`'s parser reads it as part of
   the value, so the sweep was silently skipping this article too. No Fact text changed. verified_sha
   → 678ff0d.
+- sprint-44 (STORY-079 fix loop, quality review MAJOR): `pyproject.toml` was over-broad in
+  `code_refs` — it is touched by every dependency change anywhere in the repo, while the
+  plain-asyncio contract is already pinned by `pull_loop.py` itself. Removed `pyproject.toml`
+  from `code_refs`. The Facts-section clause "NO new dependency in `pyproject.toml` (AC5)" was a
+  point-in-time record of STORY-009's AC5, not a living contract this article continuously
+  verifies — moved out of Facts: STORY-009 AC5 was satisfied at the time (no new dependency, e.g.
+  APScheduler, was added for the pull loop). The living Fact ("Plain `asyncio` — NO APScheduler")
+  stays in place, unedited. `verified_sha` re-stamped to `adc002a`.
