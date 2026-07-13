@@ -41,4 +41,3 @@ def delete_maintenance_window(
 ) -> None:
     """Delete a scheduled maintenance window."""
     service.delete_window(window_id)
-

@@ -54,4 +54,3 @@ class MaintenanceWindow(BaseModel):
 
 class MaintenanceWindowNotFoundError(ValueError):
     """Raised when a maintenance window cannot be found by its ID."""
-

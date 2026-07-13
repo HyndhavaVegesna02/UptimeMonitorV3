@@ -57,4 +57,3 @@ class MaintenanceRepository(ABC):
             MaintenanceWindowNotFoundError: If the window ID does not exist.
         """
         raise NotImplementedError
-

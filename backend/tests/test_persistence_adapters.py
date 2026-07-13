@@ -1080,8 +1080,8 @@ def test_maintenance_repository_title_parity(migrated_db, engine):
     from src.adapters.persistence.maintenance_repository import (
         PostgresMaintenanceRepository,
     )
-    from tests.fakes import FakeMaintenanceRepository
     from src.core.domain.maintenance import MaintenanceWindow
+    from tests.fakes import FakeMaintenanceRepository
 
     # Clear tables for isolation
     with psycopg.connect(migrated_db.database_url) as conn:
@@ -1126,11 +1126,11 @@ def test_maintenance_repository_delete_parity(migrated_db, engine):
     from src.adapters.persistence.maintenance_repository import (
         PostgresMaintenanceRepository,
     )
-    from tests.fakes import FakeMaintenanceRepository
     from src.core.domain.maintenance import (
         MaintenanceWindow,
         MaintenanceWindowNotFoundError,
     )
+    from tests.fakes import FakeMaintenanceRepository
 
     # Clear tables for isolation
     with psycopg.connect(migrated_db.database_url) as conn:
@@ -1235,12 +1235,14 @@ def test_postgres_publication_repository(migrated_db, engine):
 
 
 def test_publication_repository_author_parity(migrated_db, engine):
-    from src.adapters.persistence.publication_repository import PostgresPublicationRepository
     from src.adapters.persistence.proposal_repository import PostgresProposalRepository
-    from tests.fakes import FakePublicationRepository
-    from src.core.domain.publication import Publication, PublicationOutcome
+    from src.adapters.persistence.publication_repository import (
+        PostgresPublicationRepository,
+    )
     from src.core.domain.proposal import ProposalState, StatusProposal
+    from src.core.domain.publication import Publication
     from src.core.domain.status import ComponentStatus
+    from tests.fakes import FakePublicationRepository
 
     # Clear tables for isolation
     with psycopg.connect(migrated_db.database_url) as conn:
@@ -1257,7 +1259,7 @@ def test_publication_repository_author_parity(migrated_db, engine):
 
     # Set up Postgres data
     prop_repo = PostgresProposalRepository(engine)
-    
+
     # 1. Proposal with approval
     p1 = StatusProposal(
         component_id="checkout",
@@ -1316,7 +1318,7 @@ def test_publication_repository_author_parity(migrated_db, engine):
 
     # Now, set up repositories
     pg_pub_repo = PostgresPublicationRepository(engine)
-    
+
     # Injected map for Fake
     fake_map = {
         p1_saved.id: "Alice",
@@ -1326,7 +1328,7 @@ def test_publication_repository_author_parity(migrated_db, engine):
 
     for repo in [pg_pub_repo, fake_pub_repo]:
         # Record publications:
-        
+
         # Pub 1: proposal_id = p1_saved.id -> author = "Alice"
         pub1 = Publication(
             component_id="checkout",
@@ -1366,7 +1368,7 @@ def test_publication_repository_author_parity(migrated_db, engine):
         # Verify on read!
         recent = repo.list_recent()
         assert len(recent) == 4
-        
+
         assert recent[0].id == saved4.id
         assert recent[0].author in ["Bob", "Charlie"]
 
@@ -1378,7 +1380,6 @@ def test_publication_repository_author_parity(migrated_db, engine):
 
         assert recent[3].id == saved1.id
         assert recent[3].author == "Alice"
-
 
 
 def test_postgres_publication_repository_records_failed_outcome(migrated_db, engine):

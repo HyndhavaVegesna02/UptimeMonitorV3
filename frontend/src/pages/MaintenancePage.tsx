@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiError } from '../api/client'
-import type { CreateMaintenanceRequest } from '../api/types'
+import type { CreateMaintenanceRequest, MaintenanceWindowDTO } from '../api/types'
 import { Button, EmptyState, ErrorState, LoadingState, Panel } from '../components'
 import { useComponents } from '../features/dashboard/useComponents'
 import { fieldErrorFromDetail } from '../features/maintenance/fieldError'
@@ -35,13 +35,6 @@ function WindowStateBadge({ state }: { state: WindowState }) {
   )
 }
 
-/** `reason` is nullable on the wire — render an explicit em-dash rather than
- * a blank cell or the literal string "null" (STORY-015f conventions
- * checklist (h)). The mock's "Title" field maps directly onto this field
- * (AC1 — the DTO has no separate title). */
-function formatReason(reason: string | null): string {
-  return reason ?? '—'
-}
 
 interface ScheduleFormProps {
   onSubmit: (request: CreateMaintenanceRequest) => Promise<boolean>

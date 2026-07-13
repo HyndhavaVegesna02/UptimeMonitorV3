@@ -107,7 +107,9 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
 
     def delete(self, window_id: int) -> None:
         """Delete a maintenance window by its ID."""
-        stmt = sa.delete(_MAINTENANCE_WINDOWS).where(_MAINTENANCE_WINDOWS.c.id == window_id)
+        stmt = sa.delete(_MAINTENANCE_WINDOWS).where(
+            _MAINTENANCE_WINDOWS.c.id == window_id
+        )
 
         with self._engine.begin() as conn:
             res = conn.execute(stmt)
@@ -115,4 +117,3 @@ class PostgresMaintenanceRepository(MaintenanceRepository):
                 raise MaintenanceWindowNotFoundError(
                     f"Maintenance window with ID {window_id} not found."
                 )
-

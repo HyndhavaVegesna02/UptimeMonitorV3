@@ -141,7 +141,7 @@ def test_get_publications_serializes_author():
     """STORY-066 AC3: GET /api/v1/publications serializes author (string | null)."""
     # 1. We construct a FakePublicationRepository with proposal_to_actor mapped
     pub_repo = FakePublicationRepository(proposal_to_actor={42: "Alice"})
-    
+
     # 2. Record two publications: one with proposal_id=42 (author="Alice"), one with proposal_id=None (author=None)
     pub1 = Publication(
         component_id="checkout",
@@ -168,11 +168,10 @@ def test_get_publications_serializes_author():
     assert response.status_code == 200
     data = response.json()
     assert len(data) == 2
-    
+
     # Ordered by published_at DESC, so pub2 (hour 12) is first, pub1 (hour 10) is second.
     assert data[0]["proposal_id"] is None
     assert data[0]["author"] is None
 
     assert data[1]["proposal_id"] == 42
     assert data[1]["author"] == "Alice"
-

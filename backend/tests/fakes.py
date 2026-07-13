@@ -356,4 +356,3 @@ class FakeMaintenanceRepository(MaintenanceRepository):
                 f"Maintenance window with ID {window_id} not found."
             )
         del self._windows[window_id]
-

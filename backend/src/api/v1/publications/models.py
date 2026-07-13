@@ -34,4 +34,3 @@ class PublicationDTO(BaseModel):
 
     author: str | None = None
     """The author derived from the approval event, if any."""
-
