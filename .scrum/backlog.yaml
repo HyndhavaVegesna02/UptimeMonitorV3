@@ -504,7 +504,7 @@ stories:
   - id: STORY-064
     title: Observation HTTP status code + check type on ObservationDTO (Check History columns)
     file: docs/scrum/stories/STORY-064-observation-code-type.md
-    status: ready   # refined 2026-07-12 (pilot sprint 44): live Grail probe confirmed response_status_code on the canonical row; type = persisted native_kind
+    status: done    # accepted at Sprint 44 review (2026-07-13)
     points: 3
     priority: 39
     type: feature
@@ -770,7 +770,7 @@ stories:
   - id: STORY-079
     title: Wiki Facts-coverage cleanup — every cited file covered by code_refs
     file: docs/scrum/stories/STORY-079-wiki-facts-coverage-cleanup.md
-    status: ready   # filed + refined 2026-07-12 (pilot sprint 44): yt_wiki.py facts lint first run found ~20 uncovered cites
+    status: done    # accepted at Sprint 44 review (2026-07-13)
     points: 2
     priority: 40
     type: chore

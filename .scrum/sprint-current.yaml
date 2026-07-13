@@ -1,6 +1,9 @@
 # YourTeam active sprint board.
 sprint: 44
-status: review        # none | active | review | closed | aborted | parked
+status: closed        # PO accepted BOTH stories 2026-07-13 ("i accept both the stories") —
+                      # whole-branch merge to main (also lands YourTeam v2). Velocity: 5/5.
+                      # PO-stated rule recorded at review: skill changes stay project-GENERIC;
+                      # project specifics only in generated artifacts (-> working-agreements).
 started: 2026-07-12
 mode: in-process      # YourTeam v2 PILOT — first sprint on the v2 machinery
 goal: "Check History shows the real HTTP status code and check type from live Dynatrace data
