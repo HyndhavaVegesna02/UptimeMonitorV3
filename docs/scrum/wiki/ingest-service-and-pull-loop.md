@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_persistence_adapters.py]
-verified_sha: f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787
+verified_sha: 010a21b3a17823ceae24f5f2716a49f242b56331
 verified_sprint: sprint-45
 status: verified
 ---
@@ -268,3 +268,4 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   stays in place, unedited. `verified_sha` re-stamped to `adc002a`.
 - sprint-45 (STORY-065/STORY-066): re-verified, no changes to Ingest or Pull Loop. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 
+- 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
