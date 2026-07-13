@@ -29,6 +29,7 @@ class PublicationsService:
                 published_at=p.published_at,
                 proposal_id=p.proposal_id,
                 outcome=p.outcome.value,
+                author=p.author,
             )
             for p in pubs
         ]

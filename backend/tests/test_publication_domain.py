@@ -58,7 +58,7 @@ def test_publication_outcome_values():
 
 
 def test_publication_with_all_fields():
-    """AC1: Optional proposal_id and id are accepted."""
+    """AC1: Optional proposal_id, id and author are accepted."""
     from src.core.domain.publication import Publication
     from src.core.domain.status import ComponentStatus
 
@@ -68,9 +68,11 @@ def test_publication_with_all_fields():
         published_at=_utc_now(),
         proposal_id=42,
         id=7,
+        author="alice",
     )
     assert pub.proposal_id == 42
     assert pub.id == 7
+    assert pub.author == "alice"
 
 
 def test_publication_is_frozen():

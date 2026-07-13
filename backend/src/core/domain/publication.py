@@ -68,6 +68,9 @@ class Publication(BaseModel):
     id: int | None = None
     """Database-assigned surrogate key; None before persisted."""
 
+    author: str | None = None
+    """Optional author derived on read (not persisted by record)."""
+
     @field_validator("published_at")
     @classmethod
     def _require_published_at_utc(cls, value: datetime) -> datetime:

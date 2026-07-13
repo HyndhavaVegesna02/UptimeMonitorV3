@@ -31,3 +31,7 @@ class PublicationDTO(BaseModel):
 
     outcome: str
     """Whether the Statuspage publish succeeded or failed (STORY-072: 'succeeded'/'failed')."""
+
+    author: str | None = None
+    """The author derived from the approval event, if any."""
+
