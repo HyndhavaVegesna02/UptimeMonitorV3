@@ -34,7 +34,7 @@ Runs once, when no `.scrum/` exists.
 4. Offer one optional extra: **wiki seeding** — a pass writing initial verified articles for core modules (each with `code_refs` and current `verified_sha`). PO may skip; the wiki then grows organically from sprint 1.
 5. CLAUDE.md handling: append the YourTeam section only. Never rewrite existing content. If AGENTS.md exists (other agents work on this repo), append the same pointer section there too — agents that don't know about `.scrum/` would otherwise commit outside the sprint flow.
 6. **Bootstrap the project-local machinery** (both fresh and existing projects), from the skill's `templates/`:
-   - Copy `templates/agents/yt-*.md` → `.claude/agents/` (confirm model tiers with the PO: default Sonnet implementer / Opus reviewers + verifier / Haiku scout).
+   - Copy `templates/agents/yt-*.md` → `.claude/agents/` (confirm model AND effort tiers with the PO: default Sonnet/high implementer, Opus/high reviewers, Opus/xhigh plan verifier, Haiku/low scout — an unpinned effort silently inherits whatever the session runs at).
    - Copy `templates/hooks/yt_git_guard.py` → `.claude/hooks/` and **merge** the hooks block from `templates/hooks/settings-fragment.json` into `.claude/settings.json` — never overwrite an existing file; the conflict scan (step 3) covers pre-existing agents and hooks. PO confirms, since hooks affect permission behavior.
    - Copy `templates/checklists/` → `.scrum/checklists/` (project-conventions sections start empty; they grow via retro routing).
    - Every generated file keeps its `yourteam_version` marker; the standup drift-check compares it against the skill version and offers a PO-approved re-sync after skill upgrades.

@@ -4,7 +4,7 @@ What inception generates into a project, from this directory (ceremonies.md §1 
 
 | Source | Destination | Rule |
 |---|---|---|
-| `agents/yt-*.md` | `.claude/agents/` | Copy; confirm model tiers with the PO (defaults: Sonnet implementer, Opus reviewers + verifier, Haiku scout) |
+| `agents/yt-*.md` | `.claude/agents/` | Copy; confirm model AND effort tiers with the PO (defaults: Sonnet/high implementer, Opus/high reviewers, Opus/xhigh plan verifier, Haiku/low scout) |
 | `hooks/yt_git_guard.py` | `.claude/hooks/` | Copy |
 | `hooks/settings-fragment.json` | `.claude/settings.json` | **MERGE** the hooks block — never overwrite; PO confirms |
 | `checklists/*.md` | `.scrum/checklists/` | Copy; "Project conventions" sections start empty and grow via retro routing |
