@@ -9,27 +9,62 @@ goal: "The Maintenance tab gains a real Title field and a per-window delete (STO
 branch: sprint-45
 start_tag: sprint-45-start
 # LOCK AUTHORIZATION: PO directive 2026-07-13 "lock it" after scope approval (065 + 066 author-only,
-# 6 pts) via the planning question. Plan verified by yt-plan-verifier: round 1 GAPS (3 — fake author
-# seam not constructible, author-join row multiplication, title-render hole) -> amended -> round 2
-# LOCK_READY (zero gaps). Handoff of implementation to be confirmed with PO before dispatch.
-# ORDER: 065 first (schema migration + the codebase's first DELETE verb = highest novelty/risk),
-# then 066 (no migration, pure derive-on-read).
+# 6 pts) via the planning question. Plan verified by yt-plan-verifier: round 1 GAPS (3) -> amended
+# -> round 2 LOCK_READY. Implementation delegated to a PO-driven external agent (handoff.md); handed
+# back complete at HEAD 48fba51. Orchestrator (this session) runs the DoD gate + reviewers + reality
+# gate. ORDER: 065 first (schema migration + first DELETE verb), then 066 (no migration).
 stories:
   - id: STORY-065
     points: 3
-    board: todo
+    board: in_review            # implemented + committed; DoD gate GREEN; spec+quality review + reality gate pending
     pipeline: full
-    attempts: 0
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
+    blast_radius_resolved: true # wiki re-verified by implementer (7 articles); sweep CLEAN at HEAD (orchestrator-confirmed)
   - id: STORY-066
     points: 3
-    board: todo
+    board: in_review            # implemented + committed; DoD gate GREEN; spec+quality review + reality gate pending
     pipeline: full
-    attempts: 0
+    attempts: 1
     blocked_question: null
     paused_at_commit: null
-    blast_radius_resolved: false
+    blast_radius_resolved: true
+
+# Whole-tree DoD gate (yt_gate.py) at HEAD 48fba51 — both stories complete + committed.
+dod_evidence:
+  gate_head: 48fba51
+  verdict: GREEN
+  # Ran with PYTHONUTF8=1 and DATABASE_URL/DIRECT pointed at a throwaway postgres:16 on :55432.
+  commands:
+    - {command: "pytest", exit_code: 0, result: "570 passed in 146.78s"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, result: "8 contracts kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)"}
+    - {command: "python scripts/check_fk_direction.py", exit_code: 0, result: "11 FKs checked, 0 violations"}
+    - {command: "alembic upgrade head", exit_code: 0, result: "migrated clean (incl. new b52c8865a2c1 maintenance title)"}
+    - {command: "ruff check .", exit_code: 0, result: "All checks passed"}
+    - {command: "ruff format --check .", exit_code: 0, result: "206 files already formatted"}
+    - {command: "npm test", exit_code: 0, result: "51 files, 363 tests passed"}
+    - {command: "npm run build", exit_code: 0, result: "tsc -b + vite build OK"}
+    - {command: "npm run lint", exit_code: 0, result: "eslint clean"}
+
+# Two ENVIRONMENTAL gate artifacts hit on earlier runs, both proven benign (not sprint-45 defects) —
+# retro material (see below). The GREEN run above avoided both.
+gate_notes:
+  - artifact: "import-linter (cmd 2) exited 1 on a run WITHOUT PYTHONUTF8=1: rich's Unicode/emoji
+      banner crashes the Windows cp1252 pipe writer (UnicodeEncodeError in rich/_win32_console.py).
+      Proven benign: under PYTHONUTF8=1 the linter reports 8 contracts KEPT / 0 broken / exit 0.
+      Root cause is the Windows console encoding, not the boundaries. RETRO: bake PYTHONUTF8=1 into
+      yt_gate.py's subprocess env (script rung)."
+  - artifact: "pytest (cmd 1) flaked on one run: test_dev_db_cli.py::test_up_idempotent_against_
+      leftover_container failed (1 of 570) — the known dev_db container-contention flake
+      (STORY-073 class; STORY-080 hardcoded-port defect, open). Proven per the 2026-07-06 agreement:
+      (a) empty diff since sprint cut for test_dev_db_cli.py / dev_db.py / conftest.py; (b) passes
+      2/2 in isolation (66s). Aggravated by the orchestrator's own :55432 dev_db container.
+      RETRO: STORY-080 + skip/serialize dev_db-lifecycle tests when an external dev_db is up."
+
 hotfixes: []
-interrupts: []
+interrupts:
+  - date: 2026-07-13
+    kind: implementation-handoff
+    note: "PO chose to drive an external implementer agent (not orchestrator-dispatched yt-implementer).
+      Handed back complete at 48fba51; orchestrator resumed for gate + review + reality closure."
