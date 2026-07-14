@@ -48,3 +48,41 @@ def test_resolve_dynamo_skips_when_no_external_and_no_docker(monkeypatch: pytest
     assert plan.source == "skip"
     assert plan.endpoint_url is None
     assert plan.container_name is None
+
+
+def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatch):
+    import subprocess
+    from conftest import provide_dynamo_local
+
+    # Clear external endpoint to force container spawn
+    monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
+    monkeypatch.setattr(dynamo_local, "docker_available", lambda: True)
+
+    gen = provide_dynamo_local()
+    plan = next(gen)
+    assert plan.source == "container"
+    container_name = plan.container_name
+    assert container_name
+
+    # Verify container exists
+    running = subprocess.run(
+        ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+        capture_output=True,
+        text=True,
+    )
+    assert running.stdout.strip() == container_name
+
+    try:
+        with pytest.raises(RuntimeError, match="simulated test failure"):
+            gen.throw(RuntimeError("simulated test failure"))
+    finally:
+        # Check if container is stopped/deleted
+        leftover = subprocess.run(
+            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+            capture_output=True,
+            text=True,
+        )
+        if leftover.stdout.strip():
+            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True, text=True)
+
+    assert leftover.stdout.strip() == ""

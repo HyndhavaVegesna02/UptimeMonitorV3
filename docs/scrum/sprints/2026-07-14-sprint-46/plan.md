@@ -129,7 +129,7 @@ AC5 boundaries/gates).
       with a free host port; else `source="skip"`. GREEN: implement `resolve_dynamo()`,
       `start_container()` (runs `amazon/dynamodb-local` with `-inMemory`, waits ready),
       `stop_container()` — free-port allocation mirroring `scripts/dev_db.py`. Commit.
-- [ ] 082.4 conftest: `provide_dynamo_local()` generator + session-scoped `dynamo_local`
+- [x] 082.4 conftest: `provide_dynamo_local()` generator + session-scoped `dynamo_local`
       fixture — mirrors `provide_migrated_db` exactly: reflect `DYNAMO_ENDPOINT_URL` into
       `os.environ` with save/restore, finalizer stops the container even on failure.
       RED first: the `.throw()` teardown-contract test (same pattern the migrated_db

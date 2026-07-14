@@ -19,6 +19,41 @@ if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
 import dev_db  # noqa: E402  (after sys.path setup above)
+import dynamo_local as dynamo_local_module  # noqa: E402
+
+
+def provide_dynamo_local():
+    """Generator implementing the `dynamo_local` fixture's lifecycle.
+
+    Reflects DYNAMO_ENDPOINT_URL into os.environ with save/restore.
+    A finalizer stops the container even on test failure.
+    """
+    plan = dynamo_local_module.resolve_dynamo()
+
+    if plan.source == "skip":
+        pytest.skip(
+            "no DYNAMO_ENDPOINT_URL set and Docker is unavailable; "
+            "skipping DynamoDB-gated tests"
+        )
+
+    prev_endpoint = os.environ.get("DYNAMO_ENDPOINT_URL")
+    os.environ["DYNAMO_ENDPOINT_URL"] = plan.endpoint_url
+
+    try:
+        yield plan
+    finally:
+        if plan.source == "container":
+            dynamo_local_module.stop_container(plan.container_name)
+        if prev_endpoint is None:
+            os.environ.pop("DYNAMO_ENDPOINT_URL", None)
+        else:
+            os.environ["DYNAMO_ENDPOINT_URL"] = prev_endpoint
+
+
+@pytest.fixture(scope="session")
+def dynamo_local():
+    """Session-scoped throwaway-DynamoDB fixture; see provide_dynamo_local()."""
+    yield from provide_dynamo_local()
 
 
 def provide_migrated_db():

@@ -63,6 +63,8 @@ def start_container(name: str, host_port: int) -> None:
             "-p",
             f"{host_port}:8000",
             "amazon/dynamodb-local",
+            "-jar",
+            "DynamoDBLocal.jar",
             "-inMemory",
         ],
         capture_output=True,
