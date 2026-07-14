@@ -118,7 +118,7 @@ AC5 boundaries/gates).
 - [x] 082.1 Add `boto3` to `[project] dependencies` in `pyproject.toml`;
       `.venv/Scripts/python.exe -m pip install -e ".[dev]"`; sanity `python -c "import
       boto3"`. Commit (chore step — no test precedes a bare dependency add).
-- [ ] 082.2 RED: settings tests — with none of the four env vars set, `load_settings()`
+- [x] 082.2 RED: settings tests — with none of the four env vars set, `load_settings()`
       yields `aws_region == "us-east-1"`, the two default table names, `dynamo_endpoint_url
       is None`; with all four set, the overrides win; `DATABASE_URL` still required
       (KeyError test unchanged). GREEN: add the four fields to `Settings` +

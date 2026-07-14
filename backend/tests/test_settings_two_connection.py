@@ -68,3 +68,31 @@ def test_migration_url_normalizes_to_psycopg3():
     assert normalize("postgres://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
     # already-qualified driver is left untouched
     assert normalize("postgresql+psycopg://u:p@h/db") == "postgresql+psycopg://u:p@h/db"
+
+
+def test_app_settings_dynamodb_defaults(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@h/db")
+    monkeypatch.delenv("AWS_REGION", raising=False)
+    monkeypatch.delenv("DYNAMO_OBSERVATIONS_TABLE", raising=False)
+    monkeypatch.delenv("DYNAMO_CONTROL_TABLE", raising=False)
+    monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
+
+    settings = load_settings()
+    assert settings.aws_region == "us-east-1"
+    assert settings.dynamo_observations_table == "uptime-observations"
+    assert settings.dynamo_control_table == "uptime-control"
+    assert settings.dynamo_endpoint_url is None
+
+
+def test_app_settings_dynamodb_overrides(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql+psycopg://u:p@h/db")
+    monkeypatch.setenv("AWS_REGION", "us-west-2")
+    monkeypatch.setenv("DYNAMO_OBSERVATIONS_TABLE", "custom-obs")
+    monkeypatch.setenv("DYNAMO_CONTROL_TABLE", "custom-ctrl")
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "http://localhost:8000")
+
+    settings = load_settings()
+    assert settings.aws_region == "us-west-2"
+    assert settings.dynamo_observations_table == "custom-obs"
+    assert settings.dynamo_control_table == "custom-ctrl"
+    assert settings.dynamo_endpoint_url == "http://localhost:8000"
