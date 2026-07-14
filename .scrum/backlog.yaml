@@ -804,19 +804,19 @@ stories:
   - id: STORY-082
     title: DynamoDB persistence foundation — table bootstrap, DynamoDB Local test fixture, settings/composition seam
     file: docs/scrum/stories/STORY-082-dynamodb-persistence-foundation.md
-    status: ready   # drafted + PO-approved 2026-07-14 (AWS-migration refinement, "approve all")
+    status: done    # sprint-46: spec PASS + quality PASS (MAJOR fixed 6c4a257); PO accepted 2026-07-15
     points: 5
     priority: 41
     type: chore
-    sprint: null
+    sprint: 46
   - id: STORY-083
     title: DynamoDB adapters — signals, components, watermarks, sample-mode
     file: docs/scrum/stories/STORY-083-dynamodb-topology-adapters.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    status: done    # sprint-46: spec PASS + quality APPROVE; PO accepted 2026-07-15
     points: 3
     priority: 42
     type: chore
-    sprint: null
+    sprint: 46
   - id: STORY-084
     title: DynamoDB observation adapter — idempotent ingest transaction + half-open window query
     file: docs/scrum/stories/STORY-084-dynamodb-observation-adapter.md
