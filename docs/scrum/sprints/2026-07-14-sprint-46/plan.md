@@ -148,7 +148,7 @@ AC5 boundaries/gates).
       and a PutItem/GetItem round-trips on a bootstrapped table; region honored. GREEN:
       implement. Commit.
 - [x] 082.8 Extend pyproject.toml contracts: add `boto3` to the `forbidden_modules` list for `core-independence` and `api-outward-independence`. Verify the contract count stays 8. Commit.
-- [ ] 082.9 Boundary + gate: `importlinter` green (boto3 usage confined to
+- [x] 082.9 Boundary + gate: `importlinter` green (boto3 usage confined to
       `adapters/persistence`—none yet—and `composition`, `scripts/`, tests); scoped story
       gate `yt_gate.py --only` {pytest, ruff check, ruff format, importlinter} — the four
       commands this diff can affect (no migration/schema change ⇒ alembic + FK check are
