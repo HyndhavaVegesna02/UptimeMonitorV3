@@ -1,6 +1,6 @@
 # YourTeam sprint board.
 sprint: 45
-status: done   # PO ACCEPT both (2026-07-13 review); velocity 6/6; merged to main (local). Retro next.
+status: done   # PO ACCEPT both (2026-07-13 review); velocity 6/6; merged to main (local). Retro DONE (58ef5f1 retro.md + amendments landed cb105e9). Sprint cycle fully closed — next ceremony: planning.
 started: 2026-07-13
 mode: in-process
 goal: "The Maintenance tab gains a real Title field and a per-window delete (STORY-065), and the
