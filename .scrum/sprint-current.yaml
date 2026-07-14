@@ -8,10 +8,30 @@ start_tag: sprint-46-start
 started: "2026-07-14T12:13:00+05:30"
 stories:
   - id: STORY-082
-    status: todo
+    status: done
     slug: dynamodb-persistence-foundation
     points: 5
-    dod_evidence: []
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ======================= 584 passed in 118.38s (0:01:58) ======================="
+        commit: 1fed484
+        at: "2026-07-14T07:30:01+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "--------- | Contracts | --------- | Analyzed 146 files, 417 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 1fed484
+        at: "2026-07-14T07:32:01+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 1fed484
+        at: "2026-07-14T07:32:02+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "212 files already formatted"
+        commit: 1fed484
+        at: "2026-07-14T07:32:03+00:00"
   - id: STORY-083
     status: todo
     slug: dynamodb-topology-adapters
