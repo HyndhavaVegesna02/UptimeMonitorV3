@@ -1,8 +1,8 @@
 ---
 title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, backend/tests/test_spine_schema.py]
-verified_sha: adc002a
-verified_sprint: sprint-44
+verified_sha: 7097bcc
+verified_sprint: sprint-46
 status: verified
 ---
 
@@ -129,3 +129,4 @@ status: verified
   flag this article stale. Removed `CLAUDE.md` from `code_refs`; struck the now-uncovered
   parenthetical pointer "(Documented in `CLAUDE.md`.)" from the URL-dialect-split gotcha Fact
   (the substantive claim text is unchanged). `verified_sha` re-stamped to `adc002a`.
+- sprint-46 (STORY-082/083): Re-verified after settings and conftest adjustments for DynamoDB Local support. verified_sha -> 7097bcc.

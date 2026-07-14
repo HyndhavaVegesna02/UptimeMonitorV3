@@ -273,8 +273,10 @@ def main() -> int:
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4
-        label = "CLEAN" if not found else (
-            f"{len(found)} note(s)" if advisory else f"{len(found)} finding(s)"
+        label = (
+            "CLEAN"
+            if not found
+            else (f"{len(found)} note(s)" if advisory else f"{len(found)} finding(s)")
         )
         print(f"== {check}: {label} ==")
         for f in found:

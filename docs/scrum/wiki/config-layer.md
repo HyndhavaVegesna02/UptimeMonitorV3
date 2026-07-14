@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 6859f17
-verified_sprint: sprint-42
+verified_sha: abd8609
+verified_sprint: sprint-46
 status: verified
 ---
 
@@ -177,3 +177,4 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   `.env`-loading defect fix at the two process entrypoints — see [[dev-setup-and-dod]] and
   [[ingest-service-and-pull-loop]]), unrelated to the config loader/resolvers. verified_sha =
   6a33edb.
+- sprint-46 (STORY-082): Re-verified after pyproject.toml changes. verified_sha -> abd8609.
