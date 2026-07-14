@@ -143,7 +143,7 @@ AC5 boundaries/gates).
       re-create via `create_tables` — full isolation per test on a reused endpoint,
       mirroring `clean_runtime_tables`' role) + `dynamo_resource` fixture (analog of
       `engine` at conftest.py:112-127, chained on `clean_dynamo_tables`). Commit.
-- [ ] 082.7 RED: `composition/dynamo.py::make_dynamo_resource(settings)` test — with
+- [x] 082.7 RED: `composition/dynamo.py::make_dynamo_resource(settings)` test — with
       `dynamo_endpoint_url` set, the resource targets the local endpoint with dummy creds
       and a PutItem/GetItem round-trips on a bootstrapped table; region honored. GREEN:
       implement. Commit.
