@@ -399,11 +399,11 @@ stories:
   - id: STORY-017
     title: Deployment topology
     file: docs/scrum/stories/STORY-017-deployment-topology.md
-    status: ready   # refined 2026-07-06 (sprint-35 planning): PO answered all four open decisions; Sock Shop tail split to STORY-053; re-pointed 3 -> 5
+    status: archived # SUPERSEDED by the AWS migration epic (STORY-082..090) — PO directive 2026-07-14: stack moves to S3+CloudFront / ECS Fargate+ALB / DynamoDB via CloudFormation, console-first. Decision-3's same-origin-/api intent survives as the CloudFront /api/* behavior (STORY-088); the console-runbook modality (decision 1) carries into STORY-088/089.
     points: 5
     priority: 17
     type: chore
-    sprint: 35
+    sprint: null
   - id: STORY-053
     title: Failure shim for the existing Railway demo app + demo cadence tuning
     file: docs/scrum/stories/STORY-053-sock-shop-railway-failure-shim.md
@@ -790,4 +790,84 @@ stories:
     file: docs/scrum/stories/STORY-081-publication-incident-id.md
     status: draft   # split out of STORY-066 at sprint-45 refinement (2026-07-13); genuinely new + speculative (Statuspage response discarded today; flow never creates incidents). Blocked on a Statuspage design decision + live response sample; needs refinement + estimate.
     type: feature
+    sprint: null
+
+  # ── AWS migration epic (PO decisions 2026-07-14; supersedes STORY-017) ────
+  # Approved: Postgres -> DynamoDB (two-table design, counter int IDs,
+  # maintenance-check eventual-consistency delta, fresh-start cutover); one CFN
+  # stack (S3+CloudFront / ECS Fargate+ALB / DynamoDB, dev-sized, no NAT);
+  # console-first deployment, CI/CD later (STORY-090). DoD amendment (retire
+  # alembic + check_fk_direction; adopt DynamoDB-Local pytest + cfn-lint)
+  # PO-approved 2026-07-14, EFFECTIVE at STORY-087/088 — pending note in
+  # .scrum/definition-of-done.md. Sequence: 082 -> 083 -> 084 -> 085 -> 086 ->
+  # 087 -> 088 -> 089 -> (later) 090.
+  - id: STORY-082
+    title: DynamoDB persistence foundation — table bootstrap, DynamoDB Local test fixture, settings/composition seam
+    file: docs/scrum/stories/STORY-082-dynamodb-persistence-foundation.md
+    status: ready   # drafted + PO-approved 2026-07-14 (AWS-migration refinement, "approve all")
+    points: 5
+    priority: 41
+    type: chore
+    sprint: null
+  - id: STORY-083
+    title: DynamoDB adapters — signals, components, watermarks, sample-mode
+    file: docs/scrum/stories/STORY-083-dynamodb-topology-adapters.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    points: 3
+    priority: 42
+    type: chore
+    sprint: null
+  - id: STORY-084
+    title: DynamoDB observation adapter — idempotent ingest transaction + half-open window query
+    file: docs/scrum/stories/STORY-084-dynamodb-observation-adapter.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    points: 5
+    priority: 43
+    type: chore
+    sprint: null
+  - id: STORY-085
+    title: DynamoDB proposal adapter — open-slot uniqueness transaction, counter IDs, approval events
+    file: docs/scrum/stories/STORY-085-dynamodb-proposal-adapter.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    points: 5
+    priority: 44
+    type: chore
+    sprint: null
+  - id: STORY-086
+    title: DynamoDB adapters — publications, maintenance windows, rejected observations + seed rewrite
+    file: docs/scrum/stories/STORY-086-dynamodb-publication-maintenance-seed.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-085 (approved_actor denormalization)
+    points: 5
+    priority: 45
+    type: chore
+    sprint: null
+  - id: STORY-087
+    title: Composition cutover to DynamoDB — retire Postgres, DoD amendment takes effect
+    file: docs/scrum/stories/STORY-087-dynamodb-cutover.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-083..086 all accepted
+    points: 3
+    priority: 46
+    type: chore
+    sprint: null
+  - id: STORY-088
+    title: CloudFormation single-stack template + console deployment runbook
+    file: docs/scrum/stories/STORY-088-cloudformation-stack-runbook.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); adds cfn-lint to the DoD; depends on STORY-087
+    points: 5
+    priority: 47
+    type: chore
+    sprint: null
+  - id: STORY-089
+    title: Live console deployment + end-to-end verification (PO-driven)
+    file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md
+    status: ready   # PO-approved 2026-07-14 ("approve all"); PO-interactive, live-credential gated; depends on STORY-088
+    points: 3
+    priority: 48
+    type: chore
+    sprint: null
+  - id: STORY-090
+    title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
+    file: docs/scrum/stories/STORY-090-cicd-github-actions.md
+    status: draft   # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
+    type: chore
     sprint: null

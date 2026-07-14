@@ -76,3 +76,11 @@ mechanism, and scope/estimate.
 - 2026-07-06: refined to READY at sprint-35 planning — PO answered all four open
   decisions (console-driven modality, existing Neon, Vercel-rewrite routing, trim+5pts);
   Sock Shop / failure shim / demo cadence split to STORY-053. Estimate 3 → 5.
+- 2026-07-14: SUPERSEDED (PO directive at AWS-migration refinement) — the stack moves
+  to AWS: S3+CloudFront (frontend), ECS Fargate+ALB (api + loop), DynamoDB (replacing
+  Neon Postgres entirely), provisioned by one CloudFormation template, deployed
+  console-first with CI/CD as a later stage. Replaced by STORY-082..090. What survives:
+  decision 1's console-runbook modality (→ STORY-088/089), decision 3's same-origin
+  `/api` intent (→ CloudFront `/api/*` ordered behavior, CORS still deferred), D3's
+  two-process/double-seed-safe finding (→ STORY-086/088), and AC5's secrets-hygiene
+  bar (→ Secrets Manager, names-only in repo). Status: archived-superseded.

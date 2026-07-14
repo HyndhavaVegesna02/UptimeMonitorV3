@@ -23,6 +23,15 @@
 # Within Sprint 0, a story is Done when every command that exists at that point
 # passes; later stories inherit the full gate.
 
+# PENDING AMENDMENT (PO-approved 2026-07-14, AWS-migration refinement — NOT yet in force):
+# when STORY-087 (DynamoDB cutover) lands, `alembic upgrade head` and
+# `python scripts/check_fk_direction.py` RETIRE from this gate (Postgres/Alembic and the
+# FK-direction concept leave the codebase with it), and the persistence floor becomes the
+# DynamoDB-Local-backed pytest suite (fixture from STORY-082). `cfn-lint infra/` JOINS the
+# gate at STORY-088 (CloudFormation template story). Until those stories land, every
+# command below remains in force unchanged — the Postgres gates keep holding while
+# Postgres code exists. The landing story edits this file and cites this note.
+
 ## Commands (backend)
 - [ ] Tests pass: `pytest` -> exit 0
 - [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
