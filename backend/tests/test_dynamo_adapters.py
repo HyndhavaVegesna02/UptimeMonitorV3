@@ -191,3 +191,37 @@ def test_dynamo_sample_mode_repository_lifecycle(dynamo_resource):
     repo.is_enabled()
     assert len(spy_kwargs) == 1
     assert spy_kwargs[0].get("ConsistentRead") is True
+
+
+def test_dynamo_component_repository_list_components(dynamo_resource):
+    from src.adapters.persistence.dynamo_component_repository import (
+        DynamoComponentRepository,
+    )
+
+    settings = load_settings()
+    repo = DynamoComponentRepository(dynamo_resource, settings)
+
+    # Empty case
+    assert repo.list_components() == []
+
+    # Seed components
+    _seed_component_dynamo(dynamo_resource, settings, "comp-a", "app-a")
+    _seed_component_dynamo(dynamo_resource, settings, "comp-b", "app-a")
+
+    # Update status of comp-b to degraded
+    repo.set_status("comp-b", ComponentStatus.DEGRADED)
+
+    components = repo.list_components()
+    assert len(components) == 2
+
+    components_sorted = sorted(components, key=lambda c: c.id)
+
+    assert components_sorted[0].id == "comp-a"
+    assert components_sorted[0].name == "comp-a"
+    assert components_sorted[0].status == ComponentStatus.OPERATIONAL
+    assert components_sorted[0].app_id == "app-a"
+
+    assert components_sorted[1].id == "comp-b"
+    assert components_sorted[1].name == "comp-b"
+    assert components_sorted[1].status == ComponentStatus.DEGRADED
+    assert components_sorted[1].app_id == "app-a"
