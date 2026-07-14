@@ -86,3 +86,24 @@ def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatc
             subprocess.run(["docker", "rm", "-f", container_name], capture_output=True, text=True)
 
     assert leftover.stdout.strip() == ""
+
+
+def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
+    # Retrieve the control table (using default name)
+    table = dynamo_resource.Table("uptime-control")
+    
+    # Put a dummy item
+    table.put_item(Item={"pk": "TEST#1", "sk": "META", "val": "hello"})
+    
+    # Verify it exists
+    res = table.get_item(Key={"pk": "TEST#1", "sk": "META"})
+    assert "Item" in res
+    assert res["Item"]["val"] == "hello"
+
+
+def test_dynamo_resource_fixture_isolation_part_2(dynamo_resource):
+    # This test runs after part_1, and clean_dynamo_tables should have run,
+    # so the table must be empty!
+    table = dynamo_resource.Table("uptime-control")
+    res = table.get_item(Key={"pk": "TEST#1", "sk": "META"})
+    assert "Item" not in res

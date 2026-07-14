@@ -139,7 +139,7 @@ AC5 boundaries/gates).
       SECOND time completes exit-0 with no error and no schema change (AC1 idempotency);
       CLI entry honors the settings env vars. GREEN: implement (create, wait ACTIVE,
       swallow `ResourceInUseException` on re-run). Commit.
-- [ ] 082.6 conftest: function-scoped `clean_dynamo_tables` (delete both tables if present,
+- [x] 082.6 conftest: function-scoped `clean_dynamo_tables` (delete both tables if present,
       re-create via `create_tables` — full isolation per test on a reused endpoint,
       mirroring `clean_runtime_tables`' role) + `dynamo_resource` fixture (analog of
       `engine` at conftest.py:112-127, chained on `clean_dynamo_tables`). Commit.
