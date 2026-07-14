@@ -1,0 +1,50 @@
+from __future__ import annotations
+
+import sys
+from pathlib import Path
+import pytest
+
+# Add repo root and scripts to sys.path so we can import dynamo_local
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT / "scripts"))
+
+import dynamo_local
+
+
+def test_import_exists():
+    assert dynamo_local is not None
+
+
+def test_resolve_dynamo_uses_external_endpoint(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "http://aws-dynamo:8000")
+    plan = dynamo_local.resolve_dynamo()
+    assert plan.source == "env"
+    assert plan.endpoint_url == "http://aws-dynamo:8000"
+
+
+def test_resolve_dynamo_spawns_container_when_docker_available(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
+
+    # Mock docker_available to return True
+    monkeypatch.setattr(dynamo_local, "docker_available", lambda: True)
+
+    spawned = []
+    def mock_spawn(name, port):
+        spawned.append((name, port))
+
+    plan = dynamo_local.resolve_dynamo(spawn_container=mock_spawn)
+    assert plan.source == "container"
+    assert plan.endpoint_url.startswith("http://localhost:")
+    assert plan.container_name is not None
+    assert len(spawned) == 1
+    assert spawned[0][0] == plan.container_name
+
+
+def test_resolve_dynamo_skips_when_no_external_and_no_docker(monkeypatch: pytest.MonkeyPatch):
+    monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
+    monkeypatch.setattr(dynamo_local, "docker_available", lambda: False)
+
+    plan = dynamo_local.resolve_dynamo()
+    assert plan.source == "skip"
+    assert plan.endpoint_url is None
+    assert plan.container_name is None

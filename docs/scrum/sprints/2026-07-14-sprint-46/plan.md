@@ -123,7 +123,7 @@ AC5 boundaries/gates).
       is None`; with all four set, the overrides win; `DATABASE_URL` still required
       (KeyError test unchanged). GREEN: add the four fields to `Settings` +
       `load_settings`. Commit.
-- [ ] 082.3 RED: unit tests for `scripts/dynamo_local.py` resolve ladder (pure logic,
+- [x] 082.3 RED: unit tests for `scripts/dynamo_local.py` resolve ladder (pure logic,
       Docker probed via injected/monkeypatched check, mirroring dev_db's testing style):
       env `DYNAMO_ENDPOINT_URL` set → `source="env"`; else Docker → `source="container"`
       with a free host port; else `source="skip"`. GREEN: implement `resolve_dynamo()`,
