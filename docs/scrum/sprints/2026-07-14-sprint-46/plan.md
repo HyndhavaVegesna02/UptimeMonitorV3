@@ -115,7 +115,7 @@ Story file: `docs/scrum/stories/STORY-082-dynamodb-persistence-foundation.md` (A
 there; AC1 bootstrap idempotency, AC2 fixture ladder, AC3 settings, AC4 factory,
 AC5 boundaries/gates).
 
-- [ ] 082.1 Add `boto3` to `[project] dependencies` in `pyproject.toml`;
+- [x] 082.1 Add `boto3` to `[project] dependencies` in `pyproject.toml`;
       `.venv/Scripts/python.exe -m pip install -e ".[dev]"`; sanity `python -c "import
       boto3"`. Commit (chore step — no test precedes a bare dependency add).
 - [ ] 082.2 RED: settings tests — with none of the four env vars set, `load_settings()`
