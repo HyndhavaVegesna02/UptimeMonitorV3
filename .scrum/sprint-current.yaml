@@ -1,7 +1,7 @@
 # YourTeam active sprint board
 sprint: 46
-status: active
-mode: in-process
+status: in_review   # implementation + reviews complete; awaiting PO accept/reject at review
+mode: in-process    # PLANNED in-process; ACTUAL external (Antigravity) after the CC session limit was hit mid-sprint — verified under external-mode rules (spec+quality per story regardless of size + independent gate re-run). See review.md.
 goal: "Stand up the DynamoDB persistence seam — table bootstrap, throwaway-local test fixture, settings, boto3 factory — and prove port-contract parity with the first four adapters (signals, components, watermarks, sample-mode), all without touching the Postgres wiring."
 branch: sprint-46
 start_tag: sprint-46-start
@@ -11,51 +11,78 @@ stories:
     status: done
     slug: dynamodb-persistence-foundation
     points: 5
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ======================= 584 passed in 118.38s (0:01:58) ======================="
-        commit: 1fed484
-        at: "2026-07-14T07:30:01+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "--------- | Contracts | --------- | Analyzed 146 files, 417 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: 1fed484
-        at: "2026-07-14T07:32:01+00:00"
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 1fed484
-        at: "2026-07-14T07:32:02+00:00"
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "212 files already formatted"
-        commit: 1fed484
-        at: "2026-07-14T07:32:03+00:00"
+    review:
+      spec: PASS          # 5/5 AC met, no gaps (yt-spec-reviewer)
+      quality: FIX_REQUIRED_then_FIXED  # 1 MAJOR (teardown test lacked Docker-skip guard) fixed in 6c4a257; 4 minors captured in review.md
   - id: STORY-083
     status: done
     slug: dynamodb-topology-adapters
     points: 3
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ======================= 599 passed in 119.08s (0:01:59) ======================="
-        commit: e28135b
-        at: "2026-07-14T08:53:36+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "--------- | Contracts | --------- | Analyzed 152 files, 435 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: e28135b
-        at: "2026-07-14T08:55:37+00:00"
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: e28135b
-        at: "2026-07-14T08:55:38+00:00"
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "219 files already formatted"
-        commit: e28135b
-        at: "2026-07-14T08:55:39+00:00"
+    review:
+      spec: PASS          # 5/5 AC met, ConsistentRead spies real, not-wired-into-composition confirmed
+      quality: APPROVE    # 0 critical, 0 major, 3 minors captured in review.md
+# Evidence of record: full 9-command DoD gate on the FINAL sprint HEAD (6c4a257),
+# independently re-run by the orchestrator (external-mode requirement). 8/9 green
+# outright; pytest's single failure is a proven contention false-red — see gate_notes.
+final_gate:
+  head: 6c4a257
+  dod_evidence:
+    - command: "pytest"
+      exit_code: 1
+      output_tail: "1 failed, 598 passed in 144.44s — FAILED backend/tests/test_dev_db_fixture.py::test_container_is_torn_down_even_when_a_test_using_the_fixture_fails (server closed the connection unexpectedly; dev-db container contention under full-suite load). PROVEN CONTENTION FALSE-RED (see gate_notes). Every DynamoDB test — this sprint's product code — passed."
+      commit: 6c4a257
+      at: "2026-07-14T18:59:18+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "Contracts: 8 kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)."
+      commit: 6c4a257
+      at: "2026-07-14T19:01:46+00:00"
+    - command: "python scripts/check_fk_direction.py"
+      exit_code: 0
+      output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
+      commit: 6c4a257
+      at: "2026-07-14T19:01:49+00:00"
+    - command: "alembic upgrade head"
+      exit_code: 0
+      output_tail: "Context impl PostgresqlImpl. | Will assume transactional DDL."
+      commit: 6c4a257
+      at: "2026-07-14T19:01:50+00:00"
+    - command: "ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 6c4a257
+      at: "2026-07-14T19:01:53+00:00"
+    - command: "ruff format --check ."
+      exit_code: 0
+      output_tail: "219 files already formatted"
+      commit: 6c4a257
+      at: "2026-07-14T19:01:53+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
+      commit: 6c4a257
+      at: "2026-07-14T19:01:53+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "built in 1.10s (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
+      commit: 6c4a257
+      at: "2026-07-14T19:02:58+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "eslint . — clean"
+      commit: 6c4a257
+      at: "2026-07-14T19:03:09+00:00"
+gate_notes: >-
+  pytest's lone failure (test_dev_db_fixture.py::test_container_is_torn_down_even_when_a_test_using_the_fixture_fails)
+  is a CONTENTION FALSE-RED, proven per the 2026-07-06 protocol: (1) EMPTY diff for
+  backend/tests/test_dev_db_fixture.py and scripts/dev_db.py since sprint-46-start
+  (this sprint did not touch the Postgres dev-db harness), and (2) the file passes in
+  isolation (6 passed, exit 0) with no competing container. It is the STORY-080
+  dev-db port-collision/connection-disconnect flake under full-suite Docker pressure,
+  aggravated by the gate's own DB container — exactly what STORY-080 (already
+  PO-prioritized) will durably fix. A separate earlier full-gate run at 8153b53 tripped
+  a DIFFERENT member of the same family (test_dev_db_cli.py), also proven a false-red.
+  All DynamoDB product tests (STORY-082/083) passed in every run.
 hotfixes: []
-interrupts: []
+interrupts:
+  - note: "Mid-sprint CC session limit forced external implementation via Antigravity; PO pivoted to external delivery. Both stories then verified under external-mode rules on resume."
