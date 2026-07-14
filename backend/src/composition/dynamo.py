@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import boto3
+
 from src.composition.settings import Settings
 
 
@@ -16,7 +17,7 @@ def make_dynamo_resource(settings: Settings):
     resource_kwargs: dict = {
         "region_name": settings.aws_region,
     }
-    
+
     if settings.dynamo_endpoint_url:
         resource_kwargs["endpoint_url"] = settings.dynamo_endpoint_url
         resource_kwargs["aws_access_key_id"] = "test"

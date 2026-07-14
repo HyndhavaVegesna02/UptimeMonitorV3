@@ -13,9 +13,9 @@ BACKEND = REPO_ROOT / "backend"
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
-import boto3
-from botocore.exceptions import ClientError
-from src.composition.settings import load_settings
+import boto3  # noqa: E402
+from botocore.exceptions import ClientError  # noqa: E402
+from src.composition.settings import load_settings  # noqa: E402
 
 
 def create_tables() -> None:

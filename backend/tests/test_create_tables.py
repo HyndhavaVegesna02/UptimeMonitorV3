@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
+
 import boto3
-import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
@@ -47,19 +46,25 @@ def test_create_tables_idempotency_and_schema(dynamo_local, monkeypatch):
     ctrl_table = dynamo.Table("uptime-control")
 
     # Assert observations schema
-    obs_desc = obs_table.meta.client.describe_table(TableName="uptime-observations")["Table"]
+    obs_desc = obs_table.meta.client.describe_table(TableName="uptime-observations")[
+        "Table"
+    ]
     assert obs_desc["TableStatus"] == "ACTIVE"
     assert obs_desc["BillingModeSummary"]["BillingMode"] == "PAY_PER_REQUEST"
-    
+
     key_schema = {k["AttributeName"]: k["KeyType"] for k in obs_desc["KeySchema"]}
     assert key_schema == {"pk": "HASH", "sk": "RANGE"}
 
-    attr_types = {a["AttributeName"]: a["AttributeType"] for a in obs_desc["AttributeDefinitions"]}
+    attr_types = {
+        a["AttributeName"]: a["AttributeType"] for a in obs_desc["AttributeDefinitions"]
+    }
     assert attr_types["pk"] == "S"
     assert attr_types["sk"] == "S"
 
     # Assert control schema
-    ctrl_desc = ctrl_table.meta.client.describe_table(TableName="uptime-control")["Table"]
+    ctrl_desc = ctrl_table.meta.client.describe_table(TableName="uptime-control")[
+        "Table"
+    ]
     assert ctrl_desc["TableStatus"] == "ACTIVE"
     assert ctrl_desc["BillingModeSummary"]["BillingMode"] == "PAY_PER_REQUEST"
 
@@ -70,11 +75,14 @@ def test_create_tables_idempotency_and_schema(dynamo_local, monkeypatch):
     gsi = ctrl_desc["GlobalSecondaryIndexes"][0]
     assert gsi["IndexName"] == "gsi1"
     assert gsi["Projection"]["ProjectionType"] == "ALL"
-    
+
     gsi_keys = {k["AttributeName"]: k["KeyType"] for k in gsi["KeySchema"]}
     assert gsi_keys == {"gsi1pk": "HASH", "gsi1sk": "RANGE"}
 
-    ctrl_attrs = {a["AttributeName"]: a["AttributeType"] for a in ctrl_desc["AttributeDefinitions"]}
+    ctrl_attrs = {
+        a["AttributeName"]: a["AttributeType"]
+        for a in ctrl_desc["AttributeDefinitions"]
+    }
     assert ctrl_attrs["pk"] == "S"
     assert ctrl_attrs["sk"] == "S"
     assert ctrl_attrs["gsi1pk"] == "S"

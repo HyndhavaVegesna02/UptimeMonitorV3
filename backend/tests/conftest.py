@@ -48,7 +48,7 @@ def provide_dynamo_local():
     finally:
         if plan.source == "container":
             dynamo_local_module.stop_container(plan.container_name)
-        
+
         if prev_db_url is None:
             os.environ.pop("DATABASE_URL", None)
         else:

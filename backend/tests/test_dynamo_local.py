@@ -2,13 +2,14 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+
 import pytest
 
 # Add repo root and scripts to sys.path so we can import dynamo_local
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
-import dynamo_local
+import dynamo_local  # noqa: E402
 
 
 def test_import_exists():
@@ -22,13 +23,16 @@ def test_resolve_dynamo_uses_external_endpoint(monkeypatch: pytest.MonkeyPatch):
     assert plan.endpoint_url == "http://aws-dynamo:8000"
 
 
-def test_resolve_dynamo_spawns_container_when_docker_available(monkeypatch: pytest.MonkeyPatch):
+def test_resolve_dynamo_spawns_container_when_docker_available(
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
 
     # Mock docker_available to return True
     monkeypatch.setattr(dynamo_local, "docker_available", lambda: True)
 
     spawned = []
+
     def mock_spawn(name, port):
         spawned.append((name, port))
 
@@ -40,7 +44,9 @@ def test_resolve_dynamo_spawns_container_when_docker_available(monkeypatch: pyte
     assert spawned[0][0] == plan.container_name
 
 
-def test_resolve_dynamo_skips_when_no_external_and_no_docker(monkeypatch: pytest.MonkeyPatch):
+def test_resolve_dynamo_skips_when_no_external_and_no_docker(
+    monkeypatch: pytest.MonkeyPatch,
+):
     monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
     monkeypatch.setattr(dynamo_local, "docker_available", lambda: False)
 
@@ -52,6 +58,7 @@ def test_resolve_dynamo_skips_when_no_external_and_no_docker(monkeypatch: pytest
 
 def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatch):
     import subprocess
+
     from conftest import provide_dynamo_local
 
     # Clear external endpoint to force container spawn
@@ -66,7 +73,15 @@ def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatc
 
     # Verify container exists
     running = subprocess.run(
-        ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+        [
+            "docker",
+            "ps",
+            "-a",
+            "--filter",
+            f"name={container_name}",
+            "--format",
+            "{{.Names}}",
+        ],
         capture_output=True,
         text=True,
     )
@@ -78,12 +93,22 @@ def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatc
     finally:
         # Check if container is stopped/deleted
         leftover = subprocess.run(
-            ["docker", "ps", "-a", "--filter", f"name={container_name}", "--format", "{{.Names}}"],
+            [
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                f"name={container_name}",
+                "--format",
+                "{{.Names}}",
+            ],
             capture_output=True,
             text=True,
         )
         if leftover.stdout.strip():
-            subprocess.run(["docker", "rm", "-f", container_name], capture_output=True, text=True)
+            subprocess.run(
+                ["docker", "rm", "-f", container_name], capture_output=True, text=True
+            )
 
     assert leftover.stdout.strip() == ""
 
@@ -91,10 +116,10 @@ def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatc
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
     # Retrieve the control table (using default name)
     table = dynamo_resource.Table("uptime-control")
-    
+
     # Put a dummy item
     table.put_item(Item={"pk": "TEST#1", "sk": "META", "val": "hello"})
-    
+
     # Verify it exists
     res = table.get_item(Key={"pk": "TEST#1", "sk": "META"})
     assert "Item" in res

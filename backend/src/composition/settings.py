@@ -41,10 +41,10 @@ class Settings:
 
     database_url: str
     config_dir: str
-    aws_region: str
-    dynamo_observations_table: str
-    dynamo_control_table: str
-    dynamo_endpoint_url: str | None
+    aws_region: str = "us-east-1"
+    dynamo_observations_table: str = "uptime-observations"
+    dynamo_control_table: str = "uptime-control"
+    dynamo_endpoint_url: str | None = None
 
 
 def load_settings() -> Settings:
@@ -58,7 +58,9 @@ def load_settings() -> Settings:
         database_url=os.environ[APP_DATABASE_URL_VAR],
         config_dir=os.environ.get("CONFIG_DIR", "config/apps"),
         aws_region=os.environ.get("AWS_REGION", "us-east-1"),
-        dynamo_observations_table=os.environ.get("DYNAMO_OBSERVATIONS_TABLE", "uptime-observations"),
+        dynamo_observations_table=os.environ.get(
+            "DYNAMO_OBSERVATIONS_TABLE", "uptime-observations"
+        ),
         dynamo_control_table=os.environ.get("DYNAMO_CONTROL_TABLE", "uptime-control"),
         dynamo_endpoint_url=os.environ.get("DYNAMO_ENDPOINT_URL") or None,
     )
