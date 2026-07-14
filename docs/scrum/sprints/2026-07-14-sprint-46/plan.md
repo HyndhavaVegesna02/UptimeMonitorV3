@@ -163,38 +163,38 @@ AC5 boundaries/gates).
 Story file: `docs/scrum/stories/STORY-083-dynamodb-topology-adapters.md` (AC verbatim
 there; AC1 signals, AC2 components, AC3 watermarks, AC4 sample-mode, AC5 boundaries).
 
-- [ ] 083.1 RED: unit tests for `adapters/persistence/dynamo_serde.py` — canonical
+- [x] 083.1 RED: unit tests for `adapters/persistence/dynamo_serde.py` — canonical
       serialization (zero-microsecond datetime pads to `.000000`; offset renders `+00:00`;
       naive datetime rejected; parse(serialize(dt)) == dt; lexicographic order of two
       serialized instants matches chronological order across the microsecond-padding
       boundary). GREEN: implement `to_canonical_iso` / `from_canonical_iso`. Commit.
       (STORY-084 reuses this module — it is shared infrastructure, name it accordingly.)
-- [ ] 083.2 RED: `DynamoSignalRepository` contract tests against `dynamo_resource` —
+- [x] 083.2 RED: `DynamoSignalRepository` contract tests against `dynamo_resource` —
       empty table → `[]`; three seeded signal items return ordered by `signal_key`; field
       fidelity incl. `component_id=None` / `interval_seconds=None` absent-attr handling;
       `get` miss → None. GREEN: implement (Query `pk="TOPOLOGY" AND begins_with(sk,
       "SIGNAL#")`; GetItem for `get`). Commit.
-- [ ] 083.3 RED: `DynamoComponentRepository` tests — `list_components` / `get` fidelity;
+- [x] 083.3 RED: `DynamoComponentRepository` tests — `list_components` / `get` fidelity;
       `get` uses ConsistentRead (verify via call-kwargs spy, as DynamoDB-Local is always consistent);
       `set_status` flips the attr; `set_status` on a missing id raises
       `ComponentNotFoundError` (ConditionalCheckFailed mapped, nothing written). GREEN:
       implement (UpdateItem with `attribute_exists(pk)` condition… full key condition on
       pk+sk). Commit.
-- [ ] 083.4 RED: `DynamoWatermarkRepository` tests — `get` on never-advanced → None;
+- [x] 083.4 RED: `DynamoWatermarkRepository` tests — `get` on never-advanced → None;
       `advance` then `get` round-trips the exact instant tz-aware UTC (via dynamo_serde);
       `advance` twice = upsert (last write wins); `get` uses ConsistentRead (verify via call-kwargs spy). GREEN:
       implement. Commit.
-- [ ] 083.5 RED: `DynamoSampleModeRepository` tests — `is_enabled()` False on absent item;
+- [x] 083.5 RED: `DynamoSampleModeRepository` tests — `is_enabled()` False on absent item;
       `is_enabled` uses ConsistentRead (verify via call-kwargs spy);
       `set_enabled(True)` → True; setting the same value again succeeds silently;
       toggle round-trips. GREEN: implement. Commit.
-- [ ] 083.6 Parity sweep: mirror each relevant scenario from
+- [x] 083.6 Parity sweep: mirror each relevant scenario from
       `backend/tests/test_persistence_adapters.py` for these four ports (scenario-for-
       scenario in `test_dynamo_adapters.py` — separate file, no parametrizing the Postgres
       suite over two backends: that would double DB spin-ups and violate the
       one-DB-gated-run-at-a-time rule). Confirm composition wiring untouched
       (`git diff` shows no `composition/app.py`/`run.py` change — AC5). Commit.
-- [ ] 083.7 Scoped story gate (same four commands as 082.9); wiki blast-radius check
+- [x] 083.7 Scoped story gate (same four commands as 082.9); wiki blast-radius check
       (`yt_wiki.py` — new files carry no `code_refs` yet, but `pyproject.toml` and
       `conftest.py` are cited by existing articles; any hit gets updated or re-verified);
       reviews (spec ∥ quality); board to done.
