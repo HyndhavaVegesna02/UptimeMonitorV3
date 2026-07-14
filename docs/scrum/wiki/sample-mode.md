@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
 code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, scripts/check_fk_direction.py]
-verified_sha: 010a21b3a17823ceae24f5f2716a49f242b56331
-verified_sprint: sprint-45
+verified_sha: abd8609
+verified_sprint: sprint-46
 status: verified
 ---
 
@@ -461,3 +461,4 @@ produced ordinary data flowing through it.
 - sprint-45 (STORY-065/STORY-066): re-verified, no changes to Sample Mode. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
+- sprint-46 (STORY-082): Re-verified after pyproject.toml changes. verified_sha -> abd8609.

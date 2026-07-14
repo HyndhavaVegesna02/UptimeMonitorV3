@@ -1,18 +1,19 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py, backend/tests/test_spine_schema.py]
-verified_sha: 678ff0d
-verified_sprint: sprint-44
+verified_sha: abd8609
+verified_sprint: sprint-46
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx, python-dotenv
-  (`pyproject.toml` — `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config
+  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx, python-dotenv,
+  boto3 (`pyproject.toml` — `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config
   loader, httpx promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP
   executors, python-dotenv added sprint-36 STORY-043 so the two process entrypoints can load a
-  `.env` file). Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
+  `.env` file, boto3 added sprint-46 STORY-082 for the AWS/DynamoDB persistence migration).
+  Dev extras: pytest, import-linter, ruff, uvicorn[standard] (`pyproject.toml` —
   `[project.optional-dependencies] dev`; `uvicorn` added sprint-28 STORY-042 as the local ASGI dev
   server — see "Run the app locally" below).
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
@@ -84,6 +85,10 @@ status: verified
   `clean_runtime_tables` fixture (STORY-039) truncates the runtime tables before
   each DB-gated test, so the suite passes even against a reused, already-populated
   DB (the session-scoped DB is shared; per-test isolation comes from the truncate).
+  A symmetric session-scoped `dynamo_local` fixture (via `dynamo_local.resolve_dynamo()`)
+  spawns a throwaway DynamoDB Local container (or reuses `DYNAMO_ENDPOINT_URL`), and
+  `clean_dynamo_tables` (function-scoped) deletes/re-creates tables for per-test isolation,
+  supporting DynamoDB integration tests (STORY-082).
 - Manual fallback one-liner for commands 3 & 4 (Docker 28.x), if not using
   `scripts/dev_db.py`:
   `docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16`
@@ -213,3 +218,5 @@ status: verified
   `migrated_db` fixture — not in `code_refs`, so the sweep could never have caught it drifting.
   Added to `code_refs` (a defining exemplar of the fixture-consumption pattern this article
   documents). No Fact text changed. verified_sha → 678ff0d.
+- sprint-46 (STORY-082): Added boto3 dependency and set up the session-scoped dynamo_local
+  fixture and clean_dynamo_tables for DynamoDB Local container lifecycle integration. verified_sha -> abd8609.

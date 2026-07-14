@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: 05f640e
-verified_sprint: sprint-43
+verified_sha: abd8609
+verified_sprint: sprint-46
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -21,7 +21,7 @@ status: verified
 - **Import boundary (dossier §4)** is enforced by import-linter, run as the bare command
   `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with eight contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
-    `src.composition`, `src.api`, `sqlalchemy`, or `httpx` (`pyproject.toml` ("core-independence")).
+    `src.composition`, `src.api`, `sqlalchemy`, `httpx`, or `boto3` (`pyproject.toml` ("core-independence")).
   - `core-internal-layering` (layers): `src.core.queries` → `src.core.services` →
     `src.core.ports` → `src.core.domain` (`pyproject.toml` ("core-internal-layering")).
   - `adapters-independence` (independence): `src.adapters.{inbound,outbound,persistence}`
@@ -32,7 +32,7 @@ status: verified
     `src.api.v1.topology`, and `src.api.v1.sample_mode` may not import one another
     (`pyproject.toml` ("api-feature-independence")).
   - `api-outward-independence` (forbidden): `src.api` may not import `src.adapters`,
-    `src.composition`, `sqlalchemy`, `psycopg`, or `httpx` (`pyproject.toml` ("api-outward-independence")).
+    `src.composition`, `sqlalchemy`, `psycopg`, `httpx`, or `boto3` (`pyproject.toml` ("api-outward-independence")).
   - `adapters-edge-only` (forbidden): `src.adapters` may not import `src.api` or
     `src.composition` (`pyproject.toml` ("adapters-edge-only")).
   - `api-shared-no-feature-imports` (forbidden): `src.api.v1._shared` may not import any of the
@@ -149,4 +149,5 @@ status: verified
   `api/v1/_shared/` package from importing any feature package. `lint-imports`: 8 kept / 0 broken,
   FK 11/0 unchanged. verified_sha → 219af4a.
 - sprint-43 (STORY-078): Relocated availability read model whole to a new `core/queries/` subpackage (CQRS-lite). `core-internal-layering` contract updated to: queries → services → ports → domain. verified_sha → 05f640e.
+- sprint-46 (STORY-082): Extended core-independence and api-outward-independence contracts in pyproject.toml to forbid boto3 imports, securing DynamoDB boundaries. verified_sha -> abd8609.
 

@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py]
-verified_sha: 010a21b3a17823ceae24f5f2716a49f242b56331
-verified_sprint: sprint-45
+verified_sha: abd8609
+verified_sprint: sprint-46
 status: verified
 ---
 
@@ -230,3 +230,4 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
+- sprint-46 (STORY-082): Re-verified after test conftest edits. verified_sha -> abd8609.
