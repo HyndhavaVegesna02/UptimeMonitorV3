@@ -56,6 +56,10 @@ def test_resolve_dynamo_skips_when_no_external_and_no_docker(
     assert plan.container_name is None
 
 
+@pytest.mark.skipif(
+    not dynamo_local.docker_available(),
+    reason="requires Docker to spawn a real container",
+)
 def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatch):
     import subprocess
 
