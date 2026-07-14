@@ -112,3 +112,43 @@ def test_dynamo_component_repository_set_status_contract(dynamo_resource):
     _seed_component_dynamo(dynamo_resource, settings, "set-status-comp")
     repo = DynamoComponentRepository(dynamo_resource, settings)
     _assert_set_status_contract(repo, known_id="set-status-comp")
+
+
+def test_dynamo_watermark_repository_lifecycle(dynamo_resource):
+    from datetime import datetime, timezone
+
+    from src.adapters.persistence.dynamo_watermark_repository import (
+        DynamoWatermarkRepository,
+    )
+
+    settings = load_settings()
+    repo = DynamoWatermarkRepository(dynamo_resource, settings)
+
+    assert repo.get("signal-1") is None
+
+    dt1 = datetime(2026, 7, 14, 12, 0, 0, 0, tzinfo=timezone.utc)
+    repo.advance("signal-1", dt1)
+
+    got1 = repo.get("signal-1")
+    assert got1 == dt1
+    assert got1.tzinfo == timezone.utc
+
+    # advance twice
+    dt2 = datetime(2026, 7, 14, 12, 30, 0, 0, tzinfo=timezone.utc)
+    repo.advance("signal-1", dt2)
+    assert repo.get("signal-1") == dt2
+
+    # Spy on get to check ConsistentRead
+    table = repo._table
+    original_get_item = table.get_item
+    spy_kwargs = []
+
+    def spied_get_item(*args, **kwargs):
+        spy_kwargs.append(kwargs)
+        return original_get_item(*args, **kwargs)
+
+    table.get_item = spied_get_item
+
+    repo.get("signal-1")
+    assert len(spy_kwargs) == 1
+    assert spy_kwargs[0].get("ConsistentRead") is True
