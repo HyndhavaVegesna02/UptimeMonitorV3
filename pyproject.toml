@@ -42,7 +42,7 @@ include_external_packages = true
 name = "core-independence"
 type = "forbidden"
 source_modules = ["src.core"]
-forbidden_modules = ["src.adapters", "src.composition", "src.api", "sqlalchemy", "httpx"]
+forbidden_modules = ["src.adapters", "src.composition", "src.api", "sqlalchemy", "httpx", "boto3"]
 
 [[tool.importlinter.contracts]]
 name = "core-internal-layering"
@@ -79,7 +79,7 @@ modules = [
 name = "api-outward-independence"
 type = "forbidden"
 source_modules = ["src.api"]
-forbidden_modules = ["src.adapters", "src.composition", "sqlalchemy", "psycopg", "httpx"]
+forbidden_modules = ["src.adapters", "src.composition", "sqlalchemy", "psycopg", "httpx", "boto3"]
 
 # Adapters are edge-only: they implement ports, they never reach up
 [[tool.importlinter.contracts]]

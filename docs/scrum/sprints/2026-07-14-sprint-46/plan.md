@@ -147,7 +147,7 @@ AC5 boundaries/gates).
       `dynamo_endpoint_url` set, the resource targets the local endpoint with dummy creds
       and a PutItem/GetItem round-trips on a bootstrapped table; region honored. GREEN:
       implement. Commit.
-- [ ] 082.8 Extend pyproject.toml contracts: add `boto3` to the `forbidden_modules` list for `core-independence` and `api-outward-independence`. Verify the contract count stays 8. Commit.
+- [x] 082.8 Extend pyproject.toml contracts: add `boto3` to the `forbidden_modules` list for `core-independence` and `api-outward-independence`. Verify the contract count stays 8. Commit.
 - [ ] 082.9 Boundary + gate: `importlinter` green (boto3 usage confined to
       `adapters/persistence`—none yet—and `composition`, `scripts/`, tests); scoped story
       gate `yt_gate.py --only` {pytest, ruff check, ruff format, importlinter} — the four
