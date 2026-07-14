@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py]
-verified_sha: abd8609
+verified_sha: 7097bcc4676a219d589dd9cc96cc692b9cf696c4
 verified_sprint: sprint-46
 status: verified
 ---
