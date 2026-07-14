@@ -1,125 +1,21 @@
-# YourTeam sprint board.
-sprint: 45
-status: done   # PO ACCEPT both (2026-07-13 review); velocity 6/6; merged to main (local). Retro DONE (58ef5f1 retro.md + amendments landed cb105e9). Sprint cycle fully closed — next ceremony: planning.
-started: 2026-07-13
+# YourTeam active sprint board
+sprint: 46
+status: active
 mode: in-process
-goal: "The Maintenance tab gains a real Title field and a per-window delete (STORY-065), and the
-  Publications timeline shows the real publish author (STORY-066, author-only) — closing two of the
-  Sprint 38 redesign data gaps against real API data."
-branch: sprint-45
-start_tag: sprint-45-start
-# LOCK AUTHORIZATION: PO directive 2026-07-13 "lock it" after scope approval (065 + 066 author-only,
-# 6 pts) via the planning question. Plan verified by yt-plan-verifier: round 1 GAPS (3) -> amended
-# -> round 2 LOCK_READY. Implementation delegated to a PO-driven external agent (handoff.md); handed
-# back complete at HEAD 48fba51. Orchestrator (this session) runs the DoD gate + reviewers + reality
-# gate. ORDER: 065 first (schema migration + first DELETE verb), then 066 (no migration).
-# CLOSE-OUT (2026-07-13 22:31, session cc-sprint45-close-20260713-2231): PO's external agent applied
-# the 065 quality FIX (styling) + 066 quality minor (MSW actor) at commits cbe628b + 356fb8a.
-# Orchestrator re-reviewed styling (APPROVE), re-ran the whole-tree gate at f53819e (GREEN), wiki
-# sweep CLEAN, and ran BOTH reality gates against a live backend (PASS). Only the PO review remains.
+goal: "Stand up the DynamoDB persistence seam — table bootstrap, throwaway-local test fixture, settings, boto3 factory — and prove port-contract parity with the first four adapters (signals, components, watermarks, sample-mode), all without touching the Postgres wiring."
+branch: sprint-46
+start_tag: sprint-46-start
+started: "2026-07-14T12:13:00+05:30"
 stories:
-  - id: STORY-065
+  - id: STORY-082
+    status: todo
+    slug: dynamodb-persistence-foundation
+    points: 5
+    dod_evidence: []
+  - id: STORY-083
+    status: todo
+    slug: dynamodb-topology-adapters
     points: 3
-    board: accepted             # PO ACCEPT (2026-07-13). spec PASS; quality APPROVE (post styling fix); DoD GREEN; reality gate PASS.
-    pipeline: full
-    attempts: 1
-    blocked_question: null
-    paused_at_commit: null
-    blast_radius_resolved: true # sweep CLEAN at HEAD (frontend-zone.md re-verified in 356fb8a)
-    review:
-      spec: PASS
-      quality: APPROVE          # was FIX_REQUIRED (1 major: 9 inline styles + orphan BEM hooks in MaintenancePage.tsx).
-                                # FIX cbe628b moved all styles to MaintenancePage.css under design tokens; orchestrator
-                                # re-review at f53819e: 0 inline styles remain, all 13 maintenance-window* class hooks
-                                # have backing CSS (exact className<->selector match), all 8 tokens exist in styles/. APPROVE.
-    reality_gate: passed        # live wire cycle vs real backend (:8010 -> throwaway :55434). See reality_gate_evidence.
-  - id: STORY-066
-    points: 3
-    board: accepted             # PO ACCEPT (2026-07-13). spec PASS + quality APPROVE (minor MSW actor fixed in cbe628b);
-                                # DoD GREEN; reality gate PASS (live author derivation).
-    pipeline: full
-    attempts: 1
-    blocked_question: null
-    paused_at_commit: null
-    blast_radius_resolved: true
-    review:
-      spec: PASS
-      quality: APPROVE          # minor (MSW actor not the real 'dashboard-operator' seam) resolved in cbe628b.
-    reality_gate: passed        # live wire author derivation vs real backend. See reality_gate_evidence.
-
-# Whole-tree DoD gate (yt_gate.py) — CLEAN GREEN run at HEAD f53819e (post-fix).
-dod_evidence:
-  gate_head: f53819e
-  verdict: GREEN
-  # Ran via yt_gate.py with PYTHONUTF8=1 and DATABASE_URL/DIRECT -> throwaway postgres:16 on :55434
-  # (uptime_pg_gate). The idle :55432 leftover was stopped first to remove Docker contention.
-  commands:
-    - {command: "pytest", exit_code: 0, result: "570 passed in 92.24s"}
-    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, result: "8 contracts kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)"}
-    - {command: "python scripts/check_fk_direction.py", exit_code: 0, result: "11 FKs checked, 0 violations"}
-    - {command: "alembic upgrade head", exit_code: 0, result: "migrated clean (head incl. maintenance title revision)"}
-    - {command: "ruff check .", exit_code: 0, result: "All checks passed"}
-    - {command: "ruff format --check .", exit_code: 0, result: "206 files already formatted"}
-    - {command: "npm test", exit_code: 0, result: "51 files, 363 tests passed"}
-    - {command: "npm run build", exit_code: 0, result: "tsc -b + vite build OK"}
-    - {command: "npm run lint", exit_code: 0, result: "eslint clean"}
-
-# Reality gate (plan lines 144-152) — live render-vs-wire against a real ASGI backend
-# (uvicorn src.composition.asgi:app on :8010) over the throwaway :55434 DB. Exercises the
-# genuinely un-mocked paths that green unit tests cannot: the new title column + first DELETE
-# verb through the real HTTP surface, and the derive-on-read author join through real Postgres.
-reality_gate_evidence:
-  backend: "uvicorn src.composition.asgi:app :8010 -> DATABASE_URL postgres:16 :55434 (seeded component http-check)"
-  story_065:
-    verdict: PASS
-    steps:
-      - "POST /api/v1/maintenance {title:'Postgres upgrade REALITY-065',...} -> 201; response body carries title"
-      - "GET /api/v1/maintenance -> row carries title on the wire (new nullable column round-trips through Postgres)"
-      - "DELETE /api/v1/maintenance/1 -> 204 (codebase's first DELETE verb, live)"
-      - "GET /api/v1/maintenance -> [] (window actually removed)"
-      - "DELETE /api/v1/maintenance/999999 -> 404 {detail:'Maintenance window with ID 999999 not found.'} (MaintenanceWindowNotFoundError -> _shared 404)"
-  story_066:
-    verdict: PASS
-    steps:
-      - "seeded: proposal(state=approved) + approval_event(actor='dashboard-operator',action='approved') + publication(proposal_id=that) + publication(proposal_id=NULL)"
-      - "GET /api/v1/publications -> pub w/ proposal_id: author='dashboard-operator' == DB approval_events.actor ground truth (correlated subquery derivation, live)"
-      - "GET /api/v1/publications -> pub w/ proposal_id=null: author=null (graceful degrade)"
-    note: "Render side covered by the 363 passing component tests against MSW fixtures mirroring this exact wire shape (author field present/null)."
-
-# ENVIRONMENTAL gate artifacts, all proven benign (not sprint-45 defects) — retro material.
-gate_notes:
-  - artifact: "pytest (cmd 1) flaked on the FIRST close-out run at f53819e: test_dev_db_fixture.py::
-      test_container_is_torn_down_even_when_a_test_using_the_fixture_fails failed (1 of 570) with a
-      'server closed the connection unexpectedly' on an ephemeral port (dev_db.py:198 RuntimeError).
-      Known dev_db container-contention flake class (STORY-073 / STORY-080 hardcoded-port defect,
-      open). Proven benign per the 2026-07-06 agreement: (a) EMPTY diff sprint-45-start..HEAD for
-      test_dev_db_fixture.py / test_dev_db_cli.py / dev_db.py / conftest.py; (b) passes 2/2 in
-      isolation (7.24s, 10.21s). Root cause this run: two idle postgres containers (:55432 + :55434)
-      plus the test spawning its own -> Docker daemon pressure during the full 570-test run. The
-      clean GREEN run above stopped the idle :55432 leftover first and passed 570/570.
-      RETRO: STORY-080 + skip/serialize dev_db-lifecycle tests when an external dev_db is up."
-  - artifact: "import-linter (cmd 2) crashes on Windows WITHOUT PYTHONUTF8=1: rich's Unicode banner
-      breaks the cp1252 pipe writer (UnicodeEncodeError in rich/_win32_console.py). Benign — under
-      PYTHONUTF8=1 it reports 8 contracts KEPT / exit 0. RETRO: bake PYTHONUTF8=1 into yt_gate.py's
-      subprocess env (script rung) — STILL OPEN (yt_gate.py only reconfigures its own streams, not
-      the child env; the orchestrator must export PYTHONUTF8=1)."
-  - artifact: "git-guard hook used a bare relative path (python .claude/hooks/yt_git_guard.py) that
-      failed to resolve once a shell CWD moved off the repo root (e.g. after `cd frontend`), blocking
-      all subsequent shell calls. FIXED at f53819e: use $CLAUDE_PROJECT_DIR so it resolves absolutely.
-      RETRO: the YourTeam hook template should ship the $CLAUDE_PROJECT_DIR form (agent-definition/
-      template rung)."
-
+    dod_evidence: []
 hotfixes: []
-interrupts:
-  - date: 2026-07-13
-    kind: implementation-handoff
-    note: "PO chose to drive an external implementer agent (not orchestrator-dispatched yt-implementer).
-      Handed back complete at 48fba51; orchestrator resumed for gate + review + reality closure."
-  - date: 2026-07-13
-    kind: review-fix-handback
-    note: "After the first review (spec PASS x2; quality 066 APPROVE, 065 FIX_REQUIRED), the PO's
-      external agent applied both quality items: 065 styling break -> MaintenancePage.css under
-      design tokens (cbe628b); 066 MSW actor -> canonical 'dashboard-operator' (cbe628b);
-      frontend-zone.md re-verified (356fb8a). Orchestrator (cc-sprint45-close-20260713-2231) re-took
-      the dead lock, re-reviewed styling (APPROVE), committed a git-guard hook-path fix (f53819e),
-      re-ran the whole-tree gate GREEN at f53819e, and ran both reality gates PASS. PO review next."
+interrupts: []
