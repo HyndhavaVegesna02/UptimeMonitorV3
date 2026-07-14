@@ -2,17 +2,15 @@
 
 from __future__ import annotations
 
-from src.composition.settings import Settings
 from src.core.ports.sample_mode_repository import SampleModeRepository
 
 
 class DynamoSampleModeRepository(SampleModeRepository):
     """DynamoDB repository for managing the global sample-mode flag."""
 
-    def __init__(self, db_resource, settings: Settings) -> None:
+    def __init__(self, db_resource, table_name: str) -> None:
         self._db = db_resource
-        self._settings = settings
-        self._table = self._db.Table(self._settings.dynamo_control_table)
+        self._table = self._db.Table(table_name)
 
     def is_enabled(self) -> bool:
         response = self._table.get_item(

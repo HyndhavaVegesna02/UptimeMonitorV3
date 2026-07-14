@@ -30,7 +30,7 @@ def test_dynamo_signal_repository_empty(dynamo_resource):
     from src.adapters.persistence.dynamo_signal_repository import DynamoSignalRepository
 
     settings = load_settings()
-    repo = DynamoSignalRepository(dynamo_resource, settings)
+    repo = DynamoSignalRepository(dynamo_resource, settings.dynamo_control_table)
     assert repo.list_signals() == []
     assert repo.get("anything") is None
 
@@ -40,7 +40,7 @@ def test_dynamo_signal_repository_contract(dynamo_resource):
 
     settings = load_settings()
     _seed_signals_dynamo(dynamo_resource, settings, _sample_signals())
-    repo = DynamoSignalRepository(dynamo_resource, settings)
+    repo = DynamoSignalRepository(dynamo_resource, settings.dynamo_control_table)
     _assert_signal_repository_contract(repo)
 
 
@@ -71,7 +71,7 @@ def test_dynamo_component_repository_empty(dynamo_resource):
     )
 
     settings = load_settings()
-    repo = DynamoComponentRepository(dynamo_resource, settings)
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
     assert repo.list_components() == []
     assert repo.get("anything") is None
 
@@ -83,7 +83,7 @@ def test_dynamo_component_repository_get_consistent_read(dynamo_resource):
 
     settings = load_settings()
     _seed_component_dynamo(dynamo_resource, settings, "comp-1")
-    repo = DynamoComponentRepository(dynamo_resource, settings)
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
 
     # Spy on get_item
     table = repo._table
@@ -110,7 +110,7 @@ def test_dynamo_component_repository_set_status_contract(dynamo_resource):
 
     settings = load_settings()
     _seed_component_dynamo(dynamo_resource, settings, "set-status-comp")
-    repo = DynamoComponentRepository(dynamo_resource, settings)
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
     _assert_set_status_contract(repo, known_id="set-status-comp")
 
 
@@ -122,7 +122,7 @@ def test_dynamo_watermark_repository_lifecycle(dynamo_resource):
     )
 
     settings = load_settings()
-    repo = DynamoWatermarkRepository(dynamo_resource, settings)
+    repo = DynamoWatermarkRepository(dynamo_resource, settings.dynamo_control_table)
 
     assert repo.get("signal-1") is None
 
@@ -160,7 +160,7 @@ def test_dynamo_sample_mode_repository_lifecycle(dynamo_resource):
     )
 
     settings = load_settings()
-    repo = DynamoSampleModeRepository(dynamo_resource, settings)
+    repo = DynamoSampleModeRepository(dynamo_resource, settings.dynamo_control_table)
 
     # absent item -> disabled
     assert repo.is_enabled() is False
@@ -199,7 +199,7 @@ def test_dynamo_component_repository_list_components(dynamo_resource):
     )
 
     settings = load_settings()
-    repo = DynamoComponentRepository(dynamo_resource, settings)
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
 
     # Empty case
     assert repo.list_components() == []

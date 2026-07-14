@@ -5,7 +5,6 @@ from __future__ import annotations
 from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
-from src.composition.settings import Settings
 from src.core.domain.component import Component, ComponentNotFoundError
 from src.core.domain.status import ComponentStatus
 from src.core.ports.component_repository import ComponentRepository
@@ -14,10 +13,9 @@ from src.core.ports.component_repository import ComponentRepository
 class DynamoComponentRepository(ComponentRepository):
     """DynamoDB repository for managing system components."""
 
-    def __init__(self, db_resource, settings: Settings) -> None:
+    def __init__(self, db_resource, table_name: str) -> None:
         self._db = db_resource
-        self._settings = settings
-        self._table = self._db.Table(self._settings.dynamo_control_table)
+        self._table = self._db.Table(table_name)
 
     def _map_item(self, item: dict) -> Component:
         return Component(

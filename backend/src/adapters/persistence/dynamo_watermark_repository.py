@@ -5,17 +5,15 @@ from __future__ import annotations
 from datetime import datetime
 
 from src.adapters.persistence.dynamo_serde import from_canonical_iso, to_canonical_iso
-from src.composition.settings import Settings
 from src.core.ports.watermark import WatermarkRepository
 
 
 class DynamoWatermarkRepository(WatermarkRepository):
     """DynamoDB repository for managing ingestion watermarks."""
 
-    def __init__(self, db_resource, settings: Settings) -> None:
+    def __init__(self, db_resource, table_name: str) -> None:
         self._db = db_resource
-        self._settings = settings
-        self._table = self._db.Table(self._settings.dynamo_control_table)
+        self._table = self._db.Table(table_name)
 
     def get(self, signal_key: str) -> datetime | None:
         response = self._table.get_item(

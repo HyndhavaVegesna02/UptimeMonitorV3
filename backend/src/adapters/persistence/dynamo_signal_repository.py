@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from boto3.dynamodb.conditions import Key
 
-from src.composition.settings import Settings
 from src.core.domain.topology import Signal
 from src.core.ports.signal_repository import SignalRepository
 
@@ -12,10 +11,9 @@ from src.core.ports.signal_repository import SignalRepository
 class DynamoSignalRepository(SignalRepository):
     """DynamoDB repository for reading topology signals."""
 
-    def __init__(self, db_resource, settings: Settings) -> None:
+    def __init__(self, db_resource, table_name: str) -> None:
         self._db = db_resource
-        self._settings = settings
-        self._table = self._db.Table(self._settings.dynamo_control_table)
+        self._table = self._db.Table(table_name)
 
     def _map_item(self, item: dict) -> Signal:
         interval = item.get("interval_seconds")
