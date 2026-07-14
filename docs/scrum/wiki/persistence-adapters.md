@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py]
-verified_sha: 7097bcc4676a219d589dd9cc96cc692b9cf696c4
+code_refs: [backend/src/adapters/persistence/observation_repository.py, backend/src/adapters/persistence/watermark_repository.py, backend/src/adapters/persistence/rejected_observation_repository.py, backend/src/adapters/persistence/proposal_repository.py, backend/src/adapters/persistence/component_repository.py, backend/src/adapters/persistence/maintenance_repository.py, backend/src/adapters/persistence/publication_repository.py, backend/src/adapters/persistence/signal_repository.py, backend/tests/test_persistence_adapters.py, backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, migrations/versions/ecda752c8865_add_publications_outcome.py, migrations/versions/a2c1d89efcea_add_observations_response_status_code.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py]
+verified_sha: 5ddf3ab
 verified_sprint: sprint-46
 status: verified
 ---
@@ -155,6 +155,17 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
   DB-gated test, so the suite is order- and reused-DB-independent.
 - Tests specifically verifying `seed_topology` or CLI execution clean up the topology tables (`apps`, `components`, `signals`) before and after each test run using a cascaded truncation (`TRUNCATE TABLE apps, components, signals CASCADE;`) to keep the shared database clean.
 
+### DynamoDB Repositories (STORY-082, STORY-083)
+- Implements DynamoDB adapters in `backend/src/adapters/persistence/`:
+  - `DynamoSignalRepository` (`dynamo_signal_repository.py`)
+  - `DynamoComponentRepository` (`dynamo_component_repository.py`)
+  - `DynamoWatermarkRepository` (`dynamo_watermark_repository.py`)
+  - `DynamoSampleModeRepository` (`dynamo_sample_mode_repository.py`)
+- They take `db_resource` (boto3 DynamoDB resource) and `table_name: str` in their constructor, preventing direct dependencies on `src.composition` to adhere to the `adapters-edge-only` boundary contract.
+- Point-reads for decision-path queries (`DynamoComponentRepository.get`, `DynamoWatermarkRepository.get`, `DynamoSampleModeRepository.is_enabled`) use `ConsistentRead=True` to guarantee read-after-write consistency.
+- `DynamoComponentRepository.set_status` uses conditional updates (`ConditionExpression="attribute_exists(pk)"`) to raise `ComponentNotFoundError` when updating a non-existent component, ensuring behavior matches `PostgresComponentRepository`'s contract.
+- Contract parity is verified in `backend/tests/test_dynamo_adapters.py` by reusing the shared contract test suites against a real local DynamoDB instance.
+
 ## Inference (synthesis, not verified)
 - `watermarks.updated_at` is set once at first insert and not refreshed by `advance`'s
   `DO UPDATE` (only `watermark` is set) — audit metadata only; nothing reads it today. Noted as
@@ -230,4 +241,4 @@ Zone 2). They live ONLY in `backend/src/adapters/persistence/`; all SQL stays he
 
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
-- sprint-46 (STORY-082): Re-verified after test conftest edits. verified_sha -> abd8609.
+- sprint-46 (STORY-082/083): Added DynamoDB topology adapters and serde logic with contract parity tests. verified_sha -> 5ddf3ab.
