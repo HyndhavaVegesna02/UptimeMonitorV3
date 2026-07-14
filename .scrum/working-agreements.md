@@ -86,6 +86,28 @@
   (Motivated by: sprint-45 token audit — wiki churn was 10 of 33 commits; measured 285 code_refs /
   239 files; `pyproject.toml` cited by 5 articles.)
 
+- 2026-07-15 — **External-delivery pivots must set `mode: external` immediately** (sprint-46 retro).
+  When implementation is delegated outside the in-process pipeline mid-sprint — a CC session limit,
+  a PO pivot to an external agent — the orchestrator sets `mode: external` on `sprint-current.yaml`
+  the moment it happens. This mechanically mandates the external-mode verification floor on resume
+  (spec + quality review per story regardless of points, plus an independent full-gate re-run) so it
+  is never a judgment call. (Motivating incident: sprint-46 was implemented by Antigravity after a
+  session limit; the board stayed `mode: in-process` and external-mode verification was applied only
+  because the orchestrator recognized the situation — which caught a MAJOR self-review had missed.
+  Rung: prose; may harden to a plan-verification checklist item later.)
+
+- 2026-07-15 — **Expedite STORY-080; the dev-db flake is a standing full-gate false-red until it lands**
+  (sprint-46 retro). STORY-080 (dev-db container port-collision / connection-disconnect) is elevated to
+  top backlog priority to enter the next sprint. It false-red'd BOTH sprint-46 full-gate runs (two
+  different `test_dev_db_*` members), each requiring the contention-proof protocol. Correction to the
+  proposed interim: pytest here runs SERIALLY (no xdist, no addopts), so "serialize the harness tests"
+  is a no-op — the flake is Docker/connection *resource* contention across the full suite (each dev-db
+  test spawns its own container; the gate's own DB container aggravates it), which is exactly STORY-080's
+  domain. Until it lands, the existing 2026-07-06 contention false-red protocol governs (prove: empty
+  diff since sprint cut + passes isolated), and 2026-07-14(b) clean-container hygiene stands. (Rung:
+  backlog priority; the durable fix is STORY-080's own test-rung work — not an ad-hoc skill-script edit
+  outside a story.)
+
 ## Prune record
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock

@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 46
-status: accepted    # PO accepted both stories 2026-07-15; merged to main (abd13d2); velocity 8/8 recorded. Next ceremony: retro.
+status: done        # PO accepted both stories 2026-07-15; merged to main (abd13d2); velocity 8/8; retro complete (retro.md, 2 amendments landed). Sprint cycle closed — next ceremony: planning.
 mode: in-process    # PLANNED in-process; ACTUAL external (Antigravity) after the CC session limit was hit mid-sprint — verified under external-mode rules (spec+quality per story regardless of size + independent gate re-run). See review.md.
 goal: "Stand up the DynamoDB persistence seam — table bootstrap, throwaway-local test fixture, settings, boto3 factory — and prove port-contract parity with the first four adapters (signals, components, watermarks, sample-mode), all without touching the Postgres wiring."
 branch: sprint-46

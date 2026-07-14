@@ -782,7 +782,7 @@ stories:
   - id: STORY-080
     title: dev_db CLI tests — remove the hardcoded 55433 port collision
     file: docs/scrum/stories/STORY-080-dev-db-cli-port-collision.md
-    status: draft   # filed 2026-07-12 from sprint-44 gate contention (2026-07-06 agreement: flaky gate -> defect); needs estimate at refinement. PO-PRIORITIZED 2026-07-14 (sprint-45 token audit): refine FIRST — the flake re-taxed sprint-45's gate (1/570 red + prove-benign + full re-run); interim mitigation is the clean-container agreement (working-agreements 2026-07-14b)
+    status: draft   # filed 2026-07-12 from sprint-44 gate contention (2026-07-06 agreement: flaky gate -> defect); needs estimate at refinement. PO-PRIORITIZED 2026-07-14 (sprint-45 token audit): refine FIRST. ESCALATED 2026-07-15 (sprint-46 retro): false-red'd BOTH sprint-46 full-gate runs (test_dev_db_cli.py at 8153b53, test_dev_db_fixture.py at 6c4a257) — now a STANDING full-gate false-red, top priority for the next sprint. Root cause is Docker/connection resource contention (pytest is already serial — no xdist; not a parallelism fix); the durable fix is this story's own test-rung work. Interim: 2026-07-06 contention protocol + 2026-07-14b clean-container hygiene.
     type: defect
     sprint: null
   - id: STORY-081
