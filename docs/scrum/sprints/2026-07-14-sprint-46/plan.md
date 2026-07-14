@@ -134,7 +134,7 @@ AC5 boundaries/gates).
       `os.environ` with save/restore, finalizer stops the container even on failure.
       RED first: the `.throw()` teardown-contract test (same pattern the migrated_db
       fixture has). GREEN: implement. Commit.
-- [ ] 082.5 RED: `scripts/create_tables.py` tests against `dynamo_local` — creates both
+- [x] 082.5 RED: `scripts/create_tables.py` tests against `dynamo_local` — creates both
       tables with the exact key schemas + `gsi1` (assert via `DescribeTable`); running it a
       SECOND time completes exit-0 with no error and no schema change (AC1 idempotency);
       CLI entry honors the settings env vars. GREEN: implement (create, wait ACTIVE,
