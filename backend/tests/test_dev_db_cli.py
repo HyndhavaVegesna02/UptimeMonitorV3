@@ -34,7 +34,7 @@ pytestmark = pytest.mark.skipif(
 
 @pytest.fixture(scope="module", autouse=True)
 def run_with_blocker():
-    """Spin up an unrelated container on the old fixed port and name to ensure they don't collision (STORY-080).
+    """Spin up an unrelated container on the old fixed port and name to prove the CLI tests don't collide with it (STORY-080).
 
     Name: "uptime_pg_pytest_cli_test", port: 55433
     """

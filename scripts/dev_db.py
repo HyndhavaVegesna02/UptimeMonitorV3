@@ -163,15 +163,25 @@ def wait_for_postgres(
                 if host_port is not None:
                     try:
                         import psycopg
-
+                    except ImportError:
+                        # psycopg not installed in this context (e.g. Docker-only,
+                        # no venv): pg_isready success is the best signal we have.
+                        return
+                    try:
                         with psycopg.connect(
                             f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{host_port}/{POSTGRES_DB}",
                             connect_timeout=2,
                         ):
                             pass
                         return
-                    except (ImportError, Exception):
-                        # Transient connection drops or psycopg import issue, treat as not ready and retry
+                    except psycopg.OperationalError:
+                        # A transient connection drop under Docker host contention
+                        # ("server closed the connection unexpectedly") — treat as
+                        # not-ready and retry. Any OTHER error (a real
+                        # misconfiguration: wrong password/DB, auth failure) is NOT
+                        # caught here, so it fails fast and legibly instead of being
+                        # silently retried into an opaque TimeoutError. (STORY-080
+                        # quality review: scope the swallow to the transient class.)
                         pass
                 else:
                     return
