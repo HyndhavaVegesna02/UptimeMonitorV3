@@ -9,4 +9,12 @@
 - [ ] **Live-path check.** An AC that cannot execute inside review is executed before sprint close OR carved out as an explicit tracked story — never deferred informally inside a "done" story (2026-06-29; sprint-21's deferred AC6 hid a live-path crash that cost all of sprint 22).
 - [ ] **Plan-vs-AC conflicts are findings; the AC win.** Including AC that pre-declare wiki blast radius — the mechanical sweep is the sole decider (2026-07-03).
 - [ ] **Scope additions flagged** (functionality no AC asked for) — the orchestrator decides; you only report.
+- [ ] **Failure-path AC clauses need failure-path tests.** For any AC clause naming a
+      failure / negative / cleanup behavior — "teardown stays leak-free", "rejects X",
+      "does not write", "raises on missing", "never fails on Y" — the driving test must
+      exercise that FAILURE/negative path, not just the happy path. A happy-path-only test
+      for a negative clause is a finding (FAIL), even if it passes (2026-07-15; sprint-48
+      STORY-091 AC2 "teardown stays leak-free" — the leak lived on the blocker-start-fails
+      branch, the delivered test only ran the happy path, quality review approved it, spec
+      review caught it by reproducing the failure path).
 - [ ] **PASS = every AC MET.** PARTIAL or NOT_MET on any AC is FAIL. There is no partial accept.

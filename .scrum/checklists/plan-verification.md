@@ -23,6 +23,15 @@
 ## External mode only
 
 - [ ] plan.md is fully self-contained: the conventions checklist is embedded; every step introducing a new module/public symbol names its docstring deliverable; the external implementer builds literally and infers nothing (2026-06-27).
+- [ ] Any concrete vendor mechanism the plan prescribes LITERALLY — a specific condition
+      expression, key shape, transaction item, or API-call form — is checked for FEASIBILITY
+      against the vendor's actual semantics, not just for presence. An infeasible literal
+      instruction is a GAP even when the intent is right: in external mode a literal agent
+      implements the broken form (2026-07-15; sprint-48 STORY-091 AC1 — the plan told the
+      agent to add `attribute_exists(pk)` to the event Put, but on a create the item's own
+      key does not exist yet so it fails every happy-path write; the agent silently corrected
+      it to a ConditionCheck-on-META, and the plan-verifier had passed it by checking only
+      "is a guard specified?").
 
 ## Preconditions
 
