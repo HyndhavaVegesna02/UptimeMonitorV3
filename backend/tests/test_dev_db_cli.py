@@ -37,13 +37,16 @@ def run_with_blocker():
     """Spin up an unrelated container on the old fixed port and name to prove the CLI tests don't collide with it (STORY-080).
 
     Name: "uptime_pg_pytest_cli_test", port: 55433
+
+    Decision: Assert that the blocker container successfully started to ensure the collision-proof
+    behavior is actively tested under load (Option A).
     """
     blocker_name = "uptime_pg_pytest_cli_test"
     blocker_port = 55433
     # Remove any existing blocker container
     subprocess.run(["docker", "rm", "-f", blocker_name], capture_output=True, text=True)
     # Start the blocker
-    subprocess.run(
+    res = subprocess.run(
         [
             "docker",
             "run",
@@ -57,11 +60,24 @@ def run_with_blocker():
         capture_output=True,
         text=True,
     )
-    # Give Docker a brief moment
-    time.sleep(1)
-    yield
-    # Clean up the blocker
-    subprocess.run(["docker", "rm", "-f", blocker_name], capture_output=True, text=True)
+    # try/finally so the teardown runs even if the return-code assertion below
+    # fails: a failed `docker run` (e.g. a name/port collision) still creates a
+    # persisted container object, so cleanup must be guaranteed on that path too
+    # — AC2's "teardown stays leak-free" clause covers the failure branch, not just
+    # the happy path (STORY-091 spec review). `docker rm -f` on a never-created name
+    # is an idempotent no-op, so this is safe when the blocker never started.
+    try:
+        assert res.returncode == 0, (
+            f"Blocker container failed to start: {res.stdout}\n{res.stderr}"
+        )
+        # Give Docker a brief moment
+        time.sleep(1)
+        yield
+    finally:
+        # Clean up the blocker
+        subprocess.run(
+            ["docker", "rm", "-f", blocker_name], capture_output=True, text=True
+        )
 
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:

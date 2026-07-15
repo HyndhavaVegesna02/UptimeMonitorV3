@@ -838,11 +838,11 @@ stories:
   - id: STORY-086
     title: DynamoDB adapters — publications, maintenance windows, rejected observations + seed rewrite
     file: docs/scrum/stories/STORY-086-dynamodb-publication-maintenance-seed.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-085 (approved_actor denormalization)
+    status: todo    # LOCKED into sprint 48 (2026-07-15), order 1; PO-approved 2026-07-14. Depends on STORY-085 (approved_actor denormalization) — accepted sprint 47.
     points: 5
     priority: 45
     type: chore
-    sprint: null
+    sprint: 48
   - id: STORY-087
     title: Composition cutover to DynamoDB — retire Postgres, DoD amendment takes effect
     file: docs/scrum/stories/STORY-087-dynamodb-cutover.md
@@ -876,6 +876,8 @@ stories:
   - id: STORY-091
     title: Chore — sprint-47 review minors (proposal-event orphan guard, blocker-fixture return-code check, create_open dedup)
     file: docs/scrum/stories/STORY-091-sprint47-review-minors.md
-    status: draft   # filed 2026-07-15 at sprint-47 review (PO "accept with follow-up"); 3 deferred quality-review MINORs; needs estimate at refinement
+    status: todo    # LOCKED into sprint 48 (2026-07-15), order 2. Refined at planning: AC already testable (guard-or-remove escape hatch on AC2), estimate 2 (three small hygiene fixes to files just worked on in sprint 47).
+    points: 2
+    priority: 49
     type: chore
-    sprint: null
+    sprint: 48
