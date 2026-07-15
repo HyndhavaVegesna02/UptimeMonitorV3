@@ -289,12 +289,8 @@ class DynamoProposalRepository(ProposalRepository):
                 }
             )
 
-        try:
-            client.transact_write_items(TransactItems=transact_items)
-        except ClientError as e:
-            # If the proposal is not found (condition check failed), let's raise
-            if e.response["Error"]["Code"] == "TransactionCanceledException":
-                # We can verify if it was due to proposal missing
-                # But in standard hexagon, recording events on missing proposal is not permitted
-                pass
-            raise
+        # Any ClientError (incl. a TransactionCanceledException when the approved-actor
+        # Update's attribute_exists(pk) condition fails on a missing proposal) propagates
+        # — recording an event against a missing proposal is not permitted. (STORY-085
+        # quality review: removed a dead try/except that re-raised unconditionally.)
+        client.transact_write_items(TransactItems=transact_items)
