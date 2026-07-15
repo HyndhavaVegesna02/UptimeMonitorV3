@@ -96,10 +96,12 @@ described behavior is unchanged by the scoped-exception refinement. Sweep otherw
 links clean. (Advisory `refs` amplifier notes on `run.py`/`pyproject.toml`/`check_fk_direction.py`
 are pre-existing, not introduced this sprint.)
 
-## For the PO
+## PO verdict (2026-07-15)
+
+**ACCEPT WITH FOLLOW-UP** — all three stories accepted (15/15 points), merged to main. The three
+deferred MINORs are filed as **STORY-091** (chore, draft — needs an estimate at next refinement).
 
 15/15 points delivered and verified; both MAJORs found by review were fixed and re-verified. This is
 the second consecutive successful external delivery, and the external-mode floor again earned its
 keep — it caught two MAJORs (one of which directly undermined a story's own purpose) that the
-self-reported "all nine gates clean" summary did not mention. Recommend accept per story; three
-MINORs deferred above as a follow-up chore.
+self-reported "all nine gates clean" summary did not mention.
