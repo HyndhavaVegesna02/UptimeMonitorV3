@@ -42,3 +42,5 @@ Land the three deferred sprint-47 review MINORs.
   concrete test/decision); estimate 2 = three small, low-risk hygiene fixes to adapter/test files just
   worked on in sprint 47 (high reverse-blast-radius momentum). No open questions (AC2's guard-or-remove
   is an implementer decision, recorded either way). PO selected it into sprint 48 alongside STORY-086.
+- 2026-07-15: Implementer chose Option A for AC2, asserting that the docker run start command for the blocker container returns code 0. Recorded in both the fixture docstring and here.
+

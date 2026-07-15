@@ -45,6 +45,29 @@ class DynamoProposalRepository(ProposalRepository):
             resolved_at=resolved_at,
         )
 
+    def _base_proposal_attrs(
+        self,
+        proposal: StatusProposal,
+        assigned_id: int,
+        proposed_at_str: str,
+        resolved_at_str: str | None,
+    ) -> dict:
+        """Helper to extract shared proposal attributes for DB writes."""
+        attrs = {
+            "id": assigned_id,
+            "component_id": proposal.component_id,
+            "to_status": proposal.to_status.value,
+            "state": proposal.state.value,
+            "proposed_at": proposed_at_str,
+        }
+        if proposal.from_status is not None:
+            attrs["from_status"] = proposal.from_status.value
+        if proposal.reason is not None:
+            attrs["reason"] = proposal.reason
+        if resolved_at_str is not None:
+            attrs["resolved_at"] = resolved_at_str
+        return attrs
+
     def _next_id(self) -> int:
         """Increment sequence counter and return the next Proposal ID."""
         response = self._table.update_item(
@@ -67,22 +90,16 @@ class DynamoProposalRepository(ProposalRepository):
             to_canonical_iso(proposal.resolved_at) if proposal.resolved_at else None
         )
 
+        base_attrs = self._base_proposal_attrs(
+            proposal, assigned_id, proposed_at_str, resolved_at_str
+        )
+
         # Proposal META item
         meta_item = {
             "pk": f"PROPOSAL#{assigned_id}",
             "sk": "META",
-            "id": assigned_id,
-            "component_id": proposal.component_id,
-            "to_status": proposal.to_status.value,
-            "state": proposal.state.value,
-            "proposed_at": proposed_at_str,
+            **base_attrs,
         }
-        if proposal.from_status is not None:
-            meta_item["from_status"] = proposal.from_status.value
-        if proposal.reason is not None:
-            meta_item["reason"] = proposal.reason
-        if resolved_at_str is not None:
-            meta_item["resolved_at"] = resolved_at_str
 
         # If proposal is open, index via sparse GSI
         if proposal.state == ProposalState.OPEN:
@@ -93,18 +110,8 @@ class DynamoProposalRepository(ProposalRepository):
         slot_item = {
             "pk": f"COMPONENT#{proposal.component_id}",
             "sk": "OPEN_PROPOSAL",
-            "id": assigned_id,
-            "component_id": proposal.component_id,
-            "to_status": proposal.to_status.value,
-            "state": proposal.state.value,
-            "proposed_at": proposed_at_str,
+            **base_attrs,
         }
-        if proposal.from_status is not None:
-            slot_item["from_status"] = proposal.from_status.value
-        if proposal.reason is not None:
-            slot_item["reason"] = proposal.reason
-        if resolved_at_str is not None:
-            slot_item["resolved_at"] = resolved_at_str
 
         client = self._db.meta.client
 
@@ -284,6 +291,19 @@ class DynamoProposalRepository(ProposalRepository):
                         "Key": {"pk": f"PROPOSAL#{proposal_id}", "sk": "META"},
                         "UpdateExpression": "SET approved_actor = :actor",
                         "ExpressionAttributeValues": {":actor": actor},
+                        "ConditionExpression": "attribute_exists(pk)",
+                    }
+                }
+            )
+        else:
+            # STORY-091: Add a condition check on the proposal META item to prevent orphan events.
+            # Currently unreachable via ApprovalService._decide, which loads + resolves first,
+            # so this is latent-divergence hygiene, not a live bug.
+            transact_items.append(
+                {
+                    "ConditionCheck": {
+                        "TableName": self._table_name,
+                        "Key": {"pk": f"PROPOSAL#{proposal_id}", "sk": "META"},
                         "ConditionExpression": "attribute_exists(pk)",
                     }
                 }

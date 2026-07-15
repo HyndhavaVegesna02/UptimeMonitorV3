@@ -269,3 +269,62 @@ def test_dynamo_proposal_repository_decide_approve_lifecycle_parity(
         assert len(publisher.published) == 1
         assert publisher.published[0].component_id == "comp-lifecycle"
         assert publisher.published[0].status == ComponentStatus.DEGRADED
+
+
+def test_dynamo_proposal_repository_orphan_event_guard(dynamo_resource):
+    from botocore.exceptions import ClientError
+
+    settings = load_settings()
+    repo = DynamoProposalRepository(dynamo_resource, settings.dynamo_control_table)
+
+    missing_proposal_id = 99999
+    occurred_time = datetime(2026, 6, 26, 12, 5, 0, tzinfo=timezone.utc)
+
+    # 1. Recording an event (e.g. rejection) against a non-existent proposal must fail
+    with pytest.raises(ClientError) as exc_info:
+        repo.record_approval_event(
+            missing_proposal_id,
+            actor="ops-admin",
+            action="rejected",
+            notes="Should fail",
+            occurred_at=occurred_time,
+        )
+    assert exc_info.value.response["Error"]["Code"] == "TransactionCanceledException"
+
+    # Verify no event item was written
+    response = repo._table.get_item(
+        Key={
+            "pk": f"PROPOSAL#{missing_proposal_id}",
+            "sk": "EVENT#2026-06-26T12:05:00.000000+00:00#rejected",
+        }
+    )
+    assert "Item" not in response
+
+    # 2. Assert the happy path (event against a real proposal) still succeeds
+    prop = StatusProposal(
+        component_id="comp-happy",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved = repo.create_open(prop)
+    assert saved is not None
+
+    repo.record_approval_event(
+        saved.id,
+        actor="ops-admin",
+        action="rejected",
+        notes="Should succeed",
+        occurred_at=occurred_time,
+    )
+
+    # Verify the event item exists for the real proposal
+    response = repo._table.get_item(
+        Key={
+            "pk": f"PROPOSAL#{saved.id}",
+            "sk": "EVENT#2026-06-26T12:05:00.000000+00:00#rejected",
+        }
+    )
+    assert "Item" in response
+    assert response["Item"]["notes"] == "Should succeed"
