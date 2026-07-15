@@ -38,3 +38,7 @@ Land the three deferred sprint-47 review MINORs.
 ## History
 - 2026-07-15: filed at sprint-47 review from the three deferred quality-review MINORs (STORY-080 blocker
   fixture, STORY-085 orphan-event guard + create_open dedup). Draft — needs estimate at refinement.
+- 2026-07-15: refined at sprint-48 planning → ready, 2 points. AC was already testable (each has a
+  concrete test/decision); estimate 2 = three small, low-risk hygiene fixes to adapter/test files just
+  worked on in sprint 47 (high reverse-blast-radius momentum). No open questions (AC2's guard-or-remove
+  is an implementer decision, recorded either way). PO selected it into sprint 48 alongside STORY-086.

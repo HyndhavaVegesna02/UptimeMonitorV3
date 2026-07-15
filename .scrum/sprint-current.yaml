@@ -1,109 +1,45 @@
 # YourTeam active sprint board
-sprint: 47
-status: done        # PO accepted all 3 stories 2026-07-15 (accept-with-follow-up); merged to main (2e29e72); velocity 15/15; STORY-091 filed for the 3 deferred minors; RETRO complete (retro.md — 2 amendments landed: external-delivery contract + gate env-preflight, v2.1.3). Sprint cycle CLOSED. Next ceremony: planning.
-mode: external      # PO-directed at lock (2026-07-15): implementation delivered outside the
-                    # in-process pipeline (PO drives an external agent, as in sprint 46). Per the
-                    # 2026-07-15 working agreement, mode:external is set AT LOCK — this mechanically
-                    # mandates the external-mode verification floor on resume: spec + quality review
-                    # per story regardless of points, plus an independent full nine-command gate
-                    # re-run on the final HEAD, before any board:done stands.
-goal: "End the recurring test_dev_db_* full-gate false-red for good (STORY-080), then advance the AWS migration epic through its two hardest adapters — the idempotent observation ingest + half-open window read (STORY-084) and the human-approval concurrency gate: open-slot uniqueness, counter IDs, approval events (STORY-085) — both proven for exact behavioral parity against the landed DynamoDB-Local harness, neither wired into composition yet."
-branch: sprint-47
-start_tag: sprint-47-start
-start_commit: c6a84af
-started: "2026-07-15T15:20:00+05:30"
-# 15 pts committed — ~2x recent velocity (46:8, 45:6, 44:5, 43:8) for sequential backend
-# adapter work; a deliberate PO stretch commit. Drop order if delivery runs long:
-# STORY-085 first (last + lowest priority), then STORY-084; STORY-080 never drops (the
-# standing-false-red fix is the sprint's floor). See plan.md.
+sprint: 48
+status: active
+mode: external      # PO-directed at lock (2026-07-15), 3rd consecutive external sprint.
+                    # Per the 2026-07-15 working agreement, mode:external is set AT LOCK —
+                    # mandating the external-mode verification floor on delivery/resume: spec +
+                    # quality review PER STORY regardless of points, plus an independent full
+                    # nine-command gate re-run on the final HEAD, before any board:done stands.
+                    # Delivery contract (execution-modes.md §2): external agent works ONLY on
+                    # sprint-48, never merges main; on return the orchestrator reads each diff and
+                    # COMMITS PER STORY as the reviewable object before reviewing; a self-reported
+                    # "gates green" is a to-verify list, NEVER evidence.
+goal: "Complete the DynamoDB adapter set — publications, maintenance windows, rejected observations, plus a DynamoDB topology seed (STORY-086), proven for behavioral parity against the landed DynamoDB-Local harness; and land the three deferred sprint-47 review minors (STORY-091: proposal-event orphan guard, blocker-fixture return-code check, create_open dedup). Neither story is wired into composition — that is the cutover (STORY-087), out of scope this sprint."
+branch: sprint-48
+start_tag: sprint-48-start
+start_commit: a8606e9
+started: "2026-07-15T17:45:00+05:30"
+# 7 pts committed — a deliberately calmer commit after sprint-47's 15-pt stretch (recent
+# velocity 45:6, 46:8, 47:15). Drop order if delivery runs long: STORY-091 first (last +
+# lowest priority; pure hygiene), then STORY-086 stands alone as the epic's next slice.
+# STORY-086 unblocks the cutover (STORY-087, depends on 083..086 all accepted).
 stories:
-  - id: STORY-080
-    status: done        # verified under external-mode floor; awaiting PO acceptance at review
-    slug: dev-db-gate-false-red
+  - id: STORY-086
+    status: todo
+    slug: dynamodb-publication-maintenance-seed
     points: 5
     order: 1
-    review:
-      spec: PASS            # family passes together on clean slate (17/17) incl. the 2 historically false-redding tests; reviewer's own inconclusive run was its leftover-container artifact
-      quality: FIX_REQUIRED_then_FIXED   # 1 MAJOR (bare-Exception swallow) fixed 987453b (scoped to psycopg.OperationalError); docstring minor folded in
-  - id: STORY-084
-    status: done
-    slug: dynamodb-observation-adapter
-    points: 5
+  - id: STORY-091
+    status: todo
+    slug: sprint47-review-minors
+    points: 2
     order: 2
-    review:
-      spec: PASS            # 7/7 AC MET, full trace, all 5 tests green vs real DynamoDB-Local + Postgres (cross-attr idempotency, real pagination, availability parity)
-      quality: APPROVE      # clean on all 5 weighing points; 1 MINOR (redundant Decimal branches) fixed 143f15a
-  - id: STORY-085
-    status: done
-    slug: dynamodb-proposal-adapter
-    points: 5
-    order: 3
-    review:
-      spec: PASS            # 6/6 AC MET, all 6 port methods tested, real ApprovalService drives decide->approve parity vs Postgres
-      quality: FIX_REQUIRED_then_FIXED   # 1 MAJOR (dead-code record_approval_event handler, flagged by BOTH reviewers) fixed 45aa5a4; 2 minors deferred to follow-up chore
-# Plan-verifier ran at planning (contract-sensitive sprint, v2.1.2 conditional rule):
-# contract-faithful, 12/13 checks PASS; one GAP fixed pre-lock (StatusProposal.id is int|None,
-# not int) + two implementer notes folded into plan.md (transactions need the boto3 client not
-# just the resource; pagination is genuinely new — reviewers must not accept a single-page copy
-# for STORY-084 AC4).
-# DoD: full nine-command gate in force unchanged — the AWS-epic amendment (retire alembic +
-# check_fk_direction) is PENDING until STORY-087; this sprint touches neither Postgres schema
-# nor CloudFormation.
-# Independent full nine-command DoD gate on the FINAL fixed HEAD (143f15a), external-mode
-# requirement. ALL NINE GREEN. Note: the standalone gate run left DATABASE_URL /
-# DATABASE_URL_DIRECT unset, so alembic + check_fk_direction initially errored on missing
-# env (NOT a code failure, NOT the STORY-080 contention flake); both re-ran green at the
-# SAME HEAD against a freshly provisioned throwaway DB (dev_db.py up), per the documented
-# DB-gated procedure. pytest passed outright (611) — no contention false-red this sprint
-# (STORY-080's fix + clean-container hygiene held).
-final_gate:
-  head: 143f15a
-  dod_evidence:
-    - command: "pytest"
-      exit_code: 0
-      output_tail: "======================= 611 passed in 221.96s (0:03:41) ======================="
-      commit: 143f15a
-      at: "2026-07-15T11:28:39+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "Analyzed 154 files, 451 dependencies. Contracts: 8 kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)."
-      commit: 143f15a
-      at: "2026-07-15T11:32:23+00:00"
-    - command: "python scripts/check_fk_direction.py"
-      exit_code: 0
-      output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-      commit: 143f15a
-      at: "2026-07-15T11:35:40+00:00"   # re-run against provisioned throwaway DB (standalone run had no DATABASE_URL)
-    - command: "alembic upgrade head"
-      exit_code: 0
-      output_tail: "INFO [alembic.runtime.migration] Context impl PostgresqlImpl. | Will assume transactional DDL."
-      commit: 143f15a
-      at: "2026-07-15T11:35:41+00:00"   # re-run against provisioned throwaway DB (standalone run had no DATABASE_URL_DIRECT)
-    - command: "ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: 143f15a
-      at: "2026-07-15T11:32:27+00:00"
-    - command: "ruff format --check ."
-      exit_code: 0
-      output_tail: "223 files already formatted"
-      commit: 143f15a
-      at: "2026-07-15T11:32:27+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
-      commit: 143f15a
-      at: "2026-07-15T11:32:28+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "built in 871ms (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
-      commit: 143f15a
-      at: "2026-07-15T11:34:07+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "eslint . — clean"
-      commit: 143f15a
-      at: "2026-07-15T11:34:18+00:00"
+# Plan-verifier ran at planning (external + adapter/contract-sensitive, v2.1.2 conditional
+# rule): 11/11 technical checks PASS, verdict GAPS on 3 spec/precondition-hygiene items (no
+# logic errors) — ALL fixed pre-lock (preconditions section added; constructor citation
+# corrected to dynamo_proposal_repository.py:23-26; dangling "STORY-066 fixture script" ref
+# replaced with concrete record_approval_event(action="approved") instruction). It pinned the
+# seeded-component default status to "operational" (spine-migration server_default =
+# ComponentStatus.OPERATIONAL). Status after fixes: LOCK_READY. See plan.md.
+# DoD: full nine-command gate in force UNCHANGED — the AWS-epic amendment (retire alembic +
+# check_fk_direction; adopt DynamoDB-Local pytest + cfn-lint) is PENDING until STORY-087/088;
+# this sprint touches neither Postgres schema nor CloudFormation.
+final_gate: null    # filled at sprint close: independent nine-command gate on the final HEAD
 hotfixes: []
-interrupts:
-  - note: "External delivery (PO-driven agent) arrived as an uncommitted working tree; orchestrator examined each diff and committed per story as the reviewable object (28eefbe/033bdb3/dc82e06). Two quality MAJORs (080 bare-Exception swallow; 085 dead-code handler) fixed by orchestrator (987453b/45aa5a4/143f15a) per edge-case #13; 3 minors deferred to a follow-up chore (see review.md)."
+interrupts: []
