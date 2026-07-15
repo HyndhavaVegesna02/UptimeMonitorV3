@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import decimal
 from collections.abc import Sequence
 from datetime import datetime
 
@@ -125,19 +124,15 @@ class DynamoObservationRepository(ObservationRepository):
             sk_parts = item["sk"].split("#")
             observed_at_val = from_canonical_iso(sk_parts[0])
 
+            # int() accepts Decimal directly, so no isinstance branching is needed
+            # (STORY-084 quality review: collapsed redundant Decimal/else arms).
             latency_ms = None
             if item.get("latency_ms") is not None:
-                if isinstance(item["latency_ms"], decimal.Decimal):
-                    latency_ms = int(item["latency_ms"])
-                else:
-                    latency_ms = int(item["latency_ms"])
+                latency_ms = int(item["latency_ms"])
 
             response_status_code = None
             if item.get("response_status_code") is not None:
-                if isinstance(item["response_status_code"], decimal.Decimal):
-                    response_status_code = int(item["response_status_code"])
-                else:
-                    response_status_code = int(item["response_status_code"])
+                response_status_code = int(item["response_status_code"])
 
             observations.append(
                 SignalObservation(
