@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py, backend/tests/test_spine_schema.py]
-verified_sha: 7097bcc4676a219d589dd9cc96cc692b9cf696c4
-verified_sprint: sprint-46
+verified_sha: 50a7bd9
+verified_sprint: sprint-47
 status: verified
 ---
 
@@ -71,7 +71,8 @@ status: verified
   Container readiness timeout is tunable via the `DEV_DB_READY_TIMEOUT_SECONDS`
   environment variable (defaults to `60.0` seconds), which leverages a patient
   retry/backoff loop with a 5-second bounded exec timeout under concurrent load
-  (STORY-073).
+  (STORY-073) and also retries and recovers from transient connection drops during
+  readiness verification (STORY-080).
 - Under `pytest`, the same logic is the session-scoped `migrated_db` fixture
   (`backend/tests/conftest.py`, via `dev_db.resolve_db()`): reuses
   `DATABASE_URL`/`DATABASE_URL_DIRECT` if both are already set externally
@@ -79,7 +80,10 @@ status: verified
   throwaway `postgres:16` on a free port if Docker is available (PID+UUID
   -unique container name, to avoid collisions between nested/concurrent
   pytest runs), tearing it down in a `finally`-block finalizer that runs even
-  if a test fails; else skips the DB-gated tests cleanly (no error). DB-gated
+  if a test fails; else skips the DB-gated tests cleanly (no error). The CLI
+  tests (`test_dev_db_cli.py`) also dynamically allocate unique container names
+  and free ports to remain completely collision-proof against any external
+  running container (STORY-080). DB-gated
   tests (e.g. `backend/tests/test_spine_schema.py`) depend on this fixture
   instead of each rolling its own `skipif` + connection setup. A function-scoped
   `clean_runtime_tables` fixture (STORY-039) truncates the runtime tables before
@@ -220,3 +224,4 @@ status: verified
   documents). No Fact text changed. verified_sha → 678ff0d.
 - sprint-46 (STORY-082): Added boto3 dependency and set up the session-scoped dynamo_local
   fixture and clean_dynamo_tables for DynamoDB Local container lifecycle integration. verified_sha -> abd8609.
+- sprint-47 (STORY-080): Hardened container connection readiness verification to retry and recover from transient connection drops under load, and collision-proofed the CLI tests (`test_dev_db_cli.py`) by dynamically allocating unique container names and ports. verified_sha -> 50a7bd9.

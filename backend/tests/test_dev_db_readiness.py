@@ -119,3 +119,47 @@ def test_wait_for_postgres_returns_once_pg_isready_reports_ready(monkeypatch):
     dev_db.wait_for_postgres(
         name="not-a-real-container", timeout_seconds=1.0, poll_interval_seconds=0.01
     )
+
+
+def test_wait_for_postgres_recovers_from_transient_connection_failure(monkeypatch):
+    """AC3: A simulated transient connection closed/error during readiness is recovered rather than causing a failure."""
+    import psycopg
+
+    run_calls = 0
+
+    def fake_run(cmd, **kwargs):
+        nonlocal run_calls
+        run_calls += 1
+        return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
+
+    connect_calls = 0
+
+    def fake_connect(*args, **kwargs):
+        nonlocal connect_calls
+        connect_calls += 1
+        if connect_calls == 1:
+            raise psycopg.OperationalError("server closed the connection unexpectedly")
+
+        # Return a dummy mock connection context manager
+        class DummyConn:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc_val, exc_tb):
+                pass
+
+        return DummyConn()
+
+    monkeypatch.setattr(dev_db.subprocess, "run", fake_run)
+    monkeypatch.setattr(psycopg, "connect", fake_connect)
+    monkeypatch.setattr(dev_db.time, "sleep", lambda _seconds: None)
+
+    dev_db.wait_for_postgres(
+        name="not-a-real-container",
+        host_port=5432,
+        timeout_seconds=5.0,
+        poll_interval_seconds=0.01,
+    )
+
+    assert run_calls >= 2  # It had to poll again after the transient connection failure
+    assert connect_calls == 2  # The first failed, the second succeeded

@@ -18,6 +18,7 @@ import os
 import re
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
@@ -30,8 +31,37 @@ pytestmark = pytest.mark.skipif(
     reason="requires Docker to exercise the dev_db.py CLI end-to-end",
 )
 
-_TEST_CONTAINER = "uptime_pg_pytest_cli_test"
-_TEST_PORT = 55433
+
+@pytest.fixture(scope="module", autouse=True)
+def run_with_blocker():
+    """Spin up an unrelated container on the old fixed port and name to ensure they don't collision (STORY-080).
+
+    Name: "uptime_pg_pytest_cli_test", port: 55433
+    """
+    blocker_name = "uptime_pg_pytest_cli_test"
+    blocker_port = 55433
+    # Remove any existing blocker container
+    subprocess.run(["docker", "rm", "-f", blocker_name], capture_output=True, text=True)
+    # Start the blocker
+    subprocess.run(
+        [
+            "docker",
+            "run",
+            "-d",
+            "--name",
+            blocker_name,
+            "-p",
+            f"{blocker_port}:5432",
+            "postgres:16",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    # Give Docker a brief moment
+    time.sleep(1)
+    yield
+    # Clean up the blocker
+    subprocess.run(["docker", "rm", "-f", blocker_name], capture_output=True, text=True)
 
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
@@ -44,13 +74,18 @@ def _run_cli(*args: str) -> subprocess.CompletedProcess:
 
 
 def test_up_then_check_fk_direction_then_down():
+    from dev_db import _free_tcp_port, unique_container_name
+
+    container_name = unique_container_name(prefix="uptime_pg_pytest_cli_test")
+    port = _free_tcp_port()
+
     # Ensure no leftover from a prior crashed run before we start.
     subprocess.run(
-        ["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True
+        ["docker", "rm", "-f", container_name], capture_output=True, text=True
     )
 
     try:
-        up_result = _run_cli("up", "--name", _TEST_CONTAINER, "--port", str(_TEST_PORT))
+        up_result = _run_cli("up", "--name", container_name, "--port", str(port))
         assert up_result.returncode == 0, up_result.stdout + up_result.stderr
 
         url_match = re.search(r"export DATABASE_URL=(\S+)", up_result.stdout)
@@ -79,7 +114,7 @@ def test_up_then_check_fk_direction_then_down():
         )
         assert fk_result.returncode == 0, fk_result.stdout + fk_result.stderr
     finally:
-        down_result = _run_cli("down", "--name", _TEST_CONTAINER)
+        down_result = _run_cli("down", "--name", container_name)
         assert down_result.returncode == 0, down_result.stdout + down_result.stderr
 
     leftover = subprocess.run(
@@ -88,7 +123,7 @@ def test_up_then_check_fk_direction_then_down():
             "ps",
             "-a",
             "--filter",
-            f"name={_TEST_CONTAINER}",
+            f"name={container_name}",
             "--format",
             "{{.Names}}",
         ],
@@ -99,9 +134,14 @@ def test_up_then_check_fk_direction_then_down():
 
 
 def test_up_idempotent_against_leftover_container():
+    from dev_db import _free_tcp_port, unique_container_name
+
+    container_name = unique_container_name(prefix="uptime_pg_pytest_cli_idemp")
+    port = _free_tcp_port()
+
     # Ensure no leftover from a prior run
     subprocess.run(
-        ["docker", "rm", "-f", _TEST_CONTAINER], capture_output=True, text=True
+        ["docker", "rm", "-f", container_name], capture_output=True, text=True
     )
 
     # 1. Start a container manually with the target name
@@ -111,9 +151,9 @@ def test_up_idempotent_against_leftover_container():
             "run",
             "-d",
             "--name",
-            _TEST_CONTAINER,
+            container_name,
             "-p",
-            f"{_TEST_PORT}:5432",
+            f"{port}:5432",
             "postgres:16",
         ],
         capture_output=True,
@@ -124,9 +164,9 @@ def test_up_idempotent_against_leftover_container():
     try:
         # 2. Run our CLI up command while the container is running.
         # It should force-remove it and recreate/migrate it without error.
-        up_result = _run_cli("up", "--name", _TEST_CONTAINER, "--port", str(_TEST_PORT))
+        up_result = _run_cli("up", "--name", container_name, "--port", str(port))
         assert up_result.returncode == 0, up_result.stdout + up_result.stderr
         assert "DB is up and migrated" in up_result.stdout
     finally:
         # Cleanup
-        _run_cli("down", "--name", _TEST_CONTAINER)
+        _run_cli("down", "--name", container_name)

@@ -134,16 +134,17 @@ def start_container(
 
 def wait_for_postgres(
     name: str = CONTAINER_NAME,
+    host_port: int | None = None,
     timeout_seconds: float | None = None,
     poll_interval_seconds: float = READY_POLL_INTERVAL_SECONDS,
 ) -> None:
-    """Poll `pg_isready` inside the container until ready or timeout.
+    """Poll `pg_isready` inside the container and verify connection readiness until ready or timeout.
 
     `timeout_seconds` defaults to `_ready_timeout_seconds()` (the current
     `DEV_DB_READY_TIMEOUT_SECONDS` env value, or 60.0s), read LAZILY here at
     call time rather than baked in at import time (STORY-073 fix-forward, M1).
 
-    Cites: STORY-073
+    Cites: STORY-073, STORY-080
     """
     if timeout_seconds is None:
         timeout_seconds = _ready_timeout_seconds()
@@ -159,7 +160,21 @@ def wait_for_postgres(
                 timeout=5.0,
             )
             if result.returncode == 0:
-                return
+                if host_port is not None:
+                    try:
+                        import psycopg
+
+                        with psycopg.connect(
+                            f"postgresql://postgres:{POSTGRES_PASSWORD}@localhost:{host_port}/{POSTGRES_DB}",
+                            connect_timeout=2,
+                        ):
+                            pass
+                        return
+                    except (ImportError, Exception):
+                        # Transient connection drops or psycopg import issue, treat as not ready and retry
+                        pass
+                else:
+                    return
         except (subprocess.TimeoutExpired, subprocess.SubprocessError, OSError):
             # If docker exec times out or fails under Docker host contention,
             # we treat it as not ready and continue the loop.
@@ -291,7 +306,7 @@ def _spawn_default(container_name: str, migrate, port_box: list) -> None:
     port = _free_tcp_port()
     start_container(name=container_name, host_port=port)
     try:
-        wait_for_postgres(name=container_name)
+        wait_for_postgres(name=container_name, host_port=port)
         direct_url = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{port}/{POSTGRES_DB}"
         migrate(direct_url)
     except BaseException:
@@ -315,7 +330,7 @@ def cmd_up(args: argparse.Namespace) -> int:
     database_url_direct = f"postgresql+psycopg://postgres:{POSTGRES_PASSWORD}@localhost:{args.port}/{POSTGRES_DB}"
     try:
         print("Waiting for readiness...")
-        wait_for_postgres(name=name)
+        wait_for_postgres(name=name, host_port=args.port)
         print("Running `alembic upgrade head`...")
         run_migrations(database_url_direct)
     except BaseException:
