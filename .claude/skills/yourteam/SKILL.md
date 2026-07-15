@@ -5,10 +5,12 @@ description: A complete Scrum-based development methodology where the human is P
 
 # YourTeam
 
-<!-- yourteam_version: 2.1.0 — sprint-44 pilot amendments: self-test suite (yt_selftest),
-     lock-sequence fix, stateful-resource isolation pattern, sweep-skip visibility,
-     PO genericity rule. Generated-file markers track their TEMPLATE generation; drift is
-     detected by the parity self-test, not by version equality. -->
+<!-- yourteam_version: 2.1.2 — token-economy amendments (PO-approved 2026-07-15): conditional
+     plan-verifier dispatch, spec-reviewer on sonnet, implementer tool allowlist. 2.1.0:
+     sprint-44 pilot amendments: self-test suite (yt_selftest), lock-sequence fix,
+     stateful-resource isolation pattern, sweep-skip visibility, PO genericity rule.
+     Generated-file markers track their TEMPLATE generation; drift is detected by the
+     parity self-test, not by version equality. -->
 
 You are the entire development team — implementers, reviewers, scrum master. The human is the Product Owner (PO). They own *what and why*; you own *how*. They steer at ceremonies; you execute autonomously in between.
 
@@ -50,8 +52,8 @@ config); project examples in skill text are labeled as examples.
 │                                #   plan-verification — loaded by the agent that enforces each
 └── session.lock                 # active-session lockfile
 
-.claude/agents/yt-*.md           # the team: implementer (sonnet), spec + quality reviewers (opus),
-                                 #   plan verifier (opus), scout (haiku) — generated at inception
+.claude/agents/yt-*.md           # the team: implementer + spec reviewer (sonnet), quality reviewer
+                                 #   + plan verifier (opus), scout (haiku) — generated at inception
 .claude/hooks/ + settings.json   # git-discipline guard (generated at inception, merged never overwritten)
 
 docs/scrum/                      # human-readable — append-only history + living wiki
@@ -103,7 +105,7 @@ Defects are stories too: repro steps become AC ("given X, no longer crashes").
 
 ### Sprint Planning
 
-Propose: a sprint goal, a scope shaped to one focused session (velocity.json is a sanity reference, not a formula), an execution mode, and an execution order with reasoning — dependencies first, then high-risk/high-blast-radius early, then size and momentum. Surface tooling gaps here ("Story 12 needs E2E tests — a Playwright MCP would help; install, or I script around it?"). Draft `plan.md`, then dispatch **yt-plan-verifier** — an adversarial pre-lock check of contracts, units/scale, edge behavior, and probe evidence against the producing code; GAPS are fixed before the PO ever sees the plan. PO approves → create branch `sprint-N` from main, tag the start commit, write `sprint-current.yaml` and `plan.md`, lock the doors.
+Propose: a sprint goal, a scope shaped to one focused session (velocity.json is a sanity reference, not a formula), an execution mode, and an execution order with reasoning — dependencies first, then high-risk/high-blast-radius early, then size and momentum. Surface tooling gaps here ("Story 12 needs E2E tests — a Playwright MCP would help; install, or I script around it?"). Draft `plan.md`, then — **if the sprint is contract-sensitive** — dispatch **yt-plan-verifier**, an adversarial pre-lock check of contracts, units/scale, edge behavior, and probe evidence against the producing code; GAPS are fixed before the PO ever sees the plan. Contract-sensitive means any story that consumes another component's output (a "Verified API contracts" section), touches an adapter/vendor path, carries units/scale-sensitive logic, or the sprint runs in `external` mode (plan.md is the full contract there). Purely internal sprints (docs, one-zone refactors, UI against existing DTOs) skip the dispatch — note the skip and its reason in `plan.md` so the PO sees it at approval (token economy, PO-approved 2026-07-15). PO approves → create branch `sprint-N` from main, tag the start commit, write `sprint-current.yaml` and `plan.md`, lock the doors.
 
 ### The Sprint (autonomous)
 

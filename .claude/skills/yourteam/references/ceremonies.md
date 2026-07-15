@@ -65,7 +65,13 @@ Defect stories: repro steps in context, the fix expressed as AC ("given X, Y no 
    checkbox steps (2–5 minutes each, TDD-shaped: write failing test / see it fail / minimal
    code / see it pass / commit), a "Verified API contracts" section for consumer stories, and
    the proposed execution mode (see references/execution-modes.md).
-4. **Dispatch `yt-plan-verifier`** with the draft plan + story files. It refutes: units/scale
+4. **Dispatch `yt-plan-verifier`** — only when the sprint is contract-sensitive (token
+   economy, PO-approved 2026-07-15): any story consuming another component's output (has a
+   "Verified API contracts" section), touching an adapter/vendor path, carrying units/
+   scale-sensitive logic, or an `external`-mode sprint (plan.md is the full contract there).
+   Purely internal sprints (docs, one-zone refactors, UI against existing DTOs) skip the
+   dispatch and record the skip + reason in `plan.md` for the PO to see at approval.
+   When dispatched: draft plan + story files. It refutes: units/scale
    uncited from producing code, unproven producer-gap claims, unstated edge behavior, missing
    fixture provenance, breakdown↔AC holes, informally deferred live ACs. Fix every GAP before
    the PO sees the plan; re-dispatch until LOCK_READY. (This kills the wrong-assumption class

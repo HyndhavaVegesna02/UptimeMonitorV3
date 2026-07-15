@@ -131,4 +131,16 @@
   finish trivial tails" → edge-cases.md #13. Full pre-prune text:
   `git show b025b3c:.scrum/working-agreements.md`.
 
+- 2026-07-15 — **Token-economy amendments v2.1.2 (PO-approved, out-of-sprint):**
+  (1) `yt-spec-reviewer` runs on sonnet — the AC↔test trace is mechanical verification;
+  (2) `yt-implementer` carries an explicit tool allowlist (Read, Write, Edit, Grep, Glob,
+  Bash) — an unrestricted implementer inherited every session MCP tool schema, re-writing a
+  ~125k cached prefix per dispatch; (3) `yt-plan-verifier` is dispatched conditionally —
+  contract-sensitive sprints only (consumer contracts / adapter-vendor paths / units-scale
+  logic / external mode), with any skip + reason recorded in `plan.md` at approval.
+  (Motivated by: session-limit burn audit 2026-07-15 — a $22 session changed 9 lines;
+  1.7M cache-write tokens traced to subagent prefix re-writes and an always-on opus
+  plan-verifier.) (Rung: agent definitions + skill text — this entry is the record; the
+  enforcement lives in `.claude/agents/yt-*.md` frontmatter and SKILL.md/ceremonies.md §4.)
+
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) (Rung: <ladder rung considered and why prose>) -->
