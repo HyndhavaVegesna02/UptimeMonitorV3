@@ -782,11 +782,11 @@ stories:
   - id: STORY-080
     title: dev_db test harness — kill the standing full-gate false-red (free ports + unique names + contention hardening across the test_dev_db_* family)
     file: docs/scrum/stories/STORY-080-dev-db-cli-port-collision.md
-    status: ready   # RE-REFINED 2026-07-15 (sprint-47 planning): PO widened from CLI-only port fix to the whole test_dev_db_* contention family (collision-proofing + readiness/connection contention-hardening); estimated 5 pts. Was: filed 2026-07-12 (sprint-44 gate contention), PO-PRIORITIZED 2026-07-14, ESCALATED 2026-07-15 (sprint-46 retro) — standing full-gate false-red (test_dev_db_cli.py at 8153b53, test_dev_db_fixture.py at 6c4a257). Root cause is Docker/connection resource contention (pytest already serial — no xdist; not a parallelism fix). Interim until landed: 2026-07-06 contention protocol + 2026-07-14b clean-container hygiene.
+    status: done    # sprint-47: spec PASS (family 17/17 together) + quality FIX_REQUIRED_then_FIXED (bare-Exception MAJOR -> 987453b); PO accepted 2026-07-15 (accept-with-follow-up). Standing gate false-red resolved.
     points: 5
     priority: 41    # top priority for sprint 47 (retro escalation); ahead of the epic's 084/085
     type: defect
-    sprint: null
+    sprint: 47
   - id: STORY-081
     title: Publication incident-id capture (Statuspage response → Publications timeline)
     file: docs/scrum/stories/STORY-081-publication-incident-id.md
@@ -822,19 +822,19 @@ stories:
   - id: STORY-084
     title: DynamoDB observation adapter — idempotent ingest transaction + half-open window query
     file: docs/scrum/stories/STORY-084-dynamodb-observation-adapter.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    status: done    # sprint-47: spec PASS (7/7) + quality APPROVE; PO accepted 2026-07-15
     points: 5
     priority: 43
     type: chore
-    sprint: null
+    sprint: 47
   - id: STORY-085
     title: DynamoDB proposal adapter — open-slot uniqueness transaction, counter IDs, approval events
     file: docs/scrum/stories/STORY-085-dynamodb-proposal-adapter.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-082
+    status: done    # sprint-47: spec PASS (6/6) + quality FIX_REQUIRED_then_FIXED (dead-code handler MAJOR -> 45aa5a4); PO accepted 2026-07-15
     points: 5
     priority: 44
     type: chore
-    sprint: null
+    sprint: 47
   - id: STORY-086
     title: DynamoDB adapters — publications, maintenance windows, rejected observations + seed rewrite
     file: docs/scrum/stories/STORY-086-dynamodb-publication-maintenance-seed.md
@@ -871,5 +871,11 @@ stories:
     title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
     file: docs/scrum/stories/STORY-090-cicd-github-actions.md
     status: draft   # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
+    type: chore
+    sprint: null
+  - id: STORY-091
+    title: Chore — sprint-47 review minors (proposal-event orphan guard, blocker-fixture return-code check, create_open dedup)
+    file: docs/scrum/stories/STORY-091-sprint47-review-minors.md
+    status: draft   # filed 2026-07-15 at sprint-47 review (PO "accept with follow-up"); 3 deferred quality-review MINORs; needs estimate at refinement
     type: chore
     sprint: null

@@ -1,6 +1,14 @@
 # Sprint 47 Plan — Kill the standing gate false-red, then the two highest-stakes DynamoDB adapters
 
-**Status:** DRAFT — awaiting PO approval at planning.
+**Status:** READY — PO-approved 2026-07-15; locked. Branch `sprint-47` from `main` @ `c6a84af`,
+tagged `sprint-47-start`.
+
+**Mode note (PO-directed 2026-07-15):** implementation is **external** (PO drives it via an external
+agent, as in Sprint 46). Per the 2026-07-15 working agreement, `mode: external` is set at lock — the
+external-mode verification floor applies on resume: **spec + quality review per story regardless of
+points, plus an independent full nine-command gate re-run** on the final HEAD before any `board: done`
+stands. plan.md is the full contract for the external implementer — the story files' AC (verbatim) are
+the acceptance contract; this plan carries the verified contracts + implementer notes above.
 
 **Sprint goal:** End the recurring `test_dev_db_*` full-gate false-red for good (STORY-080),
 then advance the AWS migration epic through its two hardest adapters — the idempotent
@@ -8,8 +16,11 @@ observation ingest + half-open window read (STORY-084) and the human-approval co
 gate: open-slot uniqueness, counter IDs, approval events (STORY-085) — both proven for exact
 behavioral parity against the landed DynamoDB-Local harness, neither wired into composition yet.
 
-**Mode:** in-process (default — yt-implementer per story; all three are 5 pts, so spec + quality
-reviewers run concurrently after each implementation, then the DoD gate, then the reality gate).
+**Mode:** external (PO-directed 2026-07-15 — implementation delivered outside the in-process
+pipeline). On resume, the external-mode verification floor applies to EVERY story regardless of
+points: spec review + quality review (independent, concurrent) + the DoD gate + the reality gate,
+plus an independent full nine-command gate re-run on the final HEAD. The originally-planned
+in-process shape (yt-implementer per story) is superseded by external delivery.
 
 ## Stories (15 pts committed)
 
