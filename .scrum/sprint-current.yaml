@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 48
-status: active
+status: done        # PO accepted both stories 2026-07-15; merged to main (798804a); velocity 7/7. Next: retro.
 mode: external      # PO-directed at lock (2026-07-15), 3rd consecutive external sprint.
                     # Per the 2026-07-15 working agreement, mode:external is set AT LOCK —
                     # mandating the external-mode verification floor on delivery/resume: spec +
