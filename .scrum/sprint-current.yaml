@@ -1,88 +1,54 @@
 # YourTeam active sprint board
-sprint: 46
-status: done        # PO accepted both stories 2026-07-15; merged to main (abd13d2); velocity 8/8; retro complete (retro.md, 2 amendments landed). Sprint cycle closed — next ceremony: planning.
-mode: in-process    # PLANNED in-process; ACTUAL external (Antigravity) after the CC session limit was hit mid-sprint — verified under external-mode rules (spec+quality per story regardless of size + independent gate re-run). See review.md.
-goal: "Stand up the DynamoDB persistence seam — table bootstrap, throwaway-local test fixture, settings, boto3 factory — and prove port-contract parity with the first four adapters (signals, components, watermarks, sample-mode), all without touching the Postgres wiring."
-branch: sprint-46
-start_tag: sprint-46-start
-started: "2026-07-14T12:13:00+05:30"
+sprint: 47
+status: active
+mode: external      # PO-directed at lock (2026-07-15): implementation delivered outside the
+                    # in-process pipeline (PO drives an external agent, as in sprint 46). Per the
+                    # 2026-07-15 working agreement, mode:external is set AT LOCK — this mechanically
+                    # mandates the external-mode verification floor on resume: spec + quality review
+                    # per story regardless of points, plus an independent full nine-command gate
+                    # re-run on the final HEAD, before any board:done stands.
+goal: "End the recurring test_dev_db_* full-gate false-red for good (STORY-080), then advance the AWS migration epic through its two hardest adapters — the idempotent observation ingest + half-open window read (STORY-084) and the human-approval concurrency gate: open-slot uniqueness, counter IDs, approval events (STORY-085) — both proven for exact behavioral parity against the landed DynamoDB-Local harness, neither wired into composition yet."
+branch: sprint-47
+start_tag: sprint-47-start
+start_commit: c6a84af
+started: "2026-07-15T15:20:00+05:30"
+# 15 pts committed — ~2x recent velocity (46:8, 45:6, 44:5, 43:8) for sequential backend
+# adapter work; a deliberate PO stretch commit. Drop order if delivery runs long:
+# STORY-085 first (last + lowest priority), then STORY-084; STORY-080 never drops (the
+# standing-false-red fix is the sprint's floor). See plan.md.
 stories:
-  - id: STORY-082
-    status: done
-    slug: dynamodb-persistence-foundation
+  - id: STORY-080
+    status: todo
+    slug: dev-db-gate-false-red
     points: 5
+    order: 1            # retro-escalated floor; also the sprint's Docker-lifecycle risk concentration
     review:
-      spec: PASS          # 5/5 AC met, no gaps (yt-spec-reviewer)
-      quality: FIX_REQUIRED_then_FIXED  # 1 MAJOR (teardown test lacked Docker-skip guard) fixed in 6c4a257; 4 minors captured in review.md
-  - id: STORY-083
-    status: done
-    slug: dynamodb-topology-adapters
-    points: 3
+      spec: pending
+      quality: pending
+  - id: STORY-084
+    status: todo
+    slug: dynamodb-observation-adapter
+    points: 5
+    order: 2            # epic sequence; highest-stakes adapter (ingest idempotency + availability read)
     review:
-      spec: PASS          # 5/5 AC met, ConsistentRead spies real, not-wired-into-composition confirmed
-      quality: APPROVE    # 0 critical, 0 major, 3 minors captured in review.md
-# Evidence of record: full 9-command DoD gate on the FINAL sprint HEAD (6c4a257),
-# independently re-run by the orchestrator (external-mode requirement). 8/9 green
-# outright; pytest's single failure is a proven contention false-red — see gate_notes.
-final_gate:
-  head: 6c4a257
-  dod_evidence:
-    - command: "pytest"
-      exit_code: 1
-      output_tail: "1 failed, 598 passed in 144.44s — FAILED backend/tests/test_dev_db_fixture.py::test_container_is_torn_down_even_when_a_test_using_the_fixture_fails (server closed the connection unexpectedly; dev-db container contention under full-suite load). PROVEN CONTENTION FALSE-RED (see gate_notes). Every DynamoDB test — this sprint's product code — passed."
-      commit: 6c4a257
-      at: "2026-07-14T18:59:18+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "Contracts: 8 kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)."
-      commit: 6c4a257
-      at: "2026-07-14T19:01:46+00:00"
-    - command: "python scripts/check_fk_direction.py"
-      exit_code: 0
-      output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-      commit: 6c4a257
-      at: "2026-07-14T19:01:49+00:00"
-    - command: "alembic upgrade head"
-      exit_code: 0
-      output_tail: "Context impl PostgresqlImpl. | Will assume transactional DDL."
-      commit: 6c4a257
-      at: "2026-07-14T19:01:50+00:00"
-    - command: "ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: 6c4a257
-      at: "2026-07-14T19:01:53+00:00"
-    - command: "ruff format --check ."
-      exit_code: 0
-      output_tail: "219 files already formatted"
-      commit: 6c4a257
-      at: "2026-07-14T19:01:53+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
-      commit: 6c4a257
-      at: "2026-07-14T19:01:53+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "built in 1.10s (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
-      commit: 6c4a257
-      at: "2026-07-14T19:02:58+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "eslint . — clean"
-      commit: 6c4a257
-      at: "2026-07-14T19:03:09+00:00"
-gate_notes: >-
-  pytest's lone failure (test_dev_db_fixture.py::test_container_is_torn_down_even_when_a_test_using_the_fixture_fails)
-  is a CONTENTION FALSE-RED, proven per the 2026-07-06 protocol: (1) EMPTY diff for
-  backend/tests/test_dev_db_fixture.py and scripts/dev_db.py since sprint-46-start
-  (this sprint did not touch the Postgres dev-db harness), and (2) the file passes in
-  isolation (6 passed, exit 0) with no competing container. It is the STORY-080
-  dev-db port-collision/connection-disconnect flake under full-suite Docker pressure,
-  aggravated by the gate's own DB container — exactly what STORY-080 (already
-  PO-prioritized) will durably fix. A separate earlier full-gate run at 8153b53 tripped
-  a DIFFERENT member of the same family (test_dev_db_cli.py), also proven a false-red.
-  All DynamoDB product tests (STORY-082/083) passed in every run.
+      spec: pending
+      quality: pending
+  - id: STORY-085
+    status: todo
+    slug: dynamodb-proposal-adapter
+    points: 5
+    order: 3            # epic sequence; approval concurrency gate; approved_actor feeds STORY-086
+    review:
+      spec: pending
+      quality: pending
+# Plan-verifier ran at planning (contract-sensitive sprint, v2.1.2 conditional rule):
+# contract-faithful, 12/13 checks PASS; one GAP fixed pre-lock (StatusProposal.id is int|None,
+# not int) + two implementer notes folded into plan.md (transactions need the boto3 client not
+# just the resource; pagination is genuinely new — reviewers must not accept a single-page copy
+# for STORY-084 AC4).
+# DoD: full nine-command gate in force unchanged — the AWS-epic amendment (retire alembic +
+# check_fk_direction) is PENDING until STORY-087; this sprint touches neither Postgres schema
+# nor CloudFormation.
+final_gate: {}       # populated by the independent full-gate re-run at sprint close (external-mode)
 hotfixes: []
-interrupts:
-  - note: "Mid-sprint CC session limit forced external implementation via Antigravity; PO pivoted to external delivery. Both stories then verified under external-mode rules on resume."
+interrupts: []

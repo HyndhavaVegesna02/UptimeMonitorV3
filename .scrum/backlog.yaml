@@ -786,7 +786,7 @@ stories:
     points: 5
     priority: 41    # top priority for sprint 47 (retro escalation); ahead of the epic's 084/085
     type: defect
-    sprint: null
+    sprint: 47
   - id: STORY-081
     title: Publication incident-id capture (Statuspage response → Publications timeline)
     file: docs/scrum/stories/STORY-081-publication-incident-id.md
@@ -826,7 +826,7 @@ stories:
     points: 5
     priority: 43
     type: chore
-    sprint: null
+    sprint: 47
   - id: STORY-085
     title: DynamoDB proposal adapter — open-slot uniqueness transaction, counter IDs, approval events
     file: docs/scrum/stories/STORY-085-dynamodb-proposal-adapter.md
@@ -834,7 +834,7 @@ stories:
     points: 5
     priority: 44
     type: chore
-    sprint: null
+    sprint: 47
   - id: STORY-086
     title: DynamoDB adapters — publications, maintenance windows, rejected observations + seed rewrite
     file: docs/scrum/stories/STORY-086-dynamodb-publication-maintenance-seed.md
