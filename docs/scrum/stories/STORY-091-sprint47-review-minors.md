@@ -43,4 +43,12 @@ Land the three deferred sprint-47 review MINORs.
   worked on in sprint 47 (high reverse-blast-radius momentum). No open questions (AC2's guard-or-remove
   is an implementer decision, recorded either way). PO selected it into sprint 48 alongside STORY-086.
 - 2026-07-15: Implementer chose Option A for AC2, asserting that the docker run start command for the blocker container returns code 0. Recorded in both the fixture docstring and here.
+- 2026-07-15: sprint-48 external-mode review — AC2 leak-free-teardown fix (orchestrator tail, edge-case #13).
+  Spec review found the Option-A `assert res.returncode == 0` sat before the `yield` with no `try/finally`,
+  so a real blocker-start failure would raise before cleanup and leak the (still-created) container —
+  violating AC2's explicit "teardown stays leak-free" clause on the failure path. Wrapped the assert→yield
+  in `try/`, moved `docker rm -f` into `finally` (idempotent on a never-created name). AC1 (orphan guard) and
+  AC3 (create_open dedup) passed both reviews unchanged; the AC1 mechanism diverged from the plan's literal
+  `attribute_exists(pk)`-on-Put to a ConditionCheck-on-META and was confirmed MET (functionally equivalent
+  via TransactWriteItems all-or-nothing; the plan's literal form would have broken the happy path).
 

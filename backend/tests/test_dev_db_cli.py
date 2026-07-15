@@ -60,14 +60,24 @@ def run_with_blocker():
         capture_output=True,
         text=True,
     )
-    assert res.returncode == 0, (
-        f"Blocker container failed to start: {res.stdout}\n{res.stderr}"
-    )
-    # Give Docker a brief moment
-    time.sleep(1)
-    yield
-    # Clean up the blocker
-    subprocess.run(["docker", "rm", "-f", blocker_name], capture_output=True, text=True)
+    # try/finally so the teardown runs even if the return-code assertion below
+    # fails: a failed `docker run` (e.g. a name/port collision) still creates a
+    # persisted container object, so cleanup must be guaranteed on that path too
+    # — AC2's "teardown stays leak-free" clause covers the failure branch, not just
+    # the happy path (STORY-091 spec review). `docker rm -f` on a never-created name
+    # is an idempotent no-op, so this is safe when the blocker never started.
+    try:
+        assert res.returncode == 0, (
+            f"Blocker container failed to start: {res.stdout}\n{res.stderr}"
+        )
+        # Give Docker a brief moment
+        time.sleep(1)
+        yield
+    finally:
+        # Clean up the blocker
+        subprocess.run(
+            ["docker", "rm", "-f", blocker_name], capture_output=True, text=True
+        )
 
 
 def _run_cli(*args: str) -> subprocess.CompletedProcess:
