@@ -14,8 +14,9 @@ gate's concurrency invariant. Postgres semantics being ported
 - `resolve`: `UPDATE ... WHERE id=:id AND state='open'`; rowcount≠1 →
   `ProposalNotOpenError` (covers both not-found and concurrently-resolved).
 - IDs: BIGINT autoincrement — ported as an atomic `COUNTER`/`proposal` item
-  (`UpdateItem ADD seq 1`) so `StatusProposal.id: int` stays untouched (PO-accepted
-  2026-07-14).
+  (`UpdateItem ADD seq 1`) so the domain field `StatusProposal.id: int | None` (assigned
+  an int on create; `DecideService` guards with `assert opened.id is not None`) stays
+  untouched (PO-accepted 2026-07-14).
 
 Approved item shapes: `PROPOSAL#<id>`/`META` (sparse `gsi1pk=PROPOSAL_OPEN` while
 open); slot item `COMPONENT#<cid>`/`OPEN_PROPOSAL` with a denormalized copy of the open
