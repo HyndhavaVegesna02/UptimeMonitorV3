@@ -46,6 +46,10 @@ from pathlib import Path
 
 CMD_RE = re.compile(r"^\s*-\s*\[[ xX]\]\s*(.+?):\s*`([^`]+)`")
 HEADING_RE = re.compile(r"^##\s+(.*)$")
+# Optional per-command env-precondition annotation on a DoD line:
+# `(requires-env: DATABASE_URL, DATABASE_URL_DIRECT)`. Project-supplied — the
+# runner hardcodes no var names, staying generic (sprint-47 retro, 2026-07-15).
+REQUIRES_ENV_RE = re.compile(r"\(requires-env:\s*([^)]*)\)", re.IGNORECASE)
 CWD_RE = re.compile(r"run from\s+`?([\w./\\-]+?)/?`?[\s),]", re.IGNORECASE)
 TAIL_CHARS = 600
 
@@ -73,11 +77,20 @@ def parse_dod(dod_path: Path) -> list[dict]:
             continue
         m = CMD_RE.match(line)
         if m:
+            # Optional, project-supplied: `(requires-env: VAR1, VAR2)` anywhere on
+            # the DoD line declares env preconditions the gate warns about up front
+            # when unset. The project names its own vars, so the runner stays
+            # generic (sprint-47 retro, 2026-07-15).
+            rm = REQUIRES_ENV_RE.search(line)
+            requires_env = (
+                [v.strip() for v in rm.group(1).split(",") if v.strip()] if rm else []
+            )
             commands.append(
                 {
                     "label": m.group(1).strip(),
                     "command": m.group(2).strip(),
                     "cwd": section_cwd,
+                    "requires_env": requires_env,
                 }
             )
     return commands
@@ -121,6 +134,41 @@ def one_line_tail(text: str, limit: int = TAIL_CHARS) -> str:
         if part.strip() and not _is_banner(part)
     )
     return tail.replace("\\", "\\\\").replace('"', '\\"')
+
+
+_ENV_REF = re.compile(r"\$\{(\w+)\}|\$(\w+)|%(\w+)%")
+
+
+def preflight_env(commands: list, env: dict) -> list:
+    """Generic, project-agnostic precondition scan.
+
+    A command whose env precondition is unset produces a false-red that looks
+    nothing like the code failing — e.g. a DB-backed migration/consistency
+    command left without its connection URL surfaces a raw KeyError, costing a
+    diagnose-and-re-run cycle (sprint-47 retro, 2026-07-15). This warns UP FRONT
+    and names the missing vars, without hardcoding any project's var names.
+
+    Two signals, both project-supplied (the runner stays generic):
+      - a `(requires-env: VAR, ...)` annotation on the DoD line — the reliable
+        signal, since the dependency is usually INSIDE the invoked code
+        (`os.environ[...]`), not literally in the command string; and
+      - a literal `$VAR` / `${VAR}` / `%VAR%` reference in the command text
+        (fallback, for shell-style commands).
+
+    Returns the sorted list of required-but-unset var names (empty = clean).
+    Advisory only: it never blocks — the command still runs and reds honestly
+    if the missing var truly breaks it.
+    """
+    missing = set()
+    for entry in commands:
+        for name in entry.get("requires_env", []):
+            if name not in env:
+                missing.add(name)
+        for m in _ENV_REF.finditer(entry["command"]):
+            name = next(g for g in m.groups() if g)
+            if name not in env:
+                missing.add(name)
+    return sorted(missing)
 
 
 def run_command(entry: dict, root: Path, env: dict, timeout: int) -> dict:
@@ -264,6 +312,22 @@ def main() -> int:
     # (UnicodeEncodeError in rich/_win32_console.py) and reds an otherwise-green gate.
     # setdefault so a deliberately-exported PYTHONUTF8 still wins.
     env.setdefault("PYTHONUTF8", "1")
+
+    # Precondition scan (sprint-47 retro, 2026-07-15): a command referencing an
+    # unset env var reds in a way that looks nothing like the code failing (a raw
+    # KeyError / connection error), costing a diagnose-and-re-run cycle. Warn up
+    # front and name the missing vars — generically, no project var names hardcoded.
+    unset = preflight_env(commands, env)
+    if unset:
+        print(
+            "yt_gate: WARNING these commands reference unset env var(s): "
+            + ", ".join(unset)
+            + " — a missing precondition (e.g. an unprovisioned DB/service) reds as a "
+            "false failure. Set them (or provision the backing resource) before trusting "
+            "the result. Running anyway.",
+            file=sys.stderr,
+            flush=True,
+        )
 
     commit = git(root, "rev-parse", "--short", "HEAD")
     results, all_green = [], True

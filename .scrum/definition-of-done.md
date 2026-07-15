@@ -40,11 +40,13 @@
       (import-linter; the five contracts from dossier §4, §13, and Sprint 14:
        core-independence, core-internal-layering [domain<-ports<-services],
        adapter-independence, api-feature-independence, src-no-tests)
-- [ ] Schema FK-direction holds: `python scripts/check_fk_direction.py` -> exit 0
+- [ ] Schema FK-direction holds: `python scripts/check_fk_direction.py` -> exit 0 (requires-env: DATABASE_URL)
       (the spine never references a feature table; dossier §9)
-- [ ] Migrations apply on a fresh DB: `alembic upgrade head` -> exit 0
+- [ ] Migrations apply on a fresh DB: `alembic upgrade head` -> exit 0 (requires-env: DATABASE_URL_DIRECT)
       (uses the DIRECT connection; never create_all; Sprint 0 runs it against a
        throwaway Dockerized Postgres, real Neon DIRECT from the deploy zone)
+      (requires-env annotations added sprint-47 retro 2026-07-15 — the gate warns
+       up front when these are unset instead of surfacing a raw KeyError mid-run)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
 

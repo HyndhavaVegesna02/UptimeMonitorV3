@@ -143,4 +143,27 @@
   plan-verifier.) (Rung: agent definitions + skill text — this entry is the record; the
   enforcement lives in `.claude/agents/yt-*.md` frontmatter and SKILL.md/ceremonies.md §4.)
 
+- 2026-07-15 — **External deliveries arrive committed per-story; self-reported gate results are
+  never trusted** (sprint-47 retro). The `external` execution mode now carries an explicit delivery
+  contract stated at handoff and checked on return: commit per story with `STORY-NNN:` messages
+  (ideally the per-green TDD cadence); if the work arrives as one uncommitted tree, the orchestrator
+  reads each diff and commits it per-story as the reviewable object BEFORE reviewing (reviewers need
+  a stable per-story diff; the gate refuses a dirty tree). An external "all gates green" summary is a
+  to-verify list, never evidence — the orchestrator's own `yt_gate.py` run on the final HEAD is the
+  only record that counts. (Motivating incident: sprint-47 external delivery arrived as one
+  uncommitted blob with no cadence and self-reported "all nine gates clean" while carrying two
+  quality MAJORs and two gate commands that had never run against a DB. Rung: reference — the
+  contract lives in `references/execution-modes.md` §2; this entry is the pointer.)
+
+- 2026-07-15 — **The gate warns up front on unset env preconditions instead of surfacing a raw error
+  mid-run** (sprint-47 retro). `yt_gate.py` now runs a generic precondition scan and prints a named
+  WARNING when a command's required env var is unset (advisory — the command still runs). Kept
+  project-GENERIC per the 2026-07-13 rule: the runner hardcodes no var names; the project's DoD line
+  declares them via a `(requires-env: VAR, ...)` annotation (added here to the `alembic upgrade head`
+  and `check_fk_direction.py` lines). (Motivating incident: a standalone full-gate run left
+  `DATABASE_URL`/`DATABASE_URL_DIRECT` unset, so the two DB-gated commands errored on a raw KeyError
+  — a false-red distinct from the code failing — costing a diagnose-and-re-run cycle. Rung: script
+  + project config — the mechanism is in `scripts/yt_gate.py`, the var names in
+  `.scrum/definition-of-done.md`; this entry is the record.)
+
 <!-- - YYYY-MM-DD — <agreement> (Motivated by: <incident, sprint, story>) (Rung: <ladder rung considered and why prose>) -->

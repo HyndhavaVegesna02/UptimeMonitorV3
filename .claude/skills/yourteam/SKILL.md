@@ -5,7 +5,10 @@ description: A complete Scrum-based development methodology where the human is P
 
 # YourTeam
 
-<!-- yourteam_version: 2.1.2 — token-economy amendments (PO-approved 2026-07-15): conditional
+<!-- yourteam_version: 2.1.3 — sprint-47 retro amendments (PO-approved 2026-07-15): external-delivery
+     contract in execution-modes.md §2 (commit-per-story handoff + never-trust-self-reported-gate);
+     generic env-precondition preflight in yt_gate.py (project-supplied `(requires-env: …)` DoD
+     annotation, no hardcoded var names). 2.1.2: token-economy amendments (PO-approved 2026-07-15): conditional
      plan-verifier dispatch, spec-reviewer on sonnet, implementer tool allowlist. 2.1.0:
      sprint-44 pilot amendments: self-test suite (yt_selftest), lock-sequence fix,
      stateful-resource isolation pattern, sweep-skip visibility, PO genericity rule.

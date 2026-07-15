@@ -30,6 +30,25 @@ The PO implements via an external AI agent building to `plan.md` alone.
   `yt_gate.py` re-run, before any story goes `board: done`. (History: external mode reliably
   ships ~1 MAJOR per 3-pt story — self-review blind spots; the review stage is never skipped.)
 
+**Delivery contract (state it at handoff; check it on return).** `plan.md` says what to build;
+this says what to hand back. When handing work to the external agent, the orchestrator states, and
+on resume verifies:
+  1. **Commit per story, not one lump.** Each story is its own commit(s) with `STORY-NNN:` messages
+     on the sprint branch; ideally the per-green-step TDD cadence (the crash-recovery mechanism). On
+     return, if the work arrived as one uncommitted tree or a single blob, the orchestrator reads
+     each diff and commits it as a per-story reviewable object BEFORE reviewing — reviewers need a
+     stable per-story diff, and the DoD gate refuses a dirty tree. (This is exactly the salvage the
+     orchestrator ran when a delivery arrived uncommitted; the contract makes it the expectation, not
+     a recovery.)
+  2. **Never trust a self-reported gate result.** An external "all gates green" summary is a claim,
+     not evidence — the orchestrator's own `yt_gate.py` run on the final HEAD is the only record that
+     counts, and it routinely diverges (missed MAJORs; a gate command that had no DB; a stale HEAD).
+     Treat the summary as a to-verify list, never as the verification.
+  3. **Reviewers get the story's own commit range** as their primary object, same as in-process.
+(Motivating incident: sprint-47 — external delivery arrived as one uncommitted tree with no cadence
+and self-reported "all nine gates clean" while carrying two quality MAJORs and two gate commands that
+had never run against a DB. Added at the sprint-47 retro, PO-approved 2026-07-15.)
+
 ## 3. `parallel-waves`
 
 For sprints with several independent stories (no shared files, no dependency edges).
