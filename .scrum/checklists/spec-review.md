@@ -17,4 +17,11 @@
       STORY-091 AC2 "teardown stays leak-free" — the leak lived on the blocker-start-fails
       branch, the delivered test only ran the happy path, quality review approved it, spec
       review caught it by reproducing the failure path).
+- [ ] **Deletion-reason trace.** When the story's diff DELETES code (files/functions removed),
+      confirm the deletion reason is recorded in the story-file History — the DoD standing rule
+      requires it, and nothing mechanical checks it, so trace it explicitly. A code deletion with
+      no recorded reason is a finding (2026-07-16; sprint-49 STORY-087 deleted the entire Postgres
+      stack — nine adapters, the Alembic tree, dev_db/check_fk_direction — with no reasons recorded
+      in the story until the review tail; the deletion itself was correct, the provenance was
+      missing, which is how future sprints re-make removed mistakes).
 - [ ] **PASS = every AC MET.** PARTIAL or NOT_MET on any AC is FAIL. There is no partial accept.

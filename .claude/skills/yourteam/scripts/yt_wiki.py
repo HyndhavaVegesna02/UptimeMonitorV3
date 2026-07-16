@@ -19,6 +19,14 @@ Mechanizes the wiki protocol's three mechanical checks over docs/scrum/wiki/:
            cited as a code_ref by many articles quarantines them ALL on any
            touch (one shared file once re-staled a third of a wiki). Notes
            by default; findings under --strict-refs.
+  integrity — wiki-integrity lint (retro sprint-49, 2026-07-16): (1) verified_sha
+           must be a SHORT sha (7-12 hex) — a 40-char full sha is the tell of a
+           bulk "bump every article to HEAD" pass that never re-verified the Facts
+           (sprint-49: 12 articles laundered to one 40-char sha). (2) status:
+           archived ⇒ the file must LIVE under wiki/archive/ AND carry
+           archived_sprint + archived_reason frontmatter — a status-flip that
+           leaves the article in the main dir with no tombstone is a fake archive
+           the sweep silently skips (sprint-49: migrations-and-db.md).
 
 The sweep skips LLM re-verification it can prove unnecessary: if the diff
 since verified_sha is whitespace-only (`git diff -w --ignore-blank-lines`
@@ -211,6 +219,59 @@ def check_facts(root: Path, articles: dict[Path, str]) -> list[str]:
     return findings
 
 
+SHORT_SHA_RE = re.compile(r"^[0-9a-f]{7,12}$")
+
+
+def check_integrity(wiki: Path, articles: dict[Path, str]) -> list[str]:
+    """Wiki-integrity lint (retro sprint-49, 2026-07-16).
+
+    Two mechanical guards for failure modes an external delivery slipped past the
+    other checks:
+      1. verified_sha must be a SHORT sha (7-12 hex). A 40-char full sha is the
+         tell of a bulk re-stamp that never re-verified the per-article Facts —
+         which launders staleness and defeats the sweep's whole premise.
+      2. status: archived ⇒ the file lives under wiki/archive/ AND carries
+         archived_sprint + archived_reason frontmatter. A status-flip that leaves
+         the article in the main dir with no tombstone is a fake archive: the
+         sweep skips `status: archived`, so the flip silences the linter instead
+         of being caught by it.
+    """
+    findings = []
+    for path, text in articles.items():  # main-dir articles
+        meta = parse_frontmatter(text)
+        sha = meta.get("verified_sha")
+        if sha and not SHORT_SHA_RE.match(sha):
+            findings.append(
+                f"{path.name}: verified_sha {sha!r} is not a short sha (7-12 hex) — a "
+                "40-char sha signals a bulk re-stamp with no per-article re-verification"
+            )
+        if meta.get("status") == "archived":
+            findings.append(
+                f"{path.name}: status=archived but the file is in the main wiki dir — move "
+                "it to wiki/archive/ with archived_sprint + archived_reason (a real tombstone)"
+            )
+    archive = wiki / "archive"
+    if archive.is_dir():
+        for path in sorted(archive.glob("*.md")):
+            meta = parse_frontmatter(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+            sha = meta.get("verified_sha")
+            if sha and not SHORT_SHA_RE.match(sha):
+                findings.append(
+                    f"archive/{path.name}: verified_sha {sha!r} is not a short sha (7-12 hex)"
+                )
+            missing = [
+                k for k in ("archived_sprint", "archived_reason") if not meta.get(k)
+            ]
+            if missing:
+                findings.append(
+                    f"archive/{path.name}: archived article missing tombstone "
+                    f"frontmatter: {', '.join(missing)}"
+                )
+    return findings
+
+
 def check_links(root: Path, wiki: Path, articles: dict[Path, str]) -> list[str]:
     findings = []
     for path, text in articles.items():
@@ -229,7 +290,7 @@ def main() -> int:
         "checks",
         nargs="*",
         default=[],
-        help="sweep | facts | links | refs (default: all)",
+        help="sweep | facts | links | refs | integrity (default: all)",
     )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
     ap.add_argument(
@@ -257,7 +318,7 @@ def main() -> int:
         p: p.read_text(encoding="utf-8", errors="replace")
         for p in sorted(wiki.glob("*.md"))
     }
-    checks = args.checks or ["sweep", "facts", "links", "refs"]
+    checks = args.checks or ["sweep", "facts", "links", "refs", "integrity"]
     all_findings: list[str] = []
     for check in checks:
         advisory = False
@@ -270,6 +331,8 @@ def main() -> int:
         elif check == "refs":
             found = check_refs(articles)
             advisory = not args.strict_refs  # notes by default — never blocks
+        elif check == "integrity":
+            found = check_integrity(wiki, articles)
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4
