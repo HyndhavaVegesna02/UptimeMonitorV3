@@ -16,7 +16,19 @@ started: "2026-07-17T04:30:00+05:30"
 # Playwright directly (headless Chromium via tools/ui-sweep/); MCP takes over next session.
 stories:
   - id: STORY-094
-    status: in-progress   # implementer dispatched 2026-07-17
+    status: done          # all 4 AC; 2-pt story ⇒ implementer → scoped DoD gate → reality gate
+    commits: 6ab598c..7f352b8   # TDD cadence; scoped gate at 7f352b8 (pytest 529 / ruff x2 / npm lint all 0)
+    reality_gate:
+      ran: true
+      evidence: >-
+        Local-stack spot check on an ISOLATED DynamoDB Local (container uptime_dynamo_094
+        port 8009, API uvicorn port 8010, both torn down after): limit=2 -> exactly the 2
+        newest of 5 seeded rows (22:31:41, 22:21:41); no limit -> all 5 (unchanged full
+        window); limit=0 -> 422 greater_than_equal. Real-repository test
+        (test_history_limit_against_real_dynamo_repository) runs vs DynamoDB Local in the
+        suite. LIVE stack still runs the pre-fix image by design — live verification at
+        the post-acceptance redeploy (stated in plan; not ship-on-promise). Wiki blast
+        radius: api-five-file-convention.md, frontend-zone.md, sample-mode.md re-verified.
     slug: history-limit-param
     points: 2
     order: 1           # the code change first; sweep is independent of it
