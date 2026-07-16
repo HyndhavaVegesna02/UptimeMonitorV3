@@ -253,9 +253,7 @@ def check_integrity(wiki: Path, articles: dict[Path, str]) -> list[str]:
     archive = wiki / "archive"
     if archive.is_dir():
         for path in sorted(archive.glob("*.md")):
-            meta = parse_frontmatter(
-                path.read_text(encoding="utf-8", errors="replace")
-            )
+            meta = parse_frontmatter(path.read_text(encoding="utf-8", errors="replace"))
             sha = meta.get("verified_sha")
             if sha and not SHORT_SHA_RE.match(sha):
                 findings.append(
