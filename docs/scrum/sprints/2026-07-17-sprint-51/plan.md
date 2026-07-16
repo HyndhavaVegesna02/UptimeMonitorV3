@@ -56,7 +56,7 @@
   untouched and green); `limit=0` and `limit=-1` → 422; `limit=abc` → 422. Commit.
 - [x] 4. AC3 docs: reconcile the two frontend comments (client.ts, CheckHistoryPage.tsx)
   — server cap exists, client render-cap stays authoritative. Commit.
-- [ ] 5. Story gate: `yt_gate.py --only` pytest + ruff (diff = backend api/tests +
+- [x] 5. Story gate: `yt_gate.py --only` pytest + ruff (diff = backend api/tests +
   frontend comments; comments don't affect npm gates but run `npm run lint` if
   CheckHistoryPage.tsx line-wrap changes). Wiki blast radius check. Board update.
 
