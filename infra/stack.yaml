@@ -482,6 +482,7 @@ Resources:
     Properties:
       DistributionConfig:
         Enabled: true
+        DefaultRootObject: index.html   # bare / would otherwise 403 at the S3 origin; the rewrite fn deliberately skips '/'
         Origins:
           - Id: S3Origin
             DomainName: !GetAtt FrontendBucket.RegionalDomainName
