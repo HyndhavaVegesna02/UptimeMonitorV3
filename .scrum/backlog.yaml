@@ -876,17 +876,19 @@ stories:
   - id: STORY-093
     title: Chore — sprint-49 review minors (container hardening, health grace, test hygiene)
     file: docs/scrum/stories/STORY-093-sprint49-review-minors.md
-    status: ready   # filed at sprint-49 review (accept-with-follow-up, PO 2026-07-16): non-root Dockerfile USER + dead ENV PORT + dep-layer ordering; APIService HealthCheckGracePeriodSeconds; zero-assertion test + no-Postgres guard test + monkeypatch cleanup. Refine/estimate at next planning.
+    status: in-sprint   # sprint 50 (order 1); estimated 2 pts at sprint-50 planning 2026-07-16: non-root Dockerfile USER + dead ENV PORT + dep-layer ordering; APIService HealthCheckGracePeriodSeconds; zero-assertion test + no-Postgres guard test + monkeypatch cleanup; + deploy-runbook branch-prereq update (plan-verifier GAP 1).
+    points: 2
+    priority: 49
     type: chore
-    sprint: null
+    sprint: 50
   - id: STORY-089
     title: Live console deployment + end-to-end verification (PO-driven)
     file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); PO-interactive, live-credential gated; depends on STORY-088
+    status: in-sprint   # sprint 50 (order 2); PO-approved 2026-07-14 ("approve all"); PO-interactive, live-credential gated; depends on STORY-088 (on main) + STORY-093 hardening in the deployed artifacts
     points: 3
     priority: 48
     type: chore
-    sprint: null
+    sprint: 50
   - id: STORY-090
     title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
     file: docs/scrum/stories/STORY-090-cicd-github-actions.md
