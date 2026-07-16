@@ -30,12 +30,18 @@ class HistoryService:
         *,
         since_str: str | None,
         until_str: str | None,
+        limit: int | None = None,
     ) -> list[ObservationDTO]:
         """Return per-signal observations as DTOs, most-recent first.
 
         Window defaulting (AC3, dossier §17):
           until = clock.now() if not supplied
           since = until − 24 h if not supplied
+
+        `limit` (STORY-094): when supplied, caps the result to the N most
+        recent observations — the cap is applied AFTER the most-recent-first
+        sort, by slicing it. `None` (absent) leaves the full window untouched.
+        The ObservationRepository port is unchanged: the cap is edge-side.
         """
         now = self._clock.now()
         since, until = resolve_window(since_str, until_str, now)
@@ -44,6 +50,8 @@ class HistoryService:
 
         # Sort most-recent first; map to DTOs (omit source/raw_ref/source_event_id)
         sorted_obs = sorted(observations, key=lambda o: o.observed_at, reverse=True)
+        if limit is not None:
+            sorted_obs = sorted_obs[:limit]
         return [
             ObservationDTO(
                 signal_key=o.signal_key,
