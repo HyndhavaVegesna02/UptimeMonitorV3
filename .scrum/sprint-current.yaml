@@ -78,7 +78,77 @@ stories:
     points: 2          # estimated at this planning (was unestimated at filing)
     order: 1           # first: its Dockerfile/stack hardening must be in what 089 deploys
   - id: STORY-089
-    status: in-progress   # preflight PASS (093 done on branch; cfn-lint/docker build/npm build green); awaiting PO console runbook Steps 1-2 (sanctioned PO-interaction point)
+    status: done          # all 6 AC live-verified against the deployed stack; PO drove console/UI interaction points
+    commits: 9a4e83b..89925c9   # runbook org-policy + 3 live-found template fixes (ec09e8a AutoPublish, d119cc3 policy IDs, c05fc57 DefaultRootObject) + AC6 docs 235fc37
+    reality_gate:
+      ran: true
+      evidence: >-
+        The story IS the reality gate — every AC exercised against the live stack
+        (us-east-1, account 065317679010, stack `uptime-monitor`):
+        AC1: CREATE_COMPLETE (attempt 3 + 1 update); API task `healthy` in
+        uptime-monitor-api-tg; loop exactly 1 RUNNING task; image in ECR.
+        AC2: PO click-through — all six tabs render at
+        https://d3ukiib1iqmbxb.cloudfront.net; orchestrator probes: / -> 200,
+        extensionless /approvals -> 200 text/html (rewrite fn LIVE),
+        /api/v1/health & /components & /topology -> 200 same-origin (no CORS).
+        AC3: watermark advanced 21:42:42Z -> 21:44:42Z across live cycles;
+        /history returns real per-minute Grail observations (2 synthetic
+        locations); /availability computes 69/69 verdicts, completeness ~9.7%/24h.
+        AC4: sample-mode round-trip from the deployed UI — two
+        `PUT /api/v1/sample-mode 200` witnessed in /ecs/uptime-monitor-api
+        CloudWatch logs; CONFIG/SAMPLE_MODE item verified, left enabled:false.
+        AC5: leak sweep over all 25+ sprint commits (git log -p + git grep):
+        only the dummy dt0c01.sampletoken test fixtures; values live only in
+        Secrets Manager. AC6: CLAUDE.md deployed-topology section +
+        deployment-topology.md wiki article (live-verified facts) + this record.
+        Live-found template defects (fixed on-branch, each verified by redeploy):
+        missing AutoPublish on the CloudFront function; fabricated
+        Managed-CachingOptimized ID; ID/comment mismatch on the origin-request
+        policy; missing DefaultRootObject (bare / 403). Org-policy interrupt
+        encoded into the runbook (us-east-1 lock, c7n-keep/username tags).
+final_gate:
+  head: 89925c9
+  dod_evidence:
+    - command: "pytest"
+      exit_code: 0
+      output_tail: "522 passed in 42.96s"
+      commit: 89925c9
+      at: "2026-07-16T22:03:44+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."
+      commit: 89925c9
+      at: "2026-07-16T22:04:28+00:00"
+    - command: "ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 89925c9
+      at: "2026-07-16T22:04:28+00:00"
+    - command: "ruff format --check ."
+      exit_code: 0
+      output_tail: "205 files already formatted"
+      commit: 89925c9
+      at: "2026-07-16T22:04:29+00:00"
+    - command: "cfn-lint infra/stack.yaml"
+      exit_code: 0
+      output_tail: "(exit 0, no findings)"
+      commit: 89925c9
+      at: "2026-07-16T22:04:29+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
+      commit: 89925c9
+      at: "2026-07-16T22:04:31+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "built (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
+      commit: 89925c9
+      at: "2026-07-16T22:05:08+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "eslint . — clean"
+      commit: 89925c9
+      at: "2026-07-16T22:05:12+00:00"
     slug: console-deployment-live-verification
     points: 3
     order: 2           # PO-driven console runbook execution + live AC verification
