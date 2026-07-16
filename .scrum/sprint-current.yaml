@@ -17,7 +17,63 @@ started: "2026-07-16T23:59:00+05:30"
 # (format-only, self-test 28/28); baseline green at start_commit.
 stories:
   - id: STORY-093
-    status: in-progress   # implementer dispatched 2026-07-16
+    status: done          # all 4 AC; 2-pt story ⇒ implementer → DoD gate → reality gate (no reviewer tier)
+    commits: cf875ff..b2d0cfa   # per-step TDD cadence; gate evidence at 0f7546f; b2d0cfa = orchestrator wiki Facts-lint fix (docs-only)
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "tor.py ...                       [ 91%] | backend\\tests\\test_streak.py .........                                   [ 93%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 522 passed in 40.47s ============================="
+        commit: 0f7546f
+        at: "2026-07-16T18:27:55+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 0f7546f
+        at: "2026-07-16T18:28:36+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 0f7546f
+        at: "2026-07-16T18:28:36+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "205 files already formatted"
+        commit: 0f7546f
+        at: "2026-07-16T18:28:36+00:00"
+      - command: "cfn-lint infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 0f7546f
+        at: "2026-07-16T18:28:36+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  23:58:39 | Duration  33.56s (transform 4.10s, setup 30.24s, import 16.88s, tests 36.54s, environment 119.52s)"
+        commit: 0f7546f
+        at: "2026-07-16T18:28:38+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | [32m✓ built in 272ms[39m"
+        commit: 0f7546f
+        at: "2026-07-16T18:29:13+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 0f7546f
+        at: "2026-07-16T18:29:17+00:00"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live image probe (plan step 5): docker build exit 0; whitespace-only touch to
+        backend/src/composition/run.py then rebuild -> dependency-install layer
+        (tomllib-derived requirements.txt + uvicorn[standard]) reported CACHED;
+        `docker run --rm <img> whoami` -> app (non-root); container import smoke
+        `python -c "import src.composition.asgi; import src.composition.run"` -> OK.
+        cfn-lint exit 0 on the HealthCheckGracePeriodSeconds:120 template edit
+        (APIService only — LoopService has no LB). Wiki blast radius: 4 articles
+        updated/re-verified (deployment-and-infra Facts rewritten; 3 re-verified,
+        shared code_refs, test-only diff); yt_wiki.py exit 0 after orchestrator
+        Facts-lint fix b2d0cfa. Full live exercise of the deployed template/image
+        is STORY-089 by design.
     slug: sprint49-review-minors
     points: 2          # estimated at this planning (was unestimated at filing)
     order: 1           # first: its Dockerfile/stack hardening must be in what 089 deploys
