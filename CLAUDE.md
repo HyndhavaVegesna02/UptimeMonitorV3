@@ -200,3 +200,24 @@ The full local stack is: DynamoDB Local + the API server (uvicorn) + the live pu
 | cfn-lint          | live (STORY-088); dev dependency | CloudFormation validation tool (DoD)      |
 
 No `psql` client or SQL databases are used. Dynatrace/Statuspage credentials and DynamoDB settings are read from environment variables, exported directly or loaded from a gitignored repo-root `.env` (STORY-043) for the live loop.
+
+## Deployed topology (STORY-089, live since 2026-07-17)
+
+The system runs live in AWS **us-east-1**, account `065317679010`, as CloudFormation stack
+`uptime-monitor` (from `infra/stack.yaml`; deploy procedure: `docs/deploy-runbook.md`).
+Full live-verified detail: `docs/scrum/wiki/deployment-topology.md`.
+
+| Piece          | Live value                                                              |
+| -------------- | ----------------------------------------------------------------------- |
+| Public URL     | `https://d3ukiib1iqmbxb.cloudfront.net` (SPA + same-origin `/api/*`)    |
+| ECS cluster    | `uptime-monitor-cluster` — services `uptime-monitor-api` (behind the ALB) + `uptime-monitor-loop` (singleton) |
+| Image          | `065317679010.dkr.ecr.us-east-1.amazonaws.com/uptime-monitor-repo:latest` |
+| Tables         | `uptime-monitor-observations`, `uptime-monitor-control` (DeletionPolicy Retain) |
+| Secrets (names)| `uptime-monitor-dynatrace-secrets` (`DYNATRACE_ENV_URL`, `DYNATRACE_API_TOKEN`); `uptime-monitor-statuspage-secrets` (`STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY`) — values ONLY in Secrets Manager |
+| Plain env vars | `AWS_REGION`, `DYNAMO_OBSERVATIONS_TABLE`, `DYNAMO_CONTROL_TABLE` (injected by task defs) |
+| Logs           | `/ecs/uptime-monitor-api`, `/ecs/uptime-monitor-loop` (CloudWatch, 14 days) |
+
+Quick verify: `curl https://d3ukiib1iqmbxb.cloudfront.net/api/v1/health` → 200;
+`aws ecs describe-services --cluster uptime-monitor-cluster --services uptime-monitor-api uptime-monitor-loop`
+→ both 1/1 running. Company account rules (region lock us-east-1, `c7n-keep=true` tagging
+against the 22:00 IST reaper): see `docs/deploy-runbook.md` Prerequisites.

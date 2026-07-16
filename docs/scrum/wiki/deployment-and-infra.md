@@ -1,7 +1,7 @@
 ---
 title: Deployment — CloudFormation single-stack + container image
 code_refs: [infra/stack.yaml, Dockerfile, .dockerignore, scripts/create_tables.py]
-verified_sha: a8700f5
+verified_sha: c05fc57
 verified_sprint: sprint-50
 status: verified
 ---
@@ -37,9 +37,18 @@ status: verified
 - **Edge:** ALB HTTP:80 → api target group; a private S3 bucket (`DeletionPolicy: Retain`,
   `infra/stack.yaml:427-428`) + Origin Access Control; CloudFront with the default behavior →
   S3 and an ordered `/api/*` behavior → the ALB origin (all methods, caching disabled). A
-  CloudFront Function (`RewriteFunction`, `infra/stack.yaml:462-477`) rewrites extensionless
+  CloudFront Function (`RewriteFunction`, `infra/stack.yaml:462-478`) rewrites extensionless
   paths to `/index.html` on the **default behavior only**, never touching `/api/*` responses.
   Two 14-day log groups; two Secrets Manager secrets (names only — values entered in-console).
+- **Live-deploy fixes (STORY-089, found only by deploying):** the CloudFront function carries
+  `AutoPublish: true` (`infra/stack.yaml:466`) — distribution `FunctionAssociations` require
+  the LIVE stage, and without it stack create fails with "not found or is not published";
+  the distribution sets `DefaultRootObject: index.html` (`infra/stack.yaml:485`) — the rewrite
+  function deliberately skips `/`, so the bare root otherwise 403s at the S3 origin; both
+  managed policy IDs are live-verified (`Managed-CachingOptimized`
+  `658327ea-f89d-4fab-a63d-7e88639e58f6`, `Managed-AllViewerExceptHostHeader`
+  `b689b0a8-53d0-40ab-baf2-68738e2966ac`) — the originals were one fabricated ID (404 at
+  create) and one ID/comment mismatch (`Managed-AllViewer`).
 - **Container image** (`Dockerfile`): a single `python:3.13-slim` image serves **both**
   processes. Default `CMD` runs the API (`uvicorn src.composition.asgi:app`); the loop runs by
   command override (`python -m src.composition.run`) — the same override the ECS loop task def
@@ -69,3 +78,8 @@ status: verified
   layer across source-only changes, dropped the dead `ENV PORT=8000`, and now runs as a
   non-root `app` user. Re-verified against `infra/stack.yaml` line-number drift from the
   1-line insertion.
+- sprint-50 (STORY-089, live deployment): three template defects surfaced only by the real
+  deploy — missing `AutoPublish` on the CloudFront function, a fabricated
+  `Managed-CachingOptimized` ID, and no `DefaultRootObject` — all fixed and live-verified
+  against the deployed stack (`ec09e8a`, `d119cc3`, `c05fc57`). See
+  [[deployment-topology]] for the deployed instance itself.
