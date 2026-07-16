@@ -1,7 +1,7 @@
 ---
 title: Deployment — CloudFormation single-stack + container image
 code_refs: [infra/stack.yaml, Dockerfile, .dockerignore, scripts/create_tables.py]
-verified_sha: 96f456f
+verified_sha: d8173d3
 verified_sprint: sprint-49
 status: verified
 ---

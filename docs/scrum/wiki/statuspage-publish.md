@@ -1,7 +1,7 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: 5b4ee36
+verified_sha: d8173d3
 verified_sprint: sprint-49
 status: verified
 ---
