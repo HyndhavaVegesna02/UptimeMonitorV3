@@ -1,110 +1,53 @@
 # YourTeam active sprint board
-sprint: 48
-status: done        # PO accepted both stories 2026-07-15; merged to main (798804a); velocity 7/7. Next: retro.
-mode: external      # PO-directed at lock (2026-07-15), 3rd consecutive external sprint.
-                    # Per the 2026-07-15 working agreement, mode:external is set AT LOCK —
-                    # mandating the external-mode verification floor on delivery/resume: spec +
-                    # quality review PER STORY regardless of points, plus an independent full
-                    # nine-command gate re-run on the final HEAD, before any board:done stands.
-                    # Delivery contract (execution-modes.md §2): external agent works ONLY on
-                    # sprint-48, never merges main; on return the orchestrator reads each diff and
-                    # COMMITS PER STORY as the reviewable object before reviewing; a self-reported
-                    # "gates green" is a to-verify list, NEVER evidence.
-goal: "Complete the DynamoDB adapter set — publications, maintenance windows, rejected observations, plus a DynamoDB topology seed (STORY-086), proven for behavioral parity against the landed DynamoDB-Local harness; and land the three deferred sprint-47 review minors (STORY-091: proposal-event orphan guard, blocker-fixture return-code check, create_open dedup). Neither story is wired into composition — that is the cutover (STORY-087), out of scope this sprint."
-branch: sprint-48
-start_tag: sprint-48-start
-start_commit: a8606e9
-started: "2026-07-15T17:45:00+05:30"
-# 7 pts committed — a deliberately calmer commit after sprint-47's 15-pt stretch (recent
-# velocity 45:6, 46:8, 47:15). Drop order if delivery runs long: STORY-091 first (last +
-# lowest priority; pure hygiene), then STORY-086 stands alone as the epic's next slice.
-# STORY-086 unblocks the cutover (STORY-087, depends on 083..086 all accepted).
+sprint: 49
+status: active
+mode: external      # PO-approved at lock (2026-07-16), 4th consecutive external sprint.
+                    # Per the 2026-07-15 working agreement, mode:external mandates the
+                    # external-mode verification floor on delivery: spec + quality review PER
+                    # STORY regardless of points, plus an independent full amended-gate re-run
+                    # on the final HEAD (with DynamoDB Local UP — see plan.md Gate note),
+                    # before any board:done stands. Delivery contract (execution-modes.md §2):
+                    # external agent works ONLY on sprint-49, never merges main; on return the
+                    # orchestrator reads each diff and COMMITS PER STORY as the reviewable
+                    # object before reviewing; a self-reported "gates green" is a to-verify
+                    # list, NEVER evidence.
+goal: "Complete the AWS cutover: wire the DynamoDB adapter set into both composition roots and delete the entire Postgres stack (STORY-087, DoD amendment takes effect); containerize both processes in one image (STORY-092, single Dockerfile + CMD override); author the CloudFormation single-stack template + console deployment runbook (STORY-088, cfn-lint joins the DoD). Fresh-start hard cutover — no data migration. Live console deployment itself is STORY-089, out of scope."
+branch: sprint-49
+start_tag: sprint-49-start
+start_commit: b16fb58
+started: "2026-07-16T00:00:00+05:30"
+# 10 pts committed (087:3 + 092:2 + 088:5). Dependency chain 087 -> 092 -> 088 (image built
+# against the DynamoDB-only runtime; CFN stack references the image + amended gate). Drop
+# order if delivery runs long: 088 first (last + largest + no downstream dependant this
+# sprint), then 092. STORY-087 never drops — it unblocks the other two.
+# Plan-verifier ran at planning (external + adapter/vendor contract-sensitive): every cited
+# contract verified clean (crucially the table-assignment table — obs repo -> observations
+# table, everything else incl. rejected -> control table — fully confirmed against the landed
+# adapter tests; the 3 STORY-088 CloudFront/loop-singleton mechanisms feasible in one CFN
+# template). Verdict GAPS on 6 external-mode completeness items (3 HIGH would leave pytest red
+# for a literal agent: stray Postgres composition/seed.py; test_app engine-disposal test;
+# two kept Dynamo test files carrying Postgres-parity tests) + 3 lower (run.py to_psycopg_url
+# import; create_app database_url param; CFN prefix-list-ID Parameter). ALL FIXED pre-lock.
+# Status: LOCK_READY. See plan.md.
+# DoD EVOLVES this sprint (PO-approved 2026-07-14 amendment): after STORY-087, alembic +
+# check_fk_direction RETIRE and the DynamoDB-Local pytest suite is the persistence floor;
+# after STORY-088, cfn-lint infra/ JOINS. The orchestrator's final gate on the final HEAD
+# runs the amended set with DynamoDB Local UP.
 stories:
-  - id: STORY-086
-    status: done        # verified under external-mode floor; awaiting PO acceptance at review
-    slug: dynamodb-publication-maintenance-seed
-    points: 5
+  - id: STORY-087
+    status: todo
+    slug: dynamodb-cutover
+    points: 3
     order: 1
-    commit: d60eda0
-    review:
-      spec: PASS            # 6/6 AC MET, full trace, all 10 tests ran green vs real DynamoDB-Local (author parity via real record_approval_event, boundary at both instants, seed status-preservation trap)
-      quality: APPROVE      # 0 critical / 0 major; 3 non-blocking minors (docstring "full overwrite"->"upsert" wording; FilterExpression bare-name aliasing; reviewer's own env couldn't start Docker — sort-key algebra verified by hand + spec reviewer ran the tests live)
-  - id: STORY-091
-    status: done        # verified under external-mode floor; awaiting PO acceptance at review
-    slug: sprint47-review-minors
+  - id: STORY-092
+    status: todo
+    slug: containerize-both-processes
     points: 2
     order: 2
-    commit: 2816e5b       # + review tail b9d4a5c (AC2 leak-free teardown fix)
-    review:
-      spec: FAIL_then_FIXED   # AC1 MET (orphan guard; plan-divergent ConditionCheck-on-META confirmed equivalent), AC3 MET (create_open dedup, regression-clean). AC2 PARTIAL: return-code assert sat before yield w/o try/finally -> container leak on failure path (explicit "leak-free" clause). Orchestrator tail b9d4a5c wrapped in try/finally.
-      quality: APPROVE      # 0 critical / 0 major / 0 minor. Notably confirmed the AC1 divergence was a CORRECTION (plan's attribute_exists(pk)-on-Put would have broken the happy path).
-# Plan-verifier ran at planning (external + adapter/contract-sensitive, v2.1.2 conditional
-# rule): 11/11 technical checks PASS, verdict GAPS on 3 spec/precondition-hygiene items (no
-# logic errors) — ALL fixed pre-lock (preconditions section added; constructor citation
-# corrected to dynamo_proposal_repository.py:23-26; dangling "STORY-066 fixture script" ref
-# replaced with concrete record_approval_event(action="approved") instruction). It pinned the
-# seeded-component default status to "operational" (spine-migration server_default =
-# ComponentStatus.OPERATIONAL). Status after fixes: LOCK_READY. See plan.md.
-# DoD: full nine-command gate in force UNCHANGED — the AWS-epic amendment (retire alembic +
-# check_fk_direction; adopt DynamoDB-Local pytest + cfn-lint) is PENDING until STORY-087/088;
-# this sprint touches neither Postgres schema nor CloudFormation.
-# Independent full nine-command DoD gate on the FINAL HEAD (b9d4a5c), external-mode
-# requirement — the orchestrator's own run, NOT the external agent's self-report. ALL NINE
-# GREEN. DB-gated commands (check_fk_direction, alembic) ran against a freshly provisioned
-# throwaway DB (dev_db.py up) with DATABASE_URL/DATABASE_URL_DIRECT exported. Reality gate:
-# the 4 hardest AC paths (author-derivation parity, maintenance boundary at both instants,
-# seed status-preservation, orphan-event guard) re-run live vs real DynamoDB-Local at final
-# HEAD — 8 passed in 30.48s.
-final_gate:
-  head: b9d4a5c
-  dod_evidence:
-    - command: "pytest"
-      exit_code: 0
-      output_tail: "======================= 622 passed in 153.55s (0:02:33) ======================="
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:07+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "Analyzed 161 files, 475 dependencies. Contracts: 8 kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)."
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:07+00:00"
-    - command: "python scripts/check_fk_direction.py"
-      exit_code: 0
-      output_tail: "FK-direction OK: 11 foreign key(s) checked, 0 violations."
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:08+00:00"
-    - command: "alembic upgrade head"
-      exit_code: 0
-      output_tail: "INFO [alembic.runtime.migration] Context impl PostgresqlImpl. Will assume transactional DDL."
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:09+00:00"
-    - command: "ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:11+00:00"
-    - command: "ruff format --check ."
-      exit_code: 0
-      output_tail: "231 files already formatted"
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:11+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
-      commit: b9d4a5c
-      at: "2026-07-15T16:55:12+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "built (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
-      commit: b9d4a5c
-      at: "2026-07-15T16:56:36+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "eslint . — clean"
-      commit: b9d4a5c
-      at: "2026-07-15T16:56:47+00:00"
-  reality_gate:
-    ran: true
-    evidence: "8 passed in 30.48s vs real DynamoDB-Local (Docker) at HEAD b9d4a5c — publication record+list_recent, author-derivation parity (via real record_approval_event action='approved'), is_under_maintenance at both boundary instants, seed status-preservation trap, orphan-event guard."
+  - id: STORY-088
+    status: todo
+    slug: cloudformation-stack-runbook
+    points: 5
+    order: 3
 hotfixes: []
 interrupts: []
