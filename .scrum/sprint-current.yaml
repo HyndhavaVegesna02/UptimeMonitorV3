@@ -1,6 +1,8 @@
 # YourTeam active sprint board
 sprint: 50
-status: active
+status: done          # PO verdicts 2026-07-17: STORY-093 ACCEPT; STORY-089 ACCEPT + follow-up
+                      # (STORY-094 /history limit defect filed; Playwright-MCP tooling gap -> retro).
+                      # Stack decision: KEEP RUNNING (reaper-protected c7n-keep=true). Velocity 5/5.
 mode: in-process      # PO-approved at lock (2026-07-16). STORY-089 is PO-driven: console
                       # actions are sanctioned PO-interaction points (story Context);
                       # orchestrator verifies every AC live and records evidence.
