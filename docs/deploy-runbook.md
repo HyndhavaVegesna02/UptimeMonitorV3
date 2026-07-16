@@ -16,10 +16,11 @@ Before beginning, ensure you have:
 - Create ALL resources in **us-east-1 (N. Virginia)** only — verify the region selector in the
   console top bar before every step, and use `us-east-1` wherever this runbook says
   `<your-region>`. Any other region requires prior company approval.
-- A nightly reaper deletes unprotected resources at **22:00 IST**. Tag everything with
-  **`c7n-keep` = `true`** (plus `username` = your name for ownership): as stack-level tags in
-  Step 1 (they propagate to all stack resources), and manually on anything created outside the
-  stack (Secrets Manager secrets in Step 2; the ECR repository if created outside the stack).
+- A nightly reaper deletes unprotected resources at **22:00 IST**. Add stack-level tags
+  **`c7n-keep` = `true`** (plus `username` = your name for ownership) in Step 1 — every
+  resource, including the ECR repository and both Secrets Manager secrets, is created BY the
+  stack, so the stack tags propagate everywhere; nothing needs manual tagging. If you ever
+  create a resource outside the stack, tag it manually the same way.
 - Never store credentials or access keys in the repo or shared folders (secret VALUES go only
   into Secrets Manager, Step 2).
 
