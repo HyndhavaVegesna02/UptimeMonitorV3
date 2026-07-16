@@ -96,7 +96,7 @@ agreement, so no backend change was needed to wire the proxy itself.
 | -------------- | ------------------------------------------------------------------ |
 | backend        | FastAPI on Railway — HTTP API + persistent pull-loop scheduler     |
 | frontend       | React + TypeScript on Vercel — dashboard and approval UI           |
-| database       | Neon serverless Postgres, via the pooled PgBouncer connection      |
+| database       | AWS DynamoDB — two tables (observations + control); DynamoDB Local for dev/CI (STORY-087) |
 | observability  | Dynatrace synthetic monitors; results read from Grail via DQL      |
 | demo app       | Sock Shop on Railway — the replaceable monitored app             |
 | publish target | Statuspage — a fixed core target (not swappable in V3 scope)       |
@@ -113,12 +113,12 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Run tests           | `pytest`                                  |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
 | Import boundary     | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` (must exit 0; the `lint-imports` exe shim is blocked by a Windows Application Control policy since 2026-07-12) |
-| Start Dynamo DB     | `docker run -d --name uptime_dynamo -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` |
+| Start Dynamo DB     | `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` (host 8001 so the API can own 8000) |
 | Create Dynamo tables| `python scripts/create_tables.py` (reads `DYNAMO_ENDPOINT_URL`) |
 | Seed topology       | `python scripts/seed_topology.py` (reads `DYNAMO_ENDPOINT_URL`) |
 | Build Docker Image  | `docker build -t uptime_monitor_v3:latest .` |
-| Run API in Docker   | `docker run --rm -p 8000:8000 -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8000 uptime_monitor_v3:latest` |
-| Run Loop in Docker  | `docker run --rm -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8000 uptime_monitor_v3:latest python -m src.composition.run` |
+| Run API in Docker   | `docker run --rm -p 8000:8000 -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8001 uptime_monitor_v3:latest` |
+| Run Loop in Docker  | `docker run --rm -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8001 uptime_monitor_v3:latest python -m src.composition.run` |
 | Run live loop       | `python -m src.composition.run` (loads a repo-root `.env` at startup — STORY-043 — then runs the e2e loop) |
 | Lint code           | `ruff check .` (must exit 0)               |
 | Format check        | `ruff format --check .` (must exit 0)      |
@@ -155,7 +155,7 @@ secret values):
 | `AWS_REGION`                | AWS Region (default: `us-east-1`)                                |
 | `DYNAMO_OBSERVATIONS_TABLE` | Observations table name                                          |
 | `DYNAMO_CONTROL_TABLE`      | Control table name                                               |
-| `DYNAMO_ENDPOINT_URL`       | Local DynamoDB endpoint URL (e.g. `http://localhost:8000`)       |
+| `DYNAMO_ENDPOINT_URL`       | Local DynamoDB endpoint URL (e.g. `http://localhost:8001`)       |
 | `DYNATRACE_ENV_URL`         | Dynatrace tenant base URL (Grail DQL execute endpoint)           |
 | `DYNATRACE_API_TOKEN`       | Dynatrace platform token (scopes `storage:buckets:read storage:events:read`) |
 | `STATUSPAGE_PAGE_ID`        | Statuspage page id                                               |
@@ -169,9 +169,9 @@ Under `pytest`, the session-scoped `dynamo_local` fixture (`backend/tests/confte
 
 The full local stack is: DynamoDB Local + the API server (uvicorn) + the live pull-loop (`python -m src.composition.run`) + the frontend dev server.
 
-1. Start DynamoDB Local:
-   `docker run -d --name uptime_dynamo -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
-2. Export `DYNAMO_ENDPOINT_URL="http://localhost:8000"` (or add to a repo-root `.env` file).
+1. Start DynamoDB Local (host port 8001, leaving 8000 for the API):
+   `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
+2. Export `DYNAMO_ENDPOINT_URL="http://localhost:8001"` (or add to a repo-root `.env` file).
 3. Create the DynamoDB tables:
    `python scripts/create_tables.py`
 4. Start the API server on port 8000 (serves `/api/v1/*`; the boot-time lifespan seed reads `config/apps` and populates components):

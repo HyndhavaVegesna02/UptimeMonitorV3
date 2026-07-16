@@ -3,7 +3,10 @@
 .agents
 frontend
 node_modules
+backend/tests/
+.claude/
 __pycache__
+**/__pycache__/
 *.pyc
 *.pyo
 *.pyd
