@@ -1,0 +1,13 @@
+{
+  "name": "ui-sweep",
+  "private": true,
+  "version": "1.0.0",
+  "description": "STORY-095 throwaway Playwright harness — sweeps the LIVE deployed dashboard (https://d3ukiib1iqmbxb.cloudfront.net) for evidence, never shipped/imported by the app itself.",
+  "type": "module",
+  "scripts": {
+    "sweep": "node sweep.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.61.1"
+  }
+}
