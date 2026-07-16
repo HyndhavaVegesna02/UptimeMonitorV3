@@ -33,7 +33,21 @@ stories:
     points: 2
     order: 1           # the code change first; sweep is independent of it
   - id: STORY-095
-    status: in-progress   # implementer dispatched 2026-07-17; live-stack sweep, mutations reversed
+    status: done          # all 5 AC PASS against the live deployed system; evidence committed
+    commits: 0e290ee..fbc42ac
+    reality_gate:
+      ran: true
+      evidence: >-
+        The story IS a live reality gate (real headless Chromium vs the deployed stack).
+        AC1: six tabs render via BOTH direct-URL deep load (CloudFront rewrite path) and
+        SPA nav — per-tab PNGs in sprints/2026-07-17-sprint-51/ui-sweep/. AC2: zero
+        console errors + zero failed /api/* across 20+ page loads (evidence JSONs empty).
+        AC3: sample-mode ON (banner + aria-checked + control-table enabled:true) then OFF
+        (verified both ways); maintenance window 'ui-sweep-probe' created via the form,
+        listed, deleted, gone after reload. AC4: light/dark (system-pref emulation + in-app
+        toggle) + 390x844 viewport. AC5: findings.md — empty error table, 3 anomalies
+        (2 EXPLAINED, 1 CANDIDATE-STORY: sidebar keeps desktop width below ~768px).
+        Live system confirmed left clean (SAMPLE_MODE enabled:false; 0 probe rows).
     slug: playwright-ui-sweep
     points: 2
     order: 2           # live-stack sweep (read-mostly; mutations reversed)
