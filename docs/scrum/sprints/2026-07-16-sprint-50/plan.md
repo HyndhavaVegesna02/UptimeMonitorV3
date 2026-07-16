@@ -83,10 +83,12 @@
   (currently "Git branch `sprint-49` checked out", line 13) to the `sprint-50`
   branch HEAD — a PO executing the runbook verbatim must deploy the template and
   image that INCLUDE this story's hardening, not sprint-49 artifacts. Commit.
-- [ ] 8. Story gate: `yt_gate.py --only` scoped to pytest + ruff + cfn-lint (diff
+- [x] 8. Story gate: `yt_gate.py --only` scoped to pytest + ruff + cfn-lint (diff
   touches backend tests, Dockerfile, stack.yaml — no frontend). Wiki blast radius:
   `deployment-and-infra.md` / `deployment` articles citing the Dockerfile or
   `stack.yaml` get updated or re-verified. Board → done pending review.
+  (Ran the full 8-command DoD gate, incl. import-linter + frontend, per AC4's
+  "full amended DoD gate ... + frontend" — all 8 green at a8700f5.)
 
 ### Reality gate (093)
 Step 5 IS the live probe (docker build + layer-cache assert + in-container smoke +
