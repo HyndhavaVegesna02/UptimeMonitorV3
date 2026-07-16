@@ -214,7 +214,10 @@ export function getComponentAvailability(
  * (the same tz-discipline seam STORY-015d relies on). Because there is no
  * pagination, a wide window can return many thousands of rows; the Check
  * History tab caps what it RENDERS client-side (STORY-015e AC4) — this fetch
- * always requests the full in-window result.
+ * always requests the full in-window result. The server now also accepts an
+ * optional `limit` query param (STORY-094) that caps the response server-side
+ * (newest-first); this client deliberately does NOT send it — the render cap
+ * below stays the authoritative behavior for this story.
  */
 export function getHistory(params: {
   signal_key: string

@@ -48,9 +48,11 @@ const RESULT_OPTIONS: Array<{ value: string; label: string }> = [
 /** The default (production) value for the most rows the tab will ever
  * RENDER (STORY-060 AC3, restoring the pre-060 STORY-015e cap of 1,000 per
  * the "preserve all existing functionality" rule) — the `/history` endpoint
- * has no pagination, so a wide window can return many thousands of rows
- * across every signal; this is a client-side render cap, not a request
- * limit. It is passed as the `maxRenderedRows` prop's default rather than
+ * has no client-driven pagination (the server does accept an optional
+ * `limit` query param as of STORY-094, but `client.ts::getHistory`
+ * deliberately never sends it), so a wide window can return many thousands
+ * of rows across every signal; this is a client-side render cap, not a
+ * request limit. It is passed as the `maxRenderedRows` prop's default rather than
  * hard-coded so tests can inject a small cap (STORY-054's flake was the cap
  * TEST rendering ~1,000-1,500 rows, slow enough under `npm test`
  * file-parallelism/CPU contention to occasionally exceed Vitest's 5s
