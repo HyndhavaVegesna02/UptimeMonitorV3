@@ -78,7 +78,7 @@ stories:
     points: 2          # estimated at this planning (was unestimated at filing)
     order: 1           # first: its Dockerfile/stack hardening must be in what 089 deploys
   - id: STORY-089
-    status: todo
+    status: in-progress   # preflight PASS (093 done on branch; cfn-lint/docker build/npm build green); awaiting PO console runbook Steps 1-2 (sanctioned PO-interaction point)
     slug: console-deployment-live-verification
     points: 3
     order: 2           # PO-driven console runbook execution + live AC verification
