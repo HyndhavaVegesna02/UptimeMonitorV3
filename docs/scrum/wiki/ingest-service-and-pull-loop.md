@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_persistence_adapters.py]
-verified_sha: 010a21b3a17823ceae24f5f2716a49f242b56331
-verified_sprint: sprint-45
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
+verified_sha: 5b4ee36
+verified_sprint: sprint-49
 status: verified
 ---
 
@@ -184,8 +184,10 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   which pins the wiring WITHOUT patching it away — it passes the REAL `make_grail_executor` closure,
   asserts the executor is callable and the real loaded `config` is threaded, and asserts ordering
   (`check_vendor_id_health` runs before `build_live_loop`) via an attached manager mock.
-- The DB-gated persistence side (the actual `rejected_observations` row write) is covered in
-  `backend/tests/test_persistence_adapters.py` — see [[persistence-adapters]].
+- The DB-gated persistence side (the actual rejected-observation write) is covered by the
+  DynamoDB adapter tests (`backend/tests/test_dynamo_rejected_observation_repository.py`,
+  STORY-086) since the DynamoDB cutover (STORY-087) — see [[persistence-adapters]]. (The former
+  Postgres `test_persistence_adapters.py` regression retired with the relational layer.)
 
 ## Inference (synthesis, not verified)
 - The "hand to pipeline (collapse → anti-flap)" step of dossier §8 is deliberately ABSENT here — it

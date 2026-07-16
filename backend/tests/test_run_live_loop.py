@@ -8,7 +8,6 @@ from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
-import sqlalchemy as sa
 from fakes import FakeClock
 from src.adapters.outbound.statuspage import StatuspagePublisher
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
@@ -42,9 +41,7 @@ def test_build_live_loop_assembly():
     this test able to catch a mis-wired constructor kwarg — the earlier version
     stubbed every ``__init__`` to a no-op and so green-lit a broken assembly.
     """
-    settings = Settings(
-        database_url="postgresql://user:pass@host/db", config_dir="config"
-    )
+    settings = Settings(config_dir="config")
     secrets = LiveSecrets(
         dynatrace_env_url="https://dt.example.com",
         dynatrace_api_token="token-dt",
@@ -86,7 +83,7 @@ def test_build_live_loop_assembly():
         ]
     )
 
-    engine = MagicMock(spec=sa.Engine)
+    db_resource = MagicMock()
     clock = FakeClock(datetime(2026, 6, 29, 0, 0, tzinfo=timezone.utc))
 
     # Only run_periodic is patched — every publisher / service / repo is real,
@@ -100,7 +97,7 @@ def test_build_live_loop_assembly():
             settings=settings,
             secrets=secrets,
             config=config,
-            engine=engine,
+            db_resource=db_resource,
             clock=clock,
         )
 
@@ -136,11 +133,11 @@ def test_build_live_loop_assembly():
     assert ingest_port._delegate._watermark_repo is not None
     assert ingest_port._delegate._rejected_repo is not None
     assert ingest_port._delegate._clock is clock
-    from src.adapters.persistence.sample_mode_repository import (
-        PostgresSampleModeRepository,
+    from src.adapters.persistence.dynamo_sample_mode_repository import (
+        DynamoSampleModeRepository,
     )
 
-    assert isinstance(ingest_port._sample_mode_repo, PostgresSampleModeRepository)
+    assert isinstance(ingest_port._sample_mode_repo, DynamoSampleModeRepository)
     # Same ingest_port instance threads into every per-signal run_periodic call.
     for call in mock_run_periodic.call_args_list:
         assert call.kwargs["ingest_port"] is ingest_port
@@ -177,9 +174,7 @@ def test_build_live_loop_assembly():
 
 def test_build_live_loop_assembly_statuspage_absent():
     """Verify that when Statuspage secrets are absent, build_live_loop wires LoggingPublisher directly (AC5)."""
-    settings = Settings(
-        database_url="postgresql://user:pass@host/db", config_dir="config"
-    )
+    settings = Settings(config_dir="config")
     # Statuspage secrets are None
     secrets = LiveSecrets(
         dynatrace_env_url="https://dt.example.com",
@@ -214,7 +209,7 @@ def test_build_live_loop_assembly_statuspage_absent():
         ]
     )
 
-    engine = MagicMock(spec=sa.Engine)
+    db_resource = MagicMock()
     clock = FakeClock(datetime(2026, 6, 29, 0, 0, tzinfo=timezone.utc))
 
     from src.composition.publish_helper import LoggingPublisher
@@ -228,7 +223,7 @@ def test_build_live_loop_assembly_statuspage_absent():
             settings=settings,
             secrets=secrets,
             config=config,
-            engine=engine,
+            db_resource=db_resource,
             clock=clock,
         )
 
@@ -247,29 +242,23 @@ def test_build_live_loop_assembly_statuspage_absent():
 @patch("src.composition.run.load_settings")
 @patch("src.composition.run.load_live_secrets")
 @patch("src.composition.run.load_config")
-@patch("sqlalchemy.create_engine")
-@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.make_dynamo_resource")
+@patch("src.composition.run.seed_topology_dynamo")
 @patch("src.composition.run.build_live_loop")
 def test_main_resource_lifecycle_success(
     mock_build_loop,
-    mock_seed_topology,
-    mock_create_engine,
+    mock_seed_topology_dynamo,
+    mock_make_dynamo_resource,
     mock_load_config,
     mock_load_secrets,
     mock_load_settings,
     mock_load_dotenv,
 ):
-    """Verify that main() disposes of the engine on successful startup/execution.
+    """Verify that main() runs on successful startup/execution."""
+    mock_db_resource = MagicMock()
+    mock_make_dynamo_resource.return_value = mock_db_resource
 
-    `load_dotenv` is patched (STORY-043) so this test never touches the real
-    repo-root `.env` — main() now calls it unconditionally at startup.
-    """
-    mock_engine = MagicMock(spec=sa.Engine)
-    mock_create_engine.return_value = mock_engine
-
-    mock_load_settings.return_value = Settings(
-        database_url="postgresql://host/db", config_dir="dir"
-    )
+    mock_load_settings.return_value = Settings(config_dir="dir")
     mock_load_secrets.return_value = LiveSecrets("dt", "dt-token", "sp", "sp-token")
     mock_load_config.return_value = Config([])
 
@@ -277,74 +266,57 @@ def test_main_resource_lifecycle_success(
 
     asyncio.run(main())
 
-    mock_engine.dispose.assert_called_once()
-
 
 @patch("src.composition.run.load_dotenv")
 @patch("src.composition.run.load_settings")
 @patch("src.composition.run.load_live_secrets")
 @patch("src.composition.run.load_config")
-@patch("sqlalchemy.create_engine")
-@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.make_dynamo_resource")
+@patch("src.composition.run.seed_topology_dynamo")
 def test_main_resource_lifecycle_failure_during_seeding(
-    mock_seed_topology,
-    mock_create_engine,
+    mock_seed_topology_dynamo,
+    mock_make_dynamo_resource,
     mock_load_config,
     mock_load_secrets,
     mock_load_settings,
     mock_load_dotenv,
 ):
-    """Verify that main() disposes of the engine even if topology seeding fails (resource cleanup).
+    """Verify that main() fails if topology seeding fails."""
+    mock_db_resource = MagicMock()
+    mock_make_dynamo_resource.return_value = mock_db_resource
 
-    `load_dotenv` is patched (STORY-043) so this test never touches the real
-    repo-root `.env`.
-    """
-    mock_engine = MagicMock(spec=sa.Engine)
-    mock_create_engine.return_value = mock_engine
-
-    mock_load_settings.return_value = Settings(
-        database_url="postgresql://host/db", config_dir="dir"
-    )
+    mock_load_settings.return_value = Settings(config_dir="dir")
     mock_load_secrets.return_value = LiveSecrets("dt", "dt-token", "sp", "sp-token")
     mock_load_config.return_value = Config([])
 
     # Simulate seeding failure
-    mock_seed_topology.side_effect = RuntimeError("Seeding failed")
+    mock_seed_topology_dynamo.side_effect = RuntimeError("Seeding failed")
 
     with pytest.raises(RuntimeError, match="Seeding failed"):
         asyncio.run(main())
-
-    # Verify dispose was still called
-    mock_engine.dispose.assert_called_once()
 
 
 @patch("src.composition.run.load_dotenv")
 @patch("src.composition.run.load_settings")
 @patch("src.composition.run.load_live_secrets")
-@patch("sqlalchemy.create_engine")
-@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.make_dynamo_resource")
+@patch("src.composition.run.seed_topology_dynamo")
 @patch("src.composition.run.build_live_loop")
 def test_main_fails_fast_on_missing_secrets_before_any_loop_starts(
     mock_build_loop,
-    mock_seed_topology,
-    mock_create_engine,
+    mock_seed_topology_dynamo,
+    mock_make_dynamo_resource,
     mock_load_secrets,
     mock_load_settings,
     mock_load_dotenv,
 ):
     """AC2 (STORY-050): startup failures stay fail-fast. `load_live_secrets()`
-    runs BEFORE the engine is created, before topology seeding, and before
+    runs BEFORE the dynamo resource is created, before topology seeding, and before
     `build_live_loop`/`run_periodic` ever exist -- so a `MissingLiveSecretError`
     there must terminate the process untouched by STORY-050's per-cycle
-    resilience, which only wraps the `run_cycle` call INSIDE `run_periodic`.
-
-    STORY-043's `load_dotenv()` call at the very top of `main()` must not
-    weaken this: it is patched here (never touches the real `.env`) and still
-    runs BEFORE the (still-failing) `load_live_secrets()` call.
+    resilience.
     """
-    mock_load_settings.return_value = Settings(
-        database_url="postgresql://host/db", config_dir="dir"
-    )
+    mock_load_settings.return_value = Settings(config_dir="dir")
     mock_load_secrets.side_effect = MissingLiveSecretError(
         "Missing required secrets: DYNATRACE_ENV_URL, DYNATRACE_API_TOKEN"
     )
@@ -353,8 +325,8 @@ def test_main_fails_fast_on_missing_secrets_before_any_loop_starts(
         asyncio.run(main())
 
     # Nothing past secret loading ever ran.
-    mock_create_engine.assert_not_called()
-    mock_seed_topology.assert_not_called()
+    mock_make_dynamo_resource.assert_not_called()
+    mock_seed_topology_dynamo.assert_not_called()
     mock_build_loop.assert_not_called()
 
 
@@ -362,13 +334,13 @@ def test_main_fails_fast_on_missing_secrets_before_any_loop_starts(
 @patch("src.composition.run.load_settings")
 @patch("src.composition.run.load_live_secrets")
 @patch("src.composition.run.load_config")
-@patch("sqlalchemy.create_engine")
-@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.make_dynamo_resource")
+@patch("src.composition.run.seed_topology_dynamo")
 @patch("src.composition.run.build_live_loop")
 def test_main_calls_load_dotenv_before_settings_and_secrets(
     mock_build_loop,
-    mock_seed_topology,
-    mock_create_engine,
+    mock_seed_topology_dynamo,
+    mock_make_dynamo_resource,
     mock_load_config,
     mock_load_secrets,
     mock_load_settings,
@@ -376,19 +348,14 @@ def test_main_calls_load_dotenv_before_settings_and_secrets(
 ):
     """AC1/AC2/AC4 (STORY-043): `main()` loads `.env` at the process
     entrypoint, BEFORE `load_settings()`/`load_live_secrets()` read the
-    environment -- not inside those functions (which tests call directly with
-    explicit env, e.g. `test_settings_two_connection.py`). Call order proven
-    via a shared manager mock; `load_dotenv` is patched so this never touches
-    the real repo-root `.env`.
+    environment.
     """
     manager = MagicMock()
     manager.attach_mock(mock_load_dotenv, "load_dotenv")
     manager.attach_mock(mock_load_settings, "load_settings")
     manager.attach_mock(mock_load_secrets, "load_live_secrets")
 
-    mock_load_settings.return_value = Settings(
-        database_url="postgresql://host/db", config_dir="dir"
-    )
+    mock_load_settings.return_value = Settings(config_dir="dir")
     mock_load_secrets.return_value = LiveSecrets("dt", "dt-token", "sp", "sp-token")
     mock_load_config.return_value = Config([])
     mock_build_loop.return_value = []
@@ -405,33 +372,27 @@ def test_main_calls_load_dotenv_before_settings_and_secrets(
 @patch("src.composition.run.load_settings")
 @patch("src.composition.run.load_live_secrets")
 @patch("src.composition.run.load_config")
-@patch("sqlalchemy.create_engine")
-@patch("src.composition.run.seed_topology")
+@patch("src.composition.run.make_dynamo_resource")
+@patch("src.composition.run.seed_topology_dynamo")
 @patch("src.composition.run.build_live_loop")
 @patch("src.composition.run.check_vendor_id_health")
 def test_main_probes_vendor_id_health_before_loops_start(
     mock_check_vendor_id_health,
     mock_build_loop,
-    mock_seed_topology,
-    mock_create_engine,
+    mock_seed_topology_dynamo,
+    mock_make_dynamo_resource,
     mock_load_config,
     mock_load_secrets,
     mock_load_settings,
     mock_load_dotenv,
 ):
     """STORY-070: `main()` runs the vendor-id drift health probe at startup,
-    passing it the loaded `config` and a real (never-called-in-this-test)
-    Grail executor -- BEFORE the loops are built, so a dead monitor id
-    surfaces immediately. This is a loud WARNING mechanism, not fail-fast
-    (decided sprint-41 planning): `check_vendor_id_health` itself never
-    raises, and `main()` must not wrap it in anything that changes that.
+    passing it the loaded `config` and a real Grail executor -- BEFORE the loops are built.
     """
-    mock_engine = MagicMock(spec=sa.Engine)
-    mock_create_engine.return_value = mock_engine
+    mock_db_resource = MagicMock()
+    mock_make_dynamo_resource.return_value = mock_db_resource
 
-    mock_load_settings.return_value = Settings(
-        database_url="postgresql://host/db", config_dir="dir"
-    )
+    mock_load_settings.return_value = Settings(config_dir="dir")
     mock_load_secrets.return_value = LiveSecrets("dt", "dt-token", "sp", "sp-token")
     the_config = Config([])
     mock_load_config.return_value = the_config

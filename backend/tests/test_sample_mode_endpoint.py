@@ -12,13 +12,9 @@ Exercises `GET /api/v1/sample-mode` (current flag state) and
   - a DB-gated round-trip through a real Postgres-backed create_app
 """
 
-from __future__ import annotations
-
 from datetime import datetime, timezone
 from pathlib import Path
 
-import psycopg
-import pytest
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from tests.fakes import (
@@ -128,24 +124,11 @@ def test_sample_mode_module_five_file_shape():
     }
 
 
-@pytest.fixture
-def clean_sample_mode(migrated_db):
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE sample_mode;")
-        conn.commit()
-    yield
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE sample_mode;")
-        conn.commit()
-
-
-def test_sample_mode_db_gated_round_trip(migrated_db, clean_sample_mode):
-    """AC2: PUT true against a REAL Postgres-backed create_app; a fresh GET
+def test_sample_mode_db_gated_round_trip(dynamo_local, clean_dynamo_tables):
+    """AC2: PUT true against a REAL DynamoDB-backed create_app; a fresh GET
     reads it back true, proving the flag round-trips through the database
     (not just an injected fake)."""
-    app = create_app(database_url=migrated_db.database_url)
+    app = create_app()
 
     with TestClient(app) as client:
         put_response = client.put("/api/v1/sample-mode", json={"enabled": True})

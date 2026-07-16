@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
-code_refs: [pyproject.toml, scripts/check_fk_direction.py, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: abd8609
-verified_sprint: sprint-46
+code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
+verified_sha: 5b4ee36
+verified_sprint: sprint-49
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -44,16 +44,14 @@ status: verified
 - The dossier §4 example names vendor subpackages (`inbound.dynatrace`, etc.) that do not
   exist yet; the contracts use the real `inbound/outbound/persistence` packages so they run
   against real modules, not phantoms (comment at `pyproject.toml` ("adapters-independence")).
-- **Schema boundary (dossier §9)** is enforced by `scripts/check_fk_direction.py`, run as
-  the bare command `python scripts/check_fk_direction.py`. It reads real FKs from
-  `information_schema` over `DATABASE_URL` and exits nonzero if any spine table references a
-  non-spine (feature) table. The decision logic is the pure function `find_violations`
-  (`scripts/check_fk_direction.py::find_violations`); `main()` does the I/O (`scripts/check_fk_direction.py::main`).
-- The SPINE allowlist (dossier §9) is the 11-table frozenset at
-  `scripts/check_fk_direction.py::SPINE`: apps, signals, components, observations,
-  watermarks, rejected_observations, problem_signals, status_proposals, approval_events,
-  publications, maintenance_windows. Direction-only: feature→spine passes, spine→feature is
-  the violation.
+- **Schema boundary (dossier §9), RETIRED sprint-49 (STORY-087).** Until the DynamoDB
+  cutover this was a second mechanical CI floor — `scripts/check_fk_direction.py` read real
+  FKs from `information_schema` over `DATABASE_URL` and failed if any spine table referenced
+  a feature table (the 11-table `SPINE` allowlist; feature→spine passed, spine→feature was
+  the violation). The relational schema, the Alembic tree, and this check were **all deleted**
+  at the cutover (see the archived [[migrations-and-db]]). DynamoDB's two-table design
+  (observations + control) has no cross-table foreign keys, so the FK-direction concept no
+  longer applies; the import boundary below is now the sole standing CI floor.
 - As of sprint-1, Zone 1 code lives in `core/domain` and `core/ports`, so
   `core-internal-layering` now actually bites: `core/ports` imports `core/domain` (allowed)
   and not `core/services` — verified KEPT. The Zone 1 types/ports themselves are catalogued in
@@ -68,9 +66,10 @@ status: verified
   live and green since STORY-006 (`10 checked, 0 violations`).
 
 ## Inference (synthesis, not verified)
-- The two mechanical checks (`lint-imports`, FK-direction) are the project's whole bet:
-  enforce the replaceability boundary in CI so horizontal, zone-by-zone slicing is safe —
-  the boundary is policed before the logic inside it is written.
+- The import boundary (`lint-imports`) is now the project's whole bet: enforce the
+  replaceability boundary in CI so horizontal, zone-by-zone slicing is safe — the boundary is
+  policed before the logic inside it is written. (The schema-spine FK-direction check was the
+  second floor until sprint-49; it retired with the relational schema at the DynamoDB cutover.)
 
 ## History
 - sprint-0: created (STORY-001 scaffold + STORY-002 CI contracts).
@@ -150,4 +149,8 @@ status: verified
   FK 11/0 unchanged. verified_sha → 219af4a.
 - sprint-43 (STORY-078): Relocated availability read model whole to a new `core/queries/` subpackage (CQRS-lite). `core-internal-layering` contract updated to: queries → services → ports → domain. verified_sha → 05f640e.
 - sprint-46 (STORY-082): Extended core-independence and api-outward-independence contracts in pyproject.toml to forbid boto3 imports, securing DynamoDB boundaries. verified_sha -> abd8609.
+- sprint-49 (STORY-087): FK-direction check + the relational spine were deleted at the DynamoDB
+  cutover; `code_refs` dropped `scripts/check_fk_direction.py`, the Schema-boundary Facts and the
+  Inference were rewritten to reflect the retirement, and the import boundary (`lint-imports`, 8
+  contracts kept) is now the sole standing CI floor. verified_sha → 5b4ee36.
 

@@ -3,10 +3,18 @@ title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, backend/tests/test_spine_schema.py]
 verified_sha: 143f15a
 verified_sprint: sprint-47
-status: verified
+status: archived
+archived_sprint: sprint-49
+archived_reason: "Postgres/Alembic/FK-direction removed at the DynamoDB cutover (STORY-087, sprint-49); superseded by the DynamoDB persistence zone."
 ---
 
-## Facts (verified against code)
+> **ARCHIVED sprint-49 (STORY-087)** — the Alembic migration tree, the two-connection
+> (`DATABASE_URL`/`DATABASE_URL_DIRECT`) Postgres machinery, and the FK-direction check
+> this article described were **deleted** at the DynamoDB cutover. Persistence now lives in
+> the two-table DynamoDB design (see [[persistence-adapters]] and [[deployment-and-infra]]).
+> Retained for history only — **everything below is past-tense; none of it is live code.**
+
+## Facts (verified against code — HISTORICAL, pre-cutover)
 - Alembic is initialized at the **repo top level** (dossier §4): `alembic.ini` + `migrations/`
   (with `migrations/env.py`, versions, etc.) — NOT under `backend/`.
 - The baseline migration is `migrations/versions/eda70ac11454_baseline.py` — a real revision

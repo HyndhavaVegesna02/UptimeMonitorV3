@@ -2,40 +2,11 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
 
-import psycopg
 from src.adapters.persistence.dynamo_observation_repository import (
     DynamoObservationRepository,
 )
-from src.adapters.persistence.observation_repository import (
-    PostgresObservationRepository,
-)
 from src.composition.settings import load_settings
 from src.core.domain import Health, Provenance, SignalObservation
-from src.core.queries.availability import AvailabilityCalculator
-
-
-def seed_signal(database_url: str, signal_key: str, app_id: str = "app-1") -> None:
-    """Insert a minimal `apps` row + `signals` row so FK-constrained inserts
-    against `observations`/`watermarks` for `signal_key` succeed.
-    """
-    with psycopg.connect(database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO apps (id, name, config)
-                VALUES (%s, %s, '{}'::jsonb)
-                ON CONFLICT (id) DO NOTHING
-                """,
-                (app_id, app_id),
-            )
-            cur.execute(
-                """
-                INSERT INTO signals (signal_key, app_id, name)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (signal_key) DO NOTHING
-                """,
-                (signal_key, app_id, signal_key),
-            )
 
 
 def _observation(
@@ -182,93 +153,3 @@ def test_dynamo_observation_repository_pagination(dynamo_resource):
     results = repo.in_window("checkout-http", since, until)
     assert len(results) == 10
     assert {r.source_event_id for r in results} == {f"evt-{i}" for i in range(10)}
-
-
-def test_dynamo_observation_repository_availability_parity(
-    dynamo_resource, engine, migrated_db
-):
-    settings = load_settings()
-    dynamo_repo = DynamoObservationRepository(
-        dynamo_resource, settings.dynamo_observations_table
-    )
-    postgres_repo = PostgresObservationRepository(engine)
-
-    since = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
-    until = datetime(2026, 6, 24, 11, 0, 0, tzinfo=timezone.utc)
-
-    # Seed signal in Postgres to satisfy foreign key constraint
-    seed_signal(migrated_db.database_url, "checkout-http")
-
-    # Generate a canonical multi-location fixture set
-    obs_list = [
-        _observation(
-            location="us-east",
-            event_id="e-east-1",
-            observed_at=since + timedelta(minutes=5),
-            health=Health.UP,
-        ),
-        _observation(
-            location="us-east",
-            event_id="e-east-2",
-            observed_at=since + timedelta(minutes=15),
-            health=Health.DEGRADED,
-        ),
-        _observation(
-            location="us-east",
-            event_id="e-east-3",
-            observed_at=since + timedelta(minutes=25),
-            health=Health.UP,
-        ),
-        _observation(
-            location="us-west",
-            event_id="e-west-1",
-            observed_at=since + timedelta(minutes=5),
-            health=Health.UP,
-        ),
-        _observation(
-            location="us-west",
-            event_id="e-west-2",
-            observed_at=since + timedelta(minutes=15),
-            health=Health.DOWN,
-        ),
-        _observation(
-            location="eu-west",
-            event_id="e-eu-1",
-            observed_at=since + timedelta(minutes=10),
-            health=Health.UP,
-        ),
-    ]
-
-    assert dynamo_repo.save_new(obs_list) == 6
-    assert postgres_repo.save_new(obs_list) == 6
-
-    calc_dynamo = AvailabilityCalculator(observation_repo=dynamo_repo)
-    calc_postgres = AvailabilityCalculator(observation_repo=postgres_repo)
-
-    res_dynamo = calc_dynamo.compute(
-        "checkout-http",
-        since=since,
-        until=until,
-        interval=timedelta(minutes=10),
-        window="1h",
-        maintenance=lambda cycle_start: False,
-        computed_at=since + timedelta(hours=2),
-    )
-
-    res_postgres = calc_postgres.compute(
-        "checkout-http",
-        since=since,
-        until=until,
-        interval=timedelta(minutes=10),
-        window="1h",
-        maintenance=lambda cycle_start: False,
-        computed_at=since + timedelta(hours=2),
-    )
-
-    assert res_dynamo.availability_pct == res_postgres.availability_pct
-    assert res_dynamo.completeness_pct == res_postgres.completeness_pct
-    assert res_dynamo.total_verdicts == res_postgres.total_verdicts
-    assert res_dynamo.passing_verdicts == res_postgres.passing_verdicts
-    assert res_dynamo.maintenance_verdicts == res_postgres.maintenance_verdicts
-    assert res_dynamo.gap_verdicts == res_postgres.gap_verdicts
-    assert res_dynamo.distinct_locations == res_postgres.distinct_locations

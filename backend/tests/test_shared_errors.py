@@ -18,7 +18,7 @@ from tests.fakes import (
 )
 
 
-def test_shared_errors_value_error_422(migrated_db) -> None:
+def test_shared_errors_value_error_422(clean_dynamo_tables) -> None:
     """Verify that ValueError (from invalid dates/times) maps to HTTP 422.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -41,7 +41,7 @@ def test_shared_errors_value_error_422(migrated_db) -> None:
     assert "detail" in response.json()
 
 
-def test_shared_errors_signal_not_found_404(migrated_db) -> None:
+def test_shared_errors_signal_not_found_404(clean_dynamo_tables) -> None:
     """Verify that SignalNotFoundError maps to HTTP 404.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -57,7 +57,7 @@ def test_shared_errors_signal_not_found_404(migrated_db) -> None:
     }
 
 
-def test_shared_errors_signal_interval_unconfigured_409(migrated_db) -> None:
+def test_shared_errors_signal_interval_unconfigured_409(clean_dynamo_tables) -> None:
     """Verify that SignalIntervalUnconfiguredError maps to HTTP 409.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -79,7 +79,7 @@ def test_shared_errors_signal_interval_unconfigured_409(migrated_db) -> None:
     }
 
 
-def test_shared_errors_component_not_found_404(migrated_db) -> None:
+def test_shared_errors_component_not_found_404(clean_dynamo_tables) -> None:
     """Verify that ComponentNotFoundError maps to HTTP 404.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -93,7 +93,7 @@ def test_shared_errors_component_not_found_404(migrated_db) -> None:
     assert response.json() == {"detail": "Component 'nonexistent' not found."}
 
 
-def test_shared_errors_proposal_not_found_404(migrated_db) -> None:
+def test_shared_errors_proposal_not_found_404(clean_dynamo_tables) -> None:
     """Verify that ProposalNotFoundError maps to HTTP 404.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -110,7 +110,7 @@ def test_shared_errors_proposal_not_found_404(migrated_db) -> None:
     assert "not found" in response.json()["detail"].lower()
 
 
-def test_shared_errors_proposal_not_open_409(migrated_db) -> None:
+def test_shared_errors_proposal_not_open_409(clean_dynamo_tables) -> None:
     """Verify that ProposalNotOpenError maps to HTTP 409.
 
     Cites: Proposal (2026-07-10) §3.4 G2, §10 Phase 2.
@@ -143,7 +143,7 @@ def test_shared_errors_proposal_not_open_409(migrated_db) -> None:
     assert "cannot transition" in response.json()["detail"].lower()
 
 
-def test_shared_errors_bare_value_error_500(migrated_db) -> None:
+def test_shared_errors_bare_value_error_500(clean_dynamo_tables) -> None:
     """A bare ValueError (not the registered SyntacticValidationError) must
     surface as a 500, NOT be caught and downgraded to a 422.
 
@@ -166,7 +166,7 @@ def test_shared_errors_bare_value_error_500(migrated_db) -> None:
     assert response.status_code == 500
 
 
-def test_shared_errors_unregistered_propagates(migrated_db) -> None:
+def test_shared_errors_unregistered_propagates(clean_dynamo_tables) -> None:
     """Verify that an unregistered exception propagates normally and is not swallowed.
 
     Cites: Proposal (2026-07-10) §10 Phase 2.

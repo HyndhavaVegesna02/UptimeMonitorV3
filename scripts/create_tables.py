@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -98,9 +97,6 @@ def create_tables() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    # Ensure DATABASE_URL is set in environment so load_settings() doesn't fail
-    if "DATABASE_URL" not in os.environ:
-        os.environ["DATABASE_URL"] = "postgresql://dummy:dummy@localhost/dummy"
     create_tables()
     return 0
 

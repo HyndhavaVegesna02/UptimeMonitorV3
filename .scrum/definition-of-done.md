@@ -23,14 +23,9 @@
 # Within Sprint 0, a story is Done when every command that exists at that point
 # passes; later stories inherit the full gate.
 
-# PENDING AMENDMENT (PO-approved 2026-07-14, AWS-migration refinement — NOT yet in force):
-# when STORY-087 (DynamoDB cutover) lands, `alembic upgrade head` and
-# `python scripts/check_fk_direction.py` RETIRE from this gate (Postgres/Alembic and the
-# FK-direction concept leave the codebase with it), and the persistence floor becomes the
-# DynamoDB-Local-backed pytest suite (fixture from STORY-082). `cfn-lint infra/` JOINS the
-# gate at STORY-088 (CloudFormation template story). Until those stories land, every
-# command below remains in force unchanged — the Postgres gates keep holding while
-# Postgres code exists. The landing story edits this file and cites this note.
+# EFFECTIVE AMENDMENT (PO approval 2026-07-14; landed STORY-087 sprint-49):
+# The persistence floor is now the DynamoDB-Local-backed pytest suite (STORY-082).
+# `alembic upgrade head` and `python scripts/check_fk_direction.py` are retired.
 
 ## Commands (backend)
 - [ ] Tests pass: `pytest` -> exit 0
@@ -40,15 +35,10 @@
       (import-linter; the five contracts from dossier §4, §13, and Sprint 14:
        core-independence, core-internal-layering [domain<-ports<-services],
        adapter-independence, api-feature-independence, src-no-tests)
-- [ ] Schema FK-direction holds: `python scripts/check_fk_direction.py` -> exit 0 (requires-env: DATABASE_URL)
-      (the spine never references a feature table; dossier §9)
-- [ ] Migrations apply on a fresh DB: `alembic upgrade head` -> exit 0 (requires-env: DATABASE_URL_DIRECT)
-      (uses the DIRECT connection; never create_all; Sprint 0 runs it against a
-       throwaway Dockerized Postgres, real Neon DIRECT from the deploy zone)
-      (requires-env annotations added sprint-47 retro 2026-07-15 — the gate warns
-       up front when these are unset instead of surfacing a raw KeyError mid-run)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
+- [ ] CloudFormation template lint: `cfn-lint infra/stack.yaml` -> exit 0
+      (second half of the 2026-07-14 DoD amendment, landed STORY-088)
 
 ## Commands (frontend — live from STORY-015a, Sprint 25, run from `frontend/`)
 - [ ] Frontend tests pass: `npm test` -> exit 0

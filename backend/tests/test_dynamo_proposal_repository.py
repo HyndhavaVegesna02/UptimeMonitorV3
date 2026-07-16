@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 
 import pytest
 from src.adapters.persistence.dynamo_proposal_repository import DynamoProposalRepository
-from src.adapters.persistence.proposal_repository import PostgresProposalRepository
 from src.composition.settings import load_settings
 from src.core.domain.proposal import (
     ProposalNotOpenError,
@@ -12,9 +11,6 @@ from src.core.domain.proposal import (
     StatusProposal,
 )
 from src.core.domain.status import ComponentStatus
-from src.core.services.approval import ApprovalService
-from tests.fakes import FakeClock, RecordingStatusPublisher
-from tests.test_persistence_adapters import seed_component
 
 
 def test_dynamo_proposal_repository_create_open_enforces_one_open_per_component(
@@ -221,54 +217,6 @@ def test_dynamo_proposal_repository_record_approval_event(dynamo_resource):
         Key={"pk": f"PROPOSAL#{saved.id}", "sk": "META"}
     ).get("Item")
     assert meta_item.get("approved_actor") == "ops-admin"
-
-
-def test_dynamo_proposal_repository_decide_approve_lifecycle_parity(
-    dynamo_resource, engine, migrated_db
-):
-    settings = load_settings()
-    dynamo_repo = DynamoProposalRepository(
-        dynamo_resource, settings.dynamo_control_table
-    )
-    postgres_repo = PostgresProposalRepository(engine)
-
-    # Seed component in Postgres to satisfy foreign key constraint
-    seed_component(migrated_db.database_url, "comp-lifecycle")
-
-    clock = FakeClock(datetime(2026, 7, 8, 9, 0, 0, tzinfo=timezone.utc))
-
-    # We will run identical lifecycles on both repos
-    for repo in [dynamo_repo, postgres_repo]:
-        publisher = RecordingStatusPublisher()
-        approval_service = ApprovalService(
-            proposal_repo=repo, clock=clock, publisher=publisher
-        )
-
-        prop = StatusProposal(
-            component_id="comp-lifecycle",
-            from_status=ComponentStatus.OPERATIONAL,
-            to_status=ComponentStatus.DEGRADED,
-            state=ProposalState.OPEN,
-            proposed_at=datetime(2026, 7, 8, 8, 0, 0, tzinfo=timezone.utc),
-        )
-        saved = repo.create_open(prop)
-        assert saved is not None
-
-        # Resolve via ApprovalService
-        approval_service.approve(
-            saved.id, actor="ops-engineer", notes="Confirmed via parity test"
-        )
-
-        # Re-fetch and assert terminal state
-        resolved = repo.get(saved.id)
-        assert resolved is not None
-        assert resolved.state == ProposalState.APPROVED
-        assert resolved.resolved_at == clock.now()
-
-        # Verify publish order (commit-first)
-        assert len(publisher.published) == 1
-        assert publisher.published[0].component_id == "comp-lifecycle"
-        assert publisher.published[0].status == ComponentStatus.DEGRADED
 
 
 def test_dynamo_proposal_repository_orphan_event_guard(dynamo_resource):

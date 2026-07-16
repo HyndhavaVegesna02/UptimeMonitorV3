@@ -96,13 +96,10 @@ agreement, so no backend change was needed to wire the proxy itself.
 | -------------- | ------------------------------------------------------------------ |
 | backend        | FastAPI on Railway — HTTP API + persistent pull-loop scheduler     |
 | frontend       | React + TypeScript on Vercel — dashboard and approval UI           |
-| database       | Neon serverless Postgres, via the pooled PgBouncer connection      |
+| database       | AWS DynamoDB — two tables (observations + control); DynamoDB Local for dev/CI (STORY-087) |
 | observability  | Dynatrace synthetic monitors; results read from Grail via DQL      |
-| demo app       | Sock Shop on Railway — the replaceable monitored application       |
+| demo app       | Sock Shop on Railway — the replaceable monitored app             |
 | publish target | Statuspage — a fixed core target (not swappable in V3 scope)       |
-
-Python 3.13. Backend libraries: FastAPI, Pydantic v2, SQLAlchemy 2, Alembic,
-psycopg 3.
 
 ## Key commands
 
@@ -116,34 +113,32 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Run tests           | `pytest`                                  |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
 | Import boundary     | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` (must exit 0; the `lint-imports` exe shim is blocked by a Windows Application Control policy since 2026-07-12) |
-| Schema FK-direction | `python scripts/check_fk_direction.py` (reads `DATABASE_URL`; must exit 0) |
-| Run migrations      | `alembic upgrade head` (reads `DATABASE_URL_DIRECT`; must exit 0) |
-| Start throwaway DB  | `python scripts/dev_db.py up` (starts + migrates + prints both URLs) |
-| Stop throwaway DB   | `python scripts/dev_db.py down` (removes the container) |
+| Start Dynamo DB     | `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` (host 8001 so the API can own 8000) |
+| Create Dynamo tables| `python scripts/create_tables.py` (reads `DYNAMO_ENDPOINT_URL`) |
+| Seed topology       | `python scripts/seed_topology.py` (reads `DYNAMO_ENDPOINT_URL`) |
+| Build Docker Image  | `docker build -t uptime_monitor_v3:latest .` |
+| Run API in Docker   | `docker run --rm -p 8000:8000 -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8001 uptime_monitor_v3:latest` |
+| Run Loop in Docker  | `docker run --rm -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8001 uptime_monitor_v3:latest python -m src.composition.run` |
 | Run live loop       | `python -m src.composition.run` (loads a repo-root `.env` at startup — STORY-043 — then runs the e2e loop) |
 | Lint code           | `ruff check .` (must exit 0)               |
 | Format check        | `ruff format --check .` (must exit 0)      |
+| Lint CloudFormation | `cfn-lint infra/stack.yaml` (must exit 0)  |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
 
-The six DoD gate commands are `pytest`, `lint-imports`,
-`python scripts/check_fk_direction.py`, `alembic upgrade head`, `ruff check`, and `ruff format`. All six are
-live as of STORY-033. `lint-imports` enforces the five contracts
+The five DoD gate commands are `pytest`, `lint-imports`, `ruff check`, `ruff format`, and `cfn-lint`. All five are
+live as of STORY-088. `lint-imports` enforces the five contracts
 (core-independence, core-internal-layering, adapters-independence, api-feature-independence, src-no-tests);
-`check_fk_direction.py` enforces the dossier §9 schema spine boundary (no
-spine→feature foreign key) by reading `information_schema` over `DATABASE_URL`;
-`alembic upgrade head` applies the migrations at the repo top level;
-`ruff check` and `ruff format` enforce the code style, import sorting, and formatting.
+`ruff check` and `ruff format` enforce the code style, import sorting, and formatting; `cfn-lint` validates the CloudFormation stack.
 
-## Database & migrations (dossier §3, §4, §17)
+## Database & DynamoDB Local (dossier §3, §4, §17)
 
-Two distinct connection strings, two distinct env vars — never mix them:
+All persistence has been migrated to DynamoDB (STORY-087). The Neon Postgres database and Alembic migrations have been retired.
 
-| Env var               | Connection            | Used by                                      |
-| --------------------- | --------------------- | -------------------------------------------- |
-| `DATABASE_URL`        | Neon **pooled** (PgBouncer) | app runtime (`src.composition.settings`) and `scripts/check_fk_direction.py` |
-| `DATABASE_URL_DIRECT` | Neon **direct** (non-pooled) | Alembic migrations (`migrations/env.py`) — DDL misbehaves through transaction pooling |
+All DynamoDB adapters read from two tables:
+- Observations table (default: `uptime-observations`)
+- Control table (default: `uptime-control`)
 
 ### Live-loop secrets (STORY-016 — read by `python -m src.composition.run`)
 
@@ -155,100 +150,36 @@ repo-root `.env` into the environment first, via `dotenv.load_dotenv()`
 (config holds the non-secret monitor id + Statuspage component id, never these
 secret values):
 
-| Env var               | Used for                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `DYNATRACE_ENV_URL`   | Dynatrace tenant base URL (Grail DQL execute endpoint)           |
-| `DYNATRACE_API_TOKEN` | Dynatrace platform token (scopes `storage:buckets:read storage:events:read`) |
-| `STATUSPAGE_PAGE_ID`  | Statuspage page id                                               |
-| `STATUSPAGE_API_KEY`  | Statuspage API token (→ `Settings.statuspage_api_token`)         |
+| Env var                     | Used for                                                          |
+| --------------------------- | ---------------------------------------------------------------- |
+| `AWS_REGION`                | AWS Region (default: `us-east-1`)                                |
+| `DYNAMO_OBSERVATIONS_TABLE` | Observations table name                                          |
+| `DYNAMO_CONTROL_TABLE`      | Control table name                                               |
+| `DYNAMO_ENDPOINT_URL`       | Local DynamoDB endpoint URL (e.g. `http://localhost:8001`)       |
+| `DYNATRACE_ENV_URL`         | Dynatrace tenant base URL (Grail DQL execute endpoint)           |
+| `DYNATRACE_API_TOKEN`       | Dynatrace platform token (scopes `storage:buckets:read storage:events:read`) |
+| `STATUSPAGE_PAGE_ID`        | Statuspage page id                                               |
+| `STATUSPAGE_API_KEY`        | Statuspage API token (→ `Settings.statuspage_api_token`)         |
 
-Migrations are real, versioned from day one, and live at the **repo top level**
-(`alembic.ini` + `migrations/`), NOT under `backend/`. Never `create_all`. They
-run as a **separate release step** on the DIRECT connection; the app runtime uses
-the POOLED connection.
+### Throwaway DynamoDB for local/CI runs (no AWS needed in Sprint 0)
 
-URL dialect note: `migrations/env.py` (SQLAlchemy 2) needs the psycopg3 driver,
-so it normalizes a bare `postgresql://…` to `postgresql+psycopg://…`. The
-FK-direction check uses raw psycopg, which wants a plain libpq
-`postgresql://…` URL (no `+psycopg`). So when both run against the same DB,
-set `DATABASE_URL_DIRECT` to the `postgresql+psycopg://…` form and `DATABASE_URL`
-to the plain `postgresql://…` form.
-
-### Throwaway Postgres for local/CI runs (no Neon needed in Sprint 0)
-
-**Standard way (STORY-019):** `scripts/dev_db.py` is the shared helper — it
-replaces hand-rolling the `docker run` + wait-ready + `alembic upgrade head` +
-two-URL dialect split sequence shown below. Use it for manual local runs of
-the DB-gated DoD commands:
-
-```bash
-.venv/Scripts/python.exe scripts/dev_db.py up      # start + wait + migrate + print both URLs
-# copy/export the two `export DATABASE_URL...` lines it prints, or pass
-# --env-file path/to/.env to also write them to a dotenv file, then:
-.venv/Scripts/python.exe scripts/check_fk_direction.py   # -> exit 0, no manual juggling
-.venv/Scripts/alembic.exe upgrade head                   # -> exit 0
-.venv/Scripts/python.exe scripts/dev_db.py down    # remove the container
-```
-
-Under `pytest`, the same logic is exposed as the session-scoped `migrated_db`
-fixture (`backend/tests/conftest.py`): it reuses already-set
-`DATABASE_URL`/`DATABASE_URL_DIRECT` if both are present (migrating to ensure
-current), else spawns a throwaway `postgres:16` if Docker is available (one
-per test session, on a free port, torn down in a finalizer even if a test
-fails), else skips the DB-gated tests cleanly. DB-gated tests (e.g.
-`backend/tests/test_spine_schema.py`) depend on this fixture instead of
-rolling their own `skipif`/connection setup.
-
-Container readiness timeout is tunable via the `DEV_DB_READY_TIMEOUT_SECONDS` environment variable (defaults to `60.0` seconds).
-
-The manual one-liner that `scripts/dev_db.py` wraps (kept here for reference,
-or for anyone who wants to drive Docker directly without the helper):
-
-```bash
-# one-liner to start a disposable Postgres (Docker 28.x):
-docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16
-# wait until ready: docker exec uptime_pg_test pg_isready -U postgres
-
-# migrations use the DIRECT URL (SQLAlchemy/psycopg3 dialect):
-export DATABASE_URL_DIRECT="postgresql+psycopg://postgres:postgres@localhost:55432/uptime"
-# the FK-direction check uses the pooled DATABASE_URL (plain libpq form):
-export DATABASE_URL="postgresql://postgres:postgres@localhost:55432/uptime"
-
-alembic upgrade head                 # apply migrations  -> exit 0
-alembic downgrade base               # reverse to empty  -> exit 0
-alembic upgrade head                 # re-apply          -> exit 0
-python scripts/check_fk_direction.py # 0 FKs on baseline -> exit 0
-
-docker rm -f uptime_pg_test          # clean up (never commit container/data)
-```
+Under `pytest`, the session-scoped `dynamo_local` fixture (`backend/tests/conftest.py`) starts an in-memory `amazon/dynamodb-local` container if Docker is available, or reuses `DYNAMO_ENDPOINT_URL` if set, otherwise skips DynamoDB-gated tests. The table creation is automatically handled by the `clean_dynamo_tables` fixture before each test.
 
 ## Run the app locally (dossier §17, STORY-042)
 
-The full local stack is: throwaway Postgres + the API server (uvicorn) + the
-live pull-loop (`python -m src.composition.run`) + the frontend dev server —
-four processes sharing one `DATABASE_URL`. CORS is unneeded locally: the Vite
-dev proxy makes the frontend same-origin (real CORS is STORY-017).
+The full local stack is: DynamoDB Local + the API server (uvicorn) + the live pull-loop (`python -m src.composition.run`) + the frontend dev server.
 
-1. Start the throwaway DB (migrates and prints both URLs):
-   `.venv/Scripts/python.exe scripts/dev_db.py up`
-2. Export `DATABASE_URL` — the plain-libpq pooled form it printed (the
-   direct/`+psycopg` form is only for Alembic/migrations, not needed here) —
-   or put it in a repo-root `.env` instead (STORY-043: both entrypoints below
-   load it at startup; an exported value still wins over `.env`).
-3. Start the API server on port 8000 (serves `/api/v1/*`; the boot-time
-   lifespan seed reads `config/apps` and populates components):
-   `.venv/Scripts/python.exe -m uvicorn src.composition.asgi:app --port 8000`
-4. In a SECOND terminal (same `DATABASE_URL`), run the live loop to populate
-   observations/proposals/publications — needs the Dynatrace/Statuspage
-   secrets, either exported or in the same repo-root `.env` (STORY-043; see
-   "Live-loop secrets" above): `python -m src.composition.run`
-5. In a THIRD terminal: `cd frontend && npm run dev` — the Vite proxy now
-   reaches a real backend on :8000; no more `ECONNREFUSED`.
-
-The API server and the live loop are two independent, long-running processes
-— stopping one doesn't stop the other, and both must point at the same
-`DATABASE_URL`. `python scripts/dev_db.py down` tears down the throwaway
-Postgres container when done.
+1. Start DynamoDB Local (host port 8001, leaving 8000 for the API):
+   `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
+2. Export `DYNAMO_ENDPOINT_URL="http://localhost:8001"` (or add to a repo-root `.env` file).
+3. Create the DynamoDB tables:
+   `python scripts/create_tables.py`
+4. Start the API server on port 8000 (serves `/api/v1/*`; the boot-time lifespan seed reads `config/apps` and populates components):
+   `python -m uvicorn src.composition.asgi:app --port 8000`
+5. In a SECOND terminal, run the live loop to populate observations/proposals/publications — needs the Dynatrace/Statuspage secrets, either exported or in the same repo-root `.env` (with `DYNAMO_ENDPOINT_URL` also configured):
+   `python -m src.composition.run`
+6. In a THIRD terminal:
+   `cd frontend && npm run dev`
 
 ## Tooling inventory
 
@@ -258,14 +189,14 @@ Postgres container when done.
 | pip               | 25.2                          | package management                        |
 | pytest            | test runner (DoD gate)        | `pytest` must exit 0                       |
 | import-linter     | `lint-imports` (live, STORY-002)| enforces zone dependency boundaries (DoD)|
-| FK-direction check| `scripts/check_fk_direction.py` (live, STORY-002)| enforces schema spine boundary (DoD)|
-| SQLAlchemy 2 / Alembic | live (STORY-003); `alembic upgrade head` (DoD) | ORM + migrations at repo top level |
-| Docker            | 28.5.2                        | throwaway Postgres for migration/FK checks|
-| `scripts/dev_db.py` | live (STORY-019)            | shared throwaway-DB helper (CLI `up`/`down`) + the `migrated_db` pytest session fixture |
+| Docker            | 28.5.2                        | throwaway DynamoDB local run              |
+| boto3             | runtime dependency             | AWS SDK for DynamoDB operations           |
+| `scripts/create_tables.py` | live (STORY-082)       | table creation helper                     |
 | ruff              | live (STORY-033); `ruff check` + `ruff format` (DoD) | code style, sorting, and formatting |
 | uvicorn[standard] | live (STORY-042); dev dependency | local ASGI dev server — `uvicorn src.composition.asgi:app` |
 | httpx             | runtime dependency             | HTTP library for query and statuspage executors |
 | python-dotenv     | live (STORY-043); runtime dependency | `.env` loading at the two process entrypoints (`run.py::main`, `composition/asgi.py`) |
 | git               | configured                    | version control                           |
+| cfn-lint          | live (STORY-088); dev dependency | CloudFormation validation tool (DoD)      |
 
-No `psql` client is installed. Neon/Dynatrace/Statuspage credentials are read from environment variables, exported directly or loaded from a gitignored repo-root `.env` (STORY-043) for the live loop.
+No `psql` client or SQL databases are used. Dynatrace/Statuspage credentials and DynamoDB settings are read from environment variables, exported directly or loaded from a gitignored repo-root `.env` (STORY-043) for the live loop.
