@@ -33,7 +33,7 @@ stories:
     points: 2
     order: 1           # the code change first; sweep is independent of it
   - id: STORY-095
-    status: todo
+    status: in-progress   # implementer dispatched 2026-07-17; live-stack sweep, mutations reversed
     slug: playwright-ui-sweep
     points: 2
     order: 2           # live-stack sweep (read-mostly; mutations reversed)
