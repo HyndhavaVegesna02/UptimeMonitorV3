@@ -25,16 +25,16 @@ runtime; amend `.scrum/definition-of-done.md` and CLAUDE.md; resolve the wiki bl
 radius (persistence/schema/dev-db articles).
 
 ## Acceptance Criteria
-- [ ] AC1 (wiring): `create_app()` and `run.py::main()` construct DynamoDB adapters
+- [x] AC1 (wiring): `create_app()` and `run.py::main()` construct DynamoDB adapters
       from settings (region/table names); no `sqlalchemy.create_engine` remains under
       `backend/src`; the API and the live loop start and serve with only
       `AWS_REGION`/table-name/secret env vars (a repo-root `.env` still loads for local
       dev per STORY-043, and exported vars still win).
-- [ ] AC2 (retirement): Postgres adapters, `alembic.ini` + `migrations/`,
+- [x] AC2 (retirement): Postgres adapters, `alembic.ini` + `migrations/`,
       `scripts/dev_db.py`, `scripts/check_fk_direction.py`, and the `migrated_db`
       fixture are deleted with reasons recorded; SQLAlchemy, Alembic, and psycopg leave
       `pyproject.toml` dependencies.
-- [ ] AC3 (DoD amendment lands): `.scrum/definition-of-done.md` drops the two retired
+- [x] AC3 (DoD amendment lands): `.scrum/definition-of-done.md` drops the two retired
       gates and records the DynamoDB-Local pytest floor (PO approval 2026-07-14 cited);
       `python .claude/skills/yourteam/scripts/yt_gate.py` runs GREEN under the amended
       command set on a clean tree.
@@ -42,7 +42,10 @@ radius (persistence/schema/dev-db articles).
       loop + frontend dev server) runs the end-to-end thread — loop ingests, watermark
       advances across two cycles, all six tabs render, one mutation round-trips —
       evidence recorded.
-- [ ] AC5 (docs): CLAUDE.md's Key commands / Database sections rewritten for DynamoDB
+      (read-path e2e proven live on DynamoDB Local at review — API boots on DynamoDB, boot
+      seed populates the control table, all six tab endpoints serve; the live-loop ingest +
+      mutation half requires live Dynatrace/Statuspage creds and is carved to STORY-089.)
+- [x] AC5 (docs): CLAUDE.md's Key commands / Database sections rewritten for DynamoDB
       (create_tables.py, dynamo_local fixture, env var table) in the same story; wiki
       blast radius resolved (stale persistence articles updated or archived with
       tombstones).
@@ -53,3 +56,12 @@ None.
 ## History
 - 2026-07-14: drafted at AWS-migration refinement. Status: draft, 3 points proposed.
 - 2026-07-14: PO approved AC + estimate ("approve all") → ready.
+- 2026-07-16: delivered (sprint-49, external mode). Deleted at the cutover (reasons per DoD
+  standing rule): the nine Postgres repository adapters, `composition/seed.py`, the Alembic tree
+  (`alembic.ini` + `migrations/`), `scripts/dev_db.py`, `scripts/check_fk_direction.py`, the
+  `migrated_db`/`clean_runtime_tables`/`engine` fixtures, and the two-URL
+  (`DATABASE_URL`/`DATABASE_URL_DIRECT`) machinery — all superseded by the DynamoDB persistence
+  zone (STORY-082..086); the composition cutover removed the last runtime references, so the code
+  was dead. Wiki blast radius resolved: `migrations-and-db.md` archived with a tombstone,
+  `architecture-boundary.md`/`dev-setup-and-dod.md`/`persistence-adapters.md`/`sample-mode.md`
+  updated + re-verified.
