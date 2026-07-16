@@ -266,6 +266,16 @@ def test_main_resource_lifecycle_success(
 
     asyncio.run(main())
 
+    # STORY-093 AC3: real assertions on the resource-lifecycle surface —
+    # the DynamoDB resource is constructed once, the topology is seeded
+    # through it with the real call shape (config, resource, control table
+    # name — run.py:202), and the loops are built.
+    mock_make_dynamo_resource.assert_called_once()
+    mock_seed_topology_dynamo.assert_called_once_with(
+        mock_load_config.return_value, mock_db_resource, "uptime-control"
+    )
+    mock_build_loop.assert_called_once()
+
 
 @patch("src.composition.run.load_dotenv")
 @patch("src.composition.run.load_settings")

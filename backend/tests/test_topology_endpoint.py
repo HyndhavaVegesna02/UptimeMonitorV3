@@ -11,7 +11,6 @@ the seeded topology (NOT re-read from config files at request time). Covers:
     Postgres-backed `create_app`, proving the payload is sourced from the DB.
 """
 
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -157,7 +156,7 @@ def test_topology_module_five_file_shape():
 
 
 def test_topology_db_gated_sourced_from_seeded_topology(
-    dynamo_local, clean_dynamo_tables, tmp_path
+    dynamo_local, clean_dynamo_tables, tmp_path, monkeypatch
 ):
     """AC1: the payload is sourced from the seeded topology (DB), never re-read
     from config/ at request time — proven with a real DynamoDB-backed
@@ -178,20 +177,17 @@ signals:
     (config_dir / "topo_app.yaml").write_text(yaml_content, encoding="utf-8")
 
     # Temporarily set env CONFIG_DIR for create_app settings load
-    os.environ["CONFIG_DIR"] = str(config_dir)
-    try:
-        app = create_app(
-            config_dir=str(config_dir),
-        )
+    monkeypatch.setenv("CONFIG_DIR", str(config_dir))
+    app = create_app(
+        config_dir=str(config_dir),
+    )
 
-        with TestClient(app) as client:
-            response = client.get("/api/v1/topology")
-            assert response.status_code == 200
-            data = response.json()
-            comp = next(c for c in data if c["id"] == "topo-comp")
-            by_key = {s["signal_key"]: s for s in comp["signals"]}
-            assert by_key["topo-sig-a"]["interval_seconds"] == 60
-            assert by_key["topo-sig-b"]["interval_seconds"] == 120
-            assert by_key["topo-sig-a"]["component_id"] == "topo-comp"
-    finally:
-        os.environ.pop("CONFIG_DIR", None)
+    with TestClient(app) as client:
+        response = client.get("/api/v1/topology")
+        assert response.status_code == 200
+        data = response.json()
+        comp = next(c for c in data if c["id"] == "topo-comp")
+        by_key = {s["signal_key"]: s for s in comp["signals"]}
+        assert by_key["topo-sig-a"]["interval_seconds"] == 60
+        assert by_key["topo-sig-b"]["interval_seconds"] == 120
+        assert by_key["topo-sig-a"]["component_id"] == "topo-comp"

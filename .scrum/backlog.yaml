@@ -876,17 +876,19 @@ stories:
   - id: STORY-093
     title: Chore — sprint-49 review minors (container hardening, health grace, test hygiene)
     file: docs/scrum/stories/STORY-093-sprint49-review-minors.md
-    status: ready   # filed at sprint-49 review (accept-with-follow-up, PO 2026-07-16): non-root Dockerfile USER + dead ENV PORT + dep-layer ordering; APIService HealthCheckGracePeriodSeconds; zero-assertion test + no-Postgres guard test + monkeypatch cleanup. Refine/estimate at next planning.
+    status: done    # sprint-50: all 4 AC; reality probe (layer CACHED, whoami=app, import smoke). PO accepted 2026-07-17, merged to main.
+    points: 2
+    priority: 49
     type: chore
-    sprint: null
+    sprint: 50
   - id: STORY-089
     title: Live console deployment + end-to-end verification (PO-driven)
     file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); PO-interactive, live-credential gated; depends on STORY-088
+    status: done    # sprint-50: all 6 AC live-verified; system LIVE at https://d3ukiib1iqmbxb.cloudfront.net (stack kept running, c7n-keep). 3 live-found template defects fixed. PO accepted 2026-07-17 (accept-with-follow-up STORY-094), merged to main.
     points: 3
     priority: 48
     type: chore
-    sprint: null
+    sprint: 50
   - id: STORY-090
     title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
     file: docs/scrum/stories/STORY-090-cicd-github-actions.md
@@ -901,3 +903,9 @@ stories:
     priority: 49
     type: chore
     sprint: 48
+  - id: STORY-094
+    title: Defect — /api/v1/history ignores its `limit` query param
+    file: docs/scrum/stories/STORY-094-history-limit-param-ignored.md
+    status: draft   # filed at sprint-50 review (accept-with-follow-up on STORY-089, PO 2026-07-17): limit=2 returned the full window against the live stack. Refine/estimate at next planning.
+    type: defect
+    sprint: null

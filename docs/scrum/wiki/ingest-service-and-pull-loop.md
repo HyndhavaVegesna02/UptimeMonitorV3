@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the ingest service (§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: a8700f5
+verified_sprint: sprint-50
 status: verified
 ---
 
@@ -271,3 +271,8 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - sprint-45 (STORY-065/STORY-066): re-verified, no changes to Ingest or Pull Loop. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
+- sprint-50 (STORY-093, test hygiene): `test_run_live_loop.py::test_main_resource_lifecycle_success`
+  gained real assertions (`mock_make_dynamo_resource`/`mock_seed_topology_dynamo`/`mock_build_loop`
+  called with the expected shape) — the test previously ended at `asyncio.run(main())` with none.
+  `run.py`, `pull_loop.py`, `ingest_service.py`, and `sample_mode.py` are all UNCHANGED. No Fact
+  changed. verified_sha -> a8700f5.

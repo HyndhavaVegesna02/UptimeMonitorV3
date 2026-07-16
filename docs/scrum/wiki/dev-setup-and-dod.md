@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: 235fc37
+verified_sprint: sprint-50
 status: verified
 ---
 
@@ -194,3 +194,4 @@ status: verified
 - sprint-46 (STORY-082): Added boto3 dependency and set up the session-scoped dynamo_local
   fixture and clean_dynamo_tables for DynamoDB Local container lifecycle integration. verified_sha -> abd8609.
 - sprint-47 (STORY-080): Hardened container connection readiness verification to retry and recover from transient connection drops under load, and collision-proofed the CLI tests (`test_dev_db_cli.py`) by dynamically allocating unique container names and ports. verified_sha -> 50a7bd9.
+- sprint-50 (STORY-089): CLAUDE.md gained the append-only deployed-topology section (live stack facts, no dev-setup or DoD content touched). Facts unchanged; re-verified. verified_sha -> 235fc37.

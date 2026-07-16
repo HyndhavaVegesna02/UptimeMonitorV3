@@ -10,7 +10,19 @@ Before beginning, ensure you have:
 1. An AWS Account with administrator permissions.
 2. The AWS CLI installed and configured locally (`aws configure`).
 3. Docker installed and running locally.
-4. Git branch `sprint-49` checked out.
+4. Git branch `sprint-50` checked out.
+
+**Company account rules (org policy, 2026-07-17):**
+- Create ALL resources in **us-east-1 (N. Virginia)** only — verify the region selector in the
+  console top bar before every step, and use `us-east-1` wherever this runbook says
+  `<your-region>`. Any other region requires prior company approval.
+- A nightly reaper deletes unprotected resources at **22:00 IST**. Add stack-level tags
+  **`c7n-keep` = `true`** (plus `username` = your name for ownership) in Step 1 — every
+  resource, including the ECR repository and both Secrets Manager secrets, is created BY the
+  stack, so the stack tags propagate everywhere; nothing needs manual tagging. If you ever
+  create a resource outside the stack, tag it manually the same way.
+- Never store credentials or access keys in the repo or shared folders (secret VALUES go only
+  into Secrets Manager, Step 2).
 
 ---
 
@@ -31,7 +43,9 @@ Before beginning, ensure you have:
      - Click **Managed Prefix Lists** on the left menu.
      - Search for `com.amazonaws.global.cloudfront.origin-facing`.
      - Copy the **Prefix list ID** (starts with `pl-...`, e.g., `pl-58a64931`) and paste it into the CloudFormation parameter.
-8. Click **Next**, click **Next** again on the Configure stack options page.
+8. Click **Next**. On the **Configure stack options** page, under **Tags**, add
+   `c7n-keep` = `true` and `username` = your name (org reaper protection — these propagate to
+   every taggable resource in the stack), then click **Next**.
 9. Scroll to the bottom, check the checkbox **I acknowledge that AWS CloudFormation might create IAM resources**, and click **Submit**.
 10. Wait for the stack status to transition to **CREATE_COMPLETE** (approx. 5-10 minutes).
 

@@ -35,3 +35,7 @@ None.
 - 2026-07-16: filed at sprint-49 review from the spec/quality review minors; PO accepted the
   three sprint-49 stories with these captured as a follow-up chore. Refine/estimate at next
   planning.
+- 2026-07-16: estimated 2 points at sprint-50 planning; PO approved scope + estimate → entered
+  sprint 50 (order 1, ahead of STORY-089 so the hardening is in the deployed image/template).
+  Plan adds one item under AC1's spirit: update `docs/deploy-runbook.md` Prerequisite 4 off the
+  stale `sprint-49` branch (plan-verifier GAP 1).
