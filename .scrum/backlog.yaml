@@ -904,8 +904,18 @@ stories:
     type: chore
     sprint: 48
   - id: STORY-094
-    title: Defect — /api/v1/history ignores its `limit` query param
+    title: History endpoint — additive optional server-side `limit` cap (reframed from defect at refinement)
     file: docs/scrum/stories/STORY-094-history-limit-param-ignored.md
-    status: draft   # filed at sprint-50 review (accept-with-follow-up on STORY-089, PO 2026-07-17): limit=2 returned the full window against the live stack. Refine/estimate at next planning.
-    type: defect
-    sprint: null
+    status: in-sprint   # sprint 51 (order 1); refined 2026-07-17: limit never existed (FastAPI ignored it) and the frontend never sends it — now an additive optional newest-first cap. 2 pts.
+    points: 2
+    priority: 50
+    type: chore
+    sprint: 51
+  - id: STORY-095
+    title: Playwright UI sweep — thorough browser verification of the deployed dashboard
+    file: docs/scrum/stories/STORY-095-playwright-ui-sweep.md
+    status: in-sprint   # sprint 51 (order 2); PO directive 2026-07-17 ("use playwright mcp to thoroughly check the ui"); MCP loads next session -> direct Playwright this sprint. 2 pts.
+    points: 2
+    priority: 51
+    type: chore
+    sprint: 51
