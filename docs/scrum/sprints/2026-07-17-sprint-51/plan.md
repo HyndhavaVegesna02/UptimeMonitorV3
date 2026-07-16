@@ -84,17 +84,17 @@ evidence is the local stack, stated explicitly.)
 
 ### Steps
 
-- [ ] 1. Scaffold `tools/ui-sweep/` (gitignored node_modules): playwright dep +
+- [x] 1. Scaffold `tools/ui-sweep/` (gitignored node_modules): playwright dep +
   chromium install + sweep script skeleton (console/network capture harness). Commit.
-- [ ] 2. AC1/AC2 sweep: for each tab — SPA-nav load AND direct-URL deep load; assert
+- [x] 2. AC1/AC2 sweep: for each tab — SPA-nav load AND direct-URL deep load; assert
   rendered content state; screenshot; collect console errors + failed API calls. Commit
   script + evidence.
-- [ ] 3. AC3 mutations via the browser: sample-mode ON → UI + control-table verify →
+- [x] 3. AC3 mutations via the browser: sample-mode ON → UI + control-table verify →
   OFF → verify clean. Maintenance window schedule → visible in list → delete → gone.
   Screenshots each step. Commit evidence.
-- [ ] 4. AC4: dark/light theme renders on Dashboard; one 390px-wide viewport check.
+- [x] 4. AC4: dark/light theme renders on Dashboard; one 390px-wide viewport check.
   Commit evidence.
-- [ ] 5. AC5: findings log (`ui-sweep/findings.md`) — every anomaly either explained or
+- [x] 5. AC5: findings log (`ui-sweep/findings.md`) — every anomaly either explained or
   filed as a backlog story. Story gate (`--only` ruff format if any .py touched — else
   note no gate-relevant diff; the full close gate covers it). Board update.
 
