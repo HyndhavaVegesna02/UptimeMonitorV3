@@ -1,53 +1,129 @@
 # YourTeam active sprint board
 sprint: 49
-status: active
-mode: external      # PO-approved at lock (2026-07-16), 4th consecutive external sprint.
-                    # Per the 2026-07-15 working agreement, mode:external mandates the
-                    # external-mode verification floor on delivery: spec + quality review PER
-                    # STORY regardless of points, plus an independent full amended-gate re-run
-                    # on the final HEAD (with DynamoDB Local UP — see plan.md Gate note),
-                    # before any board:done stands. Delivery contract (execution-modes.md §2):
-                    # external agent works ONLY on sprint-49, never merges main; on return the
-                    # orchestrator reads each diff and COMMITS PER STORY as the reviewable
-                    # object before reviewing; a self-reported "gates green" is a to-verify
-                    # list, NEVER evidence.
-goal: "Complete the AWS cutover: wire the DynamoDB adapter set into both composition roots and delete the entire Postgres stack (STORY-087, DoD amendment takes effect); containerize both processes in one image (STORY-092, single Dockerfile + CMD override); author the CloudFormation single-stack template + console deployment runbook (STORY-088, cfn-lint joins the DoD). Fresh-start hard cutover — no data migration. Live console deployment itself is STORY-089, out of scope."
+status: review        # verification complete under the external-mode floor; awaiting PO accept/reject per story
+mode: external        # PO-approved at lock (2026-07-16). External-mode floor applied on delivery:
+                      # spec + quality review PER STORY regardless of points, an independent full
+                      # amended-gate re-run on the FINAL HEAD (with DynamoDB Local up), and the
+                      # reality gate — before any board:done stood. Delivery arrived committed but
+                      # the review found the classic external tax (spec FAIL on all 3 on doc/AC
+                      # hygiene; the substance was sound); the orchestrator applied a review-tail
+                      # fix pass (HEAD 8a18e08) and re-verified.
+goal: "Complete the AWS cutover: wire the DynamoDB adapter set into both composition roots and delete the entire Postgres stack (STORY-087, DoD amendment takes effect); containerize both processes in one image (STORY-092); author the CloudFormation single-stack template + console deployment runbook (STORY-088, cfn-lint joins the DoD). Fresh-start hard cutover — no data migration. Live console deployment itself is STORY-089, out of scope."
 branch: sprint-49
 start_tag: sprint-49-start
 start_commit: b16fb58
 started: "2026-07-16T00:00:00+05:30"
-# 10 pts committed (087:3 + 092:2 + 088:5). Dependency chain 087 -> 092 -> 088 (image built
-# against the DynamoDB-only runtime; CFN stack references the image + amended gate). Drop
-# order if delivery runs long: 088 first (last + largest + no downstream dependant this
-# sprint), then 092. STORY-087 never drops — it unblocks the other two.
-# Plan-verifier ran at planning (external + adapter/vendor contract-sensitive): every cited
-# contract verified clean (crucially the table-assignment table — obs repo -> observations
-# table, everything else incl. rejected -> control table — fully confirmed against the landed
-# adapter tests; the 3 STORY-088 CloudFront/loop-singleton mechanisms feasible in one CFN
-# template). Verdict GAPS on 6 external-mode completeness items (3 HIGH would leave pytest red
-# for a literal agent: stray Postgres composition/seed.py; test_app engine-disposal test;
-# two kept Dynamo test files carrying Postgres-parity tests) + 3 lower (run.py to_psycopg_url
-# import; create_app database_url param; CFN prefix-list-ID Parameter). ALL FIXED pre-lock.
-# Status: LOCK_READY. See plan.md.
-# DoD EVOLVES this sprint (PO-approved 2026-07-14 amendment): after STORY-087, alembic +
-# check_fk_direction RETIRE and the DynamoDB-Local pytest suite is the persistence floor;
-# after STORY-088, cfn-lint infra/ JOINS. The orchestrator's final gate on the final HEAD
-# runs the amended set with DynamoDB Local UP.
+# Delivery HEAD 5b4ee36; review-tail fixes -> FINAL HEAD 8a18e08. Full amended 8-command DoD gate
+# re-run by the orchestrator on 8a18e08 with DynamoDB Local up: ALL 8 GREEN, pytest 521 passed /
+# 0 skipped (the DynamoDB-Local persistence suite executed, not skipped). Reality gates run live
+# by the orchestrator (see reality_gate below).
 stories:
   - id: STORY-087
-    status: todo
+    status: done        # verified under external-mode floor; awaiting PO acceptance
     slug: dynamodb-cutover
     points: 3
     order: 1
+    commit: cb09c11      # + review-tail b45a5b9/1e3c959/8a18e08 (asgi docstring, wiki tombstone/de-launder, story history)
+    review:
+      spec: FAIL_then_FIXED   # AC1/AC3 MET at delivery; AC2 (deletion reasons unrecorded), AC4 (e2e evidence), AC5 (wiki tombstone + CLAUDE.md database row + architecture-boundary FK-retirement) all fixed in the review tail. Cutover WIRING was correct at delivery (table split exact, no Postgres residue).
+      quality: FIX_REQUIRED_then_FIXED   # MAJOR asgi.py stale SQLAlchemy/DATABASE_URL docstring (fixed b45a5b9); MAJOR verified_sha bulk-laundering across 12 articles (de-laundered b45a5b9). Wiring/coverage judged clean.
   - id: STORY-092
-    status: todo
+    status: done
     slug: containerize-both-processes
     points: 2
     order: 2
+    commit: 632a302      # (shared with 088) + review-tail 96f456f (.dockerignore, CLAUDE.md port)
+    review:
+      spec: FAIL_then_FIXED   # AC1/AC2/AC5 MET; AC3 (.dockerignore missing backend/tests/ + .claude/ -> shipped tests into image) fixed 96f456f; AC4 evidence recorded by orchestrator reality gate.
+      quality: FIX_REQUIRED_then_FIXED   # MAJOR .dockerignore excludes (fixed 96f456f); MAJOR CLAUDE.md local recipe port collision dynamo:8000 vs API:8000 (fixed -> dynamo host 8001).
   - id: STORY-088
-    status: todo
+    status: done
     slug: cloudformation-stack-runbook
     points: 5
     order: 3
+    commit: 632a302      # + 1f3c834 (wiki) + review-tail 9c6ec3d (runbook env vars + ordering + deploy wiki article)
+    review:
+      spec: FAIL_then_FIXED   # AC1/AC2/AC3/AC5/AC6 MET (full resource-by-resource trace matched Context; schema matches create_tables.py); AC4 runbook omitted the 3 plain env vars (AWS_REGION/DYNAMO_*_TABLE) -> fixed 9c6ec3d.
+      quality: APPROVE      # 0 critical / 0 major. IAM scoped to the 2 table ARNs + GSI index ARN + 2 secret ARNs (not *); SGs locked down; CloudFront /api/* + rewrite-fn placement correct; loop-singleton on the right service; DeletionPolicy Retain; clean secrets hygiene. Minors -> follow-up.
+# Plan-verifier ran at planning (LOCK_READY after 6 GAPs fixed pre-lock; table-assignment contract
+# confirmed against landed tests). All 6 GAP fixes verified present in the delivery.
+# DoD amendment landed (STORY-087/088): alembic + check_fk_direction retired; DynamoDB-Local pytest
+# is the persistence floor; cfn-lint infra/stack.yaml joined. Backend gate now 5 cmds + 3 frontend = 8.
+final_gate:
+  head: 8a18e08
+  dod_evidence:
+    - command: "pytest"
+      exit_code: 0
+      output_tail: "============================ 521 passed in 43.87s ============================="
+      commit: 8a18e08
+      at: "2026-07-16T09:57:13+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken (core-independence, core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence, adapters-edge-only, api-shared-no-feature-imports, src-no-tests)."
+      commit: 8a18e08
+      at: "2026-07-16T09:57:58+00:00"
+    - command: "ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 8a18e08
+      at: "2026-07-16T09:57:59+00:00"
+    - command: "ruff format --check ."
+      exit_code: 0
+      output_tail: "204 files already formatted"
+      commit: 8a18e08
+      at: "2026-07-16T09:57:59+00:00"
+    - command: "cfn-lint infra/stack.yaml"
+      exit_code: 0
+      output_tail: "(exit 0, no findings)"
+      commit: 8a18e08
+      at: "2026-07-16T09:57:59+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
+      commit: 8a18e08
+      at: "2026-07-16T09:58:02+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "built (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
+      commit: 8a18e08
+      at: "2026-07-16T09:58:46+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "eslint . — clean"
+      commit: 8a18e08
+      at: "2026-07-16T09:58:51+00:00"
+  reality_gate:
+    ran: true
+    evidence: >-
+      STORY-087 AC4 (read/serve path, live vs real DynamoDB Local, isolated container port 8500):
+      create_tables.py ran with NO DATABASE_URL (cutover proven); uvicorn booted create_app on
+      DynamoDB; boot lifespan seed populated the control table; GET /api/v1/health 200; every
+      six-tab-backing endpoint served off DynamoDB — /components 200 (seeded 'http-check'),
+      /approvals 200 [], /topology 200, /maintenance 200, /publications 200, /sample-mode 200,
+      /history 200; /availability 422 (needs window param — endpoint alive). Live-loop INGEST +
+      watermark-advance + mutation-round-trip half requires live Dynatrace/Statuspage creds
+      (unset in-session) -> carved to STORY-089 (live console deployment), never silently deferred.
+      STORY-092 AC4: docker build -t uptime_monitor_v3 . exit 0; container import smoke
+      `python -c "import src.composition.asgi; import src.composition.run"` -> "IMPORT SMOKE OK"
+      exit 0 (both entrypoints import with no Postgres dep).
+      STORY-088: vendor-path probe = cfn-lint infra/stack.yaml exit 0 + resource-by-resource
+      spec trace vs the approved Context list (live AWS deploy is STORY-089).
+review_tail:
+  applied_by: orchestrator
+  final_head: 8a18e08
+  note: >-
+    External delivery (5b4ee36) failed spec on all 3 stories for doc/AC hygiene (substance sound).
+    Orchestrator applied a review-tail fix pass: asgi.py docstring; migrations-and-db.md real
+    tombstone (moved to wiki/archive/ + frontmatter + banner); architecture-boundary.md FK-direction
+    retirement; verified_sha de-laundering (removed the bulk 40-char stamp across 12 articles);
+    STORY-087 story History deletion reasons; .dockerignore backend/tests//.claude//nested-pycache;
+    CLAUDE.md port collision (dynamo->8001) + database row; deploy-runbook env-var NAME table +
+    ordering; new deployment-and-infra.md wiki article. yt_wiki.py exit 0; full gate re-run GREEN.
+deferred_minors:   # -> propose as follow-up chore STORY-093 at review (accept-with-follow-up)
+  - "Dockerfile: no non-root USER (runs as root); dead ENV PORT=8000; source copied before pip install (dep-layer cache miss)"
+  - "infra/stack.yaml: APIService has no HealthCheckGracePeriodSeconds (slow first-boot seed could churn the task)"
+  - "backend/tests/test_run_live_loop.py::test_main_resource_lifecycle_success has zero assertions after the dispose check was removed"
+  - "Plan step-4 guard test (grep no sqlalchemy/create_engine/psycopg under backend/src) never added — invariant rests on ruff/lint-imports only"
+  - "test_topology_endpoint.py raw os.environ try/finally where monkeypatch.setenv is cleaner"
 hotfixes: []
 interrupts: []
