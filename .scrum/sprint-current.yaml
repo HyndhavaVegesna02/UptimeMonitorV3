@@ -17,7 +17,7 @@ started: "2026-07-16T23:59:00+05:30"
 # (format-only, self-test 28/28); baseline green at start_commit.
 stories:
   - id: STORY-093
-    status: todo
+    status: in-progress   # implementer dispatched 2026-07-16
     slug: sprint49-review-minors
     points: 2          # estimated at this planning (was unestimated at filing)
     order: 1           # first: its Dockerfile/stack hardening must be in what 089 deploys
