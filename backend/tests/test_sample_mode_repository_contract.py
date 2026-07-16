@@ -14,9 +14,6 @@ FACTORY rather than a single repo instance.
 
 from __future__ import annotations
 
-import psycopg
-import pytest
-
 
 def _assert_sample_mode_repository_contract(make_repo) -> None:
     """Shared assertion body run against BOTH the fake and Postgres impls.
@@ -63,41 +60,4 @@ def test_fake_sample_mode_repository_contract():
     shared_store: dict = {}
     _assert_sample_mode_repository_contract(
         lambda: FakeSampleModeRepository(store=shared_store)
-    )
-
-
-@pytest.fixture
-def clean_sample_mode(migrated_db):
-    """Truncate `sample_mode` before and after the test (no FK; shared DB)."""
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE sample_mode;")
-        conn.commit()
-    yield
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE sample_mode;")
-        conn.commit()
-
-
-def test_postgres_sample_mode_repository_never_set_defaults_false(
-    migrated_db, engine, clean_sample_mode
-):
-    from src.adapters.persistence.sample_mode_repository import (
-        PostgresSampleModeRepository,
-    )
-
-    repo = PostgresSampleModeRepository(engine)
-    assert repo.is_enabled() is False
-
-
-def test_postgres_sample_mode_repository_contract(
-    migrated_db, engine, clean_sample_mode
-):
-    from src.adapters.persistence.sample_mode_repository import (
-        PostgresSampleModeRepository,
-    )
-
-    _assert_sample_mode_repository_contract(
-        lambda: PostgresSampleModeRepository(engine)
     )

@@ -1,14 +1,14 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, scripts/check_fk_direction.py, scripts/dev_db.py, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py, backend/tests/test_spine_schema.py]
-verified_sha: 143f15a
-verified_sprint: sprint-47
+code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
+verified_sha: e50983c
+verified_sprint: sprint-49
 status: verified
 ---
 
 ## Facts (verified against code)
 - Python 3.13; setuptools build backend (`pyproject.toml:1-3`). Runtime deps: fastapi,
-  pydantic>=2, sqlalchemy>=2, alembic, psycopg[binary], pyyaml, httpx, python-dotenv,
+  pydantic>=2, pyyaml, httpx, python-dotenv,
   boto3 (`pyproject.toml` — `[project] dependencies`; pyyaml added sprint-16 STORY-040a for the config
   loader, httpx promoted to a runtime dep sprint-20 STORY-016 for the Grail + Statuspage HTTP
   executors, python-dotenv added sprint-36 STORY-043 so the two process entrypoints can load a
@@ -19,18 +19,16 @@ status: verified
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
-- **The DoD gate is six bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
+- **The DoD gate is four bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
   1. `pytest`
   2. `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
      (2026-07-12, sprint-44: invocation moved OFF the `lint-imports` exe shim — a Windows
      Application Control policy now blocks it on this machine; same 5 import-linter contracts,
      same check, module-path invocation instead; the 4th contract, `api-feature-independence`,
      added STORY-014; the 5th, `src-no-tests`, added STORY-038 to forbid `src` importing `tests`)
-  3. `python scripts/check_fk_direction.py` (needs `DATABASE_URL` → migrated Postgres)
-  4. `alembic upgrade head` (needs `DATABASE_URL_DIRECT`)
-  5. `ruff check .`
-  6. `ruff format --check .`
-  All six are live as of STORY-033. Commands 2–4 became real during Sprint 0 (bootstrap); commands 5 and 6 were added in Sprint 11.
+  3. `ruff check .`
+  4. `ruff format --check .`
+  All four are live as of STORY-087. Command 2 became real during Sprint 0 (bootstrap); commands 3 and 4 were added in Sprint 11.
   - `[tool.ruff]` carries `exclude = [".agents", ".venv", "frontend"]` (`pyproject.toml`; `.agents`
     STORY-016c, `frontend` STORY-015a): `.agents/` is untracked third-party skills tooling that otherwise
     makes `ruff check .` / `ruff format --check .` exit non-zero; `frontend/` is the JS/TS SPA (no Python)
@@ -49,54 +47,25 @@ status: verified
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
   npm on Node 24. Playwright/E2E is deferred to a later integration story.
 - **Running the app locally (STORY-042; `.env` loading STORY-043):** the FastAPI API is served via
-  the ASGI entrypoint `backend/src/composition/asgi.py` (`app = create_app()` — reads `DATABASE_URL`
-  + the topology config, default `config/apps`, so the boot-time seed runs), launched with
+  the ASGI entrypoint `backend/src/composition/asgi.py` (`app = create_app()` — reads the topology config,
+  default `config/apps`, so the boot-time seed runs), launched with
   `uvicorn src.composition.asgi:app --port 8000`. The Vite dev proxy (`/api` → `:8000`) then reaches it.
-  Full local stack (CLAUDE.md "Run the app locally"): `dev_db.py up` → export `DATABASE_URL` (or place
-  it in a repo-root `.env` — see the STORY-043 correction above) → the uvicorn command → a 2nd terminal
-  running the live loop `python -m src.composition.run` (populates proposals/observations/publications)
-  → `npm run dev`. Two processes share one `DATABASE_URL`; no CORS locally (same-origin via the proxy —
-  real CORS is STORY-017). Before STORY-042 the API had only ever run in-process via `TestClient` (no
-  ASGI server, no module-level app).
-- **Standard way to obtain a migrated throwaway DB (STORY-019):**
-  `scripts/dev_db.py` — `python scripts/dev_db.py up` starts a throwaway
-  `postgres:16`, waits for `pg_isready`, runs `alembic upgrade head`, and
-  prints `DATABASE_URL` (plain libpq) + `DATABASE_URL_DIRECT` (`+psycopg`);
-  `python scripts/dev_db.py down` removes the container. This replaces
-  hand-rolling commands 3 & 4's setup (the manual `docker run` one-liner below
-  is now a documented fallback, not the standard path).
-  `python scripts/dev_db.py up` is idempotent: it force-removes any pre-existing
-  container of the same name before attempting `docker run`, so a leftover/stuck
-  container no longer blocks startup (STORY-030).
-  Container readiness timeout is tunable via the `DEV_DB_READY_TIMEOUT_SECONDS`
-  environment variable (defaults to `60.0` seconds), which leverages a patient
-  retry/backoff loop with a 5-second bounded exec timeout under concurrent load
-  (STORY-073) and also retries and recovers from transient connection drops during
-  readiness verification (STORY-080).
-- Under `pytest`, the same logic is the session-scoped `migrated_db` fixture
-  (`backend/tests/conftest.py`, via `dev_db.resolve_db()`): reuses
-  `DATABASE_URL`/`DATABASE_URL_DIRECT` if both are already set externally
-  (migrating to ensure current, no container spawned); else spawns a
-  throwaway `postgres:16` on a free port if Docker is available (PID+UUID
-  -unique container name, to avoid collisions between nested/concurrent
-  pytest runs), tearing it down in a `finally`-block finalizer that runs even
-  if a test fails; else skips the DB-gated tests cleanly (no error). The CLI
-  tests (`test_dev_db_cli.py`) also dynamically allocate unique container names
-  and free ports to remain completely collision-proof against any external
-  running container (STORY-080). DB-gated
-  tests (e.g. `backend/tests/test_spine_schema.py`) depend on this fixture
-  instead of each rolling its own `skipif` + connection setup. A function-scoped
-  `clean_runtime_tables` fixture (STORY-039) truncates the runtime tables before
-  each DB-gated test, so the suite passes even against a reused, already-populated
-  DB (the session-scoped DB is shared; per-test isolation comes from the truncate).
-  A symmetric session-scoped `dynamo_local` fixture (via `dynamo_local.resolve_dynamo()`)
-  spawns a throwaway DynamoDB Local container (or reuses `DYNAMO_ENDPOINT_URL`), and
-  `clean_dynamo_tables` (function-scoped) deletes/re-creates tables for per-test isolation,
-  supporting DynamoDB integration tests (STORY-082).
-- Manual fallback one-liner for commands 3 & 4 (Docker 28.x), if not using
-  `scripts/dev_db.py`:
-  `docker run -d --name uptime_pg_test -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=uptime -p 55432:5432 postgres:16`
-  (full one-liner + env exports in `CLAUDE.md` "Database & migrations").
+  Full local stack (CLAUDE.md "Run the app locally"): start DynamoDB Local container → export `DYNAMO_ENDPOINT_URL` (or place
+  it in a repo-root `.env` — see the STORY-043 correction above) → create tables via `python scripts/create_tables.py`
+  → the uvicorn command → a 2nd terminal running the live loop `python -m src.composition.run`
+  (populates proposals/observations/publications) → `npm run dev`. Two processes share one DynamoDB Local;
+  no CORS locally (same-origin via the proxy — real CORS is STORY-017). Before STORY-042 the API had only ever
+  run in-process via `TestClient` (no ASGI server, no module-level app).
+- **Standard way to obtain a throwaway DynamoDB Local (STORY-082):**
+  Docker container running `amazon/dynamodb-local`. Start command:
+  `docker run -d --name uptime_dynamo -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
+  Tables are created by `python scripts/create_tables.py`.
+- Under `pytest`, the session-scoped `dynamo_local` fixture (`backend/tests/conftest.py`, via
+  `dynamo_local.resolve_dynamo()`): reuses `DYNAMO_ENDPOINT_URL` if already set externally; else spawns a
+  throwaway `amazon/dynamodb-local` on a free port if Docker is available (PID+UUID-unique container name,
+  to avoid collisions between concurrent runs), tearing it down in a finalizer; else skips DynamoDB-gated tests.
+  A function-scoped `clean_dynamo_tables` fixture deletes and recreates tables before each test to ensure
+  complete, order-independent test isolation on a shared Local instance.
 - The console script is `lint-imports` (`.venv/Scripts/lint-imports.exe`); `python -m importlinter`
   does NOT work (it is a package with no `__main__`). **Gotcha (operational, superseded
   2026-07-12):** the `.exe` launcher used to occasionally fail with `Permission denied` /

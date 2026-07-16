@@ -10,9 +10,6 @@ requires-python = ">=3.13"
 dependencies = [
     "fastapi",
     "pydantic>=2",
-    "sqlalchemy>=2",
-    "alembic",
-    "psycopg[binary]",
     "pyyaml",
     "httpx",
     "python-dotenv",

@@ -1,11 +1,6 @@
 """App runtime settings (composition zone).
 
-The application runtime talks to Neon through the POOLED PgBouncer connection,
-read from the ``DATABASE_URL`` env var (dossier §3, §17). This is deliberately
-distinct from the migration path, which uses the DIRECT connection
-(``DATABASE_URL_DIRECT``) — DDL misbehaves through transaction pooling, so
-migrations run as a separate release step on the direct connection
-(see ``migrations/env.py``).
+The application runtime talks to DynamoDB (dossier §3, §17).
 
 Reading env vars and owning configuration belongs in the composition zone, never
 in ``core/`` (the import-linter boundary forbids core importing infrastructure).
@@ -16,30 +11,11 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass
 
-# The env var the application runtime reads for its (pooled) database URL.
-APP_DATABASE_URL_VAR = "DATABASE_URL"
-
-
-def to_psycopg_url(database_url: str) -> str:
-    """Normalize a plain libpq ``postgresql://`` URL to the psycopg3 dialect
-    ``postgresql+psycopg://`` that SQLAlchemy 2 requires.
-
-    A URL that already carries an explicit ``+driver`` (or any non-plain scheme)
-    is returned unchanged. This is the ONE home for the dialect fix — the app
-    factory, the seed CLI, and the test DB fixture all route through it rather
-    than re-implementing the prefix swap (dossier §3 URL-dialect note).
-    """
-    prefix = "postgresql://"
-    if database_url.startswith(prefix):
-        return "postgresql+psycopg://" + database_url[len(prefix) :]
-    return database_url
-
 
 @dataclass(frozen=True)
 class Settings:
     """Immutable app settings resolved from the environment."""
 
-    database_url: str
     config_dir: str
     aws_region: str = "us-east-1"
     dynamo_observations_table: str = "uptime-observations"
@@ -50,12 +26,9 @@ class Settings:
 def load_settings() -> Settings:
     """Load runtime settings from the environment.
 
-    Reads the POOLED connection string from ``DATABASE_URL``. Raises
-    ``KeyError`` if it is unset — the app must not start without a database URL.
-    Also reads config_dir from ``CONFIG_DIR`` env var, defaulting to ``"config/apps"``.
+    Reads config_dir from ``CONFIG_DIR`` env var, defaulting to ``"config/apps"``.
     """
     return Settings(
-        database_url=os.environ[APP_DATABASE_URL_VAR],
         config_dir=os.environ.get("CONFIG_DIR", "config/apps"),
         aws_region=os.environ.get("AWS_REGION", "us-east-1"),
         dynamo_observations_table=os.environ.get(

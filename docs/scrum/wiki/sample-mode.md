@@ -1,8 +1,8 @@
 ---
 title: Sample mode — the on-demand outage simulator (TEMPORARY feature)
-code_refs: [migrations/versions/09e9aa2cee32_add_sample_mode.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/adapters/persistence/sample_mode_repository.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, scripts/check_fk_direction.py]
-verified_sha: abd8609
-verified_sprint: sprint-46
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
+verified_sha: e50983c
+verified_sprint: sprint-49
 status: verified
 ---
 
@@ -36,16 +36,9 @@ below for the mechanical deletion recipe.
   concern, applied at the ingest edge — `core/domain/*` and `core/services/*`
   are untouched (STORY-048 Context).
 
-### Storage — `sample_mode` table (D1)
-- `migrations/versions/09e9aa2cee32_add_sample_mode.py` (`down_revision =
-  "5ed254a8daab"`, chains from sprint-30's head) creates a dedicated,
-  droppable, no-FK table: `sample_mode(id BOOLEAN PRIMARY KEY DEFAULT TRUE
-  CHECK (id), enabled BOOLEAN NOT NULL, updated_at TIMESTAMPTZ NOT NULL
-  DEFAULT now())`. The `CHECK (id)` constraint pins the table to AT MOST ONE
-  row. `upgrade()` creates an EMPTY table — never-set → `False` is enforced
-  by the PORT, not a seeded default row. Reversible (`downgrade()` drops the
-  table); no FK in either direction, so `scripts/check_fk_direction.py`'s
-  SPINE allowlist and violation count are unaffected.
+### Storage — DynamoDB Sample Mode (D1)
+- The sample mode status is stored in the control table under partition key `SAMPLE_MODE` and sort key `META` (via `DynamoSampleModeRepository`). There are no foreign keys or relational constraints, keeping it isolated. Default value `False` is enforced by the PORT when no item exists.
+
 
 ### The port — `SampleModeRepository` (D2)
 - `core/ports/sample_mode_repository.py::SampleModeRepository` (ABC): two
@@ -301,12 +294,8 @@ seam`; instead every touched export/section carries a doc-comment naming
   reader doesn't wonder why the sprint-32 removal recipe used to name this
   file and no longer does).
 
-**Write a new migration** chaining from whatever is HEAD at removal time
-that DROPs the `sample_mode` table (`op.drop_table("sample_mode")`) — the
-existing `09e9aa2cee32_add_sample_mode.py` migration itself is NOT deleted
-(migrations are an append-only, immutable history; the new DROP migration is
-the removal, mirroring how this table's own creation is one forward
-migration).
+**DynamoDB partition cleanup:** the `sample_mode` table has been retired and is now stored in the control table under the `SAMPLE_MODE` partition. For removal, we simply delete the `SAMPLE_MODE` row and delete the corresponding repository.
+
 
 **Data cleanup:** any simulated rows already written to a real `observations`
 table are identifiable by the D5 sentinel — `WHERE raw_ref LIKE
@@ -315,7 +304,7 @@ does not retroactively touch already-persisted rows.
 
 **What is untouched by removal** (D7 — never had a seam in the first place):
 `core/domain/*`, `core/services/*`, `composition/pull_loop.py`,
-`composition/seed.py`, all pre-existing tables/migrations, all pre-existing
+`composition/seed_dynamo.py`, all pre-existing tables, all pre-existing
 backend endpoints, and — on the frontend side (STORY-049) — every OTHER
 tab/feature (`useComponents`, `useApprovals`, `useAvailability`,
 `AvailabilityPage`, `ApprovalsPage`), `lib/useFetch.ts` itself (unchanged),
@@ -440,7 +429,7 @@ produced ordinary data flowing through it.
   and `test_run_live_loop.py` gained one wiring test (see [[ingest-service-and-pull-loop]]); neither
   touches the `SampleModeIngest` seam or the sample-mode wiring this article describes. No Fact
   changed. verified_sha → 4d3fd7a.
-- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged four uncovered
+- sprint-44 (STORY-079, Facts-coverage cleanup): `yt_wiki.py facts` flagged three uncovered
   citations: `frontend/src/pages/DashboardPage.tsx` (the Fact stating it no longer imports/renders
   anything sample-mode-related), `backend/tests/test_ingest_service.py` and
   `backend/tests/test_pull_loop.py` (the "pre-existing BEHAVIOR tests... were NOT touched" Fact in
@@ -449,8 +438,7 @@ produced ordinary data flowing through it.
   in-story-changed files were added; the v2 facts-coverage lint supersedes that convention — a Fact
   citing a file must be covered by `code_refs` regardless of whether the story changed it, so both
   are added here even though the substantive claim, that they were untouched, remains true and
-  unedited), and `scripts/check_fk_direction.py` (the D1 migration's FK-direction-check-unaffected
-  claim). All four added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
+  unedited). Added to `code_refs`. No Fact text changed. verified_sha → 678ff0d.
 - sprint-44 (STORY-079 fix loop, quality review MAJOR / spec review non-blocking finding, both
   converging on this fix): the seam-section clause "neither file appears in this article's
   `code_refs` because neither changed" went stale the moment this same story's Facts-coverage pass

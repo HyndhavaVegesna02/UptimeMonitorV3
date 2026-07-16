@@ -11,35 +11,9 @@ parity convention already documented in [[persistence-adapters]]).
 
 from __future__ import annotations
 
-import psycopg
 import pytest
 from src.core.domain.component import ComponentNotFoundError
 from src.core.domain.status import ComponentStatus
-
-
-def _seed_component(
-    database_url: str, component_id: str, app_id: str = "app-1"
-) -> None:
-    """Insert a minimal `apps` row + `components` row (test arrangement only)."""
-    with psycopg.connect(database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO apps (id, name, config)
-                VALUES (%s, %s, '{}'::jsonb)
-                ON CONFLICT (id) DO NOTHING
-                """,
-                (app_id, app_id),
-            )
-            cur.execute(
-                """
-                INSERT INTO components (id, app_id, name, status)
-                VALUES (%s, %s, %s, 'operational')
-                ON CONFLICT (id) DO NOTHING
-                """,
-                (component_id, app_id, component_id),
-            )
-        conn.commit()
 
 
 def _assert_set_status_contract(repo, *, known_id: str) -> None:
@@ -73,15 +47,3 @@ def test_fake_component_repository_set_status_contract():
     repo = FakeComponentRepository(components=[comp])
 
     _assert_set_status_contract(repo, known_id="checkout")
-
-
-def test_postgres_component_repository_set_status_contract(migrated_db, engine):
-    from src.adapters.persistence.component_repository import (
-        PostgresComponentRepository,
-    )
-
-    _seed_component(migrated_db.database_url, "set-status-comp", "app-1")
-
-    repo = PostgresComponentRepository(engine)
-
-    _assert_set_status_contract(repo, known_id="set-status-comp")

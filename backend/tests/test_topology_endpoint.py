@@ -11,11 +11,10 @@ the seeded topology (NOT re-read from config files at request time). Covers:
     Postgres-backed `create_app`, proving the payload is sourced from the DB.
 """
 
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-import psycopg
-import pytest
 from fastapi.testclient import TestClient
 from src.composition.app import create_app
 from src.core.domain import Component, ComponentStatus
@@ -157,25 +156,12 @@ def test_topology_module_five_file_shape():
     }
 
 
-@pytest.fixture
-def clean_topology(migrated_db):
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE apps, components, signals CASCADE;")
-        conn.commit()
-    yield
-    with psycopg.connect(migrated_db.database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute("TRUNCATE TABLE apps, components, signals CASCADE;")
-        conn.commit()
-
-
 def test_topology_db_gated_sourced_from_seeded_topology(
-    migrated_db, clean_topology, tmp_path
+    dynamo_local, clean_dynamo_tables, tmp_path
 ):
     """AC1: the payload is sourced from the seeded topology (DB), never re-read
-    from config/ at request time — proven with a real Postgres-backed
-    create_app + seed_topology at lifespan startup."""
+    from config/ at request time — proven with a real DynamoDB-backed
+    create_app + seed_topology_dynamo at lifespan startup."""
     config_dir = tmp_path / "apps"
     config_dir.mkdir()
     yaml_content = """
@@ -191,17 +177,21 @@ signals:
 """
     (config_dir / "topo_app.yaml").write_text(yaml_content, encoding="utf-8")
 
-    app = create_app(
-        database_url=migrated_db.database_url,
-        config_dir=str(config_dir),
-    )
+    # Temporarily set env CONFIG_DIR for create_app settings load
+    os.environ["CONFIG_DIR"] = str(config_dir)
+    try:
+        app = create_app(
+            config_dir=str(config_dir),
+        )
 
-    with TestClient(app) as client:
-        response = client.get("/api/v1/topology")
-        assert response.status_code == 200
-        data = response.json()
-        comp = next(c for c in data if c["id"] == "topo-comp")
-        by_key = {s["signal_key"]: s for s in comp["signals"]}
-        assert by_key["topo-sig-a"]["interval_seconds"] == 60
-        assert by_key["topo-sig-b"]["interval_seconds"] == 120
-        assert by_key["topo-sig-a"]["component_id"] == "topo-comp"
+        with TestClient(app) as client:
+            response = client.get("/api/v1/topology")
+            assert response.status_code == 200
+            data = response.json()
+            comp = next(c for c in data if c["id"] == "topo-comp")
+            by_key = {s["signal_key"]: s for s in comp["signals"]}
+            assert by_key["topo-sig-a"]["interval_seconds"] == 60
+            assert by_key["topo-sig-b"]["interval_seconds"] == 120
+            assert by_key["topo-sig-a"]["component_id"] == "topo-comp"
+    finally:
+        os.environ.pop("CONFIG_DIR", None)

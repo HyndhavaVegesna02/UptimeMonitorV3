@@ -3,7 +3,7 @@ title: Migrations and the two-connection database split
 code_refs: [alembic.ini, migrations/env.py, migrations/versions/eda70ac11454_baseline.py, migrations/versions/3a8254bcfe59_spine_schema.py, migrations/versions/eec78d2e8cbe_add_signals_component_id.py, migrations/versions/5ed254a8daab_add_signals_interval_seconds.py, backend/src/composition/settings.py, scripts/dev_db.py, backend/tests/conftest.py, scripts/check_fk_direction.py, backend/tests/test_spine_schema.py]
 verified_sha: 143f15a
 verified_sprint: sprint-47
-status: verified
+status: archived
 ---
 
 ## Facts (verified against code)

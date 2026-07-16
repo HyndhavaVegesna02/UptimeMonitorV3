@@ -22,20 +22,21 @@ async def lifespan(app: FastAPI):
     """Lifespan context manager for resource setup and teardown (STORY-035.1)."""
     # Seeding topology at boot time (dossier §7, §17)
     seed_config = getattr(app.state, "seed_config", None)
-    db_engine = getattr(app.state, "db_engine", None)
-    if seed_config is not None and db_engine is not None:
-        from src.composition.seed import seed_topology
+    dynamo_resource = getattr(app.state, "dynamo_resource", None)
+    control_table = getattr(app.state, "control_table", None)
+    if (
+        seed_config is not None
+        and dynamo_resource is not None
+        and control_table is not None
+    ):
+        from src.composition.seed_dynamo import seed_topology_dynamo
 
-        seed_topology(seed_config, db_engine)
+        seed_topology_dynamo(seed_config, dynamo_resource, control_table)
     yield
-    # Dispose of the DB engine on shutdown if it was constructed
-    if hasattr(app.state, "db_engine") and app.state.db_engine is not None:
-        app.state.db_engine.dispose()
 
 
 def create_app(
     *,
-    database_url: str | None = None,
     proposal_repo: ProposalRepository | None = None,
     component_repo: ComponentRepository | None = None,
     maintenance_repo: MaintenanceRepository | None = None,
@@ -71,51 +72,66 @@ def create_app(
 
     # Wire database engine and repositories
     if proposal_repo is None:
-        import sqlalchemy as sa
-
-        from src.adapters.persistence.component_repository import (
-            PostgresComponentRepository,
+        from src.adapters.persistence.dynamo_component_repository import (
+            DynamoComponentRepository,
         )
-        from src.adapters.persistence.maintenance_repository import (
-            PostgresMaintenanceRepository,
+        from src.adapters.persistence.dynamo_maintenance_repository import (
+            DynamoMaintenanceRepository,
         )
-        from src.adapters.persistence.observation_repository import (
-            PostgresObservationRepository,
+        from src.adapters.persistence.dynamo_observation_repository import (
+            DynamoObservationRepository,
         )
-        from src.adapters.persistence.proposal_repository import (
-            PostgresProposalRepository,
+        from src.adapters.persistence.dynamo_proposal_repository import (
+            DynamoProposalRepository,
         )
-        from src.adapters.persistence.sample_mode_repository import (
-            PostgresSampleModeRepository,
+        from src.adapters.persistence.dynamo_sample_mode_repository import (
+            DynamoSampleModeRepository,
         )
-        from src.adapters.persistence.signal_repository import (
-            PostgresSignalRepository,
+        from src.adapters.persistence.dynamo_signal_repository import (
+            DynamoSignalRepository,
         )
         from src.composition.config import load_config
-        from src.composition.settings import load_settings, to_psycopg_url
+        from src.composition.dynamo import make_dynamo_resource
+        from src.composition.settings import load_settings
 
         settings = load_settings()
-        db_url = to_psycopg_url(database_url or settings.database_url)
-        engine = sa.create_engine(db_url)
-        proposal_repo = PostgresProposalRepository(engine)
+        db_resource = make_dynamo_resource(settings)
+
+        proposal_repo = DynamoProposalRepository(
+            db_resource, settings.dynamo_control_table
+        )
         if component_repo is None:
-            component_repo = PostgresComponentRepository(engine)
+            component_repo = DynamoComponentRepository(
+                db_resource, settings.dynamo_control_table
+            )
         if maintenance_repo is None:
-            maintenance_repo = PostgresMaintenanceRepository(engine)
+            maintenance_repo = DynamoMaintenanceRepository(
+                db_resource, settings.dynamo_control_table
+            )
         if observation_repo is None:
-            observation_repo = PostgresObservationRepository(engine)
+            observation_repo = DynamoObservationRepository(
+                db_resource, settings.dynamo_observations_table
+            )
         if publication_repo is None:
-            from src.adapters.persistence.publication_repository import (
-                PostgresPublicationRepository,
+            from src.adapters.persistence.dynamo_publication_repository import (
+                DynamoPublicationRepository,
             )
 
-            publication_repo = PostgresPublicationRepository(engine)
+            publication_repo = DynamoPublicationRepository(
+                db_resource, settings.dynamo_control_table
+            )
         if signal_repo is None:
-            signal_repo = PostgresSignalRepository(engine)
+            signal_repo = DynamoSignalRepository(
+                db_resource, settings.dynamo_control_table
+            )
         # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
         if sample_mode_repo is None:
-            sample_mode_repo = PostgresSampleModeRepository(engine)
-        app.state.db_engine = engine
+            sample_mode_repo = DynamoSampleModeRepository(
+                db_resource, settings.dynamo_control_table
+            )
+
+        app.state.dynamo_resource = db_resource
+        app.state.control_table = settings.dynamo_control_table
 
         # Load and validate config (fail-fast: raises if invalid)
         cfg_dir = config_dir or settings.config_dir
@@ -126,7 +142,8 @@ def create_app(
         # symmetric with proposal_repo. Production code never imports the tests
         # package; callers that exercise /components, /maintenance,
         # /availability, or /history inject them explicitly.
-        app.state.db_engine = None
+        app.state.dynamo_resource = None
+        app.state.control_table = None
         app.state.seed_config = None
 
     # Wire clock

@@ -1,25 +1,24 @@
-"""STORY-016a (Phase D1): throwaway-DB integration test for orchestrate_signal.
+"""STORY-016a (Phase D1): integration test for orchestrate_signal using DynamoDB Local."""
 
-Seeds observations + app + component + signal into a real migrated throwaway
-Postgres DB, runs orchestrate_signal against Postgres-backed repository adapters
-reconciled via DecideService, and asserts a real status_proposals row is opened.
-"""
+from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 
-import psycopg
 from fakes import RecordingStatusPublisher
-from src.adapters.persistence.component_repository import PostgresComponentRepository
-from src.adapters.persistence.maintenance_repository import (
-    PostgresMaintenanceRepository,
+from src.adapters.persistence.dynamo_component_repository import (
+    DynamoComponentRepository,
 )
-from src.adapters.persistence.observation_repository import (
-    PostgresObservationRepository,
+from src.adapters.persistence.dynamo_maintenance_repository import (
+    DynamoMaintenanceRepository,
 )
-from src.adapters.persistence.proposal_repository import PostgresProposalRepository
+from src.adapters.persistence.dynamo_observation_repository import (
+    DynamoObservationRepository,
+)
+from src.adapters.persistence.dynamo_proposal_repository import DynamoProposalRepository
 from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
 from src.composition.orchestrate import orchestrate_signal
+from src.composition.seed_dynamo import seed_topology_dynamo
+from src.composition.settings import load_settings
 from src.core.domain import ComponentStatus, Health, Provenance, SignalObservation
 from src.core.domain.proposal import ProposalState
 from src.core.services.decide import DecideAction, DecideService
@@ -34,74 +33,18 @@ class FakeClock:
         return self._now
 
 
-def seed_db_topology(
-    database_url: str, app_id: str, component_id: str, signal_key: str
-) -> None:
-    """Helper to seed app, component, and signal topology into the database."""
-    with psycopg.connect(database_url) as conn:
-        with conn.cursor() as cur:
-            # Seed App
-            cur.execute(
-                """
-                INSERT INTO apps (id, name, config)
-                VALUES (%s, %s, '{}'::jsonb)
-                ON CONFLICT (id) DO NOTHING
-                """,
-                (app_id, app_id),
-            )
-            # Seed Component
-            cur.execute(
-                """
-                INSERT INTO components (id, app_id, name, status)
-                VALUES (%s, %s, %s, 'operational')
-                ON CONFLICT (id) DO NOTHING
-                """,
-                (component_id, app_id, component_id),
-            )
-            # Seed Signal
-            cur.execute(
-                """
-                INSERT INTO signals (signal_key, app_id, name)
-                VALUES (%s, %s, %s)
-                ON CONFLICT (signal_key) DO NOTHING
-                """,
-                (signal_key, app_id, signal_key),
-            )
-        conn.commit()
+def test_orchestrate_signal_db_integration(
+    dynamo_local, dynamo_resource, clean_dynamo_tables
+):
+    """Phase D1: run orchestrate_signal against real DynamoDB repository adapters.
 
-
-def seed_db_observation(database_url: str, obs: SignalObservation) -> None:
-    """Helper to insert an observation directly into the database."""
-    with psycopg.connect(database_url) as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO observations (signal_key, observed_at, health, source_event_id, source, location)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                """,
-                (
-                    obs.signal_key,
-                    obs.observed_at,
-                    obs.health.value,
-                    obs.source_event_id,
-                    json.dumps(obs.source.model_dump()),
-                    obs.location,
-                ),
-            )
-        conn.commit()
-
-
-def test_orchestrate_signal_db_integration(migrated_db, engine, clean_runtime_tables):
-    """Phase D1: run orchestrate_signal against real Postgres repository adapters.
-
-    Asserts that a real status_proposals row is opened in Postgres when major threshold is met.
+    Asserts that a real status_proposals row is opened in DynamoDB when major threshold is met.
     """
+    settings = load_settings()
+
     app_id = "sockshop-int"
     component_id = "checkout-int"
     signal_key = "checkout-http-int"
-
-    # Seed the DB structure
-    seed_db_topology(migrated_db.database_url, app_id, component_id, signal_key)
 
     # Build memory Config
     thresholds = AntiFlapThresholds(major=3, partial=2, degraded=2, recovery=2)
@@ -123,8 +66,24 @@ def test_orchestrate_signal_db_integration(migrated_db, engine, clean_runtime_ta
     )
     config = Config([app_cfg])
 
+    # Seed the DynamoDB structure
+    seed_topology_dynamo(config, dynamo_resource, settings.dynamo_control_table)
+
+    # Initialize real repositories
+    observation_repo = DynamoObservationRepository(
+        dynamo_resource, settings.dynamo_observations_table
+    )
+    component_repo = DynamoComponentRepository(
+        dynamo_resource, settings.dynamo_control_table
+    )
+    maintenance_repo = DynamoMaintenanceRepository(
+        dynamo_resource, settings.dynamo_control_table
+    )
+    proposal_repo = DynamoProposalRepository(
+        dynamo_resource, settings.dynamo_control_table
+    )
+
     # Now let's place 3 DOWN observations at 1-min interval
-    # Cycle bounds: major=3, so we check last 5 cycles
     now_ts = datetime(2026, 6, 28, 10, 4, 0, tzinfo=timezone.utc)
 
     obs1 = SignalObservation(
@@ -152,15 +111,7 @@ def test_orchestrate_signal_db_integration(migrated_db, engine, clean_runtime_ta
         location="us-east-1",
     )
 
-    seed_db_observation(migrated_db.database_url, obs1)
-    seed_db_observation(migrated_db.database_url, obs2)
-    seed_db_observation(migrated_db.database_url, obs3)
-
-    # Initialize real repositories using SQLAlchemy engine
-    observation_repo = PostgresObservationRepository(engine)
-    component_repo = PostgresComponentRepository(engine)
-    maintenance_repo = PostgresMaintenanceRepository(engine)
-    proposal_repo = PostgresProposalRepository(engine)
+    observation_repo.save_new([obs1, obs2, obs3])
 
     publisher = RecordingStatusPublisher()
     decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
