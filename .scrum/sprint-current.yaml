@@ -51,5 +51,16 @@ stories:
     slug: playwright-ui-sweep
     points: 2
     order: 2           # live-stack sweep (read-mostly; mutations reversed)
+final_gate:
+  head: 3cdf09d
+  dod_evidence:   # full 8-command amended gate, all exit 0 at 2026-07-16T23:19-23:21Z on 3cdf09d
+    - {command: "pytest", exit_code: 0, output_tail: "529 passed in 40.71s", commit: 3cdf09d, at: "2026-07-16T23:19:31+00:00"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, output_tail: "Contracts: 8 kept, 0 broken.", commit: 3cdf09d, at: "2026-07-16T23:20:12+00:00"}
+    - {command: "ruff check .", exit_code: 0, output_tail: "All checks passed!", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "ruff format --check .", exit_code: 0, output_tail: "205 files already formatted", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, output_tail: "(exit 0, no findings)", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "npm test", exit_code: 0, output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)", commit: 3cdf09d, at: "2026-07-16T23:20:15+00:00"}
+    - {command: "npm run build", exit_code: 0, output_tail: "built", commit: 3cdf09d, at: "2026-07-16T23:20:51+00:00"}
+    - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 3cdf09d, at: "2026-07-16T23:20:56+00:00"}
 hotfixes: []
 interrupts: []
