@@ -58,7 +58,30 @@ Before beginning, ensure you have:
      - `STATUSPAGE_PAGE_ID` = Your Statuspage page ID
      - `STATUSPAGE_API_KEY` = Your Statuspage API token
    - Click **Save**.
-5. Once saved, restart the ECS services (or update the stack) to let the containers load the updated secrets.
+
+> **Do NOT start or restart the ECS services yet.** No image exists in ECR until Step 3,
+> so tasks cannot launch. The services come up via the force-new-deployment at the end of
+> Step 3, which starts tasks that read these secret values on boot.
+
+### Environment variables injected by the stack (no console entry needed)
+
+Besides the four secret-backed values above, the CloudFormation template injects these
+**plain (non-secret) environment variables** into the task definitions — you do NOT enter
+them anywhere; they are listed here so you know every variable each container receives:
+
+| Variable | api service | loop service | Source |
+| --- | :---: | :---: | --- |
+| `AWS_REGION` | ✅ | ✅ | template (stack region) |
+| `DYNAMO_OBSERVATIONS_TABLE` | ✅ | ✅ | template (observations table name) |
+| `DYNAMO_CONTROL_TABLE` | ✅ | ✅ | template (control table name) |
+| `DYNATRACE_ENV_URL` | — | ✅ | Secrets Manager (entered above) |
+| `DYNATRACE_API_TOKEN` | — | ✅ | Secrets Manager (entered above) |
+| `STATUSPAGE_PAGE_ID` | — | ✅ | Secrets Manager (entered above) |
+| `STATUSPAGE_API_KEY` | — | ✅ | Secrets Manager (entered above) |
+
+The api task runs the default image CMD (uvicorn); the loop task overrides the CMD to
+`python -m src.composition.run` and is the only service that receives the Dynatrace/Statuspage
+secrets.
 
 ---
 
