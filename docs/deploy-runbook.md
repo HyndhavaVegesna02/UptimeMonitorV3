@@ -10,7 +10,7 @@ Before beginning, ensure you have:
 1. An AWS Account with administrator permissions.
 2. The AWS CLI installed and configured locally (`aws configure`).
 3. Docker installed and running locally.
-4. Git branch `sprint-49` checked out.
+4. Git branch `sprint-50` checked out.
 
 ---
 
