@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: a8700f5
+verified_sprint: sprint-50
 status: verified
 ---
 
@@ -97,3 +97,6 @@ status: verified
 - sprint-45 (STORY-065/STORY-066): re-verified, no changes to Statuspage publishing. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) — behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
+- sprint-50 (STORY-093, test hygiene): `test_run_live_loop.py::test_main_resource_lifecycle_success`
+  gained real assertions on the mocked resource-lifecycle surface (`build_live_loop` called once);
+  the publisher chain this article describes is UNCHANGED. No Fact changed. verified_sha -> a8700f5.
