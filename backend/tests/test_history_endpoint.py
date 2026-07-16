@@ -7,6 +7,8 @@ FakeObservationRepository (in-memory). Covers:
   - 422 when signal_key is missing (AC2)
   - explicit since/until honored (AC3)
   - Five-file shape assertion (AC4)
+  - limit query param (STORY-094 AC1/AC2): fake-repo tests above plus one
+    real-DynamoDB-Local test (test_history_limit_against_real_dynamo_repository)
 """
 
 from datetime import datetime, timedelta, timezone
@@ -253,6 +255,100 @@ def test_history_limit_larger_than_result_set_returns_all():
 
     assert response.status_code == 200
     assert len(response.json()) == 5
+
+
+def test_history_limit_absent_matches_existing_full_window_behavior():
+    """AC2: absent limit → identical full-window behavior (no cap applied)."""
+    obs_repo = FakeObservationRepository()
+    base = _NOW - timedelta(hours=5)
+    obs_repo.save_new(
+        [
+            _obs(event_id=f"e-{i}", observed_at=base + timedelta(hours=i))
+            for i in range(5)
+        ]
+    )
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    response = client.get("/api/v1/history?signal_key=checkout-http")
+
+    assert response.status_code == 200
+    assert len(response.json()) == 5
+
+
+def test_history_limit_zero_returns_422():
+    """AC2: limit=0 -> clean 422 via the validation seam (STORY-052 convention)."""
+    obs_repo = FakeObservationRepository()
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    response = client.get("/api/v1/history?signal_key=checkout-http&limit=0")
+
+    assert response.status_code == 422
+
+
+def test_history_limit_negative_returns_422():
+    """AC2: limit=-1 -> clean 422."""
+    obs_repo = FakeObservationRepository()
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    response = client.get("/api/v1/history?signal_key=checkout-http&limit=-1")
+
+    assert response.status_code == 422
+
+
+def test_history_limit_non_int_returns_422():
+    """AC2: limit=abc (non-int) -> clean 422 (FastAPI's own coercion)."""
+    obs_repo = FakeObservationRepository()
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(obs_repo, clock))
+
+    response = client.get("/api/v1/history?signal_key=checkout-http&limit=abc")
+
+    assert response.status_code == 422
+
+
+def test_history_limit_against_real_dynamo_repository(
+    dynamo_local, dynamo_resource, clean_dynamo_tables
+):
+    """AC1: limit=N against the real DynamoDB-Local repository path (not the fake)."""
+    from src.adapters.persistence.dynamo_observation_repository import (
+        DynamoObservationRepository,
+    )
+    from src.composition.settings import load_settings
+
+    settings = load_settings()
+    observation_repo = DynamoObservationRepository(
+        dynamo_resource, settings.dynamo_observations_table
+    )
+
+    signal_key = "checkout-http-dynamo"
+    base = _NOW - timedelta(hours=5)
+    observations = [
+        _obs(
+            signal_key=signal_key,
+            event_id=f"evt-dynamo-{i}",
+            observed_at=base + timedelta(hours=i),
+        )
+        for i in range(5)
+    ]
+    observation_repo.save_new(observations)
+
+    clock = FakeClock(_NOW)
+    client = TestClient(_app(observation_repo, clock))
+
+    response = client.get(f"/api/v1/history?signal_key={signal_key}&limit=2")
+
+    assert response.status_code == 200
+    data = response.json()
+    assert len(data) == 2
+    from datetime import datetime as dt_
+
+    t0 = dt_.fromisoformat(data[0]["observed_at"])
+    t1 = dt_.fromisoformat(data[1]["observed_at"])
+    assert t0 == base + timedelta(hours=4)
+    assert t1 == base + timedelta(hours=3)
 
 
 def test_history_module_five_file_shape():
