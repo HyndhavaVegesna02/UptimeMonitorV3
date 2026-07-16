@@ -387,6 +387,7 @@ Resources:
       TaskDefinition: !Ref APITaskDefinition
       DesiredCount: !Ref APIDesiredCount
       LaunchType: FARGATE
+      HealthCheckGracePeriodSeconds: 120
       NetworkConfiguration:
         AwsvpcConfiguration:
           AssignPublicIp: ENABLED
