@@ -463,6 +463,7 @@ Resources:
     Type: AWS::CloudFront::Function
     Properties:
       Name: !Sub 'RewriteExtensionlessPaths-${AWS::StackName}'
+      AutoPublish: true   # distribution FunctionAssociations require the LIVE stage; without this, create fails with "not found or is not published"
       FunctionConfig:
         Comment: 'Rewrite extensionless paths to /index.html'
         Runtime: cloudfront-js-1.0
