@@ -77,9 +77,9 @@
   layer is CACHED on the second build; run the container import smoke
   (`python -c "import src.composition.asgi; import src.composition.run"`) and
   `whoami` inside the container → the non-root user. Record output. Commit any fix.
-- [ ] 6. `infra/stack.yaml`: add `HealthCheckGracePeriodSeconds: 120` to
+- [x] 6. `infra/stack.yaml`: add `HealthCheckGracePeriodSeconds: 120` to
   `APIService.Properties`; run `cfn-lint infra/stack.yaml` → exit 0. Commit.
-- [ ] 7. Runbook branch reconcile: update `docs/deploy-runbook.md` Prerequisite 4
+- [x] 7. Runbook branch reconcile: update `docs/deploy-runbook.md` Prerequisite 4
   (currently "Git branch `sprint-49` checked out", line 13) to the `sprint-50`
   branch HEAD — a PO executing the runbook verbatim must deploy the template and
   image that INCLUDE this story's hardening, not sprint-49 artifacts. Commit.
