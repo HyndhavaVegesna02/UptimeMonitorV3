@@ -1,8 +1,8 @@
 ---
 title: Deployment — CloudFormation single-stack + container image
 code_refs: [infra/stack.yaml, Dockerfile, .dockerignore, scripts/create_tables.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: a8700f5
+verified_sprint: sprint-50
 status: verified
 ---
 
@@ -25,21 +25,35 @@ status: verified
   0.5 GB task definitions — api runs the image's default CMD with a `/api/v1/health` ALB
   health check; loop overrides the CMD to `python -m src.composition.run` and receives the
   four Dynatrace/Statuspage secrets. Two services, desiredCount 1.
+- **API health grace (STORY-093 AC2):** `APIService` sets `HealthCheckGracePeriodSeconds: 120`
+  (`infra/stack.yaml:390`) so the ALB target-group health check (30s interval, unhealthy after
+  3 fails ≈ 90s budget, `infra/stack.yaml:365-368`) does not churn the task while the first-boot
+  lifespan seed (config read + DynamoDB writes) is still running on a cold task.
 - **Loop singleton (double-publish guard):** the loop service sets
   `DeploymentConfiguration MinimumHealthyPercent: 0 / MaximumPercent: 100`
-  (`infra/stack.yaml:419-421`) so a deploy never runs two loops concurrently. The api service
-  keeps the rolling default.
+  (`infra/stack.yaml:420-422`) so a deploy never runs two loops concurrently. The api service
+  keeps the rolling default (no `HealthCheckGracePeriodSeconds` on `LoopService` — it has no
+  load balancer, so the property is not legal there).
 - **Edge:** ALB HTTP:80 → api target group; a private S3 bucket (`DeletionPolicy: Retain`,
-  `infra/stack.yaml:426-427`) + Origin Access Control; CloudFront with the default behavior →
+  `infra/stack.yaml:427-428`) + Origin Access Control; CloudFront with the default behavior →
   S3 and an ordered `/api/*` behavior → the ALB origin (all methods, caching disabled). A
-  CloudFront Function rewrites extensionless paths to `/index.html` on the **default behavior
-  only** (`infra/stack.yaml:498-500`), never touching `/api/*` responses. Two 14-day log
-  groups; two Secrets Manager secrets (names only — values entered in-console).
+  CloudFront Function (`RewriteFunction`, `infra/stack.yaml:462-477`) rewrites extensionless
+  paths to `/index.html` on the **default behavior only**, never touching `/api/*` responses.
+  Two 14-day log groups; two Secrets Manager secrets (names only — values entered in-console).
 - **Container image** (`Dockerfile`): a single `python:3.13-slim` image serves **both**
   processes. Default `CMD` runs the API (`uvicorn src.composition.asgi:app`); the loop runs by
   command override (`python -m src.composition.run`) — the same override the ECS loop task def
   uses. `.dockerignore` keeps the build context lean (excludes `.venv/`, `frontend/`,
   `backend/tests/`, `.claude/`, `docs/`, `.scrum/`, caches).
+- **Cached dependency layer + non-root (STORY-093 AC1):** `Dockerfile` copies only
+  `pyproject.toml` first, derives the `[project] dependencies` list via a stdlib `tomllib`
+  one-liner into `requirements.txt`, and installs those + `uvicorn[standard]` — all BEFORE
+  `COPY backend /app/backend` — so a source-only change never invalidates the dependency
+  install layer; the final `pip install --no-cache-dir .` (installing the package itself) runs
+  after the source copy, riding on the already-installed deps. The dead `ENV PORT=8000` (never
+  read — `CMD` hard-codes `--port 8000`) is removed. Both processes run as a non-root `app`
+  user (`RUN useradd --create-home app` + `USER app`) — safe because neither process writes to
+  disk (network-only DynamoDB persistence, `.env` load is a container no-op, logs to stderr).
 
 ## Inference (synthesis, not verified)
 - Deployment is **console-first**: the PO drives the AWS Console against the step-by-step guide
@@ -50,3 +64,8 @@ status: verified
 ## History
 - sprint-49 (STORY-088 + STORY-092): created. The single-stack template + Dockerfile + console
   runbook landed the AWS deployment surface; `cfn-lint` joined the DoD.
+- sprint-50 (STORY-093, review minors): `APIService` gained
+  `HealthCheckGracePeriodSeconds: 120`; `Dockerfile` reordered to cache the dependency-install
+  layer across source-only changes, dropped the dead `ENV PORT=8000`, and now runs as a
+  non-root `app` user. Re-verified against `infra/stack.yaml` line-number drift from the
+  1-line insertion.
