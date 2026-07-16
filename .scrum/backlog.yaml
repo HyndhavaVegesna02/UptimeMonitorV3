@@ -3,10 +3,12 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 93   # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
+next_story_id: 94   # 093 = sprint-49 review minors (container hardening, ECS health grace,
+                    # test hygiene), filed at sprint-49 review as accept-with-follow-up.
+                    # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
                     # AWS epic 082-091 was filed without bumping it); 092 = containerize both
                     # processes (single Dockerfile), split out of STORY-088 at sprint-49
-                    # planning per PO directive. Next free id = 093.
+                    # planning per PO directive.
                     # 081 = publication incident-id capture (split out of 066 at sprint-45 refinement; draft, blocked on a Statuspage design decision + live sample). 080 = dev_db CLI port-collision defect (sprint-44 gate contention). 079 = wiki Facts-coverage cleanup (pilot sprint 44, from yt_wiki.py facts lint first run). 078 = core/queries CQRS-lite move (proposal §8, PO-triggered sprint 43). 077 = sprint-42 review minors (zone-layout private-API coupling + decisions concurrency comment). 074-076 = API restructure now-phase (sprint 42; from docs/superpowers/specs/2026-07-10-api-restructure-design.md). 073 pre-existed when counter said 73 (sprint-41 filing missed the bump — fixed here). 072 = publication record-always + outcome (approve records independent of Statuspage publish; sprint 40; delivers STORY-066's outcome part). 071 = decision CheckViolation defect (approval_events.action 'approve' vs constraint 'approved'/'rejected'); sprint 39. 070 = live vendor-id drift health check (sprint-38 retro, from the stale-monitor-id hotfix); 068 = useAvailability.test.tsx parallelism false-red (sprint-38 STORY-058); 069 = sprint-38 redesign consolidation chore. 055-062 = Operator Dashboard redesign (sprint 38, frontend-only, adapt-to-real-data); 063-067 = redesign backend-gap follow-ups (drafts, deferred per PO 2026-07-07). 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
@@ -850,7 +852,7 @@ stories:
   - id: STORY-087
     title: Composition cutover to DynamoDB — retire Postgres, DoD amendment takes effect
     file: docs/scrum/stories/STORY-087-dynamodb-cutover.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); depends on STORY-083..086 all accepted. IN sprint-49 (order 1).
+    status: done    # sprint-49: spec FAIL_then_FIXED (AC2/AC4/AC5 review-tail) + quality FIX_REQUIRED_then_FIXED (asgi docstring, verified_sha de-launder); AC4 live-loop PROVEN (244 obs ingested, watermark advanced). PO accepted 2026-07-16, merged to main.
     points: 3
     priority: 46
     type: chore
@@ -858,7 +860,7 @@ stories:
   - id: STORY-088
     title: CloudFormation single-stack template + console deployment runbook
     file: docs/scrum/stories/STORY-088-cloudformation-stack-runbook.md
-    status: ready   # PO-approved 2026-07-14 ("approve all"); adds cfn-lint to the DoD; depends on STORY-087 + STORY-092 (the image). IN sprint-49 (order 3).
+    status: done    # sprint-49: spec FAIL_then_FIXED (AC4 runbook env vars) + quality APPROVE (0C/0M; IAM+SG+CloudFront+loop-singleton correct). PO accepted 2026-07-16, merged to main. cfn-lint now in the DoD.
     points: 5
     priority: 47
     type: chore
@@ -866,11 +868,17 @@ stories:
   - id: STORY-092
     title: Containerize both processes — single Dockerfile, CMD override per role
     file: docs/scrum/stories/STORY-092-containerize-both-processes.md
-    status: ready   # PO-approved 2026-07-16 (sprint-49 planning); split out of STORY-088 (the missing Dockerfile it assumed). Depends on STORY-087 (image built against the DynamoDB-only runtime). IN sprint-49 (order 2).
+    status: done    # sprint-49: spec FAIL_then_FIXED (AC3 .dockerignore excludes) + quality FIX_REQUIRED_then_FIXED (.dockerignore, CLAUDE.md port collision); reality gate PASS (docker build + import smoke). PO accepted 2026-07-16, merged to main.
     points: 2
     priority: 46
     type: chore
     sprint: 49
+  - id: STORY-093
+    title: Chore — sprint-49 review minors (container hardening, health grace, test hygiene)
+    file: docs/scrum/stories/STORY-093-sprint49-review-minors.md
+    status: ready   # filed at sprint-49 review (accept-with-follow-up, PO 2026-07-16): non-root Dockerfile USER + dead ENV PORT + dep-layer ordering; APIService HealthCheckGracePeriodSeconds; zero-assertion test + no-Postgres guard test + monkeypatch cleanup. Refine/estimate at next planning.
+    type: chore
+    sprint: null
   - id: STORY-089
     title: Live console deployment + end-to-end verification (PO-driven)
     file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md

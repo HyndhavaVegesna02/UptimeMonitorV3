@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 49
-status: review        # verification complete under the external-mode floor; awaiting PO accept/reject per story
+status: done          # PO accepted all 3 stories 2026-07-16 (+ follow-up STORY-093); velocity 10/10; merged to main
 mode: external        # PO-approved at lock (2026-07-16). External-mode floor applied on delivery:
                       # spec + quality review PER STORY regardless of points, an independent full
                       # amended-gate re-run on the FINAL HEAD (with DynamoDB Local up), and the
@@ -25,7 +25,7 @@ stories:
     order: 1
     commit: cb09c11      # + review-tail b45a5b9/1e3c959/8a18e08 (asgi docstring, wiki tombstone/de-launder, story history)
     review:
-      spec: FAIL_then_FIXED   # AC1/AC3 MET at delivery; AC2 (deletion reasons unrecorded), AC4 (e2e evidence), AC5 (wiki tombstone + CLAUDE.md database row + architecture-boundary FK-retirement) all fixed in the review tail. Cutover WIRING was correct at delivery (table split exact, no Postgres residue).
+      spec: FAIL_then_FIXED   # AC1/AC3 MET at delivery; AC2 (deletion reasons unrecorded), AC5 (wiki tombstone + CLAUDE.md database row + architecture-boundary FK-retirement) fixed in the review tail; AC4 fully MET after the live-loop verification (PO-requested): 244 real Dynatrace observations ingested to DynamoDB + watermark advanced. Cutover WIRING was correct at delivery (table split exact, no Postgres residue).
       quality: FIX_REQUIRED_then_FIXED   # MAJOR asgi.py stale SQLAlchemy/DATABASE_URL docstring (fixed b45a5b9); MAJOR verified_sha bulk-laundering across 12 articles (de-laundered b45a5b9). Wiring/coverage judged clean.
   - id: STORY-092
     status: done
@@ -100,9 +100,16 @@ final_gate:
       DynamoDB; boot lifespan seed populated the control table; GET /api/v1/health 200; every
       six-tab-backing endpoint served off DynamoDB — /components 200 (seeded 'http-check'),
       /approvals 200 [], /topology 200, /maintenance 200, /publications 200, /sample-mode 200,
-      /history 200; /availability 422 (needs window param — endpoint alive). Live-loop INGEST +
-      watermark-advance + mutation-round-trip half requires live Dynatrace/Statuspage creds
-      (unset in-session) -> carved to STORY-089 (live console deployment), never silently deferred.
+      /history 200; /availability 422 (needs window param — endpoint alive).
+      STORY-087 AC4 LIVE-LOOP half (PO-requested verification via repo-root .env, 2026-07-16):
+      `python -m src.composition.run` ran against real Dynatrace + DynamoDB Local — vendor-health
+      OK (http-check -> HTTP_CHECK-38B092E93932C002, 238 executions/2h); topology seeded to the
+      control table; 244 real observations ingested into the observations table; watermark advanced
+      to WATERMARK#http-check META = 2026-07-16T10:05:42Z (from empty), observation count stable
+      across cycles = correct incremental no-re-ingest. AC4 fully MET live. (Only an actual approve
+      mutation is unexercised — needs a real degradation event a healthy monitor won't emit; the
+      /approvals + /decisions endpoints are live per the read-path probe. Full live AWS deploy
+      remains STORY-089.)
       STORY-092 AC4: docker build -t uptime_monitor_v3 . exit 0; container import smoke
       `python -c "import src.composition.asgi; import src.composition.run"` -> "IMPORT SMOKE OK"
       exit 0 (both entrypoints import with no Postgres dep).
