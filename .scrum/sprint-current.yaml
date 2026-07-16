@@ -83,4 +83,5 @@ stories:
     points: 3
     order: 2           # PO-driven console runbook execution + live AC verification
 hotfixes: []
-interrupts: []
+interrupts:
+  - "2026-07-17 PO supplied company AWS account rules mid-STORY-089 (region lock us-east-1; 22:00 IST reaper -> c7n-keep=true tags; username tag; cost/teardown hygiene). Not a scope change — an execution constraint on the in-flight story; encoded into deploy-runbook.md (9a4e83b) + saved to memory. Teardown-vs-keep decision queued for review."
