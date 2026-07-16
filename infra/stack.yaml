@@ -496,7 +496,7 @@ Resources:
         DefaultCacheBehavior:
           TargetOriginId: S3Origin
           ViewerProtocolPolicy: redirect-to-https
-          CachePolicyId: 65832f63-7b43-43cf-849b-52e1e3d7cd11 # CachingOptimized (Managed)
+          CachePolicyId: 658327ea-f89d-4fab-a63d-7e88639e58f6 # Managed-CachingOptimized (ID verified live via list-cache-policies)
           FunctionAssociations:
             - EventType: viewer-request
               FunctionARN: !GetAtt RewriteFunction.FunctionMetadata.FunctionARN
@@ -505,7 +505,7 @@ Resources:
             TargetOriginId: ALBOrigin
             ViewerProtocolPolicy: redirect-to-https
             CachePolicyId: 4135ea2d-6df8-44a3-9df3-4b5a84be39ad # CachingDisabled (Managed)
-            OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3 # AllViewerExceptHostHeader (Managed)
+            OriginRequestPolicyId: b689b0a8-53d0-40ab-baf2-68738e2966ac # Managed-AllViewerExceptHostHeader (old ID was Managed-AllViewer, contradicting this comment; verified live)
             AllowedMethods:
               - GET
               - HEAD
