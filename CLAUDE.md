@@ -98,7 +98,10 @@ agreement, so no backend change was needed to wire the proxy itself.
 | frontend       | React + TypeScript on Vercel — dashboard and approval UI           |
 | database       | Neon serverless Postgres, via the pooled PgBouncer connection      |
 | observability  | Dynatrace synthetic monitors; results read from Grail via DQL      |
-| demo app       | Sock Shop on Railway — the replaceable monitored app## Key commands
+| demo app       | Sock Shop on Railway — the replaceable monitored app             |
+| publish target | Statuspage — a fixed core target (not swappable in V3 scope)       |
+
+## Key commands
 
 Run from the repo root with the virtualenv active (or call the `.venv` binaries
 directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe`).
@@ -113,17 +116,21 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 | Start Dynamo DB     | `docker run -d --name uptime_dynamo -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` |
 | Create Dynamo tables| `python scripts/create_tables.py` (reads `DYNAMO_ENDPOINT_URL`) |
 | Seed topology       | `python scripts/seed_topology.py` (reads `DYNAMO_ENDPOINT_URL`) |
+| Build Docker Image  | `docker build -t uptime_monitor_v3:latest .` |
+| Run API in Docker   | `docker run --rm -p 8000:8000 -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8000 uptime_monitor_v3:latest` |
+| Run Loop in Docker  | `docker run --rm -e DYNAMO_ENDPOINT_URL=http://host.docker.internal:8000 uptime_monitor_v3:latest python -m src.composition.run` |
 | Run live loop       | `python -m src.composition.run` (loads a repo-root `.env` at startup — STORY-043 — then runs the e2e loop) |
 | Lint code           | `ruff check .` (must exit 0)               |
 | Format check        | `ruff format --check .` (must exit 0)      |
+| Lint CloudFormation | `cfn-lint infra/stack.yaml` (must exit 0)  |
 
 `src` is the importable top-level package (it lives at `backend/src`, exposed via
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
 
-The four DoD gate commands are `pytest`, `lint-imports`, `ruff check`, and `ruff format`. All four are
-live as of STORY-087. `lint-imports` enforces the five contracts
+The five DoD gate commands are `pytest`, `lint-imports`, `ruff check`, `ruff format`, and `cfn-lint`. All five are
+live as of STORY-088. `lint-imports` enforces the five contracts
 (core-independence, core-internal-layering, adapters-independence, api-feature-independence, src-no-tests);
-`ruff check` and `ruff format` enforce the code style, import sorting, and formatting.
+`ruff check` and `ruff format` enforce the code style, import sorting, and formatting; `cfn-lint` validates the CloudFormation stack.
 
 ## Database & DynamoDB Local (dossier §3, §4, §17)
 
@@ -190,5 +197,6 @@ The full local stack is: DynamoDB Local + the API server (uvicorn) + the live pu
 | httpx             | runtime dependency             | HTTP library for query and statuspage executors |
 | python-dotenv     | live (STORY-043); runtime dependency | `.env` loading at the two process entrypoints (`run.py::main`, `composition/asgi.py`) |
 | git               | configured                    | version control                           |
+| cfn-lint          | live (STORY-088); dev dependency | CloudFormation validation tool (DoD)      |
 
 No `psql` client or SQL databases are used. Dynatrace/Statuspage credentials and DynamoDB settings are read from environment variables, exported directly or loaded from a gitignored repo-root `.env` (STORY-043) for the live loop.

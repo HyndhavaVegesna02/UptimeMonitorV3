@@ -17,7 +17,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest", "import-linter", "ruff", "uvicorn[standard]"]
+dev = ["pytest", "import-linter", "ruff", "uvicorn[standard]", "cfn-lint"]
 
 [tool.setuptools]
 package-dir = {"" = "backend"}

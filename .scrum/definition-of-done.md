@@ -37,6 +37,8 @@
        adapter-independence, api-feature-independence, src-no-tests)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
+- [ ] CloudFormation template lint: `cfn-lint infra/stack.yaml` -> exit 0
+      (second half of the 2026-07-14 DoD amendment, landed STORY-088)
 
 ## Commands (frontend — live from STORY-015a, Sprint 25, run from `frontend/`)
 - [ ] Frontend tests pass: `npm test` -> exit 0

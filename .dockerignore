@@ -1,0 +1,17 @@
+.git
+.venv
+.agents
+frontend
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache
+.env
+docs
+.scrum
+README.md
+CLAUDE.md
+YOURTEAM*
+*log
