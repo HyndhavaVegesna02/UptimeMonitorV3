@@ -38,3 +38,10 @@
 - [ ] Clean working tree and green DoD baseline on main stated as verified (edge-case #1).
 - [ ] Execution mode declared in the plan (`mode:` in sprint-current.yaml).
 - [ ] Scope within a single focused session's shape; dependencies ordered first, risk early.
+
+- [ ] Every hardcoded external-service identifier the plan or its target code carries
+      (managed-policy IDs, prefix lists, ARNs, vendor entity IDs) is re-derived live from
+      the account/vendor (one CLI call) rather than trusted from generation — a fabricated
+      ID is invisible to linters and reviews and only fails at deploy time (2026-07-17;
+      sprint-50 CloudFront CachePolicyId 404 — two failed stack creates, ~1h lost, checkable
+      pre-lock with `aws cloudfront list-cache-policies`).
