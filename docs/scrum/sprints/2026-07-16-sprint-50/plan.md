@@ -67,12 +67,12 @@
   `mock_build_loop` called once. See it pass. Commit.
 - [x] 3. Replace the raw `os.environ` try/finally in `test_topology_endpoint.py`
   with `monkeypatch.setenv("CONFIG_DIR", ...)`; run the file. Commit.
-- [ ] 4. Dockerfile hardening: reorder so `COPY pyproject.toml` + dependency
+- [x] 4. Dockerfile hardening: reorder so `COPY pyproject.toml` + dependency
   install (deps derived from `pyproject.toml` via stdlib `tomllib`, plus
   `uvicorn[standard]`) precede `COPY backend/ config/`; final `pip install --no-cache-dir .`
   after source copy; delete `ENV PORT=8000`; add a non-root `USER` (create an
   `app` user) after installs. Commit.
-- [ ] 5. Reality check the image (adapter-type story ⇒ live probe): `docker build`
+- [x] 5. Reality check the image (adapter-type story ⇒ live probe): `docker build`
   twice with a whitespace-only `backend/` source touch between — assert the dependency
   layer is CACHED on the second build; run the container import smoke
   (`python -c "import src.composition.asgi; import src.composition.run"`) and
