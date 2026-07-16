@@ -1,0 +1,22 @@
+dod_evidence:
+  - command: "pytest"
+    exit_code: 0
+    at: "2026-07-16T07:48:22+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    at: "2026-07-16T07:49:12+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    at: "2026-07-16T07:49:12+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    at: "2026-07-16T07:49:12+00:00"
+  - command: "npm test"
+    exit_code: 0
+    at: "2026-07-16T07:49:12+00:00"
+  - command: "npm run build"
+    exit_code: 0
+    at: "2026-07-16T07:50:03+00:00"
+  - command: "npm run lint"
+    exit_code: 0
+    at: "2026-07-16T07:50:08+00:00"
