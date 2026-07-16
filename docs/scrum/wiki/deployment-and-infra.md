@@ -45,10 +45,10 @@ status: verified
   command override (`python -m src.composition.run`) — the same override the ECS loop task def
   uses. `.dockerignore` keeps the build context lean (excludes `.venv/`, `frontend/`,
   `backend/tests/`, `.claude/`, `docs/`, `.scrum/`, caches).
-- **Cached dependency layer + non-root (STORY-093 AC1):** `Dockerfile` copies only
-  `pyproject.toml` first, derives the `[project] dependencies` list via a stdlib `tomllib`
-  one-liner into `requirements.txt`, and installs those + `uvicorn[standard]` — all BEFORE
-  `COPY backend /app/backend` — so a source-only change never invalidates the dependency
+- **Cached dependency layer + non-root (STORY-093 AC1):** `Dockerfile` copies only the
+  build-config file first, derives the project's `[project] dependencies` list via a stdlib
+  `tomllib` one-liner into `requirements.txt`, and installs those + `uvicorn[standard]` — all
+  BEFORE `COPY backend /app/backend` — so a source-only change never invalidates the dependency
   install layer; the final `pip install --no-cache-dir .` (installing the package itself) runs
   after the source copy, riding on the already-installed deps. The dead `ENV PORT=8000` (never
   read — `CMD` hard-codes `--port 8000`) is removed. Both processes run as a non-root `app`
