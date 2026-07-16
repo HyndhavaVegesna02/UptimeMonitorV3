@@ -55,17 +55,17 @@
 
 ### Steps
 
-- [ ] 1. Test hygiene first (pure-test commit): add the no-Postgres guard test
+- [x] 1. Test hygiene first (pure-test commit): add the no-Postgres guard test
   (walk `backend/src/**/*.py`, assert none of `sqlalchemy` / `create_engine` /
   `psycopg` appears); run it — green (invariant holds today). Commit.
-- [ ] 2. Give `test_main_resource_lifecycle_success` real assertions: after
+- [x] 2. Give `test_main_resource_lifecycle_success` real assertions: after
   `asyncio.run(main())`, assert `mock_make_dynamo_resource` called once,
   `mock_seed_topology_dynamo` called once with exactly
   `(config, db_resource, "uptime-control")` — the real call shape is
   `seed_topology_dynamo(config, db_resource, settings.dynamo_control_table)`
   (`run.py:202`; default table `"uptime-control"`, `settings.py:22`) — and
   `mock_build_loop` called once. See it pass. Commit.
-- [ ] 3. Replace the raw `os.environ` try/finally in `test_topology_endpoint.py`
+- [x] 3. Replace the raw `os.environ` try/finally in `test_topology_endpoint.py`
   with `monkeypatch.setenv("CONFIG_DIR", ...)`; run the file. Commit.
 - [ ] 4. Dockerfile hardening: reorder so `COPY pyproject.toml` + dependency
   install (deps derived from `pyproject.toml` via stdlib `tomllib`, plus
