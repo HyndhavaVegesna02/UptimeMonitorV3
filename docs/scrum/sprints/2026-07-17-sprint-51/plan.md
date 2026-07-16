@@ -46,15 +46,15 @@
 
 ### Steps
 
-- [ ] 1. Failing test first (`backend/tests/test_history_endpoint.py` pattern): with 5
+- [x] 1. Failing test first (`backend/tests/test_history_endpoint.py` pattern): with 5
   seeded observations, `limit=2` returns exactly the 2 newest; `limit` larger than the
   result set returns all; run — red (param not declared). Commit after green via step 2.
-- [ ] 2. Declare `limit: int | None = Query(None, ge=1, ...)` in the controller; thread
+- [x] 2. Declare `limit: int | None = Query(None, ge=1, ...)` in the controller; thread
   through the service (`sorted_obs[:limit]` when limit is not None). See step-1 tests
   pass. Commit.
-- [ ] 3. Edge tests: absent limit → identical full-window behavior (existing tests
+- [x] 3. Edge tests: absent limit → identical full-window behavior (existing tests
   untouched and green); `limit=0` and `limit=-1` → 422; `limit=abc` → 422. Commit.
-- [ ] 4. AC3 docs: reconcile the two frontend comments (client.ts, CheckHistoryPage.tsx)
+- [x] 4. AC3 docs: reconcile the two frontend comments (client.ts, CheckHistoryPage.tsx)
   — server cap exists, client render-cap stays authoritative. Commit.
 - [ ] 5. Story gate: `yt_gate.py --only` pytest + ruff (diff = backend api/tests +
   frontend comments; comments don't affect npm gates but run `npm run lint` if
