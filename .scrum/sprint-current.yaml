@@ -1,6 +1,12 @@
 # YourTeam active sprint board
 sprint: 54
-status: active
+status: parked        # PO interrupt 2026-07-18: "not satisfied with how the present ui looks"
+                      # — full UI/frontend rewrite ordered on a NEW branch from main, complete
+                      # creative freedom; this sprint + the whole ui-redesign initiative branch
+                      # left in current state per PO instruction. STORY-100 was 1 MAJOR-fix from
+                      # Done (spec PASS, quality FIX_REQUIRED->fix WIP-committed 46d8980, suite
+                      # unverified); STORY-101 never started. If ever resumed: re-run gates first.
+                      # The rewrite initiative continues in a NEW sprint series on branch ui-rewrite.
 mode: in-process
 goal: "UI redesign wave 3: decision support — evidence-first approvals (STORY-100) + check-history readability (STORY-101). Last planned sprint before the initiative polish pass + final PO review."
 branch: sprint-54
@@ -26,4 +32,7 @@ stories:
     status: todo
 baseline_gate: "inherited GREEN — ui-redesign @ 1a54f25 = sprint-53 8/8 gate (71e28ad) + merges."
 hotfixes: []
-interrupts: []
+interrupts:
+  - "2026-07-18 PO pivot: incremental redesign look rejected; full frontend rewrite ordered
+    (new branch from main, creative freedom, same YourTeam+Playwright loop until fully done).
+    Sprint 54 parked; ui-redesign branch frozen in current state for reference/salvage." 
