@@ -1,48 +1,23 @@
-import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
-import { Sidebar } from './nav/Sidebar'
-import { TopBar } from './nav/TopBar'
-import { SampleModeBanner } from './nav/SampleModeBanner'
-import { persistExpanded, resolveInitialExpanded } from './nav/sidebarState'
-import { useApprovalsBadge } from './features/shell/useApprovalsBadge'
-import { useSampleMode } from './features/dashboard/useSampleMode'
-import { DashboardPage } from './pages/DashboardPage'
-import { AvailabilityPage } from './pages/AvailabilityPage'
-import { ApprovalsPage } from './pages/ApprovalsPage'
-import { CheckHistoryPage } from './pages/CheckHistoryPage'
-import { MaintenancePage } from './pages/MaintenancePage'
-import { PublicationsPage } from './pages/PublicationsPage'
+import { Icon } from './components'
+import { TABS } from './nav/tabs'
+import { PlaceholderPage } from './pages/PlaceholderPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { useTheme } from './theme/useTheme'
 import './AppShell.css'
 
 /**
- * The routed shell (STORY-056): a collapsible left icon `Sidebar` + a
- * `TopBar` (theme toggle + the relocated sample-mode trigger) + a
- * dismissible `SampleModeBanner`, wrapping one route per tab. Router-
- * agnostic so tests can wrap it in a `MemoryRouter` without pulling in
- * `BrowserRouter` (unchanged from STORY-015a).
- *
- * `useSampleMode()` is called ONCE here and its result is passed down to
- * both `TopBar` (the trigger) and `SampleModeBanner` (via the derived
- * `visible` boolean) — a single source of truth, so a toggle in the top
- * bar is guaranteed to be reflected in the banner on the very same render
- * (two independent hook instances would each run their own GET/override
- * cycle and could disagree — see `TopBar.tsx`'s header comment).
+ * The minimal rewrite-in-progress shell (STORY-103 AC5): a top-bar stub
+ * (brand + theme toggle) and a routed `<main>` rendering one placeholder
+ * `Tile` per tab, all on the new Mission Teal tokens. The old sidebar +
+ * top-bar + sample-mode-banner shell (and every page it wrapped) is
+ * deliberately DEAD on this branch — STORY-104 builds the real top
+ * command bar + horizontal tab nav; the pages return per-tab in the
+ * stories that follow it (sprint-56+).
  */
 export function AppShell() {
-  const [expanded, setExpanded] = useState(() => resolveInitialExpanded())
-  const pendingApprovals = useApprovalsBadge()
-  const sampleMode = useSampleMode()
-
-  const toggleExpanded = () => {
-    setExpanded((current) => {
-      const next = !current
-      persistExpanded(next)
-      return next
-    })
-  }
-
-  const bannerVisible = sampleMode.state.phase === 'success' && sampleMode.enabled === true
+  const { theme, toggleTheme } = useTheme()
+  const isDark = theme === 'dark'
 
   return (
     <div className="app-shell">
@@ -59,26 +34,32 @@ export function AppShell() {
       >
         Skip to main content
       </a>
-      <Sidebar
-        expanded={expanded}
-        onToggleExpanded={toggleExpanded}
-        pendingApprovals={pendingApprovals}
-      />
-      <div className="app-shell__content">
-        <TopBar sampleMode={sampleMode} />
-        <SampleModeBanner visible={bannerVisible} />
-        <main id="main-content" className="app-shell__main" tabIndex={-1}>
-          <Routes>
-            <Route path="/" element={<DashboardPage />} />
-            <Route path="/availability" element={<AvailabilityPage />} />
-            <Route path="/approvals" element={<ApprovalsPage />} />
-            <Route path="/check-history" element={<CheckHistoryPage />} />
-            <Route path="/maintenance" element={<MaintenancePage />} />
-            <Route path="/publications" element={<PublicationsPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </main>
-      </div>
+      <header className="app-shell__topbar">
+        <span className="app-shell__brand">
+          <Icon name="logo" />
+          Uptime Monitor
+        </span>
+        <button
+          type="button"
+          className="app-shell__theme-toggle"
+          onClick={toggleTheme}
+          aria-label={isDark ? 'Switch to light theme' : 'Switch to dark theme'}
+        >
+          <Icon name={isDark ? 'moon' : 'sun'} title={isDark ? 'Dark theme' : 'Light theme'} />
+        </button>
+      </header>
+      <main id="main-content" className="app-shell__main" tabIndex={-1}>
+        <Routes>
+          {TABS.map((tab) => (
+            <Route
+              key={tab.path}
+              path={tab.path}
+              element={<PlaceholderPage title={tab.label} />}
+            />
+          ))}
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </main>
     </div>
   )
 }

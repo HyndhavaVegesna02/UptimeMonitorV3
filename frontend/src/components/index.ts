@@ -1,5 +1,7 @@
 export { Button, type ButtonProps, type ButtonVariant } from './Button/Button'
+export { Tile, type TileProps, type TileElevation } from './Tile/Tile'
 export { Icon, type IconProps, type IconName } from './Icon/Icon'
+export { RelativeTime, type RelativeTimeProps } from './RelativeTime/RelativeTime'
 export {
   StatusBadge,
   type HealthStatus,
