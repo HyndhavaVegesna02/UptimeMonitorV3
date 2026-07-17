@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import {
@@ -11,6 +12,18 @@ import {
 import { getActor } from '../api/actor'
 import { ApprovalsPage } from './ApprovalsPage'
 
+/** Renders `ApprovalsPage` inside a `MemoryRouter` — required as of
+ * STORY-100 since each card's "View checks" affordance renders as a real
+ * routed `Link`, which throws outside a Router (mirrors
+ * `DashboardPage.test.tsx`'s `renderDashboard` helper, STORY-099). */
+function renderApprovalsPage() {
+  return render(
+    <MemoryRouter>
+      <ApprovalsPage />
+    </MemoryRouter>,
+  )
+}
+
 describe('ApprovalsPage', () => {
   afterEach(() => {
     // A no-op unless a test below sets a fixed system time (STORY-098's
@@ -19,7 +32,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', async () => {
-    const { container } = render(<ApprovalsPage />)
+    const { container } = renderApprovalsPage()
 
     const heading = screen.getByRole('heading', { name: 'Approvals', level: 1 })
     expect(heading.closest('.page-header')).not.toBeNull()
@@ -30,7 +43,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('shows a loading state, then one card per open proposal (AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
@@ -45,7 +58,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('renders a severity chip derived from to_status, not a fake field (AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     // FIXTURE_PROPOSALS[0].to_status === 'degraded' -> "Degraded" severity,
@@ -67,7 +80,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('renders both StatusBadges for an ordinary transition (AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     await screen.findByRole('list')
 
@@ -81,7 +94,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('handles a null from_status without crashing, rendering "New" instead of a badge (AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     await screen.findByRole('list')
 
@@ -98,7 +111,7 @@ describe('ApprovalsPage', () => {
     // text is deterministic.
     vi.setSystemTime(new Date('2026-07-01T14:00:00Z'))
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const time = screen.getByText('2h ago')
@@ -113,7 +126,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('does not render fields the API does not expose — no reason/source/checks/signals copy (AC3)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     expect(screen.queryByText(/triggering signals/i)).not.toBeInTheDocument()
@@ -121,7 +134,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('resolves the friendly component name from topology, keeping the raw component_id as a secondary slug (STORY-100 AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     // FIXTURE_PROPOSALS[0].component_id === FIXTURE_TOPOLOGY[0].id.
@@ -134,7 +147,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('renders per-location evidence rows (status, latency, relative time) for the component\'s primary signal (STORY-100 AC1)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -161,7 +174,7 @@ describe('ApprovalsPage', () => {
       ),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -185,7 +198,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const frontendCard = screen
@@ -202,7 +215,7 @@ describe('ApprovalsPage', () => {
   it('shows the "Queue clear" empty state when there are no open proposals (AC3)', async () => {
     server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     expect(await screen.findByText('Queue clear')).toBeInTheDocument()
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
@@ -211,7 +224,7 @@ describe('ApprovalsPage', () => {
   it('uses the shared EmptyState primitive for "Queue clear", with a helpful body line (STORY-097 AC3)', async () => {
     server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
 
-    const { container } = render(<ApprovalsPage />)
+    const { container } = renderApprovalsPage()
 
     const message = await screen.findByText('Queue clear')
     expect(message.closest('.empty-state')).not.toBeNull()
@@ -232,7 +245,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load proposals')
 
@@ -243,7 +256,7 @@ describe('ApprovalsPage', () => {
   })
 
   it('renders an Approve and a Reject action per open proposal (AC1, AC2)', async () => {
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
 
     await screen.findByRole('list')
 
@@ -282,7 +295,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen.getByText(target.component_id).closest('li') as HTMLElement
@@ -323,7 +336,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen.getByText(target.component_id).closest('li') as HTMLElement
@@ -352,7 +365,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -369,7 +382,7 @@ describe('ApprovalsPage', () => {
 
   it('is keyboard-operable: Enter on a focused Approve button opens the confirmation (AC2)', async () => {
     const user = userEvent.setup()
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -395,7 +408,7 @@ describe('ApprovalsPage', () => {
       ),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -422,7 +435,7 @@ describe('ApprovalsPage', () => {
       ),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
@@ -452,7 +465,7 @@ describe('ApprovalsPage', () => {
       }),
     )
 
-    render(<ApprovalsPage />)
+    renderApprovalsPage()
     await screen.findByRole('list')
 
     const card = screen
