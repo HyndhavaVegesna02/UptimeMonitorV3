@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
-verified_sha: ff0779e
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
+verified_sha: 0f93a79
 verified_sprint: sprint-52
 status: verified
 ---
@@ -75,7 +75,12 @@ status: verified
   (primary/secondary/tertiary), `StatusBadge` (pill; `aria-hidden` status dot + ink text label —
   status is NEVER color-alone; 7-value `HealthStatus` union as of STORY-055), `Panel` (surface-1 +
   hairline + 8px radius + `--shadow`, `headingLevel` prop defaulting to `h2`), `LoadingState`,
-  `ErrorState` (retry callback; warning glyph now the shared `Icon` set), `EmptyState`, `Icon`
+  `ErrorState` (retry callback; warning glyph now the shared `Icon` set), `EmptyState`
+  (`EmptyState.tsx` — STORY-097 gave it an optional `icon`/`tone` pair, purely additive to the
+  pre-existing `message`/`detail` shape: an icon renders a 44px decorative circle above the
+  centered message, `tone="neutral"` (default, a plain surface tint) or `tone="positive"` (the
+  health-up subtle pair, for a "nothing to do" good-news state) — see the "Page scaffold" entry
+  below for its adopters), `PageHeader` (`PageHeader.tsx` — STORY-097, see below), `Icon`
   (STORY-055 — 18 inline feather-style SVGs, decorative/`aria-hidden` by default, opt-in
   `role="img"`+`<title>` for a standalone meaningful icon), `Table`/`TableHead`/`TableBody`/
   `TableRow`/`TableHeaderCell`/`TableCell` (STORY-055 — extracts the th/td/hairline/uppercase-
@@ -610,3 +615,49 @@ status: verified
 - `Table.tsx` wraps every table in `.table-wrapper` (`overflow-x: auto`): wide tables scroll in
   their own container, never the page; `documentElement.scrollWidth == 390` at 390×844 was
   live-verified on all six tabs (sprint-52 gate evidence, `gate-096/`).
+
+### Page scaffold (STORY-097, sprint-52 — ui-redesign wave 1)
+- `frontend/src/components/PageHeader/PageHeader.tsx` is the new shared shell primitive (title +
+  optional subtitle + optional `actions` slot) every one of the six tabs now renders as its OWN
+  root-level h1, OUTSIDE its content `Panel`/card — fixing the pre-097 split where Dashboard/
+  Approvals/Maintenance put the h1 outside the card but Check History/Publications put it inside
+  (`Panel title=... headingLevel="h1"`). Exactly one `<h1>` per route (verified — the only
+  `<h1>` in `frontend/src/` is `PageHeader.tsx`'s own); `Panel`'s content heading (when it has a
+  `title`) defaults to `h2`, so every route's heading order stays sequential (h1 → h2, never
+  skipped).
+- **Container-width policy**: a single `--container-width: 960px` token (`styles/tokens.css`) +
+  two utility classes in `styles/global.css` — `.page` (the default: `max-width:
+  var(--container-width); margin: 0 auto`) and `.page--wide` (`max-width: none`, an explicit
+  opt-out for a dense data page). 960px was chosen to MATCH Approvals' pre-existing shipped
+  width rather than inventing a new number (journal D1 — evolve, don't re-theme). Each page's
+  root element carries `page` plus, for the three dense-table/grid tabs, `page--wide`:
+  `dashboard-page page page--wide`, `availability-page page page--wide`, `check-history-page page
+  page--wide` (full width — the pre-097 status quo for these three, now an explicit opt-in rather
+  than a silent default); `approvals-page page`, `maintenance-page page`, `publications-page page`
+  (960px centered — Approvals' width extended to the other two card/list/timeline tabs, replacing
+  their pre-097 unbounded width).
+- Check History and Publications, which previously used `<Panel title="..." headingLevel="h1">`
+  as their OWN page root (no wrapping div), each gained a root `<div className="…-page page
+  page--wide">`/`page` wrapping a `PageHeader` + a title-less `Panel` (the toolbar/timeline moved
+  one level in, unchanged in content). Check History's `PageHeader` also gained a subtitle it
+  never had before (`Panel` carried no subtitle prop).
+- Availability's legend (down/missing swatches) and 24h/7d/30d window switcher — previously a
+  bespoke `availability-page__header`/`__controls` row — now render through `PageHeader`'s
+  `actions` prop; no behavior/markup/test change to the legend or switcher themselves, only their
+  parent.
+- `EmptyState` (see the Shell primitives Fact above for its new `icon`/`tone` API) is now adopted
+  with a designed icon + helpful body line by: Approvals ("Queue clear", `icon="check"
+  tone="positive"`, replacing its fully bespoke inline `approvals-page__empty*` JSX — the
+  surrounding bordered card div is KEPT as page-specific CSS since Approvals is the one tab with
+  no `Panel` wrapper around its list), Maintenance ("No maintenance scheduled", `icon="maintenance"`),
+  Publications ("Nothing published yet", `icon="publications"`), and Check History's
+  filtered-to-zero state ("No observations match your filters", `icon="search"`) — Check History's
+  OTHER empty state ("No observations in this window", zero rows before any filter is applied)
+  deliberately keeps the bare message-only shape (not named in STORY-097 AC3).
+- Publications' "Showing the latest 50 publications" cap-note paragraph now renders ONLY inside
+  the populated (`state.data.length > 0`) branch, never above the empty state — it no longer
+  contradicts "Nothing published yet" when the endpoint returns zero rows.
+- Every accessible name/route/DOM-role assertion the STORY-056/documented-above per-tab Facts
+  describe is unchanged by this story (h1 text, nav labels, table roles, filter behavior) — only
+  the h1's DOM position (outside vs inside the card), the root container's width class, the
+  Availability header's internal composition, and the four EmptyState call sites changed.
