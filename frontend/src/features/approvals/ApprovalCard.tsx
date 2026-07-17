@@ -1,6 +1,6 @@
 import { toHealthStatus } from '../../api/statusMapping'
 import type { ProposalDTO } from '../../api/types'
-import { Button, ErrorState, Icon, StatusBadge } from '../../components'
+import { Button, ErrorState, Icon, RelativeTime, StatusBadge } from '../../components'
 import { cx } from '../../lib/cx'
 import { ACTION_LABEL, CONFIRM_COPY } from './decisionState'
 import type { CardDecisionState, DecisionAction } from './decisionState'
@@ -30,6 +30,11 @@ export interface ApprovalCardProps {
  * state machine from STORY-015c exactly (AC2) — only the markup changed;
  * the 409/404 notice banner lives one level up, in `ApprovalsPage`, since
  * it is not scoped to a single card.
+ *
+ * "Proposed …" (STORY-098) renders via the shared `RelativeTime` primitive —
+ * relative text ticking at least once a minute, the raw `proposed_at`
+ * instant on `dateTime`, and an absolute-local + raw-UTC tooltip — never the
+ * bare ISO string as primary text.
  */
 export function ApprovalCard({
   proposal,
@@ -62,10 +67,7 @@ export function ApprovalCard({
           </div>
 
           <p className="approval-card__meta">
-            Proposed{' '}
-            <time className="text-mono" dateTime={proposal.proposed_at}>
-              {proposal.proposed_at}
-            </time>
+            Proposed <RelativeTime iso={proposal.proposed_at} className="text-mono" />
           </p>
         </div>
 
