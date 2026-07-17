@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getActor } from '../api/actor'
 import { ApiError, postDecision } from '../api/client'
-import { ErrorState, Icon, LoadingState } from '../components'
+import { ErrorState, Icon, LoadingState, PageHeader } from '../components'
 import { ApprovalCard } from '../features/approvals/ApprovalCard'
 import { toCardDecisionState } from '../features/approvals/decisionState'
 import type { DecisionAction, DecisionUiState } from '../features/approvals/decisionState'
@@ -69,14 +69,11 @@ export function ApprovalsPage() {
   }
 
   return (
-    <div className="approvals-page">
-      <div className="approvals-page__header">
-        <h1 className="text-h1">Approvals</h1>
-      </div>
-      <p className="approvals-page__intro">
-        Approving publishes the change to the public status page. Every decision
-        requires confirmation before it submits.
-      </p>
+    <div className="approvals-page page">
+      <PageHeader
+        title="Approvals"
+        subtitle="Approving publishes the change to the public status page. Every decision requires confirmation before it submits."
+      />
 
       {notice ? (
         <p className="approvals-page__notice" role="status">

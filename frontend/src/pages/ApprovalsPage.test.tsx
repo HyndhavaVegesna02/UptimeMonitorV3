@@ -8,6 +8,17 @@ import { getActor } from '../api/actor'
 import { ApprovalsPage } from './ApprovalsPage'
 
 describe('ApprovalsPage', () => {
+  it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', async () => {
+    const { container } = render(<ApprovalsPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Approvals', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+
+    const root = container.querySelector('.approvals-page')
+    expect(root).toHaveClass('page')
+    expect(root).not.toHaveClass('page--wide')
+  })
+
   it('shows a loading state, then one card per open proposal (AC1)', async () => {
     render(<ApprovalsPage />)
 
