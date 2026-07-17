@@ -26,6 +26,9 @@ stories:
     points: 2
     order: 2
     status: todo
-baseline_gate: pending   # full 8-command gate on sprint-52 HEAD right after lock commit
+baseline_gate: "GREEN — full 8-command gate, all exit 0 at 203ed93 (2026-07-17T10:47Z).
+  First run red on ruff x2: PO-installed .claude/skills scripts (2026-07-17) — vendored
+  tooling, not project code; fixed by adding '.claude' to [tool.ruff] exclude (203ed93),
+  5 pyproject-citing wiki articles re-verified (claims untouched by the exclude line)."
 hotfixes: []
 interrupts: []
