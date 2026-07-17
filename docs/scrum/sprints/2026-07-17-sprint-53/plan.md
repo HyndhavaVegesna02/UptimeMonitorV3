@@ -48,13 +48,13 @@ without rework; if the third story slips it returns to the backlog at review, no
 - [x] Scoped DoD gate + evidence merge
 
 ### 3. STORY-102 — Mode & nav affordances (2 pts) — order 3: independent; touches TopBar/rail/maintenance form
-- [ ] Step 1: sample-mode control relabel (visible text ≥768px, warning accent when ON, never red) — tests first
-- [ ] Step 2: persistent "SAMPLE" chip when ON + banner dismissed (click restores banner)
-- [ ] Step 3: collapsed-rail tooltips (hover AND focus) + badge aria-label with count
-- [ ] Step 4: maintenance form inline validation (styled errors, aria-describedby, focus-first-invalid, Title required) + success/delete toast (aria-live polite)
-- [ ] Step 5: full frontend suite green
-- [ ] Step 6: Playwright reality gate: toggle state colors (computed), chip persistence across tabs, tooltip on keyboard focus, form error flow + toast (probe window created + deleted)
-- [ ] Scoped DoD gate + evidence merge
+- [x] Step 1: sample-mode control relabel (visible text ≥768px, warning accent when ON, never red) — tests first
+- [x] Step 2: persistent "SAMPLE" chip when ON + banner dismissed (click restores banner)
+- [x] Step 3: collapsed-rail tooltips (hover AND focus) + badge aria-label with count
+- [x] Step 4: maintenance form inline validation (styled errors, aria-describedby, focus-first-invalid, Title required) + success/delete toast (aria-live polite)
+- [x] Step 5: full frontend suite green
+- [x] Step 6: Playwright reality gate: toggle state colors (computed), chip persistence across tabs, tooltip on keyboard focus, form error flow + toast (probe window created + deleted)
+- [x] Scoped DoD gate + evidence merge
 
 **Sprint close:** full 8-command gate (isolated DB) → wiki compile pass → journal sprint log
 → delegated review → merge `sprint-53` → `ui-redesign` → retro → sprint 54 planning

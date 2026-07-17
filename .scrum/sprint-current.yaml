@@ -76,7 +76,31 @@ stories:
     slug: mode-and-nav-affordances
     points: 2
     order: 3
-    status: in_progress   # implementer dispatched 2026-07-17 ~22:05 IST
+    status: done          # all 5 AC; 8 commits b75c2fc..c3120be (mid-story API-error crash
+                          # recovered: 5 commits intact, 1 uncommitted test scrap discarded,
+                          # agent resumed from step 4 via transcript)
+    commits: b75c2fc..c3120be
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live Playwright: sample-mode switch OFF = neutral gray rgb(89,98,108)/hairline,
+        ON = amber rgb(154,103,0) + tint (never red), visible "Sample mode" text label,
+        aria-checked toggles; banner dismissed -> "SAMPLE" chip in TopBar (aria-label
+        explains mode), persists across tabs, click restores banner, chip gone after;
+        collapsed-rail tooltip role=tooltip + aria-describedby, VISIBLE under real
+        keyboard Tab (:focus-visible — programmatic focus() correctly shows nothing);
+        maintenance form noValidate + "Title/Component/Start is required." inline errors,
+        focus lands on first invalid (aria-invalid=true, aria-describedby wired);
+        create -> "Window scheduled" toast (role=status, aria-live=polite, focus not
+        stolen); delete -> "Window deleted" toast; probe cleaned up. Sample mode OFF at
+        end. Suite 471 -> 515.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at c3120be, 2026-07-17T~17:15Z
+      - {command: "npm test", exit_code: 0, output_tail: "62 files / 515 tests passed", commit: c3120be}
+      - {command: "npm run build", exit_code: 0, commit: c3120be}
+      - {command: "npm run lint", exit_code: 0, commit: c3120be}
+    wiki_blast_radius: "sample-mode.md Facts section REWRITTEN (chip/controlled banner/
+      warning accent) + removal recipe extended; frontend-zone.md new entry; reviewed —
+      matches live-verified behavior. Sweep CLEAN."
 baseline_gate: "inherited GREEN — ui-redesign @ 30895b8 is sprint-52's 8/8-green HEAD (45c6086)
   plus the no-ff merge commit (docs/board only in the merge)."
 hotfixes: []
