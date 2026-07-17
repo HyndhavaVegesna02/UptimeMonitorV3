@@ -80,19 +80,50 @@ describe('AvailabilityPage', () => {
     expect(bar.querySelectorAll('[title]')).toHaveLength(FIXTURE_HISTORY_FRONTEND_HTTP.length)
   })
 
-  it('renders "no downtime" when every non-maintenance verdict passed, and a low-completeness "missing data" chip for a component below the threshold (AC1)', async () => {
+  it('renders "no downtime" when every non-maintenance verdict passed (AC1)', async () => {
     render(<AvailabilityPage />)
     await screen.findByRole('table')
 
     const frontendRow = screen.getByText('Sock Shop — frontend').closest('tr') as HTMLElement
     // Fixture: total 96, passing 95, maintenance 1 -> down = 0.
     expect(within(frontendRow).getByText('no downtime')).toBeInTheDocument()
-    // Fixture completeness 0.999 -> not low.
+  })
+
+  it('labels Data completeness unambiguously as a RECEIVED share, never readable as "N% missing" (STORY-099 AC4, journal #9)', async () => {
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    const frontendRow = screen.getByText('Sock Shop — frontend').closest('tr') as HTMLElement
+    // Fixture completeness 0.999 -> the value + label sit together, always.
+    expect(within(frontendRow).getByText('99.90%')).toBeInTheDocument()
+    expect(within(frontendRow).getByText('of expected checks received')).toBeInTheDocument()
+    // The old chip text that made the number read as "missing" is gone
+    // everywhere — completeness is never re-labeled per-row as "missing".
     expect(within(frontendRow).queryByText('missing data')).not.toBeInTheDocument()
 
     const catalogueRow = screen.getByText('Sock Shop — catalogue').closest('tr') as HTMLElement
-    // Fixture completeness 0.975 -> below the 98% threshold.
-    expect(within(catalogueRow).getByText('missing data')).toBeInTheDocument()
+    // Fixture completeness 0.975 -> below the low-completeness threshold —
+    // still labeled the same unambiguous way, no "missing data" text next
+    // to the number (the hatched bar + the shared legend carry that signal).
+    expect(within(catalogueRow).getByText('97.50%')).toBeInTheDocument()
+    expect(within(catalogueRow).getByText('of expected checks received')).toBeInTheDocument()
+    expect(within(catalogueRow).queryByText('missing data')).not.toBeInTheDocument()
+    // The low-completeness visual cue (color) is still there, just not the
+    // ambiguous text next to the number.
+    expect(within(catalogueRow).getByText('97.50%')).toHaveClass(
+      'availability-cell__value--low',
+    )
+  })
+
+  it('omits the completeness sub-label entirely for a "no data" (null) completeness cell, never fabricating a share (AC1, AC4)', async () => {
+    render(<AvailabilityPage />)
+    await screen.findByRole('table')
+
+    const zeroSignalRow = screen.getByText('Sock Shop — orders').closest('tr') as HTMLElement
+    expect(within(zeroSignalRow).getAllByText('no data').length).toBeGreaterThan(0)
+    expect(
+      within(zeroSignalRow).queryByText('of expected checks received'),
+    ).not.toBeInTheDocument()
   })
 
   it('renders "N period(s) down" derived from REAL verdict counts, singular and plural', async () => {
