@@ -54,7 +54,31 @@ stories:
     slug: page-scaffold-consistency
     points: 2
     order: 2
-    status: in_progress   # implementer dispatched 2026-07-17 ~17:05 IST
+    status: done          # all 5 AC; 15 TDD commits fb7006a..2a2f7bd (incl. 2 wiki commits)
+    commits: fb7006a..2a2f7bd
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live Playwright vs dev stack at 1440: all six tabs exactly one h1, rendered via
+        PageHeader OUTSIDE any card, heading levels sequential (mechanical audit);
+        widths unified (960px token on Approvals/Maintenance/Publications; explicit
+        page--wide on Dashboard/Availability/CheckHistory). Designed EmptyState verified
+        on Publications (icon + no false "latest 50" claim when empty), Maintenance
+        (icon + action copy), Check History filtered-to-zero (icon + recovery copy
+        via live search-to-zero); Availability legend + range switcher live in the
+        PageHeader actions slot and the switcher still works (aria/active verified
+        after click). Light theme spot-checked. STORY-096 NON-REGRESSION: all six tabs
+        scrollWidth==390 at 390x844; drawer opens + Escape-closes. Clean-load console
+        0 errors (pre-reload errors were Vite HMR artifacts again). Screenshots:
+        sprints/2026-07-17-sprint-52/gate-097/.
+    dod_evidence:   # scoped gate (--only npm), all exit 0
+      - {command: "npm test", exit_code: 0, output_tail: "Test Files 55 passed (55) | Tests 417 passed (417)", commit: 2a2f7bd, at: "2026-07-17T12:14:41+00:00"}
+      - {command: "npm run build", exit_code: 0, output_tail: "built in 284ms", commit: 2a2f7bd, at: "2026-07-17T12:15:21+00:00"}
+      - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 2a2f7bd, at: "2026-07-17T12:15:25+00:00"}
+    wiki_blast_radius: "frontend-zone.md + sample-mode.md updated by the IMPLEMENTER
+      (deviated from brief's no-wiki line, but consistent with the yt-implementer
+      definition's report schema; content reviewed by orchestrator against live-verified
+      facts — accurate, accepted; brief/agent-definition mismatch -> retro). Sweep CLEAN."
 baseline_gate: "GREEN — full 8-command gate, all exit 0 at 203ed93 (2026-07-17T10:47Z).
   First run red on ruff x2: PO-installed .claude/skills scripts (2026-07-17) — vendored
   tooling, not project code; fixed by adding '.claude' to [tool.ruff] exclude (203ed93),

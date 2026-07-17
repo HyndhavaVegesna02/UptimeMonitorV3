@@ -42,13 +42,13 @@ and decisions D1–D2.
 - [x] Scoped DoD gate (`--only` npm test / npm build / npm lint) + evidence merge
 
 ### 2. STORY-097 — Consistent page scaffold (2 pts) — order 2: builds on the settled shell
-- [ ] Step 1: `PageHeader` component (title/subtitle/actions slot) — tests first
-- [ ] Step 2: adopt on all six pages; one container-width policy (explicit wide-opt-in prop)
-- [ ] Step 3: EmptyState adoption (Maintenance list, Publications, Check History zero-result); Publications empty-copy fix
-- [ ] Step 4: Availability legend + range switcher into the header actions slot
-- [ ] Step 5: Vitest updates; full frontend suite green
-- [ ] Step 6: Playwright reality gate: six tabs, empty + populated states (sample mode for populated approvals; reversed after), heading audit (one h1/page)
-- [ ] Scoped DoD gate + evidence merge
+- [x] Step 1: `PageHeader` component (title/subtitle/actions slot) — tests first
+- [x] Step 2: adopt on all six pages; one container-width policy (explicit wide-opt-in prop)
+- [x] Step 3: EmptyState adoption (Maintenance list, Publications, Check History zero-result); Publications empty-copy fix
+- [x] Step 4: Availability legend + range switcher into the header actions slot
+- [x] Step 5: Vitest updates; full frontend suite green
+- [x] Step 6: Playwright reality gate: six tabs, empty + populated states (sample mode for populated approvals; reversed after), heading audit (one h1/page)
+- [x] Scoped DoD gate + evidence merge
 
 **Sprint close:** full 8-command gate on final HEAD (evidence of record) → wiki compile
 pass (frontend-zone.md at minimum; blast-radius check on all touched `code_refs`) →
