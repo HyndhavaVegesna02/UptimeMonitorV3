@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react'
 import { getActor } from '../api/actor'
 import { ApiError, postDecision } from '../api/client'
 import type { ComponentTopologyDTO } from '../api/types'
-import { EmptyState, ErrorState, LoadingState, PageHeader } from '../components'
+import { EmptyState, ErrorState, LoadingState, PageHeader, Panel } from '../components'
 import { ApprovalCard } from '../features/approvals/ApprovalCard'
 import { toCardDecisionState } from '../features/approvals/decisionState'
 import type { DecisionAction, DecisionUiState } from '../features/approvals/decisionState'
@@ -96,38 +96,38 @@ export function ApprovalsPage() {
         </p>
       ) : null}
 
-      {state.phase === 'loading' && <LoadingState label="Loading proposals…" />}
+      <Panel>
+        {state.phase === 'loading' && <LoadingState label="Loading proposals…" />}
 
-      {state.phase === 'error' && (
-        <ErrorState message="Could not load proposals" onRetry={retry} />
-      )}
+        {state.phase === 'error' && (
+          <ErrorState message="Could not load proposals" onRetry={retry} />
+        )}
 
-      {state.phase === 'success' && state.data.length === 0 && (
-        <div className="approvals-page__empty">
+        {state.phase === 'success' && state.data.length === 0 && (
           <EmptyState
             icon="check"
             tone="positive"
             message="Queue clear"
             detail="No proposals awaiting review."
           />
-        </div>
-      )}
+        )}
 
-      {state.phase === 'success' && state.data.length > 0 && (
-        <ul className="approval-list">
-          {state.data.map((proposal) => (
-            <ApprovalCard
-              key={proposal.id}
-              proposal={proposal}
-              component={componentById[proposal.component_id]}
-              decision={toCardDecisionState(decisionState, proposal.id)}
-              onRequestConfirm={(action) => requestConfirm(proposal.id, action)}
-              onCancelConfirm={cancelConfirm}
-              onConfirmDecision={(action) => confirmDecision(proposal.id, action)}
-            />
-          ))}
-        </ul>
-      )}
+        {state.phase === 'success' && state.data.length > 0 && (
+          <ul className="approval-list">
+            {state.data.map((proposal) => (
+              <ApprovalCard
+                key={proposal.id}
+                proposal={proposal}
+                component={componentById[proposal.component_id]}
+                decision={toCardDecisionState(decisionState, proposal.id)}
+                onRequestConfirm={(action) => requestConfirm(proposal.id, action)}
+                onCancelConfirm={cancelConfirm}
+                onConfirmDecision={(action) => confirmDecision(proposal.id, action)}
+              />
+            ))}
+          </ul>
+        )}
+      </Panel>
     </div>
   )
 }

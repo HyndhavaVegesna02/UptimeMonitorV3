@@ -57,6 +57,13 @@ describe('ApprovalsPage', () => {
     expect(within(list).getAllByRole('listitem')).toHaveLength(FIXTURE_PROPOSALS.length)
   })
 
+  it('wraps the card list in the standard Panel (review-52 note, STORY-100)', async () => {
+    renderApprovalsPage()
+
+    const list = await screen.findByRole('list')
+    expect(list.closest('.panel')).not.toBeNull()
+  })
+
   it('renders a severity chip derived from to_status, not a fake field (AC1)', async () => {
     renderApprovalsPage()
     await screen.findByRole('list')
@@ -259,6 +266,9 @@ describe('ApprovalsPage', () => {
     expect(message.closest('.empty-state')).not.toBeNull()
     expect(container.querySelector('.empty-state__icon--positive')).not.toBeNull()
     expect(screen.getByText('No proposals awaiting review.')).toBeInTheDocument()
+    // The empty state stays INSIDE the standard Panel (review-52 note,
+    // STORY-100), not a bespoke bordered wrapper.
+    expect(message.closest('.panel')).not.toBeNull()
   })
 
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {
