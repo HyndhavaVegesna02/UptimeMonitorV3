@@ -46,17 +46,17 @@
 
 ### Steps
 
-- [ ] 1. Failing test first (`backend/tests/test_history_endpoint.py` pattern): with 5
+- [x] 1. Failing test first (`backend/tests/test_history_endpoint.py` pattern): with 5
   seeded observations, `limit=2` returns exactly the 2 newest; `limit` larger than the
   result set returns all; run — red (param not declared). Commit after green via step 2.
-- [ ] 2. Declare `limit: int | None = Query(None, ge=1, ...)` in the controller; thread
+- [x] 2. Declare `limit: int | None = Query(None, ge=1, ...)` in the controller; thread
   through the service (`sorted_obs[:limit]` when limit is not None). See step-1 tests
   pass. Commit.
-- [ ] 3. Edge tests: absent limit → identical full-window behavior (existing tests
+- [x] 3. Edge tests: absent limit → identical full-window behavior (existing tests
   untouched and green); `limit=0` and `limit=-1` → 422; `limit=abc` → 422. Commit.
-- [ ] 4. AC3 docs: reconcile the two frontend comments (client.ts, CheckHistoryPage.tsx)
+- [x] 4. AC3 docs: reconcile the two frontend comments (client.ts, CheckHistoryPage.tsx)
   — server cap exists, client render-cap stays authoritative. Commit.
-- [ ] 5. Story gate: `yt_gate.py --only` pytest + ruff (diff = backend api/tests +
+- [x] 5. Story gate: `yt_gate.py --only` pytest + ruff (diff = backend api/tests +
   frontend comments; comments don't affect npm gates but run `npm run lint` if
   CheckHistoryPage.tsx line-wrap changes). Wiki blast radius check. Board update.
 
@@ -84,17 +84,17 @@ evidence is the local stack, stated explicitly.)
 
 ### Steps
 
-- [ ] 1. Scaffold `tools/ui-sweep/` (gitignored node_modules): playwright dep +
+- [x] 1. Scaffold `tools/ui-sweep/` (gitignored node_modules): playwright dep +
   chromium install + sweep script skeleton (console/network capture harness). Commit.
-- [ ] 2. AC1/AC2 sweep: for each tab — SPA-nav load AND direct-URL deep load; assert
+- [x] 2. AC1/AC2 sweep: for each tab — SPA-nav load AND direct-URL deep load; assert
   rendered content state; screenshot; collect console errors + failed API calls. Commit
   script + evidence.
-- [ ] 3. AC3 mutations via the browser: sample-mode ON → UI + control-table verify →
+- [x] 3. AC3 mutations via the browser: sample-mode ON → UI + control-table verify →
   OFF → verify clean. Maintenance window schedule → visible in list → delete → gone.
   Screenshots each step. Commit evidence.
-- [ ] 4. AC4: dark/light theme renders on Dashboard; one 390px-wide viewport check.
+- [x] 4. AC4: dark/light theme renders on Dashboard; one 390px-wide viewport check.
   Commit evidence.
-- [ ] 5. AC5: findings log (`ui-sweep/findings.md`) — every anomaly either explained or
+- [x] 5. AC5: findings log (`ui-sweep/findings.md`) — every anomaly either explained or
   filed as a backlog story. Story gate (`--only` ruff format if any .py touched — else
   note no gate-relevant diff; the full close gate covers it). Board update.
 

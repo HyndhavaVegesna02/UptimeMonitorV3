@@ -1,159 +1,67 @@
 # YourTeam active sprint board
-sprint: 50
-status: done          # PO verdicts 2026-07-17: STORY-093 ACCEPT; STORY-089 ACCEPT + follow-up
-                      # (STORY-094 /history limit defect filed; Playwright-MCP tooling gap -> retro).
-                      # Stack decision: KEEP RUNNING (reaper-protected c7n-keep=true). Velocity 5/5.
-mode: in-process      # PO-approved at lock (2026-07-16). STORY-089 is PO-driven: console
-                      # actions are sanctioned PO-interaction points (story Context);
-                      # orchestrator verifies every AC live and records evidence.
-goal: "Harden the container image and stack (STORY-093), then execute the live console deployment and verify the deployed system end-to-end (STORY-089) — completing the AWS migration epic's deployment leg."
-branch: sprint-50
-start_tag: sprint-50-start
-start_commit: 74b66e9
-started: "2026-07-16T23:59:00+05:30"
-# Plan-verifier: DISPATCHED (contract-sensitive: live vendor/deploy path + CFN service
-# contract edit). Verdict LOCK_READY after 2 GAPs fixed pre-lock (deploy-runbook branch
-# prerequisite still said sprint-49; seed_topology_dynamo assertion arg-shape).
-# Pre-lock baseline: full 8-command gate on main — 7 PASS at b2c46a2; ruff format red on
-# .claude/skills/yourteam/scripts/yt_wiki.py (retro-amendment drift), fixed 74b66e9
-# (format-only, self-test 28/28); baseline green at start_commit.
+sprint: 51
+status: done          # PO verdicts 2026-07-17: both stories ACCEPT; redeploy live stack approved;
+                      # sidebar-breakpoint finding filed as STORY-096 (draft). Velocity 4/4.
+mode: in-process      # PO-approved at lock (2026-07-17).
+goal: "Add the server-side limit cap to the history endpoint (STORY-094) and run the first thorough, orchestrator-driven Playwright verification of the live deployed dashboard (STORY-095)."
+branch: sprint-51
+start_tag: sprint-51-start
+start_commit: 1677b72
+started: "2026-07-17T04:30:00+05:30"
+# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive:
+# STORY-094 is a one-zone additive param on existing DTOs; STORY-095 writes no production
+# code (live-UI verification sweep). Skip + reason recorded in plan.md for PO visibility.
+# Baseline: full 8-command gate GREEN on main at 1677b72 (clean tree; first attempt refused
+# on dirty refinement records — committed, re-run).
+# Tooling note: Playwright MCP (.mcp.json) loads at session START only — this sprint drives
+# Playwright directly (headless Chromium via tools/ui-sweep/); MCP takes over next session.
 stories:
-  - id: STORY-093
-    status: done          # all 4 AC; 2-pt story ⇒ implementer → DoD gate → reality gate (no reviewer tier)
-    commits: cf875ff..b2d0cfa   # per-step TDD cadence; gate evidence at 0f7546f; b2d0cfa = orchestrator wiki Facts-lint fix (docs-only)
-    dod_evidence:
-      - command: "pytest"
-        exit_code: 0
-        output_tail: "tor.py ...                       [ 91%] | backend\\tests\\test_streak.py .........                                   [ 93%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 522 passed in 40.47s ============================="
-        commit: 0f7546f
-        at: "2026-07-16T18:27:55+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: 0f7546f
-        at: "2026-07-16T18:28:36+00:00"
-      - command: "ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 0f7546f
-        at: "2026-07-16T18:28:36+00:00"
-      - command: "ruff format --check ."
-        exit_code: 0
-        output_tail: "205 files already formatted"
-        commit: 0f7546f
-        at: "2026-07-16T18:28:36+00:00"
-      - command: "cfn-lint infra/stack.yaml"
-        exit_code: 0
-        output_tail: ""
-        commit: 0f7546f
-        at: "2026-07-16T18:28:36+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  23:58:39 | Duration  33.56s (transform 4.10s, setup 30.24s, import 16.88s, tests 36.54s, environment 119.52s)"
-        commit: 0f7546f
-        at: "2026-07-16T18:28:38+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | [32m✓ built in 272ms[39m"
-        commit: 0f7546f
-        at: "2026-07-16T18:29:13+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: 0f7546f
-        at: "2026-07-16T18:29:17+00:00"
+  - id: STORY-094
+    status: done          # all 4 AC; 2-pt story ⇒ implementer → scoped DoD gate → reality gate
+    commits: 6ab598c..7f352b8   # TDD cadence; scoped gate at 7f352b8 (pytest 529 / ruff x2 / npm lint all 0)
     reality_gate:
       ran: true
       evidence: >-
-        Live image probe (plan step 5): docker build exit 0; whitespace-only touch to
-        backend/src/composition/run.py then rebuild -> dependency-install layer
-        (tomllib-derived requirements.txt + uvicorn[standard]) reported CACHED;
-        `docker run --rm <img> whoami` -> app (non-root); container import smoke
-        `python -c "import src.composition.asgi; import src.composition.run"` -> OK.
-        cfn-lint exit 0 on the HealthCheckGracePeriodSeconds:120 template edit
-        (APIService only — LoopService has no LB). Wiki blast radius: 4 articles
-        updated/re-verified (deployment-and-infra Facts rewritten; 3 re-verified,
-        shared code_refs, test-only diff); yt_wiki.py exit 0 after orchestrator
-        Facts-lint fix b2d0cfa. Full live exercise of the deployed template/image
-        is STORY-089 by design.
-    slug: sprint49-review-minors
-    points: 2          # estimated at this planning (was unestimated at filing)
-    order: 1           # first: its Dockerfile/stack hardening must be in what 089 deploys
-  - id: STORY-089
-    status: done          # all 6 AC live-verified against the deployed stack; PO drove console/UI interaction points
-    commits: 9a4e83b..89925c9   # runbook org-policy + 3 live-found template fixes (ec09e8a AutoPublish, d119cc3 policy IDs, c05fc57 DefaultRootObject) + AC6 docs 235fc37
+        Local-stack spot check on an ISOLATED DynamoDB Local (container uptime_dynamo_094
+        port 8009, API uvicorn port 8010, both torn down after): limit=2 -> exactly the 2
+        newest of 5 seeded rows (22:31:41, 22:21:41); no limit -> all 5 (unchanged full
+        window); limit=0 -> 422 greater_than_equal. Real-repository test
+        (test_history_limit_against_real_dynamo_repository) runs vs DynamoDB Local in the
+        suite. LIVE stack still runs the pre-fix image by design — live verification at
+        the post-acceptance redeploy (stated in plan; not ship-on-promise). Wiki blast
+        radius: api-five-file-convention.md, frontend-zone.md, sample-mode.md re-verified.
+    slug: history-limit-param
+    points: 2
+    order: 1           # the code change first; sweep is independent of it
+  - id: STORY-095
+    status: done          # all 5 AC PASS against the live deployed system; evidence committed
+    commits: 0e290ee..fbc42ac
     reality_gate:
       ran: true
       evidence: >-
-        The story IS the reality gate — every AC exercised against the live stack
-        (us-east-1, account 065317679010, stack `uptime-monitor`):
-        AC1: CREATE_COMPLETE (attempt 3 + 1 update); API task `healthy` in
-        uptime-monitor-api-tg; loop exactly 1 RUNNING task; image in ECR.
-        AC2: PO click-through — all six tabs render at
-        https://d3ukiib1iqmbxb.cloudfront.net; orchestrator probes: / -> 200,
-        extensionless /approvals -> 200 text/html (rewrite fn LIVE),
-        /api/v1/health & /components & /topology -> 200 same-origin (no CORS).
-        AC3: watermark advanced 21:42:42Z -> 21:44:42Z across live cycles;
-        /history returns real per-minute Grail observations (2 synthetic
-        locations); /availability computes 69/69 verdicts, completeness ~9.7%/24h.
-        AC4: sample-mode round-trip from the deployed UI — two
-        `PUT /api/v1/sample-mode 200` witnessed in /ecs/uptime-monitor-api
-        CloudWatch logs; CONFIG/SAMPLE_MODE item verified, left enabled:false.
-        AC5: leak sweep over all 25+ sprint commits (git log -p + git grep):
-        only the dummy dt0c01.sampletoken test fixtures; values live only in
-        Secrets Manager. AC6: CLAUDE.md deployed-topology section +
-        deployment-topology.md wiki article (live-verified facts) + this record.
-        Live-found template defects (fixed on-branch, each verified by redeploy):
-        missing AutoPublish on the CloudFront function; fabricated
-        Managed-CachingOptimized ID; ID/comment mismatch on the origin-request
-        policy; missing DefaultRootObject (bare / 403). Org-policy interrupt
-        encoded into the runbook (us-east-1 lock, c7n-keep/username tags).
+        The story IS a live reality gate (real headless Chromium vs the deployed stack).
+        AC1: six tabs render via BOTH direct-URL deep load (CloudFront rewrite path) and
+        SPA nav — per-tab PNGs in sprints/2026-07-17-sprint-51/ui-sweep/. AC2: zero
+        console errors + zero failed /api/* across 20+ page loads (evidence JSONs empty).
+        AC3: sample-mode ON (banner + aria-checked + control-table enabled:true) then OFF
+        (verified both ways); maintenance window 'ui-sweep-probe' created via the form,
+        listed, deleted, gone after reload. AC4: light/dark (system-pref emulation + in-app
+        toggle) + 390x844 viewport. AC5: findings.md — empty error table, 3 anomalies
+        (2 EXPLAINED, 1 CANDIDATE-STORY: sidebar keeps desktop width below ~768px).
+        Live system confirmed left clean (SAMPLE_MODE enabled:false; 0 probe rows).
+    slug: playwright-ui-sweep
+    points: 2
+    order: 2           # live-stack sweep (read-mostly; mutations reversed)
 final_gate:
-  head: 89925c9
-  dod_evidence:
-    - command: "pytest"
-      exit_code: 0
-      output_tail: "522 passed in 42.96s"
-      commit: 89925c9
-      at: "2026-07-16T22:03:44+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."
-      commit: 89925c9
-      at: "2026-07-16T22:04:28+00:00"
-    - command: "ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: 89925c9
-      at: "2026-07-16T22:04:28+00:00"
-    - command: "ruff format --check ."
-      exit_code: 0
-      output_tail: "205 files already formatted"
-      commit: 89925c9
-      at: "2026-07-16T22:04:29+00:00"
-    - command: "cfn-lint infra/stack.yaml"
-      exit_code: 0
-      output_tail: "(exit 0, no findings)"
-      commit: 89925c9
-      at: "2026-07-16T22:04:29+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
-      commit: 89925c9
-      at: "2026-07-16T22:04:31+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "built (index-CS_W8toy.js 278.14 kB / gzip 85.39 kB)"
-      commit: 89925c9
-      at: "2026-07-16T22:05:08+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "eslint . — clean"
-      commit: 89925c9
-      at: "2026-07-16T22:05:12+00:00"
-    slug: console-deployment-live-verification
-    points: 3
-    order: 2           # PO-driven console runbook execution + live AC verification
+  head: 3cdf09d
+  dod_evidence:   # full 8-command amended gate, all exit 0 at 2026-07-16T23:19-23:21Z on 3cdf09d
+    - {command: "pytest", exit_code: 0, output_tail: "529 passed in 40.71s", commit: 3cdf09d, at: "2026-07-16T23:19:31+00:00"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, output_tail: "Contracts: 8 kept, 0 broken.", commit: 3cdf09d, at: "2026-07-16T23:20:12+00:00"}
+    - {command: "ruff check .", exit_code: 0, output_tail: "All checks passed!", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "ruff format --check .", exit_code: 0, output_tail: "205 files already formatted", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, output_tail: "(exit 0, no findings)", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
+    - {command: "npm test", exit_code: 0, output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)", commit: 3cdf09d, at: "2026-07-16T23:20:15+00:00"}
+    - {command: "npm run build", exit_code: 0, output_tail: "built", commit: 3cdf09d, at: "2026-07-16T23:20:51+00:00"}
+    - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 3cdf09d, at: "2026-07-16T23:20:56+00:00"}
 hotfixes: []
-interrupts:
-  - "2026-07-17 PO supplied company AWS account rules mid-STORY-089 (region lock us-east-1; 22:00 IST reaper -> c7n-keep=true tags; username tag; cost/teardown hygiene). Not a scope change — an execution constraint on the in-flight story; encoded into deploy-runbook.md (9a4e83b) + saved to memory. Teardown-vs-keep decision queued for review."
+interrupts: []

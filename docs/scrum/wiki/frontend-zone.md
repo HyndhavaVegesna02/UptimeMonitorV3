@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
-verified_sha: cbe628b
-verified_sprint: sprint-45
+verified_sha: 2859b95
+verified_sprint: sprint-51
 status: verified
 ---
 
@@ -108,7 +108,10 @@ status: verified
   AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
   same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
   thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
-  requests), `getPublications()` (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
+  requests. STORY-094: the server now accepts an optional `limit` query param that caps the
+  response server-side, but `getHistory`'s params type stays `{ signal_key, since, until }` — this
+  client deliberately does not adopt it; the render cap stays authoritative), `getPublications()`
+  (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
   params; the endpoint itself caps at the repository's most-recent 50 server-side, so unlike
   `/history` there is no client-side render cap to add), and `getMaintenance()`/`postMaintenance(body)`
   (STORY-036/STORY-015f AC1, AC2 — `GET`/`POST /api/v1/maintenance`; `postMaintenance` funnels
@@ -253,7 +256,8 @@ status: verified
     client-side — none of the three filters triggers a refetch, only the window toggle does; the
     location options are populated from the currently-loaded window's REAL data (no dedicated
     locations-enumeration endpoint). The dense grid replaced the old selector-driven single-signal
-    table. The 1,000-row render cap (STORY-015e, `/history` has no pagination) is preserved but now
+    table. The 1,000-row render cap (STORY-015e, `/history` has no CLIENT-DRIVEN pagination — the
+    server gained an optional `limit` cap in STORY-094 that this client does not send) is preserved but now
     an INJECTABLE `maxRenderedRows` prop (default `DEFAULT_MAX_RENDERED_ROWS = 1000`) — added in the
     STORY-060 review fix so a test can pin a small cap without the STORY-054 flake (rendering
     ~1,000+ rows was slow enough under `npm test` file-parallelism to occasionally exceed Vitest's
@@ -581,4 +585,9 @@ status: verified
 - sprint-45 (STORY-065/STORY-066): verified after implementing Maintenance title + DELETE endpoint and Publication author metadata. MaintenanceWindowDTO gained optional `title`, PublicationDTO gained optional `author`, and useMaintenance hook and MaintenancePage UI were updated to support deletion with inline two-step confirm. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
 - 2026-07-13 (sprint-45 gate closure): re-stale was the trailing ruff/lint commit 48fba51 (behavior-neutral — trailing-blank trims; MaintenancePage dropped the now-unused formatReason helper + added a type import). Facts unchanged. Re-verified; verified_sha -> 2db6c70.
 - sprint-45 (STORY-065 styling fix & STORY-066 minor): moved static inline styles in MaintenancePage to MaintenancePage.css, defined proper BEM class rules, and updated publications MSW mock authors to dashboard-operator. verified_sha -> cbe628bcc849707ffea21aee4d45f433bd76dd12.
+- sprint-51 (STORY-094, docs-only): the backend `/history` endpoint gained an optional server-side
+  `limit` query param (see [[api-five-file-convention]]); `client.ts::getHistory`'s comment and the
+  `CheckHistoryPage.tsx` render-cap comment (Facts updated above) now note the server accepts it
+  but this client deliberately does not send it — no code path, DTO, or contract changed.
+  verified_sha -> 2859b95.
 
