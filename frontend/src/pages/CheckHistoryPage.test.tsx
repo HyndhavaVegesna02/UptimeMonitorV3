@@ -160,12 +160,17 @@ describe('CheckHistoryPage', () => {
 
   it('shows a distinct empty state when filters match nothing, without hiding that data exists (AC1, AC4)', async () => {
     const user = userEvent.setup()
-    render(<CheckHistoryPage />)
+    const { container } = render(<CheckHistoryPage />)
     await screen.findByRole('table')
 
     await user.type(screen.getByLabelText('Search'), 'no-such-signal-or-component')
 
-    expect(await screen.findByText('No observations match your filters')).toBeInTheDocument()
+    const message = await screen.findByText('No observations match your filters')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon')).not.toBeNull()
+    expect(
+      screen.getByText('Try widening the time window or clearing a filter.'),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

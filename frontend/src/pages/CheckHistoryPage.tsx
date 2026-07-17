@@ -203,7 +203,11 @@ export function CheckHistoryPage({
         )}
 
         {state.phase === 'success' && rows.length > 0 && filtered.length === 0 && (
-          <EmptyState message="No observations match your filters" />
+          <EmptyState
+            icon="search"
+            message="No observations match your filters"
+            detail="Try widening the time window or clearing a filter."
+          />
         )}
 
         {state.phase === 'success' && filtered.length > 0 && (
