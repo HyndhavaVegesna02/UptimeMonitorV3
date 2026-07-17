@@ -203,6 +203,66 @@ describe('AppShell — top bar + banner (STORY-056 AC2, AC3)', () => {
   })
 })
 
+describe('AppShell — persistent SAMPLE chip (STORY-102 AC2)', () => {
+  it('shows no chip while the banner is visible (not yet dismissed)', async () => {
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderShell('/')
+
+    await screen.findByRole('status')
+    expect(screen.queryByText('SAMPLE')).not.toBeInTheDocument()
+  })
+
+  it('shows the persistent chip once the banner is dismissed while the flag stays on', async () => {
+    const user = userEvent.setup()
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderShell('/')
+
+    await user.click(await screen.findByRole('button', { name: 'Dismiss' }))
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    expect(screen.getByText('SAMPLE')).toBeInTheDocument()
+  })
+
+  it('restores the banner (and hides the chip) when the chip is clicked', async () => {
+    const user = userEvent.setup()
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderShell('/')
+
+    await user.click(await screen.findByRole('button', { name: 'Dismiss' }))
+    const chip = screen.getByText('SAMPLE')
+
+    await user.click(chip)
+
+    expect(await screen.findByRole('status')).toBeInTheDocument()
+    expect(screen.queryByText('SAMPLE')).not.toBeInTheDocument()
+  })
+
+  it('persists across a tab switch: the chip stays visible after navigating (shell-level, all tabs)', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })),
+      http.get('/api/v1/approvals', () => HttpResponse.json([])),
+    )
+    renderShell('/')
+
+    await user.click(await screen.findByRole('button', { name: 'Dismiss' }))
+    expect(screen.getByText('SAMPLE')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Availability' }))
+
+    expect(
+      screen.getByRole('heading', { name: 'Availability' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('SAMPLE')).toBeInTheDocument()
+  })
+
+  it('shows no chip when the flag is off', async () => {
+    renderShell('/')
+    await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(screen.queryByText('SAMPLE')).not.toBeInTheDocument()
+  })
+})
+
 describe('AppShell — Approvals badge (STORY-056 AC4)', () => {
   it('shows the open-proposal count on the Approvals sidebar item', async () => {
     renderShell('/')
