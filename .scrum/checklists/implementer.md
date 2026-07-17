@@ -42,3 +42,9 @@
 - [ ] Blast radius is the MECHANICAL sweep over all articles (`python .claude/skills/yourteam/scripts/yt_wiki.py sweep`) â€” never hand-picked; shared `code_refs` files drift multiple articles (2026-06-28).
 - [ ] Facts cite SYMBOLS (`file.py::ClassName`, `file.py::function`) â€” bare line numbers only where no symbol applies (2026-06-27).
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 Ã—2).
+
+- [ ] Any server/container/process you spawn for a reality check ends with an OS-level
+      teardown VERIFICATION — process gone by PID (taskkill/kill + re-check) and port freed
+      (netstat or equivalent) — a wrapper-job kill alone is not evidence (2026-07-17;
+      sprint-51 STORY-094 — the bash-job kill left the port-8010 uvicorn worker alive;
+      an explicit taskkill /PID /F + netstat confirm was required).
