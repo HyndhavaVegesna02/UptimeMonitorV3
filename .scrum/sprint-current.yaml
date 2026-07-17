@@ -1,6 +1,7 @@
 # YourTeam active sprint board
 sprint: 51
-status: active
+status: done          # PO verdicts 2026-07-17: both stories ACCEPT; redeploy live stack approved;
+                      # sidebar-breakpoint finding filed as STORY-096 (draft). Velocity 4/4.
 mode: in-process      # PO-approved at lock (2026-07-17).
 goal: "Add the server-side limit cap to the history endpoint (STORY-094) and run the first thorough, orchestrator-driven Playwright verification of the live deployed dashboard (STORY-095)."
 branch: sprint-51

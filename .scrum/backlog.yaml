@@ -906,7 +906,7 @@ stories:
   - id: STORY-094
     title: History endpoint — additive optional server-side `limit` cap (reframed from defect at refinement)
     file: docs/scrum/stories/STORY-094-history-limit-param-ignored.md
-    status: in-sprint   # sprint 51 (order 1); refined 2026-07-17: limit never existed (FastAPI ignored it) and the frontend never sends it — now an additive optional newest-first cap. 2 pts.
+    status: done    # sprint-51: all 4 AC; real-DynamoDB-Local test + isolated local-stack reality gate. PO accepted 2026-07-17, merged to main; live redeploy approved at review.
     points: 2
     priority: 50
     type: chore
@@ -914,8 +914,14 @@ stories:
   - id: STORY-095
     title: Playwright UI sweep — thorough browser verification of the deployed dashboard
     file: docs/scrum/stories/STORY-095-playwright-ui-sweep.md
-    status: in-sprint   # sprint 51 (order 2); PO directive 2026-07-17 ("use playwright mcp to thoroughly check the ui"); MCP loads next session -> direct Playwright this sprint. 2 pts.
+    status: done    # sprint-51: all 5 AC PASS vs the live system (six tabs both load modes, 0 console/API errors, mutations reversed, themes+390px); 1 finding -> STORY-096. PO accepted 2026-07-17, merged to main.
     points: 2
     priority: 51
     type: chore
     sprint: 51
+  - id: STORY-096
+    title: Sidebar keeps desktop width below ~768px — add a narrow-viewport breakpoint
+    file: docs/scrum/stories/STORY-096-sidebar-narrow-viewport.md
+    status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
+    type: story
+    sprint: null
