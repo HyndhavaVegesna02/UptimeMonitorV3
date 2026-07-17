@@ -62,3 +62,9 @@
   cursor: not-allowed;
   opacity: 0.6;
 }
+
+/* Mobile drawer trigger (STORY-096 AC2) — pinned to the left edge of the
+   top bar, ahead of the right-aligned error/trigger/theme cluster. */
+.top-bar__menu-trigger {
+  margin-right: auto;
+}

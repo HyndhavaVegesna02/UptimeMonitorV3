@@ -24,16 +24,28 @@ function mockMatchMedia(prefersDark: boolean) {
  * `TopBar` and `SampleModeBanner` (a single source of truth — see that
  * file's header comment for why two independent hook instances would
  * desync). */
-function TopBarHarness() {
+function TopBarHarness({
+  showMenuTrigger,
+  onOpenMenu,
+}: {
+  showMenuTrigger?: boolean
+  onOpenMenu?: () => void
+}) {
   const sampleMode = useSampleMode()
-  return <TopBar sampleMode={sampleMode} />
+  return (
+    <TopBar
+      sampleMode={sampleMode}
+      showMenuTrigger={showMenuTrigger}
+      onOpenMenu={onOpenMenu}
+    />
+  )
 }
 
-function renderTopBar() {
+function renderTopBar(props: { showMenuTrigger?: boolean; onOpenMenu?: () => void } = {}) {
   mockMatchMedia(true)
   return render(
     <ThemeProvider>
-      <TopBarHarness />
+      <TopBarHarness {...props} />
     </ThemeProvider>,
   )
 }
@@ -121,6 +133,23 @@ describe('TopBar', () => {
 
     expect(await screen.findByRole('alert')).toBeInTheDocument()
     expect(toggle).toHaveAttribute('aria-checked', 'false')
+  })
+
+  it('does not render a menu trigger when showMenuTrigger is false (default)', () => {
+    renderTopBar()
+    expect(
+      screen.queryByRole('button', { name: 'Open navigation menu' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders a labeled menu trigger when showMenuTrigger is true (STORY-096 AC2)', async () => {
+    const onOpenMenu = vi.fn()
+    renderTopBar({ showMenuTrigger: true, onOpenMenu })
+
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    await userEvent.setup().click(trigger)
+
+    expect(onOpenMenu).toHaveBeenCalledTimes(1)
   })
 
   it('on a GET failure, renders a retry affordance instead of the switch', async () => {
