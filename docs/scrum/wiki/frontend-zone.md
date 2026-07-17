@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/components/RelativeTime/RelativeTime.tsx]
-verified_sha: aa6dcb5
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/features/dashboard/actionCard.ts, frontend/src/features/dashboard/maintenanceSummary.ts]
+verified_sha: 94a2a12
 verified_sprint: sprint-53
 status: verified
 ---
@@ -703,3 +703,64 @@ status: verified
   untouched-green (empty diff — no backend source change). `code_refs` += `lib/formatTime.ts`,
   `lib/formatLocation.ts`, `components/RelativeTime/RelativeTime.tsx`. Test count at HEAD: 442
   tests / 58 files (`npm test`, all green). verified_sha = aa6dcb5.
+
+### Signal quality — dashboard + availability (STORY-099, sprint-53 — ui-redesign wave 2)
+- `components/SummaryCard/SummaryCard.tsx::SummaryCard` gained two opt-in props (journal D4 —
+  "color carries state only when non-nominal"): `neutralAtZero` (a numeric `value` of exactly `0`
+  overrides the given `tone` to `'neutral'`; `value` above `0` restores it; a non-numeric `value`,
+  e.g. a formatted percentage string, is never neutralized — only a REAL `0` triggers it) and
+  `href` (the whole card renders as a single routed `react-router-dom` `Link` — one focusable/
+  clickable element for the entire card, never a nested control; the app-wide `a:focus-visible`
+  rule in `styles/global.css` already covers its focus ring, no local override needed). Both
+  default to off/`undefined` — every pre-existing `SummaryCard` call site is a plain, non-
+  interactive `<div>` exactly as before unless it opts in.
+- `features/dashboard/summary.ts::summarizeComponents` DROPPED the "Components" total card (it
+  only ever duplicated "Operational N of N" — journal #7) and added a `neutralAtZero: boolean`
+  field to `SummaryCardViewModel`: `true` for the "bad state" buckets (`degraded`/`partial`/`down`
+  — a 0 count there is good news, not an alert) and `false` for `up` (Operational always keeps
+  its green, by design, regardless of count) — `DashboardPage.tsx` passes this straight through to
+  `SummaryCard`'s new `neutralAtZero` prop.
+- Two new pure helpers replace that slot with cross-tab awareness action cards (journal #8):
+  `features/dashboard/maintenanceSummary.ts::countActiveOrUpcomingWindows` (counts
+  `MaintenanceWindowDTO[]` whose `features/maintenance/windowState.ts::deriveWindowState` is
+  `'active'` or `'upcoming'`, mirroring its half-open boundary rule exactly rather than
+  re-deriving it) and `features/dashboard/actionCard.ts::actionCardView` (derives `{value, tone}`
+  from a `number | undefined` count: `undefined` — loading OR error, the same graceful-
+  degradation convention as `features/shell/useApprovalsBadge.ts` — renders an honest em-dash in
+  the neutral tone, NEVER a fabricated `0`; a resolved `0` stays neutral too; any count above `0`
+  gets the `'accent'` tone, i.e. the indigo/info token, deliberately never the alert-red health
+  vocabulary). `pages/DashboardPage.tsx::DashboardPage` renders these as the first two
+  `SummaryCard`s in the row — "Pending approvals" (`features/shell/useApprovalsBadge.ts`, linking
+  to `/approvals`) and "Maintenance" (`useMaintenanceWindows` + `countActiveOrUpcomingWindows`,
+  linking to `/maintenance`) — both ahead of the (now Components-less) status cards from
+  `summarizeComponents`.
+- `features/dashboard/useComponents.ts::useComponents` gained a `lastUpdatedAt: string | null`
+  field (display-layer state only, no API change) — `null` until the first successful
+  `GET /api/v1/components` fetch, re-stamped to `new Date().toISOString()` on EVERY later success
+  (e.g. a manual retry), and untouched by a failure. Stamped by comparing the incoming `state`
+  reference against a `seenState` tracked in a second `useState`, adjusted DURING RENDER (the
+  documented "adjusting state when a derived value changes" pattern) rather than inside a
+  `useEffect` body — avoids the `react-hooks/set-state-in-effect` cascading-render lint rule
+  `lib/useFetch.ts`'s own `retry` callback already steers clear of. `DashboardPage.tsx` renders it
+  through a compact "Updated <RelativeTime iso={lastUpdatedAt} />" indicator in the shared
+  `PageHeader`'s `actions` slot (STORY-098's `RelativeTime`, never a raw ISO string) — hidden
+  entirely (not a placeholder) before the first successful load.
+- `pages/AvailabilityPage.tsx::CompletenessCell` relabeled the "Data completeness" cell (journal
+  #9 — "8.33% • missing data" read as if the number itself were the missing share): the old
+  conditional "missing data" chip next to the value is GONE; every real (non-null) completeness
+  value now carries an unconditional "of expected checks received" sub-label instead, so the
+  number can only be read as a RECEIVED share. The low-completeness visual cue
+  (`availability-cell__value--low`, still driven by `features/availability/format.ts::
+  isCompletenessLow`) is preserved as a color-only cue on the value — the ambiguous adjacent TEXT
+  is what's gone, not the signal; the shared page legend's "Missing data" swatch and the split
+  bar's hatched fill (unchanged) still carry that meaning. A `null` completeness (`formatPct` ->
+  "no data") omits the sub-label entirely — never fabricates a "received share" for a component
+  with no data at all. Column header ("Data completeness") and bar semantics are unchanged.
+- Every DashboardPage test render call now wraps in `react-router-dom`'s `MemoryRouter`
+  (`renderDashboard()` helper in `DashboardPage.test.tsx`) — required now that the summary row's
+  two action cards render as a real `Link`, which throws outside a Router context; this is a
+  TEST-ONLY change, `DashboardPage.tsx` itself needs no Router prop (the real app always mounts it
+  under `App.tsx`'s `BrowserRouter`). Frontend-only; six backend gates untouched-green (empty
+  diff — no backend source change). `code_refs` += `features/dashboard/actionCard.ts`,
+  `features/dashboard/maintenanceSummary.ts`. Test count at HEAD: 471 tests / 60 files (`npm
+  test`, all green). verified_sha = 94a2a12.
