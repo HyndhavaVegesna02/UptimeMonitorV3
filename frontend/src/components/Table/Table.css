@@ -1,3 +1,10 @@
+/* Horizontal scroll container (STORY-096 AC4) — the table itself may be
+   wider than its column on a narrow viewport; this wrapper contains that
+   overflow so the PAGE never gains a horizontal scrollbar. */
+.table-wrapper {
+  overflow-x: auto;
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;
