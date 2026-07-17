@@ -1,101 +1,40 @@
 # YourTeam active sprint board
-sprint: 52
-status: done          # delegated review 2026-07-17: both stories ACCEPT (PO delegation for
-                      # the ui-redesign initiative); merged sprint-52 -> ui-redesign (NOT main).
-                      # Velocity 5/5. Final PO review of the whole initiative still pending.
+sprint: 53
+status: active
 mode: in-process
-goal: "UI redesign wave 1: responsive shell (adaptive sidebar + mobile-safe layouts) and consistent page scaffold across all six tabs."
-branch: sprint-52          # off ui-redesign (NOT main) — initiative branch structure per PO directive 2026-07-17;
-                           # review merges sprint-52 -> ui-redesign; main untouched until PO's final initiative review.
+goal: "UI redesign wave 2: operator signal quality — human time/identity (STORY-098), calm dashboard + availability signals (STORY-099), honest mode/nav affordances (STORY-102)."
+branch: sprint-53          # off ui-redesign (NOT main); merges back into ui-redesign at review.
 integration_branch: ui-redesign
-start_tag: sprint-52-start
-start_commit: 517fc38
-started: "2026-07-17T16:15:00+05:30"
-# PO delegation (2026-07-17): sprint plans + per-sprint review verdicts pre-approved for the
-# ui-redesign initiative; final merge into main reserved for the PO.
-# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — frontend display-layer
-# only, existing DTOs, no new contracts, in-process. Reason also in plan.md.
-# Constraints (PO, 2026-07-17): frontend-only (no backend/infra/config/scripts changes);
-# no new Docker resources; every change Playwright-verified against the live local stack.
+start_tag: sprint-53-start
+start_commit: 30895b8
+started: "2026-07-17T18:05:00+05:30"
+# PO delegation (2026-07-17): plans + per-sprint verdicts pre-approved for the ui-redesign
+# initiative; final merge into main reserved for the PO.
+# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — frontend display-layer,
+# existing DTOs, no new contracts, in-process. Reason also in plan.md.
+# Constraints (PO): frontend-only; no new Docker resources; Playwright-verify every change.
+# Retro-52 rules in force: A1 gate shells have DYNAMO_ENDPOINT_URL UNSET; A2 hard-reload
+# before trusting post-HMR console errors, element-shots for color claims; A3 implementers
+# own wiki blast-radius updates per their agent definition (orchestrator reviews).
+# Scope note: 6 pts vs velocity 5 — deliberate; three small independent stories; a slip
+# returns to backlog at review, never extends the sprint.
 stories:
-  - id: STORY-096
-    slug: responsive-shell
-    points: 3
+  - id: STORY-098
+    slug: human-time-and-identity
+    points: 2
     order: 1
-    status: done          # all 5 AC; 11 TDD commits 4ee4112..ff0779e
-    commits: 4ee4112..ff0779e
-    reviews: "spec APPROVE (5/5 AC traced, fence PASS); quality APPROVE (0 major; 3 minors
-      -> follow-up story at review: unused breakpoint tokens doc-note, shift+Tab test
-      [landed with ff0779e], Table.test class-name assertion)"
-    reality_gate:
-      ran: true
-      evidence: >-
-        Live Playwright vs dev stack: AC1 all six tabs documentElement.scrollWidth==390
-        at 390x844 (no page H-scroll); AC2 drawer closed by default, labeled trigger
-        ("Open navigation menu"), focus into drawer on open ("Close navigation"), Escape
-        + scrim-click + nav-link-activation all close with focus returned to trigger
-        (nav-link close was a GATE FINDING — drawer covered the destination page; fixed
-        ff0779e, re-verified live); AC3 1024px auto-rail (aside 52px), 1440px expanded
-        (212px, labels) with localStorage preference honored; AC4 banner 57px (~1-2
-        lines) at 390 with sample mode ON (toggled off after). Clean-load console: 0
-        errors (initial 3 errors proven to be Vite HMR hook-order artifacts — gone after
-        hard reload). Screenshots: sprints/2026-07-17-sprint-52/gate-096/.
-    dod_evidence:   # scoped gate (--only npm; story diff is frontend-only), all exit 0
-      - {command: "npm test", exit_code: 0, output_tail: "Test Files 54 passed (54) | Tests 400 passed (400)", commit: ff0779e, at: "2026-07-17T11:27:59+00:00"}
-      - {command: "npm run build", exit_code: 0, output_tail: "built in 334ms", commit: ff0779e, at: "2026-07-17T11:28:37+00:00"}
-      - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: ff0779e, at: "2026-07-17T11:28:42+00:00"}
-    wiki_blast_radius: "frontend-zone.md UPDATED (responsive-shell section + 5 new code_refs);
-      sample-mode.md re-verified (seam untouched); both -> ff0779e; sweep CLEAN"
-    # PROCESS INCIDENT (retro item): baseline gate pytest ran with DYNAMO_ENDPOINT_URL
-    # pointing at the LIVE local stack DB — clean_dynamo_tables wiped topology mid-sprint
-    # (found as "Topo Comp/No data" during reality gate; NOT a frontend defect). Restored:
-    # container restart + create_tables + loop restart (re-seeds). Rule going forward:
-    # gate runs use an unset DYNAMO_ENDPOINT_URL (suite manages its own throwaway DB) —
-    # same isolation sprint-51's STORY-094 reality gate used.
-  - id: STORY-097
-    slug: page-scaffold-consistency
+    status: in_progress   # implementer dispatched 2026-07-17 ~18:10 IST
+  - id: STORY-099
+    slug: dashboard-signal-quality
     points: 2
     order: 2
-    status: done          # all 5 AC; 15 TDD commits fb7006a..2a2f7bd (incl. 2 wiki commits)
-    commits: fb7006a..2a2f7bd
-    reality_gate:
-      ran: true
-      evidence: >-
-        Live Playwright vs dev stack at 1440: all six tabs exactly one h1, rendered via
-        PageHeader OUTSIDE any card, heading levels sequential (mechanical audit);
-        widths unified (960px token on Approvals/Maintenance/Publications; explicit
-        page--wide on Dashboard/Availability/CheckHistory). Designed EmptyState verified
-        on Publications (icon + no false "latest 50" claim when empty), Maintenance
-        (icon + action copy), Check History filtered-to-zero (icon + recovery copy
-        via live search-to-zero); Availability legend + range switcher live in the
-        PageHeader actions slot and the switcher still works (aria/active verified
-        after click). Light theme spot-checked. STORY-096 NON-REGRESSION: all six tabs
-        scrollWidth==390 at 390x844; drawer opens + Escape-closes. Clean-load console
-        0 errors (pre-reload errors were Vite HMR artifacts again). Screenshots:
-        sprints/2026-07-17-sprint-52/gate-097/.
-    dod_evidence:   # scoped gate (--only npm), all exit 0
-      - {command: "npm test", exit_code: 0, output_tail: "Test Files 55 passed (55) | Tests 417 passed (417)", commit: 2a2f7bd, at: "2026-07-17T12:14:41+00:00"}
-      - {command: "npm run build", exit_code: 0, output_tail: "built in 284ms", commit: 2a2f7bd, at: "2026-07-17T12:15:21+00:00"}
-      - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 2a2f7bd, at: "2026-07-17T12:15:25+00:00"}
-    wiki_blast_radius: "frontend-zone.md + sample-mode.md updated by the IMPLEMENTER
-      (deviated from brief's no-wiki line, but consistent with the yt-implementer
-      definition's report schema; content reviewed by orchestrator against live-verified
-      facts — accurate, accepted; brief/agent-definition mismatch -> retro). Sweep CLEAN."
-baseline_gate: "GREEN — full 8-command gate, all exit 0 at 203ed93 (2026-07-17T10:47Z).
-  First run red on ruff x2: PO-installed .claude/skills scripts (2026-07-17) — vendored
-  tooling, not project code; fixed by adding '.claude' to [tool.ruff] exclude (203ed93),
-  5 pyproject-citing wiki articles re-verified (claims untouched by the exclude line)."
-final_gate:
-  head: 45c6086
-  dod_evidence:   # full 8-command gate, all exit 0, 2026-07-17T12:16-12:19Z; DYNAMO_ENDPOINT_URL
-                  # UNSET (suite ran its own throwaway DynamoDB; live local stack verified intact after)
-    - {command: "pytest", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:16:32+00:00"}
-    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
-    - {command: "ruff check .", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
-    - {command: "ruff format --check .", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
-    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
-    - {command: "npm test", exit_code: 0, output_tail: "55 files / 417 tests passed", commit: 45c6086, at: "2026-07-17T12:17:21+00:00"}
-    - {command: "npm run build", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:18:10+00:00"}
-    - {command: "npm run lint", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:18:16+00:00"}
+    status: todo
+  - id: STORY-102
+    slug: mode-and-nav-affordances
+    points: 2
+    order: 3
+    status: todo
+baseline_gate: "inherited GREEN — ui-redesign @ 30895b8 is sprint-52's 8/8-green HEAD (45c6086)
+  plus the no-ff merge commit (docs/board only in the merge)."
 hotfixes: []
 interrupts: []
