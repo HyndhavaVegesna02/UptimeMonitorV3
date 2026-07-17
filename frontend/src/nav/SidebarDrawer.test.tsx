@@ -117,6 +117,34 @@ describe('SidebarDrawer', () => {
     expect(closeButton).toHaveFocus()
   })
 
+  it('wraps shift+Tab focus at the first focusable element back to the last one', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    await user.click(screen.getByRole('button', { name: 'Open navigation menu' }))
+    const closeButton = screen.getByRole('button', { name: 'Close navigation' })
+    const publicationsLink = screen.getByRole('link', { name: 'Publications' })
+
+    closeButton.focus()
+    await user.tab({ shift: true })
+
+    expect(publicationsLink).toHaveFocus()
+  })
+
+  it('closes the drawer when a nav link is activated (destination page must not stay covered), returning focus to the trigger', async () => {
+    const user = userEvent.setup()
+    render(<Harness />)
+
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    await user.click(trigger)
+    expect(screen.getByRole('dialog')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('link', { name: 'Availability' }))
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
+  })
+
   it('does not error when there is no pending-approvals count yet', async () => {
     const user = userEvent.setup()
     render(<Harness pendingApprovals={undefined} />)

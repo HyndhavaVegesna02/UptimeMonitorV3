@@ -21,6 +21,12 @@ export interface SidebarProps {
    * and the header instead CLOSES the drawer (`onToggleExpanded` is the
    * drawer's close handler in this variant, not a collapse toggle). */
   variant?: 'static' | 'drawer'
+  /** Called when a tab `NavLink` is activated (STORY-096 fix, 2026-07-17
+   * reality-gate finding) — `SidebarDrawer` passes its `onClose` here so
+   * navigating from the open drawer closes it instead of leaving it open
+   * over the newly-navigated-to page. Omitted (no-op) for the static
+   * rail/expanded usage, which has no drawer to close. */
+  onNavigate?: () => void
 }
 
 /**
@@ -38,6 +44,7 @@ export function Sidebar({
   onToggleExpanded,
   pendingApprovals,
   variant = 'static',
+  onNavigate,
 }: SidebarProps) {
   const isDrawer = variant === 'drawer'
   // In the drawer variant the layout is always fully labeled — there is no
@@ -90,6 +97,7 @@ export function Sidebar({
               end={tab.path === '/'}
               title={tab.label}
               aria-label={accessibleLabel}
+              onClick={onNavigate}
               className={({ isActive }) =>
                 cx('sidebar__tab', isActive && 'sidebar__tab--active')
               }

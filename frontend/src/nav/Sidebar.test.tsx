@@ -19,6 +19,7 @@ function renderSidebar(
           onToggleExpanded={onToggleExpanded}
           pendingApprovals={props.pendingApprovals}
           variant={props.variant}
+          onNavigate={props.onNavigate}
         />
       </MemoryRouter>,
     ),
@@ -122,5 +123,29 @@ describe('Sidebar — drawer variant (STORY-096 AC2)', () => {
     renderSidebar('/', { expanded: true, variant: 'drawer' })
     expect(screen.queryByRole('button', { name: 'Collapse sidebar' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Expand sidebar' })).not.toBeInTheDocument()
+  })
+})
+
+describe('Sidebar — onNavigate (STORY-096 fix: drawer must close after nav-link activation)', () => {
+  it('calls onNavigate when a tab link is activated', async () => {
+    const user = userEvent.setup()
+    const onNavigate = vi.fn()
+    renderSidebar('/', { onNavigate })
+
+    await user.click(screen.getByRole('link', { name: 'Availability' }))
+
+    expect(onNavigate).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not throw when onNavigate is omitted (static usage, unchanged)', async () => {
+    const user = userEvent.setup()
+    renderSidebar('/')
+
+    await user.click(screen.getByRole('link', { name: 'Availability' }))
+
+    expect(screen.getByRole('link', { name: 'Availability' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
   })
 })

@@ -24,6 +24,12 @@ const FOCUSABLE_SELECTOR = 'a[href], button:not([disabled])'
  * genuinely mounted, and the page content underneath is never narrowed by
  * it (AC2's "content >= 90% of viewport width" holds trivially since the
  * drawer is `position: fixed`, not part of flow, even while open).
+ *
+ * `Sidebar`'s `onNavigate` prop is wired to `onClose` below (2026-07-17
+ * reality-gate finding): without it, activating a nav link navigated
+ * correctly but left the drawer open over the destination page. Standard
+ * overlay-drawer behavior closes on navigation too, same as Escape/scrim-
+ * click; focus returns to the trigger via the same open-transition effect.
  */
 export function SidebarDrawer({
   open,
@@ -108,6 +114,7 @@ export function SidebarDrawer({
           expanded
           onToggleExpanded={onClose}
           pendingApprovals={pendingApprovals}
+          onNavigate={onClose}
         />
       </div>
     </>
