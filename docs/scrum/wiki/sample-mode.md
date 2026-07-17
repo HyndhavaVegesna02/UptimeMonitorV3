@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
-code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: be2ffcd
-verified_sprint: sprint-51
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
+verified_sha: 52f1706
+verified_sprint: sprint-55
 status: verified
 ---
 
@@ -200,6 +200,28 @@ below for the mechanical deletion recipe.
   This is still the ONLY frontend surface sample mode has; no other tab/page renders anything
   related to it â€” the surface just moved from "inside one tab's page" to "the shell every tab
   renders inside."
+
+### CURRENT STATE on `sprint-55`/`ui-rewrite` - STORY-103 removed the frontend surface (re-verified, NOT just a trivial re-check)
+- STORY-103 (the PO-ordered full UI rewrite, "Mission Teal") deleted `nav/TopBar.tsx`,
+  `nav/SampleModeBanner.tsx`, and `pages/DashboardPage.tsx` outright (old-visual-language
+  presentation, incompatible with the new `Button` variant set - see
+  `docs/scrum/wiki/frontend-zone.md`'s "Minimal placeholder shell" Facts). The new
+  `frontend/src/AppShell.tsx` (a minimal top-bar-stub shell) does NOT call `useSampleMode()` and
+  renders no switch/chip/banner at all - **the frontend sample-mode surface described in the
+  section above is TEMPORARILY ABSENT from the routed app on this branch.** This is a real
+  regression in UI SURFACE, not a documentation lag: as of sprint-55, sample mode can still be
+  toggled via a direct `PUT /api/v1/sample_mode` call (backend untouched, still fully functional -
+  see the Facts above), but there is no in-app control to do so.
+- **What survives untouched:** `features/dashboard/useSampleMode.ts` and its test
+  (`useSampleMode.test.tsx`) - the load+mutate hook itself, byte-identical to the STORY-049/056
+  shape described above, still green, still exercising the same `getSampleMode`/`putSampleMode`
+  client fns and the same MSW `mocks/handlers/sampleMode.ts`. Nothing on the backend, in
+  `api/types.ts`/`api/client.ts`, or in the mock handlers changed.
+  `docs/scrum/sprints/2026-07-18-sprint-55/plan.md`'s STORY-104 Step 3 ("sample-mode switch/chip/
+  banner, ported contracts") is the story that re-wires this surviving hook into the new shell -
+  until then, this article's frontend Facts above describe the LAST WORKING integration
+  (STORY-056, still live on `main`/`ui-redesign` through sprint-54), not the current `sprint-55`
+  HEAD.
 
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
@@ -459,3 +481,14 @@ produced ordinary data flowing through it.
   (a comment noting the server's new optional `limit` cap, see [[frontend-zone]] and
   [[api-five-file-convention]]) - `getSampleMode`/`putSampleMode` and every Sample Mode Fact
   in this article are untouched. No Fact changed. verified_sha -> d0f6573.
+- sprint-55 (STORY-103, PO-ordered full UI rewrite): checked the frontend Facts against what
+  survives on the new `sprint-55`/`ui-rewrite` line, per the story's wiki-ownership brief - this
+  was NOT a trivial re-verify: `nav/TopBar.tsx`, `nav/SampleModeBanner.tsx`, and
+  `pages/DashboardPage.tsx` were all DELETED (old-skin removal, see [[frontend-zone]]), and the
+  new minimal `AppShell.tsx` no longer calls `useSampleMode()` at all - the frontend sample-mode
+  switch/banner surface is temporarily ABSENT from the app until STORY-104 re-wires the still-green
+  `useSampleMode.ts` hook into the new shell. Added a "CURRENT STATE" subsection documenting this;
+  the STORY-049/056 Facts above it are left as an accurate historical record of the last working
+  integration. `code_refs` dropped the three deleted paths (`nav/TopBar.tsx`,
+  `nav/SampleModeBanner.tsx`, `pages/DashboardPage.tsx`); `AppShell.tsx` kept (still exists,
+  rewritten). verified_sha -> 52f1706.
