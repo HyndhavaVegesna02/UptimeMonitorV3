@@ -182,6 +182,22 @@
   }
 }
 
+/* Quality-review fix (STORY-100): every other animated element in the
+   codebase pairs its animation with this guard (LoadingState.css,
+   SidebarDrawer.css, Sidebar.css, AppShell.css) and there is no global
+   reset — a static (non-pulsing) skeleton is still a perfectly legible
+   loading placeholder, so disabling the animation is the correct reduced
+   state, not a degraded one. CSS-only fix: jsdom does not evaluate
+   `prefers-reduced-motion` against computed styles (no other
+   reduced-motion CSS block in this codebase has a matching Vitest test
+   either), so there is nothing a unit test could meaningfully assert here
+   beyond re-asserting the CSS itself. */
+@media (prefers-reduced-motion: reduce) {
+  .approval-card__evidence-skeleton li {
+    animation: none;
+  }
+}
+
 .approval-card__actions {
   flex: none;
   display: flex;

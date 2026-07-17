@@ -1,4 +1,5 @@
 import './StatusBadge.css'
+import { DEFAULT_LABELS } from './labels'
 
 export type HealthStatus =
   | 'up'
@@ -13,28 +14,6 @@ export interface StatusBadgeProps {
   status: HealthStatus
   /** Overrides the default per-status label text. */
   label?: string
-}
-
-const DEFAULT_LABELS: Record<HealthStatus, string> = {
-  up: 'Up',
-  down: 'Down',
-  degraded: 'Degraded',
-  partial: 'Partial outage',
-  maintenance: 'Maintenance',
-  unknown: 'Unknown',
-  missing: 'Missing data',
-}
-
-/**
- * The same default label text a bare `<StatusBadge status={status} />`
- * renders (STORY-100) — exported so a caller that needs the WORD (not the
- * badge markup) reuses the SAME vocabulary rather than a second copy. E.g.
- * the Approvals confirm-step consequence copy ("Publishes '<component>:
- * <target status>' …") names the target status using this, so it always
- * matches the word the transition badge itself already shows.
- */
-export function defaultStatusLabel(status: HealthStatus): string {
-  return DEFAULT_LABELS[status]
 }
 
 /**

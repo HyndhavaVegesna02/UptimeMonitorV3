@@ -2,10 +2,10 @@ export { Button, type ButtonProps, type ButtonVariant } from './Button/Button'
 export { Icon, type IconProps, type IconName } from './Icon/Icon'
 export {
   StatusBadge,
-  defaultStatusLabel,
   type HealthStatus,
   type StatusBadgeProps,
 } from './StatusBadge/StatusBadge'
+export { defaultStatusLabel, DEFAULT_LABELS } from './StatusBadge/labels'
 export { Panel, type PanelProps } from './Panel/Panel'
 export { PageHeader, type PageHeaderProps } from './PageHeader/PageHeader'
 export { LoadingState, type LoadingStateProps } from './LoadingState/LoadingState'
