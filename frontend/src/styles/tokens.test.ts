@@ -1,6 +1,11 @@
-import { readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
+// Vite's `?raw` suffix imports the file as a plain string (typed via the
+// `vite/client` ambient types already in tsconfig.app.json) — avoids
+// reaching for `node:fs`, which the frontend's browser-target tsconfig
+// deliberately excludes from `src/` (only `vite.config.ts` gets node
+// types). Works identically under `vite build` and under Vitest.
+import TOKENS_CSS from './tokens.css?raw'
+import GLOBAL_CSS from './global.css?raw'
 
 /**
  * Token-level contract tests for the Mission Teal design system v2
@@ -9,9 +14,6 @@ import { describe, expect, it } from 'vitest'
  * through attribute-selector scoping) so these assertions are exact and
  * deterministic regardless of the test DOM environment.
  */
-
-const TOKENS_CSS = readFileSync(resolve(__dirname, './tokens.css'), 'utf-8')
-const GLOBAL_CSS = readFileSync(resolve(__dirname, './global.css'), 'utf-8')
 
 function extractBlock(css: string, selector: string): string {
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
