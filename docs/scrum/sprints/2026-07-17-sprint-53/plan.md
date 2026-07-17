@@ -30,13 +30,13 @@ without rework; if the third story slips it returns to the backlog at review, no
 ## Execution order & steps
 
 ### 1. STORY-098 — Human time & identity (2 pts) — order 1: 099's "updated Xs ago" and later stories consume its formatters
-- [ ] Step 1: `lib/formatTime.ts` (relative + absolute-local + ISO tooltip contract) — tests first (boundaries: <1m, minutes, hours, days, future, invalid)
-- [ ] Step 2: `lib/formatLocation.ts` (short display form + raw tooltip) — tests first
-- [ ] Step 3: adopt in Check History, dashboard signals drill-down, Approvals "Proposed", Publications; `<time dateTime>` + title everywhere; minute-tick re-render
-- [ ] Step 4: Maintenance windows render local time + tz label (raw UTC in tooltip)
-- [ ] Step 5: full frontend suite green
-- [ ] Step 6: Playwright reality gate: no bare ISO/microseconds visible on any tab; tooltips carry raw; maintenance round-trip shows local tz
-- [ ] Scoped DoD gate + evidence merge
+- [x] Step 1: `lib/formatTime.ts` (relative + absolute-local + ISO tooltip contract) — tests first (boundaries: <1m, minutes, hours, days, future, invalid)
+- [x] Step 2: `lib/formatLocation.ts` (short display form + raw tooltip) — tests first
+- [x] Step 3: adopt in Check History, dashboard signals drill-down, Approvals "Proposed", Publications; `<time dateTime>` + title everywhere; minute-tick re-render
+- [x] Step 4: Maintenance windows render local time + tz label (raw UTC in tooltip)
+- [x] Step 5: full frontend suite green
+- [x] Step 6: Playwright reality gate: no bare ISO/microseconds visible on any tab; tooltips carry raw; maintenance round-trip shows local tz
+- [x] Scoped DoD gate + evidence merge
 
 ### 2. STORY-099 — Signal quality: dashboard + availability (2 pts) — order 2: consumes 098's formatter
 - [ ] Step 1: SummaryCard neutral-at-zero logic (color only when >0) — tests first

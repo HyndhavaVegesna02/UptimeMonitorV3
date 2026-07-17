@@ -23,12 +23,31 @@ stories:
     slug: human-time-and-identity
     points: 2
     order: 1
-    status: in_progress   # implementer dispatched 2026-07-17 ~18:10 IST
+    status: done          # all 5 AC; 10 TDD commits 254a4d2..b9d69a2 (incl. 2 wiki)
+    commits: 254a4d2..b9d69a2
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live Playwright: zero visible ISO strings on all six tabs (regex audit of
+        body.innerText); Check History renders 207 <time datetime> els, ALL with
+        tooltips ("1m ago" primary / "17 Jul 2026, 18:18:42 GMT+5:30 · ...Z UTC" title /
+        raw ISO in dateTime); location cells "Location …0060" with raw-id tooltip,
+        filter option VALUES still raw ids; dashboard drill-down same pattern;
+        maintenance probe round-trip WYSIWYG — entered 09:30–10:30 local, displays
+        "18 Jul 2026, 09:30–10:30 GMT+5:30" with raw UTC range tooltip (probe deleted,
+        list back to designed empty state). Suite 417 -> 442.
+    dod_evidence:   # scoped gate (--only npm), all exit 0 at b9d69a2, 2026-07-17T~12:55Z
+      - {command: "npm test", exit_code: 0, output_tail: "58 files / 442 tests passed", commit: b9d69a2}
+      - {command: "npm run build", exit_code: 0, commit: b9d69a2}
+      - {command: "npm run lint", exit_code: 0, commit: b9d69a2}
+    wiki_blast_radius: "frontend-zone.md updated + sample-mode.md re-verified by implementer
+      (per retro-52 A3); orchestrator reviewed against live-verified behavior — accurate.
+      Sweep CLEAN."
   - id: STORY-099
     slug: dashboard-signal-quality
     points: 2
     order: 2
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-17 ~18:35 IST
   - id: STORY-102
     slug: mode-and-nav-affordances
     points: 2
