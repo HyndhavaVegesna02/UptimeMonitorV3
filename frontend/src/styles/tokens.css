@@ -209,4 +209,15 @@
   --nav-width-collapsed: 52px;
   --header-height: 52px;
   --target-min: 40px;
+
+  /* Responsive breakpoints (STORY-096; journal D2) — max-width values for
+     the adaptive shell (rail at <=1024px, overlay drawer at <=768px). `@media`
+     conditions cannot reference a custom property directly (no browser
+     support without a preprocessor plugin; sprint-52 froze new dependencies
+     mid-sprint), so any `@media` rule below hardcodes these same two pixel
+     values with a comment citing this token. `src/lib/breakpoints.ts` is the
+     JS-side source of truth these mirror (the `useMediaQuery`-based hooks
+     build their query strings from THAT module, not from these tokens). */
+  --breakpoint-tablet: 1024px;
+  --breakpoint-mobile: 768px;
 }
