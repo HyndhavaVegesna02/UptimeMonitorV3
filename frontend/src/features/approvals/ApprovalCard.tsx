@@ -1,10 +1,17 @@
 import { Link } from 'react-router-dom'
 import { toHealthStatus } from '../../api/statusMapping'
 import type { ComponentTopologyDTO, ProposalDTO } from '../../api/types'
-import { Button, ErrorState, Icon, RelativeTime, StatusBadge } from '../../components'
+import {
+  Button,
+  defaultStatusLabel,
+  ErrorState,
+  Icon,
+  RelativeTime,
+  StatusBadge,
+} from '../../components'
 import { cx } from '../../lib/cx'
 import { formatLocationLabel } from '../../lib/formatLocation'
-import { ACTION_LABEL, CONFIRM_COPY } from './decisionState'
+import { ACTION_LABEL, CONFIRM_LABEL, confirmPrompt } from './decisionState'
 import type { CardDecisionState, DecisionAction } from './decisionState'
 import { deriveSeverity } from './severity'
 import { useProposalEvidence } from './useProposalEvidence'
@@ -66,6 +73,7 @@ export function ApprovalCard({
   const componentName = component?.name ?? proposal.component_id
   const primarySignal = component?.signals[0]
   const evidence = useProposalEvidence(primarySignal?.signal_key)
+  const targetStatusLabel = defaultStatusLabel(toHealthStatus(proposal.to_status))
 
   return (
     <li className={cx('approval-card', `approval-card--${severity.tone}`)}>
@@ -153,10 +161,13 @@ export function ApprovalCard({
           {decision.phase === 'confirming' && (
             <>
               <p className="approval-card__confirm-text">
-                {CONFIRM_COPY[decision.action].prompt}
+                {confirmPrompt(decision.action, {
+                  componentLabel: componentName,
+                  targetStatusLabel,
+                })}
               </p>
               <Button variant="primary" onClick={() => onConfirmDecision(decision.action)}>
-                {CONFIRM_COPY[decision.action].confirmLabel}
+                {CONFIRM_LABEL[decision.action]}
               </Button>
               <Button variant="tertiary" onClick={onCancelConfirm}>
                 Cancel

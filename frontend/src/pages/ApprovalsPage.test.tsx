@@ -342,6 +342,38 @@ describe('ApprovalsPage', () => {
     expect(getCallCount).toBe(2)
   })
 
+  it('states the publish consequence (component + target status) on the approve confirm step (STORY-100 AC3)', async () => {
+    const user = userEvent.setup()
+    renderApprovalsPage()
+    await screen.findByRole('list')
+
+    // FIXTURE_PROPOSALS[0]: component_id 'sockshop-frontend' (topology name
+    // 'Sock Shop — frontend'), to_status 'degraded' -> "Degraded".
+    const card = screen
+      .getByText(FIXTURE_TOPOLOGY[0].name)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Approve' }))
+
+    expect(
+      await within(card).findByText(
+        "Publishes 'Sock Shop — frontend: Degraded' to the public status page.",
+      ),
+    ).toBeInTheDocument()
+  })
+
+  it('leaves the reject confirm prompt unchanged in behavior (STORY-100 AC3)', async () => {
+    const user = userEvent.setup()
+    renderApprovalsPage()
+    await screen.findByRole('list')
+
+    const card = screen
+      .getByText(FIXTURE_PROPOSALS[1].component_id)
+      .closest('li') as HTMLElement
+    await user.click(within(card).getByRole('button', { name: 'Reject' }))
+
+    expect(await within(card).findByText('Reject this proposal?')).toBeInTheDocument()
+  })
+
   it('requires confirmation before POSTing a reject, then refreshes the list on success (AC2)', async () => {
     const user = userEvent.setup()
     const target = FIXTURE_PROPOSALS[1]

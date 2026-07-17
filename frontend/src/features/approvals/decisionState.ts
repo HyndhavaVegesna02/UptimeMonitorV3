@@ -1,8 +1,35 @@
 export type DecisionAction = 'approve' | 'reject'
 
-export const CONFIRM_COPY: Record<DecisionAction, { prompt: string; confirmLabel: string }> = {
-  approve: { prompt: 'Approve this proposal?', confirmLabel: 'Confirm approve' },
-  reject: { prompt: 'Reject this proposal?', confirmLabel: 'Confirm reject' },
+/** What `confirmPrompt` needs to name the consequence (STORY-100 AC3): the
+ * component's friendly name and the human word for the proposal's target
+ * status — the SAME text the transition `StatusBadge` already shows
+ * (`defaultStatusLabel`), so the confirm step never invents a second
+ * vocabulary for the same status. */
+export interface ConfirmContext {
+  componentLabel: string
+  targetStatusLabel: string
+}
+
+/**
+ * The confirm-step prompt text (STORY-100 AC3 — journal finding #14, D5):
+ * approve now states the CONSEQUENCE explicitly — "Publishes '<component>:
+ * <target status>' to the public status page." — instead of the old bare
+ * "Approve this proposal?"; reject's prompt is UNCHANGED in behavior (its
+ * own text carries no publish consequence, since a reject never touches the
+ * public status page).
+ */
+export function confirmPrompt(action: DecisionAction, context: ConfirmContext): string {
+  if (action === 'reject') {
+    return 'Reject this proposal?'
+  }
+  return `Publishes '${context.componentLabel}: ${context.targetStatusLabel}' to the public status page.`
+}
+
+/** The confirm button's own label — UNCHANGED from pre-STORY-100 (only the
+ * prompt text above gained the consequence copy). */
+export const CONFIRM_LABEL: Record<DecisionAction, string> = {
+  approve: 'Confirm approve',
+  reject: 'Confirm reject',
 }
 
 export const ACTION_LABEL: Record<DecisionAction, string> = {
