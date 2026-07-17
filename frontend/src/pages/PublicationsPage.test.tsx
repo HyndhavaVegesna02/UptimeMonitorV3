@@ -129,6 +129,20 @@ describe('PublicationsPage', () => {
     expect(screen.queryByRole('list', { name: 'Publication log' })).not.toBeInTheDocument()
   })
 
+  it('uses the shared designed EmptyState and drops the "latest 50" claim when empty (STORY-097 AC3)', async () => {
+    server.use(http.get('/api/v1/publications', () => HttpResponse.json([])))
+
+    const { container } = render(<PublicationsPage />)
+
+    const message = await screen.findByText('Nothing published yet')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon')).not.toBeNull()
+    expect(
+      screen.getByText('Approved changes appear here once published to the status page.'),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/latest 50 publications/i)).not.toBeInTheDocument()
+  })
+
   it('shows an error state on failure, then recovers via retry (AC2)', async () => {
     const user = userEvent.setup()
     let callCount = 0
