@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
@@ -75,6 +75,25 @@ describe('DashboardPage', () => {
 
     // Exactly one data row per fixture component (no row expanded).
     expect(screen.getAllByRole('row')).toHaveLength(FIXTURE_COMPONENTS.length + 1)
+  })
+
+  it('shows no last-updated indicator before the first successful load, then a relative-time "Updated …" indicator, never a raw ISO string (AC3)', async () => {
+    renderDashboard()
+
+    // No indicator at all while the initial fetch is still loading.
+    expect(screen.queryByText(/Updated/)).not.toBeInTheDocument()
+
+    await screen.findByRole('table')
+    await waitFor(() => expect(screen.getByText(/Updated/)).toBeInTheDocument())
+
+    const updated = screen.getByText(/Updated/)
+    const timeEl = updated.querySelector('time')
+    expect(timeEl).not.toBeNull()
+    // The relative text ("just now"), never the raw ISO instant, as the
+    // VISIBLE text — the raw instant only ever lives on `dateTime`/`title`.
+    expect(timeEl).toHaveTextContent('just now')
+    expect(timeEl).toHaveAttribute('dateTime')
+    expect(updated.textContent).not.toMatch(/\d{4}-\d{2}-\d{2}T/)
   })
 
   it('renders a SummaryCard row derived from real component counts — no redundant "Components" card (STORY-099 AC1)', async () => {

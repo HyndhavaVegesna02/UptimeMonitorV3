@@ -256,9 +256,14 @@ function ComponentRow({
  * clears the primary table. Only a `useComponents` failure blocks the page.
  * The two action cards degrade the same way, via `actionCardView` — an
  * unresolved count renders an honest em-dash, never a fabricated 0.
+ *
+ * The header's "Updated Xs ago" indicator (STORY-099 AC3) reads
+ * `useComponents`' own `lastUpdatedAt` and renders it through the shared
+ * `RelativeTime` (STORY-098) — it is hidden entirely before the first
+ * successful load rather than showing a fabricated/placeholder instant.
  */
 export function DashboardPage() {
-  const { state, retry } = useComponents()
+  const { state, retry, lastUpdatedAt } = useComponents()
   const { state: topologyState } = useTopology()
   const { state: maintenanceState } = useMaintenanceWindows()
   const approvalsCount = useApprovalsBadge()
@@ -306,6 +311,13 @@ export function DashboardPage() {
   const approvalsCard = actionCardView(approvalsCount)
   const maintenanceCard = actionCardView(maintenanceCount)
 
+  const headerActions =
+    lastUpdatedAt !== null ? (
+      <span className="dashboard-page__updated text-caption">
+        Updated <RelativeTime iso={lastUpdatedAt} />
+      </span>
+    ) : undefined
+
   return (
     <div className="dashboard-page page page--wide">
       {/* Accessible name kept as "Dashboard" (not the mock's "System
@@ -321,6 +333,7 @@ export function DashboardPage() {
               } · click a row to see its signals`
             : 'Live status across monitored components · click a row to see its signals'
         }
+        actions={headerActions}
       />
 
       {state.phase === 'success' && (
