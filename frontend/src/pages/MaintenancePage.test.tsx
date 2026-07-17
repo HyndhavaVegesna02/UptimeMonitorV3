@@ -358,6 +358,7 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />)
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
@@ -392,6 +393,7 @@ describe('MaintenancePage', () => {
     // via the mocked response, independent of what was actually submitted —
     // the point under test is the detail->field MAPPING, not reproducing
     // the exact browser state that would trigger this specific backend rule.
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
@@ -425,12 +427,18 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />)
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
+    // Dates are client-VALID (End after Start) — STORY-102's own
+    // end-after-start client check would otherwise block submission before
+    // this mocked SERVER 422 is ever reached; the mocked response (not the
+    // submitted values) is what this test actually exercises, same
+    // decoupling as the component_id case above.
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
     )
-    await user.type(screen.getByLabelText('Start'), '2026-07-09T10:00')
-    await user.type(screen.getByLabelText('End'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
     const endField = screen.getByLabelText('End').closest('.maintenance-form__field')
@@ -463,6 +471,7 @@ describe('MaintenancePage', () => {
     render(<MaintenancePage />)
     await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
 
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
     await user.selectOptions(
       await screen.findByLabelText('Component'),
       FIXTURE_COMPONENTS[0].id,
@@ -472,5 +481,176 @@ describe('MaintenancePage', () => {
     await user.click(screen.getByRole('button', { name: /schedule window/i }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('something unexpected happened')
+  })
+})
+
+describe('MaintenancePage — client-side validation (STORY-102 AC4)', () => {
+  beforeEach(() => {
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('the form opts out of native browser validation bubbles (noValidate)', async () => {
+    const { container } = render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    expect(container.querySelector('form.maintenance-form')).toHaveAttribute('novalidate')
+  })
+
+  it('submitting a fully empty form shows a styled error below EVERY required field, no network call', async () => {
+    const user = userEvent.setup()
+    let postCalled = false
+    server.use(
+      http.post('/api/v1/maintenance', () => {
+        postCalled = true
+        return HttpResponse.json({}, { status: 201 })
+      }),
+    )
+
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    await screen.findByLabelText('Component')
+
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(
+      await within(
+        screen.getByLabelText('Title').closest('.maintenance-form__field') as HTMLElement,
+      ).findByText('Title is required.'),
+    ).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByLabelText('Component').closest('.maintenance-form__field') as HTMLElement,
+      ).getByText('Component is required.'),
+    ).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByLabelText('Start').closest('.maintenance-form__field') as HTMLElement,
+      ).getByText('Start is required.'),
+    ).toBeInTheDocument()
+    expect(
+      within(
+        screen.getByLabelText('End').closest('.maintenance-form__field') as HTMLElement,
+      ).getByText('End is required.'),
+    ).toBeInTheDocument()
+    expect(postCalled).toBe(false)
+  })
+
+  it('moves focus to the FIRST invalid field (Title) when the whole form is empty', async () => {
+    const user = userEvent.setup()
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    await screen.findByLabelText('Component')
+
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(screen.getByLabelText('Title')).toHaveFocus()
+  })
+
+  it('moves focus to Component (the first invalid field) when only Title is filled', async () => {
+    const user = userEvent.setup()
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    await screen.findByLabelText('Component')
+
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(screen.getByLabelText('Component')).toHaveFocus()
+  })
+
+  it('blocks submission and focuses End when End is not after Start, without ever calling the server', async () => {
+    const user = userEvent.setup()
+    let postCalled = false
+    server.use(
+      http.post('/api/v1/maintenance', () => {
+        postCalled = true
+        return HttpResponse.json({}, { status: 201 })
+      }),
+    )
+
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
+    await user.selectOptions(
+      await screen.findByLabelText('Component'),
+      FIXTURE_COMPONENTS[0].id,
+    )
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T10:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T09:00')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(
+      within(
+        screen.getByLabelText('End').closest('.maintenance-form__field') as HTMLElement,
+      ).getByText('End must be after start.'),
+    ).toBeInTheDocument()
+    expect(screen.getByLabelText('End')).toHaveFocus()
+    expect(postCalled).toBe(false)
+  })
+})
+
+describe('MaintenancePage — success toast (STORY-102 AC4)', () => {
+  beforeEach(() => {
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows a polite "Window scheduled" toast after a successful create', async () => {
+    const user = userEvent.setup()
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
+    await user.selectOptions(
+      await screen.findByLabelText('Component'),
+      FIXTURE_COMPONENTS[0].id,
+    )
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    expect(await screen.findByText('Window scheduled')).toBeInTheDocument()
+  })
+
+  it('shows a polite "Window deleted" toast after a successful delete', async () => {
+    const user = userEvent.setup()
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    const windowItem = windowItemFor(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+    await user.click(within(windowItem).getByRole('button', { name: /delete/i }))
+    await user.click(within(windowItem).getByRole('button', { name: /yes/i }))
+
+    expect(await screen.findByText('Window deleted')).toBeInTheDocument()
+  })
+
+  it('does not show a toast when create fails', async () => {
+    const user = userEvent.setup()
+    server.use(
+      http.post('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+    render(<MaintenancePage />)
+    await screen.findByText(FIXTURE_MAINTENANCE_WINDOWS[0].component_id)
+
+    await user.type(screen.getByLabelText('Title'), 'Routine check')
+    await user.selectOptions(
+      await screen.findByLabelText('Component'),
+      FIXTURE_COMPONENTS[0].id,
+    )
+    await user.type(screen.getByLabelText('Start'), '2026-07-09T09:00')
+    await user.type(screen.getByLabelText('End'), '2026-07-09T10:00')
+    await user.click(screen.getByRole('button', { name: /schedule window/i }))
+
+    await screen.findByRole('alert')
+    expect(screen.queryByText('Window scheduled')).not.toBeInTheDocument()
   })
 })
