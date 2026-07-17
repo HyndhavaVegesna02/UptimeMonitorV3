@@ -33,13 +33,13 @@ and decisions D1–D2.
 ## Execution order & steps
 
 ### 1. STORY-096 — Responsive shell (3 pts) — order 1: highest blast radius (touches the shell every page sits in)
-- [ ] Step 1: breakpoint tokens in `tokens.css` (+ a `useMediaQuery`/matchMedia hook) — tests first
-- [ ] Step 2: ≤1024px auto-collapse to the existing icon rail (expand still possible; user pref respected on re-widen)
-- [ ] Step 3: ≤768px drawer: closed by default, hamburger trigger in top bar, scrim, Escape + scrim-click close, focus trap in/return
-- [ ] Step 4: banner + page containers + filter rows fit 390px; tables scroll inside their own container only
-- [ ] Step 5: Vitest for hook + drawer behavior; full frontend suite green
-- [ ] Step 6: Playwright reality gate: all six tabs × {390, 768, 1024, 1440} × {light, dark}; `scrollWidth <= viewport` assertion per tab; drawer keyboard flow
-- [ ] Scoped DoD gate (`--only` npm test / npm build / npm lint) + evidence merge
+- [x] Step 1: breakpoint tokens in `tokens.css` (+ a `useMediaQuery`/matchMedia hook) — tests first
+- [x] Step 2: ≤1024px auto-collapse to the existing icon rail (expand still possible; user pref respected on re-widen)
+- [x] Step 3: ≤768px drawer: closed by default, hamburger trigger in top bar, scrim, Escape + scrim-click close, focus trap in/return
+- [x] Step 4: banner + page containers + filter rows fit 390px; tables scroll inside their own container only
+- [x] Step 5: Vitest for hook + drawer behavior; full frontend suite green
+- [x] Step 6: Playwright reality gate: all six tabs × {390, 768, 1024, 1440} × {light, dark}; `scrollWidth <= viewport` assertion per tab; drawer keyboard flow
+- [x] Scoped DoD gate (`--only` npm test / npm build / npm lint) + evidence merge
 
 ### 2. STORY-097 — Consistent page scaffold (2 pts) — order 2: builds on the settled shell
 - [ ] Step 1: `PageHeader` component (title/subtitle/actions slot) — tests first

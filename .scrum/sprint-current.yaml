@@ -20,15 +20,30 @@ stories:
     slug: responsive-shell
     points: 3
     order: 1
-    status: in_progress   # impl done 4ee4112..0466697 (10 TDD commits); spec review APPROVE
-                          # (5/5 AC traced, fence PASS); quality review APPROVE (0 major,
-                          # 3 minors to file). Reality gate (live Playwright): AC1 PASS
-                          # (6 tabs scrollWidth=390), AC2 drawer PASS (closed default,
-                          # labeled trigger, focus in/out, Escape+scrim close) EXCEPT
-                          # 1 finding: drawer stays open after nav-link click — fix
-                          # dispatched to implementer 2026-07-17. AC3 PASS (1024 rail,
-                          # 1440 expanded, localStorage pref honored). AC4 PASS (banner
-                          # 57px/1-2 lines at 390). Scoped DoD gate pending after fix.
+    status: done          # all 5 AC; 11 TDD commits 4ee4112..ff0779e
+    commits: 4ee4112..ff0779e
+    reviews: "spec APPROVE (5/5 AC traced, fence PASS); quality APPROVE (0 major; 3 minors
+      -> follow-up story at review: unused breakpoint tokens doc-note, shift+Tab test
+      [landed with ff0779e], Table.test class-name assertion)"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live Playwright vs dev stack: AC1 all six tabs documentElement.scrollWidth==390
+        at 390x844 (no page H-scroll); AC2 drawer closed by default, labeled trigger
+        ("Open navigation menu"), focus into drawer on open ("Close navigation"), Escape
+        + scrim-click + nav-link-activation all close with focus returned to trigger
+        (nav-link close was a GATE FINDING — drawer covered the destination page; fixed
+        ff0779e, re-verified live); AC3 1024px auto-rail (aside 52px), 1440px expanded
+        (212px, labels) with localStorage preference honored; AC4 banner 57px (~1-2
+        lines) at 390 with sample mode ON (toggled off after). Clean-load console: 0
+        errors (initial 3 errors proven to be Vite HMR hook-order artifacts — gone after
+        hard reload). Screenshots: sprints/2026-07-17-sprint-52/gate-096/.
+    dod_evidence:   # scoped gate (--only npm; story diff is frontend-only), all exit 0
+      - {command: "npm test", exit_code: 0, output_tail: "Test Files 54 passed (54) | Tests 400 passed (400)", commit: ff0779e, at: "2026-07-17T11:27:59+00:00"}
+      - {command: "npm run build", exit_code: 0, output_tail: "built in 334ms", commit: ff0779e, at: "2026-07-17T11:28:37+00:00"}
+      - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: ff0779e, at: "2026-07-17T11:28:42+00:00"}
+    wiki_blast_radius: "frontend-zone.md UPDATED (responsive-shell section + 5 new code_refs);
+      sample-mode.md re-verified (seam untouched); both -> ff0779e; sweep CLEAN"
     # PROCESS INCIDENT (retro item): baseline gate pytest ran with DYNAMO_ENDPOINT_URL
     # pointing at the LIVE local stack DB — clean_dynamo_tables wiped topology mid-sprint
     # (found as "Topo Comp/No data" during reality gate; NOT a frontend defect). Restored:
