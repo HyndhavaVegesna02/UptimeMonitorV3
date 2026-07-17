@@ -8,6 +8,7 @@ import { fieldErrorFromDetail } from '../features/maintenance/fieldError'
 import { useMaintenance } from '../features/maintenance/useMaintenance'
 import { deriveWindowState } from '../features/maintenance/windowState'
 import type { WindowState } from '../features/maintenance/windowState'
+import { formatLocalRange } from '../lib/formatTime'
 import './MaintenancePage.css'
 
 const WINDOW_STATE_LABEL: Record<WindowState, string> = {
@@ -231,6 +232,7 @@ function MaintenanceWindowRow({
   deleting: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const range = formatLocalRange(window.starts_at, window.ends_at)
 
   async function handleDeleteClick() {
     if (confirmDelete) {
@@ -261,9 +263,7 @@ function MaintenanceWindowRow({
           <div className="maintenance-window__meta text-mono text-caption">
             <span>{window.component_id}</span>
             <span aria-hidden="true"> · </span>
-            <span>
-              {window.starts_at}–{window.ends_at}
-            </span>
+            <span title={range.tooltip}>{range.text}</span>
           </div>
         </div>
         <div className="maintenance-window__actions">
@@ -311,7 +311,12 @@ function MaintenanceWindowRow({
  * `DELETE /api/v1/maintenance/{id}` on the wire) → deferred to STORY-065.
  * `useMaintenance` owns both the list `useFetch` and the create mutation,
  * calling the list's `retry()` on a successful create so the view always
- * reconciles with the server (AC2, unchanged from STORY-015f/015c).
+ * reconciles with the server (AC2, unchanged from STORY-015f/015c). The
+ * `component · range` line's range (STORY-098 AC3) renders via
+ * `lib/formatTime.ts::formatLocalRange` — absolute LOCAL start–end with an
+ * explicit timezone label as the primary text, the raw UTC range in the
+ * `title` tooltip; the schedule FORM's `datetime-local` input is unchanged
+ * (it was already local — only this display side changes).
  */
 export function MaintenancePage() {
   const {

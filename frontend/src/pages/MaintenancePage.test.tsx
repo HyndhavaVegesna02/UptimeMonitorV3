@@ -4,6 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { FIXTURE_COMPONENTS, FIXTURE_MAINTENANCE_WINDOWS } from '../mocks/handlers'
+import { formatLocalRange } from '../lib/formatTime'
 import { MaintenancePage } from './MaintenancePage'
 
 const NOW = new Date('2026-07-07T10:30:00Z')
@@ -87,11 +88,19 @@ describe('MaintenancePage', () => {
     const nullReasonWindow = FIXTURE_MAINTENANCE_WINDOWS[1]
     const item = windowItemFor(nullReasonWindow.component_id)
     expect(within(item).getByText('—')).toBeInTheDocument()
+
+    // STORY-098 AC3: the range is absolute LOCAL time with an explicit
+    // timezone label, never the bare ISO-UTC range — computed via the same
+    // formatter under test so this assertion doesn't depend on the
+    // machine's timezone.
+    const range = formatLocalRange(nullReasonWindow.starts_at, nullReasonWindow.ends_at)
     expect(
-      within(item).getByText(
-        `${nullReasonWindow.starts_at}–${nullReasonWindow.ends_at}`,
-      ),
-    ).toBeInTheDocument()
+      within(item).queryByText(`${nullReasonWindow.starts_at}–${nullReasonWindow.ends_at}`),
+    ).not.toBeInTheDocument()
+    const rangeEl = within(item).getByText(range.text)
+    expect(rangeEl).toHaveAttribute('title', range.tooltip)
+    expect(range.tooltip).toContain(new Date(nullReasonWindow.starts_at).toISOString())
+    expect(range.tooltip).toContain(new Date(nullReasonWindow.ends_at).toISOString())
 
     // The other fixture window has a real title and reason string.
     const namedWindow = FIXTURE_MAINTENANCE_WINDOWS[0]
