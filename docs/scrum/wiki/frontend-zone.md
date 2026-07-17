@@ -1,363 +1,344 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
-verified_sha: be2ffcd
-verified_sprint: sprint-51
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js]
+verified_sha: 52f1706
+verified_sprint: sprint-55
 status: verified
 ---
 
 ## Facts (verified against code)
-- `frontend/` is a standalone Vite + React + TypeScript (strict) SPA — the operator-cockpit
-  "internal dashboard" surface (dossier §17, the two-surface model; the other surface is the
-  public Statuspage). It is ISOLATED from the Python backend: no import of backend source, no
-  shared build step. The six backend DoD commands never touch it; its three frontend DoD
-  commands (`npm test` / `npm run build` / `npm run lint`, from `frontend/`) never touch the
-  backend. Design direction: `DESIGN-linear.app.md` (repo root) as a GUIDE, not a copy target
-  (see the sprint-25 plan for the binding design brief). Established STORY-015a, sprint-25.
-- **This is the SECOND frontend attempt.** The first (sprints 23–24, built to a since-removed
-  `DESIGN-airtable.md`) was fully reverted in commit `521764c`; its code lives only on the
-  `sprint-23`/`sprint-24` branches. Nothing here descends from it.
-- **Toolchain** (`frontend/package.json`): Vite + React + TS strict; Vitest + React Testing
-  Library + jsdom + MSW (Mock Service Worker) for tests; ESLint flat config
-  (`frontend/eslint.config.js`); npm on Node 24. Scripts: `dev`, `build` (`tsc -b && vite build`
-  — type-check is part of the build gate), `test` (`vitest run`, run-once), `lint` (`eslint .`).
-  Playwright/E2E is DEFERRED to a later integration story.
-- **Dev ↔ API seam:** the Vite dev server proxies `/api/*` → `http://localhost:8000`
-  (`frontend/vite.config.ts`), a locally running uvicorn backend. No backend change and no CORS
-  work was needed — CORS stays deferred to STORY-017 per the 2026-06-23 working agreement.
-- **App shell + routing (rebuilt STORY-056, sprint-38):** `frontend/src/AppShell.tsx` composes a
-  collapsible left icon `Sidebar` + a content column (`TopBar` + `SampleModeBanner` + a routed
-  `<main>`), replacing the old single top `Nav` bar (`Nav.tsx`/`Nav.css`/`Nav.test.tsx` deleted).
-  The six tabs remain a single source of truth in `frontend/src/nav/tabs.ts` (Dashboard ·
-  Availability · Approvals · Check History · Maintenance · Publications) — each entry now also
-  carries an `icon: IconName` (STORY-055's shared `Icon` set) alongside `path`/`label`, consumed by
-  `frontend/src/nav/Sidebar.tsx`. `Sidebar` renders each tab as a routed `NavLink` (native anchor
-  semantics, still deliberately NOT an ARIA tablist) — active = accent background + bold weight,
-  inactive = ink-muted. Every link's accessible name is set explicitly via `aria-label` (not left
-  to visible text) so it holds steady whether the sidebar is expanded (icon + visible label +
-  optional badge) or collapsed (icon-only, label/badge visually hidden but the name unchanged) —
-  a screen-reader user always hears e.g. "Approvals, 3 pending" regardless of the visual state. The
-  collapse/expand choice is a header button (logo + title + chevron when expanded) with
-  `aria-expanded` + a dynamic `aria-label` ("Collapse sidebar"/"Expand sidebar"), persisted to
-  `localStorage` by `frontend/src/nav/sidebarState.ts` (mirrors `theme/resolveTheme.ts`'s
-  stored-override pattern; defaults to expanded). The Approvals tab shows a live pending-count
-  badge — `frontend/src/features/shell/useApprovalsBadge.ts` (`useFetch(getApprovals)`, count on
-  success, `undefined` while loading or on failure) — rendered as a number when expanded, a
-  decorative dot when collapsed, and folded into the link's `aria-label` either way; no badge
-  renders on a fetch failure (graceful degradation, never a stale/fabricated count).
-  `frontend/src/nav/TopBar.tsx` is the right-aligned header bar (theme toggle + the sample-mode ⚡
-  trigger, see below); `frontend/src/nav/SampleModeBanner.tsx` is the dismissible warning region
-  under it. A trailing catch-all `<Route path="*">` renders `pages/NotFoundPage.tsx` (Panel +
-  EmptyState + a link back to Dashboard) for unknown paths (STORY-041), unchanged by the shell
-  rebuild. **All six tabs are now real — Dashboard, Availability, Approvals, Check History,
-  Maintenance, and Publications** (STORY-015b, 015c, 015d, 015e, 015f, 015g); there is no
-  remaining placeholder page.
-- **Theme system (dark + light):** `frontend/src/theme/resolveTheme.ts` resolves the active
-  theme (localStorage override → else `prefers-color-scheme`). An inline pre-paint script in
-  `frontend/index.html` applies it before first paint (no flash), mirroring `resolveTheme.ts`.
-  `ThemeContext.tsx` + `useTheme.ts` expose it to React and back the toggle button in `TopBar`
-  (override persisted to localStorage; moved there from the old `Nav` at STORY-056 — same
-  `useTheme()` call, same persistence, only the button's location and icon changed: it now shows
-  the CURRENT theme, sun/moon, rather than the old glyph's target-theme convention). Both surfaces
-  read the SAME resolution logic.
-- **Token layer:** `frontend/src/styles/tokens.css` holds ALL visual values as CSS custom
-  properties scoped per theme (`:root[data-theme='dark']` / `[data-theme='light']`) — surfaces,
-  hairlines, a 4-step ink scale, the accent set (+ `--color-accent-bg`), a 7-status health palette
-  (up/degraded/partial/down/maintenance/unknown/missing, each with a `-subtle` badge-background
-  variant), a `--shadow` token (none in dark, a subtle two-layer shadow in light), radii, spacing,
-  type. **Components consume tokens only — no raw hex outside `styles/`** (enforced by review;
-  grep-verified clean at STORY-015a). Fonts are self-hosted Geist + Geist Mono via `@fontsource`
-  (imported in `frontend/src/styles/global.css`, loaded by `main.tsx`; bundled, no runtime
-  font-CDN `<link>`) — retuned from Inter/JetBrains Mono at STORY-055 (sprint-38), which also
-  retuned the palette/type-scale VALUES to the imported *Operator Dashboard* mock while keeping
-  every existing token NAME (see the Sprint-38 history entry below).
-- **Shell primitives** (`frontend/src/components/`, barrel `components/index.ts`): `Button`
-  (primary/secondary/tertiary), `StatusBadge` (pill; `aria-hidden` status dot + ink text label —
-  status is NEVER color-alone; 7-value `HealthStatus` union as of STORY-055), `Panel` (surface-1 +
-  hairline + 8px radius + `--shadow`, `headingLevel` prop defaulting to `h2`), `LoadingState`,
-  `ErrorState` (retry callback; warning glyph now the shared `Icon` set), `EmptyState`, `Icon`
-  (STORY-055 — 18 inline feather-style SVGs, decorative/`aria-hidden` by default, opt-in
-  `role="img"`+`<title>` for a standalone meaningful icon), `Table`/`TableHead`/`TableBody`/
-  `TableRow`/`TableHeaderCell`/`TableCell` (STORY-055 — extracts the th/td/hairline/uppercase-
-  caption styling previously copy-pasted per page; `TableHeaderCell` defaults `scope="col"`),
-  `UptimeBar` (STORY-055 — N-segment sparkline colored by `HealthStatus`, per-segment `title`
-  tooltip, hatched "missing" fill, explicit "No data" state for zero segments), `SummaryCard`
-  (STORY-055 — dot + uppercase label + big mono value + sub, tone variants mapped to the health
-  tokens), `Timeline`/`TimelineItem` (STORY-055 — semantic `<ul>`/`<li>` vertical line + dot list).
-  These ship with the shell so per-tab stories don't copy-paste. Classnames are composed with the
-  shared `cx(...)` helper (`frontend/src/lib/cx.ts`, STORY-041) — filters falsy, joins on a space.
-- **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single `/api` base-URL seam.
-  Both `getJson` (GET) and `postJson` (POST — JSON body, `Content-Type: application/json`) funnel
-  their response through a shared `readOkJson(response, path)` that gives ONE uniform error
-  contract (STORY-015c): EVERY failure is a typed `ApiError` — network rejection (no status),
-  non-2xx (`.status` carried), and a malformed-body `SyntaxError` on a 2xx (with status). The
-  readable `.status` is what lets a mutating tab branch on 404/409. `ApiError` also carries an
-  optional `.detail` (STORY-015f AC3) — a best-effort, `.clone()`-based parse of a non-2xx body's
-  `{"detail": "..."}` string (FastAPI's shape for a manually-raised `HTTPException`, e.g.
-  `maintenance/service.py`'s 422s); `undefined` for network failures, malformed bodies, or a body
-  without a string `detail`. This is what lets the Maintenance tab map a 422's message onto the
-  specific field it names (`features/maintenance/fieldError.ts::fieldErrorFromDetail`) without
-  every caller re-parsing the response body itself — purely additive to the existing `ApiError`
-  shape, so no prior `.status`-only assertion broke. A third helper, `putJson`
-  (STORY-049), mirrors `postJson` for PUT bodies, funneling through the same `readOkJson`. Endpoint
-  fns: `getComponents`, `getApprovals`, `postDecision(proposalId, body)`, `getTopology`,
-  `getComponentAvailability(componentId, { since, until })` (STORY-015d — query-string encodes
-  `since`/`until`, both REQUIRED to be tz-aware ISO strings since the backend 422s a naive
-  datetime), `getSampleMode()` / `putSampleMode(enabled)` (STORY-049 — a TEMPORARY-feature seam,
-  see `docs/scrum/wiki/sample-mode.md`), `getHistory({ signal_key, since, until })` (STORY-015e
-  AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
-  same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
-  thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
-  requests. STORY-094: the server now accepts an optional `limit` query param that caps the
-  response server-side, but `getHistory`'s params type stays `{ signal_key, since, until }` — this
-  client deliberately does not adopt it; the render cap stays authoritative), `getPublications()`
-  (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
-  params; the endpoint itself caps at the repository's most-recent 50 server-side, so unlike
-  `/history` there is no client-side render cap to add), and `getMaintenance()`/`postMaintenance(body)`
-  (STORY-036/STORY-015f AC1, AC2 — `GET`/`POST /api/v1/maintenance`; `postMaintenance` funnels
-  through `postJson`, not `putJson`, so the sample-mode REMOVAL recipe's "no other endpoint has
-  adopted `putJson`" caveat still holds). DTO types in `frontend/src/api/types.ts`
-  (`ComponentDTO`,
-  `ProposalDTO`, `DecisionRequest`, `DecisionResponse`, `TopologySignalDTO`, `ComponentTopologyDTO`,
-  `AvailabilityDTO`, `SignalAvailabilityDTO`, `ComponentAvailabilityDTO`, `SampleModeDTO`,
-  `ObservationDTO`, `PublicationDTO`, `MaintenanceWindowDTO`, `CreateMaintenanceRequest`) mirror
-  the backend `api/v1/*/models.py` shapes — `ObservationDTO` gained `response_status_code:
-  number | null` and `check_type: string` (STORY-064; Facts updated below in the Check History
-  bullet) — note `SignalAvailabilityDTO` (a per-signal availability
-  result) carries `signal_key` but NOT a display `name`; the name lives only on the topology
-  response's nested `TopologySignalDTO`, so a two-grain consumer must join the two responses by
-  `signal_key` to label a child row (STORY-015d AC1; see `AvailabilityPage.tsx`).
-  `frontend/src/api/statusMapping.ts::toHealthStatus` is the
-  authoritative map from the backend `ComponentStatus` vocabulary (operational / degraded /
-  partial_outage / major_outage) onto the health tokens (operational→up, degraded→degraded,
-  partial_outage→partial, major_outage→down, else→unknown). **STORY-055 (sprint-38):**
-  `partial_outage` now maps to its own `'partial'` token (previously folded into `'degraded'`)
-  now that the palette has a dedicated partial-outage color; the `DashboardPage` test covering the
-  all-statuses fixture was rewritten to assert "Partial outage" instead of "Degraded" for that
-  case. **There is now a SECOND, deliberately
-  separate health mapper:** `frontend/src/features/history/observationHealth.ts::observationHealth`
-  maps the OBSERVATION vocabulary (`ObservationDTO.health`: `"up" | "down" | "degraded"`, else→
-  unknown) onto the SAME health tokens `StatusBadge` consumes (STORY-015e AC3). The two mappers'
-  input vocabularies overlap only on the string `"degraded"` — `ComponentStatus` has no `"up"`
-  value, so `toHealthStatus` would wrongly fold an observation's `"up"` into `unknown`; keeping
-  them separate means a future contract change to either vocabulary never ripples into the other
-  tab. `PublicationDTO.status` (STORY-015g) IS the `ComponentStatus` vocabulary (same producing
-  type as `ComponentDTO.status`), so the Publications tab reuses the EXISTING `toHealthStatus`
-  directly — no third mapper.
-- **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
-  placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity when STORY-017
-  auth + scopes land. Every decision POST reads the actor from here; the value is not scattered.
-  (STORY-015c; PO decision 2026-07-02.)
-- **Test I/O boundary:** MSW is the ONLY mocked edge. Handlers are modularized per feature
-  (`frontend/src/mocks/handlers/<feature>.ts`, e.g. `components.ts` / `availability.ts` exporting
-  their handlers + fixtures) composed into the `handlers` array in
-  `frontend/src/mocks/handlers/index.ts`, which `mocks/server.ts` registers (wired in
-  `frontend/src/test/setup.ts`). A tab story adds its own `handlers/<feature>.ts` and spreads it
-  in — touching no other feature's handlers (STORY-041 refactor). Tests assert via accessible
-  roles/text and drive real behavior (success + empty + error→retry against MSW; for a mutating
-  tab, the actual POST/PUT body MSW received; for STORY-015d, the actual `since`/`until` query
-  params a selector change sent); no component/hook under assertion is mocked. 355 tests across 50
-  files at HEAD of sprint-38 (`npm test`, all green).
-- **Shared fetch machinery:** `frontend/src/lib/useFetch.ts::useFetch<T>(fetcher)` is the single
-  home of the read-fetch state machine (STORY-015c, extracted from 015b's `useComponents` — the
-  parallel-shape agreement): returns `{ state, retry }` over a discriminated-union `FetchState<T>`
-  (loading|error|success), a cancelled-guarded effect (no set-state after stale/unmount), and an
-  `attempt`-keyed `retry`. **Sharp edge:** `fetcher` MUST be a STABLE reference (module-scoped fn),
-  never an inline closure, or the effect refetches every render — documented in the JSDoc and
-  honored at both call sites. `features/dashboard/useComponents.ts` = `useFetch(getComponents)` and
-  `features/approvals/useApprovals.ts` = `useFetch(getApprovals)` are thin wrappers with zero
-  duplicated effect body.
-  **Parameterized fetch — the STORY-015d pattern:** `useFetch`'s effect already lists `fetcher` as
-  a dependency, so a hook whose fetch depends on caller-supplied args (e.g. a selectable window)
-  does NOT need `useFetch` itself changed — wrap the parameterized call in `useCallback` keyed on
-  the arg object (`features/availability/useAvailability.ts::useAvailability(range)` =
-  `useCallback(() => fetchAvailabilityBundle(range), [range])`), and have the CALLER memoize that
-  arg object (`useMemo` keyed on the selector's own state, e.g. `AvailabilityPage`'s
-  `useMemo(() => windowToRange(preset), [preset])`) so the fetcher's identity is stable while the
-  selection is unchanged and changes — triggering exactly one refetch — only when the selection
-  does. No `useFetch` contract change, no rewritten `useFetch` tests; this is the sanctioned
-  extension for 015e–015g if a future tab needs the same shape.
-- **The per-tab pattern (Wave 0/1 established it; Wave 2, sprint-38, rebuilt every page onto the
-  Operator Dashboard mock while keeping the shape):** a page in `pages/<Tab>Page.tsx` + one or more
-  `features/<tab>/use<Thing>.ts` hooks built on the shared `useFetch<T>`, rendering a four-state
-  view (loading / error+retry / empty / success) from the shared primitives. The six tabs at HEAD:
-  - **Dashboard (STORY-057 rebuild of 015b/046):** `useComponents()` is still the PRIMARY, blocking
-    fetch (only its failure blocks the page) gating a `SummaryCard` row —
-    `features/dashboard/summary.ts::summarizeComponents` derives REAL bucket counts (up / degraded /
-    partial / down, led by a "Components" total card) from `toHealthStatus`, adding a trailing
-    "Unknown" card only when that bucket actually has a member — never a permanent zero-value card.
-    Below it, one expandable `<table>` row per component (`pages/DashboardPage.tsx::ComponentRow`):
-    a `UptimeBar` sparkline + mono `formatPct`, and a `StatusBadge` (plus a SECOND "Under
-    maintenance" `StatusBadge`, STORY-046, unchanged, alongside — never replacing — the health one).
-    THREE more hooks layer on as graceful-degradation ENHANCEMENTS, per AC2 — a failure/loading
-    state in any of them degrades to "no expand affordance" / "no uptime data" / "no maintenance
-    badge" and never blocks or clears the primary table: `features/dashboard/useTopology.ts` (thin
-    `useFetch(getTopology)`, feeds the expand affordance), `features/dashboard/
-    useComponentUptime.ts::useComponentUptime(topology, range)` (a fixed 24h `range` — no selector
-    on this tab — combining the rollup `availability_pct` from `getComponentAvailability` with a
-    `buildUptimeSegments` sparkline built from the component's FIRST topology signal's raw
-    `getHistory`, capped at `MAX_UPTIME_SEGMENTS = 30`; `fetchComponentUptime` NEVER rejects — a
-    per-component failure degrades to `{ pct: null, segments: [] }` so one troubled component can't
-    blank every other row), and `features/dashboard/useMaintenanceWindows.ts` (STORY-046,
-    unchanged). Expanding a row (a real `<button aria-expanded>`, `Set<string>` of expanded ids in
-    local state) lazily mounts `SignalsDrilldown`, which calls
-    `features/dashboard/useComponentSignals.ts::useComponentSignals(signals, range)` — its
-    `buildSignalRows` collapses each signal's observations to "latest per location" (the newest-
-    first `getHistory` contract means the FIRST observation seen per location IS the latest), and a
-    signal with zero observations in the window contributes one honest `'missing'`-status row rather
-    than being silently dropped; the drill-down's own loading/error/empty states are scoped to that
-    region alone. See `pages/DashboardPage.tsx`, `features/dashboard/{summary,useTopology,
-    useComponentSignals,useComponentUptime}.ts`.
-  - **Availability (STORY-058 rebuild of 015d):** a two-column grid replacing the old single
-    Availability column — `AvailabilityCell` (a big mono `formatPct` colored by
-    `features/availability/format.ts::availabilityBand`'s four real-percentage bands — up ≥99.9% /
-    degraded ≥99% / partial ≥95% / else down — plus `formatDownLabel`'s sublabel derived from the
-    REAL verdict counts `total − passing − maintenance`, never a fabricated count) and
-    `CompletenessCell` (mono `completeness_pct` + a hatched split bar, `isCompletenessLow` flagging
-    a REAL completeness below the 98% `COMPLETENESS_LOW_THRESHOLD` with a "missing data" chip — a
-    `null` pct is deliberately NOT "low", a distinct "no data" case). The rollup row's own
-    `UptimeBar` sparkline is `features/availability/segments.ts::buildAvailabilitySegments` (a
-    line-for-line copy of the Dashboard's `buildUptimeSegments`, `MAX_AVAILABILITY_SEGMENTS = 30`,
-    kept as its own file per the sprint-38 Wave-2 file-scope isolation rule since parallel
-    implementers worked in separate worktrees); a per-signal drill-down child row renders the same
-    `AvailabilityCell`/`CompletenessCell` pair with `showBar={false}` (mirroring the Dashboard
-    drill-down's bar-less convention). A legend (down/missing swatches) plus the 24h/7d/30d window
-    toggle (`features/availability/windowRange.ts`, unchanged, also reused by Check History) sit in
-    the header. The two-grain expand/collapse mechanics (a real `<button aria-expanded>`, per-signal
-    name resolved from topology since `SignalAvailabilityDTO` carries no `name`) are unchanged from
-    015d. See `pages/AvailabilityPage.tsx`, `features/availability/{segments,format}.ts`.
-  - **Approvals (STORY-059 rebuild of 015c):** one `ApprovalCard` per open proposal (`<ul
-    className="approval-list">` replacing the old table) with a left severity-accent stripe —
-    `features/approvals/severity.ts::deriveSeverity(to_status)` maps `major_outage → down/"Major"`,
-    `partial_outage → partial/"Partial"`, `degraded → degraded/"Degraded"` onto the SAME 7-status
-    health tokens every other indicator uses (a defensive `'unknown'` fallback for the
-    else-case, which `core/services/decide.py` makes practically unreachable — an open proposal is
-    always a degradation, never a recovery). The `from_status → to_status` transition is two
-    `StatusBadge`s (`from_status === null` renders "New" — a component's first-ever proposal has no
-    prior status) plus an `Icon name="arrow-right"`. The idle → confirming → submitting → failed
-    state machine (`features/approvals/decisionState.ts`, byte-identical to 015c) is narrowed
-    per-card via `toCardDecisionState` so a card never compares proposal ids itself; the 409/404
-    notice banner still lives one level up in `ApprovalsPage` (not scoped to a single card). Fields
-    the wire doesn't expose (reason/source/detected-ago/checks/triggering-signals) are OMITTED,
-    never faked — deferred to STORY-063. See `pages/ApprovalsPage.tsx`, `features/approvals/
-    {severity,decisionState,ApprovalCard}.tsx`.
-  - **Check History (STORY-060 rebuild of 015e — now a SYSTEM-WIDE ledger, not one signal at a
-    time):** `features/history/useAllHistory.ts` enumerates every topology signal via the EXISTING
-    `getTopology()` (reusing `features/history/signals.ts::flattenSignals`), fires one `getHistory`
-    call per signal IN PARALLEL for the selected 24h/7d/30d window, and merges the results via
-    `features/history/mergeObservations.ts::mergeObservations` — each signal's own observations
-    arrive newest-first, but interleaving multiple signals means the merged list must be RE-SORTED
-    by `observed_at` descending to stay newest-first overall; `HistoryRow` extends `ObservationDTO`
-    with a `componentName` resolved at merge time from the topology join. This ONE `useFetch`
-    fetcher supersedes and REMOVES the old per-signal-selector pair `features/history/
-    useSignalOptions.ts` + `useHistory.ts` (deleted — no longer in `code_refs`). A filter toolbar
-    (free-text search + a result `<select>` + a location `<select>`, `features/history/
-    filterHistory.ts::filterHistoryRows`/`uniqueLocations`) then narrows the ALREADY-LOADED list
-    client-side — none of the three filters triggers a refetch, only the window toggle does; the
-    location options are populated from the currently-loaded window's REAL data (no dedicated
-    locations-enumeration endpoint). The dense grid replaced the old selector-driven single-signal
-    table. The 1,000-row render cap (STORY-015e, `/history` has no CLIENT-DRIVEN pagination — the
-    server gained an optional `limit` cap in STORY-094 that this client does not send) is preserved but now
-    an INJECTABLE `maxRenderedRows` prop (default `DEFAULT_MAX_RENDERED_ROWS = 1000`) — added in the
-    STORY-060 review fix so a test can pin a small cap without the STORY-054 flake (rendering
-    ~1,000+ rows was slow enough under `npm test` file-parallelism to occasionally exceed Vitest's
-    per-test timeout); production always renders via the default. **STORY-064 (sprint-44):** the
-    grid gained Type and Code columns (between Timestamp/Component and Result/Latency
-    respectively) — `pages/CheckHistoryPage.tsx` renders `row.check_type.toUpperCase()` (e.g.
-    `"http"` -> `"HTTP"`) and `formatResponseStatusCode(row.response_status_code)` (raw int, or an
-    em-dash for `null` — the SAME convention as `formatLatency`, covering both a missing/unparsable
-    source value and a pre-migration row). `mocks/handlers/history.ts`'s `makeObservation` factory
-    defaults both fields to a REAL `/api/v1/history` response captured during implementation off
-    the 2026-07-12 live-Grail probe sample (`response_status_code: 200, check_type: 'http'`); the
-    degraded/down fixture rows use `response_status_code: null` (the real "no failure code
-    captured" state — see [[dynatrace-adapter]]'s TBD-failure-code note — never an invented
-    failure status). See `pages/CheckHistoryPage.tsx`,
-    `features/history/{filterHistory,mergeObservations,useAllHistory}.ts`.
-  - **Publications (STORY-062 rebuild of 015g; STORY-072 added the outcome chip):** a vertical
-    `Timeline`/`TimelineItem` (the STORY-055 shared primitive) replacing the old changelog table —
-    one `TimelineItem` per publication, newest-first exactly as `usePublications()`
-    (`useFetch(getPublications)`, unchanged shape) returns them, toned via the EXISTING
-    `toHealthStatus` (unchanged — `PublicationDTO.status` is the SAME `ComponentStatus` vocabulary).
-    Each row NOW also renders `PublicationDTO.outcome` (`'succeeded' | 'failed'`, STORY-072 — every
-    approve publish ATTEMPT is recorded independent of whether the Statuspage call itself succeeded)
-    as an `OutcomeChip` (`pages/PublicationsPage.tsx::OutcomeChip`) — a REUSE of `StatusBadge` mapped
-    `succeeded -> 'up'` / `failed -> 'down'` with a `'Succeeded'`/`'Failed'` label override, so it
-    stays dot+text/token-only with no new CSS. The mock's author/incident fields are still OMITTED —
-    not on `PublicationDTO` — deferred to STORY-066; the 50-item server-side cap is still stated as
-    permanent header copy (never a conditional note, since the frontend never learns the true total
-    row count for this endpoint); `proposal_id: null` still renders an em-dash. See
-    `pages/PublicationsPage.tsx`.
-  - **Maintenance (STORY-061 rebuild of 015f/052):** a two-column layout — a `ScheduleForm` card
-    ("New window": Title/Component/Start/End, "Title" a client-only label submitted as `reason`;
-    `fieldErrorFromDetail`/`deriveWindowState`/`useComponents()` for its options all UNCHANGED from
-    015f) beside a windows list, each entry showing its title/reason (`formatReason`, `null` →
-    em-dash), a `WindowStateBadge` (unchanged since 015f — deliberately SEPARATE from
-    `StatusBadge`/`HealthStatus`, since a window's scheduling state is a different concept from
-    component health), and `component_id · starts_at–ends_at`. The per-window delete control is
-    OMITTED — no `DELETE /api/v1/maintenance/{id}` on the wire — deferred to STORY-065.
-    `useMaintenance` (load+mutate-in-one-hook, calling the list's `retry()` on a successful create)
-    is UNCHANGED. See `pages/MaintenancePage.tsx`.
-  - **The adapt-to-real-data decisions across all six rebuilds are tracked as explicit follow-up
-    stories, never silently fabricated fields:** STORY-063 (Approvals: proposal
-    reason/source/detected-ago/checks), STORY-064 (Check History: observation Code/Type columns —
-    LANDED sprint-44, see the Check History bullet above), STORY-065 (Maintenance: a real title field + delete), STORY-066
-    (Publications: author/incident metadata — `outcome` itself landed in STORY-072, see above),
-    STORY-067 (component grouping on Dashboard —
-    today's rebuild renders ONE flat section, no `group` field on the wire yet — and a dedicated
-    per-component uptime-bucket API, so both Dashboard's `useComponentUptime` and Availability's
-    `useAvailability` independently adapt today by composing the existing per-component
-    `getComponentAvailability` rollup with a sparkline built from the FIRST topology signal's raw
-    `getHistory` — two near-identical `buildXSegments` helpers kept as separate files per the
-    sprint-38 Wave-2 file-scope isolation rule, not a shared one, since parallel implementers worked
-    in separate worktrees).
-  - **A load+mutate widget owned by the shell, not a tab (sample-mode trigger, STORY-049,
-    relocated STORY-056, TEMPORARY — see `docs/scrum/wiki/sample-mode.md`):**
-    `features/dashboard/useSampleMode.ts` still owns BOTH the load (`useFetch(getSampleMode)`) and
-    the mutate (`setEnabled`, PUTting and updating an internal `override` state from the PUT
-    RESPONSE only) in one hook, unchanged since STORY-049 — a single boolean, no "list to refresh"
-    to reconcile against. `enabled` is still computed on every render as `override ??
-    state.data.enabled` (never effect-synced) to avoid a one-frame flash. What CHANGED at
-    STORY-056: the hook is no longer called from `DashboardPage` — `AppShell.tsx` calls it ONCE and
-    passes the result down as a prop to both `nav/TopBar.tsx` (the ⚡ trigger — still a real
-    `<button role="switch" aria-checked aria-label="Sample mode">`, rendering nothing until
-    `state.phase` leaves `'loading'`, a retry affordance on a load failure instead of the switch)
-    and `nav/SampleModeBanner.tsx` (the warning, now dismissible — session-scoped local state that
-    re-arms whenever the derived `visible` boolean transitions false → true again). This "lift once,
-    thread down as a prop" shape is DELIBERATE: two independent `useSampleMode()` calls (one in the
-    trigger, one in the banner) would each run their own GET/override cycle and could disagree the
-    instant one of them PUTs — see `TopBar.tsx`'s and `SampleModeBanner.tsx`'s header comments.
-    `DashboardPage.tsx` no longer renders or imports anything sample-mode-related. See
-    `AppShell.tsx`, `nav/TopBar.tsx`, `nav/SampleModeBanner.tsx`.
-  - The Dashboard maintenance indicator (STORY-046 — the frontend health vocabulary's `maintenance`
-    `HealthStatus` value, otherwise dead code since the backend `ComponentStatus`
-    `toHealthStatus` maps is a closed 4-value set with no maintenance state) is unchanged by the
-    STORY-057 rebuild: `isUnderActiveMaintenance`/`deriveWindowState`/`useMaintenanceWindows` all
-    carry over verbatim, folded into the new `ComponentRow` (documented above).
-  - The field-mapping fix from STORY-052 (sprint-37: the backend's `ends_at`/`starts_at` ordering
-    422 mentions BOTH fields, so `features/maintenance/fieldError.ts::fieldErrorFromDetail` checks
-    for the "strictly greater than" phrase FIRST — before the generic per-field substring scan — and
-    maps it to `ends_at`, the field actually at fault) is preserved unchanged by the STORY-061
-    two-column rebuild.
-  - A tab story touches only its own `pages/` + `features/<tab>/` files, appends a
-    `mocks/handlers/<feature>.ts`, and adds its DTO + `getX()`/`postX()` to `api/types.ts` /
-    `api/client.ts`; the routing table `tabs.ts` is already fully populated. (STORY-015a's throwaway
-    `ComponentsProbe` was absorbed into `useComponents` + `DashboardPage` and deleted in 015b.)
+
+**REWRITE ERA (sprint-55, STORY-103 onward).** PO directive 2026-07-18: a full
+UI/frontend rewrite ("Mission Teal"), complete creative freedom within
+`docs/scrum/ui-rewrite/design-brief.md` (the binding design authority — a
+generated base, `design-system/uptime-monitor-v3-rewrite/MASTER.md`, exists but
+the brief overrides it on every conflict, notably fonts and motion). The
+previous incremental redesign (`ui-redesign` branch, sprints 52-54, itself a
+retune of the STORY-055/056 "Operator Dashboard" shell) is PARKED - its LOOK
+was rejected; a short salvage list of its UX logic (time/location formatters,
+a media-query hook, a `RelativeTime` primitive) was ported verbatim into this
+rewrite (see the STORY-103 bullet below). `sprint-55`/`ui-rewrite` branch off
+`main` at the sprint-51 close (517fc38), NOT off `ui-redesign` - the
+STORY-055/056/057-062 "Operator Dashboard" shell/pages this article used to
+describe are DELETED on this line (STORY-103); their underlying FEATURE HOOKS
+(data-fetching/derivation logic, no presentation) survive untouched and are
+documented in their own subsection below, orphaned until each tab's rewrite
+story (sprint-56+: STORY-105 dashboard, 106 availability, etc.) re-wires them
+onto a new page. Everything above this banner in Facts you'd expect from a
+"pre-rewrite" article - DESIGN-linear.app.md as the design guide, the
+Sidebar/TopBar/SampleModeBanner shell, the six rebuilt Wave-2 pages - is GONE;
+see History below for exactly what STORY-103 deleted and why.
+
+- `frontend/` is a standalone Vite + React + TypeScript (strict) SPA — the
+  operator-cockpit "internal dashboard" surface (dossier §17, the two-surface
+  model; the other surface is the public Statuspage). It is ISOLATED from the
+  Python backend: no import of backend source, no shared build step. The six
+  backend DoD commands never touch it; its three frontend DoD commands
+  (`npm test` / `npm run build` / `npm run lint`, from `frontend/`) never
+  touch the backend. Design authority is NOW `docs/scrum/ui-rewrite/
+  design-brief.md` (STORY-103) — `DESIGN-linear.app.md` (the sprint-25/38
+  design guide) is retired, superseded by the brief.
+- **This is the THIRD frontend design generation.** The first (sprints 23-24,
+  `DESIGN-airtable.md`) was fully reverted in `521764c` (code lives only on
+  `sprint-23`/`sprint-24`). The second (`DESIGN-linear.app.md` -> STORY-055's
+  "Operator Dashboard" retune) ran sprints 25-54 and is now torn out on this
+  line by STORY-103 (PO-ordered full rewrite) — its code survives only on
+  `main`/`ui-redesign` up to sprint-54. Nothing in the current tree descends
+  from either prior generation's PRESENTATION layer; the surviving feature
+  hooks predate both generations' visual language and were always
+  design-agnostic.
+- **Toolchain** (`frontend/package.json`): Vite + React + TS strict; Vitest +
+  React Testing Library + jsdom + MSW (Mock Service Worker) for tests; ESLint
+  flat config (`frontend/eslint.config.js`); npm on Node 24. Scripts: `dev`,
+  `build` (`tsc -b && vite build` — type-check is part of the build gate),
+  `test` (`vitest run`, run-once), `lint` (`eslint .`) — UNCHANGED by the
+  rewrite; the three frontend DoD gate commands are the same commands they've
+  always been. Playwright/E2E is still deferred to a later integration story.
+  STORY-103 Step 0 added three font packages (`@fontsource/space-grotesk`,
+  `@fontsource/inter`, `@fontsource/jetbrains-mono`), replacing the
+  STORY-055-era `@fontsource/geist`/`@fontsource/geist-mono` — the sole
+  `package.json` dependency change this story made (declared at sprint-55
+  planning, tooling-freeze compliant).
+- **Dev <-> API seam (unchanged):** the Vite dev server proxies `/api/*` ->
+  `http://localhost:8000` (`frontend/vite.config.ts`), a locally running
+  uvicorn backend. No backend change and no CORS work was needed — CORS
+  stays deferred to STORY-017 per the 2026-06-23 working agreement.
+
+### Mission Teal design system v2 (STORY-103)
+- **Tokens** (`frontend/src/styles/tokens.css`): a from-scratch v2 token set,
+  DARK-first (`:root, :root[data-theme='dark']` carries the dark values
+  directly, so the theme is correct even before any JS runs — `:root
+  [data-theme='light']` is the explicit light override). Dark canvas
+  `#0A0E14` / elevated tile surface `#111823`; light canvas `#F0FDFA`
+  (mint-tinted, per the brief exactly) / white tiles. Primary accent is teal:
+  `#14B8A6` (teal-500) in dark, `#0F766E` (teal-700, "on-light contrast") in
+  light — paired with a THEME-SPECIFIC `--color-on-accent` rather than a
+  fixed white/black, because white-on-teal-500 fails 4.5:1 in dark theme
+  (verified in `tokens.test.ts`; dark on-accent is a near-black `#04140F`,
+  light on-accent is white on the darker teal-700). A NEW
+  `--color-danger`/`--color-danger-hover`/`--color-on-danger` triple backs
+  `Button`'s `danger` variant — deliberately NOT a reuse of
+  `--color-health-down` (that hue is tuned as a TEXT/dot color against a
+  canvas; white text on it fails 4.5:1 in dark theme). The 7-status health
+  palette (up/degraded/partial/down/maintenance/unknown/missing, each with a
+  `-subtle` badge-background variant) keeps the SAME hex values the
+  STORY-055 retune landed (already proven accessible against near-identical
+  background luminances) — every value re-checked by `tokens.test.ts`
+  against the new canvas colors, all still >= 4.5:1. NEW radius token
+  `--radius-tile: 16px` ("rounded-xl tiles" per the brief); NEW elevation
+  scale `--shadow-sm/-md/-lg` (border-glow hairline-plus-shadow in dark,
+  soft layered shadow in light) alongside the pre-existing single-level
+  `--shadow` alias (kept for the primitives this story doesn't touch —
+  Panel/SummaryCard); NEW motion tokens `--motion-fast/-base/-slow` (150ms/
+  200ms/250ms) + `--ease-standard`; NEW z-scale (`--z-base` through
+  `--z-toast`). `--target-min` raised 40px -> 44px (the brief's "44px touch
+  targets" floor). Every OTHER pre-existing token NAME (`--color-surface-1`,
+  `--color-ink-muted`, `--fs-h1`, `--space-4`, `--radius-control`, etc.) is
+  UNCHANGED, so every primitive this story does NOT rewrite (Panel,
+  LoadingState, EmptyState, Table, UptimeBar, SummaryCard, Timeline) needed
+  zero code changes — only their rendered colors/sizes shifted. Six
+  now-unused tokens whose sole consumers were deleted this story
+  (`--nav-height`, `--nav-width-expanded`, `--nav-width-collapsed`,
+  `--header-height`, `--radius-badge`, `--border-badge-width`) were dropped.
+  `frontend/src/styles/tokens.test.ts` is a NEW token-level contract test
+  (reads the raw CSS text via Vite's `?raw` import — NOT `node:fs`, which
+  `tsconfig.app.json`'s browser-target `src/` deliberately excludes from
+  node types — and NOT jsdom computed style, which doesn't reliably cascade
+  custom properties through attribute-selector scoping): asserts the exact
+  dark/light canvas and accent hex values, the font-family tokens, the
+  150-250ms motion band, and — the AC3 evidence — a WCAG contrast-ratio
+  check (hand-rolled relative-luminance formula, self-tested against
+  black-on-white = 21:1) for `--color-ink-muted` (the `StatusBadge` label
+  color) against both badge-hosting surfaces, EVERY health-dot color against
+  the canvas, and `--color-on-accent`/`--color-on-danger` against their
+  fills — all >= 4.5:1, BOTH themes (74 assertions total).
+- **Fonts** (`frontend/src/styles/global.css`): self-hosted Space Grotesk
+  (headings — `h1`/`h2`/`h3` and `.text-h1/-h2/-h3` all set
+  `font-family: var(--font-heading)`), Inter (body — `--font-sans`),
+  JetBrains Mono (tabular data/timestamps/latency/IDs — `--font-mono`), all
+  via `@fontsource/*` imports — replacing Geist/Geist Mono. Zero runtime
+  Google-Fonts CDN request (verified: the production `dist/` build was
+  grepped for `fonts.googleapis.com`/`fonts.gstatic.com`, zero matches; all
+  font files are bundled `.woff`/`.woff2` assets). `global.css` also carries
+  a `@media (prefers-reduced-motion: reduce)` guard collapsing every
+  animation/transition duration to ~0 — the brief's "every animation guarded
+  by prefers-reduced-motion" rule — and the two-tone focus-ring rule now
+  additionally covers `[role='switch']` (a future sample-mode-switch/tab
+  affordance).
+- **Theme engine, now dark-FIRST** (`frontend/src/theme/resolveTheme.ts`):
+  `getSystemTheme()` no longer collapses to `dark ? dark : light` — it checks
+  `(prefers-color-scheme: dark)` explicitly, THEN `(prefers-color-scheme:
+  light)` explicitly, and only falls back to `'dark'` if NEITHER query
+  matches (no stated OS preference, or no `matchMedia` support at all).
+  `resolveInitialTheme()`'s precedence is otherwise unchanged: a
+  `localStorage`-persisted override always wins over the system/default
+  resolution. `frontend/index.html`'s inline pre-paint script was rewritten
+  to the same three-way branch (stored -> explicit dark -> explicit light ->
+  dark) so there is still no flash of the wrong theme before first paint.
+  `ThemeContext.tsx`/`useTheme.ts`/`theme-context.ts` are UNCHANGED (same
+  `{ theme, toggleTheme }` contract, same persistence).
+
+### Base primitives (STORY-103) — the set the rewrite composes from
+- **`Tile`** (`frontend/src/components/Tile/Tile.tsx`, NEW): the bento-grid
+  card primitive. Renders as a react-router `Link` when `href` is given
+  (real anchor semantics), a `<button>` when `onClick` is given without
+  `href` (native focusability/keyboard-activation — never a `div` +
+  `onClick`), or a plain `<div>` otherwise. `elevation` (`'sm'|'md'|'lg'`,
+  default `'md'`) maps to the new `--shadow-sm/-md/-lg` scale; an optional
+  `accent` (the same 7-value `HealthStatus` union) draws a 3px colored left
+  edge, never the sole cue. `interactive` (default: `true` whenever `href`
+  or `onClick` is given, override-able) adds a `<=1.01` hover scale + the
+  shared two-tone focus ring — capped per the brief's "no layout-shifting
+  hovers" rule.
+- **`Button`** (`frontend/src/components/Button/Button.tsx`, REWRITTEN): the
+  variant set changed from `primary`/`secondary`/`tertiary` to
+  `primary`/`ghost`/`danger` — a BREAKING prop-shape change (this is why the
+  one remaining old consumer, `ErrorState`'s retry button, needed touching:
+  `variant="secondary"` -> `variant="ghost"`; the OTHER old consumer,
+  `ApprovalCard.tsx`, was deleted outright since it was pure presentation
+  coupled to the old variant set with no independent test). New
+  `loading?: boolean` prop: renders a decorative `.button__spinner`
+  (`aria-hidden`), sets `aria-busy="true"`, and disables the button (can't be
+  re-triggered mid-request) WITHOUT removing its accessible name — the label
+  stays visible alongside the spinner, never replaced by it. Still `>=44px`
+  target height (`--target-min`), tokens only, defaults `type="button"`.
+- **`StatusBadge`** (`frontend/src/components/StatusBadge/StatusBadge.tsx`,
+  UNCHANGED): kept as-is — its dot+label/7-status/tokens-only shape already
+  matched the brief exactly (status never conveyed by color alone; the label
+  is the accessible name, not the dot), so it re-skins automatically via the
+  new token values with zero code change. Its label-contrast requirement
+  (AC3) is covered by `tokens.test.ts` (documented above).
+- **`Icon`** (`frontend/src/components/Icon/Icon.tsx`, UNCHANGED): the
+  18-glyph feather-style set is already `currentColor`/token-free, so it
+  needed no rewrite to fit the new palette; no new glyphs were needed for
+  this story's minimal shell (`logo`/`sun`/`moon` already covered the brand
+  mark + theme toggle). Extending the set is deferred to whichever
+  sprint-56+ story first needs a glyph it doesn't have.
+- **`RelativeTime`** (`frontend/src/components/RelativeTime/RelativeTime.tsx`,
+  PORTED from `ui-redesign` STORY-098 verbatim): a `<time dateTime>` whose
+  text is `formatRelativeTime` ("4m ago"/"in 2h", ticking forward at least
+  once a minute) and whose `title` carries the absolute-local time + raw
+  ISO-UTC instant. Depends on the newly-ported `lib/formatTime.ts` below.
+- **Salvage-ported `lib/` logic** (`design-brief.md` §Salvage — ported
+  VERBATIM from `ui-redesign`, with their tests, per the 2026-07-18 PO
+  directive; design-agnostic, review-approved on the parked line):
+  `lib/formatTime.ts` (`formatRelativeTime`/`formatAbsoluteLocal`/
+  `formatTooltip`/`formatLocalRange`/`useRelativeTime` — the shared
+  relative/absolute time formatting contract, invalid input always falls
+  back to the raw string, never throws), `lib/formatLocation.ts`
+  (`formatLocationLabel` — shortens any vendor location id to "Location
+  ...tail", generically off the trailing 4 characters, no vendor-specific
+  mapping), `lib/useMediaQuery.ts` (a hand-rolled `matchMedia` subscription
+  hook — no new dependency for a single listener), `lib/breakpoints.ts`
+  (`BREAKPOINT_TABLET_MAX_PX = 1024` / `BREAKPOINT_MOBILE_MAX_PX = 768` +
+  their `QUERY_*_DOWN` media-query strings — the shared JS-side breakpoint
+  source of truth STORY-104's hamburger-sheet nav will consume), and
+  `test/matchMedia.ts::stubMatchMedia` (a live-updatable `matchMedia` stub
+  for any test needing to simulate a viewport crossing a breakpoint, not
+  just a static initial value).
+
+### Minimal placeholder shell (STORY-103 AC5 — STORY-104 builds the real one)
+- `frontend/src/AppShell.tsx` is now a MINIMAL top-bar-stub shell: a
+  `<header>` (brand — `Icon name="logo"` + "Uptime Monitor" — and a theme
+  toggle button whose `aria-label`/icon reflect the CURRENT theme, e.g.
+  "Switch to light theme" + a moon glyph while dark) plus a routed
+  `<main id="main-content">`. `frontend/src/nav/tabs.ts`'s `TABS` array
+  (UNCHANGED — still the single six-tab source of truth: Dashboard ·
+  Availability · Approvals · Check History · Maintenance · Publications,
+  each carrying `path`/`label`/`icon`) drives the `<Routes>` — each tab
+  renders `frontend/src/pages/PlaceholderPage.tsx` (NEW: a `Tile` with one
+  `<h1>` {label} + "Rewrite in progress" copy — one real level-one heading
+  per route, the a11y floor). An unknown path renders
+  `frontend/src/pages/NotFoundPage.tsx` (re-skinned onto `Tile`, same job as
+  before: a heading + a link back to `/`). A skip link (`#main-content`
+  target) is still present (a11y floor, cheap to keep even in the minimal
+  shell). **There is currently NO visible tab-navigation UI** (no sidebar,
+  no horizontal tab bar) — routes are only reachable by direct
+  URL/programmatic navigation until STORY-104 builds the real "top command
+  bar + horizontal tab nav" per the brief's IA section.
+- **DELETED, PO-ordered full rewrite (STORY-103):** `nav/Sidebar.{tsx,css}`,
+  `nav/TopBar.{tsx,css}`, `nav/SampleModeBanner.{tsx,css}`,
+  `nav/sidebarState.ts` (the STORY-056 collapsible-icon-sidebar shell,
+  including the sample-mode trigger switch/chip and its dismissible banner)
+  and all SIX per-tab pages (`pages/{Dashboard,Approvals,Availability,
+  CheckHistory,Maintenance,Publications}Page.{tsx,css}` — the STORY-057-062
+  "Operator Dashboard" Wave-2 rebuilds) plus `features/approvals/
+  ApprovalCard.{tsx,css}` (the old Button-variant-dependent Approvals card
+  presentation). **Consequence for sample-mode:** the frontend sample-mode
+  switch/banner integration described in [[sample-mode]] is TEMPORARILY
+  ABSENT from the routed app — `AppShell.tsx` no longer calls
+  `useSampleMode()` or renders any switch/banner at all. The HOOK itself
+  (`features/dashboard/useSampleMode.ts`) and its test are untouched and
+  still green; STORY-104 Step 3 ("sample-mode switch/chip/banner, ported
+  contracts") re-wires it into the new shell. See [[sample-mode]] for the
+  full detail.
+
+### Surviving feature hooks (logic UNCHANGED, presentation gone — orphaned until their tab's rewrite story)
+Every file below still exists, is still unit/hook-tested against MSW exactly
+as before, and is NOT currently imported by any routed page (their pages were
+deleted, see above). They are documented here so a sprint-56+ implementer
+rebuilding a tab knows this logic already exists and does not need
+reinventing:
+- **Dashboard:** `features/dashboard/useComponents.ts`
+  (`useFetch(getComponents)`), `features/dashboard/summary.ts::
+  summarizeComponents` (real up/degraded/partial/down bucket counts),
+  `features/dashboard/useTopology.ts` (`useFetch(getTopology)`),
+  `features/dashboard/useComponentUptime.ts` (combines the rollup
+  `availability_pct` with a `buildUptimeSegments` sparkline, capped at 30
+  segments, never rejects — a per-component failure degrades gracefully),
+  `features/dashboard/useComponentSignals.ts` (latest-per-location signal
+  rows, a zero-observation signal renders an honest `'missing'` row),
+  `features/dashboard/useMaintenanceWindows.ts` (`useFetch(getMaintenance)`),
+  `features/dashboard/useSampleMode.ts` (load+mutate-in-one-hook; see the
+  sample-mode note above).
+- **Approvals:** `features/approvals/useApprovals.ts`
+  (`useFetch(getApprovals)`), `features/approvals/severity.ts::
+  deriveSeverity` (maps `to_status` onto the 7-status health tokens),
+  `features/approvals/decisionState.ts` (the idle -> confirming ->
+  submitting -> failed state machine + its per-card narrowing type). The
+  rendering component (`ApprovalCard.tsx`) is the one piece of this feature
+  actually DELETED (see above) since it was pure presentation coupled to
+  the old `Button` variant set.
+- **Availability:** `features/availability/{windowRange,useAvailability,
+  format,segments}.ts` — the 24h/7d/30d window-to-range conversion, the
+  topology+per-component fetch/merge, `availabilityBand`/`formatDownLabel`/
+  `isCompletenessLow`, and the sparkline-segment builder.
+- **Check History:** `features/history/{observationHealth,signals,
+  filterHistory,mergeObservations,useAllHistory}.ts` — the system-wide
+  per-signal-parallel-fetch-and-merge ledger, the client-side filter
+  toolbar logic, and the separate observation-vocabulary health mapper.
+- **Publications:** `features/publications/usePublications.ts` — the
+  simplest read hook, `useFetch(getPublications)`.
+- **Maintenance:** `features/maintenance/{windowState,fieldError,
+  useMaintenance}.ts` — the half-open upcoming/active/past window-state
+  derivation, the 422-detail-to-field mapper, and the load+mutate hook.
+- **Shell:** `features/shell/useApprovalsBadge.ts` — the Approvals
+  pending-count badge fetch (`useFetch(getApprovals)`), currently unused
+  since the minimal shell has no nav UI to badge; STORY-104 will likely
+  re-wire it into the new top command bar.
+
+### Typed API client, actor seam, test boundary, shared fetch (UNCHANGED by the rewrite)
+- **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single
+  `/api` base-URL seam. `getJson`/`postJson`/`putJson` all funnel through a
+  shared `readOkJson(response, path)` giving ONE uniform `ApiError` contract
+  (network rejection, non-2xx with `.status`, malformed-2xx-body
+  `SyntaxError`, plus an optional best-effort `.detail` parse of a 422 JSON
+  body). Endpoint fns: `getComponents`, `getApprovals`,
+  `postDecision(proposalId, body)`, `getTopology`,
+  `getComponentAvailability(componentId, { since, until })`,
+  `getSampleMode()`/`putSampleMode(enabled)`, `getHistory({ signal_key,
+  since, until })` (server accepts an optional `limit` cap since STORY-094;
+  this client deliberately does not send it — the render-side cap stays
+  authoritative), `getPublications()`, `getMaintenance()`/
+  `postMaintenance(body)`. DTO types in `frontend/src/api/types.ts` mirror
+  the backend `api/v1/*/models.py` shapes.
+  `frontend/src/api/statusMapping.ts::toHealthStatus` is the authoritative
+  map from the backend `ComponentStatus` vocabulary onto the 7 health tokens
+  (`operational`->`up`, `degraded`->`degraded`, `partial_outage`->`partial`,
+  `major_outage`->`down`, else->`unknown`). A SECOND, deliberately separate
+  mapper, `features/history/observationHealth.ts::observationHealth`, maps
+  the OBSERVATION vocabulary (`ObservationDTO.health`) onto the same tokens
+  — the two mappers' input vocabularies overlap only on `"degraded"`, kept
+  separate so a future contract change to either never ripples into the
+  other.
+- **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()`
+  returns a fixed placeholder (`"dashboard-operator"`) — the single
+  swap-point for real identity when STORY-017 auth lands.
+- **Test I/O boundary:** MSW is the ONLY mocked edge. Handlers are
+  modularized per feature (`frontend/src/mocks/handlers/<feature>.ts`)
+  composed into `mocks/handlers/index.ts`, registered by `mocks/server.ts`
+  (wired in `frontend/src/test/setup.ts`). All eight handler modules survive
+  untouched — the deleted pages were their CONSUMERS, not their producers;
+  every hook above still exercises its handler directly via
+  `renderHook`/MSW.
+- **Shared fetch machinery:** `frontend/src/lib/useFetch.ts::useFetch<T>` —
+  the single home of the read-fetch state machine (`{ state, retry }` over a
+  `loading|error|success` discriminated union, a cancelled-guarded effect,
+  an `attempt`-keyed `retry`). `fetcher` MUST be a stable reference. Every
+  surviving hook above still builds on it — unchanged, untouched, still the
+  foundation the sprint-56+ rebuilds will keep composing from.
+- **Shared classname helper:** `frontend/src/lib/cx.ts::cx(...)` — filters
+  falsy parts, joins on a space. Used by every primitive, old and new.
 
 ## Inference (synthesis, not verified)
-- The shared append-points a tab story still edits are `api/types.ts` + `api/client.ts` (its DTO +
-  `getX()`/`postX()`) and a new `mocks/handlers/<feature>.ts`; the routing table, MSW composition,
-  and the shared `useFetch<T>` are structured for additive-only edits, so sequential tab stories
-  don't collide.
-- **The shared `useFetch<T>` (done in 015c) is now the foundation for every read hook through
-  sprint-38** — the parallel-shape trigger the Sprint-26 retro flagged has been discharged, and held
-  up across a much wider set of shapes than originally anticipated: a read tab with NO
-  selector/args is a thin `useFetch(getX)`; one WITH a selector (015d's window, or Dashboard's fixed
-  24h `range`) wraps its parameterized call in `useCallback` keyed on a caller-memoized arg object;
-  and STORY-057's `useComponentUptime`/`useComponentSignals` show the pattern generalizes to a
-  compound key (`[topology, range]` / `[signals, range]`) with no `useFetch` change either. The one
-  sharp edge to watch throughout is still the stable-`fetcher`-reference rule. A mutating tab still
-  reuses the Approvals local-state-machine + `ApiError.status`-branching pattern rather than
-  re-inventing it.
+- **Pre-rewrite (STORY-055-062), still expected to hold for the sprint-56+ rebuilds since the
+  hooks themselves are untouched:** the shared append-points a tab story edits are `api/types.ts` +
+  `api/client.ts` (its DTO + `getX()`/`postX()`) and a new `mocks/handlers/<feature>.ts`; the
+  routing table, MSW composition, and the shared `useFetch<T>` are structured for additive-only
+  edits, so sequential tab stories don't collide. **The shared `useFetch<T>` is STILL the
+  foundation every surviving read hook builds on** — a read tab with NO selector/args is a thin
+  `useFetch(getX)`; one WITH a selector wraps its parameterized call in `useCallback` keyed on a
+  caller-memoized arg object; a compound key (`[topology, range]` / `[signals, range]`) needs no
+  `useFetch` change either. The one sharp edge to watch is still the stable-`fetcher`-reference
+  rule. A future mutating tab can likely reuse the Approvals `decisionState.ts` state-machine +
+  `ApiError.status`-branching pattern rather than re-inventing it — NOT YET RE-VERIFIED against an
+  actual STORY-103+ rebuilt page, since none exists yet on this branch.
+- A sprint-56+ per-tab rewrite story will likely need to decide: does the new page render inside a
+  `Tile` (bento-grid placement) or reuse `Panel`/`Table` for tabular data, or some mix? STORY-103
+  deliberately left this open — the brief's dashboard description ("asymmetric grid: hero tile,
+  per-component tiles, action tiles, feed tile") suggests `Tile` for Dashboard specifically, but
+  Check History's dense ledger may still want `Table`. NOT VERIFIED — a design decision for those
+  stories, not this one.
 
 ## History
 - sprint-38 (sprint-close compile pass, this update): recompiled for Wave 2 of the Operator
@@ -590,4 +571,31 @@ status: verified
   `CheckHistoryPage.tsx` render-cap comment (Facts updated above) now note the server accepts it
   but this client deliberately does not send it — no code path, DTO, or contract changed.
   verified_sha -> 2859b95.
+- sprint-55 (STORY-103, PO-ordered full UI rewrite — "Mission Teal", REWRITE ERA begins): rebuilt
+  `styles/tokens.css` v2 (dark-first + full light theme, new spacing/radius/shadow/z/motion
+  scales, `tokens.test.ts` contract tests incl. WCAG contrast checks) and `styles/global.css`
+  (self-hosted Space Grotesk/Inter/JetBrains Mono replacing Geist/Geist Mono, a
+  `prefers-reduced-motion` guard); made the theme engine dark-first
+  (`resolveTheme.ts::getSystemTheme` now checks both media queries explicitly, defaulting to dark
+  only when NEITHER matches; `index.html`'s pre-paint script mirrors it); rewrote `Button` (new
+  primary/ghost/danger variants + a `loading` state) and added three new primitives — `Tile`
+  (the bento-card base unit), `RelativeTime`, and the salvage-ported `lib/{formatTime,
+  formatLocation,useMediaQuery,breakpoints}.ts` + `test/matchMedia.ts` (verbatim from the parked
+  `ui-redesign` branch's STORY-096/098, review-approved there); left `StatusBadge`/`Icon`/`Panel`/
+  `LoadingState`/`EmptyState`/`Table`/`UptimeBar`/`SummaryCard`/`Timeline` UNCHANGED (already
+  token-only, re-skin automatically). DELETED the entire STORY-056 sidebar/topbar/
+  sample-mode-banner shell and all six STORY-057-062 per-tab pages (`pages/*Page.{tsx,css,
+  test.tsx}`) plus `features/approvals/ApprovalCard.{tsx,css}` — replaced with a MINIMAL
+  placeholder `AppShell.tsx` (brand + theme toggle top bar, one `PlaceholderPage`/`Tile` per
+  route via the unchanged `nav/tabs.ts`). Every other feature hook (`features/{dashboard,
+  approvals,availability,history,maintenance,publications,shell}/*.ts`, excluding
+  `ApprovalCard.tsx`) and the entire `api/`/`mocks/` layer are UNTOUCHED and still green — see the
+  new "Surviving feature hooks" Facts subsection. Frontend suite: 372 tests / 47 files, all green;
+  `npm run build`/`npm run lint` both exit 0. Backend diff is empty except the cherry-picked
+  `pyproject.toml` `.claude`-ruff-exclude line (see [[dev-setup-and-dod]]/[[architecture-boundary]]/
+  [[config-layer]]/[[api-five-file-convention]]). `code_refs` heavily re-scoped: removed every
+  deleted file path, added `components/Tile/Tile.tsx`, `components/RelativeTime/RelativeTime.tsx`,
+  `lib/{formatTime,formatLocation,useMediaQuery,breakpoints}.ts`, `test/matchMedia.ts`,
+  `pages/PlaceholderPage.tsx`, `styles/global.css`, and `docs/scrum/ui-rewrite/design-brief.md`
+  (the new design authority, replacing `DESIGN-linear.app.md`). verified_sha = 52f1706.
 
