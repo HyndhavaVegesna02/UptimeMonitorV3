@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { StatusBadge } from './StatusBadge'
+import { defaultStatusLabel, StatusBadge } from './StatusBadge'
 
 describe('StatusBadge', () => {
   it.each([
@@ -50,6 +50,23 @@ describe('StatusBadge', () => {
       expect(
         container.querySelector(`.status-badge--${status}`),
       ).not.toBeNull()
+    },
+  )
+})
+
+describe('defaultStatusLabel', () => {
+  it.each([
+    ['up', 'Up'],
+    ['down', 'Down'],
+    ['degraded', 'Degraded'],
+    ['partial', 'Partial outage'],
+    ['maintenance', 'Maintenance'],
+    ['unknown', 'Unknown'],
+    ['missing', 'Missing data'],
+  ] as const)(
+    'returns the same default label text the %s badge itself renders (single source of truth, STORY-100)',
+    (status, label) => {
+      expect(defaultStatusLabel(status)).toBe(label)
     },
   )
 })
