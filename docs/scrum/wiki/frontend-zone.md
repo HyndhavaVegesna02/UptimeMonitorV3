@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/features/dashboard/actionCard.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/nav/useDismissibleBanner.ts, frontend/src/components/Toast/Toast.tsx]
-verified_sha: f3d30ff
-verified_sprint: sprint-53
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/approvals/useApprovalsTopology.ts, frontend/src/features/approvals/useProposalEvidence.ts, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/features/dashboard/actionCard.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/nav/useDismissibleBanner.ts, frontend/src/components/Toast/Toast.tsx]
+verified_sha: beca48f
+verified_sprint: sprint-54
 status: verified
 ---
 
@@ -109,13 +109,15 @@ status: verified
   `getComponentAvailability(componentId, { since, until })` (STORY-015d — query-string encodes
   `since`/`until`, both REQUIRED to be tz-aware ISO strings since the backend 422s a naive
   datetime), `getSampleMode()` / `putSampleMode(enabled)` (STORY-049 — a TEMPORARY-feature seam,
-  see `docs/scrum/wiki/sample-mode.md`), `getHistory({ signal_key, since, until })` (STORY-015e
-  AC1, AC2 — query-string encodes all three; `since`/`until` REQUIRED tz-aware ISO strings, the
-  same discipline as `getComponentAvailability`; NO pagination — the endpoint can return many
-  thousands of rows for a wide window, so the Check History tab caps what it RENDERS, not what it
-  requests. STORY-094: the server now accepts an optional `limit` query param that caps the
-  response server-side, but `getHistory`'s params type stays `{ signal_key, since, until }` — this
-  client deliberately does not adopt it; the render cap stays authoritative), `getPublications()`
+  see `docs/scrum/wiki/sample-mode.md`), `getHistory({ signal_key, since, until, limit? })`
+  (STORY-015e AC1, AC2 — query-string encodes `signal_key`/`since`/`until`; `since`/`until`
+  REQUIRED tz-aware ISO strings, the same discipline as `getComponentAvailability`; NO
+  client-driven pagination for the Check History tab, which still omits `limit` and caps what it
+  RENDERS instead. STORY-094 added the server-side optional `limit` cap; STORY-100 is the FIRST
+  caller to actually send it — `optional limit?: number`, additive, omitted entirely from the
+  query string when `undefined` so every pre-STORY-100 call site (Check History, Dashboard,
+  Availability) is unaffected — used by `features/approvals/useProposalEvidence.ts` to fetch a
+  small, server-capped slice per proposal rather than the render-side-capped full window), `getPublications()`
   (STORY-037/STORY-015g AC1 — `GET /api/v1/publications`, no
   params; the endpoint itself caps at the repository's most-recent 50 server-side, so unlike
   `/history` there is no client-side render cap to add), and `getMaintenance()`/`postMaintenance(body)`
@@ -231,21 +233,24 @@ status: verified
     the header. The two-grain expand/collapse mechanics (a real `<button aria-expanded>`, per-signal
     name resolved from topology since `SignalAvailabilityDTO` carries no `name`) are unchanged from
     015d. See `pages/AvailabilityPage.tsx`, `features/availability/{segments,format}.ts`.
-  - **Approvals (STORY-059 rebuild of 015c):** one `ApprovalCard` per open proposal (`<ul
-    className="approval-list">` replacing the old table) with a left severity-accent stripe —
-    `features/approvals/severity.ts::deriveSeverity(to_status)` maps `major_outage → down/"Major"`,
+  - **Approvals (STORY-059 rebuild of 015c; evidence-first per STORY-100, sprint-54 — see its own
+    subsection below for the full detail):** one `ApprovalCard` per open proposal (`<ul
+    className="approval-list">`, now wrapped in the standard `Panel`) with a left severity-accent
+    stripe — `features/approvals/severity.ts::deriveSeverity(to_status)` maps `major_outage → down/"Major"`,
     `partial_outage → partial/"Partial"`, `degraded → degraded/"Degraded"` onto the SAME 7-status
     health tokens every other indicator uses (a defensive `'unknown'` fallback for the
     else-case, which `core/services/decide.py` makes practically unreachable — an open proposal is
     always a degradation, never a recovery). The `from_status → to_status` transition is two
     `StatusBadge`s (`from_status === null` renders "New" — a component's first-ever proposal has no
     prior status) plus an `Icon name="arrow-right"`. The idle → confirming → submitting → failed
-    state machine (`features/approvals/decisionState.ts`, byte-identical to 015c) is narrowed
+    state machine (`features/approvals/decisionState.ts`) is narrowed
     per-card via `toCardDecisionState` so a card never compares proposal ids itself; the 409/404
-    notice banner still lives one level up in `ApprovalsPage` (not scoped to a single card). Fields
-    the wire doesn't expose (reason/source/detected-ago/checks/triggering-signals) are OMITTED,
-    never faked — deferred to STORY-063. See `pages/ApprovalsPage.tsx`, `features/approvals/
-    {severity,decisionState,ApprovalCard}.tsx`.
+    notice banner still lives one level up in `ApprovalsPage` (not scoped to a single card). A
+    friendly component name, per-location evidence, a "View checks" deep link, and the approve
+    confirm's publish-consequence copy are STORY-100 additions (see below); the reason/source/
+    detected-ago/triggering-signals fields are still OMITTED, never faked — deferred to STORY-063.
+    See `pages/ApprovalsPage.tsx`, `features/approvals/
+    {severity,decisionState,ApprovalCard,useApprovalsTopology,useProposalEvidence}.tsx`.
   - **Check History (STORY-060 rebuild of 015e — now a SYSTEM-WIDE ledger, not one signal at a
     time):** `features/history/useAllHistory.ts` enumerates every topology signal via the EXISTING
     `getTopology()` (reusing `features/history/signals.ts::flattenSignals`), fires one `getHistory`
@@ -276,7 +281,17 @@ status: verified
     the 2026-07-12 live-Grail probe sample (`response_status_code: 200, check_type: 'http'`); the
     degraded/down fixture rows use `response_status_code: null` (the real "no failure code
     captured" state — see [[dynatrace-adapter]]'s TBD-failure-code note — never an invented
-    failure status). See `pages/CheckHistoryPage.tsx`,
+    failure status). **STORY-100 (sprint-54):** the toolbar's search filter is now URL-driven for
+    its INITIAL value only — `features/history/filterHistory.ts::initialHistoryFilters(searchParams)`
+    seeds `filters.query` from an optional `?signal=` param (falling back to
+    `DEFAULT_HISTORY_FILTERS` when absent), read via `react-router-dom`'s `useSearchParams()` in a
+    lazy `useState` initializer; the toolbar remains fully editable afterwards and is never
+    re-synced back to the URL. This is the deep-link seam the Approvals evidence card's "View
+    checks" link (`/check-history?signal=<signal_key>`) lands on — the SAME free-text `query` field
+    already substring-matches a row's `signal_key` (documented above), so no new filter dimension
+    was added. `CheckHistoryPage.test.tsx` now wraps every render in a `MemoryRouter`
+    (`renderCheckHistory()` helper, mirroring `DashboardPage.test.tsx`'s STORY-099 pattern) since
+    `useSearchParams` throws outside a Router. See `pages/CheckHistoryPage.tsx`,
     `features/history/{filterHistory,mergeObservations,useAllHistory}.ts`.
   - **Publications (STORY-062 rebuild of 015g; STORY-072 added the outcome chip):** a vertical
     `Timeline`/`TimelineItem` (the STORY-055 shared primitive) replacing the old changelog table —
@@ -830,3 +845,71 @@ status: verified
 - Frontend-only; six backend gates untouched-green (empty diff — no backend source change).
   `code_refs` += `nav/useDismissibleBanner.ts`, `components/Toast/Toast.tsx`. Test count at HEAD:
   515 tests / 62 files (`npm test`, all green). verified_sha = f3d30ff.
+
+### Approvals decision support — evidence-first cards (STORY-100, sprint-54 — ui-redesign wave 3)
+- Closes journal findings #4 ("approval cards give zero decision evidence") and #14 (approve
+  confirm carries no consequence copy), decision D5, ONLY from data already exposed by existing
+  endpoints (components/topology/history/approvals) — no backend change.
+- `features/approvals/useApprovalsTopology.ts` is a thin `useFetch(getTopology)` wrapper (mirrors
+  `features/dashboard/useTopology.ts`'s pattern exactly, its own file per-feature) —
+  `ApprovalsPage.tsx` joins each proposal's `component_id` against it (`Object.fromEntries` keyed
+  by `component.id`, `{}` while loading/failed) for the friendly name + primary signal every card
+  needs; a topology failure/loading tick degrades every card to its raw `component_id` slug and no
+  evidence rather than blocking the queue.
+- `features/approvals/useProposalEvidence.ts::useProposalEvidence(signalKey)` is the evidence
+  fetch: `ProposalDTO`/`core/domain/proposal.py::StatusProposal` carry NO `signal_key` on the wire
+  (a proposal is per-COMPONENT, not per-signal), so the caller resolves `signalKey` from the
+  component's topology — its FIRST signal (`component.signals[0]`), the SAME single-signal
+  adaptation `features/dashboard/useComponentUptime.ts` already uses for the identical reason (no
+  dedicated per-proposal signal API; the live deployment's one real app/component has exactly one
+  signal anyway — `config/apps/httpcheck.yaml`). `signalKey === undefined` short-circuits to an
+  always-successful empty result, never fetching. Otherwise calls the EXISTING `getHistory` over a
+  fixed 24h window (`features/availability/windowRange.ts::windowToRange('24h')`, reused) WITH the
+  STORY-094 `limit` param (small, server-side cap — `EVIDENCE_HISTORY_LIMIT = 20`) rather than the
+  render-side cap Check History uses, then `latestPerLocation` collapses the newest-first
+  observations to one row per distinct location (the FIRST observation seen per location IS its
+  latest — the same convention `features/dashboard/useComponentSignals.ts::buildSignalRows` uses).
+  A REAL history-fetch failure surfaces as this hook's OWN `'error'` state; it never throws for a
+  missing signal.
+- `features/approvals/ApprovalCard.tsx` renders (top to bottom): friendly component name (bold) +
+  the raw `component_id` as a secondary mono slug; the severity chip; the `from_status -> to_status`
+  transition (unchanged from STORY-059); "Proposed <RelativeTime>" (unchanged from STORY-098); the
+  evidence block — a compact pulsing skeleton while `useProposalEvidence` loads, a quiet italic
+  "Evidence unavailable" line on its error state (the card stays FULLY actionable — Approve/Reject
+  render regardless), "No recent checks recorded" for a genuine empty success, or one row per
+  location (`formatLocationLabel` short label + raw-id tooltip, a `StatusBadge`, latency via a
+  file-local `formatLatencyMs` em-dash convention, and a `RelativeTime`); then a "View checks" link
+  (`react-router-dom`'s `Link`, omitted entirely when no primary signal resolved) to
+  `/check-history?signal=<signal_key>` (`encodeURIComponent`-escaped). The approve confirm step's
+  prompt now states the consequence — `features/approvals/decisionState.ts::confirmPrompt(action,
+  {componentLabel, targetStatusLabel})` renders "Publishes '<component>: <target status>' to the
+  public status page." for `'approve'`, where `targetStatusLabel` is
+  `components/StatusBadge/StatusBadge.tsx::defaultStatusLabel(toHealthStatus(proposal.to_status))`
+  — reusing the SAME word the transition badge itself already shows rather than a second
+  vocabulary; `'reject'` is UNCHANGED ("Reject this proposal?"). `CONFIRM_COPY` (the old static
+  `Record<DecisionAction, {prompt, confirmLabel}>`) was REPLACED by `confirmPrompt` (function) +
+  `CONFIRM_LABEL` (the confirm-button labels, unchanged text) — a genuine contract change, so the
+  covering tests were rewritten to the new shape (2026-06-29 agreement), not deleted.
+  `ApprovalsPage.tsx` now wraps the card list (and the "Queue clear" `EmptyState`) in the standard
+  `Panel` (review-52 accepted-with-notes item — Approvals was the one tab with no `Panel` around
+  its list; the bespoke `.approvals-page__empty` bordered-card CSS is REMOVED, `Panel` supplies the
+  surface/border/shadow now).
+- `client.ts::getHistory` gained an optional `limit?: number` param (additive — every pre-existing
+  call site omits it and is unaffected; STORY-100 is the first caller to send it, documented
+  above). `StatusBadge.tsx` exported its private `DEFAULT_LABELS` lookup through a new
+  `defaultStatusLabel(status)` function (in the `components/index.ts` barrel) rather than
+  exporting the record itself, so a consumer asks for one status's word instead of importing a
+  lookup table.
+- Check History's search filter gained a URL-driven INITIAL value (the "View checks" deep-link
+  seam) — see the Check History bullet above for the full detail
+  (`features/history/filterHistory.ts::initialHistoryFilters`).
+- Both `ApprovalsPage.test.tsx` and `CheckHistoryPage.test.tsx` now wrap every render in a
+  `MemoryRouter` (`renderApprovalsPage()`/`renderCheckHistory()` helpers, mirroring
+  `DashboardPage.test.tsx`'s STORY-099 pattern) since a routed `Link`/`useSearchParams` throws
+  outside a Router — test-infra-only changes, landed as their own behavior-neutral commits before
+  the Link/URL-param features themselves.
+- Sonnet-5-implementer TDD pass, one commit per green step; frontend-only; six backend gates
+  untouched-green (empty diff — no backend source change, confirmed via `git diff --stat backend/`).
+  `code_refs` += `features/approvals/{useApprovalsTopology,useProposalEvidence}.ts`,
+  `components/StatusBadge/StatusBadge.tsx` (previously covered only via the `components/index.ts`
+  barrel). Test count at HEAD: 550 tests / 65 files (`npm test`, all green). verified_sha = beca48f.
