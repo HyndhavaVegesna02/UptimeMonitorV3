@@ -20,6 +20,17 @@
   padding: var(--space-6);
 }
 
+/* Narrow-viewport page container fit (STORY-096 AC4/AC1 — 390px-safe
+   layouts, no horizontal page scroll). Mirrors --breakpoint-mobile (768px)
+   in intent but is intentionally a bit tighter than the drawer breakpoint:
+   full 24px side padding is fine down to a small phone-in-portrait width,
+   it only needs trimming once the viewport itself gets very narrow. */
+@media (max-width: 480px) {
+  .app-shell__main {
+    padding: var(--space-4);
+  }
+}
+
 .skip-link {
   position: absolute;
   top: -48px;
