@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: f3e4eb7
+verified_sha: 52f1706
 verified_sprint: sprint-50
 status: verified
 ---
@@ -203,4 +203,5 @@ status: verified
   Geist/Geist Mono fonts the STORY-055 entry below documents for the ui-rewrite's Mission Teal
   type stack — see [[frontend-zone]] for the substantive Fact update) — the three frontend DoD
   commands (`npm test`/`npm run build`/`npm run lint`) are UNCHANGED in shape. verified_sha ->
-  f3e4eb7.
+  52f1706 (the story's full code diff — package.json's dependency addition lands at commit
+  `8e12206`, folded into this single re-verify since no other Fact needed touching in between).
