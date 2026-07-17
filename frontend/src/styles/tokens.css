@@ -237,6 +237,16 @@
   --radius-chip: 6px;
   --radius-pill: 9999px;
 
+  /* Danger action color (Button's `danger` variant) — a fixed value in
+     BOTH themes rather than reusing `--color-health-down`: the health
+     "down" hue is tuned to sit as TEXT/dot color against a canvas, and
+     white-on-health-down fails 4.5:1 in dark theme (verified in
+     tokens.test.ts); this is tuned specifically to hold white text as a
+     SOLID button fill. */
+  --color-danger: #b91c1c;
+  --color-danger-hover: #dc2626;
+  --color-on-danger: #ffffff;
+
   /* Focus ring — two-tone (canvas-colored inner gap + accent outer ring)
      so it reads clearly on ANY surface in either theme (brief: "visible
      focus-ring tokens, two-tone, visible both themes"). */

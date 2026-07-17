@@ -22,7 +22,7 @@ export function ErrorState({
         {message}
       </p>
       {onRetry ? (
-        <Button variant="secondary" onClick={onRetry}>
+        <Button variant="ghost" onClick={onRetry}>
           Retry
         </Button>
       ) : null}
