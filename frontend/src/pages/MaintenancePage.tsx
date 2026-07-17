@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiError } from '../api/client'
 import type { CreateMaintenanceRequest, MaintenanceWindowDTO } from '../api/types'
-import { Button, EmptyState, ErrorState, LoadingState, Panel } from '../components'
+import { Button, EmptyState, ErrorState, LoadingState, PageHeader, Panel } from '../components'
 import { useComponents } from '../features/dashboard/useComponents'
 import { fieldErrorFromDetail } from '../features/maintenance/fieldError'
 import { useMaintenance } from '../features/maintenance/useMaintenance'
@@ -326,13 +326,11 @@ export function MaintenancePage() {
   } = useMaintenance()
 
   return (
-    <div className="maintenance-page">
-      <div className="maintenance-page__header">
-        <h1 className="text-h1 maintenance-page__title">Maintenance</h1>
-        <p className="text-caption maintenance-page__subtitle">
-          Windows suppress alerting for affected components to prevent false proposals.
-        </p>
-      </div>
+    <div className="maintenance-page page">
+      <PageHeader
+        title="Maintenance"
+        subtitle="Windows suppress alerting for affected components to prevent false proposals."
+      />
 
       <div className="maintenance-page__layout">
         <Panel
