@@ -3,7 +3,11 @@ import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
-import { FIXTURE_PROPOSALS } from '../mocks/handlers'
+import {
+  FIXTURE_HISTORY_FRONTEND_HTTP,
+  FIXTURE_PROPOSALS,
+  FIXTURE_TOPOLOGY,
+} from '../mocks/handlers'
 import { getActor } from '../api/actor'
 import { ApprovalsPage } from './ApprovalsPage'
 
@@ -114,6 +118,85 @@ describe('ApprovalsPage', () => {
 
     expect(screen.queryByText(/triggering signals/i)).not.toBeInTheDocument()
     expect(screen.queryByText(/detected/i)).not.toBeInTheDocument()
+  })
+
+  it('resolves the friendly component name from topology, keeping the raw component_id as a secondary slug (STORY-100 AC1)', async () => {
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    // FIXTURE_PROPOSALS[0].component_id === FIXTURE_TOPOLOGY[0].id.
+    const friendlyName = FIXTURE_TOPOLOGY[0].name
+    const card = screen.getByText(friendlyName).closest('li')
+    expect(card).not.toBeNull()
+    expect(
+      within(card as HTMLElement).getByText(FIXTURE_PROPOSALS[0].component_id),
+    ).toBeInTheDocument()
+  })
+
+  it('renders per-location evidence rows (status, latency, relative time) for the component\'s primary signal (STORY-100 AC1)', async () => {
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    const card = screen
+      .getByText(FIXTURE_TOPOLOGY[0].name)
+      .closest('li') as HTMLElement
+
+    // FIXTURE_HISTORY_FRONTEND_HTTP has 3 distinct locations.
+    const locationRows = await within(card).findAllByText(/^Location …/)
+    expect(locationRows).toHaveLength(3)
+
+    // First row: location …0060, "Up" status, 571 ms latency.
+    const firstRow = locationRows[0].closest('li') as HTMLElement
+    expect(within(firstRow).getByText('Up')).toBeInTheDocument()
+    expect(within(firstRow).getByText('571 ms')).toBeInTheDocument()
+    const time = within(firstRow).getByText(/ago|just now/)
+    expect(time.tagName).toBe('TIME')
+    expect(time).toHaveAttribute('dateTime', FIXTURE_HISTORY_FRONTEND_HTTP[0].observed_at)
+  })
+
+  it('shows a quiet "evidence unavailable" note on a history-fetch failure, and the card stays fully actionable (STORY-100 AC4)', async () => {
+    server.use(
+      http.get('/api/v1/history', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    )
+
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    const card = screen
+      .getByText(FIXTURE_TOPOLOGY[0].name)
+      .closest('li') as HTMLElement
+
+    expect(await within(card).findByText('Evidence unavailable')).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Reject' })).toBeInTheDocument()
+  })
+
+  it('renders each proposal card\'s evidence independently — one card\'s failure does not affect another\'s (STORY-100 AC4)', async () => {
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        const url = new URL(request.url)
+        const signalKey = url.searchParams.get('signal_key')
+        if (signalKey === 'frontend-http') {
+          return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+        }
+        return HttpResponse.json({ detail: 'boom' }, { status: 500 })
+      }),
+    )
+
+    render(<ApprovalsPage />)
+    await screen.findByRole('list')
+
+    const frontendCard = screen
+      .getByText(FIXTURE_TOPOLOGY[0].name)
+      .closest('li') as HTMLElement
+    const catalogueCard = screen
+      .getByText(FIXTURE_TOPOLOGY[1].name)
+      .closest('li') as HTMLElement
+
+    expect(await within(frontendCard).findAllByText(/^Location …/)).toHaveLength(3)
+    expect(await within(catalogueCard).findByText('Evidence unavailable')).toBeInTheDocument()
   })
 
   it('shows the "Queue clear" empty state when there are no open proposals (AC3)', async () => {

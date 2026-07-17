@@ -1,11 +1,13 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { getActor } from '../api/actor'
 import { ApiError, postDecision } from '../api/client'
+import type { ComponentTopologyDTO } from '../api/types'
 import { EmptyState, ErrorState, LoadingState, PageHeader } from '../components'
 import { ApprovalCard } from '../features/approvals/ApprovalCard'
 import { toCardDecisionState } from '../features/approvals/decisionState'
 import type { DecisionAction, DecisionUiState } from '../features/approvals/decisionState'
 import { useApprovals } from '../features/approvals/useApprovals'
+import { useApprovalsTopology } from '../features/approvals/useApprovalsTopology'
 import './ApprovalsPage.css'
 
 /**
@@ -28,8 +30,21 @@ import './ApprovalsPage.css'
  */
 export function ApprovalsPage() {
   const { state, retry } = useApprovals()
+  const topology = useApprovalsTopology()
   const [decisionState, setDecisionState] = useState<DecisionUiState>({ phase: 'idle' })
   const [notice, setNotice] = useState<string | null>(null)
+
+  // Joins each proposal's `component_id` against the topology (STORY-100
+  // AC1) for the friendly name + primary signal a card needs. A topology
+  // fetch failure/loading tick degrades every card to its raw component_id
+  // slug and no evidence — never blocks the queue (AC4) — by staying `{}`
+  // rather than surfacing its own error state here.
+  const componentById = useMemo<Record<string, ComponentTopologyDTO>>(() => {
+    if (topology.state.phase !== 'success') {
+      return {}
+    }
+    return Object.fromEntries(topology.state.data.map((component) => [component.id, component]))
+  }, [topology.state])
 
   function requestConfirm(proposalId: number, action: DecisionAction) {
     setNotice(null)
@@ -104,6 +119,7 @@ export function ApprovalsPage() {
             <ApprovalCard
               key={proposal.id}
               proposal={proposal}
+              component={componentById[proposal.component_id]}
               decision={toCardDecisionState(decisionState, proposal.id)}
               onRequestConfirm={(action) => requestConfirm(proposal.id, action)}
               onCancelConfirm={cancelConfirm}
