@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { QUERY_MOBILE_DOWN, QUERY_TABLET_DOWN } from '../lib/breakpoints'
 import { useMediaQuery } from '../lib/useMediaQuery'
 import { persistExpanded, resolveInitialExpanded } from './sidebarState'
@@ -34,6 +34,14 @@ export interface ResponsiveSidebar {
  * (AC3, "user pref respected on re-widen"). Toggling while narrow therefore
  * never calls `persistExpanded` — only a toggle at desktop width does,
  * exactly the pre-096 contract.
+ *
+ * Both breakpoint-crossing resets below use the React-documented
+ * "adjusting state when a prop changes" pattern (compare against a
+ * mirrored previous-value state DURING render, not inside a `useEffect`) —
+ * the same pattern `SampleModeBanner.tsx` and `useMediaQuery.ts` already
+ * use, required here since `eslint-plugin-react-hooks`'s
+ * `set-state-in-effect` rule (DoD gate) rejects a synchronous `setState`
+ * call in an effect body.
  */
 export function useResponsiveSidebar(): ResponsiveSidebar {
   const isNarrow = useMediaQuery(QUERY_TABLET_DOWN)
@@ -43,19 +51,23 @@ export function useResponsiveSidebar(): ResponsiveSidebar {
   const [narrowOverride, setNarrowOverride] = useState<boolean | null>(null)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
-  useEffect(() => {
+  const [prevIsNarrow, setPrevIsNarrow] = useState(isNarrow)
+  if (isNarrow !== prevIsNarrow) {
+    setPrevIsNarrow(isNarrow)
     if (!isNarrow) {
       setNarrowOverride(null)
     }
-  }, [isNarrow])
+  }
 
   // The drawer never persists as "open" once its breakpoint no longer
   // applies (e.g. the viewport widens past 768px while it was open).
-  useEffect(() => {
+  const [prevIsMobile, setPrevIsMobile] = useState(isMobile)
+  if (isMobile !== prevIsMobile) {
+    setPrevIsMobile(isMobile)
     if (!isMobile) {
       setDrawerOpen(false)
     }
-  }, [isMobile])
+  }
 
   const expanded = isNarrow ? (narrowOverride ?? false) : preferenceExpanded
 
