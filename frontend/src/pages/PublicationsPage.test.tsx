@@ -1,12 +1,18 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { FIXTURE_PUBLICATIONS } from '../mocks/handlers'
 import { PublicationsPage } from './PublicationsPage'
 
 describe('PublicationsPage', () => {
+  afterEach(() => {
+    // A no-op unless a test below sets a fixed system time (STORY-098's
+    // published_at relative-time test) — safe to call unconditionally.
+    vi.useRealTimers()
+  })
+
   it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', async () => {
     const { container } = render(<PublicationsPage />)
 
@@ -20,6 +26,10 @@ describe('PublicationsPage', () => {
   })
 
   it('shows a loading state, then a vertical timeline with one item per publication, newest-first (AC1)', async () => {
+    // Fixed 1 hour after the newest fixture's published_at (STORY-098) so the
+    // relative-time text below is deterministic.
+    vi.setSystemTime(new Date('2026-06-29T13:00:00Z'))
+
     render(<PublicationsPage />)
 
     expect(screen.getByRole('status')).toBeInTheDocument()
@@ -32,10 +42,18 @@ describe('PublicationsPage', () => {
     const items = screen.getAllByRole('listitem')
     expect(items).toHaveLength(FIXTURE_PUBLICATIONS.length)
 
+    const expectedRelative = ['1h ago', '3h ago', '5h ago']
     FIXTURE_PUBLICATIONS.forEach((publication, index) => {
+      // AC1: no bare ISO-8601 string as primary text.
       expect(
-        within(items[index]).getByText(publication.published_at),
-      ).toBeInTheDocument()
+        within(items[index]).queryByText(publication.published_at),
+      ).not.toBeInTheDocument()
+      const time = within(items[index]).getByText(expectedRelative[index])
+      expect(time.tagName).toBe('TIME')
+      expect(time).toHaveAttribute('dateTime', publication.published_at)
+      expect(time.getAttribute('title')).toContain(
+        new Date(publication.published_at).toISOString(),
+      )
       expect(
         within(items[index]).getByText(publication.component_id),
       ).toBeInTheDocument()

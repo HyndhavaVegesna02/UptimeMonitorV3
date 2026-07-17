@@ -7,6 +7,7 @@ import {
   LoadingState,
   PageHeader,
   Panel,
+  RelativeTime,
   StatusBadge,
   Timeline,
   TimelineItem,
@@ -54,7 +55,10 @@ function OutcomeChip({ outcome }: { outcome: PublicationDTO['outcome'] }) {
  * (STORY-097 AC3 — an empty list never claims "latest 50", which would
  * contradict the designed empty state right below it). The h1 + subtitle
  * render via the shared `PageHeader` (STORY-097 AC1), outside the `Panel`
- * card, in the shared narrow `page` container (AC2).
+ * card, in the shared narrow `page` container (AC2). `published_at`
+ * (STORY-098) renders via the shared `RelativeTime` primitive — relative
+ * text, the raw instant on `dateTime`, and an absolute-local + raw-UTC
+ * tooltip — never the bare ISO string as primary text.
  */
 export function PublicationsPage() {
   const { state, retry } = usePublications()
@@ -102,7 +106,7 @@ export function PublicationsPage() {
                     <OutcomeChip outcome={publication.outcome} />
                   </div>
                   <div className="publications-page__meta text-mono text-caption">
-                    <span>{publication.published_at}</span>
+                    <RelativeTime iso={publication.published_at} />
                     <span aria-hidden="true"> · </span>
                     <span>Proposal {formatProposalId(publication.proposal_id)}</span>
                     <span aria-hidden="true"> · </span>
