@@ -15,6 +15,17 @@ function cardFor(label: string): HTMLElement {
 }
 
 describe('DashboardPage', () => {
+  it('renders the h1 via the shared PageHeader, outside the content card, opted into full width (STORY-097 AC1, AC2)', async () => {
+    const { container } = render(<DashboardPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Dashboard', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+    expect(heading.closest('.panel')).toBeNull()
+
+    const root = container.querySelector('.dashboard-page')
+    expect(root).toHaveClass('page', 'page--wide')
+  })
+
   it('shows a loading state, then a table with one row per component (AC1, AC2)', async () => {
     render(<DashboardPage />)
 

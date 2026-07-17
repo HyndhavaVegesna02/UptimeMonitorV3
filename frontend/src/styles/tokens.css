@@ -210,6 +210,15 @@
   --header-height: 52px;
   --target-min: 40px;
 
+  /* Page content container width (STORY-097 AC2) — the ONE shared reading
+     width every tab's `.page` class centers to; a wide data page (a dense
+     table/grid) opts OUT via the `.page--wide` modifier rather than
+     inventing its own divergent max-width. 960px matches the Approvals
+     tab's pre-existing (already-shipped) centered width — chosen as the
+     shared value rather than a new number, per the "evolve, don't re-theme"
+     token discipline (journal D1). */
+  --container-width: 960px;
+
   /* Responsive breakpoints (STORY-096; journal D2) — max-width values for
      the adaptive shell (rail at <=1024px, overlay drawer at <=768px). `@media`
      conditions cannot reference a custom property directly (no browser

@@ -6,6 +6,7 @@ import {
   ErrorState,
   Icon,
   LoadingState,
+  PageHeader,
   Panel,
   StatusBadge,
   SummaryCard,
@@ -279,21 +280,21 @@ export function DashboardPage() {
   const components = state.phase === 'success' ? state.data : []
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-page__header">
-        {/* Accessible name kept as "Dashboard" (not the mock's "System
-            health") — `AppShell`/`App`'s routing tests assert every route's
-            h1 matches its nav tab label, and those shell-level test files
-            are out of scope for this story. */}
-        <h1 className="text-h1 dashboard-page__title">Dashboard</h1>
-        <p className="text-caption dashboard-page__subtitle">
-          {state.phase === 'success'
+    <div className="dashboard-page page page--wide">
+      {/* Accessible name kept as "Dashboard" (not the mock's "System
+          health") — `AppShell`/`App`'s routing tests assert every route's
+          h1 matches its nav tab label, and those shell-level test files
+          are out of scope for this story. */}
+      <PageHeader
+        title="Dashboard"
+        subtitle={
+          state.phase === 'success'
             ? `Live status across ${components.length} monitored component${
                 components.length === 1 ? '' : 's'
               } · click a row to see its signals`
-            : 'Live status across monitored components · click a row to see its signals'}
-        </p>
-      </div>
+            : 'Live status across monitored components · click a row to see its signals'
+        }
+      />
 
       {state.phase === 'success' && (
         <div className="dashboard-page__summary">
