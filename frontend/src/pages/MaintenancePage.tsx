@@ -358,7 +358,11 @@ export function MaintenancePage() {
           )}
 
           {state.phase === 'success' && state.data.length === 0 && (
-            <EmptyState message="No maintenance scheduled" />
+            <EmptyState
+              icon="maintenance"
+              message="No maintenance scheduled"
+              detail="Schedule a window to suppress alerts during planned work."
+            />
           )}
 
           {state.phase === 'success' && state.data.length > 0 && (

@@ -198,6 +198,19 @@ describe('MaintenancePage', () => {
     expect(screen.queryByRole('list', { name: /window/i })).not.toBeInTheDocument()
   })
 
+  it('uses the shared designed EmptyState with a helpful body line (STORY-097 AC3)', async () => {
+    server.use(http.get('/api/v1/maintenance', () => HttpResponse.json([])))
+
+    const { container } = render(<MaintenancePage />)
+
+    const message = await screen.findByText('No maintenance scheduled')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon')).not.toBeNull()
+    expect(
+      screen.getByText('Schedule a window to suppress alerts during planned work.'),
+    ).toBeInTheDocument()
+  })
+
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {
     const user = userEvent.setup()
     let callCount = 0
