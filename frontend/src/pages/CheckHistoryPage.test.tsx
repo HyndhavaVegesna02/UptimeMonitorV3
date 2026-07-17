@@ -14,6 +14,17 @@ const TOTAL_MERGED_ROWS =
   FIXTURE_HISTORY_FRONTEND_HTTP.length + FIXTURE_HISTORY_FRONTEND_TLS.length
 
 describe('CheckHistoryPage', () => {
+  it('renders the h1 + subtitle via the shared PageHeader, outside the card, opted into full width (STORY-097 AC1, AC2)', async () => {
+    const { container } = render(<CheckHistoryPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Check History', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+    expect(heading.closest('.panel')).toBeNull()
+
+    const root = container.querySelector('.check-history-page')
+    expect(root).toHaveClass('page', 'page--wide')
+  })
+
   it('renders every topology signal\'s observations merged newest-first, tagged with their component (AC1, AC2)', async () => {
     render(<CheckHistoryPage />)
 
