@@ -941,7 +941,7 @@ stories:
   - id: STORY-098
     title: Human time & identity — relative timestamps, local-time display, friendly location names
     file: docs/scrum/stories/STORY-098-human-time-and-identity.md
-    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #5-#6
+    status: done    # sprint-53: all AC live-verified (no raw ISO anywhere; WYSIWYG local times); delegated ACCEPT 2026-07-17, merged to ui-redesign
     points: 2
     priority: 54
     type: story
@@ -949,7 +949,7 @@ stories:
   - id: STORY-099
     title: Signal quality — neutral zero-states, cross-tab awareness cards, last-updated, completeness label
     file: docs/scrum/stories/STORY-099-dashboard-signal-quality.md
-    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #7-#9
+    status: done    # sprint-53: all AC live-verified (neutral zeros, action cards, updated-ago, relabel); delegated ACCEPT 2026-07-17, merged to ui-redesign
     points: 2
     priority: 55
     type: story
@@ -973,7 +973,7 @@ stories:
   - id: STORY-102
     title: Mode & nav affordances — labeled sample-mode control, persistent mode indicator, rail tooltips, form feedback
     file: docs/scrum/stories/STORY-102-mode-and-nav-affordances.md
-    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #12, #15-#16
+    status: done    # sprint-53: all AC live-verified (labeled amber switch, SAMPLE chip, rail tooltips, form UX); delegated ACCEPT 2026-07-17, merged to ui-redesign
     points: 2
     priority: 58
     type: story

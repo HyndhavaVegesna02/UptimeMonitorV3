@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 53
-status: active
+status: done   # 3x ACCEPT (delegated) 2026-07-17, velocity 6/6, merged to ui-redesign d5b09a9
 mode: in-process
 goal: "UI redesign wave 2: operator signal quality — human time/identity (STORY-098), calm dashboard + availability signals (STORY-099), honest mode/nav affordances (STORY-102)."
 branch: sprint-53          # off ui-redesign (NOT main); merges back into ui-redesign at review.
