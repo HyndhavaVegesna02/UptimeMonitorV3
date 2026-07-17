@@ -15,6 +15,12 @@ function cardFor(label: string): HTMLElement {
 }
 
 describe('DashboardPage', () => {
+  afterEach(() => {
+    // A no-op unless a test below sets a fixed system time (STORY-098's
+    // drill-down relative-time test) — safe to call unconditionally.
+    vi.useRealTimers()
+  })
+
   it('renders the h1 via the shared PageHeader, outside the content card, opted into full width (STORY-097 AC1, AC2)', async () => {
     const { container } = render(<DashboardPage />)
 
@@ -157,6 +163,10 @@ describe('DashboardPage', () => {
   })
 
   it('expands a component row to its real signal drill-down: location/status/latency/last-observed (AC2)', async () => {
+    // Fixed 4 minutes after the newest fixtured observation (STORY-098) so
+    // the "Last observed" relative-time text below is deterministic.
+    vi.setSystemTime(new Date('2026-07-03T13:33:17.931000Z'))
+
     const user = userEvent.setup()
     render(<DashboardPage />)
     await screen.findByRole('table')
@@ -171,8 +181,16 @@ describe('DashboardPage', () => {
     // frontend-http -> 3 distinct-location rows; frontend-tls -> 1.
     expect(screen.getAllByText('Frontend HTTP check')).toHaveLength(3)
     expect(screen.getAllByText('Frontend TLS check')).toHaveLength(1)
-    expect(screen.getByText('SYNTHETIC_LOCATION-0000000000000060')).toBeInTheDocument()
+    // Location shows the short display form with the raw id as tooltip
+    // (STORY-098 AC4) — never the bare vendor id as primary text.
+    expect(screen.queryByText('SYNTHETIC_LOCATION-0000000000000060')).not.toBeInTheDocument()
+    expect(screen.getByText('Location …0060')).toBeInTheDocument()
+    expect(screen.getByTitle('SYNTHETIC_LOCATION-0000000000000060')).toBeInTheDocument()
     expect(screen.getByText('571 ms')).toBeInTheDocument()
+    // "Last observed" is relative, with the raw instant on `dateTime` (AC1, AC2).
+    const lastObservedTime = screen.getByText('4m ago')
+    expect(lastObservedTime.tagName).toBe('TIME')
+    expect(lastObservedTime).toHaveAttribute('dateTime', '2026-07-03T13:29:17.931000Z')
 
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'false')

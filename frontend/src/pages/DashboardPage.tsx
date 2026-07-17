@@ -8,6 +8,7 @@ import {
   LoadingState,
   PageHeader,
   Panel,
+  RelativeTime,
   StatusBadge,
   SummaryCard,
   Table,
@@ -20,6 +21,7 @@ import {
 } from '../components'
 import { cx } from '../lib/cx'
 import { formatPct } from '../features/availability/format'
+import { formatLocationLabel } from '../lib/formatLocation'
 import type { AvailabilityRange } from '../features/availability/windowRange'
 import { windowToRange } from '../features/availability/windowRange'
 import { summarizeComponents } from '../features/dashboard/summary'
@@ -118,12 +120,16 @@ function SignalsDrilldown({ id, signals, range, colSpan }: SignalsDrilldownProps
               {state.data.map((row) => (
                 <TableRow key={row.key}>
                   <TableCell>{row.label}</TableCell>
-                  <TableCell className="text-mono">{row.location ?? '—'}</TableCell>
+                  <TableCell className="text-mono" title={row.location ?? undefined}>
+                    {row.location === null ? '—' : formatLocationLabel(row.location)}
+                  </TableCell>
                   <TableCell>
                     <StatusBadge status={row.status} />
                   </TableCell>
                   <TableCell className="text-mono">{formatLatency(row.latencyMs)}</TableCell>
-                  <TableCell className="text-mono">{row.lastObserved ?? '—'}</TableCell>
+                  <TableCell className="text-mono">
+                    {row.lastObserved === null ? '—' : <RelativeTime iso={row.lastObserved} />}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
