@@ -1,47 +1,62 @@
 /*
- * Theme-scoped design tokens (STORY-015a AC4; retuned to the Operator
- * Dashboard mock at STORY-055 — sprint-38 plan.md "Design system spec").
- * Token NAMES are held stable across the retune so every downstream
- * component/page that already reads `var(--…)` needed no rewrite; only the
- * VALUES changed (plus the new tokens the plan calls for: accent-bg, the
- * partial/missing health pair, shadow). Dark is the mock's `:root` block;
- * light is the mock's `[data-theme="light"]` block — both copied verbatim
- * from `docs/scrum/sprints/2026-07-07-sprint-38/reference-operator-dashboard.dc.html`.
+ * Theme-scoped design tokens v2 — "Mission Teal" (STORY-103, sprint-55 UI
+ * rewrite). Binding design authority: docs/scrum/ui-rewrite/design-brief.md
+ * (overrides the generated design-system/uptime-monitor-v3-rewrite/MASTER.md
+ * where the two disagree — MASTER's Cinzel/Josefin fonts and GSAP motion are
+ * explicitly overridden by the brief; its color/spacing/shadow numbers are
+ * the starting point, retuned here for dark-first + a 7-status health
+ * palette).
  *
- * Components consume ONLY these custom properties — never raw hex — per the
- * sprint-25 conventions checklist ("tokens, not hex"), reaffirmed by the
- * sprint-38 conventions checklist.
+ * Dark is the DEFAULT theme (deep-space canvas, teal-500 primary) — the
+ * shared `:root` block below carries the dark values directly (so the
+ * theme renders correctly even before the pre-paint script in index.html
+ * runs), and `:root[data-theme='dark']` repeats the same selector for
+ * explicitness/symmetry with the light override. `:root[data-theme='light']`
+ * is the full light theme (mint-tinted canvas, teal-700 for on-light
+ * contrast). Token NAMES are the stable contract every component consumes
+ * — never a raw hex outside this file — so a future re-tune only touches
+ * this file.
  */
 
+:root,
 :root[data-theme='dark'] {
   /* Surfaces */
-  --color-canvas: #0b0d10;
-  --color-surface-1: #111419;
-  --color-surface-2: #171b21;
-  --color-surface-3: #1b2027;
-  --color-surface-4: #1b2027;
+  --color-canvas: #0a0e14;
+  --color-surface-1: #111823;
+  --color-surface-2: #161f2b;
+  --color-surface-3: #1b2530;
+  --color-surface-4: #1b2530;
 
-  /* Hairlines */
-  --color-hairline: #22272e;
-  --color-hairline-strong: #2d333b;
+  /* Hairlines — low-contrast, depth comes from the border-glow shadow
+     scale below, not strong borders. */
+  --color-hairline: #1e2733;
+  --color-hairline-strong: #2a3644;
 
   /* Ink (4-step hierarchy) */
-  --color-ink: #e6e9ee;
-  --color-ink-muted: #98a1ac;
-  --color-ink-subtle: #69727d;
-  --color-ink-tertiary: #69727d;
+  --color-ink: #e7edf0;
+  --color-ink-muted: #93a3af;
+  --color-ink-subtle: #6b7c89;
+  --color-ink-tertiary: #6b7c89;
 
-  /* Accent — used scarcely (buttons, focus, active tab, links) */
-  --color-accent: #7c85f0;
-  --color-accent-hover: #939bf5;
-  --color-accent-focus: #7c85f0;
-  --color-accent-bg: rgba(124, 133, 240, 0.14);
-  --color-on-accent: #ffffff;
+  /* Accent — teal-500 family (brief §Identity: Color), used for focus
+     rings, links, active states, and tile accent edges. Buttons pair it
+     with a near-black `--color-on-accent` (teal-500 is too light for
+     white text to hold 4.5:1 — verified in tokens.test.ts). */
+  --color-accent: #14b8a6;
+  --color-accent-hover: #2dd4c0;
+  --color-accent-focus: #14b8a6;
+  --color-accent-bg: rgba(20, 184, 166, 0.14);
+  --color-on-accent: #04140f;
 
-  /* Health palette — 7 statuses, non-text cues only; each has a -subtle
-     badge surface. `down` covers the "major" outage severity; `maintenance`
-     is unchanged from the pre-retune blue (a domain concept, not in the
-     mock's 5-state SM but kept for maintenance-window indicators). */
+  /* Secondary accent — info/links (brief: "accent blue #0369A1"). The
+     dark theme lightens it to #38bdf8 to hold contrast against the deep
+     canvas; #0369A1 itself is the LIGHT-theme value (defined below). */
+  --color-accent-blue: #38bdf8;
+
+  /* Health palette — 7 statuses, non-text cues only (dot + `-subtle`
+     badge background); text labels are always an ink token (StatusBadge).
+     `down` covers the "major" outage severity; `maintenance` is a domain
+     concept (a scheduled window), not a health state. */
   --color-health-up: #3fb950;
   --color-health-up-subtle: rgba(63, 185, 80, 0.13);
   --color-health-degraded: #d6a419;
@@ -60,39 +75,53 @@
   /* Overlay / scrim */
   --color-overlay: rgba(0, 0, 0, 0.6);
 
-  /* Elevation — the mock ships no shadow in dark (flat surfaces + hairlines
-     carry all depth cues there). */
-  --shadow: none;
+  /* Elevation — "border-glow" style (brief §Shape/depth): a hairline
+     highlight instead of a heavy drop shadow, growing into a subtle teal
+     glow at the highest (interactive/hover) level. `--shadow` is the
+     Panel-era single-level alias, kept for the primitives this story does
+     not touch (Panel/SummaryCard). */
+  --shadow-sm: 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-md:
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 8px 24px -4px rgba(0, 0, 0, 0.5);
+  --shadow-lg:
+    0 0 0 1px rgba(20, 184, 166, 0.28),
+    0 16px 40px -8px rgba(0, 0, 0, 0.6);
+  --shadow: var(--shadow-sm);
 }
 
 :root[data-theme='light'] {
-  /* Surfaces */
-  --color-canvas: #f6f7f9;
+  /* Surfaces — mint-tinted canvas (brief exact value), white tiles. */
+  --color-canvas: #f0fdfa;
   --color-surface-1: #ffffff;
-  --color-surface-2: #f0f2f5;
-  --color-surface-3: #eaedf1;
-  --color-surface-4: #eaedf1;
+  --color-surface-2: #e6f7f3;
+  --color-surface-3: #dff3ee;
+  --color-surface-4: #dff3ee;
 
   /* Hairlines */
-  --color-hairline: #e4e7eb;
-  --color-hairline-strong: #d3d8de;
+  --color-hairline: #cbeae3;
+  --color-hairline-strong: #a8ded2;
 
   /* Ink (4-step hierarchy) */
-  --color-ink: #161a1e;
-  --color-ink-muted: #59626c;
-  --color-ink-subtle: #8a929b;
-  --color-ink-tertiary: #8a929b;
+  --color-ink: #0b2b27;
+  --color-ink-muted: #3f6b63;
+  --color-ink-subtle: #6b8f87;
+  --color-ink-tertiary: #6b8f87;
 
-  /* Accent — same hue family; hover/focus darken for light-canvas contrast
-     instead of the dark theme's lighten. */
-  --color-accent: #5b60d6;
-  --color-accent-hover: #4a4fc0;
-  --color-accent-focus: #5b60d6;
-  --color-accent-bg: rgba(91, 96, 214, 0.1);
+  /* Accent — teal-700 (brief: "#0F766E for on-light contrast"), paired
+     with white on-accent text (verified >= 4.5:1 in tokens.test.ts).
+     Hover DARKENS on light canvas (dark theme lightens instead). */
+  --color-accent: #0f766e;
+  --color-accent-hover: #0c5d57;
+  --color-accent-focus: #0f766e;
+  --color-accent-bg: rgba(15, 118, 110, 0.1);
   --color-on-accent: #ffffff;
 
-  /* Health palette — 7 statuses, darkened from the dark-theme values to hold
-     ink-level contrast on light surfaces; text itself never uses these. */
+  /* Secondary accent — info/links, the brief's literal light-theme value. */
+  --color-accent-blue: #0369a1;
+
+  /* Health palette — darkened from the dark-theme hues to hold ink-level
+     contrast on light surfaces; text itself never uses these directly. */
   --color-health-up: #1a7f37;
   --color-health-up-subtle: rgba(26, 127, 55, 0.11);
   --color-health-degraded: #9a6700;
@@ -110,22 +139,36 @@
 
   --color-overlay: rgba(13, 14, 16, 0.4);
 
-  /* Elevation — a subtle two-layer shadow gives light-theme cards depth
-     against the near-white canvas. */
-  --shadow: 0 1px 3px rgba(18, 24, 38, 0.06), 0 1px 2px rgba(18, 24, 38, 0.04);
+  /* Elevation — soft layered shadows (brief §Shape/depth) give light-theme
+     tiles depth against the near-white canvas. */
+  --shadow-sm: 0 1px 2px rgba(11, 43, 39, 0.06);
+  --shadow-md:
+    0 4px 10px rgba(11, 43, 39, 0.08),
+    0 1px 3px rgba(11, 43, 39, 0.06);
+  --shadow-lg:
+    0 16px 32px rgba(11, 43, 39, 0.14),
+    0 2px 6px rgba(11, 43, 39, 0.08);
+  --shadow: var(--shadow-sm);
 }
 
 :root {
-  color-scheme: light dark;
+  color-scheme: dark light;
 
-  /* Type families — self-hosted Geist / Geist Mono (STORY-055 AC3;
-     @fontsource/geist + @fontsource/geist-mono, imported in main.tsx). */
+  /* Type families — self-hosted Space Grotesk (headings) / Inter (body) /
+     JetBrains Mono (tabular data, timestamps, latency, IDs) via
+     @fontsource, imported in global.css. Overrides MASTER.md's
+     Cinzel/Josefin Sans per the design brief (wrong "luxury property"
+     mood for an ops tool). */
+  --font-heading:
+    'Space Grotesk', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
   --font-sans:
-    'Geist', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
-  --font-mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+    'Inter', -apple-system, system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;
 
-  /* Type scale — retuned to the reference's compact operator-console scale
-     (13px body, tight headings) per sprint-38 plan.md. */
+  /* Type scale — compact operator-console scale (13px body, tight
+     headings), unchanged in shape from the pre-rewrite scale so every
+     surviving primitive (Panel/SummaryCard/Table/Timeline/UptimeBar) needs
+     no rewrite, only the font-family swap above. */
   --fs-h1: 17px;
   --fw-h1: 650;
   --lh-h1: 1.3;
@@ -166,21 +209,18 @@
   --lh-mono: 1.5;
   --ls-mono: 0;
 
-  /* Uppercase section-label type (table captions, summary-card labels) —
-     11px/600/uppercase/.05em per the sprint-38 plan.md type scale, kept
-     separate from the general --fs-caption so existing "cap note" copy
-     (Check History / Publications render caps) isn't forced uppercase/bold. */
+  /* Uppercase section-label type (table captions, summary-card labels). */
   --fs-label: 11px;
   --fw-label: 600;
   --lh-label: 1.4;
   --ls-label: 0.05em;
 
-  /* Stat and chip typography (STORY-069) */
+  /* Stat and chip typography. */
   --fs-stat: 24px;
   --fs-chip: 10.5px;
   --fw-semibold: 600;
 
-  /* Spacing — 4px base */
+  /* Spacing — 4px base, dense rhythm (brief: density 8/10). */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -189,24 +229,38 @@
   --space-8: 32px;
   --space-12: 48px;
 
-  /* Radii — control ~7px, card 8px, chip 4-5px, pill fully round. */
-  --radius-control: 7px;
-  --radius-panel: 8px;
-  --radius-chip: 4px;
+  /* Radii — bento tile 16px (brief §Shape/depth: "rounded-xl tiles"),
+     control ~8px, chip 4-6px, pill fully round. */
+  --radius-control: 8px;
+  --radius-panel: 12px;
+  --radius-tile: 16px;
+  --radius-chip: 6px;
   --radius-pill: 9999px;
-  --radius-badge: 8px;
 
-  /* Borders (STORY-069) */
-  --border-badge-width: 1.5px;
-
-  /* Focus ring — accent, offset by a canvas-colored ring for legibility on
-     any surface (AC6: visible focus ring on every interactive element). */
+  /* Focus ring — two-tone (canvas-colored inner gap + accent outer ring)
+     so it reads clearly on ANY surface in either theme (brief: "visible
+     focus-ring tokens, two-tone, visible both themes"). */
   --focus-ring: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-accent-focus);
 
+  /* Motion — CSS-only, 150-250ms, transform/opacity only (brief overrides
+     MASTER's GSAP overlay: "ops tools must feel instant"). Every animated
+     rule using these MUST also be inside a `@media (prefers-reduced-motion:
+     no-preference)` guard (see global.css) or be a non-essential hover-only
+     affordance. */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 250ms;
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-scale — a shared stacking order so a sheet/overlay/toast introduced
+     by a later story can never accidentally sit under a sticky header. */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-dropdown: 20;
+  --z-overlay: 30;
+  --z-modal: 40;
+  --z-toast: 50;
+
   /* Layout constants */
-  --nav-height: 56px;
-  --nav-width-expanded: 212px;
-  --nav-width-collapsed: 52px;
-  --header-height: 52px;
-  --target-min: 40px;
+  --target-min: 44px;
 }
