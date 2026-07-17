@@ -8,17 +8,25 @@ export interface SummaryCardViewModel {
   value: number
   sub: string
   tone: SummaryCardTone
+  /** Passed straight through to `SummaryCard`'s `neutralAtZero` (STORY-099
+   * AC1, journal D4): true for the "bad state" buckets (degraded/partial/
+   * down) — a 0 count there is good news, not an alert — false for
+   * Operational, which stays its status color regardless of count. */
+  neutralAtZero: boolean
 }
 
 /**
- * Derives the Dashboard's summary-card row (STORY-057 AC1) from
- * `GET /api/v1/components` — REAL counts only, never a fabricated total.
- * One card per health bucket `toHealthStatus` can produce among component
- * statuses (up/degraded/partial/down), led by a "Components" total card, so
- * the cards' values always reconcile with `components.length`. A status the
- * mapper doesn't recognize (`toHealthStatus`'s `'unknown'` fallback) gets
- * its own trailing card too, ONLY when it actually occurs — no permanent
- * zero-value "Unknown" card cluttering the common case.
+ * Derives the Dashboard's summary-card row (STORY-057 AC1, re-scoped by
+ * STORY-099 AC1) from `GET /api/v1/components` — REAL counts only, never a
+ * fabricated total. One card per health bucket `toHealthStatus` can produce
+ * among component statuses (up/degraded/partial/down); the redundant
+ * "Components" total card (it only ever duplicated "Operational N of N") is
+ * gone — the Dashboard replaces that slot with the "Pending approvals" /
+ * "Maintenance" cross-tab awareness action cards instead (`DashboardPage.tsx`,
+ * not derived from this function). A status the mapper doesn't recognize
+ * (`toHealthStatus`'s `'unknown'` fallback) gets its own trailing card too,
+ * ONLY when it actually occurs — no permanent zero-value "Unknown" card
+ * cluttering the common case.
  */
 export function summarizeComponents(components: ComponentDTO[]): SummaryCardViewModel[] {
   const total = components.length
@@ -39,14 +47,21 @@ export function summarizeComponents(components: ComponentDTO[]): SummaryCardView
   }
 
   const cards: SummaryCardViewModel[] = [
-    { key: 'total', label: 'Components', value: total, sub: 'monitored', tone: 'accent' },
-    { key: 'up', label: 'Operational', value: counts.up, sub: `of ${total}`, tone: 'up' },
+    {
+      key: 'up',
+      label: 'Operational',
+      value: counts.up,
+      sub: `of ${total}`,
+      tone: 'up',
+      neutralAtZero: false,
+    },
     {
       key: 'degraded',
       label: 'Degraded',
       value: counts.degraded,
       sub: `of ${total}`,
       tone: 'degraded',
+      neutralAtZero: true,
     },
     {
       key: 'partial',
@@ -54,8 +69,16 @@ export function summarizeComponents(components: ComponentDTO[]): SummaryCardView
       value: counts.partial,
       sub: `of ${total}`,
       tone: 'partial',
+      neutralAtZero: true,
     },
-    { key: 'down', label: 'Down', value: counts.down, sub: `of ${total}`, tone: 'down' },
+    {
+      key: 'down',
+      label: 'Down',
+      value: counts.down,
+      sub: `of ${total}`,
+      tone: 'down',
+      neutralAtZero: true,
+    },
   ]
 
   if (counts.unknown > 0) {
@@ -65,6 +88,7 @@ export function summarizeComponents(components: ComponentDTO[]): SummaryCardView
       value: counts.unknown,
       sub: `of ${total}`,
       tone: 'neutral',
+      neutralAtZero: false,
     })
   }
 

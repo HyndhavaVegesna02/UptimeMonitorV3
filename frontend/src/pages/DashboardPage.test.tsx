@@ -1,10 +1,26 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
-import { FIXTURE_COMPONENTS, FIXTURE_COMPONENTS_ALL_STATUSES } from '../mocks/handlers'
+import {
+  FIXTURE_COMPONENTS,
+  FIXTURE_COMPONENTS_ALL_STATUSES,
+  FIXTURE_PROPOSALS,
+} from '../mocks/handlers'
 import { DashboardPage } from './DashboardPage'
+
+/** Renders `DashboardPage` inside a `MemoryRouter` — required as of
+ * STORY-099 since the summary row's action cards render as a real routed
+ * `Link` (via `SummaryCard`'s `href`), which throws outside a Router. */
+function renderDashboard() {
+  return render(
+    <MemoryRouter>
+      <DashboardPage />
+    </MemoryRouter>,
+  )
+}
 
 /** Scopes a summary-card lookup to the summary row — several status LABELS
  * (e.g. "Degraded") are shared with the per-row `StatusBadge` text below,
@@ -22,7 +38,7 @@ describe('DashboardPage', () => {
   })
 
   it('renders the h1 via the shared PageHeader, outside the content card, opted into full width (STORY-097 AC1, AC2)', async () => {
-    const { container } = render(<DashboardPage />)
+    const { container } = renderDashboard()
 
     const heading = screen.getByRole('heading', { name: 'Dashboard', level: 1 })
     expect(heading.closest('.page-header')).not.toBeNull()
@@ -33,7 +49,7 @@ describe('DashboardPage', () => {
   })
 
   it('shows a loading state, then a table with one row per component (AC1, AC2)', async () => {
-    render(<DashboardPage />)
+    renderDashboard()
 
     expect(screen.getByRole('status')).toBeInTheDocument()
 
@@ -61,12 +77,13 @@ describe('DashboardPage', () => {
     expect(screen.getAllByRole('row')).toHaveLength(FIXTURE_COMPONENTS.length + 1)
   })
 
-  it('renders a SummaryCard row derived from real component counts (AC1)', async () => {
-    render(<DashboardPage />)
+  it('renders a SummaryCard row derived from real component counts — no redundant "Components" card (STORY-099 AC1)', async () => {
+    renderDashboard()
     await screen.findByRole('table')
 
+    // The old redundant "Components" total card is gone (STORY-099).
+    expect(screen.queryByText('Components')).not.toBeInTheDocument()
     // FIXTURE_COMPONENTS: 1 operational + 1 degraded, no partial/down/unknown.
-    expect(within(cardFor('Components')).getByText('2')).toBeInTheDocument()
     expect(within(cardFor('Operational')).getByText('1')).toBeInTheDocument()
     expect(within(cardFor('Degraded')).getByText('1')).toBeInTheDocument()
     expect(within(cardFor('Partial outage')).getByText('0')).toBeInTheDocument()
@@ -74,10 +91,34 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
   })
 
+  it('renders the "bad state" cards neutral when their count is 0, while Operational always stays green (STORY-099 AC1, journal D4)', async () => {
+    renderDashboard()
+    await screen.findByRole('table')
+
+    // FIXTURE_COMPONENTS: 1 operational + 1 degraded -> partial/down are 0.
+    expect(cardFor('Operational')).toHaveClass('summary-card--up')
+    expect(cardFor('Degraded')).toHaveClass('summary-card--degraded')
+    expect(cardFor('Partial outage')).toHaveClass('summary-card--neutral')
+    expect(cardFor('Down')).toHaveClass('summary-card--neutral')
+  })
+
+  it('restores the status color for a "bad state" card once its count is above 0 (STORY-099 AC1)', async () => {
+    server.use(
+      http.get('/api/v1/components', () =>
+        HttpResponse.json(FIXTURE_COMPONENTS_ALL_STATUSES),
+      ),
+    )
+    renderDashboard()
+    await screen.findByRole('table')
+
+    expect(cardFor('Partial outage')).toHaveClass('summary-card--partial')
+    expect(cardFor('Down')).toHaveClass('summary-card--down')
+  })
+
   it('renders the empty state when the backend returns no components (AC2)', async () => {
     server.use(http.get('/api/v1/components', () => HttpResponse.json([])))
 
-    render(<DashboardPage />)
+    renderDashboard()
 
     expect(
       await screen.findByText('No components configured'),
@@ -98,7 +139,7 @@ describe('DashboardPage', () => {
       }),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Could not load components',
@@ -119,7 +160,7 @@ describe('DashboardPage', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
 
     await screen.findByRole('table')
 
@@ -143,7 +184,7 @@ describe('DashboardPage', () => {
   })
 
   it('binds the per-row uptime % and sparkline to real availability/history, omitting fabricated segments where none exist (AC3)', async () => {
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     // sockshop-frontend: real availability_pct (0.995) + a real 4-observation
@@ -168,7 +209,7 @@ describe('DashboardPage', () => {
     vi.setSystemTime(new Date('2026-07-03T13:33:17.931000Z'))
 
     const user = userEvent.setup()
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
@@ -199,7 +240,7 @@ describe('DashboardPage', () => {
 
   it('is keyboard-operable: focus + Enter toggles the expand affordance (AC2)', async () => {
     const user = userEvent.setup()
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
@@ -217,7 +258,7 @@ describe('DashboardPage', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
@@ -234,7 +275,7 @@ describe('DashboardPage', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     const toggle = await screen.findByRole('button', { name: FIXTURE_COMPONENTS[0].name })
@@ -331,7 +372,7 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     // Active + the starts_at boundary instant ARE marked.
@@ -370,7 +411,7 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
     await screen.findByRole('table')
 
     const row = rowFor(DEGRADED_ACTIVE.name)
@@ -388,11 +429,117 @@ describe('DashboardPage — maintenance indicator (STORY-046)', () => {
       ),
     )
 
-    render(<DashboardPage />)
+    renderDashboard()
 
     const table = await screen.findByRole('table')
     expect(table).toBeInTheDocument()
     expect(screen.getByText(FIXTURE_COMPONENTS[0].name)).toBeInTheDocument()
     expect(screen.queryByText('Under maintenance')).not.toBeInTheDocument()
+  })
+})
+
+describe('DashboardPage — cross-tab awareness action cards (STORY-099 AC2)', () => {
+  // Fixed instant so active/upcoming windows are deterministic (2026-06-25
+  // working-agreement: non-aligned-boundary tests pin `now`).
+  const NOW = new Date('2026-07-07T09:00:00Z')
+
+  beforeEach(() => {
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  const ACTIVE_WINDOW = {
+    id: 201,
+    component_id: 'sockshop-frontend',
+    starts_at: '2026-07-07T08:00:00Z',
+    ends_at: '2026-07-07T10:00:00Z',
+    reason: null,
+    title: null,
+  }
+  const PAST_WINDOW = {
+    id: 202,
+    component_id: 'sockshop-catalogue',
+    starts_at: '2026-07-01T08:00:00Z',
+    ends_at: '2026-07-01T09:00:00Z',
+    reason: null,
+    title: null,
+  }
+
+  it('replaces the old "Components" card with "Pending approvals" and "Maintenance" action cards, showing real live counts (AC2)', async () => {
+    server.use(
+      http.get('/api/v1/maintenance', () => HttpResponse.json([ACTIVE_WINDOW, PAST_WINDOW])),
+    )
+
+    renderDashboard()
+    await screen.findByRole('table')
+
+    expect(
+      await within(cardFor('Pending approvals')).findByText(String(FIXTURE_PROPOSALS.length)),
+    ).toBeInTheDocument()
+    // Only the ACTIVE window counts — the past one is excluded.
+    expect(within(cardFor('Maintenance')).getByText('1')).toBeInTheDocument()
+  })
+
+  it('renders each action card as a single interactive link to its own tab, keyboard-focusable (AC2)', async () => {
+    renderDashboard()
+    await screen.findByRole('table')
+
+    const approvalsLink = await screen.findByRole('link', { name: /Pending approvals/ })
+    expect(approvalsLink).toHaveAttribute('href', '/approvals')
+    expect(approvalsLink.tagName).toBe('A')
+    approvalsLink.focus()
+    expect(approvalsLink).toHaveFocus()
+
+    const maintenanceLink = screen.getByRole('link', { name: /Maintenance/ })
+    expect(maintenanceLink).toHaveAttribute('href', '/maintenance')
+  })
+
+  it('renders neutral at a real 0 count (never alert-red) — nothing pending is good news (AC2, journal D4)', async () => {
+    server.use(
+      http.get('/api/v1/approvals', () => HttpResponse.json([])),
+      http.get('/api/v1/maintenance', () => HttpResponse.json([PAST_WINDOW])),
+    )
+
+    renderDashboard()
+    await screen.findByRole('table')
+
+    expect(await within(cardFor('Pending approvals')).findByText('0')).toBeInTheDocument()
+    expect(cardFor('Pending approvals')).toHaveClass('summary-card--neutral')
+    expect(within(cardFor('Maintenance')).getByText('0')).toBeInTheDocument()
+    expect(cardFor('Maintenance')).toHaveClass('summary-card--neutral')
+  })
+
+  it('renders the indigo/info accent tone (never alert-red) once a count is above 0 (AC2, journal D4)', async () => {
+    server.use(
+      http.get('/api/v1/approvals', () => HttpResponse.json(FIXTURE_PROPOSALS)),
+      http.get('/api/v1/maintenance', () => HttpResponse.json([ACTIVE_WINDOW])),
+    )
+
+    renderDashboard()
+    await screen.findByRole('table')
+
+    await within(cardFor('Pending approvals')).findByText(String(FIXTURE_PROPOSALS.length))
+    expect(cardFor('Pending approvals')).toHaveClass('summary-card--accent')
+    expect(within(cardFor('Maintenance')).getByText('1')).toBeInTheDocument()
+    expect(cardFor('Maintenance')).toHaveClass('summary-card--accent')
+  })
+
+  it('shows an honest em-dash (never a fabricated 0) while the approvals/maintenance counts are still unresolved', async () => {
+    // Handlers that never resolve — the components fetch (a DIFFERENT
+    // endpoint) still succeeds and gates the summary row on, but approvals/
+    // maintenance stay in their `loading` phase for the life of the test.
+    server.use(
+      http.get('/api/v1/approvals', () => new Promise(() => {})),
+      http.get('/api/v1/maintenance', () => new Promise(() => {})),
+    )
+
+    renderDashboard()
+    await screen.findByRole('table')
+
+    expect(cardFor('Pending approvals')).toHaveTextContent('—')
+    expect(cardFor('Maintenance')).toHaveTextContent('—')
   })
 })

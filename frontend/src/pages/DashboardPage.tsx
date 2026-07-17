@@ -24,6 +24,8 @@ import { formatPct } from '../features/availability/format'
 import { formatLocationLabel } from '../lib/formatLocation'
 import type { AvailabilityRange } from '../features/availability/windowRange'
 import { windowToRange } from '../features/availability/windowRange'
+import { actionCardView } from '../features/dashboard/actionCard'
+import { countActiveOrUpcomingWindows } from '../features/dashboard/maintenanceSummary'
 import { summarizeComponents } from '../features/dashboard/summary'
 import { useComponents } from '../features/dashboard/useComponents'
 import { useComponentSignals } from '../features/dashboard/useComponentSignals'
@@ -31,6 +33,7 @@ import type { ComponentUptime } from '../features/dashboard/useComponentUptime'
 import { useComponentUptime } from '../features/dashboard/useComponentUptime'
 import { useMaintenanceWindows } from '../features/dashboard/useMaintenanceWindows'
 import { useTopology } from '../features/dashboard/useTopology'
+import { useApprovalsBadge } from '../features/shell/useApprovalsBadge'
 import { deriveWindowState } from '../features/maintenance/windowState'
 import './DashboardPage.css'
 
@@ -232,26 +235,33 @@ function ComponentRow({
 }
 
 /**
- * The Dashboard tab (STORY-057 rebuild of STORY-015b/STORY-046): a summary
- * row of `SummaryCard`s (AC1) above every monitored component's health,
- * uptime sparkline, and status — grouped under ONE section (no `group`
- * field on the wire yet; per-group sections are STORY-067). Fetches
- * `GET /api/v1/components` (`useComponents`, the primary/blocking fetch —
- * its own loading/error/empty states gate the whole table),
- * `GET /api/v1/topology` (`useTopology`, feeds the expand affordance +
- * signal drill-down + uptime's primary-signal history), and
- * `GET /api/v1/maintenance` (`useMaintenanceWindows`, STORY-046 overlay).
+ * The Dashboard tab (STORY-057 rebuild of STORY-015b/STORY-046, re-scoped by
+ * STORY-099): a summary row of `SummaryCard`s (AC1) above every monitored
+ * component's health, uptime sparkline, and status — grouped under ONE
+ * section (no `group` field on the wire yet; per-group sections are
+ * STORY-067). Fetches `GET /api/v1/components` (`useComponents`, the
+ * primary/blocking fetch — its own loading/error/empty states gate the whole
+ * table; STORY-099 also reads its `lastUpdatedAt` for the header's "Updated
+ * Xs ago" indicator), `GET /api/v1/topology` (`useTopology`, feeds the expand
+ * affordance + signal drill-down + uptime's primary-signal history),
+ * `GET /api/v1/approvals` (`useApprovalsBadge`, the "Pending approvals"
+ * cross-tab awareness card — STORY-099 AC2), and `GET /api/v1/maintenance`
+ * (`useMaintenanceWindows`, both the STORY-046 per-row overlay AND the
+ * "Maintenance" awareness card's active/upcoming count).
  *
  * Graceful degradation (AC2): topology/uptime/maintenance are all
  * ENHANCEMENTS layered on top of the primary components list — a failure or
  * loading state in any of them degrades to "no expand affordance" / "no
  * uptime data" / "no maintenance badge" respectively, and NEVER blocks or
  * clears the primary table. Only a `useComponents` failure blocks the page.
+ * The two action cards degrade the same way, via `actionCardView` — an
+ * unresolved count renders an honest em-dash, never a fabricated 0.
  */
 export function DashboardPage() {
   const { state, retry } = useComponents()
   const { state: topologyState } = useTopology()
   const { state: maintenanceState } = useMaintenanceWindows()
+  const approvalsCount = useApprovalsBadge()
   const range = useDashboardRange()
 
   const topology = topologyState.phase === 'success' ? topologyState.data : EMPTY_TOPOLOGY
@@ -285,6 +295,17 @@ export function DashboardPage() {
 
   const components = state.phase === 'success' ? state.data : []
 
+  // Cross-tab awareness action cards (STORY-099 AC2): an unresolved count
+  // (loading or error on either fetch) stays honestly unknown — `undefined`
+  // — rather than fabricating a 0, mirroring `useApprovalsBadge`'s own
+  // graceful-degradation contract.
+  const maintenanceCount =
+    maintenanceState.phase === 'success'
+      ? countActiveOrUpcomingWindows(maintenanceState.data)
+      : undefined
+  const approvalsCard = actionCardView(approvalsCount)
+  const maintenanceCard = actionCardView(maintenanceCount)
+
   return (
     <div className="dashboard-page page page--wide">
       {/* Accessible name kept as "Dashboard" (not the mock's "System
@@ -304,6 +325,20 @@ export function DashboardPage() {
 
       {state.phase === 'success' && (
         <div className="dashboard-page__summary">
+          <SummaryCard
+            label="Pending approvals"
+            value={approvalsCard.value}
+            sub="open"
+            tone={approvalsCard.tone}
+            href="/approvals"
+          />
+          <SummaryCard
+            label="Maintenance"
+            value={maintenanceCard.value}
+            sub="active or upcoming"
+            tone={maintenanceCard.tone}
+            href="/maintenance"
+          />
           {summarizeComponents(components).map((card) => (
             <SummaryCard
               key={card.key}
@@ -311,6 +346,7 @@ export function DashboardPage() {
               value={card.value}
               sub={card.sub}
               tone={card.tone}
+              neutralAtZero={card.neutralAtZero}
             />
           ))}
         </div>
