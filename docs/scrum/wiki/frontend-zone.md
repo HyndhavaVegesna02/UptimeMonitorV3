@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
-verified_sha: 0f93a79
-verified_sprint: sprint-52
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/nav/SidebarDrawer.tsx, frontend/src/nav/useResponsiveSidebar.ts, frontend/src/lib/breakpoints.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/test/matchMedia.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/PageHeader/PageHeader.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/components/RelativeTime/RelativeTime.tsx]
+verified_sha: aa6dcb5
+verified_sprint: sprint-53
 status: verified
 ---
 
@@ -661,3 +661,45 @@ status: verified
   describe is unchanged by this story (h1 text, nav labels, table roles, filter behavior) — only
   the h1's DOM position (outside vs inside the card), the root container's width class, the
   Availability header's internal composition, and the four EmptyState call sites changed.
+
+### Human time & identity (STORY-098, sprint-53 — ui-redesign wave 2)
+- One shared time-formatting module, `frontend/src/lib/formatTime.ts` (journal decision D3, no new
+  date-library dependency — hand-rolled against `Intl.*` per the sprint-53 scope fence):
+  `formatRelativeTime(iso, now?)` (floors to whole minutes/hours/days, "just now" under a minute
+  either direction, `"in Xm"` for the future, raw-string passthrough on invalid input — never
+  throws), `formatAbsoluteLocal`/`formatTooltip` (locale-default absolute local time with the
+  timezone spelled out via `timeStyle: 'long'`, plus the raw ISO-UTC instant, for a tooltip/
+  `title`), `formatLocalRange(startIso, endIso)` (the MAINTENANCE-surface counterpart — absolute
+  LOCAL start–end text with a single trailing explicit timezone label extracted via
+  `Intl.DateTimeFormat({timeZoneName:'short'}).formatToParts`, plus a raw-UTC-range `.tooltip`),
+  and `useRelativeTime(iso, now?)` (a render hook ticking forward every 60s via `setInterval`,
+  skipping the tick while `document.visibilityState === 'hidden'`; `now` is injectable for test
+  hermeticity, defaulting to the real clock). `frontend/src/lib/formatLocation.ts::
+  formatLocationLabel` shortens ANY location id to a generic `"Location …<last-4-chars>"` display
+  form — deliberately NOT a vendor-specific mapping (no `SYNTHETIC_LOCATION`-prefix special-casing),
+  so a future vendor's id shape shortens the same way; empty input passes through unchanged.
+- `frontend/src/components/RelativeTime/RelativeTime.tsx` is the shared rendering primitive
+  wrapping `useRelativeTime` — a `<time dateTime={iso} title={tooltip}>{relativeText}</time>`, in
+  the `components/index.ts` barrel. Every RECENCY-oriented surface adopts it directly:
+  `CheckHistoryPage.tsx`'s Timestamp column, the Dashboard signal drill-down's "Last observed"
+  cell (`DashboardPage.tsx::SignalsDrilldown`, `null` still renders as an em-dash — never wrapped),
+  `ApprovalCard.tsx`'s "Proposed …" line, and `PublicationsPage.tsx`'s per-item timestamp — none of
+  these four re-implement the ticking/tooltip mechanics themselves. The SCHEDULING surface
+  (`MaintenancePage.tsx`'s per-window `component · range` line) instead calls `formatLocalRange`
+  directly and renders a plain `<span title={range.tooltip}>{range.text}</span>` (AC3 only requires
+  a tooltip, not a `<time dateTime>`, for a two-instant range) — the schedule FORM's own
+  `datetime-local` input is UNCHANGED, this is a display-only change.
+- `CheckHistoryPage.tsx` and `DashboardPage.tsx`'s signal drill-down also adopt
+  `formatLocationLabel` for their Location cell/column — the cell keeps the RAW id as its `title`
+  tooltip (`getByTitle` in tests). `CheckHistoryPage.tsx`'s location-FILTER `<select>` keeps raw ids
+  as OPTION VALUES (its filtering behavior/selection is unchanged) — only the visible OPTION TEXT is
+  now prettified through the same helper.
+- No raw ISO-8601/microsecond string or bare vendor location id is left as PRIMARY rendered text on
+  any of the five converted surfaces (AC1) — every existing page test asserting the old raw-text
+  contract was REWRITTEN (2026-06-29 contract-change agreement) to assert the new relative/local/
+  short-label text plus the `dateTime`/`title` attributes instead of deleting coverage; several
+  tests now pin a fixed `vi.setSystemTime(...)` (mirroring the pre-existing `MaintenancePage.test.tsx`
+  pattern) so the relative-time assertions are deterministic. Frontend-only; six backend gates
+  untouched-green (empty diff — no backend source change). `code_refs` += `lib/formatTime.ts`,
+  `lib/formatLocation.ts`, `components/RelativeTime/RelativeTime.tsx`. Test count at HEAD: 442
+  tests / 58 files (`npm test`, all green). verified_sha = aa6dcb5.
