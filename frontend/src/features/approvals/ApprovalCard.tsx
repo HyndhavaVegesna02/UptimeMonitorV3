@@ -44,17 +44,29 @@ function formatLatencyMs(latencyMs: number | null): string {
 }
 
 /**
- * One pending proposal rendered as a card with a left severity-accent
- * stripe (STORY-059 AC1) — replaces the STORY-015c table row. Severity is
- * DERIVED from `to_status` via `deriveSeverity`, never a fake field. The
- * from -> to transition reuses the shared `StatusBadge` (dot + text, never
- * color alone); `from_status === null` renders "New" instead of a badge
- * (a component's first-ever proposal has no prior status).
+ * One pending proposal rendered as an evidence-first card (STORY-100,
+ * journal finding #4/#14, decision D5) with a left severity-accent stripe
+ * (STORY-059 AC1). Severity is DERIVED from `to_status` via `deriveSeverity`,
+ * never a fake field. The from -> to transition reuses the shared
+ * `StatusBadge` (dot + text, never color alone); `from_status === null`
+ * renders "New" instead of a badge (a component's first-ever proposal has no
+ * prior status).
+ *
+ * `component` (resolved by `ApprovalsPage` from topology) supplies the
+ * friendly name (`proposal.component_id` stays visible as a secondary slug)
+ * and the primary signal fed to `useProposalEvidence` (STORY-100 AC1): a
+ * per-location "latest result" list (status/latency/relative time), a
+ * compact skeleton while loading, and a quiet "Evidence unavailable" note on
+ * a fetch failure — the card NEVER blocks Approve/Reject on evidence (AC4).
+ * A resolved primary signal also renders a "View checks" deep link to Check
+ * History, pre-filtered to that signal (AC2).
  *
  * Approve/Reject preserve the idle -> confirming -> submitting -> failed
  * state machine from STORY-015c exactly (AC2) — only the markup changed;
  * the 409/404 notice banner lives one level up, in `ApprovalsPage`, since
- * it is not scoped to a single card.
+ * it is not scoped to a single card. The approve confirm step states the
+ * publish consequence (component + target status, STORY-100 AC3, via
+ * `confirmPrompt`); the reject prompt is unchanged.
  *
  * "Proposed …" (STORY-098) renders via the shared `RelativeTime` primitive —
  * relative text ticking at least once a minute, the raw `proposed_at`

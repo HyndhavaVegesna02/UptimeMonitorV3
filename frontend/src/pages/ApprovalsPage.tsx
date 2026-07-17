@@ -11,18 +11,24 @@ import { useApprovalsTopology } from '../features/approvals/useApprovalsTopology
 import './ApprovalsPage.css'
 
 /**
- * The Approvals tab (STORY-015c; card layout per STORY-059): the human
- * approval gate — a degradation reaches the public Statuspage only after an
- * operator approves it here. Fetches `GET /api/v1/approvals` via
- * `useApprovals` and renders one card per open proposal (STORY-059 AC1):
- * `component_id`, a severity accent stripe DERIVED from `to_status`
- * (`features/approvals/severity.ts`), the `from_status -> to_status`
- * transition (two `StatusBadge`s; "New" when `from_status` is null), and
- * real `proposed_at` — plus Approve/Reject actions.
+ * The Approvals tab (STORY-015c; card layout per STORY-059; evidence-first
+ * per STORY-100, journal finding #4/#14, decision D5): the human approval
+ * gate — a degradation reaches the public Statuspage only after an operator
+ * approves it here. Fetches `GET /api/v1/approvals` via `useApprovals`,
+ * joins each proposal's `component_id` against `useApprovalsTopology()`
+ * (`GET /api/v1/topology`, STORY-100 AC1) for a friendly name + primary
+ * signal, and renders one card per open proposal wrapped in the standard
+ * `Panel` (review-52 note): a severity accent stripe DERIVED from
+ * `to_status` (`features/approvals/severity.ts`), the `from_status ->
+ * to_status` transition, real `proposed_at`, per-location evidence, a "View
+ * checks" deep link, and Approve/Reject actions.
  *
- * Fields the API does not expose (reason/source/detected-ago/checks/
- * triggering-signals — not on `ProposalDTO`) are OMITTED, never faked
- * (AC3) — deferred to STORY-063 proposal enrichment.
+ * Fields the API does not expose (reason/source/detected-ago/triggering-
+ * signals — not on `ProposalDTO`) are still OMITTED, never faked (AC3) —
+ * deferred to STORY-063 proposal enrichment. A topology fetch failure/
+ * loading tick degrades every card to its raw `component_id` slug and no
+ * evidence — never blocks the queue (AC4) — rather than surfacing its own
+ * error state on this page.
  *
  * The idle -> confirming -> submitting -> failed decision state machine and
  * the 409/404 notice banner are carried over from STORY-015c UNCHANGED
