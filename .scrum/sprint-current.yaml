@@ -54,7 +54,7 @@ stories:
     slug: page-scaffold-consistency
     points: 2
     order: 2
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-17 ~17:05 IST
 baseline_gate: "GREEN — full 8-command gate, all exit 0 at 203ed93 (2026-07-17T10:47Z).
   First run red on ruff x2: PO-installed .claude/skills scripts (2026-07-17) — vendored
   tooling, not project code; fixed by adding '.claude' to [tool.ruff] exclude (203ed93),
