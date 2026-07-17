@@ -14,11 +14,21 @@ function isTheme(value: string | null): value is Theme {
   return value === 'dark' || value === 'light'
 }
 
-/** The OS/browser color-scheme preference, defaulting to dark when unknown. */
+/**
+ * The OS/browser color-scheme preference (STORY-103 — Mission Teal is
+ * dark-first). Checks BOTH queries explicitly rather than
+ * `dark ? dark : light`: a browser that reports neither query as matching
+ * (no stated preference, or no `prefers-color-scheme` support at all)
+ * defaults to DARK, never light.
+ */
 export function getSystemTheme(): Theme {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches
-    ? 'dark'
-    : 'light'
+  if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    return 'dark'
+  }
+  if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+    return 'light'
+  }
+  return 'dark'
 }
 
 /** The persisted override, or null if none is stored (or it is corrupt). */
