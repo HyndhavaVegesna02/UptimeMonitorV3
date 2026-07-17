@@ -48,3 +48,5 @@
       (netstat or equivalent) — a wrapper-job kill alone is not evidence (2026-07-17;
       sprint-51 STORY-094 — the bash-job kill left the port-8010 uvicorn worker alive;
       an explicit taskkill /PID /F + netstat confirm was required).
+
+- [ ] Gate runs (any command set including pytest) MUST have DYNAMO_ENDPOINT_URL and any live-stack endpoint var UNSET - the suite manages its own throwaway resources; exporting the live dev-stack endpoint into a gate shell wiped the local stack (2026-07-17, sprint-52 retro A1).

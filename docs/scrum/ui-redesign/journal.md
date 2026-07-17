@@ -94,4 +94,17 @@ and their reasoning, and lessons learned.
 
 ## Sprint log
 
-(appended at each sprint close)
+### Sprint 52 (2026-07-17) — wave 1: responsive shell + consistent scaffold — 5/5 accepted
+- Shipped: adaptive sidebar (auto-rail ≤1024px, focus-managed overlay drawer ≤768px, drawer
+  closes on nav — a live-gate catch), 390px-safe layouts everywhere (scrollWidth==390 on all
+  six tabs), table-scoped horizontal scrolling, shared PageHeader (one h1/page, outside cards),
+  single container-width policy (960px token + explicit wide opt-in), designed EmptyStates on
+  all tabs, Publications empty-copy contradiction fixed, Availability controls into the header
+  actions slot. Tests 363 → 417. Findings #1–#3, #10–#11 CLOSED.
+- Lessons (details in sprint retro): L1 — never point a gate's pytest at the live dev DB
+  (fixture wipe incident); L2 — after HMR hot patches, hard-reload before trusting console
+  errors; full-viewport headless screenshots lie about sticky-element colors (use element
+  shots / computed styles); L3 — the live reality gate catches what jsdom can't (drawer-
+  covers-page); L4 — wiki ownership follows the agent definition, briefs must not improvise.
+- Remaining findings → sprint 53+: #4–#9, #12–#16 (time/identity, dashboard signal quality,
+  approvals evidence, check-history readability, mode/nav affordances).

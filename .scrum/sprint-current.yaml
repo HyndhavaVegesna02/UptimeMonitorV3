@@ -1,6 +1,8 @@
 # YourTeam active sprint board
 sprint: 52
-status: active
+status: done          # delegated review 2026-07-17: both stories ACCEPT (PO delegation for
+                      # the ui-redesign initiative); merged sprint-52 -> ui-redesign (NOT main).
+                      # Velocity 5/5. Final PO review of the whole initiative still pending.
 mode: in-process
 goal: "UI redesign wave 1: responsive shell (adaptive sidebar + mobile-safe layouts) and consistent page scaffold across all six tabs."
 branch: sprint-52          # off ui-redesign (NOT main) — initiative branch structure per PO directive 2026-07-17;
@@ -83,5 +85,17 @@ baseline_gate: "GREEN — full 8-command gate, all exit 0 at 203ed93 (2026-07-17
   First run red on ruff x2: PO-installed .claude/skills scripts (2026-07-17) — vendored
   tooling, not project code; fixed by adding '.claude' to [tool.ruff] exclude (203ed93),
   5 pyproject-citing wiki articles re-verified (claims untouched by the exclude line)."
+final_gate:
+  head: 45c6086
+  dod_evidence:   # full 8-command gate, all exit 0, 2026-07-17T12:16-12:19Z; DYNAMO_ENDPOINT_URL
+                  # UNSET (suite ran its own throwaway DynamoDB; live local stack verified intact after)
+    - {command: "pytest", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:16:32+00:00"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
+    - {command: "ruff check .", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
+    - {command: "ruff format --check .", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
+    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:17:17+00:00"}
+    - {command: "npm test", exit_code: 0, output_tail: "55 files / 417 tests passed", commit: 45c6086, at: "2026-07-17T12:17:21+00:00"}
+    - {command: "npm run build", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:18:10+00:00"}
+    - {command: "npm run lint", exit_code: 0, commit: 45c6086, at: "2026-07-17T12:18:16+00:00"}
 hotfixes: []
 interrupts: []
