@@ -89,14 +89,20 @@ export function Sidebar({
           const accessibleLabel = hasBadge
             ? `${tab.label}, ${badgeCount} pending`
             : tab.label
+          // STORY-102 AC3: only the collapsed rail (icon-only) needs a
+          // visual tooltip — the expanded/drawer layouts already show the
+          // label text on-screen. `id` derives from `tab.icon` (unique per
+          // tab, unlike `tab.path` which is empty-ish for the root route).
+          const showTooltip = !showLabels
+          const tooltipId = showTooltip ? `sidebar-tooltip-${tab.icon}` : undefined
 
           return (
             <NavLink
               key={tab.path}
               to={tab.path}
               end={tab.path === '/'}
-              title={tab.label}
               aria-label={accessibleLabel}
+              aria-describedby={tooltipId}
               onClick={onNavigate}
               className={({ isActive }) =>
                 cx('sidebar__tab', isActive && 'sidebar__tab--active')
@@ -105,13 +111,21 @@ export function Sidebar({
               <span className="sidebar__tab-icon-wrap">
                 <Icon name={tab.icon} className="sidebar__tab-icon" />
                 {hasBadge && !showLabels ? (
-                  <span className="sidebar__badge-dot" aria-hidden="true" />
+                  <span
+                    className="sidebar__badge-dot"
+                    aria-label={`${badgeCount} pending approvals`}
+                  />
                 ) : null}
               </span>
               {showLabels ? <span className="sidebar__tab-label">{tab.label}</span> : null}
               {hasBadge && showLabels ? (
                 <span className="sidebar__badge" aria-hidden="true">
                   {badgeCount}
+                </span>
+              ) : null}
+              {showTooltip ? (
+                <span className="sidebar__tooltip" id={tooltipId} role="tooltip">
+                  {accessibleLabel}
                 </span>
               ) : null}
             </NavLink>
