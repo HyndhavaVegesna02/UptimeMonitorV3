@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 7c53685
+verified_sha: f3e4eb7
 verified_sprint: sprint-50
 status: verified
 ---
@@ -195,3 +195,12 @@ status: verified
   fixture and clean_dynamo_tables for DynamoDB Local container lifecycle integration. verified_sha -> abd8609.
 - sprint-47 (STORY-080): Hardened container connection readiness verification to retry and recover from transient connection drops under load, and collision-proofed the CLI tests (`test_dev_db_cli.py`) by dynamically allocating unique container names and ports. verified_sha -> 50a7bd9.
 - sprint-50 (STORY-089): CLAUDE.md gained the append-only deployed-topology section (live stack facts, no dev-setup or DoD content touched). Facts unchanged; re-verified. verified_sha -> 235fc37.
+- sprint-55 (STORY-103, cherry-picked from the parked sprint-52/ui-redesign line via commit
+  `f3e4eb7`): re-verified after the mechanical staleness sweep. The only `pyproject.toml` change
+  was adding `".claude"` to `[tool.ruff] exclude` (PO-installed third-party skill scripts
+  false-red'd the gate). `frontend/package.json` also changed this story (STORY-103 Step 0: added
+  `@fontsource/space-grotesk`/`@fontsource/inter`/`@fontsource/jetbrains-mono`, swapping the
+  Geist/Geist Mono fonts the STORY-055 entry below documents for the ui-rewrite's Mission Teal
+  type stack — see [[frontend-zone]] for the substantive Fact update) — the three frontend DoD
+  commands (`npm test`/`npm run build`/`npm run lint`) are UNCHANGED in shape. verified_sha ->
+  f3e4eb7.
