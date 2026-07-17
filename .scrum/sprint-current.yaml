@@ -20,7 +20,7 @@ stories:
     slug: responsive-shell
     points: 3
     order: 1
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-17 ~16:20 IST
   - id: STORY-097
     slug: page-scaffold-consistency
     points: 2
