@@ -1,0 +1,32 @@
+/* Fixed-position confirmation toast (STORY-102 AC4) — Panel's surface
+   treatment (surface-1, hairline border, panel radius) rather than a new
+   visual language, per the "match existing Panel/EmptyState conventions"
+   brief. Health-up accent border marks it as a SUCCESS confirmation only
+   (errors keep the existing role="alert" patterns, never this component). */
+.toast {
+  position: fixed;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  z-index: 50;
+  max-width: 320px;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-health-up);
+  border-radius: var(--radius-panel);
+  background: var(--color-surface-1);
+  box-shadow: var(--shadow);
+}
+
+.toast__message {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  color: var(--color-ink);
+}
+
+@media (max-width: 480px) {
+  .toast {
+    right: var(--space-3);
+    left: var(--space-3);
+    bottom: var(--space-3);
+    max-width: none;
+  }
+}

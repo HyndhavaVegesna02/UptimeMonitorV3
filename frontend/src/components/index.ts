@@ -37,3 +37,4 @@ export {
   type TimelineItemProps,
 } from './Timeline/Timeline'
 export { RelativeTime, type RelativeTimeProps } from './RelativeTime/RelativeTime'
+export { Toast, type ToastProps } from './Toast/Toast'
