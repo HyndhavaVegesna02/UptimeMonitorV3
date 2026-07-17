@@ -1,6 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import {
@@ -12,6 +13,21 @@ import { CheckHistoryPage } from './CheckHistoryPage'
 
 const TOTAL_MERGED_ROWS =
   FIXTURE_HISTORY_FRONTEND_HTTP.length + FIXTURE_HISTORY_FRONTEND_TLS.length
+
+/** Renders `CheckHistoryPage` inside a `MemoryRouter` — required as of
+ * STORY-100 since the page now reads an optional `signal` URL param via
+ * `useSearchParams` (AC2), which throws outside a Router. `route` lets a
+ * test drive a deep-linked initial URL. */
+function renderCheckHistory(
+  props: { maxRenderedRows?: number } = {},
+  route = '/check-history',
+) {
+  return render(
+    <MemoryRouter initialEntries={[route]}>
+      <CheckHistoryPage {...props} />
+    </MemoryRouter>,
+  )
+}
 
 // Fixed 4 minutes after the newest fixture observation (STORY-098) so the
 // relative-time text below is deterministic — `vi.setSystemTime` alone
@@ -30,7 +46,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('renders the h1 + subtitle via the shared PageHeader, outside the card, opted into full width (STORY-097 AC1, AC2)', async () => {
-    const { container } = render(<CheckHistoryPage />)
+    const { container } = renderCheckHistory()
 
     const heading = screen.getByRole('heading', { name: 'Check History', level: 1 })
     expect(heading.closest('.page-header')).not.toBeNull()
@@ -41,7 +57,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('renders every topology signal\'s observations merged newest-first, tagged with their component (AC1, AC2)', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1) // drop the header row
@@ -77,7 +93,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('renders Type and Code columns from ObservationDTO (STORY-064)', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     await screen.findByRole('table')
 
     expect(screen.getByRole('columnheader', { name: 'Timestamp' })).toBeInTheDocument()
@@ -90,7 +106,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('renders check_type uppercased, and the HTTP status code in the mono token, with a null code as an em-dash (STORY-064)', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
@@ -105,7 +121,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('renders latency in the mono token as integer milliseconds, and a null latency as an em-dash (never "0 ms") (AC2)', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
@@ -121,7 +137,7 @@ describe('CheckHistoryPage', () => {
   })
 
   it('has accessible names for the search input and both filter selects (AC1)', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     await screen.findByRole('table')
 
     expect(screen.getByLabelText('Search')).toBeInTheDocument()
@@ -144,7 +160,7 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     await screen.findByRole('table')
     const callsAfterLoad = historyCallCount
 
@@ -163,7 +179,7 @@ describe('CheckHistoryPage', () => {
 
   it('the result filter narrows rows to the selected health value (AC1)', async () => {
     const user = userEvent.setup()
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     const table = await screen.findByRole('table')
 
     await user.selectOptions(screen.getByLabelText('Result'), 'degraded')
@@ -175,7 +191,7 @@ describe('CheckHistoryPage', () => {
 
   it('the location filter narrows rows to the selected location (AC1)', async () => {
     const user = userEvent.setup()
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     const table = await screen.findByRole('table')
 
     const targetLocation = FIXTURE_HISTORY_FRONTEND_TLS[0].location
@@ -192,7 +208,7 @@ describe('CheckHistoryPage', () => {
 
   it('shows a distinct empty state when filters match nothing, without hiding that data exists (AC1, AC4)', async () => {
     const user = userEvent.setup()
-    const { container } = render(<CheckHistoryPage />)
+    const { container } = renderCheckHistory()
     await screen.findByRole('table')
 
     await user.type(screen.getByLabelText('Search'), 'no-such-signal-or-component')
@@ -220,7 +236,7 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     await screen.findByText('No observations in this window')
 
     const initialSince = seenRanges[0].since
@@ -240,14 +256,14 @@ describe('CheckHistoryPage', () => {
   })
 
   it('shows the shared LoadingState while the merged history is loading (AC4)', () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
     expect(screen.getByRole('status')).toHaveTextContent('Loading observations…')
   })
 
   it('shows the shared EmptyState "no observations in this window" when nothing loaded at all (AC4)', async () => {
     server.use(http.get('/api/v1/history', () => HttpResponse.json([])))
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     expect(await screen.findByText('No observations in this window')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
@@ -266,7 +282,7 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load check history')
 
@@ -292,7 +308,7 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Could not load check history')
 
@@ -340,7 +356,7 @@ describe('CheckHistoryPage', () => {
       }),
     )
 
-    render(<CheckHistoryPage maxRenderedRows={5} />)
+    renderCheckHistory({ maxRenderedRows: 5 })
 
     expect(await screen.findByText('showing latest 5 of 8 observations')).toBeInTheDocument()
 
@@ -366,7 +382,7 @@ describe('CheckHistoryPage', () => {
    * truncation/caption mechanics respectively.
    */
   it('uses a 1,000-row cap by default (no maxRenderedRows prop) — untruncated below that size', async () => {
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     const table = await screen.findByRole('table')
     const rows = within(table).getAllByRole('row').slice(1)
@@ -380,7 +396,7 @@ describe('CheckHistoryPage', () => {
   it('shows the shared EmptyState "no observations in this window" when the topology itself is empty (AC4)', async () => {
     server.use(http.get('/api/v1/topology', () => HttpResponse.json([])))
 
-    render(<CheckHistoryPage />)
+    renderCheckHistory()
 
     expect(await screen.findByText('No observations in this window')).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
