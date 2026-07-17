@@ -18,6 +18,7 @@ function renderSidebar(
           expanded={props.expanded ?? true}
           onToggleExpanded={onToggleExpanded}
           pendingApprovals={props.pendingApprovals}
+          variant={props.variant}
         />
       </MemoryRouter>,
     ),
@@ -94,5 +95,32 @@ describe('Sidebar', () => {
       screen.getByRole('link', { name: 'Approvals, 3 pending' }),
     ).toBeInTheDocument()
     expect(screen.queryByText('3')).not.toBeInTheDocument()
+  })
+})
+
+describe('Sidebar — drawer variant (STORY-096 AC2)', () => {
+  it('always shows the full labeled layout, ignoring `expanded`', () => {
+    renderSidebar('/', { expanded: false, variant: 'drawer' })
+    expect(screen.getByText('Uptime Monitor')).toBeInTheDocument()
+    for (const tab of TABS) {
+      expect(screen.getByRole('link', { name: tab.label })).toBeInTheDocument()
+    }
+  })
+
+  it('renders its header as a "Close navigation" control instead of the collapse toggle', async () => {
+    const user = userEvent.setup()
+    const { onToggleExpanded } = renderSidebar('/', { expanded: true, variant: 'drawer' })
+
+    const closeButton = screen.getByRole('button', { name: 'Close navigation' })
+    expect(closeButton).not.toHaveAttribute('aria-expanded')
+
+    await user.click(closeButton)
+    expect(onToggleExpanded).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not render the static-variant collapse toggle in drawer mode', () => {
+    renderSidebar('/', { expanded: true, variant: 'drawer' })
+    expect(screen.queryByRole('button', { name: 'Collapse sidebar' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Expand sidebar' })).not.toBeInTheDocument()
   })
 })

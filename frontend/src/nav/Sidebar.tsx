@@ -6,13 +6,21 @@ import './Sidebar.css'
 
 export interface SidebarProps {
   /** Expanded (labeled) vs. collapsed (icons-only) — persisted by the
-   * caller (STORY-056 AC1; see `sidebarState.ts`). */
+   * caller (STORY-056 AC1; see `sidebarState.ts`). Ignored when
+   * `variant="drawer"` (STORY-096 AC2), which always shows the full
+   * labeled layout. */
   expanded: boolean
   onToggleExpanded: () => void
   /** Open-proposal count for the Approvals badge (STORY-056 AC4).
    * `undefined` while loading or on a fetch failure — no badge renders,
    * the graceful-degradation case. */
   pendingApprovals: number | undefined
+  /** 'static' (default): the persistent rail/expanded sidebar — the header
+   * toggles `expanded`/collapsed (STORY-056 AC1). 'drawer' (STORY-096 AC2):
+   * rendered inside `SidebarDrawer`'s mobile overlay — always full-labeled,
+   * and the header instead CLOSES the drawer (`onToggleExpanded` is the
+   * drawer's close handler in this variant, not a collapse toggle). */
+  variant?: 'static' | 'drawer'
 }
 
 /**
@@ -25,22 +33,43 @@ export interface SidebarProps {
  * expanded and collapsed layouts (a screen-reader user gets "Approvals, 3
  * pending" either way; only the sighted, icon-only presentation changes).
  */
-export function Sidebar({ expanded, onToggleExpanded, pendingApprovals }: SidebarProps) {
+export function Sidebar({
+  expanded,
+  onToggleExpanded,
+  pendingApprovals,
+  variant = 'static',
+}: SidebarProps) {
+  const isDrawer = variant === 'drawer'
+  // In the drawer variant the layout is always fully labeled — there is no
+  // rail state inside an overlay drawer (STORY-096 AC2).
+  const showLabels = isDrawer || expanded
+
   return (
-    <aside className={cx('sidebar', expanded ? 'sidebar--expanded' : 'sidebar--collapsed')}>
+    <aside
+      className={cx(
+        'sidebar',
+        showLabels ? 'sidebar--expanded' : 'sidebar--collapsed',
+        isDrawer && 'sidebar--drawer',
+      )}
+    >
       <button
         type="button"
         className="sidebar__header"
         onClick={onToggleExpanded}
-        aria-expanded={expanded}
-        aria-label={expanded ? 'Collapse sidebar' : 'Expand sidebar'}
+        aria-expanded={isDrawer ? undefined : expanded}
+        aria-label={
+          isDrawer ? 'Close navigation' : expanded ? 'Collapse sidebar' : 'Expand sidebar'
+        }
         title="Uptime Monitor"
       >
         <Icon name="logo" className="sidebar__logo" />
-        {expanded ? (
+        {showLabels ? (
           <>
             <span className="sidebar__title">Uptime Monitor</span>
-            <Icon name="chevron-left" className="sidebar__collapse-icon" />
+            <Icon
+              name={isDrawer ? 'x' : 'chevron-left'}
+              className="sidebar__collapse-icon"
+            />
           </>
         ) : null}
       </button>
@@ -67,12 +96,12 @@ export function Sidebar({ expanded, onToggleExpanded, pendingApprovals }: Sideba
             >
               <span className="sidebar__tab-icon-wrap">
                 <Icon name={tab.icon} className="sidebar__tab-icon" />
-                {hasBadge && !expanded ? (
+                {hasBadge && !showLabels ? (
                   <span className="sidebar__badge-dot" aria-hidden="true" />
                 ) : null}
               </span>
-              {expanded ? <span className="sidebar__tab-label">{tab.label}</span> : null}
-              {hasBadge && expanded ? (
+              {showLabels ? <span className="sidebar__tab-label">{tab.label}</span> : null}
+              {hasBadge && showLabels ? (
                 <span className="sidebar__badge" aria-hidden="true">
                   {badgeCount}
                 </span>
