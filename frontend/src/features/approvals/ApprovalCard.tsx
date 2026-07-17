@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { toHealthStatus } from '../../api/statusMapping'
 import type { ComponentTopologyDTO, ProposalDTO } from '../../api/types'
 import { Button, ErrorState, Icon, RelativeTime, StatusBadge } from '../../components'
@@ -125,6 +126,15 @@ export function ApprovalCard({
               </ul>
             )}
           </div>
+
+          {primarySignal ? (
+            <Link
+              to={`/check-history?signal=${encodeURIComponent(primarySignal.signal_key)}`}
+              className="approval-card__view-checks"
+            >
+              View checks
+            </Link>
+          ) : null}
         </div>
 
         <div className="approval-card__actions">

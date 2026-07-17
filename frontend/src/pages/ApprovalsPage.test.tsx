@@ -212,6 +212,35 @@ describe('ApprovalsPage', () => {
     expect(await within(catalogueCard).findByText('Evidence unavailable')).toBeInTheDocument()
   })
 
+  it('renders a "View checks" link deep-linking to Check History pre-filtered to the primary signal (STORY-100 AC2)', async () => {
+    renderApprovalsPage()
+    await screen.findByRole('list')
+
+    const card = screen
+      .getByText(FIXTURE_TOPOLOGY[0].name)
+      .closest('li') as HTMLElement
+
+    const link = within(card).getByRole('link', { name: 'View checks' })
+    expect(link).toHaveAttribute(
+      'href',
+      `/check-history?signal=${FIXTURE_TOPOLOGY[0].signals[0].signal_key}`,
+    )
+  })
+
+  it('omits the "View checks" link when no signal is resolved (topology failure), keeping the card actionable (STORY-100 AC2, AC4)', async () => {
+    server.use(http.get('/api/v1/topology', () => HttpResponse.json({ detail: 'boom' }, { status: 500 })))
+
+    renderApprovalsPage()
+    const list = await screen.findByRole('list')
+    // Component name unresolved -> falls back to the raw component_id in
+    // BOTH the name and slug spans, so locate the card positionally
+    // (FIXTURE_PROPOSALS[0] is the first card) instead of by text.
+    const card = within(list).getAllByRole('listitem')[0]
+
+    expect(within(card).queryByRole('link', { name: 'View checks' })).not.toBeInTheDocument()
+    expect(within(card).getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+  })
+
   it('shows the "Queue clear" empty state when there are no open proposals (AC3)', async () => {
     server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
 
