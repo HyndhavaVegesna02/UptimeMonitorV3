@@ -1,67 +1,31 @@
 # YourTeam active sprint board
-sprint: 51
-status: done          # PO verdicts 2026-07-17: both stories ACCEPT; redeploy live stack approved;
-                      # sidebar-breakpoint finding filed as STORY-096 (draft). Velocity 4/4.
-mode: in-process      # PO-approved at lock (2026-07-17).
-goal: "Add the server-side limit cap to the history endpoint (STORY-094) and run the first thorough, orchestrator-driven Playwright verification of the live deployed dashboard (STORY-095)."
-branch: sprint-51
-start_tag: sprint-51-start
-start_commit: 1677b72
-started: "2026-07-17T04:30:00+05:30"
-# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive:
-# STORY-094 is a one-zone additive param on existing DTOs; STORY-095 writes no production
-# code (live-UI verification sweep). Skip + reason recorded in plan.md for PO visibility.
-# Baseline: full 8-command gate GREEN on main at 1677b72 (clean tree; first attempt refused
-# on dirty refinement records — committed, re-run).
-# Tooling note: Playwright MCP (.mcp.json) loads at session START only — this sprint drives
-# Playwright directly (headless Chromium via tools/ui-sweep/); MCP takes over next session.
+sprint: 52
+status: active
+mode: in-process
+goal: "UI redesign wave 1: responsive shell (adaptive sidebar + mobile-safe layouts) and consistent page scaffold across all six tabs."
+branch: sprint-52          # off ui-redesign (NOT main) — initiative branch structure per PO directive 2026-07-17;
+                           # review merges sprint-52 -> ui-redesign; main untouched until PO's final initiative review.
+integration_branch: ui-redesign
+start_tag: sprint-52-start
+start_commit: 517fc38
+started: "2026-07-17T16:15:00+05:30"
+# PO delegation (2026-07-17): sprint plans + per-sprint review verdicts pre-approved for the
+# ui-redesign initiative; final merge into main reserved for the PO.
+# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — frontend display-layer
+# only, existing DTOs, no new contracts, in-process. Reason also in plan.md.
+# Constraints (PO, 2026-07-17): frontend-only (no backend/infra/config/scripts changes);
+# no new Docker resources; every change Playwright-verified against the live local stack.
 stories:
-  - id: STORY-094
-    status: done          # all 4 AC; 2-pt story ⇒ implementer → scoped DoD gate → reality gate
-    commits: 6ab598c..7f352b8   # TDD cadence; scoped gate at 7f352b8 (pytest 529 / ruff x2 / npm lint all 0)
-    reality_gate:
-      ran: true
-      evidence: >-
-        Local-stack spot check on an ISOLATED DynamoDB Local (container uptime_dynamo_094
-        port 8009, API uvicorn port 8010, both torn down after): limit=2 -> exactly the 2
-        newest of 5 seeded rows (22:31:41, 22:21:41); no limit -> all 5 (unchanged full
-        window); limit=0 -> 422 greater_than_equal. Real-repository test
-        (test_history_limit_against_real_dynamo_repository) runs vs DynamoDB Local in the
-        suite. LIVE stack still runs the pre-fix image by design — live verification at
-        the post-acceptance redeploy (stated in plan; not ship-on-promise). Wiki blast
-        radius: api-five-file-convention.md, frontend-zone.md, sample-mode.md re-verified.
-    slug: history-limit-param
+  - id: STORY-096
+    slug: responsive-shell
+    points: 3
+    order: 1
+    status: todo
+  - id: STORY-097
+    slug: page-scaffold-consistency
     points: 2
-    order: 1           # the code change first; sweep is independent of it
-  - id: STORY-095
-    status: done          # all 5 AC PASS against the live deployed system; evidence committed
-    commits: 0e290ee..fbc42ac
-    reality_gate:
-      ran: true
-      evidence: >-
-        The story IS a live reality gate (real headless Chromium vs the deployed stack).
-        AC1: six tabs render via BOTH direct-URL deep load (CloudFront rewrite path) and
-        SPA nav — per-tab PNGs in sprints/2026-07-17-sprint-51/ui-sweep/. AC2: zero
-        console errors + zero failed /api/* across 20+ page loads (evidence JSONs empty).
-        AC3: sample-mode ON (banner + aria-checked + control-table enabled:true) then OFF
-        (verified both ways); maintenance window 'ui-sweep-probe' created via the form,
-        listed, deleted, gone after reload. AC4: light/dark (system-pref emulation + in-app
-        toggle) + 390x844 viewport. AC5: findings.md — empty error table, 3 anomalies
-        (2 EXPLAINED, 1 CANDIDATE-STORY: sidebar keeps desktop width below ~768px).
-        Live system confirmed left clean (SAMPLE_MODE enabled:false; 0 probe rows).
-    slug: playwright-ui-sweep
-    points: 2
-    order: 2           # live-stack sweep (read-mostly; mutations reversed)
-final_gate:
-  head: 3cdf09d
-  dod_evidence:   # full 8-command amended gate, all exit 0 at 2026-07-16T23:19-23:21Z on 3cdf09d
-    - {command: "pytest", exit_code: 0, output_tail: "529 passed in 40.71s", commit: 3cdf09d, at: "2026-07-16T23:19:31+00:00"}
-    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, output_tail: "Contracts: 8 kept, 0 broken.", commit: 3cdf09d, at: "2026-07-16T23:20:12+00:00"}
-    - {command: "ruff check .", exit_code: 0, output_tail: "All checks passed!", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "ruff format --check .", exit_code: 0, output_tail: "205 files already formatted", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, output_tail: "(exit 0, no findings)", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "npm test", exit_code: 0, output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)", commit: 3cdf09d, at: "2026-07-16T23:20:15+00:00"}
-    - {command: "npm run build", exit_code: 0, output_tail: "built", commit: 3cdf09d, at: "2026-07-16T23:20:51+00:00"}
-    - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 3cdf09d, at: "2026-07-16T23:20:56+00:00"}
+    order: 2
+    status: todo
+baseline_gate: pending   # full 8-command gate on sprint-52 HEAD right after lock commit
 hotfixes: []
 interrupts: []

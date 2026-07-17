@@ -3,7 +3,9 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 94   # 093 = sprint-49 review minors (container hardening, ECS health grace,
+next_story_id: 103  # 097-102 = ui-redesign initiative stories (filed 2026-07-17; counter was stale at 94 —
+                    # 094-096 were filed at sprint-51 without bumping it, fixed here).
+                    # 093 = sprint-49 review minors (container hardening, ECS health grace,
                     # test hygiene), filed at sprint-49 review as accept-with-follow-up.
                     # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
                     # AWS epic 082-091 was filed without bumping it); 092 = containerize both
@@ -920,8 +922,59 @@ stories:
     type: chore
     sprint: 51
   - id: STORY-096
-    title: Sidebar keeps desktop width below ~768px — add a narrow-viewport breakpoint
+    title: Responsive shell — adaptive sidebar (rail ≤1024px, drawer ≤768px) and mobile-safe layouts
     file: docs/scrum/stories/STORY-096-sidebar-narrow-viewport.md
-    status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
+    status: ready   # refined 2026-07-17 at ui-redesign refinement (PO-delegated); scope grew from sidebar-only to shell-wide per exploration evidence (journal #1-#3)
+    points: 3
+    priority: 52
+    type: story
+    sprint: null
+  # ── UI-redesign initiative (PO directive 2026-07-17; frontend-only; ui-redesign branch) ──
+  - id: STORY-097
+    title: Consistent page scaffold — shared PageHeader, container widths, designed empty states
+    file: docs/scrum/stories/STORY-097-page-scaffold-consistency.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #10-#11
+    points: 2
+    priority: 53
+    type: story
+    sprint: null
+  - id: STORY-098
+    title: Human time & identity — relative timestamps, local-time display, friendly location names
+    file: docs/scrum/stories/STORY-098-human-time-and-identity.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #5-#6
+    points: 2
+    priority: 54
+    type: story
+    sprint: null
+  - id: STORY-099
+    title: Signal quality — neutral zero-states, cross-tab awareness cards, last-updated, completeness label
+    file: docs/scrum/stories/STORY-099-dashboard-signal-quality.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #7-#9
+    points: 2
+    priority: 55
+    type: story
+    sprint: null
+  - id: STORY-100
+    title: Approvals decision support — evidence-first proposal cards + consequence-aware confirm
+    file: docs/scrum/stories/STORY-100-approvals-decision-support.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal finding #4, decision D5
+    points: 3
+    priority: 56
+    type: story
+    sprint: null
+  - id: STORY-101
+    title: Check History readability — column diet, latency encoding, sticky header, result count
+    file: docs/scrum/stories/STORY-101-check-history-readability.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal finding #13
+    points: 2
+    priority: 57
+    type: story
+    sprint: null
+  - id: STORY-102
+    title: Mode & nav affordances — labeled sample-mode control, persistent mode indicator, rail tooltips, form feedback
+    file: docs/scrum/stories/STORY-102-mode-and-nav-affordances.md
+    status: ready   # filed+refined 2026-07-17 (ui-redesign refinement, PO-delegated); journal findings #12, #15-#16
+    points: 2
+    priority: 58
     type: story
     sprint: null
