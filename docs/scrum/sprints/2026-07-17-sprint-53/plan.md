@@ -39,13 +39,13 @@ without rework; if the third story slips it returns to the backlog at review, no
 - [x] Scoped DoD gate + evidence merge
 
 ### 2. STORY-099 — Signal quality: dashboard + availability (2 pts) — order 2: consumes 098's formatter
-- [ ] Step 1: SummaryCard neutral-at-zero logic (color only when >0) — tests first
-- [ ] Step 2: replace "Components" card with "Pending approvals" + "Maintenance" action cards (live counts, whole-card link, keyboard-focusable)
-- [ ] Step 3: "Updated Xs ago" indicator in Dashboard PageHeader actions (poll-cycle driven, via formatTime)
-- [ ] Step 4: Availability completeness relabel ("N% of expected checks received")
-- [ ] Step 5: full frontend suite green
-- [ ] Step 6: Playwright reality gate: computed-style proof of neutral zeros (healthy state) + colored non-zeros (sample mode ON briefly, reversed); card navigation; label copy
-- [ ] Scoped DoD gate + evidence merge
+- [x] Step 1: SummaryCard neutral-at-zero logic (color only when >0) — tests first
+- [x] Step 2: replace "Components" card with "Pending approvals" + "Maintenance" action cards (live counts, whole-card link, keyboard-focusable)
+- [x] Step 3: "Updated Xs ago" indicator in Dashboard PageHeader actions (poll-cycle driven, via formatTime)
+- [x] Step 4: Availability completeness relabel ("N% of expected checks received")
+- [x] Step 5: full frontend suite green
+- [x] Step 6: Playwright reality gate: computed-style proof of neutral zeros (healthy state) + colored non-zeros (sample mode ON briefly, reversed); card navigation; label copy
+- [x] Scoped DoD gate + evidence merge
 
 ### 3. STORY-102 — Mode & nav affordances (2 pts) — order 3: independent; touches TopBar/rail/maintenance form
 - [ ] Step 1: sample-mode control relabel (visible text ≥768px, warning accent when ON, never red) — tests first

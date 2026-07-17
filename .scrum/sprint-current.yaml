@@ -47,12 +47,36 @@ stories:
     slug: dashboard-signal-quality
     points: 2
     order: 2
-    status: in_progress   # implementer dispatched 2026-07-17 ~18:35 IST
+    status: done          # all 5 AC; commits 7077b7a..29d7421 (first dispatch died at the
+                          # session limit BEFORE any writes; fresh re-dispatch post-reset)
+    commits: 7077b7a..29d7421
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live Playwright: healthy state — 6 cards (Pending approvals 0/link, Maintenance
+        0/link, Operational 1 GREEN rgb(26,127,55), Degraded/Partial/Down 0 all NEUTRAL
+        rgb(22,26,30) — alert-colored zeros gone); "Updated just now" RelativeTime in
+        PageHeader actions with full tooltip. Non-zero path: sample mode ON → proposal
+        arrived → Pending approvals card = 1 in INDIGO rgb(91,96,214), card keyboard-
+        focusable, whole-card click navigates to /approvals; proposal rejected, sample
+        OFF, queue clear (system clean). Availability: "28.54% of expected checks
+        received" — ambiguous "• missing data" chip next to the number GONE, bar legend
+        "Missing data" intact. Suite 442 -> 471. Screenshot: gate-099/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at 29d7421, 2026-07-17T~16:30Z
+      - {command: "npm test", exit_code: 0, output_tail: "60 files / 471 tests passed", commit: 29d7421}
+      - {command: "npm run build", exit_code: 0, commit: 29d7421}
+      - {command: "npm run lint", exit_code: 0, commit: 29d7421}
+    wiki_blast_radius: "frontend-zone.md + sample-mode.md updated by implementer (A3);
+      reviewed — accurate. Sweep CLEAN."
+    note: "Implementer flagged a premise gap: no real background polling exists in the
+      frontend (lastUpdatedAt stamps the existing fetch/retry cycle). Candidate follow-up:
+      auto-refresh interval — needs PO input on desired cadence; journal finding #8 partially
+      addressed (awareness cards done, live refresh not in scope)."
   - id: STORY-102
     slug: mode-and-nav-affordances
     points: 2
     order: 3
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-17 ~22:05 IST
 baseline_gate: "inherited GREEN — ui-redesign @ 30895b8 is sprint-52's 8/8-green HEAD (45c6086)
   plus the no-ff merge commit (docs/board only in the merge)."
 hotfixes: []
