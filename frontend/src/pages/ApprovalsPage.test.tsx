@@ -109,6 +109,17 @@ describe('ApprovalsPage', () => {
     expect(screen.queryByRole('list')).not.toBeInTheDocument()
   })
 
+  it('uses the shared EmptyState primitive for "Queue clear", with a helpful body line (STORY-097 AC3)', async () => {
+    server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
+
+    const { container } = render(<ApprovalsPage />)
+
+    const message = await screen.findByText('Queue clear')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon--positive')).not.toBeNull()
+    expect(screen.getByText('No proposals awaiting review.')).toBeInTheDocument()
+  })
+
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {
     const user = userEvent.setup()
     let callCount = 0

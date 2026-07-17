@@ -16,36 +16,12 @@
   gap: var(--space-3);
 }
 
+/* The card housing the shared `EmptyState` (STORY-097 AC3) — Approvals has
+   no `Panel` wrapper elsewhere on the page (its cards ARE the content), so
+   this is the one place that still needs its own surface/border/shadow. */
 .approvals-page__empty {
-  text-align: center;
-  padding: var(--space-12) var(--space-4);
   background: var(--color-surface-1);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-panel);
   box-shadow: var(--shadow);
-}
-
-.approvals-page__empty-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin: 0 auto var(--space-3);
-  border-radius: 50%;
-  background: var(--color-health-up-subtle);
-  color: var(--color-health-up);
-}
-
-.approvals-page__empty-title {
-  margin: 0;
-  font-weight: 600;
-  font-size: var(--fs-body-lg);
-  color: var(--color-ink);
-}
-
-.approvals-page__empty-detail {
-  margin: 3px 0 0;
-  color: var(--color-ink-subtle);
-  font-size: var(--fs-caption);
 }

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { getActor } from '../api/actor'
 import { ApiError, postDecision } from '../api/client'
-import { ErrorState, Icon, LoadingState, PageHeader } from '../components'
+import { EmptyState, ErrorState, LoadingState, PageHeader } from '../components'
 import { ApprovalCard } from '../features/approvals/ApprovalCard'
 import { toCardDecisionState } from '../features/approvals/decisionState'
 import type { DecisionAction, DecisionUiState } from '../features/approvals/decisionState'
@@ -89,13 +89,12 @@ export function ApprovalsPage() {
 
       {state.phase === 'success' && state.data.length === 0 && (
         <div className="approvals-page__empty">
-          <span className="approvals-page__empty-icon" aria-hidden="true">
-            <Icon name="check" size={20} />
-          </span>
-          <p className="approvals-page__empty-title">Queue clear</p>
-          <p className="approvals-page__empty-detail">
-            No proposals awaiting review.
-          </p>
+          <EmptyState
+            icon="check"
+            tone="positive"
+            message="Queue clear"
+            detail="No proposals awaiting review."
+          />
         </div>
       )}
 
