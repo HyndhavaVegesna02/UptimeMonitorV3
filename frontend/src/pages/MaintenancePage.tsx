@@ -1,13 +1,23 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import type { FormEvent } from 'react'
 import type { ApiError } from '../api/client'
 import type { CreateMaintenanceRequest, MaintenanceWindowDTO } from '../api/types'
-import { Button, EmptyState, ErrorState, LoadingState, PageHeader, Panel } from '../components'
+import {
+  Button,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  PageHeader,
+  Panel,
+  Toast,
+} from '../components'
 import { useComponents } from '../features/dashboard/useComponents'
-import { fieldErrorFromDetail } from '../features/maintenance/fieldError'
+import type { MaintenanceFormField } from '../features/maintenance/fieldError'
+import { fieldErrorFromDetail, validateMaintenanceForm } from '../features/maintenance/fieldError'
 import { useMaintenance } from '../features/maintenance/useMaintenance'
 import { deriveWindowState } from '../features/maintenance/windowState'
 import type { WindowState } from '../features/maintenance/windowState'
+import { formatLocalRange } from '../lib/formatTime'
 import './MaintenancePage.css'
 
 const WINDOW_STATE_LABEL: Record<WindowState, string> = {
@@ -53,13 +63,22 @@ interface ScheduleFormProps {
  * time (`<input type="datetime-local">`); on submit each is converted to a
  * tz-aware ISO string via `new Date(value).toISOString()` before POSTing —
  * the tz-discipline the backend requires (AC2, unchanged from STORY-015f).
- * A 422's `ApiError.detail` is mapped via `fieldErrorFromDetail` onto the
- * specific field it concerns and rendered INLINE next to that field (AC2,
- * not toast/console-only); a detail naming none of the three fields
- * (`component_id`/`starts_at`/`ends_at` — `reason`/Title is never a 422
- * target) falls back to a general form-level error banner instead of being
- * silently dropped. On a successful submit the form resets (AC2 — a fresh
- * empty form ready for the next window).
+ *
+ * STORY-102 AC4: the form carries `noValidate` — the browser's own bubble
+ * UI never fires — and `validateMaintenanceForm` (required Title + Component
+ * + Start + End, plus the end-after-start rule) runs FIRST on submit; any
+ * failure renders styled inline text under EVERY invalid field and moves
+ * focus to the FIRST one (submit order: Title, Component, Start, End),
+ * without ever calling `onSubmit`/hitting the network. Only once the client
+ * check passes does the existing server round trip happen: a 422's
+ * `ApiError.detail` is still mapped via `fieldErrorFromDetail` onto the
+ * specific field it concerns (`clientErrors` and the server's `erroredField`
+ * share the SAME per-field rendering slot, merged by `fieldMessage` below —
+ * they can never both be non-empty for the same field in practice, since a
+ * client failure never reaches the server). A detail naming none of the
+ * three server-checked fields falls back to a general form-level error
+ * banner instead of being silently dropped. On a successful submit the form
+ * resets (AC2 — a fresh empty form ready for the next window).
  */
 function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps) {
   const { state: componentsState, retry: retryComponents } = useComponents()
@@ -68,11 +87,42 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
   const [componentId, setComponentId] = useState('')
   const [startsAt, setStartsAt] = useState('')
   const [endsAt, setEndsAt] = useState('')
+  const [clientErrors, setClientErrors] = useState<
+    Partial<Record<MaintenanceFormField, string>>
+  >({})
+
+  const titleRef = useRef<HTMLInputElement>(null)
+  const componentRef = useRef<HTMLSelectElement>(null)
+  const startRef = useRef<HTMLInputElement>(null)
+  const endRef = useRef<HTMLInputElement>(null)
+  const fieldRefs = {
+    title: titleRef,
+    component_id: componentRef,
+    starts_at: startRef,
+    ends_at: endRef,
+  } as const
 
   const erroredField = fieldErrorFromDetail(mutationError?.detail)
 
+  function fieldMessage(field: MaintenanceFormField): string | undefined {
+    return clientErrors[field] ?? (erroredField === field ? mutationError?.detail : undefined)
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+
+    const errors = validateMaintenanceForm({ title, componentId, startsAt, endsAt })
+    if (errors.length > 0) {
+      const errorMap: Partial<Record<MaintenanceFormField, string>> = {}
+      for (const { field, message } of errors) {
+        errorMap[field] = errorMap[field] ?? message
+      }
+      setClientErrors(errorMap)
+      fieldRefs[errors[0].field].current?.focus()
+      return
+    }
+
+    setClientErrors({})
     const ok = await onSubmit({
       component_id: componentId,
       starts_at: new Date(startsAt).toISOString(),
@@ -90,19 +140,31 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
   }
 
   return (
-    <form className="maintenance-form" onSubmit={(event) => void handleSubmit(event)}>
+    <form className="maintenance-form" noValidate onSubmit={(event) => void handleSubmit(event)}>
       <div className="maintenance-form__field">
         <label className="maintenance-form__label" htmlFor="maintenance-title">
           Title
         </label>
         <input
           id="maintenance-title"
+          ref={titleRef}
           className="maintenance-form__input"
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="e.g. Postgres upgrade"
+          required
+          aria-invalid={Boolean(fieldMessage('title'))}
+          aria-describedby={fieldMessage('title') ? 'maintenance-title-error' : undefined}
         />
+        {fieldMessage('title') ? (
+          <p id="maintenance-title-error" className="maintenance-form__error" role="alert">
+            <span className="maintenance-form__error-icon" aria-hidden="true">
+              ⚠
+            </span>
+            {fieldMessage('title')}
+          </p>
+        ) : null}
       </div>
 
       <div className="maintenance-form__field">
@@ -132,12 +194,15 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
         {componentsState.phase === 'success' && (
           <select
             id="maintenance-component"
+            ref={componentRef}
             className="maintenance-form__input"
             value={componentId}
             onChange={(event) => setComponentId(event.target.value)}
             required
-            aria-invalid={erroredField === 'component_id'}
-            aria-describedby={erroredField === 'component_id' ? 'maintenance-component-error' : undefined}
+            aria-invalid={Boolean(fieldMessage('component_id'))}
+            aria-describedby={
+              fieldMessage('component_id') ? 'maintenance-component-error' : undefined
+            }
           >
             <option value="">Select component…</option>
             {componentsState.data.map((component) => (
@@ -147,12 +212,12 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
             ))}
           </select>
         )}
-        {erroredField === 'component_id' && mutationError?.detail ? (
+        {fieldMessage('component_id') ? (
           <p id="maintenance-component-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>
-            {mutationError.detail}
+            {fieldMessage('component_id')}
           </p>
         ) : null}
       </div>
@@ -163,20 +228,21 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
         </label>
         <input
           id="maintenance-start"
+          ref={startRef}
           className="maintenance-form__input"
           type="datetime-local"
           value={startsAt}
           onChange={(event) => setStartsAt(event.target.value)}
           required
-          aria-invalid={erroredField === 'starts_at'}
-          aria-describedby={erroredField === 'starts_at' ? 'maintenance-start-error' : undefined}
+          aria-invalid={Boolean(fieldMessage('starts_at'))}
+          aria-describedby={fieldMessage('starts_at') ? 'maintenance-start-error' : undefined}
         />
-        {erroredField === 'starts_at' && mutationError?.detail ? (
+        {fieldMessage('starts_at') ? (
           <p id="maintenance-start-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>
-            {mutationError.detail}
+            {fieldMessage('starts_at')}
           </p>
         ) : null}
       </div>
@@ -187,20 +253,21 @@ function ScheduleForm({ onSubmit, scheduling, mutationError }: ScheduleFormProps
         </label>
         <input
           id="maintenance-end"
+          ref={endRef}
           className="maintenance-form__input"
           type="datetime-local"
           value={endsAt}
           onChange={(event) => setEndsAt(event.target.value)}
           required
-          aria-invalid={erroredField === 'ends_at'}
-          aria-describedby={erroredField === 'ends_at' ? 'maintenance-end-error' : undefined}
+          aria-invalid={Boolean(fieldMessage('ends_at'))}
+          aria-describedby={fieldMessage('ends_at') ? 'maintenance-end-error' : undefined}
         />
-        {erroredField === 'ends_at' && mutationError?.detail ? (
+        {fieldMessage('ends_at') ? (
           <p id="maintenance-end-error" className="maintenance-form__error" role="alert">
             <span className="maintenance-form__error-icon" aria-hidden="true">
               ⚠
             </span>
-            {mutationError.detail}
+            {fieldMessage('ends_at')}
           </p>
         ) : null}
       </div>
@@ -231,6 +298,7 @@ function MaintenanceWindowRow({
   deleting: boolean
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const range = formatLocalRange(window.starts_at, window.ends_at)
 
   async function handleDeleteClick() {
     if (confirmDelete) {
@@ -261,9 +329,7 @@ function MaintenanceWindowRow({
           <div className="maintenance-window__meta text-mono text-caption">
             <span>{window.component_id}</span>
             <span aria-hidden="true"> · </span>
-            <span>
-              {window.starts_at}–{window.ends_at}
-            </span>
+            <span title={range.tooltip}>{range.text}</span>
           </div>
         </div>
         <div className="maintenance-window__actions">
@@ -311,7 +377,18 @@ function MaintenanceWindowRow({
  * `DELETE /api/v1/maintenance/{id}` on the wire) → deferred to STORY-065.
  * `useMaintenance` owns both the list `useFetch` and the create mutation,
  * calling the list's `retry()` on a successful create so the view always
- * reconciles with the server (AC2, unchanged from STORY-015f/015c).
+ * reconciles with the server (AC2, unchanged from STORY-015f/015c). The
+ * `component · range` line's range (STORY-098 AC3) renders via
+ * `lib/formatTime.ts::formatLocalRange` — absolute LOCAL start–end with an
+ * explicit timezone label as the primary text, the raw UTC range in the
+ * `title` tooltip; the schedule FORM's `datetime-local` input is unchanged
+ * (it was already local — only this display side changes).
+ *
+ * STORY-102 AC4: a successful create/delete shows the shared `Toast`
+ * ("Window scheduled" / "Window deleted") — `toastMessage` is page-local
+ * state set only on the SUCCESS path of each mutation (a failure keeps
+ * using the existing `role="alert"` inline/banner error rendering, never
+ * this toast).
  */
 export function MaintenancePage() {
   const {
@@ -324,6 +401,23 @@ export function MaintenancePage() {
     deletingId,
     deleteError,
   } = useMaintenance()
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  async function handleSchedule(request: CreateMaintenanceRequest): Promise<boolean> {
+    const ok = await schedule(request)
+    if (ok) {
+      setToastMessage('Window scheduled')
+    }
+    return ok
+  }
+
+  async function handleDelete(id: number): Promise<boolean> {
+    const ok = await deleteWindow(id)
+    if (ok) {
+      setToastMessage('Window deleted')
+    }
+    return ok
+  }
 
   return (
     <div className="maintenance-page page">
@@ -338,7 +432,11 @@ export function MaintenancePage() {
           headingLevel="h2"
           className="maintenance-page__form-panel"
         >
-          <ScheduleForm onSubmit={schedule} scheduling={scheduling} mutationError={mutationError} />
+          <ScheduleForm
+            onSubmit={handleSchedule}
+            scheduling={scheduling}
+            mutationError={mutationError}
+          />
         </Panel>
 
         <Panel className="maintenance-page__list-panel">
@@ -371,7 +469,7 @@ export function MaintenancePage() {
                 <MaintenanceWindowRow
                   key={window.id}
                   window={window}
-                  onDelete={deleteWindow}
+                  onDelete={handleDelete}
                   deleting={deletingId === window.id}
                 />
               ))}
@@ -379,6 +477,10 @@ export function MaintenancePage() {
           )}
         </Panel>
       </div>
+
+      {toastMessage ? (
+        <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />
+      ) : null}
     </div>
   )
 }

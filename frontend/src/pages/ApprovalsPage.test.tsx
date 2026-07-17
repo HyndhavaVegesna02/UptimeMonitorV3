@@ -1,13 +1,19 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { FIXTURE_PROPOSALS } from '../mocks/handlers'
 import { getActor } from '../api/actor'
 import { ApprovalsPage } from './ApprovalsPage'
 
 describe('ApprovalsPage', () => {
+  afterEach(() => {
+    // A no-op unless a test below sets a fixed system time (STORY-098's
+    // proposed_at relative-time test) — safe to call unconditionally.
+    vi.useRealTimers()
+  })
+
   it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', async () => {
     const { container } = render(<ApprovalsPage />)
 
@@ -83,13 +89,23 @@ describe('ApprovalsPage', () => {
     expect(within(card as HTMLElement).queryByText('Unknown')).not.toBeInTheDocument()
   })
 
-  it('renders the real proposed_at timestamp in monospace (AC1)', async () => {
-    render(<ApprovalsPage />)
+  it('renders the proposed_at instant as relative time, in monospace, with the raw instant preserved (AC1, AC2, STORY-098)', async () => {
+    // Fixed 2 hours after the first fixture's proposed_at, so the relative
+    // text is deterministic.
+    vi.setSystemTime(new Date('2026-07-01T14:00:00Z'))
 
+    render(<ApprovalsPage />)
     await screen.findByRole('list')
 
-    const time = screen.getByText(FIXTURE_PROPOSALS[0].proposed_at)
+    const time = screen.getByText('2h ago')
+    expect(time.tagName).toBe('TIME')
     expect(time).toHaveClass('text-mono')
+    expect(time).toHaveAttribute('dateTime', FIXTURE_PROPOSALS[0].proposed_at)
+    expect(time.getAttribute('title')).toContain(
+      new Date(FIXTURE_PROPOSALS[0].proposed_at).toISOString(),
+    )
+    // AC1: no bare ISO-8601 string as primary text.
+    expect(screen.queryByText(FIXTURE_PROPOSALS[0].proposed_at)).not.toBeInTheDocument()
   })
 
   it('does not render fields the API does not expose — no reason/source/checks/signals copy (AC3)', async () => {

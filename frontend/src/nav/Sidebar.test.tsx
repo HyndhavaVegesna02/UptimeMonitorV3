@@ -97,6 +97,50 @@ describe('Sidebar', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText('3')).not.toBeInTheDocument()
   })
+
+  it('the badge dot carries an aria-label with the count (STORY-102 AC3)', () => {
+    renderSidebar('/', { expanded: false, pendingApprovals: 3 })
+    expect(screen.getByLabelText('3 pending approvals')).toBeInTheDocument()
+  })
+
+  it('renders no badge-dot aria-label when collapsed with a zero/undefined pending count', () => {
+    renderSidebar('/', { expanded: false, pendingApprovals: undefined })
+    expect(screen.queryByLabelText(/pending approvals/)).not.toBeInTheDocument()
+  })
+})
+
+describe('Sidebar — collapsed rail tooltips (STORY-102 AC3)', () => {
+  it('renders an accessible tooltip element for every tab when collapsed, linked via aria-describedby', () => {
+    renderSidebar('/', { expanded: false })
+    for (const tab of TABS) {
+      const link = screen.getByRole('link', { name: tab.label })
+      const describedBy = link.getAttribute('aria-describedby')
+      expect(describedBy).toBeTruthy()
+      const tooltip = document.getElementById(describedBy as string)
+      expect(tooltip).not.toBeNull()
+      expect(tooltip).toHaveTextContent(tab.label)
+    }
+  })
+
+  it('names both the tab AND the pending count in the Approvals tooltip when collapsed', () => {
+    renderSidebar('/', { expanded: false, pendingApprovals: 3 })
+    const link = screen.getByRole('link', { name: 'Approvals, 3 pending' })
+    const describedBy = link.getAttribute('aria-describedby')
+    const tooltip = document.getElementById(describedBy as string)
+    expect(tooltip).toHaveTextContent('Approvals, 3 pending')
+  })
+
+  it('renders no tooltip element when expanded (labels already visible)', () => {
+    renderSidebar('/', { expanded: true })
+    const link = screen.getByRole('link', { name: 'Dashboard' })
+    expect(link).not.toHaveAttribute('aria-describedby')
+  })
+
+  it('renders no tooltip element in the drawer variant (always full-labeled)', () => {
+    renderSidebar('/', { expanded: false, variant: 'drawer' })
+    const link = screen.getByRole('link', { name: 'Dashboard' })
+    expect(link).not.toHaveAttribute('aria-describedby')
+  })
 })
 
 describe('Sidebar — drawer variant (STORY-096 AC2)', () => {

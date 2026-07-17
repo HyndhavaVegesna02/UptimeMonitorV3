@@ -1,3 +1,14 @@
+/* The header's "Updated Xs ago" indicator (STORY-099 AC3) — a compact
+   caption in the PageHeader's actions slot, never a raw ISO string (the
+   visible text comes from the shared `RelativeTime`). */
+.dashboard-page__updated {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--color-ink-subtle);
+  white-space: nowrap;
+}
+
 .dashboard-page__summary {
   display: flex;
   gap: var(--space-3);

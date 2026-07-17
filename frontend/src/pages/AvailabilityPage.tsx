@@ -71,12 +71,19 @@ function AvailabilityCell({
   )
 }
 
-/** The Data completeness cell (STORY-058 AC1): a big mono % (never
- * rescaled — `completeness_pct` is a 0-1 wire fraction, per `formatPct`), a
- * "missing data" chip when the REAL completeness is below the 98% threshold
- * (`isCompletenessLow`), and a split bar — the `--color-health-up`-colored
+/** The Data completeness cell (STORY-058 AC1, relabeled by STORY-099 AC4): a
+ * big mono % (never rescaled — `completeness_pct` is a 0-1 wire fraction,
+ * per `formatPct`) paired with an explicit "of expected checks received"
+ * sub-label, so the number can never be misread as "N% missing" (journal
+ * #9 — the old adjacent "missing data" chip made a RECEIVED share read like
+ * a missing one). A REAL completeness below the 98% threshold
+ * (`isCompletenessLow`) still gets a visual cue (the value's low-completeness
+ * color) but no separate ambiguous text — the shared page legend's "Missing
+ * data" swatch plus the split bar below (the `--color-health-up`-colored
  * portion is real completeness width, the remainder a HATCHED
- * `--color-health-missing` fill (never a flat/misleading "full" bar). */
+ * `--color-health-missing` fill) already carry that signal. A `null`
+ * completeness (`formatPct` -> "no data") omits the sub-label entirely —
+ * there is no "received share" to state when there's no data at all. */
 function CompletenessCell({ rollup }: { rollup: AvailabilityDTO }) {
   const pct = rollup.completeness_pct
   const low = isCompletenessLow(pct)
@@ -93,10 +100,9 @@ function CompletenessCell({ rollup }: { rollup: AvailabilityDTO }) {
         >
           {formatPct(pct)}
         </span>
-        {low && (
-          <span className="availability-cell__missing-chip">
-            <span className="availability-cell__missing-dot" aria-hidden="true" />
-            missing data
+        {pct !== null && (
+          <span className="availability-cell__completeness-label">
+            of expected checks received
           </span>
         )}
       </div>

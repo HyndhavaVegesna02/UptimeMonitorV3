@@ -75,7 +75,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  overflow: auto;
+  /* STORY-102 AC3: horizontal stays `visible` so the collapsed-rail
+     tooltip (positioned outside this box, to the right of the icon) is
+     never clipped — vertical scroll is the only axis this ever needed. */
+  overflow-y: auto;
+  overflow-x: visible;
 }
 
 .sidebar__tab {
@@ -151,4 +155,34 @@
   border-radius: 50%;
   background: var(--color-health-down);
   border: var(--border-badge-width) solid var(--color-surface-1);
+}
+
+/* Collapsed-rail tooltip (STORY-102 AC3) — a REAL, non-hidden element
+   (`aria-describedby`-linked, `role="tooltip"`), visually revealed on hover
+   AND keyboard focus so it works for keyboard users too (a native `title`
+   attribute alone does not show on focus). Hidden by default via opacity +
+   pointer-events, never `display: none` (which would remove it from the
+   focus-visible transition entirely). */
+.sidebar__tooltip {
+  position: absolute;
+  left: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 20;
+  padding: 4px var(--space-2);
+  border-radius: var(--radius-control);
+  background: var(--color-ink);
+  color: var(--color-canvas);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: 500;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.1s ease;
+}
+
+.sidebar__tab:hover .sidebar__tooltip,
+.sidebar__tab:focus-visible .sidebar__tooltip {
+  opacity: 1;
 }

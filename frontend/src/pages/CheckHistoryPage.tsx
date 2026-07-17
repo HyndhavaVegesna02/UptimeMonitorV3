@@ -5,6 +5,7 @@ import {
   LoadingState,
   PageHeader,
   Panel,
+  RelativeTime,
   StatusBadge,
   Table,
   TableBody,
@@ -14,6 +15,7 @@ import {
   TableRow,
 } from '../components'
 import { cx } from '../lib/cx'
+import { formatLocationLabel } from '../lib/formatLocation'
 import { observationHealth } from '../features/history/observationHealth'
 import { useAllHistory } from '../features/history/useAllHistory'
 import {
@@ -168,7 +170,7 @@ export function CheckHistoryPage({
               <option value={ALL_LOCATIONS}>All locations</option>
               {locationOptions.map((location) => (
                 <option key={location} value={location}>
-                  {location}
+                  {formatLocationLabel(location)}
                 </option>
               ))}
             </select>
@@ -233,10 +235,14 @@ export function CheckHistoryPage({
               <TableBody>
                 {rendered.map((row, index) => (
                   <TableRow key={`${row.signal_key}-${row.observed_at}-${index}`}>
-                    <TableCell className="text-mono">{row.observed_at}</TableCell>
+                    <TableCell className="text-mono">
+                      <RelativeTime iso={row.observed_at} />
+                    </TableCell>
                     <TableCell className="text-mono">{row.check_type.toUpperCase()}</TableCell>
                     <TableCell>{row.componentName}</TableCell>
-                    <TableCell className="text-mono">{row.location}</TableCell>
+                    <TableCell className="text-mono" title={row.location}>
+                      {formatLocationLabel(row.location)}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={observationHealth(row.health)} />
                     </TableCell>

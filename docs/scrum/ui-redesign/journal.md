@@ -94,6 +94,20 @@ and their reasoning, and lessons learned.
 
 ## Sprint log
 
+### Sprint 53 (2026-07-17) — wave 2: operator signal quality — 6/6 accepted
+- Shipped: relative local times + tooltips everywhere (zero visible raw ISO; WYSIWYG
+  maintenance times), friendly location labels, neutral zero-state cards + Pending
+  approvals/Maintenance action-card links, "Updated Xs ago", availability completeness
+  relabel, labeled amber sample-mode switch + persistent SAMPLE chip, keyboard-accessible
+  rail tooltips, inline form validation + polite toasts. Tests 417 → 515.
+- Findings closed: #5–#9, #12, #15–#16 (with #1–#3, #10–#11 from sprint 52). Open: #4, #13,
+  #14 → sprint 54 (STORY-100, STORY-101).
+- Lessons: two agent crashes (session limit; API mid-stream error) recovered mechanically at
+  a cost of one uncommitted file — the commit-per-green-step cadence is the safety net; the
+  :focus-visible false-alarm class from retro-52 A2 recurred and was caught by the protocol;
+  PREMISE GAP found: the dashboard has NO real background polling (journal #8 said it did) —
+  auto-refresh is a PO decision, filed as candidate.
+
 ### Sprint 52 (2026-07-17) — wave 1: responsive shell + consistent scaffold — 5/5 accepted
 - Shipped: adaptive sidebar (auto-rail ≤1024px, focus-managed overlay drawer ≤768px, drawer
   closes on nav — a live-gate catch), 390px-safe layouts everywhere (scrollWidth==390 on all

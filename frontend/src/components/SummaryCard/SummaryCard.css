@@ -7,6 +7,23 @@
   padding: var(--space-3) var(--space-4);
 }
 
+/* Whole-card link variant (STORY-099 AC2) — the entire card is the single
+   interactive element, so an `<a>`/`Link` needs the block layout + reset
+   text styling a bare anchor doesn't have by default. The focus ring comes
+   from the app-wide `a:focus-visible` rule (global.css) — no local override. */
+.summary-card--interactive {
+  display: flex;
+  flex-direction: column;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+  transition: border-color 0.12s ease;
+}
+
+.summary-card--interactive:hover {
+  border-color: var(--color-hairline-strong);
+}
+
 .summary-card__heading {
   display: flex;
   align-items: center;

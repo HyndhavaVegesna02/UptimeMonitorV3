@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
-code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: 0f93a79
-verified_sprint: sprint-51
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, frontend/src/nav/useDismissibleBanner.ts]
+verified_sha: f3d30ff
+verified_sprint: sprint-53
 status: verified
 ---
 
@@ -175,7 +175,7 @@ below for the mechanical deletion recipe.
   max(observed_at) from observations group by 1,2`. Full evidence trail:
   `docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md`.
 
-### The frontend consumer â€” shell TopBar trigger + banner (STORY-049, relocated STORY-056)
+### The frontend consumer â€” shell TopBar trigger + banner (STORY-049, relocated STORY-056, affordances reworked STORY-102)
 - **STORY-056 (sprint-38) relocated this OUT of `DashboardPage` and into the app shell** â€” every
   tab renders inside the shell, so the trigger no longer needs to live on one specific tab. The
   hook itself, `features/dashboard/useSampleMode.ts`, is UNCHANGED (still owns both the load
@@ -184,22 +184,47 @@ below for the mechanical deletion recipe.
   What changed is WHO calls it and WHERE it renders:
   - `frontend/src/AppShell.tsx` calls `useSampleMode()` exactly ONCE and passes the result down as
     a prop to both consumers below â€” never two independent hook calls, which would each run their
-    own GET/override cycle and could disagree the instant one of them PUTs.
+    own GET/override cycle and could disagree the instant one of them PUTs. STORY-102 added a
+    SECOND single-source-of-truth call alongside it: `useDismissibleBanner(bannerVisible)` (new
+    file, `frontend/src/nav/useDismissibleBanner.ts`), whose `{dismissed, dismiss, restore}` is
+    threaded into both `TopBar` (`showSampleChip={bannerVisible && dismissed}`,
+    `onRestoreBanner={restore}`) and `SampleModeBanner` (`dismissed`, `onDismiss={dismiss}`) â€” the
+    SAME reason as lifting `useSampleMode()` itself: two independent dismiss-state copies could
+    disagree about whether the chip/banner should show.
   - `frontend/src/nav/TopBar.tsx` renders the real `<button role="switch" aria-checked
-    aria-label="Sample mode">` (now a âš¡ icon button, right-aligned in the top bar) â€” same
-    role/state contract as the old inline toggle; a GET failure now renders a small retry
-    affordance in the trigger's place instead of a load failure falling back to the full shell
-    `ErrorState` (a 32px icon slot has no room for that block); a failed PUT surfaces a visible
-    `role="alert"` next to the buttons.
-  - `frontend/src/nav/SampleModeBanner.tsx` renders the exact "sample mode â€” signals recorded as
-    DOWN" `role="status"` warning text from the old inline block, now in a shell-level banner
-    region under the top bar, and now DISMISSIBLE (session-scoped local state; re-arms whenever the
-    flag transitions off then on again).
+    aria-label="Sample mode">` (a âš¡ icon button, right-aligned in the top bar) â€” same role/state
+    contract as the old inline toggle; a GET failure still renders a small retry affordance in the
+    trigger's place instead of a load failure falling back to the full shell `ErrorState`; a failed
+    PUT still surfaces a visible `role="alert"` next to the buttons. STORY-102 (journal #12, "reads
+    as alert/destructive, not an environment switch") reworked its STYLING and added a persistent
+    indicator, WITHOUT touching the role/aria-checked/aria-label contract:
+    - A visible `<span className="top-bar__trigger-label" aria-hidden="true">Sample mode</span>`
+      renders next to the icon whenever `!useMediaQuery(QUERY_MOBILE_DOWN)` (desktop widths) â€” the
+      `aria-label` itself is unchanged/always-present regardless of viewport.
+    - OFF now renders NEUTRAL (`.top-bar__trigger` no longer overrides color â€” plain
+      `.top-bar__button` hairline/muted-ink); ON (`.top-bar__trigger--active`) now uses the
+      `--color-health-degraded`/`-subtle` (amber/warning) pair instead of `--color-health-down`
+      (red) â€” red stays reserved for the genuinely-distinct `.top-bar__trigger--error` (a real GET
+      failure), unchanged.
+    - A NEW `.top-bar__sample-chip` button (text "SAMPLE") renders exactly when the lifted
+      `showSampleChip` prop is true (ON + banner dismissed) â€” clicking it calls `onRestoreBanner`
+      (`restore()`), which re-shows the banner and hides the chip on the same render (both driven
+      by the ONE lifted `dismissed` boolean). Since `TopBar` is shell-level, this chip is visible on
+      every tab, not just the one it was dismissed from â€” the whole point of journal #12's "once
+      dismissed, the red icon is the only remaining indicator" fix.
+  - `frontend/src/nav/SampleModeBanner.tsx` still renders the exact "sample mode â€” signals recorded
+    as DOWN" `role="status"` warning text, in the same shell-level banner region under the top bar.
+    STORY-102 made it a FULLY CONTROLLED component (`visible`/`dismissed`/`onDismiss` props, no
+    internal `useState`) â€” the dismiss/re-arm state (and its re-arm-on-false-then-true-transition
+    rule) moved OUT into `useDismissibleBanner` above, since `TopBar`'s new chip also needs to
+    read/drive the SAME dismissed flag (a second consumer a purely-internal `useState` could not
+    serve).
   - `frontend/src/pages/DashboardPage.tsx` no longer imports `useSampleMode` or renders anything
     sample-mode-related â€” it is a plain read tab again, same shape as Availability/Publications.
   This is still the ONLY frontend surface sample mode has; no other tab/page renders anything
   related to it â€” the surface just moved from "inside one tab's page" to "the shell every tab
-  renders inside."
+  renders inside," and STORY-102 only touched styling/affordances on top of that, never the
+  `role="switch"`/`aria-checked`/`GET`/`PUT` contract itself.
 
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
@@ -277,16 +302,31 @@ seam`; instead every touched export/section carries a doc-comment naming
   the derived `bannerVisible` boolean, the `sampleMode={sampleMode}` prop
   passed to `TopBar`, and the `<SampleModeBanner visible={bannerVisible} />`
   render call (STORY-056 seam â€” `AppShell` reverts to composing `Sidebar` +
-  `TopBar` (no prop) + the routed `<main>` only).
+  `TopBar` (no prop) + the routed `<main>` only). STORY-102 seam, same file:
+  also remove the `useDismissibleBanner` import + its call, and the
+  `showSampleChip`/`onRestoreBanner` props passed to `TopBar` and the
+  `dismissed`/`onDismiss` props passed to `SampleModeBanner`.
+- `frontend/src/nav/useDismissibleBanner.ts` /
+  `useDismissibleBanner.test.ts` â€” delete both (STORY-102 seam; purpose-built
+  for the sample-mode banner's dismiss/re-arm state, nothing else in the app
+  calls this hook).
 - `frontend/src/nav/TopBar.tsx` / `TopBar.css` / `TopBar.test.tsx` â€” remove
   the `sampleMode: UseSampleModeResult` prop and every trigger-button branch
   keyed off it (the `mutationError` alert, the `state.phase === 'success'`
   switch, the `state.phase === 'error'` retry button, and their CSS); `TopBar`
-  reverts to rendering only the theme toggle (STORY-056 seam).
+  reverts to rendering only the theme toggle (STORY-056 seam). STORY-102
+  seam, same three files: also remove the `showSampleChip`/`onRestoreBanner`
+  props, the `.top-bar__sample-chip` button + its CSS, the visible
+  `.top-bar__trigger-label` span + `useMediaQuery`/`QUERY_MOBILE_DOWN`
+  import, and the `.top-bar__trigger`/`.top-bar__trigger--active` warning-
+  accent CSS (all sample-mode-only; the theme toggle's dynamic `title` is
+  NOT sample-mode-specific and stays).
 - `frontend/src/nav/SampleModeBanner.tsx` / `SampleModeBanner.css` /
   `SampleModeBanner.test.tsx` â€” delete all three (STORY-056 seam; nothing
   else in `AppShell` depends on this component once its render call above is
-  removed).
+  removed). Note (STORY-102): this component is CONTROLLED as of STORY-102
+  (`dismissed`/`onDismiss` props, no internal state) â€” deletion is still a
+  clean whole-file removal, nothing partial to revert here.
 - `frontend/src/pages/DashboardPage.tsx` / `.css` / `.test.tsx` â€” nothing to
   revert here anymore as of STORY-056 (the inline `SampleModeToggle`
   component/CSS/tests were already removed from this page when the trigger
@@ -313,6 +353,34 @@ publisher/approval chain needs no change either way â€” sample mode only ev
 produced ordinary data flowing through it.
 
 ## History
+- sprint-53 (STORY-102): updated (not a mechanical sweep — this story's diff genuinely touches the
+  seam). Reworked the "The frontend consumer" section's `TopBar`/`SampleModeBanner` Facts: the
+  trigger is now warning/amber-accented ON (never red — red stays reserved for the genuine GET-
+  failure `--error` variant), gained a visible desktop-width text label, and gained a persistent
+  "SAMPLE" chip (shown when ON + banner dismissed, restores the banner on click); `SampleModeBanner`
+  is now a FULLY CONTROLLED component (`dismissed`/`onDismiss` props) instead of owning its dismiss
+  state privately — a new hook, `frontend/src/nav/useDismissibleBanner.ts`, lifted that state to
+  `AppShell` (its second single-source-of-truth call, alongside the existing `useSampleMode()`) so
+  `TopBar`'s new chip can read/drive the same flag. The `role="switch"`/`aria-checked`/`aria-label`/
+  GET-PUT contract itself is UNCHANGED — see [[frontend-zone]]'s new "Mode & nav affordances" entry
+  for the full account (this article covers only what's sample-mode-specific). Extended the REMOVAL
+  recipe: `useDismissibleBanner.ts`/`.test.ts` added to the delete list; the `AppShell.tsx`/
+  `TopBar.tsx` bullets extended to name the new STORY-102 props/CSS to also remove.
+  `code_refs` += `frontend/src/nav/useDismissibleBanner.ts`. Frontend-only; six backend gates
+  untouched-green (empty diff — no backend source change). verified_sha = f3d30ff.
+- sprint-53 (STORY-099, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `frontend/src/pages/DashboardPage.tsx`, which changed only in its summary
+  row (the redundant "Components" card replaced by "Pending approvals"/"Maintenance" action
+  cards, neutral-at-zero status-card coloring, and the header's "Updated Xs ago" indicator — see
+  [[frontend-zone]]'s new "Signal quality" entry). `DashboardPage.tsx` still renders and imports
+  nothing sample-mode-related (moved to `AppShell.tsx` at STORY-056, unchanged). No Facts
+  changed. verified_sha = 94a2a12.
+- sprint-53 (STORY-098, unrelated story — mechanical staleness sweep only): this article's
+  `code_refs` include `frontend/src/pages/DashboardPage.tsx`, which changed only in its signal
+  drill-down's "Last observed"/Location cells (relative time + short location label — see
+  [[frontend-zone]]'s new "Human time & identity" entry). `DashboardPage.tsx` still renders and
+  imports nothing sample-mode-related (moved to `AppShell.tsx` at STORY-056, unchanged). No Facts
+  changed. verified_sha = aa6dcb5.
 - sprint-52 (STORY-097, unrelated story — mechanical staleness sweep only): this article's
   `code_refs` include `frontend/src/pages/DashboardPage.tsx`, which changed only in its
   PageHeader/container-width structure (the h1/subtitle moved into the new shared `PageHeader`

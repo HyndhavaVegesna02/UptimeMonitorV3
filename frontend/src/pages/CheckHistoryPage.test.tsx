@@ -1,7 +1,7 @@
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import {
   FIXTURE_HISTORY_FRONTEND_HTTP,
@@ -13,7 +13,22 @@ import { CheckHistoryPage } from './CheckHistoryPage'
 const TOTAL_MERGED_ROWS =
   FIXTURE_HISTORY_FRONTEND_HTTP.length + FIXTURE_HISTORY_FRONTEND_TLS.length
 
+// Fixed 4 minutes after the newest fixture observation (STORY-098) so the
+// relative-time text below is deterministic — `vi.setSystemTime` alone
+// (without `vi.useFakeTimers()`) mocks `Date` without freezing real timers,
+// so MSW's fetch handling is unaffected (same trick as
+// `MaintenancePage.test.tsx`).
+const NOW = new Date('2026-07-03T13:33:17.931000Z')
+
 describe('CheckHistoryPage', () => {
+  beforeEach(() => {
+    vi.setSystemTime(NOW)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
   it('renders the h1 + subtitle via the shared PageHeader, outside the card, opted into full width (STORY-097 AC1, AC2)', async () => {
     const { container } = render(<CheckHistoryPage />)
 
@@ -34,10 +49,24 @@ describe('CheckHistoryPage', () => {
 
     const frontendComponentName = FIXTURE_TOPOLOGY[0].name
     // The frontend-http fixture is newest overall, so it occupies the first
-    // rows exactly in its own newest-first order.
+    // rows exactly in its own newest-first order. Relative to the fixed NOW
+    // above: rows 0-3 sit 4m/5m/6m/7m in the past.
+    const expectedRelative = ['4m ago', '5m ago', '6m ago', '7m ago']
+    // Location display is the short "Location …tail" form (STORY-098 AC4);
+    // the raw id lives in the cell's `title` tooltip.
+    const expectedLocationLabel = ['Location …0060', 'Location …0061', 'Location …0060', 'Location …0062']
+
     FIXTURE_HISTORY_FRONTEND_HTTP.forEach((observation, index) => {
-      expect(within(rows[index]).getByText(observation.observed_at)).toBeInTheDocument()
-      expect(within(rows[index]).getByText(observation.location)).toBeInTheDocument()
+      // AC1: no bare ISO-8601 string as primary text — the relative label
+      // renders instead, with the raw instant carried on `dateTime`.
+      expect(within(rows[index]).queryByText(observation.observed_at)).not.toBeInTheDocument()
+      const timeEl = within(rows[index]).getByText(expectedRelative[index])
+      expect(timeEl.tagName).toBe('TIME')
+      expect(timeEl).toHaveAttribute('dateTime', observation.observed_at)
+      expect(timeEl.getAttribute('title')).toContain(new Date(observation.observed_at).toISOString())
+
+      expect(within(rows[index]).getByText(expectedLocationLabel[index])).toBeInTheDocument()
+      expect(within(rows[index]).getByTitle(observation.location)).toBeInTheDocument()
       expect(within(rows[index]).getByText(frontendComponentName)).toBeInTheDocument()
     })
 
@@ -125,7 +154,7 @@ describe('CheckHistoryPage', () => {
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(FIXTURE_HISTORY_FRONTEND_TLS.length)
     expect(
-      within(table).queryByText(FIXTURE_HISTORY_FRONTEND_HTTP[0].observed_at),
+      within(table).queryByTitle(FIXTURE_HISTORY_FRONTEND_HTTP[0].location),
     ).not.toBeInTheDocument()
 
     // Filtering is purely client-side — never triggers a refetch.
@@ -150,11 +179,14 @@ describe('CheckHistoryPage', () => {
     const table = await screen.findByRole('table')
 
     const targetLocation = FIXTURE_HISTORY_FRONTEND_TLS[0].location
+    // The <select> is still keyed by the RAW location id — its value/behavior
+    // is unchanged even though the visible option text is now prettified
+    // (STORY-098 AC4).
     await user.selectOptions(screen.getByLabelText('Location'), targetLocation)
 
     const rows = within(table).getAllByRole('row').slice(1)
     rows.forEach((row) => {
-      expect(within(row).getByText(targetLocation)).toBeInTheDocument()
+      expect(within(row).getByTitle(targetLocation)).toBeInTheDocument()
     })
   })
 
@@ -316,8 +348,10 @@ describe('CheckHistoryPage', () => {
     const rows = within(table).getAllByRole('row').slice(1)
     expect(rows).toHaveLength(5)
     // The rendered subset is the NEWEST 5 — the first row is the array's
-    // first (newest-first) element, unchanged.
-    expect(within(rows[0]).getByText(generated[0].observed_at)).toBeInTheDocument()
+    // first (newest-first) element, unchanged. Its raw instant is carried on
+    // `dateTime` now that the visible text is a relative label (STORY-098).
+    const firstRowTime = within(rows[0]).getByText(/ago|just now/)
+    expect(firstRowTime).toHaveAttribute('dateTime', generated[0].observed_at)
   })
 
   /**

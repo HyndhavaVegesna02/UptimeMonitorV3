@@ -191,21 +191,13 @@
   max-width: 260px;
 }
 
-.availability-cell__missing-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+/* The Data completeness sub-label (STORY-099 AC4): plain muted caption text
+   right next to the value, always reading as "N% of expected checks
+   received" — never the old ambiguous "missing data" chip. */
+.availability-cell__completeness-label {
   font-size: var(--fs-caption);
-  font-weight: var(--fw-h3);
-  color: var(--color-health-missing);
+  color: var(--color-ink-subtle);
   white-space: nowrap;
-}
-
-.availability-cell__missing-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--color-health-missing);
 }
 
 /* The completeness split bar (STORY-058 AC1): the real completeness width

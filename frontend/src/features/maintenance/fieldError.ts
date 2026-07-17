@@ -1,4 +1,4 @@
-export type MaintenanceFormField = 'component_id' | 'starts_at' | 'ends_at'
+export type MaintenanceFormField = 'title' | 'component_id' | 'starts_at' | 'ends_at'
 
 /**
  * Maps a raw backend validation `ApiError.detail` message (STORY-015f AC3)
@@ -48,4 +48,60 @@ export function fieldErrorFromDetail(detail: string | undefined): MaintenanceFor
     return 'ends_at'
   }
   return null
+}
+
+export interface MaintenanceFormValues {
+  title: string
+  componentId: string
+  /** `datetime-local` input value (empty string when unfilled). */
+  startsAt: string
+  /** `datetime-local` input value (empty string when unfilled). */
+  endsAt: string
+}
+
+export interface MaintenanceFormFieldError {
+  field: MaintenanceFormField
+  message: string
+}
+
+/**
+ * Client-side, pre-submit validation for the schedule form (STORY-102 AC4):
+ * required Title + Component + Start + End, plus the end-after-start rule
+ * the SERVER already enforces (`fieldErrorFromDetail`'s "strictly greater
+ * than" 422 case) — checked here too so a violation is caught before a
+ * round trip, with matching copy. Extends this file (rather than a second,
+ * separate validator module) since both functions map the exact same
+ * `MaintenanceFormField` vocabulary onto a message.
+ *
+ * Returns an ORDERED array — submit order (Title, Component, Start, End) —
+ * of `{field, message}` failures, empty when the form is valid. Order
+ * matters: the caller focuses the FIRST entry (AC4's "focus moves to the
+ * first invalid field"). A missing End never ALSO reports the ordering
+ * violation (the required-check and the ordering-check are mutually
+ * exclusive per field — only one message per field, ever).
+ */
+export function validateMaintenanceForm(
+  values: MaintenanceFormValues,
+): MaintenanceFormFieldError[] {
+  const errors: MaintenanceFormFieldError[] = []
+
+  if (values.title.trim() === '') {
+    errors.push({ field: 'title', message: 'Title is required.' })
+  }
+  if (values.componentId.trim() === '') {
+    errors.push({ field: 'component_id', message: 'Component is required.' })
+  }
+  if (values.startsAt.trim() === '') {
+    errors.push({ field: 'starts_at', message: 'Start is required.' })
+  }
+  if (values.endsAt.trim() === '') {
+    errors.push({ field: 'ends_at', message: 'End is required.' })
+  } else if (
+    values.startsAt.trim() !== '' &&
+    new Date(values.endsAt) <= new Date(values.startsAt)
+  ) {
+    errors.push({ field: 'ends_at', message: 'End must be after start.' })
+  }
+
+  return errors
 }

@@ -4,6 +4,7 @@ import { Sidebar } from './nav/Sidebar'
 import { SidebarDrawer } from './nav/SidebarDrawer'
 import { TopBar } from './nav/TopBar'
 import { SampleModeBanner } from './nav/SampleModeBanner'
+import { useDismissibleBanner } from './nav/useDismissibleBanner'
 import { useResponsiveSidebar } from './nav/useResponsiveSidebar'
 import { useApprovalsBadge } from './features/shell/useApprovalsBadge'
 import { useSampleMode } from './features/dashboard/useSampleMode'
@@ -35,6 +36,12 @@ import './AppShell.css'
  * `Sidebar` or the overlay `SidebarDrawer` renders AND whether `TopBar`
  * shows its hamburger trigger, so those three can never disagree about
  * whether a drawer exists to open.
+ *
+ * `useDismissibleBanner(bannerVisible)` (STORY-102 AC2) is lifted the same
+ * way: it used to be `SampleModeBanner`'s own private state, but `TopBar`'s
+ * persistent "SAMPLE" chip (shown once the banner is dismissed while the
+ * flag is still ON) needs to read/drive the SAME dismissed flag, so it
+ * moved up here alongside the other single-source-of-truth hooks.
  */
 export function AppShell() {
   const pendingApprovals = useApprovalsBadge()
@@ -44,6 +51,7 @@ export function AppShell() {
   const menuTriggerRef = useRef<HTMLButtonElement>(null)
 
   const bannerVisible = sampleMode.state.phase === 'success' && sampleMode.enabled === true
+  const { dismissed, dismiss, restore } = useDismissibleBanner(bannerVisible)
 
   return (
     <div className="app-shell">
@@ -80,8 +88,10 @@ export function AppShell() {
           showMenuTrigger={isMobile}
           onOpenMenu={openDrawer}
           menuTriggerRef={menuTriggerRef}
+          showSampleChip={bannerVisible && dismissed}
+          onRestoreBanner={restore}
         />
-        <SampleModeBanner visible={bannerVisible} />
+        <SampleModeBanner visible={bannerVisible} dismissed={dismissed} onDismiss={dismiss} />
         <main id="main-content" className="app-shell__main" tabIndex={-1}>
           <Routes>
             <Route path="/" element={<DashboardPage />} />

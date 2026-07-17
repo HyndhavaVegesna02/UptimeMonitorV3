@@ -5,13 +5,19 @@ import { describe, expect, it, vi } from 'vitest'
 import { server } from '../mocks/server'
 import { ThemeProvider } from '../theme/ThemeContext'
 import { useSampleMode } from '../features/dashboard/useSampleMode'
+import { QUERY_MOBILE_DOWN } from '../lib/breakpoints'
 import { TopBar } from './TopBar'
 
-function mockMatchMedia(prefersDark: boolean) {
+function mockMatchMedia(prefersDark: boolean, mobileMatches = false) {
   vi.stubGlobal(
     'matchMedia',
     vi.fn().mockImplementation((query: string) => ({
-      matches: query === '(prefers-color-scheme: dark)' && prefersDark,
+      matches:
+        query === '(prefers-color-scheme: dark)'
+          ? prefersDark
+          : query === QUERY_MOBILE_DOWN
+            ? mobileMatches
+            : false,
       media: query,
       addEventListener: vi.fn(),
       removeEventListener: vi.fn(),
@@ -27,9 +33,13 @@ function mockMatchMedia(prefersDark: boolean) {
 function TopBarHarness({
   showMenuTrigger,
   onOpenMenu,
+  showSampleChip,
+  onRestoreBanner,
 }: {
   showMenuTrigger?: boolean
   onOpenMenu?: () => void
+  showSampleChip?: boolean
+  onRestoreBanner?: () => void
 }) {
   const sampleMode = useSampleMode()
   return (
@@ -37,12 +47,22 @@ function TopBarHarness({
       sampleMode={sampleMode}
       showMenuTrigger={showMenuTrigger}
       onOpenMenu={onOpenMenu}
+      showSampleChip={showSampleChip}
+      onRestoreBanner={onRestoreBanner}
     />
   )
 }
 
-function renderTopBar(props: { showMenuTrigger?: boolean; onOpenMenu?: () => void } = {}) {
-  mockMatchMedia(true)
+function renderTopBar(
+  props: {
+    showMenuTrigger?: boolean
+    onOpenMenu?: () => void
+    showSampleChip?: boolean
+    onRestoreBanner?: () => void
+  } = {},
+  mobileMatches = false,
+) {
+  mockMatchMedia(true, mobileMatches)
   return render(
     <ThemeProvider>
       <TopBarHarness {...props} />
@@ -176,5 +196,57 @@ describe('TopBar', () => {
 
     expect(await screen.findByRole('switch', { name: 'Sample mode' })).toBeInTheDocument()
     expect(callCount).toBe(2)
+  })
+
+  it('shows a visible "Sample mode" text label next to the switch at desktop widths (AC1)', async () => {
+    renderTopBar({}, false)
+    await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(screen.getByText('Sample mode')).toBeInTheDocument()
+  })
+
+  it('hides the visible text label at mobile widths, keeping the aria-label (AC1)', async () => {
+    renderTopBar({}, true)
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(screen.queryByText('Sample mode')).not.toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-label', 'Sample mode')
+  })
+
+  it('OFF state renders neutral trigger styling — no active/warning class (AC1)', async () => {
+    renderTopBar()
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).not.toHaveClass('top-bar__trigger--active')
+  })
+
+  it('ON state renders the warning-accented trigger class, never the error/red class (AC1)', async () => {
+    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
+    renderTopBar()
+    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(toggle).toHaveClass('top-bar__trigger--active')
+    expect(toggle).not.toHaveClass('top-bar__trigger--error')
+  })
+
+  it('renders a persistent "SAMPLE" chip when showSampleChip is true, and clicking it calls onRestoreBanner (AC2)', async () => {
+    const user = userEvent.setup()
+    const onRestoreBanner = vi.fn()
+    renderTopBar({ showSampleChip: true, onRestoreBanner })
+    await screen.findByRole('switch', { name: 'Sample mode' })
+
+    const chip = screen.getByRole('button', { name: /sample mode is on/i })
+    expect(chip).toHaveTextContent('SAMPLE')
+
+    await user.click(chip)
+    expect(onRestoreBanner).toHaveBeenCalledTimes(1)
+  })
+
+  it('does not render the SAMPLE chip when showSampleChip is false/omitted (AC2)', async () => {
+    renderTopBar()
+    await screen.findByRole('switch', { name: 'Sample mode' })
+    expect(screen.queryByText('SAMPLE')).not.toBeInTheDocument()
+  })
+
+  it("theme toggle's title names the specific action, matching its aria-label", () => {
+    renderTopBar()
+    const themeButton = screen.getByRole('button', { name: /switch to/i })
+    expect(themeButton).toHaveAttribute('title', themeButton.getAttribute('aria-label'))
   })
 })

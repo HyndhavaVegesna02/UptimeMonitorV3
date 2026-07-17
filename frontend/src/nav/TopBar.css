@@ -27,6 +27,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: var(--space-1);
   border: 1px solid var(--color-hairline);
   border-radius: var(--radius-control);
   cursor: pointer;
@@ -40,20 +41,43 @@
   color: var(--color-ink);
 }
 
-.top-bar__trigger,
+/* STORY-102 AC1: OFF is neutral (the plain `top-bar__button` treatment
+   above, no override here) — the trigger only WIDENS to fit its label. Red
+   is reserved for `top-bar__trigger--error` (a genuine GET failure) below;
+   it never applies to the ordinary OFF state. */
+.top-bar__trigger {
+  width: auto;
+  padding: 0 var(--space-2);
+}
+
+.top-bar__trigger-label {
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  font-weight: var(--fw-button);
+  white-space: nowrap;
+}
+
+/* ON — warning/degraded accent (STORY-102 AC1), never red: an active
+   sample-mode flag is an environment state to stay aware of, not an alert. */
+.top-bar__trigger--active {
+  border-color: var(--color-health-degraded);
+  color: var(--color-health-degraded);
+  background: var(--color-health-degraded-subtle);
+}
+
+.top-bar__trigger--active:hover {
+  background: var(--color-health-degraded);
+  color: var(--color-on-accent);
+}
+
 .top-bar__trigger--error {
+  width: 32px;
   border-color: var(--color-health-down);
   color: var(--color-health-down);
   background: var(--color-health-down-subtle);
 }
 
-.top-bar__trigger:hover,
 .top-bar__trigger--error:hover {
-  background: var(--color-health-down);
-  color: var(--color-on-accent);
-}
-
-.top-bar__trigger--active {
   background: var(--color-health-down);
   color: var(--color-on-accent);
 }
@@ -61,6 +85,30 @@
 .top-bar__button:disabled {
   cursor: not-allowed;
   opacity: 0.6;
+}
+
+/* Persistent "SAMPLE" chip (STORY-102 AC2) — shown once the banner has been
+   dismissed while the flag is still ON, so the operator always has SOME
+   indicator beyond the trigger's own accent. Click restores the banner. */
+.top-bar__sample-chip {
+  flex: none;
+  min-height: var(--target-min);
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-health-degraded);
+  border-radius: var(--radius-chip);
+  background: var(--color-health-degraded-subtle);
+  color: var(--color-health-degraded);
+  font-family: var(--font-sans);
+  font-size: var(--fs-chip);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.top-bar__sample-chip:hover {
+  background: var(--color-health-degraded);
+  color: var(--color-on-accent);
 }
 
 /* Mobile drawer trigger (STORY-096 AC2) — pinned to the left edge of the
