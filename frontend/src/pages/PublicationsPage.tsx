@@ -5,6 +5,7 @@ import {
   ErrorState,
   Icon,
   LoadingState,
+  PageHeader,
   Panel,
   StatusBadge,
   Timeline,
@@ -49,54 +50,63 @@ function OutcomeChip({ outcome }: { outcome: PublicationDTO['outcome'] }) {
  * fields are still OMITTED: `PublicationDTO` carries neither — see
  * STORY-066 for the follow-up that would add that metadata. The endpoint
  * caps at the repository's most-recent 50 (`list_recent`, no pagination) —
- * stated in the header copy so the cap is visible, never silent (AC2).
+ * stated in the header copy so the cap is visible, never silent (AC2). The
+ * h1 + subtitle render via the shared `PageHeader` (STORY-097 AC1), outside
+ * the `Panel` card, in the shared narrow `page` container (AC2).
  */
 export function PublicationsPage() {
   const { state, retry } = usePublications()
 
   return (
-    <Panel title="Publications" headingLevel="h1">
-      <p className="publications-page__cap-note text-caption">
-        Showing the latest 50 publications
-      </p>
+    <div className="publications-page page">
+      <PageHeader
+        title="Publications"
+        subtitle="An audit trail of every approved change actually pushed to the public status page."
+      />
 
-      {state.phase === 'loading' && <LoadingState label="Loading publications…" />}
+      <Panel>
+        <p className="publications-page__cap-note text-caption">
+          Showing the latest 50 publications
+        </p>
 
-      {state.phase === 'error' && (
-        <ErrorState message="Could not load publications" onRetry={retry} />
-      )}
+        {state.phase === 'loading' && <LoadingState label="Loading publications…" />}
 
-      {state.phase === 'success' && state.data.length === 0 && (
-        <EmptyState message="Nothing published yet" />
-      )}
+        {state.phase === 'error' && (
+          <ErrorState message="Could not load publications" onRetry={retry} />
+        )}
 
-      {state.phase === 'success' && state.data.length > 0 && (
-        <Timeline aria-label="Publication log">
-          {state.data.map((publication, index) => (
-            <TimelineItem
-              key={publication.id}
-              tone={toHealthStatus(publication.status)}
-              isLast={index === state.data.length - 1}
-            >
-              <div className="publications-page__row-head">
-                <span className="text-mono publications-page__scope">
-                  {publication.component_id}
-                </span>
-                <Icon name="arrow-right" className="publications-page__arrow" />
-                <StatusBadge status={toHealthStatus(publication.status)} />
-                <OutcomeChip outcome={publication.outcome} />
-              </div>
-              <div className="publications-page__meta text-mono text-caption">
-                <span>{publication.published_at}</span>
-                <span aria-hidden="true"> · </span>
-                <span>Proposal {formatProposalId(publication.proposal_id)}</span>
-                <span aria-hidden="true"> · </span>
-                <span>Author {publication.author ?? '—'}</span>
-              </div>
-            </TimelineItem>
-          ))}
-        </Timeline>
-      )}
-    </Panel>
+        {state.phase === 'success' && state.data.length === 0 && (
+          <EmptyState message="Nothing published yet" />
+        )}
+
+        {state.phase === 'success' && state.data.length > 0 && (
+          <Timeline aria-label="Publication log">
+            {state.data.map((publication, index) => (
+              <TimelineItem
+                key={publication.id}
+                tone={toHealthStatus(publication.status)}
+                isLast={index === state.data.length - 1}
+              >
+                <div className="publications-page__row-head">
+                  <span className="text-mono publications-page__scope">
+                    {publication.component_id}
+                  </span>
+                  <Icon name="arrow-right" className="publications-page__arrow" />
+                  <StatusBadge status={toHealthStatus(publication.status)} />
+                  <OutcomeChip outcome={publication.outcome} />
+                </div>
+                <div className="publications-page__meta text-mono text-caption">
+                  <span>{publication.published_at}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>Proposal {formatProposalId(publication.proposal_id)}</span>
+                  <span aria-hidden="true"> · </span>
+                  <span>Author {publication.author ?? '—'}</span>
+                </div>
+              </TimelineItem>
+            ))}
+          </Timeline>
+        )}
+      </Panel>
+    </div>
   )
 }

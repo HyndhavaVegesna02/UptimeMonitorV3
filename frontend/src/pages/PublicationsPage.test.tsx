@@ -7,6 +7,18 @@ import { FIXTURE_PUBLICATIONS } from '../mocks/handlers'
 import { PublicationsPage } from './PublicationsPage'
 
 describe('PublicationsPage', () => {
+  it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', async () => {
+    const { container } = render(<PublicationsPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Publications', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+    expect(heading.closest('.panel')).toBeNull()
+
+    const root = container.querySelector('.publications-page')
+    expect(root).toHaveClass('page')
+    expect(root).not.toHaveClass('page--wide')
+  })
+
   it('shows a loading state, then a vertical timeline with one item per publication, newest-first (AC1)', async () => {
     render(<PublicationsPage />)
 
