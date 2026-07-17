@@ -1,11 +1,13 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { ThemeProvider } from './theme/ThemeContext'
 import { AppShell } from './AppShell'
 import { TABS } from './nav/tabs'
+import { QUERY_MOBILE_DOWN, QUERY_TABLET_DOWN } from './lib/breakpoints'
+import { stubMatchMedia } from './test/matchMedia'
 import { server } from './mocks/server'
 import { FIXTURE_PROPOSALS } from './mocks/handlers'
 
@@ -221,5 +223,92 @@ describe('AppShell — Approvals badge (STORY-056 AC4)', () => {
 
     // Still routable by its plain label — no ", N pending" suffix.
     expect(await screen.findByRole('link', { name: 'Approvals' })).toBeInTheDocument()
+  })
+})
+
+/** Stubs both the theme's `prefers-color-scheme` query AND the two
+ * responsive breakpoints in one call, for the STORY-096 describe blocks
+ * below — `renderShell` above intentionally keeps its own narrower
+ * `mockMatchMedia` untouched (existing desktop-width behavior must stay
+ * provably unchanged with ZERO changes to those tests). */
+function renderShellAtViewport(
+  { isNarrow = false, isMobile = false }: { isNarrow?: boolean; isMobile?: boolean },
+  initialPath = '/',
+) {
+  stubMatchMedia({
+    '(prefers-color-scheme: dark)': true,
+    [QUERY_TABLET_DOWN]: isNarrow || isMobile,
+    [QUERY_MOBILE_DOWN]: isMobile,
+  })
+  server.use(http.get('/api/v1/approvals', () => HttpResponse.json([])))
+  return render(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <ThemeProvider>
+        <AppShell />
+      </ThemeProvider>
+    </MemoryRouter>,
+  )
+}
+
+describe('AppShell — responsive shell (STORY-096 AC3): <=1024px rail auto-collapse', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('auto-collapses the sidebar to the icon rail, ignoring the persisted expanded preference', () => {
+    renderShellAtViewport({ isNarrow: true })
+    expect(
+      screen.getByRole('button', { name: 'Expand sidebar' }),
+    ).toHaveAttribute('aria-expanded', 'false')
+  })
+
+  it('renders no drawer/hamburger trigger at this width (rail only, not drawer)', () => {
+    renderShellAtViewport({ isNarrow: true })
+    expect(
+      screen.queryByRole('button', { name: 'Open navigation menu' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('still lets the user expand the rail manually at this width', async () => {
+    const user = userEvent.setup()
+    renderShellAtViewport({ isNarrow: true })
+
+    await user.click(screen.getByRole('button', { name: 'Expand sidebar' }))
+
+    expect(
+      screen.getByRole('button', { name: 'Collapse sidebar' }),
+    ).toHaveAttribute('aria-expanded', 'true')
+  })
+})
+
+describe('AppShell — responsive shell (STORY-096 AC2): <=768px overlay drawer', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('renders no persistent sidebar nav — only a hamburger trigger in the top bar', () => {
+    renderShellAtViewport({ isMobile: true })
+    expect(screen.queryByRole('navigation', { name: 'Primary' })).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Open navigation menu' }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens the drawer from the hamburger trigger, closes on Escape, and returns focus', async () => {
+    const user = userEvent.setup()
+    renderShellAtViewport({ isMobile: true })
+
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    await user.click(trigger)
+
+    expect(screen.getByRole('dialog', { name: 'Navigation' })).toBeInTheDocument()
+    for (const tab of TABS) {
+      expect(screen.getByRole('link', { name: tab.label })).toBeInTheDocument()
+    }
+
+    await user.keyboard('{Escape}')
+
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(trigger).toHaveFocus()
   })
 })

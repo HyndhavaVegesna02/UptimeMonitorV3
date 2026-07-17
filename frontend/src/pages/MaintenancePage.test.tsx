@@ -55,6 +55,17 @@ describe('MaintenancePage', () => {
     vi.useRealTimers()
   })
 
+  it('renders the h1 via the shared PageHeader, outside the card, in the shared narrow container (STORY-097 AC1, AC2)', () => {
+    const { container } = render(<MaintenancePage />)
+
+    const heading = screen.getByRole('heading', { name: 'Maintenance', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+
+    const root = container.querySelector('.maintenance-page')
+    expect(root).toHaveClass('page')
+    expect(root).not.toHaveClass('page--wide')
+  })
+
   it('renders a two-column layout: a "New window" form card + a windows list (AC1)', async () => {
     render(<MaintenancePage />)
 
@@ -185,6 +196,19 @@ describe('MaintenancePage', () => {
 
     expect(await screen.findByText('No maintenance scheduled')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: /window/i })).not.toBeInTheDocument()
+  })
+
+  it('uses the shared designed EmptyState with a helpful body line (STORY-097 AC3)', async () => {
+    server.use(http.get('/api/v1/maintenance', () => HttpResponse.json([])))
+
+    const { container } = render(<MaintenancePage />)
+
+    const message = await screen.findByText('No maintenance scheduled')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon')).not.toBeNull()
+    expect(
+      screen.getByText('Schedule a window to suppress alerts during planned work.'),
+    ).toBeInTheDocument()
   })
 
   it('shows an error state on load failure, then recovers via retry (AC4)', async () => {

@@ -1,9 +1,10 @@
-import { useState } from 'react'
+import { useRef } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Sidebar } from './nav/Sidebar'
+import { SidebarDrawer } from './nav/SidebarDrawer'
 import { TopBar } from './nav/TopBar'
 import { SampleModeBanner } from './nav/SampleModeBanner'
-import { persistExpanded, resolveInitialExpanded } from './nav/sidebarState'
+import { useResponsiveSidebar } from './nav/useResponsiveSidebar'
 import { useApprovalsBadge } from './features/shell/useApprovalsBadge'
 import { useSampleMode } from './features/dashboard/useSampleMode'
 import { DashboardPage } from './pages/DashboardPage'
@@ -28,19 +29,19 @@ import './AppShell.css'
  * bar is guaranteed to be reflected in the banner on the very same render
  * (two independent hook instances would each run their own GET/override
  * cycle and could disagree — see `TopBar.tsx`'s header comment).
+ *
+ * `useResponsiveSidebar()` (STORY-096) is the other single source of truth
+ * this shell lifts once: `isMobile` decides whether the persistent
+ * `Sidebar` or the overlay `SidebarDrawer` renders AND whether `TopBar`
+ * shows its hamburger trigger, so those three can never disagree about
+ * whether a drawer exists to open.
  */
 export function AppShell() {
-  const [expanded, setExpanded] = useState(() => resolveInitialExpanded())
   const pendingApprovals = useApprovalsBadge()
   const sampleMode = useSampleMode()
-
-  const toggleExpanded = () => {
-    setExpanded((current) => {
-      const next = !current
-      persistExpanded(next)
-      return next
-    })
-  }
+  const { isMobile, expanded, toggleExpanded, drawerOpen, openDrawer, closeDrawer } =
+    useResponsiveSidebar()
+  const menuTriggerRef = useRef<HTMLButtonElement>(null)
 
   const bannerVisible = sampleMode.state.phase === 'success' && sampleMode.enabled === true
 
@@ -59,13 +60,27 @@ export function AppShell() {
       >
         Skip to main content
       </a>
-      <Sidebar
-        expanded={expanded}
-        onToggleExpanded={toggleExpanded}
-        pendingApprovals={pendingApprovals}
-      />
+      {isMobile ? (
+        <SidebarDrawer
+          open={drawerOpen}
+          onClose={closeDrawer}
+          triggerRef={menuTriggerRef}
+          pendingApprovals={pendingApprovals}
+        />
+      ) : (
+        <Sidebar
+          expanded={expanded}
+          onToggleExpanded={toggleExpanded}
+          pendingApprovals={pendingApprovals}
+        />
+      )}
       <div className="app-shell__content">
-        <TopBar sampleMode={sampleMode} />
+        <TopBar
+          sampleMode={sampleMode}
+          showMenuTrigger={isMobile}
+          onOpenMenu={openDrawer}
+          menuTriggerRef={menuTriggerRef}
+        />
         <SampleModeBanner visible={bannerVisible} />
         <main id="main-content" className="app-shell__main" tabIndex={-1}>
           <Routes>

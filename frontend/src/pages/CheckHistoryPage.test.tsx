@@ -14,6 +14,17 @@ const TOTAL_MERGED_ROWS =
   FIXTURE_HISTORY_FRONTEND_HTTP.length + FIXTURE_HISTORY_FRONTEND_TLS.length
 
 describe('CheckHistoryPage', () => {
+  it('renders the h1 + subtitle via the shared PageHeader, outside the card, opted into full width (STORY-097 AC1, AC2)', async () => {
+    const { container } = render(<CheckHistoryPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Check History', level: 1 })
+    expect(heading.closest('.page-header')).not.toBeNull()
+    expect(heading.closest('.panel')).toBeNull()
+
+    const root = container.querySelector('.check-history-page')
+    expect(root).toHaveClass('page', 'page--wide')
+  })
+
   it('renders every topology signal\'s observations merged newest-first, tagged with their component (AC1, AC2)', async () => {
     render(<CheckHistoryPage />)
 
@@ -149,12 +160,17 @@ describe('CheckHistoryPage', () => {
 
   it('shows a distinct empty state when filters match nothing, without hiding that data exists (AC1, AC4)', async () => {
     const user = userEvent.setup()
-    render(<CheckHistoryPage />)
+    const { container } = render(<CheckHistoryPage />)
     await screen.findByRole('table')
 
     await user.type(screen.getByLabelText('Search'), 'no-such-signal-or-component')
 
-    expect(await screen.findByText('No observations match your filters')).toBeInTheDocument()
+    const message = await screen.findByText('No observations match your filters')
+    expect(message.closest('.empty-state')).not.toBeNull()
+    expect(container.querySelector('.empty-state__icon')).not.toBeNull()
+    expect(
+      screen.getByText('Try widening the time window or clearing a filter.'),
+    ).toBeInTheDocument()
     expect(screen.queryByRole('table')).not.toBeInTheDocument()
   })
 

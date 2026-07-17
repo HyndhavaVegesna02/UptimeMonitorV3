@@ -6,6 +6,7 @@ import {
   ErrorState,
   Icon,
   LoadingState,
+  PageHeader,
   Panel,
   Table,
   TableBody,
@@ -141,56 +142,51 @@ export function AvailabilityPage() {
     })
   }
 
-  return (
-    <div className="availability-page">
-      <div className="availability-page__header">
-        <div>
-          <h1 className="text-h1 availability-page__title">Availability</h1>
-          <p className="text-caption availability-page__subtitle">
-            Uptime vs. how much monitoring data we actually captured
-          </p>
-        </div>
-
-        <div className="availability-page__controls">
-          <div className="availability-page__legend">
-            <span className="availability-page__legend-item">
-              <span
-                className="availability-page__legend-swatch availability-page__legend-swatch--down"
-                aria-hidden="true"
-              />
-              Down / outage
-            </span>
-            <span className="availability-page__legend-item">
-              <span
-                className="availability-page__legend-swatch availability-page__legend-swatch--missing"
-                aria-hidden="true"
-              />
-              Missing data
-            </span>
-          </div>
-
-          <div
-            className="availability-page__window"
-            role="group"
-            aria-label="Time window"
-          >
-            {WINDOW_PRESETS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={cx(
-                  'availability-page__window-button',
-                  preset === option.value && 'availability-page__window-button--active',
-                )}
-                aria-pressed={preset === option.value}
-                onClick={() => setPreset(option.value)}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
+  const headerActions = (
+    <>
+      <div className="availability-page__legend">
+        <span className="availability-page__legend-item">
+          <span
+            className="availability-page__legend-swatch availability-page__legend-swatch--down"
+            aria-hidden="true"
+          />
+          Down / outage
+        </span>
+        <span className="availability-page__legend-item">
+          <span
+            className="availability-page__legend-swatch availability-page__legend-swatch--missing"
+            aria-hidden="true"
+          />
+          Missing data
+        </span>
       </div>
+
+      <div className="availability-page__window" role="group" aria-label="Time window">
+        {WINDOW_PRESETS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className={cx(
+              'availability-page__window-button',
+              preset === option.value && 'availability-page__window-button--active',
+            )}
+            aria-pressed={preset === option.value}
+            onClick={() => setPreset(option.value)}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+
+  return (
+    <div className="availability-page page page--wide">
+      <PageHeader
+        title="Availability"
+        subtitle="Uptime vs. how much monitoring data we actually captured"
+        actions={headerActions}
+      />
 
       {state.phase === 'loading' && <LoadingState label="Loading availability…" />}
 

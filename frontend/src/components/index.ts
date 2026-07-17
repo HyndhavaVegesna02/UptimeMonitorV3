@@ -6,6 +6,7 @@ export {
   type StatusBadgeProps,
 } from './StatusBadge/StatusBadge'
 export { Panel, type PanelProps } from './Panel/Panel'
+export { PageHeader, type PageHeaderProps } from './PageHeader/PageHeader'
 export { LoadingState, type LoadingStateProps } from './LoadingState/LoadingState'
 export { ErrorState, type ErrorStateProps } from './ErrorState/ErrorState'
 export { EmptyState, type EmptyStateProps } from './EmptyState/EmptyState'

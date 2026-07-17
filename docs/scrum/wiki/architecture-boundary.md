@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: d8173d3
+verified_sha: 203ed93
 verified_sprint: sprint-49
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -153,4 +153,4 @@ status: verified
   cutover; `code_refs` dropped `scripts/check_fk_direction.py`, the Schema-boundary Facts and the
   Inference were rewritten to reflect the retirement, and the import boundary (`lint-imports`, 8
   contracts kept) is now the sole standing CI floor. verified_sha → 5b4ee36.
-
+- sprint-52 (ui-redesign lock): re-verified after mechanical staleness sweep. The only `pyproject.toml` change was adding `".claude"` to `[tool.ruff] exclude` (PO-installed third-party skill scripts false-red'd the gate); no documented claim touched. verified_sha -> 203ed93.

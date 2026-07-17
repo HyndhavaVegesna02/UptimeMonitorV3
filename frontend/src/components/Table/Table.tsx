@@ -20,8 +20,15 @@ import './Table.css'
 
 export type TableProps = HTMLAttributes<HTMLTableElement>
 
+/** Wrapped in its own horizontally-scrollable `.table-wrapper` (STORY-096
+ * AC4) — a wide table (long timestamps, many columns) scrolls WITHIN this
+ * container, never forcing the page itself to scroll horizontally. */
 export function Table({ className, ...rest }: TableProps) {
-  return <table className={cx('table', className)} {...rest} />
+  return (
+    <div className="table-wrapper">
+      <table className={cx('table', className)} {...rest} />
+    </div>
+  )
 }
 
 export type TableHeadProps = HTMLAttributes<HTMLTableSectionElement>

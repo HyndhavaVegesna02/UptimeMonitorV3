@@ -3,6 +3,7 @@ import {
   EmptyState,
   ErrorState,
   LoadingState,
+  PageHeader,
   Panel,
   StatusBadge,
   Table,
@@ -84,7 +85,9 @@ function formatResponseStatusCode(code: number | null): string {
  * agreement) into one newest-first list; the search input plus the result
  * and location `<select>`s (AC1) then narrow that already-loaded list
  * client-side — none of the three filters trigger a refetch, only the
- * window toggle does.
+ * window toggle does. The h1 + subtitle render via the shared `PageHeader`
+ * (STORY-097 AC1), outside the `Panel` card, in the shared full-width
+ * `page--wide` container (a dense table page, per AC2).
  */
 export function CheckHistoryPage({
   maxRenderedRows = DEFAULT_MAX_RENDERED_ROWS,
@@ -106,137 +109,148 @@ export function CheckHistoryPage({
   const truncated = filtered.length > maxRenderedRows
 
   return (
-    <Panel title="Check History" headingLevel="h1">
-      <div className="check-history-page__toolbar">
-        <div className="check-history-page__search">
-          <label className="check-history-page__label" htmlFor="check-history-search">
-            Search
-          </label>
-          <input
-            id="check-history-search"
-            type="search"
-            className="check-history-page__search-input"
-            placeholder="Search component, location, or signal…"
-            value={filters.query}
-            onChange={(event) =>
-              setFilters((previous) => ({ ...previous, query: event.target.value }))
-            }
-          />
-        </div>
+    <div className="check-history-page page page--wide">
+      <PageHeader
+        title="Check History"
+        subtitle="A chronological ledger of every monitored signal's observations across the selected time window."
+      />
 
-        <div className="check-history-page__filter">
-          <label className="check-history-page__label" htmlFor="check-history-result">
-            Result
-          </label>
-          <select
-            id="check-history-result"
-            className="check-history-page__select"
-            value={filters.result}
-            onChange={(event) =>
-              setFilters((previous) => ({ ...previous, result: event.target.value }))
-            }
-          >
-            {RESULT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+      <Panel>
+        <div className="check-history-page__toolbar">
+          <div className="check-history-page__search">
+            <label className="check-history-page__label" htmlFor="check-history-search">
+              Search
+            </label>
+            <input
+              id="check-history-search"
+              type="search"
+              className="check-history-page__search-input"
+              placeholder="Search component, location, or signal…"
+              value={filters.query}
+              onChange={(event) =>
+                setFilters((previous) => ({ ...previous, query: event.target.value }))
+              }
+            />
+          </div>
 
-        <div className="check-history-page__filter">
-          <label className="check-history-page__label" htmlFor="check-history-location">
-            Location
-          </label>
-          <select
-            id="check-history-location"
-            className="check-history-page__select"
-            value={filters.location}
-            onChange={(event) =>
-              setFilters((previous) => ({ ...previous, location: event.target.value }))
-            }
-          >
-            <option value={ALL_LOCATIONS}>All locations</option>
-            {locationOptions.map((location) => (
-              <option key={location} value={location}>
-                {location}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="check-history-page__window" role="group" aria-label="Time window">
-          {WINDOW_PRESETS.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              className={cx(
-                'check-history-page__window-button',
-                preset === option.value && 'check-history-page__window-button--active',
-              )}
-              aria-pressed={preset === option.value}
-              onClick={() => setPreset(option.value)}
+          <div className="check-history-page__filter">
+            <label className="check-history-page__label" htmlFor="check-history-result">
+              Result
+            </label>
+            <select
+              id="check-history-result"
+              className="check-history-page__select"
+              value={filters.result}
+              onChange={(event) =>
+                setFilters((previous) => ({ ...previous, result: event.target.value }))
+              }
             >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {state.phase === 'loading' && <LoadingState label="Loading observations…" />}
-
-      {state.phase === 'error' && (
-        <ErrorState message="Could not load check history" onRetry={retry} />
-      )}
-
-      {state.phase === 'success' && rows.length === 0 && (
-        <EmptyState message="No observations in this window" />
-      )}
-
-      {state.phase === 'success' && rows.length > 0 && filtered.length === 0 && (
-        <EmptyState message="No observations match your filters" />
-      )}
-
-      {state.phase === 'success' && filtered.length > 0 && (
-        <>
-          {truncated ? (
-            <p className="check-history-page__cap-note text-caption">
-              showing latest {maxRenderedRows.toLocaleString()} of{' '}
-              {filtered.length.toLocaleString()} observations
-            </p>
-          ) : null}
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableHeaderCell>Timestamp</TableHeaderCell>
-                <TableHeaderCell>Type</TableHeaderCell>
-                <TableHeaderCell>Component</TableHeaderCell>
-                <TableHeaderCell>Location</TableHeaderCell>
-                <TableHeaderCell>Result</TableHeaderCell>
-                <TableHeaderCell>Code</TableHeaderCell>
-                <TableHeaderCell>Latency</TableHeaderCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rendered.map((row, index) => (
-                <TableRow key={`${row.signal_key}-${row.observed_at}-${index}`}>
-                  <TableCell className="text-mono">{row.observed_at}</TableCell>
-                  <TableCell className="text-mono">{row.check_type.toUpperCase()}</TableCell>
-                  <TableCell>{row.componentName}</TableCell>
-                  <TableCell className="text-mono">{row.location}</TableCell>
-                  <TableCell>
-                    <StatusBadge status={observationHealth(row.health)} />
-                  </TableCell>
-                  <TableCell className="text-mono">
-                    {formatResponseStatusCode(row.response_status_code)}
-                  </TableCell>
-                  <TableCell className="text-mono">{formatLatency(row.latency_ms)}</TableCell>
-                </TableRow>
+              {RESULT_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
               ))}
-            </TableBody>
-          </Table>
-        </>
-      )}
-    </Panel>
+            </select>
+          </div>
+
+          <div className="check-history-page__filter">
+            <label className="check-history-page__label" htmlFor="check-history-location">
+              Location
+            </label>
+            <select
+              id="check-history-location"
+              className="check-history-page__select"
+              value={filters.location}
+              onChange={(event) =>
+                setFilters((previous) => ({ ...previous, location: event.target.value }))
+              }
+            >
+              <option value={ALL_LOCATIONS}>All locations</option>
+              {locationOptions.map((location) => (
+                <option key={location} value={location}>
+                  {location}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="check-history-page__window" role="group" aria-label="Time window">
+            {WINDOW_PRESETS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={cx(
+                  'check-history-page__window-button',
+                  preset === option.value && 'check-history-page__window-button--active',
+                )}
+                aria-pressed={preset === option.value}
+                onClick={() => setPreset(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {state.phase === 'loading' && <LoadingState label="Loading observations…" />}
+
+        {state.phase === 'error' && (
+          <ErrorState message="Could not load check history" onRetry={retry} />
+        )}
+
+        {state.phase === 'success' && rows.length === 0 && (
+          <EmptyState message="No observations in this window" />
+        )}
+
+        {state.phase === 'success' && rows.length > 0 && filtered.length === 0 && (
+          <EmptyState
+            icon="search"
+            message="No observations match your filters"
+            detail="Try widening the time window or clearing a filter."
+          />
+        )}
+
+        {state.phase === 'success' && filtered.length > 0 && (
+          <>
+            {truncated ? (
+              <p className="check-history-page__cap-note text-caption">
+                showing latest {maxRenderedRows.toLocaleString()} of{' '}
+                {filtered.length.toLocaleString()} observations
+              </p>
+            ) : null}
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableHeaderCell>Timestamp</TableHeaderCell>
+                  <TableHeaderCell>Type</TableHeaderCell>
+                  <TableHeaderCell>Component</TableHeaderCell>
+                  <TableHeaderCell>Location</TableHeaderCell>
+                  <TableHeaderCell>Result</TableHeaderCell>
+                  <TableHeaderCell>Code</TableHeaderCell>
+                  <TableHeaderCell>Latency</TableHeaderCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {rendered.map((row, index) => (
+                  <TableRow key={`${row.signal_key}-${row.observed_at}-${index}`}>
+                    <TableCell className="text-mono">{row.observed_at}</TableCell>
+                    <TableCell className="text-mono">{row.check_type.toUpperCase()}</TableCell>
+                    <TableCell>{row.componentName}</TableCell>
+                    <TableCell className="text-mono">{row.location}</TableCell>
+                    <TableCell>
+                      <StatusBadge status={observationHealth(row.health)} />
+                    </TableCell>
+                    <TableCell className="text-mono">
+                      {formatResponseStatusCode(row.response_status_code)}
+                    </TableCell>
+                    <TableCell className="text-mono">{formatLatency(row.latency_ms)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </>
+        )}
+      </Panel>
+    </div>
   )
 }

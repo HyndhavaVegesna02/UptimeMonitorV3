@@ -37,6 +37,7 @@ describe('Icon', () => {
       'trash',
       'zap',
       'arrow-right',
+      'menu',
     ] as const
 
     for (const name of names) {

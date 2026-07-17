@@ -106,6 +106,25 @@ p {
   letter-spacing: var(--ls-mono);
 }
 
+/* Shared page-content container width policy (STORY-097 AC2) — every
+   route's root element carries `.page`, centered to the one shared
+   `--container-width` reading width; a wide data page (a dense table/grid
+   that benefits from the full shell width — Dashboard, Availability, Check
+   History) explicitly opts out via `.page--wide` rather than each page
+   inventing its own divergent max-width. */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  max-width: var(--container-width);
+  margin: 0 auto;
+}
+
+.page--wide {
+  max-width: none;
+}
+
 /* Visually hidden but reader-accessible (e.g. the "to" between a decorative
  * from->to arrow's two StatusBadges — STORY-015c AC1). Standard clip-based
  * pattern, not `display: none` (which removes it from the a11y tree too). */

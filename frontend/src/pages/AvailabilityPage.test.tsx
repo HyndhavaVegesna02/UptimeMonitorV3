@@ -12,6 +12,26 @@ import type { ComponentAvailabilityDTO } from '../api/types'
 import { AvailabilityPage } from './AvailabilityPage'
 
 describe('AvailabilityPage', () => {
+  it('renders the h1 via the shared PageHeader, outside the card, with the legend + window switcher in the actions slot (STORY-097 AC1, AC2, AC4)', async () => {
+    const { container } = render(<AvailabilityPage />)
+
+    const heading = screen.getByRole('heading', { name: 'Availability', level: 1 })
+    const header = heading.closest('.page-header')
+    expect(header).not.toBeNull()
+    expect(heading.closest('.panel')).toBeNull()
+
+    // The legend + window switcher live in the header's actions slot.
+    const actions = header!.querySelector('.page-header__actions')
+    expect(actions).not.toBeNull()
+    expect(within(actions as HTMLElement).getByText('Down / outage')).toBeInTheDocument()
+    expect(
+      within(actions as HTMLElement).getByRole('group', { name: 'Time window' }),
+    ).toBeInTheDocument()
+
+    const root = container.querySelector('.availability-page')
+    expect(root).toHaveClass('page', 'page--wide')
+  })
+
   it('shows a loading state, then a grid with Component/Availability/Data completeness columns (AC1)', async () => {
     render(<AvailabilityPage />)
 

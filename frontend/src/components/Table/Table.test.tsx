@@ -70,4 +70,11 @@ describe('Table', () => {
     const { container } = render(<ExampleTable />)
     expect(container.querySelector('.table')).not.toBeNull()
   })
+
+  it('wraps the table in its own horizontally-scrollable container (STORY-096 AC4) — the page never scrolls, only the table does', () => {
+    const { container } = render(<ExampleTable />)
+    const wrapper = container.querySelector('.table-wrapper')
+    expect(wrapper).not.toBeNull()
+    expect(wrapper?.querySelector('.table')).not.toBeNull()
+  })
 })
