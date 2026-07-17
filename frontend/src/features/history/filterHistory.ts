@@ -49,6 +49,24 @@ export function filterHistoryRows(rows: HistoryRow[], filters: HistoryFilters): 
   })
 }
 
+/**
+ * Derives the toolbar's INITIAL filter state from the URL's search params
+ * (STORY-100 AC2 — the "View checks" deep-link seam from an Approvals
+ * evidence card): an optional `signal` param seeds the free-text `query`
+ * field the search input already narrows by (which already matches a
+ * `signal_key` substring, per `filterHistoryRows` above), so a deep link
+ * lands the ledger pre-filtered to that signal. Absent, this is byte-
+ * identical to `DEFAULT_HISTORY_FILTERS`. Purely an INITIAL value — the
+ * caller seeds `useState` with it once; the toolbar remains fully editable
+ * afterwards and is never re-synced back to the URL on further changes.
+ */
+export function initialHistoryFilters(searchParams: URLSearchParams): HistoryFilters {
+  return {
+    ...DEFAULT_HISTORY_FILTERS,
+    query: searchParams.get('signal') ?? DEFAULT_HISTORY_FILTERS.query,
+  }
+}
+
 /** The distinct `location` values present across `rows`, sorted
  * alphabetically — populates the location-filter `<select>` from the
  * CURRENTLY-loaded window's real data rather than an invented fixed list

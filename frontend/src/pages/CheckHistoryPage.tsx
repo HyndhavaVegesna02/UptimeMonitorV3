@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import {
   EmptyState,
   ErrorState,
@@ -21,8 +22,8 @@ import { useAllHistory } from '../features/history/useAllHistory'
 import {
   ALL_LOCATIONS,
   ALL_RESULTS,
-  DEFAULT_HISTORY_FILTERS,
   filterHistoryRows,
+  initialHistoryFilters,
   uniqueLocations,
 } from '../features/history/filterHistory'
 import type { HistoryFilters } from '../features/history/filterHistory'
@@ -101,7 +102,14 @@ export function CheckHistoryPage({
   const range: AvailabilityRange = useMemo(() => windowToRange(preset), [preset])
   const { state, retry } = useAllHistory(range)
 
-  const [filters, setFilters] = useState<HistoryFilters>(DEFAULT_HISTORY_FILTERS)
+  // The "View checks" deep link from an Approvals evidence card (STORY-100
+  // AC2) encodes its target signal as `?signal=...`. Read ONCE for the
+  // INITIAL filter state via the lazy `useState` initializer — the toolbar
+  // stays fully editable afterwards and is never re-synced back to the URL.
+  const [searchParams] = useSearchParams()
+  const [filters, setFilters] = useState<HistoryFilters>(() =>
+    initialHistoryFilters(searchParams),
+  )
 
   const rows = useMemo(() => (state.phase === 'success' ? state.data : []), [state])
   const locationOptions = useMemo(() => uniqueLocations(rows), [rows])

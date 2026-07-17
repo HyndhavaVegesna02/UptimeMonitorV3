@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { HistoryRow } from './mergeObservations'
-import { DEFAULT_HISTORY_FILTERS, filterHistoryRows, uniqueLocations } from './filterHistory'
+import {
+  DEFAULT_HISTORY_FILTERS,
+  filterHistoryRows,
+  initialHistoryFilters,
+  uniqueLocations,
+} from './filterHistory'
 
 function makeRow(overrides: Partial<HistoryRow> = {}): HistoryRow {
   return {
@@ -65,6 +70,20 @@ describe('filterHistoryRows', () => {
     const filtered = filterHistoryRows(rows, { query: 'frontend', result: 'up', location: 'LOC-A' })
     expect(filtered).toHaveLength(1)
     expect(filtered[0]).toEqual(rows[0])
+  })
+})
+
+describe('initialHistoryFilters', () => {
+  it('seeds `query` from a `signal` URL param (STORY-100 AC2 deep-link seam)', () => {
+    const params = new URLSearchParams({ signal: 'frontend-http' })
+    expect(initialHistoryFilters(params)).toEqual({
+      ...DEFAULT_HISTORY_FILTERS,
+      query: 'frontend-http',
+    })
+  })
+
+  it('falls back to the plain defaults when there is no `signal` param', () => {
+    expect(initialHistoryFilters(new URLSearchParams())).toEqual(DEFAULT_HISTORY_FILTERS)
   })
 })
 

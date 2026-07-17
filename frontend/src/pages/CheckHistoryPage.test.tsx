@@ -177,6 +177,37 @@ describe('CheckHistoryPage', () => {
     expect(historyCallCount).toBe(callsAfterLoad)
   })
 
+  it('seeds the search filter from a `signal` URL param on initial load (STORY-100 AC2 deep link)', async () => {
+    renderCheckHistory({}, '/check-history?signal=frontend-tls')
+
+    const table = await screen.findByRole('table')
+
+    expect(screen.getByLabelText('Search')).toHaveValue('frontend-tls')
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(FIXTURE_HISTORY_FRONTEND_TLS.length)
+  })
+
+  it('a `signal`-seeded search filter remains fully editable afterwards (STORY-100 AC2)', async () => {
+    const user = userEvent.setup()
+    renderCheckHistory({}, '/check-history?signal=frontend-tls')
+
+    await screen.findByRole('table')
+    expect(screen.getByLabelText('Search')).toHaveValue('frontend-tls')
+
+    await user.clear(screen.getByLabelText('Search'))
+
+    const table = screen.getByRole('table')
+    const rows = within(table).getAllByRole('row').slice(1)
+    expect(rows).toHaveLength(TOTAL_MERGED_ROWS)
+  })
+
+  it('with no `signal` URL param, the search filter starts empty exactly as before (STORY-100 AC2)', async () => {
+    renderCheckHistory()
+    await screen.findByRole('table')
+
+    expect(screen.getByLabelText('Search')).toHaveValue('')
+  })
+
   it('the result filter narrows rows to the selected health value (AC1)', async () => {
     const user = userEvent.setup()
     renderCheckHistory()
