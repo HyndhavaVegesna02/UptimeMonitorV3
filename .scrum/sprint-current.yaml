@@ -20,7 +20,21 @@ stories:
     slug: responsive-shell
     points: 3
     order: 1
-    status: in_progress   # implementer dispatched 2026-07-17 ~16:20 IST
+    status: in_progress   # impl done 4ee4112..0466697 (10 TDD commits); spec review APPROVE
+                          # (5/5 AC traced, fence PASS); quality review APPROVE (0 major,
+                          # 3 minors to file). Reality gate (live Playwright): AC1 PASS
+                          # (6 tabs scrollWidth=390), AC2 drawer PASS (closed default,
+                          # labeled trigger, focus in/out, Escape+scrim close) EXCEPT
+                          # 1 finding: drawer stays open after nav-link click — fix
+                          # dispatched to implementer 2026-07-17. AC3 PASS (1024 rail,
+                          # 1440 expanded, localStorage pref honored). AC4 PASS (banner
+                          # 57px/1-2 lines at 390). Scoped DoD gate pending after fix.
+    # PROCESS INCIDENT (retro item): baseline gate pytest ran with DYNAMO_ENDPOINT_URL
+    # pointing at the LIVE local stack DB — clean_dynamo_tables wiped topology mid-sprint
+    # (found as "Topo Comp/No data" during reality gate; NOT a frontend defect). Restored:
+    # container restart + create_tables + loop restart (re-seeds). Rule going forward:
+    # gate runs use an unset DYNAMO_ENDPOINT_URL (suite manages its own throwaway DB) —
+    # same isolation sprint-51's STORY-094 reality gate used.
   - id: STORY-097
     slug: page-scaffold-consistency
     points: 2
