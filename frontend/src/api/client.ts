@@ -223,8 +223,24 @@ export function getHistory(params: {
   signal_key: string
   since: string
   until: string
+  /**
+   * Optional server-side cap (STORY-094) on the number of most-recent
+   * observations returned. Additive — every existing caller (Check History,
+   * Dashboard, Availability) omits it and is unaffected; STORY-100's
+   * per-proposal evidence hook is the first caller to send it, since it only
+   * needs enough of the newest-first observations to find each location's
+   * latest reading, not the full window.
+   */
+  limit?: number
 }): Promise<ObservationDTO[]> {
-  const query = new URLSearchParams(params)
+  const query = new URLSearchParams({
+    signal_key: params.signal_key,
+    since: params.since,
+    until: params.until,
+  })
+  if (params.limit !== undefined) {
+    query.set('limit', String(params.limit))
+  }
   return getJson<ObservationDTO[]>(`/v1/history?${query.toString()}`)
 }
 
