@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
-import { StatusBadge, defaultStatusLabel } from './StatusBadge'
+import { StatusBadge } from './StatusBadge'
+import { defaultStatusLabel } from './labels'
 
 describe('StatusBadge', () => {
   it.each([

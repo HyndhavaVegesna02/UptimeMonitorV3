@@ -1,4 +1,5 @@
 import './StatusBadge.css'
+import { DEFAULT_LABELS } from './labels'
 
 export type HealthStatus =
   | 'up'
@@ -13,28 +14,6 @@ export interface StatusBadgeProps {
   status: HealthStatus
   /** Overrides the default per-status label text. */
   label?: string
-}
-
-const DEFAULT_LABELS: Record<HealthStatus, string> = {
-  up: 'Up',
-  down: 'Down',
-  degraded: 'Degraded',
-  partial: 'Partial outage',
-  maintenance: 'Maintenance',
-  unknown: 'Unknown',
-  missing: 'Missing data',
-}
-
-/**
- * The default human word for a status (STORY-107) — the SAME text this
- * badge itself renders absent a `label` override. Exported so any surface
- * naming a status in prose (e.g. the Approvals approve-confirm consequence
- * copy, `features/approvals/decisionState.ts::confirmPrompt`) reuses this
- * single source of truth rather than inventing a second vocabulary for the
- * same status.
- */
-export function defaultStatusLabel(status: HealthStatus): string {
-  return DEFAULT_LABELS[status]
 }
 
 /**
