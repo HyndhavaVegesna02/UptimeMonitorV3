@@ -1,0 +1,159 @@
+.approval-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.approval-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.approval-card__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.approval-card__component {
+  font-weight: var(--fw-semibold);
+}
+
+.approval-card__slug {
+  color: var(--color-ink-subtle);
+}
+
+.approval-card__severity {
+  flex-shrink: 0;
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-chip);
+  font-size: var(--fs-chip);
+  font-weight: var(--fw-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.approval-card__severity--down {
+  color: var(--color-health-down);
+  background: var(--color-health-down-subtle);
+}
+.approval-card__severity--partial {
+  color: var(--color-health-partial);
+  background: var(--color-health-partial-subtle);
+}
+.approval-card__severity--degraded {
+  color: var(--color-health-degraded);
+  background: var(--color-health-degraded-subtle);
+}
+.approval-card__severity--unknown {
+  color: var(--color-health-unknown);
+  background: var(--color-health-unknown-subtle);
+}
+
+.approval-card__transition {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.approval-card__arrow {
+  color: var(--color-ink-subtle);
+  flex-shrink: 0;
+}
+
+.approval-card__new {
+  color: var(--color-ink-subtle);
+  font-style: italic;
+}
+
+.approval-card__meta {
+  color: var(--color-ink-subtle);
+}
+
+.approval-card__view-checks {
+  color: var(--color-accent);
+  align-self: flex-start;
+}
+
+.approval-card__evidence-note {
+  margin: 0;
+  color: var(--color-ink-subtle);
+  font-style: italic;
+}
+
+.approval-card__locations {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.approval-card__location-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  padding: var(--space-1) 0;
+  color: var(--color-ink-muted);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.approval-card__location-row:first-child {
+  border-top: none;
+}
+
+.approval-card__evidence-skeleton {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.approval-card__evidence-skeleton li {
+  height: 1.1em;
+  border-radius: var(--radius-chip);
+  background: var(--color-surface-2);
+  animation: approval-card-evidence-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes approval-card-evidence-pulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Every other animated element in this app pairs its animation with the
+   global prefers-reduced-motion reset (global.css, STORY-103) — a static
+   (non-pulsing) skeleton is still a perfectly legible loading placeholder. */
+@media (prefers-reduced-motion: reduce) {
+  .approval-card__evidence-skeleton li {
+    animation: none;
+  }
+}
+
+.approval-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.approval-card__confirm-text {
+  margin: 0;
+  color: var(--color-ink-muted);
+  flex-basis: 100%;
+}
