@@ -47,6 +47,12 @@ describe('AppShell — routing (STORY-104 AC1)', () => {
     expect(screen.getByRole('heading', { name: tab.label, level: 1 })).toBeInTheDocument()
   })
 
+  it('renders the REAL Availability page (not a placeholder) at /availability (STORY-106)', () => {
+    renderShell('/availability')
+    expect(screen.getByRole('group', { name: 'Time window' })).toBeInTheDocument()
+    expect(screen.queryByText(/rewrite in progress/i)).not.toBeInTheDocument()
+  })
+
   it('switches the active panel when a tab is clicked', async () => {
     const user = userEvent.setup()
     renderShell('/')

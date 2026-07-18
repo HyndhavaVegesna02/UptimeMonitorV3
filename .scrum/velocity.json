@@ -249,6 +249,11 @@
       "sprint": 55,
       "committed": 6,
       "accepted": 6
+    },
+    {
+      "sprint": 56,
+      "committed": 5,
+      "accepted": 5
     }
   ]
 }

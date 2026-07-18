@@ -1,83 +1,60 @@
 # YourTeam active sprint board
-sprint: 55
-status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 6/6, merged to ui-rewrite
+sprint: 56
+status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 5/5, merged to ui-rewrite
 mode: in-process
-goal: "UI REWRITE wave 1 (PO pivot 2026-07-18): Mission Teal design foundation (STORY-103) + sidebar-less shell (STORY-104). New initiative on ui-rewrite (off MAIN); ui-redesign initiative parked at sprint-54."
-branch: sprint-55
-integration_branch: ui-rewrite   # off main @ 517fc38
-start_tag: sprint-55-start
-start_commit: 517fc38
-started: "2026-07-18T03:05:00+05:30"
-# PO directive 2026-07-18: full UI/frontend rewrite, same backend, complete creative freedom,
-# Playwright-verified, YourTeam loop until fully done; PO reviews before any merge to main.
-# Design authority: docs/scrum/ui-rewrite/design-brief.md (binding) over
-# design-system/uptime-monitor-v3-rewrite/MASTER.md (generated).
-# Rewrite epic: STORY-103..110 (21 pts, ~4 sprints). Salvage logic (not looks) from ui-redesign.
-# Plan-verifier: SKIPPED (frontend-only, existing DTOs; reason in plan.md).
-# Tooling declared at planning: +@fontsource/{space-grotesk,inter,jetbrains-mono} (fonts only).
-# Retro rules in force: 52-A1 isolated gate DB; 52-A2 false-alarm protocols; 52-A3 implementer
-# owns wiki blast radius; 53-A2 over-commit needs independence note (6pts: 103->104 are
-# sequential-dependent — accepted because both are foundation work no other story can precede).
+goal: "UI rewrite wave 2: bento mission-control dashboard (STORY-105) + availability (STORY-106) on the Mission Teal identity."
+branch: sprint-56
+integration_branch: ui-rewrite
+start_tag: sprint-56-start
+start_commit: ee63f07
+started: "2026-07-18T09:30:00+05:30"
+# Delegation, design authority, retro rules: unchanged (sprint-55 board + plan).
+# Skill guidance baked into plan: periodic-refresh visuals, KPI hero, shape+text markers,
+# inline-SVG sparks (no chart lib). Plan-verifier: SKIPPED (same rationale).
 stories:
-  - id: STORY-103
-    slug: rewrite-design-foundation
+  - id: STORY-105
+    slug: rewrite-dashboard-bento
     points: 3
     order: 1
-    status: done          # all 5 AC; commits f3e4eb7..06ba847 (17 impl + 2 fix; fix landed
-                          # by orchestrator after the agent's session-limit crash — verified
-                          # then committed, trivial-tail rule)
-    commits: f3e4eb7..06ba847
-    reviews: "spec FAIL->fixed (sole gap: deletion reason missing from story-file History —
-      added); quality APPROVE (0 major; minors noted: Tile href+onClick footgun, 16
-      forward-looking unused tokens, orphan-comment refs)"
+    status: done          # all 5 AC; 8 commits 74efbde..a20ea05
+    commits: 74efbde..a20ea05
+    reviews: "spec PASS (5/5; salvage byte-identical; additive-only verified; MSW-real failure
+      paths); quality APPROVE (0 major; minors: 2N history fetches by design, dup empty msg,
+      single-point spark untested, px literals consistent w/ pattern)"
     reality_gate:
       ran: true
       evidence: >-
-        Live (Playwright MCP pre-disconnect + tools/ui-sweep scripted Chromium after):
-        fonts fully self-hosted (0 external font requests; Inter/Space Grotesk woff2 from
-        localhost); light + dark both render the Mission Teal identity (dark canvas
-        rgb(10,14,20), mint light rgb(240,253,250)); theme toggle round-trips; all six
-        routes render placeholder tiles with one h1 + skip link + single main; zero
-        console errors on clean load. DESIGN CORRECTION found at gate: system-light beat
-        the dark default -> precedence fixed to stored>dark (OS pref never consulted);
-        re-verified in a FRESH browser context: first paint dark with no stored pref.
-        Screenshots: sprints/2026-07-18-sprint-55/gate-103/.
-    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at 06ba847, 2026-07-18 ~07:45 IST
-      - {command: "npm test", exit_code: 0, output_tail: "47 files / 369 tests passed", commit: 06ba847}
-      - {command: "npm run build", exit_code: 0, commit: 06ba847}
-      - {command: "npm run lint", exit_code: 0, commit: 06ba847}
-    wiki_blast_radius: "frontend-zone.md REWRITTEN for the rewrite era + sample-mode.md
-      substantive update (frontend surface temporarily removed) + 4 pyproject-citing
-      articles re-verified (cherry-pick). Sweep CLEAN."
-  - id: STORY-104
-    slug: rewrite-app-shell
-    points: 3
+        Scripted Chromium: bento renders vs API truth (hero 'Up' 48px KPI + '1 of 1
+        component operational' matching /components; action tiles 0/neutral matching
+        /approvals; feed populated); spark aria-label 'HTTP Check latency: latest 548 ms';
+        zero raw ISO/vendor IDs page-wide; drill link ?signal=http-check; scrollWidth
+        exact at 1024/768/390; both themes captured; zero console errors.
+        Screenshots: gate-105/. Polish note -> STORY-110: low-tile-count grid balance.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at a20ea05
+      - {command: "npm test", exit_code: 0, output_tail: "61 files / 493 tests passed", commit: a20ea05}
+      - {command: "npm run build", exit_code: 0, commit: a20ea05}
+      - {command: "npm run lint", exit_code: 0, commit: a20ea05}
+    wiki_blast_radius: "frontend-zone.md dashboard section + sample-mode.md re-cover; sweep CLEAN." 
+  - id: STORY-106
+    slug: rewrite-availability
+    points: 2
     order: 2
-    status: done          # all 5 AC; 8 commits 0d9e229..6871aec
-    commits: 0d9e229..6871aec
-    reviews: "spec PASS (5/5 AC traced, fixture-vs-rigged spot check clean, one-call seam
-      grep-verified); quality APPROVE (0 major; minors -> fold-forward: <=480px brand
-      sr-only, shared matchMedia stub adoption, duplicate media-query subscription)"
+    status: done          # all 3 AC; 5 commits f414550..d68e9b4
+    commits: f414550..d68e9b4
     reality_gate:
       ran: true
       evidence: >-
-        Scripted Chromium (tools/ui-sweep harness; Playwright MCP disconnected this
-        session): six routes render in the command-bar shell (NO aside/sidebar), correct
-        aria-current per route, 6 icon+label tabs, zero console errors across the whole
-        sweep; 390x844 scrollWidth exactly 390 on all six routes; sheet contract live:
-        hamburger labeled, focus lands in sheet on open, nav-click closes + navigates,
-        Escape closes with focus returned to trigger; status dot announces "Overall
-        status: Up"; sample-mode switch labeled + unchecked; "Updated just now" renders;
-        theme toggle round-trips. Screenshots: gate-104/ (dark/light 1440, mobile,
-        sheet-open).
-    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at 6871aec, 2026-07-18 ~08:55 IST
-      - {command: "npm test", exit_code: 0, output_tail: "57 files / 461 tests passed", commit: 6871aec}
-      - {command: "npm run build", exit_code: 0, commit: 6871aec}
-      - {command: "npm run lint", exit_code: 0, commit: 6871aec}
-    wiki_blast_radius: "frontend-zone.md (real shell Facts) + sample-mode.md (surface
-      restored) updated by implementer; orchestrator cleared 3 facts-lint citation gaps
-      (code_refs additions). Sweep + facts + links CLEAN."
-baseline_gate: "main @ 517fc38 carries sprint-51's 8/8 evidence; step 0 cherry-picks the
-  .claude ruff exclude (203ed93) before any gate runs on this line."
+        Scripted Chromium: one h1; switcher 24h/7d/30d all 44px, aria-pressed round-trip
+        with REAL refetch on change; completeness renders '69.65% of expected checks
+        received'; hatched Missing-data legend; drill-down aria-expanded false->true with
+        visible signal panel; 390px exact; both themes; zero console errors. gate-106/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at d68e9b4
+      - {command: "npm test", exit_code: 0, output_tail: "62 files / 508 tests passed", commit: d68e9b4}
+      - {command: "npm run build", exit_code: 0, commit: d68e9b4}
+      - {command: "npm run lint", exit_code: 0, commit: d68e9b4}
+    wiki_blast_radius: "frontend-zone.md availability section + sample-mode.md re-verify; sweep CLEAN."
+    note: "Candidates: .text-label class referenced-but-undefined (fold into STORY-110);
+      merged-fetch shared page states (existing hook contract kept)." 
+baseline_gate: "inherited GREEN — ui-rewrite @ ee63f07 = sprint-55 8/8 gate (a41d0a2) + no-ff merge."
 hotfixes: []
 interrupts: []

@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
-code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: 5dd72ce
-verified_sprint: sprint-55
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
+verified_sha: 3e4c634
+verified_sprint: sprint-56
 status: verified
 ---
 
@@ -519,3 +519,18 @@ produced ordinary data flowing through it.
   `nav/SampleModeSwitch.tsx`, `nav/SampleModeChip.tsx`, `nav/SampleModeBanner.tsx` (re-added),
   `nav/useDismissibleBanner.ts`. Frontend-only; six backend gates untouched (empty diff). Suite:
   461 tests / 57 files, all green. verified_sha -> 5dd72ce.
+- sprint-56 (STORY-105, mechanical staleness sweep + a genuine re-add): `frontend/src/
+  AppShell.tsx` changed only to route `/` to a NEW `pages/DashboardPage.tsx` instead of
+  `PlaceholderPage` (the bento Dashboard rewrite - see [[frontend-zone]]) - the
+  `useSampleMode()` call/prop-threading this article's Facts describe is untouched. The
+  recreated `pages/DashboardPage.tsx` (re-added to `code_refs` above, having been dropped
+  when the STORY-103 rewrite deleted the old one) does NOT import or render anything
+  sample-mode-related, same as every STORY-104-era `DashboardPage.*` bullet in the REMOVAL
+  recipe above already assumed ("nothing to revert here anymore") - re-checked and still
+  true against the new file. No Fact changed. verified_sha -> 07b49c4.
+- sprint-56 (STORY-106, mechanical staleness sweep only): `frontend/src/AppShell.tsx` changed
+  only to route `/availability` to a NEW `pages/AvailabilityPage.tsx` instead of
+  `PlaceholderPage` (the Availability rewrite - see [[frontend-zone]]) - the `useSampleMode()`
+  call/prop-threading and the sample-mode switch/chip/banner wiring this article's Facts
+  describe are untouched (`AvailabilityPage.tsx` does not import or render anything
+  sample-mode-related). No Fact changed. verified_sha -> 3e4c634.

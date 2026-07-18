@@ -8,6 +8,15 @@ findings that still inform this rewrite's UX semantics.
 
 ## Sprint log
 
+### Sprint 56 (2026-07-18) — wave 2: bento dashboard + availability — 5/5 accepted
+- Shipped: bento mission-control dashboard (hero worst-of KPI, component tiles w/ uptime
+  bar + inline-SVG latency spark, neutral-at-zero action tiles, recent-checks feed,
+  MSW-real per-tile fault isolation) + availability on the Tile language (switcher,
+  completeness phrasing, hatched legend, signal drill-down). Tests 461 -> 508.
+- Notes: 2N dashboard history fetches = deliberate failure-domain isolation; grid balance
+  at low tile counts + undefined .text-label class -> STORY-110 polish.
+- Next: sprint 57 — approvals evidence cards (107) + dense check history (108).
+
 ### Sprint 55 (2026-07-18) — wave 1: foundation + shell — 6/6 accepted
 - Shipped: Mission Teal tokens (dark-first, stored>dark precedence — corrected at the
   reality gate; 74 live-file WCAG contrast assertions), self-hosted Space Grotesk/Inter/

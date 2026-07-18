@@ -26,6 +26,7 @@ export {
   type TableCellProps,
 } from './Table/Table'
 export { UptimeBar, type UptimeBarProps, type UptimeSegment } from './UptimeBar/UptimeBar'
+export { LatencySpark, type LatencySparkProps } from './LatencySpark/LatencySpark'
 export {
   SummaryCard,
   type SummaryCardProps,

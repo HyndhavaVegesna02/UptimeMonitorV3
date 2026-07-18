@@ -9,6 +9,8 @@ import { SampleModeBanner } from './nav/SampleModeBanner'
 import { TABS } from './nav/tabs'
 import { useDismissibleBanner } from './nav/useDismissibleBanner'
 import { useNavSheet } from './nav/useNavSheet'
+import { AvailabilityPage } from './pages/AvailabilityPage'
+import { DashboardPage } from './pages/DashboardPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import './AppShell.css'
@@ -89,7 +91,15 @@ export function AppShell() {
             <Route
               key={tab.path}
               path={tab.path}
-              element={<PlaceholderPage title={tab.label} />}
+              element={
+                tab.path === '/' ? (
+                  <DashboardPage />
+                ) : tab.path === '/availability' ? (
+                  <AvailabilityPage />
+                ) : (
+                  <PlaceholderPage title={tab.label} />
+                )
+              }
             />
           ))}
           <Route path="*" element={<NotFoundPage />} />
