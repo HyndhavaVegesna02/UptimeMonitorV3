@@ -1,7 +1,7 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
-code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: 52f1706
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
+verified_sha: 5dd72ce
 verified_sprint: sprint-55
 status: verified
 ---
@@ -201,27 +201,43 @@ below for the mechanical deletion recipe.
   related to it â€” the surface just moved from "inside one tab's page" to "the shell every tab
   renders inside."
 
-### CURRENT STATE on `sprint-55`/`ui-rewrite` - STORY-103 removed the frontend surface (re-verified, NOT just a trivial re-check)
-- STORY-103 (the PO-ordered full UI rewrite, "Mission Teal") deleted `nav/TopBar.tsx`,
-  `nav/SampleModeBanner.tsx`, and `pages/DashboardPage.tsx` outright (old-visual-language
-  presentation, incompatible with the new `Button` variant set - see
-  `docs/scrum/wiki/frontend-zone.md`'s "Minimal placeholder shell" Facts). The new
-  `frontend/src/AppShell.tsx` (a minimal top-bar-stub shell) does NOT call `useSampleMode()` and
-  renders no switch/chip/banner at all - **the frontend sample-mode surface described in the
-  section above is TEMPORARILY ABSENT from the routed app on this branch.** This is a real
-  regression in UI SURFACE, not a documentation lag: as of sprint-55, sample mode can still be
-  toggled via a direct `PUT /api/v1/sample_mode` call (backend untouched, still fully functional -
-  see the Facts above), but there is no in-app control to do so.
-- **What survives untouched:** `features/dashboard/useSampleMode.ts` and its test
-  (`useSampleMode.test.tsx`) - the load+mutate hook itself, byte-identical to the STORY-049/056
-  shape described above, still green, still exercising the same `getSampleMode`/`putSampleMode`
-  client fns and the same MSW `mocks/handlers/sampleMode.ts`. Nothing on the backend, in
-  `api/types.ts`/`api/client.ts`, or in the mock handlers changed.
-  `docs/scrum/sprints/2026-07-18-sprint-55/plan.md`'s STORY-104 Step 3 ("sample-mode switch/chip/
-  banner, ported contracts") is the story that re-wires this surviving hook into the new shell -
-  until then, this article's frontend Facts above describe the LAST WORKING integration
-  (STORY-056, still live on `main`/`ui-redesign` through sprint-54), not the current `sprint-55`
-  HEAD.
+### CURRENT STATE on `sprint-55`/`ui-rewrite` - STORY-104 restored the frontend surface on the new shell (re-verified, NOT just a trivial re-check)
+- STORY-103 (the PO-ordered full UI rewrite, "Mission Teal") had deleted `nav/TopBar.tsx`,
+  the old `nav/SampleModeBanner.tsx`, and `pages/DashboardPage.tsx` outright and shipped a
+  minimal top-bar-stub `AppShell.tsx` with no sample-mode surface at all - see the History
+  entry below for that interim state. **STORY-104 (this sprint's follow-on story) restored the
+  surface on the new Mission Teal shell** - the frontend sample-mode switch/banner/chip trio
+  described in "The frontend consumer" section above is once again live in the routed app, on
+  new components at NEW paths:
+  - `frontend/src/nav/SampleModeSwitch.tsx` (NEW file, same path segment `nav/` but a new name -
+    not a re-creation of the deleted `TopBar.tsx`) - the `role="switch"`/`aria-checked` trigger,
+    ported verbatim in BEHAVIOR from the deleted `TopBar`'s embedded switch block (same
+    `useSampleMode()` prop contract, same neutral-OFF/degraded-amber-ON rule, same visible-label-
+    at->=768px rule), re-skinned onto Mission Teal tokens.
+  - `frontend/src/nav/SampleModeChip.tsx` (NEW file) - the persistent "SAMPLE" chip, ported
+    verbatim in BEHAVIOR from the deleted `TopBar`'s embedded chip button.
+  - `frontend/src/nav/SampleModeBanner.tsx` (NEW file at the SAME path the STORY-103-deleted one
+    used to occupy) - the dismissible `role="status"` warning, ported verbatim (same props, same
+    text, same CSS class names) from the STORY-102 version `git show ui-redesign:frontend/src/
+    nav/SampleModeBanner.tsx` describes.
+  - `frontend/src/nav/useDismissibleBanner.ts` (NEW file, ported verbatim from `ui-redesign`
+    STORY-102 - salvage list) - lifts the banner's dismiss/re-arm state so the chip and the
+    banner can never disagree.
+  - `frontend/src/AppShell.tsx` calls `useSampleMode()` exactly ONCE again (restoring the
+    STORY-049/056 single-source-of-truth rule) and threads the result to `nav/CommandBar.tsx`
+    (which renders the switch + the chip inline in its right cluster) and to the restored
+    `SampleModeBanner` (rendered directly by `AppShell`, below the command bar).
+  This is a full functional restoration, not merely a re-skin: `AppShell.test.tsx`'s sample-mode
+  describe blocks re-prove the exact same behaviors the pre-rewrite `AppShell.test.tsx` did (switch
+  reflects GET state, PUT updates it with no optimistic flip, banner shows only when
+  ON-and-not-dismissed, the persistent chip appears once dismissed and survives a tab switch,
+  clicking the chip restores the banner).
+- **What is STILL unchanged throughout the whole rewrite (STORY-103 AND STORY-104):**
+  `features/dashboard/useSampleMode.ts` and its test (`useSampleMode.test.tsx`) - the load+mutate
+  hook itself, byte-identical to the STORY-049/056 shape described above, still exercising the same
+  `getSampleMode`/`putSampleMode` client fns and the same MSW `mocks/handlers/sampleMode.ts`.
+  Nothing on the backend, in `api/types.ts`/`api/client.ts`, or in the mock handlers changed by
+  either rewrite story.
 
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
@@ -492,3 +508,14 @@ produced ordinary data flowing through it.
   integration. `code_refs` dropped the three deleted paths (`nav/TopBar.tsx`,
   `nav/SampleModeBanner.tsx`, `pages/DashboardPage.tsx`); `AppShell.tsx` kept (still exists,
   rewritten). verified_sha -> 52f1706.
+- sprint-55 (STORY-104, restores the frontend surface on the new shell): rewrote the "CURRENT
+  STATE" subsection - the switch/chip/banner trio is live again, on new files
+  (`nav/SampleModeSwitch.tsx`, `nav/SampleModeChip.tsx`, a NEW `nav/SampleModeBanner.tsx` at the
+  same path the STORY-103-deleted one used to occupy, `nav/useDismissibleBanner.ts`), all ported
+  in BEHAVIOR from the parked `ui-redesign` branch's STORY-056/102 versions per the story's
+  salvage-list instruction, re-skinned onto Mission Teal tokens. `AppShell.tsx` calls
+  `useSampleMode()` once again and threads it to the new `nav/CommandBar.tsx` + the restored
+  banner. `useSampleMode.ts` itself remains untouched throughout. `code_refs` +=
+  `nav/SampleModeSwitch.tsx`, `nav/SampleModeChip.tsx`, `nav/SampleModeBanner.tsx` (re-added),
+  `nav/useDismissibleBanner.ts`. Frontend-only; six backend gates untouched (empty diff). Suite:
+  461 tests / 57 files, all green. verified_sha -> 5dd72ce.
