@@ -63,6 +63,12 @@ describe('AppShell — routing (STORY-104 AC1)', () => {
     expect(screen.queryByText(/rewrite in progress/i)).not.toBeInTheDocument()
   })
 
+  it('renders the REAL Check History page (not a placeholder) at /check-history (STORY-108)', async () => {
+    renderShell('/check-history')
+    expect(await screen.findByRole('searchbox', { name: 'Search' })).toBeInTheDocument()
+    expect(screen.queryByText(/rewrite in progress/i)).not.toBeInTheDocument()
+  })
+
   it('switches the active panel when a tab is clicked', async () => {
     const user = userEvent.setup()
     renderShell('/')

@@ -11,6 +11,7 @@ import { useDismissibleBanner } from './nav/useDismissibleBanner'
 import { useNavSheet } from './nav/useNavSheet'
 import { ApprovalsPage } from './pages/ApprovalsPage'
 import { AvailabilityPage } from './pages/AvailabilityPage'
+import { CheckHistoryPage } from './pages/CheckHistoryPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -99,6 +100,8 @@ export function AppShell() {
                   <AvailabilityPage />
                 ) : tab.path === '/approvals' ? (
                   <ApprovalsPage />
+                ) : tab.path === '/check-history' ? (
+                  <CheckHistoryPage />
                 ) : (
                   <PlaceholderPage title={tab.label} />
                 )

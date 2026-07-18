@@ -1,0 +1,159 @@
+.check-history-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 100%;
+}
+
+.check-history-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.check-history-page__subtitle {
+  color: var(--color-ink-muted);
+}
+
+/*
+ * Filters row (STORY-108 AC1) — search + result + location + window
+ * switcher, wraps at narrow widths rather than causing page-level
+ * horizontal scroll.
+ */
+.check-history-page__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.check-history-page__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.check-history-page__label {
+  font-size: var(--fs-label);
+  font-weight: var(--fw-label);
+  line-height: var(--lh-label);
+  letter-spacing: var(--ls-label);
+  text-transform: uppercase;
+  color: var(--color-ink-subtle);
+}
+
+.check-history-page__search-input,
+.check-history-page__select {
+  min-height: var(--target-min);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+}
+
+.check-history-page__search-input {
+  min-width: 220px;
+}
+
+.check-history-page__search-input:focus-visible,
+.check-history-page__select:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/*
+ * The 24h/7d/30d window switcher — mirrors `AvailabilityPage.css`'s own
+ * rule set (duplicated per this codebase's page-local convention).
+ */
+.check-history-page__window {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.check-history-page__window-button {
+  min-height: var(--target-min);
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink-muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.check-history-page__window-button:hover {
+  background: var(--color-surface-2);
+}
+
+.check-history-page__window-button--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: var(--fw-semibold);
+}
+
+/* Results summary line (STORY-108 AC2) — aria-live=polite (markup), a
+   quiet caption above the table. */
+.check-history-page__summary {
+  color: var(--color-ink-muted);
+}
+
+/*
+ * The table's own scroll container (STORY-108 AC2/AC3, ui-ux-pro-max
+ * chart/table domain: "tables scroll inside their container at narrow
+ * widths, never the page"). The header cells are pinned to the TOP OF THIS
+ * WRAPPER (not the viewport) via `position: sticky` on each `<th>` — sticky
+ * on `<thead>` itself does not reliably stick across browsers for a
+ * `border-collapse` table, so the cells carry it individually.
+ */
+.check-history-page__table-wrapper {
+  overflow: auto;
+  max-height: 70vh;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-panel);
+}
+
+.check-history-page__table-wrapper .table__header-cell {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky);
+  background: var(--color-surface-2);
+}
+
+.check-history-page__component {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.check-history-page__component-type {
+  color: var(--color-ink-subtle);
+}
+
+/*
+ * Latency threshold tint (STORY-108 AC2) — a REINFORCING cue only; the
+ * Result column's `StatusBadge` always carries the actual semantic.
+ */
+.check-history-page__latency--muted {
+  color: var(--color-latency-muted);
+}
+
+.check-history-page__latency--warn {
+  color: var(--color-latency-warn);
+}
+
+.check-history-page__latency--high {
+  color: var(--color-latency-high);
+}
