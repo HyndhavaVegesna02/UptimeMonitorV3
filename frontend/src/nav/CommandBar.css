@@ -94,3 +94,27 @@
     display: none;
   }
 }
+
+/* 390px-safe (design brief: "no page-level horizontal scroll on any
+   route"): at mobile widths the brand text and the "Updated Xs ago" text
+   are the two lowest-priority elements in the bar (the logo/dot still
+   name the brand and overall state; the timestamp is a nicety, not a
+   control) — dropping them plus tightening the bar's own padding/gap
+   keeps [hamburger + brand + SAMPLE chip + switch + theme toggle]
+   comfortably under a 390px viewport even with every optional element
+   present at once. Nothing here removes a CONTROL, only supplementary
+   text. */
+@media (max-width: 480px) {
+  .command-bar {
+    padding: var(--space-2) var(--space-3);
+    gap: var(--space-2);
+  }
+
+  .command-bar__brand-text {
+    display: none;
+  }
+
+  .command-bar__updated {
+    display: none;
+  }
+}
