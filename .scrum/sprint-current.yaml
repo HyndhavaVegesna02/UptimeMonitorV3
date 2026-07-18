@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 55
-status: active
+status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 6/6, merged to ui-rewrite
 mode: in-process
 goal: "UI REWRITE wave 1 (PO pivot 2026-07-18): Mission Teal design foundation (STORY-103) + sidebar-less shell (STORY-104). New initiative on ui-rewrite (off MAIN); ui-redesign initiative parked at sprint-54."
 branch: sprint-55

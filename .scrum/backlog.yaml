@@ -929,7 +929,7 @@ stories:
   - id: STORY-103
     title: Rewrite foundation — Mission Teal design system, fonts, theme engine, base primitives
     file: docs/scrum/stories/STORY-103-rewrite-design-foundation.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-55: Mission Teal foundation; dark-first corrected at gate; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 3
     priority: 59
     type: story
@@ -937,7 +937,7 @@ stories:
   - id: STORY-104
     title: Rewrite shell — top command bar, horizontal tab nav, responsive sheet, mode controls
     file: docs/scrum/stories/STORY-104-rewrite-app-shell.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-55: command-bar shell; live focus-contract verified; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 3
     priority: 60
     type: story
