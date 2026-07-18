@@ -21,11 +21,11 @@ sticky header, tabular numerals, aria-live result summaries); status never color
 - [x] Step 6: live gate: sample-mode proposal round-trip (evidence rows vs API, confirm copy, reject, off)
 
 ### 2. STORY-108 — Check history table (2 pts)
-- [ ] Step 1: filters (search/result/location/window) + ?signal= URL seed — tests first
-- [ ] Step 2: dense mono table (RelativeTime, location labels, latency threshold tint via tokens, sticky header, aria-live summary "N checks · M down")
-- [ ] Step 3: designed zero-result + unfiltered empty states; suite green
-- [ ] Step 4: live gate: filters + URL seed, computed-style tint thresholds, sticky header, 390 in-container scroll only
-- [ ] Scoped DoD gate (2-pointer)
+- [x] Step 1: filters (search/result/location/window) + ?signal= URL seed — tests first
+- [x] Step 2: dense mono table (RelativeTime, location labels, latency threshold tint via tokens, sticky header, aria-live summary "N checks · M down")
+- [x] Step 3: designed zero-result + unfiltered empty states; suite green
+- [x] Step 4: live gate: filters + URL seed, computed-style tint thresholds, sticky header, 390 in-container scroll only
+- [x] Scoped DoD gate (2-pointer)
 
 **Sprint close:** full gate → wiki → journal → review → merge → retro → sprint 58
 (STORY-109 maintenance + STORY-110 publications/polish/PO package).

@@ -961,7 +961,7 @@ stories:
   - id: STORY-107
     title: Rewrite approvals — evidence-first queue on new skin
     file: docs/scrum/stories/STORY-107-rewrite-approvals.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-57: evidence-first approvals, live sample-mode round-trip verified; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 3
     priority: 63
     type: story
@@ -969,7 +969,7 @@ stories:
   - id: STORY-108
     title: Rewrite check history — dense operator table
     file: docs/scrum/stories/STORY-108-rewrite-check-history.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-57: dense table, deep-link seed + tint thresholds live-verified vs API truth; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 2
     priority: 64
     type: story

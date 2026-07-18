@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 57
-status: active
+status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 5/5, merged to ui-rewrite
 mode: in-process
 goal: "UI rewrite wave 3: evidence-first approvals (STORY-107) + dense check-history table (STORY-108)."
 branch: sprint-57
@@ -40,7 +40,27 @@ stories:
     slug: rewrite-check-history
     points: 2
     order: 2
-    status: in_progress   # implementer dispatched 2026-07-18 ~13:50 IST
+    status: done          # all 3 AC; 6 commits babe0f3..a479048
+    commits: babe0f3..a479048
+    reality_gate:
+      ran: true
+      evidence: >-
+        Scripted Chromium + API truth: ?signal=http-check seeds the search (value +
+        877 rows filtered, aria-live summary '877 checks - 15 down - filtered by search'
+        EXACTLY matching the history endpoint's 877 rows) — this also closes STORY-107's
+        deep-link click-through; latency tint verified via computed styles on REAL data
+        spanning all three bands (273ms gray / 528ms amber / 1052ms red); sticky header
+        holds under wrapper scroll; filtered-to-zero designed empty state with recovery
+        copy; 390px page exact + table scrolls in-container only; zero console errors.
+        Screenshots: gate-108/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 post-a479048
+      - {command: "npm test", exit_code: 0, output_tail: "69 files / 606 tests passed"}
+      - {command: "npm run build", exit_code: 0}
+      - {command: "npm run lint", exit_code: 0}
+    wiki_blast_radius: "frontend-zone.md check-history section + sample-mode.md re-verify; sweep CLEAN."
+    note: "Honest salvage flag: brief pointed at a nonexistent initialHistoryFilters on the
+      parked branch (it lived only in the never-verified sprint-54 WIP); built fresh to the
+      described semantics. Candidate: render cap for very wide windows (old page had 1000)." 
 baseline_gate: "inherited GREEN — ui-rewrite @ 0f0dd49 = sprint-56 8/8 gate (67631c7) + merge."
 hotfixes: []
 interrupts: []
