@@ -14,12 +14,33 @@ stories:
     slug: rewrite-approvals
     points: 3
     order: 1
-    status: in_progress   # implementer dispatched 2026-07-18 ~12:15 IST
+    status: done          # all 4 AC; 10 commits f23c974..4e19cef
+    commits: f23c974..4e19cef
+    reviews: "spec PASS (4/4; salvage verbatim; fence + server-contract check); quality
+      APPROVE (0 major)"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Scripted Chromium + API truth, REAL sample-mode round-trip: proposal brewed live
+        (http-check -> degraded); card rendered friendly name + slug + DEGRADED chip +
+        Up->Degraded badges + Proposed-just-now + TWO evidence rows (Location ...0060
+        Down 567ms 1m ago; ...0047 Down 329ms 2m ago) + View checks link (per-card
+        ?signal= href asserted by tests; deep-link click-through completes in
+        STORY-108's gate); approve confirm rendered exactly "Publishes 'HTTP Check:
+        Degraded' to the public status page." then CANCELED; reject prompt unchanged;
+        confirm-reject -> Queue clear; sample OFF via API, queue verified empty; zero
+        console errors. Screenshots: gate-107/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 (re-run on clean tree at aff0a05
+                    # after a first attempt refused on a dirty story-file append)
+      - {command: "npm test", exit_code: 0, output_tail: "66 files / 558 tests passed", commit: aff0a05}
+      - {command: "npm run build", exit_code: 0, commit: aff0a05}
+      - {command: "npm run lint", exit_code: 0, commit: aff0a05, at: "2026-07-18T15:03:54+00:00"}
+    wiki_blast_radius: "frontend-zone.md approvals section + sample-mode.md re-verify; sweep CLEAN." 
   - id: STORY-108
     slug: rewrite-check-history
     points: 2
     order: 2
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-18 ~13:50 IST
 baseline_gate: "inherited GREEN — ui-rewrite @ 0f0dd49 = sprint-56 8/8 gate (67631c7) + merge."
 hotfixes: []
 interrupts: []
