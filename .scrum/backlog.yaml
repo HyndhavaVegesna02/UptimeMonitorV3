@@ -981,7 +981,7 @@ stories:
     points: 2
     priority: 65
     type: story
-    sprint: null
+    sprint: 58
   - id: STORY-110
     title: Rewrite publications + initiative polish sweep
     file: docs/scrum/stories/STORY-110-rewrite-publications-polish.md
@@ -989,4 +989,4 @@ stories:
     points: 3
     priority: 66
     type: story
-    sprint: null
+    sprint: 58

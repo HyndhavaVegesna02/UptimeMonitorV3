@@ -1,66 +1,26 @@
 # YourTeam active sprint board
-sprint: 57
-status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 5/5, merged to ui-rewrite
+sprint: 58
+status: active
 mode: in-process
-goal: "UI rewrite wave 3: evidence-first approvals (STORY-107) + dense check-history table (STORY-108)."
-branch: sprint-57
+goal: "UI rewrite FINAL wave: maintenance (STORY-109) + publications/polish/PO package (STORY-110). After close: PO merge review."
+branch: sprint-58
 integration_branch: ui-rewrite
-start_tag: sprint-57-start
-start_commit: 0f0dd49
-started: "2026-07-18T12:10:00+05:30"
-# Delegation, design authority, retro rules: unchanged. Plan-verifier: SKIPPED (same rationale).
+start_tag: sprint-58-start
+start_commit: 533943d
+started: "2026-07-18T21:30:00+05:30"
+# Delegation, design authority, retro rules unchanged (incl. 57-A1 atomic gate calls,
+# 57-A2 existence-verified salvage pointers — both applied in this plan).
 stories:
-  - id: STORY-107
-    slug: rewrite-approvals
-    points: 3
-    order: 1
-    status: done          # all 4 AC; 10 commits f23c974..4e19cef
-    commits: f23c974..4e19cef
-    reviews: "spec PASS (4/4; salvage verbatim; fence + server-contract check); quality
-      APPROVE (0 major)"
-    reality_gate:
-      ran: true
-      evidence: >-
-        Scripted Chromium + API truth, REAL sample-mode round-trip: proposal brewed live
-        (http-check -> degraded); card rendered friendly name + slug + DEGRADED chip +
-        Up->Degraded badges + Proposed-just-now + TWO evidence rows (Location ...0060
-        Down 567ms 1m ago; ...0047 Down 329ms 2m ago) + View checks link (per-card
-        ?signal= href asserted by tests; deep-link click-through completes in
-        STORY-108's gate); approve confirm rendered exactly "Publishes 'HTTP Check:
-        Degraded' to the public status page." then CANCELED; reject prompt unchanged;
-        confirm-reject -> Queue clear; sample OFF via API, queue verified empty; zero
-        console errors. Screenshots: gate-107/.
-    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 (re-run on clean tree at aff0a05
-                    # after a first attempt refused on a dirty story-file append)
-      - {command: "npm test", exit_code: 0, output_tail: "66 files / 558 tests passed", commit: aff0a05}
-      - {command: "npm run build", exit_code: 0, commit: aff0a05}
-      - {command: "npm run lint", exit_code: 0, commit: aff0a05, at: "2026-07-18T15:03:54+00:00"}
-    wiki_blast_radius: "frontend-zone.md approvals section + sample-mode.md re-verify; sweep CLEAN." 
-  - id: STORY-108
-    slug: rewrite-check-history
+  - id: STORY-109
+    slug: rewrite-maintenance
     points: 2
+    order: 1
+    status: in_progress   # implementer dispatched 2026-07-18 ~21:35 IST
+  - id: STORY-110
+    slug: rewrite-publications-polish
+    points: 3
     order: 2
-    status: done          # all 3 AC; 6 commits babe0f3..a479048
-    commits: babe0f3..a479048
-    reality_gate:
-      ran: true
-      evidence: >-
-        Scripted Chromium + API truth: ?signal=http-check seeds the search (value +
-        877 rows filtered, aria-live summary '877 checks - 15 down - filtered by search'
-        EXACTLY matching the history endpoint's 877 rows) — this also closes STORY-107's
-        deep-link click-through; latency tint verified via computed styles on REAL data
-        spanning all three bands (273ms gray / 528ms amber / 1052ms red); sticky header
-        holds under wrapper scroll; filtered-to-zero designed empty state with recovery
-        copy; 390px page exact + table scrolls in-container only; zero console errors.
-        Screenshots: gate-108/.
-    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 post-a479048
-      - {command: "npm test", exit_code: 0, output_tail: "69 files / 606 tests passed"}
-      - {command: "npm run build", exit_code: 0}
-      - {command: "npm run lint", exit_code: 0}
-    wiki_blast_radius: "frontend-zone.md check-history section + sample-mode.md re-verify; sweep CLEAN."
-    note: "Honest salvage flag: brief pointed at a nonexistent initialHistoryFilters on the
-      parked branch (it lived only in the never-verified sprint-54 WIP); built fresh to the
-      described semantics. Candidate: render cap for very wide windows (old page had 1000)." 
-baseline_gate: "inherited GREEN — ui-rewrite @ 0f0dd49 = sprint-56 8/8 gate (67631c7) + merge."
+    status: todo
+baseline_gate: "inherited GREEN — ui-rewrite @ 533943d = sprint-57 8/8 gate + merge."
 hotfixes: []
 interrupts: []
