@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
-verified_sha: 3e4c634
-verified_sprint: sprint-56
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/StatusBadge/labels.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/useProposalEvidence.ts, frontend/src/features/approvals/useApprovalsTopology.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
+verified_sha: bb7644e
+verified_sprint: sprint-57
 status: verified
 ---
 
@@ -485,6 +485,106 @@ is new.
   heading assertion needed no change (`AvailabilityPage`'s own `<h1>` is
   still exactly "Availability", matching `nav/tabs.ts`'s tab label).
 
+### The Approvals tab (STORY-107 — evidence-first queue, new skin)
+`pages/ApprovalsPage.tsx`/`.css` + `features/approvals/ApprovalCard.tsx`/`.css`
+(NEW, routed at `/approvals` in `AppShell.tsx` — the third tab, after
+Dashboard and Availability, that no longer renders `PlaceholderPage`) is the
+STORY-107 rewrite of the STORY-059/015c incarnation, re-skinning the
+evidence-first concept design brief §Salvage names as review-APPROVED on the
+parked `ui-redesign` branch (its STORY-100 work, itself never merged past
+`sprint-54` — the PO's full-rewrite pivot parked that branch mid-review): a
+severity-accented `Tile` per open proposal, the `from_status -> to_status`
+transition, per-location "latest result" evidence rows, a "View checks" deep
+link, and the idle -> confirming -> submitting -> failed decision flow with
+an approve-confirm consequence copy.
+- **Two hooks PORTED verbatim from `ui-redesign`'s (unmerged, parked)
+  `sprint-54` line, unchanged in logic** — `features/approvals/
+  useProposalEvidence.ts::useProposalEvidence`/`latestPerLocation` (a small
+  server-side-capped `GET /api/v1/history` call — `EVIDENCE_HISTORY_LIMIT =
+  20` — collapsed to one row per distinct location, the FIRST observation
+  seen for a location being its latest since the wire order is newest-first;
+  `signalKey === undefined` short-circuits to an always-successful empty
+  result rather than blocking the card) and `features/approvals/
+  useApprovalsTopology.ts::useApprovalsTopology` (a thin `useFetch(getTopology)`
+  wrapper, kept as ITS OWN file rather than reusing `features/dashboard/
+  useTopology.ts` so the Approvals tab's topology usage evolves
+  independently). `ProposalDTO` carries no `signal_key` on the wire (a
+  proposal is per-COMPONENT) — the card resolves `signalKey` from the
+  joined topology component's PRIMARY (first) signal, the SAME
+  single-signal adaptation `features/dashboard/useComponentUptime.ts`
+  already uses for the identical reason (documented precedent, per the
+  dispatch brief).
+- **`api/client.ts::getHistory` gained an ADDITIVE optional `limit` query
+  param** (STORY-094 added server-side `limit` support; this is the FIRST
+  client caller to send it — the existing Check History caller still
+  deliberately omits it, unchanged). Omitted entirely when not given, never
+  sent as `"undefined"`.
+- **`components/StatusBadge/labels.ts` (NEW)** — `DEFAULT_LABELS`/
+  `defaultStatusLabel` extracted OUT of `StatusBadge.tsx` into their own
+  non-component module (a quality fix ported from the same parked
+  `ui-redesign` line, where it cleared exactly this same
+  `react-refresh/only-export-components` lint warning): `StatusBadge.tsx`
+  imports `DEFAULT_LABELS` from here for its own internal default; both are
+  still re-exported through `components/index.ts` unchanged for existing
+  callers. `defaultStatusLabel` feeds the approve-confirm consequence copy
+  below — the SAME word the transition `StatusBadge` already renders for
+  the target status, never a second vocabulary.
+- **`features/approvals/decisionState.ts` gained `confirmPrompt`/
+  `ConfirmContext`/`CONFIRM_LABEL`** (replacing the previous, unused
+  `CONFIRM_COPY` — no other consumer existed): approve's confirm step now
+  states the publish consequence explicitly — `"Publishes '<component>:
+  <target status>' to the public status page."` — built from the joined
+  topology's friendly component name and `defaultStatusLabel`; reject's
+  prompt is UNCHANGED ("Reject this proposal?", since a reject never
+  touches the public status page). `severity.ts::deriveSeverity` and
+  `useApprovals.ts` were untouched by this story (already correctly shaped).
+- **`ApprovalCard.tsx`** renders as a `Tile` (`elevation="md"`,
+  `accent={severity.tone}` — reusing `Tile`'s own colored-left-edge
+  affordance rather than a bespoke stripe, unlike the pre-rewrite
+  `ApprovalCard.css`'s own `.approval-card__stripe`): friendly component
+  name + the raw `component_id` as a mono secondary slug (falls back to the
+  slug for BOTH when topology hasn't resolved, AC4), a severity chip, the
+  from -> to `StatusBadge` transition (`from_status === null` renders "New"
+  instead of a badge), "Proposed `<RelativeTime>`", per-location evidence
+  rows (short location label + `StatusBadge` + latency + `RelativeTime`), a
+  static pulsing skeleton while evidence loads (`prefers-reduced-motion`
+  guarded), a quiet "Evidence unavailable" line on a fetch failure with
+  Approve/Reject STILL rendered and actionable (AC4), "No recent checks
+  recorded" on a genuine empty result, and — when a primary signal resolved
+  — a "View checks" `Link` to `/check-history?signal=<signal_key>` (AC2;
+  Check History's rewrite, STORY-108, is what actually consumes the param —
+  this story lands the link contract against the still-placeholder page,
+  which ignores query params harmlessly). Approve (`primary`)/Reject
+  (`ghost`) in the idle phase; on confirm, the SAME two buttons persist with
+  the Confirm button's `loading` prop true during `'submitting'` (spinner +
+  `aria-busy` + disabled, label still visible — `Button`'s own STORY-103
+  contract) and Cancel disabled alongside it (can't dismiss mid-request); a
+  `'failed'` decision renders the shared `ErrorState` + retry.
+- **`ApprovalsPage.tsx`** owns the page-level `DecisionUiState` (only one
+  proposal mid-decision at a time) and the 409 ("already been resolved")/404
+  ("no longer exists") notice banner (`role="status"`, not scoped to a
+  single card) — carried over unchanged in behavior from the STORY-015c/059
+  incarnation, only the markup is new. A topology fetch failure/loading tick
+  degrades every card to its raw `component_id` slug and no evidence — never
+  blocks the queue (AC4) — by joining against an empty `{}` map rather than
+  surfacing its own error state on this page. The "Queue clear" empty state
+  (`EmptyState` message + "No proposals awaiting review." detail) and the
+  loading/error states are each wrapped in a plain `Tile` (mirroring
+  `AvailabilityPage`'s convention for non-card content) rather than the
+  pre-rewrite `Panel`.
+- **`AppShell.test.tsx`** gained one new assertion (`'renders the REAL
+  Approvals page (not a placeholder) at /approvals'`); the pre-existing
+  `it.each(TABS)` placeholder-heading assertion needed no change
+  (`ApprovalsPage`'s own `<h1>` is still exactly "Approvals").
+- **Deferred to the sprint-57 AC4 "live pass" step** (not part of this
+  implementer dispatch's scope, per the dispatch's own numbered
+  IMPLEMENTATION SHAPE, which enumerated Steps 1-5 only): a live sample-mode
+  proposal round-trip (evidence rows vs the real API, the confirm copy,
+  reject, sample mode off after) against a running local stack. NOT YET
+  LIVE-VERIFIED on this line — a candidate follow-up, not a contradiction of
+  anything Facts above state (all of which are unit/hook/component-test
+  verified against MSW).
+
 ### Surviving feature hooks (logic UNCHANGED, presentation gone until their tab's rewrite story)
 Every file below still exists and is still unit/hook-tested against MSW
 exactly as before. Files marked "wired" below ARE now imported by a routed
@@ -513,14 +613,19 @@ tab knows this logic already exists and does not need reinventing:
   drill-down; STORY-105's per-component tile instead LINKS to Check History
   rather than expanding inline, so this hook wasn't needed either — a future
   Check History rewrite (STORY-108+) is its most likely next consumer).
-- **Approvals:** `features/approvals/useApprovals.ts`
+- **Approvals:** ALL wired as of STORY-107 (see the new "The Approvals tab"
+  Facts subsection above) — `features/approvals/useApprovals.ts`
   (`useFetch(getApprovals)`), `features/approvals/severity.ts::
   deriveSeverity` (maps `to_status` onto the 7-status health tokens),
   `features/approvals/decisionState.ts` (the idle -> confirming ->
-  submitting -> failed state machine + its per-card narrowing type). The
-  rendering component (`ApprovalCard.tsx`) is the one piece of this feature
-  actually DELETED (see above) since it was pure presentation coupled to
-  the old `Button` variant set.
+  submitting -> failed state machine + its per-card narrowing type, PLUS the
+  STORY-107 additive `confirmPrompt`/`ConfirmContext`/`CONFIRM_LABEL`), and
+  the two STORY-107-ported hooks `useProposalEvidence.ts`/
+  `useApprovalsTopology.ts`. The STORY-103-deleted rendering component was
+  rebuilt fresh as `ApprovalCard.tsx` on the new Tile language (STORY-107),
+  not restored — it was pure presentation coupled to the old `Button`
+  variant set with no independent test, same as every other deleted Wave-2
+  page component.
 - **Availability:** `features/availability/{windowRange,useAvailability,
   format,segments}.ts` — the 24h/7d/30d window-to-range conversion, the
   topology+per-component fetch/merge, `availabilityBand`/`formatDownLabel`/
@@ -953,4 +1058,46 @@ tab knows this logic already exists and does not need reinventing:
   untouched (empty diff). Suite: 508 tests / 62 files, all green; `npm run
   build`/`npm run lint` both exit 0. `code_refs` += `pages/
   AvailabilityPage.tsx`. verified_sha = 3e4c634.
+
+- sprint-57 (STORY-107 — Approvals rewrite, evidence-first queue on the new
+  skin): built `pages/ApprovalsPage.tsx`/`.css` +
+  `features/approvals/ApprovalCard.tsx`/`.css` (documented in the new "The
+  Approvals tab" Facts subsection above), routed at `/approvals` in
+  `AppShell.tsx` (the third tab no longer rendering `PlaceholderPage`).
+  PORTED two hooks verbatim from the parked `ui-redesign` branch's unmerged
+  `sprint-54` line (`features/approvals/useProposalEvidence.ts`/
+  `useApprovalsTopology.ts`, per the design brief's §Salvage instruction — the
+  evidence-first concept was review-approved there before the PO's
+  full-rewrite pivot parked it): per-location latest-result evidence off the
+  existing `GET /api/v1/history` (a NEW additive `limit` query param on
+  `api/client.ts::getHistory`, its first caller) and a thin
+  `useFetch(getTopology)` wrapper. RE-WIRED the surviving
+  `features/approvals/{useApprovals,severity,decisionState}.ts` hooks —
+  `decisionState.ts` gained additive `confirmPrompt`/`ConfirmContext`/
+  `CONFIRM_LABEL` (AC3: approve states the publish consequence naming the
+  component + target status via the NEW `components/StatusBadge/labels.ts::
+  defaultStatusLabel` export — extracted out of `StatusBadge.tsx` itself,
+  also a ported quality fix from the same parked line, clearing a
+  `react-refresh/only-export-components` lint warning; reject's prompt is
+  UNCHANGED). `ApprovalCard.tsx` (rebuilt fresh, not restored — the
+  STORY-103-deleted version was pure presentation on the old `Button`
+  variant set) renders as a severity-accented `Tile` (reusing `Tile`'s own
+  colored-edge affordance, not a bespoke stripe) with a static
+  reduced-motion-guarded evidence skeleton, a quiet "Evidence unavailable"
+  degrade-gracefully-still-actionable note (AC4), and a "View checks" deep
+  link to `/check-history?signal=<signal_key>` (AC2 — the link contract
+  lands now; STORY-108 is what makes the target page consume it).
+  `AppShell.test.tsx` gained one assertion proving `/approvals` renders the
+  real page; its pre-existing `it.each(TABS)` placeholder-heading assertion
+  needed no change (`ApprovalsPage`'s own `<h1>` is still exactly
+  "Approvals"). Sonnet-5-implementer TDD pass, one commit per green step;
+  frontend-only; six backend gates untouched (empty diff — no backend source
+  change). Suite: 558 tests / 68 files, all green; `npm run build`/`npm run
+  lint` both exit 0. AC4's live sample-mode round-trip pass was OUT OF this
+  dispatch's scope (the dispatch's own numbered IMPLEMENTATION SHAPE
+  enumerated Steps 1-5 only, matching the sprint-57 plan's Steps 1-5; Step 6
+  "live gate" is a distinct follow-up, not yet run on this line). `code_refs`
+  += `pages/ApprovalsPage.tsx`, `features/approvals/{useProposalEvidence,
+  useApprovalsTopology,ApprovalCard}`, `components/StatusBadge/labels.ts`.
+  verified_sha = bb7644e.
 
