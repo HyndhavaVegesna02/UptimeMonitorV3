@@ -53,6 +53,16 @@ describe('AppShell — routing (STORY-104 AC1)', () => {
     expect(screen.queryByText(/rewrite in progress/i)).not.toBeInTheDocument()
   })
 
+  it('renders the REAL Approvals page (not a placeholder) at /approvals (STORY-107)', async () => {
+    renderShell('/approvals')
+    expect(
+      await screen.findByText(
+        'Approving publishes the change to the public status page. Every decision requires confirmation before it submits.',
+      ),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/rewrite in progress/i)).not.toBeInTheDocument()
+  })
+
   it('switches the active panel when a tab is clicked', async () => {
     const user = userEvent.setup()
     renderShell('/')
