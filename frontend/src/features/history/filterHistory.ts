@@ -49,6 +49,23 @@ export function filterHistoryRows(rows: HistoryRow[], filters: HistoryFilters): 
   })
 }
 
+/**
+ * Seeds the filter toolbar's initial state from the URL's `?signal=` param
+ * (STORY-108 AC1 — the Approvals "View checks" deep link,
+ * `/check-history?signal=<signal_key>`, STORY-107). Read via a component's
+ * lazy `useState(() => initialHistoryFilters(searchParams))` — ONCE, on
+ * mount — never re-synced if the URL changes later (an operator editing the
+ * search box afterward must not be silently overwritten by a stale param).
+ * A signal key is matched via the existing free-text `query` filter (it
+ * already substring-matches `signal_key` — `filterHistoryRows`), so no
+ * separate "signal filter" concept is needed. A missing or empty param
+ * falls back to the untouched defaults.
+ */
+export function initialHistoryFilters(searchParams: URLSearchParams): HistoryFilters {
+  const signal = searchParams.get('signal')
+  return signal ? { ...DEFAULT_HISTORY_FILTERS, query: signal } : DEFAULT_HISTORY_FILTERS
+}
+
 /** The distinct `location` values present across `rows`, sorted
  * alphabetically — populates the location-filter `<select>` from the
  * CURRENTLY-loaded window's real data rather than an invented fixed list
