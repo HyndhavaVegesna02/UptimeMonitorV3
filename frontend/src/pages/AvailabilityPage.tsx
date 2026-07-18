@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import type { ComponentTopologyDTO } from '../api/types'
 import type { DownCounts } from '../features/availability/format'
 import {
   availabilityBand,
@@ -10,7 +11,7 @@ import { useAvailability } from '../features/availability/useAvailability'
 import type { WindowPreset } from '../features/availability/windowRange'
 import { windowToRange } from '../features/availability/windowRange'
 import type { UptimeSegment } from '../components'
-import { EmptyState, ErrorState, LoadingState, Tile, UptimeBar } from '../components'
+import { EmptyState, ErrorState, Icon, LoadingState, Tile, UptimeBar } from '../components'
 import { cx } from '../lib/cx'
 import './AvailabilityPage.css'
 
@@ -84,15 +85,21 @@ interface AvailabilityMetricProps {
   rollup: DownCounts
   segments: UptimeSegment[]
   label: string
+  /** `false` for a per-signal drill-down row — there is no dedicated
+   * per-signal history fetch (STORY-106 AC3, mirrors the pre-rewrite
+   * Availability's bar-less drill-down convention), so a signal row shows
+   * only its own real %/down-count, never a fabricated bar. */
+  showBar?: boolean
 }
 
 /**
  * The Availability metric (STORY-106 AC2): a large `--fs-stat` JetBrains
  * Mono percentage (colored by `availabilityBand` — a reinforcing cue only,
  * the number itself is the accessible text), a "down" sublabel derived from
- * the REAL verdict counts, and the windowed `UptimeBar` sparkline.
+ * the REAL verdict counts, and — for a rollup row — the windowed `UptimeBar`
+ * sparkline.
  */
-function AvailabilityMetric({ rollup, segments, label }: AvailabilityMetricProps) {
+function AvailabilityMetric({ rollup, segments, label, showBar = true }: AvailabilityMetricProps) {
   const band = availabilityBand(rollup.availability_pct)
 
   return (
@@ -109,11 +116,13 @@ function AvailabilityMetric({ rollup, segments, label }: AvailabilityMetricProps
         </span>
         <span className="text-caption availability-metric__down">{formatDownLabel(rollup)}</span>
       </div>
-      <UptimeBar
-        segments={segments}
-        label={`${label} availability segments`}
-        className="availability-metric__bar"
-      />
+      {showBar && (
+        <UptimeBar
+          segments={segments}
+          label={`${label} availability segments`}
+          className="availability-metric__bar"
+        />
+      )}
     </div>
   )
 }
@@ -154,15 +163,106 @@ function CompletenessMetric({ completenessPct }: CompletenessMetricProps) {
   )
 }
 
+interface ComponentTileProps {
+  component: ComponentTopologyDTO
+  rollup: DownCounts & { completeness_pct: number | null }
+  segments: UptimeSegment[]
+  signals: Array<DownCounts & { completeness_pct: number | null; signal_key: string }>
+  expanded: boolean
+  onToggleExpand: () => void
+}
+
+/**
+ * One per-component Availability tile (STORY-106 AC2/AC3): name, the
+ * Availability + Data completeness metrics on the rollup, and — for a
+ * component with mapped signals — an `aria-expanded` drill-down toggle
+ * revealing each signal's own metrics (bar-less, per
+ * `AvailabilityMetric`'s `showBar={false}`). A zero-signal component
+ * renders a plain, non-interactive name (no broken expand affordance).
+ */
+function ComponentTile({
+  component,
+  rollup,
+  segments,
+  signals,
+  expanded,
+  onToggleExpand,
+}: ComponentTileProps) {
+  const band = availabilityBand(rollup.availability_pct)
+  const hasSignals = component.signals.length > 0
+  const signalNameByKey = new Map(
+    component.signals.map((signal) => [signal.signal_key, signal.name]),
+  )
+
+  return (
+    <Tile elevation="md" accent={band ?? undefined} className="availability-tile">
+      {hasSignals ? (
+        <button
+          type="button"
+          className="availability-tile__expand"
+          aria-expanded={expanded}
+          aria-controls={`availability-signals-${component.id}`}
+          onClick={onToggleExpand}
+        >
+          <Icon
+            name="chevron-right"
+            className={cx(
+              'availability-tile__chevron',
+              expanded && 'availability-tile__chevron--expanded',
+            )}
+          />
+          <span className="text-body-lg availability-tile__name">{component.name}</span>
+        </button>
+      ) : (
+        <span className="text-body-lg availability-tile__name availability-tile__name--static">
+          {component.name}
+        </span>
+      )}
+
+      <div className="availability-tile__metrics">
+        <AvailabilityMetric rollup={rollup} segments={segments} label={component.name} />
+        <CompletenessMetric completenessPct={rollup.completeness_pct} />
+      </div>
+
+      {hasSignals && expanded && (
+        <ul id={`availability-signals-${component.id}`} className="availability-tile__signals">
+          {signals.map((signal) => {
+            const signalName = signalNameByKey.get(signal.signal_key) ?? signal.signal_key
+            return (
+              <li key={signal.signal_key} className="availability-tile__signal">
+                <div className="availability-tile__signal-header">
+                  <span className="text-body availability-tile__signal-name">{signalName}</span>
+                  <span className="text-caption text-mono availability-tile__signal-key">
+                    {signal.signal_key}
+                  </span>
+                </div>
+                <div className="availability-tile__metrics availability-tile__metrics--signal">
+                  <AvailabilityMetric
+                    rollup={signal}
+                    segments={[]}
+                    label={signalName}
+                    showBar={false}
+                  />
+                  <CompletenessMetric completenessPct={signal.completeness_pct} />
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </Tile>
+  )
+}
+
 /**
  * The Availability tab (STORY-106 rewrite of the STORY-058/015d
- * incarnation), Step 2: per-component Availability + Data completeness
- * metrics (AC2) and the down/missing legend, on top of Step 1's header +
- * window switcher. Rewires the surviving
+ * incarnation): one h1, a subtitle, a 24h/7d/30d window switcher in the
+ * header (AC1), a legend explaining down vs missing (AC2), and one Tile per
+ * monitored component — availability % + windowed bar + data completeness,
+ * expandable to per-signal drill-down rows (AC3). Rewires the surviving
  * `features/availability/{windowRange,useAvailability,format,segments}.ts`
  * hooks verbatim (design brief: "re-skin freely; keep the tested
- * behavior") rather than re-deriving the fetch/merge logic. Signal-level
- * drill-down lands in the next step of this story.
+ * behavior") rather than re-deriving the fetch/merge logic.
  */
 export function AvailabilityPage() {
   const [preset, setPreset] = useState<WindowPreset>('24h')
@@ -171,6 +271,19 @@ export function AvailabilityPage() {
   // gets a new one — triggering a refetch — when the preset changes.
   const range = useMemo(() => windowToRange(preset), [preset])
   const { state, retry } = useAvailability(range)
+  const [expandedIds, setExpandedIds] = useState<ReadonlySet<string>>(new Set())
+
+  function toggleExpanded(componentId: string) {
+    setExpandedIds((current) => {
+      const next = new Set(current)
+      if (next.has(componentId)) {
+        next.delete(componentId)
+      } else {
+        next.add(componentId)
+      }
+      return next
+    })
+  }
 
   return (
     <div className="availability-page">
@@ -209,25 +322,17 @@ export function AvailabilityPage() {
           {state.data.topology.map((component) => {
             const availability = state.data.availabilityByComponent[component.id]
             const segments = state.data.segmentsByComponent[component.id] ?? []
-            const band = availabilityBand(availability.rollup.availability_pct)
 
             return (
-              <Tile
+              <ComponentTile
                 key={component.id}
-                elevation="md"
-                accent={band ?? undefined}
-                className="availability-tile"
-              >
-                <span className="text-body-lg availability-tile__name">{component.name}</span>
-                <div className="availability-tile__metrics">
-                  <AvailabilityMetric
-                    rollup={availability.rollup}
-                    segments={segments}
-                    label={component.name}
-                  />
-                  <CompletenessMetric completenessPct={availability.rollup.completeness_pct} />
-                </div>
-              </Tile>
+                component={component}
+                rollup={availability.rollup}
+                segments={segments}
+                signals={availability.signals}
+                expanded={expandedIds.has(component.id)}
+                onToggleExpand={() => toggleExpanded(component.id)}
+              />
             )
           })}
         </div>

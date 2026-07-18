@@ -133,3 +133,42 @@ describe('AvailabilityPage — availability + completeness metrics (AC2)', () =>
     expect(within(tile).queryByText(/of expected checks received/)).not.toBeInTheDocument()
   })
 })
+
+describe('AvailabilityPage — signal-level drill-down (AC3)', () => {
+  it('renders a collapsed, aria-expanded=false drill-down toggle for a multi-signal component', async () => {
+    renderPage()
+
+    const frontend = FIXTURE_TOPOLOGY[0]
+    const toggle = await screen.findByRole('button', { name: new RegExp(frontend.name) })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByText(frontend.signals[0].signal_key)).not.toBeInTheDocument()
+  })
+
+  it('expands to show each signal\'s own availability + completeness metrics on click', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    const frontend = FIXTURE_TOPOLOGY[0]
+    const toggle = await screen.findByRole('button', { name: new RegExp(frontend.name) })
+    await user.click(toggle)
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    for (const signal of frontend.signals) {
+      expect(screen.getByText(signal.name)).toBeInTheDocument()
+      expect(screen.getByText(signal.signal_key)).toBeInTheDocument()
+    }
+
+    const frontendAvailability = FIXTURE_AVAILABILITY_BY_COMPONENT[frontend.id]
+    const signalPct = `${(frontendAvailability.signals[0].availability_pct! * 100).toFixed(2)}%`
+    expect(screen.getAllByText(signalPct).length).toBeGreaterThan(0)
+  })
+
+  it('renders no drill-down toggle for a zero-signal component', async () => {
+    renderPage()
+
+    await screen.findByText('Sock Shop — orders')
+    expect(
+      screen.queryByRole('button', { name: /Sock Shop — orders/ }),
+    ).not.toBeInTheDocument()
+  })
+})

@@ -134,10 +134,70 @@
   gap: var(--space-3);
 }
 
+.availability-tile__expand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: var(--target-min);
+  padding: 0;
+  background: none;
+  border: none;
+  color: var(--color-ink);
+  text-align: left;
+  cursor: pointer;
+  width: 100%;
+}
+
+.availability-tile__chevron {
+  flex-shrink: 0;
+  transition: transform var(--motion-fast) var(--ease-standard);
+}
+
+.availability-tile__chevron--expanded {
+  transform: rotate(90deg);
+}
+
 .availability-tile__name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.availability-tile__name--static {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-min);
+}
+
+.availability-tile__signals {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-3) 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  border-top: 1px solid var(--color-hairline);
+}
+
+.availability-tile__signal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.availability-tile__signal-header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.availability-tile__signal-key {
+  color: var(--color-ink-subtle);
+}
+
+.availability-tile__metrics--signal {
+  gap: var(--space-2);
 }
 
 .availability-tile__metrics {
