@@ -39,13 +39,13 @@ gate DB, HMR/:focus-visible false-alarm rules). Dev stack must be restarted on t
 - [x] Reviews: spec ∥ quality (3-pointer)
 
 ### 2. STORY-104 — App shell (3 pts)
-- [ ] Step 1: top command bar + horizontal tab nav (aria-current, keyboard) — tests first
-- [ ] Step 2: overall-status dot (worst-of) + "Updated Xs ago"
-- [ ] Step 3: sample-mode switch/chip/banner (ported contracts) + theme toggle
-- [ ] Step 4: ≤768px sheet nav (ported focus contract); 390px fit
-- [ ] Step 5: suite green; scoped DoD gate
-- [ ] Step 6: live gate: six routes render, zero console errors, drawer contract, 390 sweep
-- [ ] Reviews: spec ∥ quality (3-pointer)
+- [x] Step 1: top command bar + horizontal tab nav (aria-current, keyboard) — tests first
+- [x] Step 2: overall-status dot (worst-of) + "Updated Xs ago"
+- [x] Step 3: sample-mode switch/chip/banner (ported contracts) + theme toggle
+- [x] Step 4: ≤768px sheet nav (ported focus contract); 390px fit
+- [x] Step 5: suite green; scoped DoD gate
+- [x] Step 6: live gate: six routes render, zero console errors, drawer contract, 390 sweep
+- [x] Reviews: spec ∥ quality (3-pointer)
 
 **Sprint close:** full 8-command gate (isolated DB) → wiki blast radius (frontend-zone.md
 will need a REWRITE-era rework — expected big diff) → journal → delegated review → merge

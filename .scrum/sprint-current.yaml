@@ -53,7 +53,30 @@ stories:
     slug: rewrite-app-shell
     points: 3
     order: 2
-    status: in_progress   # implementer dispatched 2026-07-18 ~07:50 IST
+    status: done          # all 5 AC; 8 commits 0d9e229..6871aec
+    commits: 0d9e229..6871aec
+    reviews: "spec PASS (5/5 AC traced, fixture-vs-rigged spot check clean, one-call seam
+      grep-verified); quality APPROVE (0 major; minors -> fold-forward: <=480px brand
+      sr-only, shared matchMedia stub adoption, duplicate media-query subscription)"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Scripted Chromium (tools/ui-sweep harness; Playwright MCP disconnected this
+        session): six routes render in the command-bar shell (NO aside/sidebar), correct
+        aria-current per route, 6 icon+label tabs, zero console errors across the whole
+        sweep; 390x844 scrollWidth exactly 390 on all six routes; sheet contract live:
+        hamburger labeled, focus lands in sheet on open, nav-click closes + navigates,
+        Escape closes with focus returned to trigger; status dot announces "Overall
+        status: Up"; sample-mode switch labeled + unchecked; "Updated just now" renders;
+        theme toggle round-trips. Screenshots: gate-104/ (dark/light 1440, mobile,
+        sheet-open).
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at 6871aec, 2026-07-18 ~08:55 IST
+      - {command: "npm test", exit_code: 0, output_tail: "57 files / 461 tests passed", commit: 6871aec}
+      - {command: "npm run build", exit_code: 0, commit: 6871aec}
+      - {command: "npm run lint", exit_code: 0, commit: 6871aec}
+    wiki_blast_radius: "frontend-zone.md (real shell Facts) + sample-mode.md (surface
+      restored) updated by implementer; orchestrator cleared 3 facts-lint citation gaps
+      (code_refs additions). Sweep + facts + links CLEAN."
 baseline_gate: "main @ 517fc38 carries sprint-51's 8/8 evidence; step 0 cherry-picks the
   .claude ruff exclude (203ed93) before any gate runs on this line."
 hotfixes: []
