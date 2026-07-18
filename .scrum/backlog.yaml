@@ -945,7 +945,7 @@ stories:
   - id: STORY-105
     title: Rewrite dashboard — bento grid mission-control page
     file: docs/scrum/stories/STORY-105-rewrite-dashboard-bento.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-56: bento dashboard live-verified vs API truth; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 3
     priority: 61
     type: story
@@ -953,7 +953,7 @@ stories:
   - id: STORY-106
     title: Rewrite availability — windowed uptime vs completeness, new skin
     file: docs/scrum/stories/STORY-106-rewrite-availability.md
-    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    status: done    # sprint-56: availability on Tile language, switcher+drill-down live-verified; delegated ACCEPT 2026-07-18, merged to ui-rewrite
     points: 2
     priority: 62
     type: story

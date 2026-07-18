@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 56
-status: active
+status: done   # 2x ACCEPT (delegated) 2026-07-18, velocity 5/5, merged to ui-rewrite
 mode: in-process
 goal: "UI rewrite wave 2: bento mission-control dashboard (STORY-105) + availability (STORY-106) on the Mission Teal identity."
 branch: sprint-56
@@ -39,7 +39,22 @@ stories:
     slug: rewrite-availability
     points: 2
     order: 2
-    status: in_progress   # implementer dispatched 2026-07-18 ~10:55 IST
+    status: done          # all 3 AC; 5 commits f414550..d68e9b4
+    commits: f414550..d68e9b4
+    reality_gate:
+      ran: true
+      evidence: >-
+        Scripted Chromium: one h1; switcher 24h/7d/30d all 44px, aria-pressed round-trip
+        with REAL refetch on change; completeness renders '69.65% of expected checks
+        received'; hatched Missing-data legend; drill-down aria-expanded false->true with
+        visible signal panel; 390px exact; both themes; zero console errors. gate-106/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at d68e9b4
+      - {command: "npm test", exit_code: 0, output_tail: "62 files / 508 tests passed", commit: d68e9b4}
+      - {command: "npm run build", exit_code: 0, commit: d68e9b4}
+      - {command: "npm run lint", exit_code: 0, commit: d68e9b4}
+    wiki_blast_radius: "frontend-zone.md availability section + sample-mode.md re-verify; sweep CLEAN."
+    note: "Candidates: .text-label class referenced-but-undefined (fold into STORY-110);
+      merged-fetch shared page states (existing hook contract kept)." 
 baseline_gate: "inherited GREEN — ui-rewrite @ ee63f07 = sprint-55 8/8 gate (a41d0a2) + no-ff merge."
 hotfixes: []
 interrupts: []

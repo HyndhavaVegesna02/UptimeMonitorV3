@@ -26,11 +26,11 @@ reduced-motion respected on any pulse/refresh affordance.
 - [x] Scoped DoD gate; reviews spec ∥ quality (3-pointer)
 
 ### 2. STORY-106 — Availability (2 pts)
-- [ ] Step 1: page scaffold on new tokens (one h1, window switcher 24h/7d/30d in header)
-- [ ] Step 2: per-component availability rows/tiles (% + bar) + completeness ("N% of expected checks received") + legend (down vs missing, hatched pattern not color-alone)
-- [ ] Step 3: signal drill-down; suite green
-- [ ] Step 4: live gate: switcher round-trip, labels, both themes, 390 fit
-- [ ] Scoped DoD gate (2-pointer: no reviewer pair)
+- [x] Step 1: page scaffold on new tokens (one h1, window switcher 24h/7d/30d in header)
+- [x] Step 2: per-component availability rows/tiles (% + bar) + completeness ("N% of expected checks received") + legend (down vs missing, hatched pattern not color-alone)
+- [x] Step 3: signal drill-down; suite green
+- [x] Step 4: live gate: switcher round-trip, labels, both themes, 390 fit
+- [x] Scoped DoD gate (2-pointer: no reviewer pair)
 
 **Sprint close:** full gate → wiki → journal → delegated review → merge → retro →
 sprint 57 (STORY-107 approvals + STORY-108 check history), then 58 (109 + 110 polish + PO package).
