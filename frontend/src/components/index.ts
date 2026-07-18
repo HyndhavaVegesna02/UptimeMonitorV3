@@ -4,6 +4,7 @@ export { Icon, type IconProps, type IconName } from './Icon/Icon'
 export { RelativeTime, type RelativeTimeProps } from './RelativeTime/RelativeTime'
 export {
   StatusBadge,
+  defaultStatusLabel,
   type HealthStatus,
   type StatusBadgeProps,
 } from './StatusBadge/StatusBadge'
