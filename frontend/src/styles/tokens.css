@@ -72,6 +72,17 @@
   --color-health-missing: #4f7bd0;
   --color-health-missing-subtle: rgba(79, 123, 208, 0.16);
 
+  /* Latency threshold tint (STORY-108 AC2, ui-ux-pro-max chart/table
+     domain: "muted <500ms / warn 500-1000 / high >1000") — a REINFORCING
+     cue only on the Check History table's Latency column; the Result
+     column's StatusBadge always carries the actual semantic (a fast
+     response can still be a failing check). Literal hex (not a `var()`
+     alias) so this file's own contrast test can verify each independently;
+     values intentionally match the same-meaning health/ink tokens above. */
+  --color-latency-muted: #93a3af;
+  --color-latency-warn: #d6a419;
+  --color-latency-high: #f85149;
+
   /* Overlay / scrim */
   --color-overlay: rgba(0, 0, 0, 0.6);
 
@@ -136,6 +147,12 @@
   --color-health-unknown-subtle: rgba(87, 96, 106, 0.11);
   --color-health-missing: #0969da;
   --color-health-missing-subtle: rgba(9, 105, 218, 0.12);
+
+  /* Latency threshold tint (STORY-108 AC2) — light-theme values, same
+     rationale as the dark block above. */
+  --color-latency-muted: #3f6b63;
+  --color-latency-warn: #9a6700;
+  --color-latency-high: #cf222e;
 
   --color-overlay: rgba(13, 14, 16, 0.4);
 
