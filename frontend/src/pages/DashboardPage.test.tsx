@@ -232,4 +232,30 @@ describe('DashboardPage — per-tile loading/error states (AC4)', () => {
     const feed = feedHeading.closest('.dashboard-grid__feed') as HTMLElement
     expect(await within(feed).findByRole('alert')).toHaveTextContent('Could not load recent checks')
   })
+
+  it('degrades component tiles to a plain (non-link) tile with no uptime data on a topology failure — never blanks the page', async () => {
+    server.use(
+      http.get('/api/v1/topology', () => HttpResponse.json({ detail: 'boom' }, { status: 500 })),
+    )
+    const { container } = renderPage()
+
+    await screen.findAllByText(FIXTURE_COMPONENTS[0].name)
+    expect(container.querySelectorAll('.dashboard-grid__component')).toHaveLength(
+      FIXTURE_COMPONENTS.length,
+    )
+    expect(screen.queryByRole('link', { name: new RegExp(FIXTURE_COMPONENTS[0].name) })).not.toBeInTheDocument()
+    // The rest of the page is unaffected.
+    expect(await screen.findByRole('link', { name: /Pending approvals/ })).toBeInTheDocument()
+  })
+
+  it('shows a persistent loading affordance (never a blank tile) when the approvals fetch itself fails — the hook\'s own documented graceful-degradation contract', async () => {
+    server.use(
+      http.get('/api/v1/approvals', () => HttpResponse.json({ detail: 'boom' }, { status: 500 })),
+    )
+    const { container } = renderPage()
+
+    await screen.findAllByText(FIXTURE_COMPONENTS[0].name)
+    const approvalsTile = container.querySelector('.dashboard-grid__action--approvals') as HTMLElement
+    expect(within(approvalsTile).getByRole('status')).toBeInTheDocument()
+  })
 })
