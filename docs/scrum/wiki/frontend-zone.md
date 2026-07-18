@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
-verified_sha: 07b49c4
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
+verified_sha: 3e4c634
 verified_sprint: sprint-56
 status: verified
 ---
@@ -414,6 +414,77 @@ null` — both derived from the SAME per-component `observations` fetch
   `"Dashboard"` (matching `nav/tabs.ts`'s tab label), so the shell-level
   routing tests needed no edits.
 
+### The Availability tab (STORY-106 — windowed uptime vs completeness, new skin)
+`pages/AvailabilityPage.tsx`/`.css` (NEW, routed at `/availability` in
+`AppShell.tsx` — the second tab, after Dashboard, that no longer renders
+`PlaceholderPage`) is the STORY-106 rewrite of the STORY-058/015d
+incarnation: one `<h1>Availability</h1>`, a subtitle, a 24h/7d/30d window
+switcher in the page header, a legend, and one `Tile` per topology
+component — an Availability metric (%, colored by `availabilityBand`, +
+the "down" sublabel + the windowed `UptimeBar` sparkline) and a Data
+completeness metric, expandable to per-signal drill-down rows. RE-WIRES the
+surviving `features/availability/{windowRange,useAvailability,format,
+segments}.ts` hooks VERBATIM (design brief §Salvage: "re-skin freely; keep
+the tested behavior") — no hook-level change, only the presentation layer
+is new.
+- **Header + window switcher (AC1):** `WindowSwitcher` (a page-local
+  component, not a new shared primitive — a single `role="group"` button
+  set is this page's only consumer) renders the three `WindowPreset` values
+  as real `<button>`s (`>= 44px` via `--target-min`, natively keyboard-
+  operable), the active preset carrying `aria-pressed="true"` (never color
+  alone — the active class also bumps background/font-weight). `preset`
+  state lives in the page; `range = useMemo(() => windowToRange(preset),
+  [preset])` keeps `useAvailability`'s fetcher identity stable while the
+  selection is unchanged and gives it a NEW identity (triggering a refetch)
+  exactly when the preset changes — the SAME memoization contract the
+  parked `ui-redesign` `AvailabilityPage` used, unchanged.
+- **Legend (AC2):** `AvailabilityLegend` renders a solid swatch + "Down /
+  outage" and a HATCHED swatch (the exact same `repeating-linear-gradient`
+  `UptimeBar.css`'s missing-segment fill uses, duplicated here as a static
+  swatch rather than imported, since it is not an interactive bar) + "Missing
+  data" — pattern plus text, never color alone.
+- **Availability + Data completeness metrics (AC2):** `AvailabilityMetric`
+  (the large `--fs-stat` JetBrains Mono % + `formatDownLabel`'s real
+  verdict-derived sublabel +, for a rollup row, the `UptimeBar` sparkline;
+  `showBar={false}` for a per-signal drill-down row — there is no dedicated
+  per-signal history fetch) and `CompletenessMetric` carry the EXACT
+  unambiguous phrasing carried from the accepted `ui-redesign` STORY-099
+  relabel: the formatted percentage immediately followed by the visible text
+  "of expected checks received" (never a separate ambiguous "missing data"
+  chip next to a RECEIVED-share number). A `null` completeness (no data at
+  all) omits that sub-label entirely — `formatPct`'s own "no data" text is
+  the only thing rendered, matching `isCompletenessLow`'s existing contract
+  that a null pct is a distinct "no data" condition, not a low-completeness
+  warning.
+- **Signal-level drill-down (AC3):** `ComponentTile` renders a real
+  `<button aria-expanded aria-controls>` toggle (an `Icon name="chevron-
+  right"` that rotates 90° when expanded, CSS-only, `prefers-reduced-motion`
+  guarded globally) for any component with `topology.signals.length > 0`;
+  toggling reveals a `<ul>` of per-signal rows, each its own bar-less
+  `AvailabilityMetric` + `CompletenessMetric` pair, signal display name
+  sourced from the SAME topology response the rollup used (the availability
+  response's per-signal children carry only `signal_key`, no `name` —
+  matching the pre-rewrite convention). A zero-signal component renders a
+  plain, non-interactive name — no broken expand affordance ever appears.
+- **Fault isolation:** unlike `DashboardPage`'s six independent fetches,
+  `useAvailability` is ONE merged `useFetch` call (topology +
+  `Promise.all(getComponentAvailability)` + `Promise.all` segment history)
+  — a single loading/error/empty state covers the whole grid, matching the
+  hook's own existing contract (rewired, not rewritten, per the design
+  brief's salvage instruction) rather than a new per-component fault-
+  isolation shape; the header (h1 + subtitle + window switcher + legend)
+  still survives any fetch failure (`ErrorState` + retry replaces only the
+  grid). NOT the same fault-isolation granularity Dashboard's bento tiles
+  have — a candidate backlog item if per-component independent fetches are
+  ever wanted here, out of this story's scope (existing hook contract
+  reused, per the brief).
+- **`AppShell.test.tsx`** gained one new assertion
+  (`'renders the REAL Availability page (not a placeholder) at
+  /availability'`) proving the route now renders `AvailabilityPage` rather
+  than `PlaceholderPage` — the pre-existing `it.each(TABS)` placeholder-
+  heading assertion needed no change (`AvailabilityPage`'s own `<h1>` is
+  still exactly "Availability", matching `nav/tabs.ts`'s tab label).
+
 ### Surviving feature hooks (logic UNCHANGED, presentation gone until their tab's rewrite story)
 Every file below still exists and is still unit/hook-tested against MSW
 exactly as before. Files marked "wired" below ARE now imported by a routed
@@ -453,7 +524,10 @@ tab knows this logic already exists and does not need reinventing:
 - **Availability:** `features/availability/{windowRange,useAvailability,
   format,segments}.ts` — the 24h/7d/30d window-to-range conversion, the
   topology+per-component fetch/merge, `availabilityBand`/`formatDownLabel`/
-  `isCompletenessLow`, and the sparkline-segment builder.
+  `isCompletenessLow`, and the sparkline-segment builder — ALL wired as of
+  STORY-106 into `pages/AvailabilityPage.tsx` (see the new "The Availability
+  tab" Facts subsection below), rewired verbatim (design brief: "re-skin
+  freely; keep the tested behavior"), no hook-level change.
 - **Check History:** `features/history/{observationHealth,signals,
   filterHistory,mergeObservations,useAllHistory}.ts` — the system-wide
   per-signal-parallel-fetch-and-merge ledger, the client-side filter
@@ -854,4 +928,29 @@ tab knows this logic already exists and does not need reinventing:
   += `pages/DashboardPage.tsx`, `components/LatencySpark/LatencySpark.tsx`,
   `features/dashboard/{latencyPoints,maintenanceSummary}.ts`. verified_sha =
   07b49c4.
+
+- sprint-56 (STORY-106 — Availability rewrite, windowed uptime vs
+  completeness): built `pages/AvailabilityPage.tsx`/`.css` (documented in
+  the new "The Availability tab" Facts subsection above) — one h1, a
+  24h/7d/30d window switcher in the header (AC1), a down/missing legend and
+  per-component availability%/windowed-bar/completeness metrics (AC2), and
+  an `aria-expanded` signal-level drill-down (AC3), routed at
+  `/availability` in `AppShell.tsx` (the second tab no longer rendering
+  `PlaceholderPage`). RE-WIRED the surviving
+  `features/availability/{windowRange,useAvailability,format,segments}.ts`
+  hooks VERBATIM (design brief §Salvage: "re-skin freely; keep the tested
+  behavior") — no new feature-hook file, no hook-level change; the single
+  merged `useAvailability` fetch's existing loading/error/empty contract is
+  reused as-is rather than re-split into per-component fetches (a
+  candidate-backlog note, not a deviation — Dashboard's per-tile fault
+  isolation was a STORY-105 decision this story did not need to match).
+  `AppShell.test.tsx` gained one assertion proving `/availability` renders
+  the real page (not `PlaceholderPage`); its pre-existing `it.each(TABS)`
+  placeholder-heading assertion needed no change (`AvailabilityPage`'s own
+  `<h1>` is still exactly "Availability"). Sonnet-5-implementer TDD pass,
+  one commit per green step (page scaffold + switcher/routing; per-component
+  metrics + legend; signal drill-down); frontend-only; six backend gates
+  untouched (empty diff). Suite: 508 tests / 62 files, all green; `npm run
+  build`/`npm run lint` both exit 0. `code_refs` += `pages/
+  AvailabilityPage.tsx`. verified_sha = 3e4c634.
 
