@@ -965,7 +965,7 @@ stories:
     points: 3
     priority: 63
     type: story
-    sprint: null
+    sprint: 57
   - id: STORY-108
     title: Rewrite check history — dense operator table
     file: docs/scrum/stories/STORY-108-rewrite-check-history.md
@@ -973,7 +973,7 @@ stories:
     points: 2
     priority: 64
     type: story
-    sprint: null
+    sprint: 57
   - id: STORY-109
     title: Rewrite maintenance — schedule form + windows list on new skin
     file: docs/scrum/stories/STORY-109-rewrite-maintenance.md
