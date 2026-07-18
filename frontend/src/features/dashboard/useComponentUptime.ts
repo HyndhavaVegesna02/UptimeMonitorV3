@@ -6,6 +6,7 @@ import type { AvailabilityRange } from '../availability/windowRange'
 import { useFetch } from '../../lib/useFetch'
 import type { UseFetchResult } from '../../lib/useFetch'
 import { buildUptimeSegments } from '../history/uptimeSegments'
+import { buildLatencyPoints } from './latencyPoints'
 
 export interface ComponentUptime {
   /** The rollup `availability_pct` (a 0-1 fraction, or `null` on a
@@ -19,6 +20,18 @@ export interface ComponentUptime {
    * `UptimeBar`, whose own empty-segments branch renders the explicit
    * "No data" state instead of a zero-segment bar. */
   segments: UptimeSegment[]
+  /** Oldest -> newest non-null latency values, capped at
+   * `MAX_LATENCY_POINTS` (STORY-105, additive — the Dashboard tile's inline
+   * latency spark). Derived from the SAME `observations` fetch `segments`
+   * already uses — no extra network call. EMPTY under the same conditions
+   * `segments` is empty (never fabricated). */
+  latencyPoints: number[]
+  /** ISO timestamp of the primary signal's most recent observation in the
+   * window (STORY-105, additive — the Dashboard tile's "Last observed"
+   * `RelativeTime`), or `null` when there is none (no signals, no
+   * observations, or the fetch failed). `observations` arrives newest-first,
+   * so this is simply its first entry. */
+  lastObservedIso: string | null
 }
 
 /**
@@ -55,9 +68,11 @@ async function fetchComponentUptime(
     return {
       pct: availability.rollup.availability_pct,
       segments: buildUptimeSegments(observations),
+      latencyPoints: buildLatencyPoints(observations),
+      lastObservedIso: observations[0]?.observed_at ?? null,
     }
   } catch {
-    return { pct: null, segments: [] }
+    return { pct: null, segments: [], latencyPoints: [], lastObservedIso: null }
   }
 }
 

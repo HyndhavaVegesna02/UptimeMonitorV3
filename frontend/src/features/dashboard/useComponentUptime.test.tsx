@@ -84,6 +84,49 @@ describe('buildUptimeSegments', () => {
   })
 })
 
+describe('useComponentUptime — latency + last-observed (STORY-105)', () => {
+  function LatencyHarness({ topology = FIXTURE_TOPOLOGY }: { topology?: typeof FIXTURE_TOPOLOGY }) {
+    const { state } = useComponentUptime(topology, RANGE)
+
+    if (state.phase !== 'success') {
+      return <div role="status">Loading…</div>
+    }
+
+    return (
+      <ul>
+        {topology.map((component) => {
+          const uptime = state.data[component.id]
+          return (
+            <li key={component.id}>
+              {component.name}: points={uptime?.latencyPoints.length ?? 0} last=
+              {uptime?.lastObservedIso ?? 'null'}
+            </li>
+          )
+        })}
+      </ul>
+    )
+  }
+
+  it('derives latencyPoints/lastObservedIso from the SAME history fetch as segments — no extra network call', async () => {
+    render(<LatencyHarness />)
+
+    const frontend = FIXTURE_TOPOLOGY[0]
+    // FIXTURE_HISTORY_FRONTEND_HTTP has 4 rows, one with a null latency_ms —
+    // 3 non-null points survive; the newest row's observed_at is last().
+    const newest = FIXTURE_HISTORY_FRONTEND_HTTP[0]
+    expect(
+      await screen.findByText(`${frontend.name}: points=3 last=${newest.observed_at}`),
+    ).toBeInTheDocument()
+  })
+
+  it('renders empty latencyPoints + null lastObservedIso for a zero-signal component (never fabricated)', async () => {
+    render(<LatencyHarness />)
+
+    const orders = FIXTURE_TOPOLOGY.find((c) => c.id === 'sockshop-orders')!
+    expect(await screen.findByText(`${orders.name}: points=0 last=null`)).toBeInTheDocument()
+  })
+})
+
 describe('useComponentUptime', () => {
   it('combines each component real availability_pct with its first-signal sparkline', async () => {
     render(<Harness />)
