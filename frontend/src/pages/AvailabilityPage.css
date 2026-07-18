@@ -1,0 +1,101 @@
+.availability-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  max-width: 100%;
+}
+
+.availability-page__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.availability-page__heading {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.availability-page__subtitle {
+  color: var(--color-ink-muted);
+}
+
+/*
+ * The 24h/7d/30d window switcher (STORY-106 AC1) — >=44px targets
+ * (`--target-min`), the active preset marked by BOTH `aria-pressed` and a
+ * filled accent background (never color alone: the label text itself also
+ * changes weight via the shared button typography).
+ */
+.availability-page__window {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.availability-page__window-button {
+  min-height: var(--target-min);
+  min-width: 44px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-control);
+  border: 1px solid var(--color-hairline);
+  background: var(--color-surface-1);
+  color: var(--color-ink-muted);
+  font-family: var(--font-sans);
+  font-size: var(--fs-button);
+  font-weight: var(--fw-button);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.availability-page__window-button:hover {
+  background: var(--color-surface-2);
+}
+
+.availability-page__window-button--active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-on-accent);
+  font-weight: var(--fw-semibold);
+}
+
+/*
+ * The per-component tile grid (STORY-106 AC2) — mobile-first single column,
+ * 2 columns at >=768px, 3 at >=1024px (390/768/1024/1440 all first-class,
+ * `fr`-based so the grid never causes page-level horizontal scroll).
+ */
+.availability-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .availability-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .availability-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.availability-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.availability-tile__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
