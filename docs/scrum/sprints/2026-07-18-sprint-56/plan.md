@@ -17,13 +17,13 @@ reduced-motion respected on any pulse/refresh affordance.
 ## Execution order & steps
 
 ### 1. STORY-105 — Bento dashboard (3 pts)
-- [ ] Step 1: bento grid layout (asymmetric ≥1024px: hero 2x2-ish, tiles flow; stacks at 768/390) — tests first on composition
-- [ ] Step 2: hero system-status tile (worst-of via deriveOverallStatus, large KPI text + StatusBadge, "since"/context line)
-- [ ] Step 3: per-component tiles (status accent edge, uptime bar port/re-skin, latency inline-SVG spark from history, last-observed RelativeTime, drill-through link to check-history?signal=)
-- [ ] Step 4: action tiles (pending approvals / maintenance: neutral-at-zero, accent >0, whole-tile links — rewire orphaned useApprovalsBadge + useMaintenanceWindows) + recent-checks feed tile (latest N, RelativeTime + location labels)
-- [ ] Step 5: per-tile skeleton/error/empty states (reduced-motion guarded); suite green
-- [ ] Step 6: live gate (ui-sweep harness): tiles vs API truth, both themes, 390/768/1024/1440, zero console errors
-- [ ] Scoped DoD gate; reviews spec ∥ quality (3-pointer)
+- [x] Step 1: bento grid layout (asymmetric ≥1024px: hero 2x2-ish, tiles flow; stacks at 768/390) — tests first on composition
+- [x] Step 2: hero system-status tile (worst-of via deriveOverallStatus, large KPI text + StatusBadge, "since"/context line)
+- [x] Step 3: per-component tiles (status accent edge, uptime bar port/re-skin, latency inline-SVG spark from history, last-observed RelativeTime, drill-through link to check-history?signal=)
+- [x] Step 4: action tiles (pending approvals / maintenance: neutral-at-zero, accent >0, whole-tile links — rewire orphaned useApprovalsBadge + useMaintenanceWindows) + recent-checks feed tile (latest N, RelativeTime + location labels)
+- [x] Step 5: per-tile skeleton/error/empty states (reduced-motion guarded); suite green
+- [x] Step 6: live gate (ui-sweep harness): tiles vs API truth, both themes, 390/768/1024/1440, zero console errors
+- [x] Scoped DoD gate; reviews spec ∥ quality (3-pointer)
 
 ### 2. STORY-106 — Availability (2 pts)
 - [ ] Step 1: page scaffold on new tokens (one h1, window switcher 24h/7d/30d in header)

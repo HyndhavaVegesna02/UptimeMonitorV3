@@ -16,12 +16,30 @@ stories:
     slug: rewrite-dashboard-bento
     points: 3
     order: 1
-    status: in_progress   # implementer dispatched 2026-07-18 ~09:35 IST
+    status: done          # all 5 AC; 8 commits 74efbde..a20ea05
+    commits: 74efbde..a20ea05
+    reviews: "spec PASS (5/5; salvage byte-identical; additive-only verified; MSW-real failure
+      paths); quality APPROVE (0 major; minors: 2N history fetches by design, dup empty msg,
+      single-point spark untested, px literals consistent w/ pattern)"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Scripted Chromium: bento renders vs API truth (hero 'Up' 48px KPI + '1 of 1
+        component operational' matching /components; action tiles 0/neutral matching
+        /approvals; feed populated); spark aria-label 'HTTP Check latency: latest 548 ms';
+        zero raw ISO/vendor IDs page-wide; drill link ?signal=http-check; scrollWidth
+        exact at 1024/768/390; both themes captured; zero console errors.
+        Screenshots: gate-105/. Polish note -> STORY-110: low-tile-count grid balance.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at a20ea05
+      - {command: "npm test", exit_code: 0, output_tail: "61 files / 493 tests passed", commit: a20ea05}
+      - {command: "npm run build", exit_code: 0, commit: a20ea05}
+      - {command: "npm run lint", exit_code: 0, commit: a20ea05}
+    wiki_blast_radius: "frontend-zone.md dashboard section + sample-mode.md re-cover; sweep CLEAN." 
   - id: STORY-106
     slug: rewrite-availability
     points: 2
     order: 2
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-18 ~10:55 IST
 baseline_gate: "inherited GREEN — ui-rewrite @ ee63f07 = sprint-55 8/8 gate (a41d0a2) + no-ff merge."
 hotfixes: []
 interrupts: []
