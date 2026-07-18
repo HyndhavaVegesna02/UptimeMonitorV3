@@ -274,6 +274,43 @@ describe('getHistory', () => {
     expect(result).toEqual(FIXTURE_HISTORY_FRONTEND_HTTP)
   })
 
+  it('sends an optional limit query param when given (STORY-107, additive on the STORY-094 server param)', async () => {
+    let receivedUrl: URL | undefined
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        receivedUrl = new URL(request.url)
+        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+      }),
+    )
+
+    await getHistory({
+      signal_key: 'frontend-http',
+      since: '2026-07-02T13:29:17.931000Z',
+      until: '2026-07-03T13:29:17.931000Z',
+      limit: 20,
+    })
+
+    expect(receivedUrl?.searchParams.get('limit')).toBe('20')
+  })
+
+  it('omits the limit query param when not given', async () => {
+    let receivedUrl: URL | undefined
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        receivedUrl = new URL(request.url)
+        return HttpResponse.json(FIXTURE_HISTORY_FRONTEND_HTTP)
+      }),
+    )
+
+    await getHistory({
+      signal_key: 'frontend-http',
+      since: '2026-07-02T13:29:17.931000Z',
+      until: '2026-07-03T13:29:17.931000Z',
+    })
+
+    expect(receivedUrl?.searchParams.has('limit')).toBe(false)
+  })
+
   it('fetches the default fixture from /api/v1/history newest-first', async () => {
     const result = await getHistory({
       signal_key: 'frontend-http',
