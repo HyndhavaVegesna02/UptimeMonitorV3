@@ -4,7 +4,7 @@ import { HttpResponse, http } from 'msw'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 import { server } from '../mocks/server'
-import { FIXTURE_TOPOLOGY } from '../mocks/handlers'
+import { FIXTURE_AVAILABILITY_BY_COMPONENT, FIXTURE_TOPOLOGY } from '../mocks/handlers'
 import { AvailabilityPage } from './AvailabilityPage'
 
 // Mirrors the `useAvailability.test.tsx` contention note (STORY-068): this
@@ -90,5 +90,46 @@ describe('AvailabilityPage — per-tile states (AC3)', () => {
     for (const component of FIXTURE_TOPOLOGY) {
       expect(screen.getByText(component.name)).toBeInTheDocument()
     }
+  })
+})
+
+describe('AvailabilityPage — legend (AC2)', () => {
+  it('renders a legend explaining down vs missing with a hatched swatch for missing', () => {
+    renderPage()
+    expect(screen.getByText('Down / outage')).toBeInTheDocument()
+    expect(screen.getByText('Missing data')).toBeInTheDocument()
+  })
+})
+
+describe('AvailabilityPage — availability + completeness metrics (AC2)', () => {
+  it('shows the availability % (windowed bar) and the down-count sublabel for a component', async () => {
+    const { container } = renderPage()
+
+    const rollup = FIXTURE_AVAILABILITY_BY_COMPONENT['sockshop-frontend'].rollup
+    const expectedPct = `${(rollup.availability_pct! * 100).toFixed(2)}%`
+    await screen.findByText(FIXTURE_TOPOLOGY[0].name)
+    expect(screen.getByText(expectedPct)).toBeInTheDocument()
+    expect(container.querySelector('.availability-metric__bar')).toBeInTheDocument()
+  })
+
+  it('shows the unambiguous completeness phrasing: pct + "of expected checks received"', async () => {
+    renderPage()
+
+    const rollup = FIXTURE_AVAILABILITY_BY_COMPONENT['sockshop-frontend'].rollup
+    const expectedPct = `${(rollup.completeness_pct! * 100).toFixed(2)}%`
+    const pctNode = await screen.findByText(expectedPct)
+    const cell = pctNode.closest('.availability-metric') as HTMLElement
+    expect(within(cell).getByText(/of expected checks received/)).toBeInTheDocument()
+  })
+
+  it('renders "no data" (never 0%) and omits the completeness sub-label for a zero-signal/degenerate component', async () => {
+    renderPage()
+
+    await screen.findByText('Sock Shop — orders')
+    const tile = screen
+      .getByText('Sock Shop — orders')
+      .closest('.availability-tile') as HTMLElement
+    expect(within(tile).getAllByText('no data').length).toBeGreaterThan(0)
+    expect(within(tile).queryByText(/of expected checks received/)).not.toBeInTheDocument()
   })
 })

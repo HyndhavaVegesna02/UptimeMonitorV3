@@ -66,6 +66,46 @@
 }
 
 /*
+ * The down/missing legend (STORY-106 AC2) — a solid swatch for "down", a
+ * HATCHED swatch (mirrors `UptimeBar.css`'s missing-segment gradient
+ * exactly) for "missing data": pattern + text, never color alone.
+ */
+.availability-page__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.availability-page__legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-ink-muted);
+  font-size: var(--fs-caption);
+}
+
+.availability-page__legend-swatch {
+  display: inline-block;
+  width: 18px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.availability-page__legend-swatch--down {
+  background: var(--color-health-down);
+}
+
+.availability-page__legend-swatch--missing {
+  background: repeating-linear-gradient(
+    45deg,
+    var(--color-health-missing) 0,
+    var(--color-health-missing) 2px,
+    var(--color-health-missing-subtle) 2px,
+    var(--color-health-missing-subtle) 5px
+  );
+}
+
+/*
  * The per-component tile grid (STORY-106 AC2) — mobile-first single column,
  * 2 columns at >=768px, 3 at >=1024px (390/768/1024/1440 all first-class,
  * `fr`-based so the grid never causes page-level horizontal scroll).
@@ -98,4 +138,58 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.availability-tile__metrics {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.availability-metric__label {
+  display: block;
+  color: var(--color-ink-subtle);
+  margin-bottom: var(--space-1);
+}
+
+.availability-metric__headline {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.availability-metric__value {
+  font-size: var(--fs-stat);
+  font-weight: var(--fw-semibold);
+}
+
+.availability-metric__value--up {
+  color: var(--color-health-up);
+}
+
+.availability-metric__value--degraded {
+  color: var(--color-health-degraded);
+}
+
+.availability-metric__value--partial {
+  color: var(--color-health-partial);
+}
+
+.availability-metric__value--down {
+  color: var(--color-health-down);
+}
+
+.availability-metric__value--low {
+  color: var(--color-health-partial);
+}
+
+.availability-metric__down,
+.availability-metric__completeness-sub {
+  color: var(--color-ink-subtle);
+}
+
+.availability-metric__bar {
+  margin-top: var(--space-2);
 }
