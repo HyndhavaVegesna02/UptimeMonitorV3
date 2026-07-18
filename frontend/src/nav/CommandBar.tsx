@@ -1,3 +1,4 @@
+import type { RefObject } from 'react'
 import type { HealthStatus } from '../components'
 import { Icon, RelativeTime } from '../components'
 import type { UseSampleModeResult } from '../features/dashboard/useSampleMode'
@@ -27,6 +28,15 @@ export interface CommandBarProps {
   /** Restores the dismissed `SampleModeBanner` — `AppShell` passes its
    * `useDismissibleBanner().restore`. */
   onRestoreBanner: () => void
+  /** STORY-104 AC4: renders the hamburger sheet trigger only at the mobile
+   * (<=768px) breakpoint — `AppShell` derives this from the same
+   * `useNavSheet().isMobile` the sheet itself reads, so the two can never
+   * disagree about whether a sheet exists to open. Defaults to `false`. */
+  showMenuTrigger?: boolean
+  onOpenMenu?: () => void
+  /** Handed to `NavSheet` as its `triggerRef` so focus can return here on
+   * close. */
+  menuTriggerRef?: RefObject<HTMLButtonElement | null>
 }
 
 /**
@@ -43,12 +53,27 @@ export function CommandBar({
   sampleMode,
   showSampleChip,
   onRestoreBanner,
+  showMenuTrigger = false,
+  onOpenMenu,
+  menuTriggerRef,
 }: CommandBarProps) {
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
 
   return (
     <header className="command-bar">
+      {showMenuTrigger ? (
+        <button
+          type="button"
+          ref={menuTriggerRef}
+          className="command-bar__menu-trigger"
+          onClick={onOpenMenu}
+          aria-label="Open navigation menu"
+          title="Open navigation menu"
+        >
+          <Icon name="menu" />
+        </button>
+      ) : null}
       <div className="command-bar__brand">
         <Icon name="logo" />
         <span className="command-bar__brand-text">Uptime Monitor</span>

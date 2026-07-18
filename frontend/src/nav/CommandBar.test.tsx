@@ -1,3 +1,4 @@
+import { createRef } from 'react'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
@@ -156,5 +157,32 @@ describe('CommandBar — right cluster (STORY-104 Step 3, AC3)', () => {
   it('renders no "Updated" text before the first fetch resolves', () => {
     renderCommandBar('/', { fetchedAtIso: undefined })
     expect(screen.queryByText(/updated/i)).not.toBeInTheDocument()
+  })
+})
+
+describe('CommandBar — mobile hamburger trigger (STORY-104 Step 4, AC4)', () => {
+  it('does not render a menu trigger when showMenuTrigger is false (default)', () => {
+    renderCommandBar()
+    expect(
+      screen.queryByRole('button', { name: 'Open navigation menu' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders a labeled menu trigger when showMenuTrigger is true, wired to onOpenMenu', async () => {
+    const user = userEvent.setup()
+    const onOpenMenu = vi.fn()
+    renderCommandBar('/', { showMenuTrigger: true, onOpenMenu })
+
+    const trigger = screen.getByRole('button', { name: 'Open navigation menu' })
+    await user.click(trigger)
+
+    expect(onOpenMenu).toHaveBeenCalledTimes(1)
+  })
+
+  it('attaches the passed menuTriggerRef to the rendered trigger button', () => {
+    const ref = createRef<HTMLButtonElement>()
+    renderCommandBar('/', { showMenuTrigger: true, menuTriggerRef: ref })
+
+    expect(ref.current).toBe(screen.getByRole('button', { name: 'Open navigation menu' }))
   })
 })
