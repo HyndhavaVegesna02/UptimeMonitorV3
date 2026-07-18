@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
-verified_sha: 5dd72ce
-verified_sprint: sprint-55
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
+verified_sha: 07b49c4
+verified_sprint: sprint-56
 status: verified
 ---
 
@@ -315,28 +315,133 @@ current state on the same render.
   `features/approvals/ApprovalCard.{tsx,css}` remain deleted; a per-tab
   rewrite is sprint-56+'s job.
 
-### Surviving feature hooks (logic UNCHANGED, presentation gone — orphaned until their tab's rewrite story)
-Every file below still exists, is still unit/hook-tested against MSW exactly
-as before, and is NOT currently imported by any routed page (their pages were
-deleted, see above). They are documented here so a sprint-56+ implementer
-rebuilding a tab knows this logic already exists and does not need
-reinventing:
+### The Dashboard tab (STORY-105 — bento mission-control page)
+`pages/DashboardPage.tsx` (NEW, routed at `/` in `AppShell.tsx` — the one tab
+path that no longer renders `PlaceholderPage`) is the first sprint-56+ tab
+rewrite, per the design brief §IA "Dashboard = bento" spec: a hero
+system-status tile, one tile per monitored component, two action tiles
+(pending approvals / maintenance), and a "recent checks" feed tile, laid out
+by `DashboardPage.css`'s mobile-first `.dashboard-grid` (single column at
+<768px, two columns at >=768px, an asymmetric 4-column grid with the hero and
+feed tiles each spanning a 2x2 block at >=1024px — `grid-auto-flow: row
+dense` lets the per-component/action tiles fill the remaining cells at any
+count). This RE-WIRES most of the "surviving feature hooks" the STORY-103
+rewrite orphaned (see below) rather than reinventing them — the one genuinely
+new data-shaping piece is `features/dashboard/latencyPoints.ts::
+buildLatencyPoints` (mirrors `features/history/uptimeSegments.ts::
+buildUptimeSegments`'s cap-and-reverse shape at a smaller cap,
+`MAX_LATENCY_POINTS = 20`, dropping any `latency_ms: null` observation) plus
+two ADDITIVE fields on `features/dashboard/useComponentUptime.ts::
+ComponentUptime` — `latencyPoints: number[]` and `lastObservedIso: string |
+null` — both derived from the SAME per-component `observations` fetch
+`segments` already uses, so the per-component tile's latency spark and
+"Last observed" `RelativeTime` cost zero extra network calls.
+- **`components/LatencySpark/LatencySpark.tsx`** (NEW primitive): an inline
+  `<svg role="img">` sparkline (ui-ux-pro-max chart-domain guidance — data
+  refreshes ~1/min, so this is a static periodic-refresh visual, never a
+  streaming/ticker chart; the point volume is small enough that a hand-rolled
+  `<svg>` is correct, no chart library, no new dependency). Renders an
+  explicit "No data" state (never a fabricated flat line) for an empty
+  series; otherwise a `<polyline>` scaled into a fixed `0 0 100 24` viewBox
+  (a flat/single-point series draws a mid-line rather than dividing by a zero
+  range), an `aria-label`/`<title>` stating the latest value in words
+  ("`<label>`: latest `<n>` ms") — the accessible name, never color/shape
+  alone.
+- **`features/dashboard/maintenanceSummary.ts::countActiveOrUpcomingWindows`**
+  (ported VERBATIM, with its test, from the parked `ui-redesign` branch's
+  STORY-099 — design brief §Salvage instruction): counts
+  `MaintenanceWindowDTO`s currently `'active'` or `'upcoming'` per
+  `features/maintenance/windowState.ts::deriveWindowState`'s existing
+  half-open rule (never re-derived) — backs the Maintenance action tile's
+  count. An empty list returns `0`.
+- **Hero tile:** `features/shell/deriveOverallStatus.ts` (STORY-104's
+  worst-of reducer, REUSED here — not re-derived) over `useComponents()`'s
+  data, rendered as a large `--font-heading` KPI word (a page-local
+  `HERO_STATUS_LABELS` map, matching `StatusBadge`'s own label text) plus a
+  `StatusBadge` (never color-only) and an honest "N of M components
+  operational" subline (an empty component list falls back to "No
+  components configured", never a fabricated count).
+- **Per-component tiles:** `useComponents()` (health/name) joined against
+  `useTopology()` (by `component.id`, for the primary signal's `signal_key`)
+  and `useComponentUptime(topology, range)` (pct/segments/latencyPoints/
+  lastObservedIso) over a FIXED 24h window (`windowToRange('24h')`, memoized
+  once — there is no window selector on this tab, that is Availability's
+  job). A component with a primary signal renders as a whole-tile `Tile
+  href="/check-history?signal=<signal_key>"` link (STORY-106+ will build the
+  page this points at); a component with no topology signals (still loading,
+  or genuinely zero signals) renders the SAME content as a plain
+  non-interactive tile rather than a broken link — graceful degradation,
+  mirroring the pre-rewrite Dashboard's convention.
+- **Action tiles:** "Pending approvals" reads `features/shell/
+  useApprovalsBadge.ts` (now WIRED — see the updated Shell bullet below);
+  "Maintenance" reads `useMaintenanceWindows()` + `countActiveOrUpcomingWindows`
+  directly (not the badge hook) since it needs the FULL `FetchState` to show
+  a genuine error+retry branch, which `useApprovalsBadge`'s collapsed
+  `number | undefined` contract cannot distinguish from loading — the
+  Approvals tile's `count === undefined` case (loading OR a fetch failure,
+  per that hook's own documented contract) renders a loading affordance
+  rather than a blank tile, a known, accepted limitation of reusing that
+  specific orphaned hook as directed (candidate: give it a distinguishable
+  error state in a future story). Both tiles are whole-tile links (`Tile
+  href`), neutral (no accent class) at count `0`, teal-accented
+  (`.dashboard-grid__action--active`) at count `> 0` — the count and its
+  sublabel ("open" / "active or upcoming") are always visible text, so the
+  accent is a reinforcing cue, never the sole one.
+- **Feed tile:** `features/history/useAllHistory(range)` (the SAME fixed 24h
+  range) — the latest 8 rows (`RECENT_CHECKS_LIMIT`) of its newest-first,
+  system-wide merged ledger, each row a `StatusBadge`
+  (`observationHealth`) + component name + `formatLocationLabel` (never the
+  raw vendor location id) + latency (a page-local `formatLatency`, em-dash
+  for `null`) + `RelativeTime` (never a raw ISO string as visible text — the
+  raw instant only ever appears in the `<time dateTime>` attribute/tooltip).
+  An empty result renders `EmptyState` ("No checks recorded yet").
+- **Per-tile fault isolation (AC4):** every tile's data comes from an
+  INDEPENDENT fetch (`useComponents`/`useTopology`/`useComponentUptime`/
+  `useApprovalsBadge`/`useMaintenanceWindows`/`useAllHistory`) — a components
+  fetch failure surfaces as the hero tile's OWN `ErrorState` + retry while
+  the action/feed tiles keep rendering their real data; a maintenance or
+  history fetch failure surfaces as THAT tile's own `ErrorState` + retry
+  without touching any other tile; a topology fetch failure degrades every
+  component tile to its non-link, no-uptime-data shape (never blanks the
+  page). `LoadingState` is reused for every tile's loading skeleton — its
+  spinner is already `prefers-reduced-motion`-guarded globally
+  (`global.css`, STORY-103), so no new reduced-motion plumbing was needed.
+  `DashboardPage.test.tsx` proves each of these fault-isolation paths
+  individually (components/maintenance/history/topology/approvals failures,
+  each asserted NOT to blank sibling tiles).
+- **`AppShell.test.tsx`'s existing "Dashboard placeholder" assertions are
+  UNCHANGED** — `DashboardPage`'s own `<h1>` text is still exactly
+  `"Dashboard"` (matching `nav/tabs.ts`'s tab label), so the shell-level
+  routing tests needed no edits.
+
+### Surviving feature hooks (logic UNCHANGED, presentation gone until their tab's rewrite story)
+Every file below still exists and is still unit/hook-tested against MSW
+exactly as before. Files marked "wired" below ARE now imported by a routed
+page (the shell, or `DashboardPage` as of STORY-105); the rest are still
+genuinely orphaned, documented here so a sprint-56+ implementer rebuilding a
+tab knows this logic already exists and does not need reinventing:
 - **Dashboard:** `features/dashboard/useComponents.ts`
-  (`useFetch(getComponents)`, PLUS the STORY-104 additive `fetchedAtIso` —
-  see the real-shell Facts above; the shell now calls this hook, but a
-  future Dashboard tab rewrite will call it too, independently, for its own
-  render) and `features/dashboard/useSampleMode.ts` (load+mutate-in-one-hook
-  — ALSO now called by the shell, STORY-104, not orphaned) are wired into
-  the app shell as of STORY-104; the rest below are still genuinely
-  orphaned. `features/dashboard/summary.ts::summarizeComponents` (real
-  up/degraded/partial/down bucket counts), `features/dashboard/useTopology.ts`
+  (`useFetch(getComponents)`, PLUS the STORY-104 additive `fetchedAtIso`),
+  `features/dashboard/useSampleMode.ts` (load+mutate-in-one-hook — called by
+  the shell, STORY-104), `features/dashboard/useTopology.ts`
   (`useFetch(getTopology)`), `features/dashboard/useComponentUptime.ts`
   (combines the rollup `availability_pct` with a `buildUptimeSegments`
-  sparkline, capped at 30 segments, never rejects — a per-component failure
-  degrades gracefully), `features/dashboard/useComponentSignals.ts`
+  sparkline capped at 30 segments PLUS the STORY-105 additive
+  `latencyPoints`/`lastObservedIso` fields, never rejects — a per-component
+  failure degrades gracefully), and `features/dashboard/
+  useMaintenanceWindows.ts` (`useFetch(getMaintenance)`) are ALL wired — the
+  first three into the shell/Dashboard page, the last one into
+  `DashboardPage`'s maintenance action tile (STORY-105). Still genuinely
+  orphaned: `features/dashboard/summary.ts::summarizeComponents` (real
+  up/degraded/partial/down bucket counts — the pre-rewrite Dashboard's
+  summary-card row; STORY-105's hero tile derives its own subline
+  differently, via `deriveOverallStatus`, so this helper's per-status-bucket
+  shape wasn't needed) and `features/dashboard/useComponentSignals.ts`
   (latest-per-location signal rows, a zero-observation signal renders an
-  honest `'missing'` row), `features/dashboard/useMaintenanceWindows.ts`
-  (`useFetch(getMaintenance)`).
+  honest `'missing'` row — the pre-rewrite Dashboard's expandable
+  drill-down; STORY-105's per-component tile instead LINKS to Check History
+  rather than expanding inline, so this hook wasn't needed either — a future
+  Check History rewrite (STORY-108+) is its most likely next consumer).
 - **Approvals:** `features/approvals/useApprovals.ts`
   (`useFetch(getApprovals)`), `features/approvals/severity.ts::
   deriveSeverity` (maps `to_status` onto the 7-status health tokens),
@@ -359,12 +464,12 @@ reinventing:
   useMaintenance}.ts` — the half-open upcoming/active/past window-state
   derivation, the 422-detail-to-field mapper, and the load+mutate hook.
 - **Shell:** `features/shell/useApprovalsBadge.ts` — the Approvals
-  pending-count badge fetch (`useFetch(getApprovals)`), STILL unused after
-  STORY-104: the real command bar's Step-1 scaffold (per the sprint-55 plan)
-  covers brand/tabs/aria-current/right-cluster only, with no pending-count
-  badge on the Approvals tab — deliberately deferred (see the STORY-104
-  story's candidate-backlog note) rather than an unrelated addition to this
-  story's scope. A future story can wire it into `TabNav`'s Approvals link.
+  pending-count badge fetch (`useFetch(getApprovals)`). Unused by the command
+  bar/`TabNav` itself (still no pending-count badge on the Approvals nav
+  link — that remains deferred, per the STORY-104 candidate-backlog note),
+  but no longer orphaned overall: STORY-105 wired it into `DashboardPage`'s
+  "Pending approvals" action tile — a DIFFERENT consumer than the one the
+  STORY-104 note anticipated, same hook, unchanged.
 
 ### Typed API client, actor seam, test boundary, shared fetch (UNCHANGED by the rewrite)
 - **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single
@@ -725,4 +830,28 @@ reinventing:
   Suite: 461 tests / 57 files, all green; `npm run build`/`npm run lint`
   both exit 0. `code_refs` += every new `nav/*`/`features/shell/
   deriveOverallStatus.ts` file listed above. verified_sha = 5dd72ce.
+
+- sprint-56 (STORY-105 — bento Dashboard, the first sprint-56+ tab rewrite):
+  built `pages/DashboardPage.tsx`/`.css` per the design brief §IA "Dashboard
+  = bento" spec (documented in the new "The Dashboard tab" Facts subsection
+  above) — hero/per-component/action/feed tiles on a mobile-first asymmetric
+  CSS grid, routed at `/` in `AppShell.tsx` (the one tab no longer rendering
+  `PlaceholderPage`). RE-WIRED five previously-orphaned feature hooks
+  (`useComponents`, `useTopology`, `useComponentUptime`,
+  `useMaintenanceWindows`, `useApprovalsBadge`) plus `useAllHistory` and
+  `deriveOverallStatus` rather than reinventing any of them. New: the
+  `LatencySpark` primitive (inline-SVG sparkline, no chart library/new
+  dependency), `features/dashboard/latencyPoints.ts::buildLatencyPoints`, two
+  ADDITIVE `ComponentUptime` fields (`latencyPoints`/`lastObservedIso`,
+  zero extra network calls — reuses the fetch `segments` already made), and
+  `features/dashboard/maintenanceSummary.ts::countActiveOrUpcomingWindows`
+  (ported verbatim from the parked `ui-redesign` branch's STORY-099, per the
+  brief's §Salvage instruction). `AppShell.test.tsx`'s Dashboard-route
+  assertions needed no changes (the page's own `<h1>` is still exactly
+  "Dashboard"). Sonnet-5-implementer TDD pass, one commit per green step;
+  frontend-only; six backend gates untouched (empty diff). Suite: 493 tests /
+  63 files, all green; `npm run build`/`npm run lint` both exit 0. `code_refs`
+  += `pages/DashboardPage.tsx`, `components/LatencySpark/LatencySpark.tsx`,
+  `features/dashboard/{latencyPoints,maintenanceSummary}.ts`. verified_sha =
+  07b49c4.
 
