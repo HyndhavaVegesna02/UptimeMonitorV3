@@ -4,10 +4,11 @@ import { ThemeContext } from './theme-context'
 
 /**
  * Owns the resolved theme for the whole app (STORY-015a AC5). Initial state
- * mirrors index.html's pre-paint inline script (stored override > OS
- * preference) so there is no flash: the <html data-theme> attribute the
- * script already set on load is simply confirmed, never changed, on the
- * first render.
+ * mirrors index.html's pre-paint inline script (stored choice > dark,
+ * PERIOD — the OS `prefers-color-scheme` is never consulted, corrected at
+ * the STORY-103 reality gate) so there is no flash: the <html data-theme>
+ * attribute the script already set on load is simply confirmed, never
+ * changed, on the first render.
  */
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())

@@ -1,19 +1,17 @@
 import { Link } from 'react-router-dom'
-import { EmptyState, Panel } from '../components'
+import { Tile } from '../components'
 
 /**
- * Catch-all for unknown routes (STORY-041 AC4) — keeps the Nav shell and
- * page chrome consistent instead of rendering an empty `<main>` for a
- * mistyped or stale URL.
+ * Catch-all for an unknown path (STORY-041 originally; re-skinned onto the
+ * Mission Teal `Tile` primitive at STORY-103 — behavior unchanged: a
+ * heading plus a link back to the Dashboard route).
  */
 export function NotFoundPage() {
   return (
-    <Panel title="Not found" headingLevel="h1">
-      <EmptyState
-        message="This page doesn't exist"
-        detail="Check the URL, or go back to the Dashboard."
-      />
+    <Tile elevation="md">
+      <h1>Not found</h1>
+      <p>That page doesn&apos;t exist.</p>
       <Link to="/">Back to Dashboard</Link>
-    </Panel>
+    </Tile>
   )
 }

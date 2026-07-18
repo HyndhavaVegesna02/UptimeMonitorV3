@@ -1,0 +1,20 @@
+.sample-mode-chip {
+  flex: none;
+  min-height: var(--target-min);
+  padding: 1px var(--space-2);
+  border: 1px solid var(--color-health-degraded);
+  border-radius: var(--radius-chip);
+  background: var(--color-health-degraded-subtle);
+  color: var(--color-health-degraded);
+  font-family: var(--font-sans);
+  font-size: var(--fs-chip);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.sample-mode-chip:hover {
+  background: var(--color-health-degraded);
+  color: var(--color-on-accent);
+}

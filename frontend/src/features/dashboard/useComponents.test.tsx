@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
@@ -43,6 +43,28 @@ describe('useComponents', () => {
       await screen.findByText(FIXTURE_COMPONENTS[0].name),
     ).toBeInTheDocument()
     expect(screen.getByText(FIXTURE_COMPONENTS[1].name)).toBeInTheDocument()
+  })
+
+  it('reports fetchedAtIso as undefined until the fetch succeeds, then a valid ISO instant (STORY-104 AC — "Updated Xs ago", display-layer only)', async () => {
+    function FetchedAtHarness() {
+      const { state, fetchedAtIso } = useComponents()
+      return (
+        <p data-testid="fetched-at">
+          {state.phase === 'success' ? (fetchedAtIso ?? 'none') : 'pending'}
+        </p>
+      )
+    }
+
+    render(<FetchedAtHarness />)
+
+    expect(screen.getByTestId('fetched-at')).toHaveTextContent('pending')
+
+    await waitFor(() => {
+      const text = screen.getByTestId('fetched-at').textContent
+      expect(text).not.toBe('pending')
+      expect(text).not.toBe('none')
+      expect(Number.isNaN(new Date(text ?? '').getTime())).toBe(false)
+    })
   })
 
   it('reaches the error phase on failure, then recovers via retry (re-fetching)', async () => {

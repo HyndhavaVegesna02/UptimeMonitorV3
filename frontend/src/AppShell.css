@@ -1,47 +1,30 @@
 .app-shell {
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-  background: var(--color-canvas);
-  color: var(--color-ink);
-}
-
-.app-shell__content {
-  flex: 1;
-  min-width: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-}
-
-.app-shell__main {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-6);
+  min-height: 100%;
 }
 
 .skip-link {
   position: absolute;
-  top: -48px;
-  left: var(--space-4);
-  z-index: 100;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
+  top: -100%;
+  left: var(--space-2);
+  z-index: var(--z-toast);
+  background: var(--color-surface-1);
+  color: var(--color-ink);
   padding: var(--space-2) var(--space-4);
   border-radius: var(--radius-control);
-  font-family: var(--font-sans);
-  font-size: var(--fs-body);
-  text-decoration: none;
-  transition: top 0.12s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skip-link {
-    transition: none;
-  }
+  border: 1px solid var(--color-hairline-strong);
 }
 
 .skip-link:focus-visible {
-  top: var(--space-4);
-  box-shadow: var(--focus-ring);
+  top: var(--space-2);
+}
+
+.app-shell__main {
+  flex: 1;
+  padding: var(--space-6);
+}
+
+.app-shell__main:focus-visible {
+  outline: none;
 }

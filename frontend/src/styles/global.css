@@ -1,15 +1,18 @@
-/* Base resets + typography utility classes built on the token layer.
- * Self-hosted fonts (@fontsource) — no runtime Google Fonts fetch (AC4).
- * Geist + Geist Mono (STORY-055, sprint-38): replaces Inter/JetBrains Mono
- * per the Operator Dashboard design brief; still bundled, no Google-CDN
- * <link> (offline/CSP). */
-@import '@fontsource/geist/400.css';
-@import '@fontsource/geist/500.css';
-@import '@fontsource/geist/600.css';
-@import '@fontsource/geist/700.css';
-@import '@fontsource/geist-mono/400.css';
-@import '@fontsource/geist-mono/500.css';
-@import '@fontsource/geist-mono/600.css';
+/* Base resets + typography utility classes built on the token layer
+ * (STORY-103 — Mission Teal design system v2). Self-hosted fonts
+ * (@fontsource) — no runtime Google Fonts fetch (AC2): Space Grotesk
+ * (headings) / Inter (body) / JetBrains Mono (tabular data), replacing
+ * Geist/Geist Mono per the ui-rewrite design brief. */
+@import '@fontsource/space-grotesk/500.css';
+@import '@fontsource/space-grotesk/600.css';
+@import '@fontsource/space-grotesk/700.css';
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/jetbrains-mono/600.css';
 
 *,
 *::before,
@@ -32,31 +35,53 @@ body {
   line-height: var(--lh-body);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  /* Digits keep a fixed width app-wide (STORY-055) — matters for mono
-     stat/latency/timestamp columns that update in place. */
+  /* Digits keep a fixed width app-wide — matters for mono stat/latency/
+     timestamp columns that update in place. */
   font-variant-numeric: tabular-nums;
 }
 
-/* Visible accent focus ring on every interactive element (AC6). Uses
-   :focus-visible so mouse clicks don't show the ring, keyboard use does. */
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-family: var(--font-heading);
+}
+
+p {
+  margin: 0;
+}
+
+/* Visible accent focus ring on every interactive element (a11y floor).
+   Uses :focus-visible so mouse clicks don't show the ring, keyboard use
+   does. */
 a:focus-visible,
 button:focus-visible,
 input:focus-visible,
 [role='tab']:focus-visible,
+[role='switch']:focus-visible,
 [tabindex]:focus-visible {
   outline: none;
   box-shadow: var(--focus-ring);
   border-radius: var(--radius-control);
 }
 
-h1,
-h2,
-h3,
-p {
-  margin: 0;
+/* Motion guard (brief §Motion): every transition/animation elsewhere in
+ * the app must be wrapped by (or itself reference only) these durations,
+ * and this reduced-motion override collapses them to near-zero for anyone
+ * who has asked the OS for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 .text-h1 {
+  font-family: var(--font-heading);
   font-size: var(--fs-h1);
   font-weight: var(--fw-h1);
   line-height: var(--lh-h1);
@@ -64,6 +89,7 @@ p {
 }
 
 .text-h2 {
+  font-family: var(--font-heading);
   font-size: var(--fs-h2);
   font-weight: var(--fw-h2);
   line-height: var(--lh-h2);
@@ -71,6 +97,7 @@ p {
 }
 
 .text-h3 {
+  font-family: var(--font-heading);
   font-size: var(--fs-h3);
   font-weight: var(--fw-h3);
   line-height: var(--lh-h3);
@@ -107,8 +134,8 @@ p {
 }
 
 /* Visually hidden but reader-accessible (e.g. the "to" between a decorative
- * from->to arrow's two StatusBadges — STORY-015c AC1). Standard clip-based
- * pattern, not `display: none` (which removes it from the a11y tree too). */
+ * from->to arrow's two StatusBadges). Standard clip-based pattern, not
+ * `display: none` (which removes it from the a11y tree too). */
 .sr-only {
   position: absolute;
   width: 1px;

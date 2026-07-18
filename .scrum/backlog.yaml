@@ -925,3 +925,68 @@ stories:
     status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
     type: story
     sprint: null
+  # ── UI-REWRITE initiative (PO directive 2026-07-18: full rewrite, creative freedom, branch ui-rewrite off main; incremental ui-redesign initiative PARKED at sprint-54) ──
+  - id: STORY-103
+    title: Rewrite foundation — Mission Teal design system, fonts, theme engine, base primitives
+    file: docs/scrum/stories/STORY-103-rewrite-design-foundation.md
+    status: done    # sprint-55: Mission Teal foundation; dark-first corrected at gate; delegated ACCEPT 2026-07-18, merged to ui-rewrite
+    points: 3
+    priority: 59
+    type: story
+    sprint: 55
+  - id: STORY-104
+    title: Rewrite shell — top command bar, horizontal tab nav, responsive sheet, mode controls
+    file: docs/scrum/stories/STORY-104-rewrite-app-shell.md
+    status: done    # sprint-55: command-bar shell; live focus-contract verified; delegated ACCEPT 2026-07-18, merged to ui-rewrite
+    points: 3
+    priority: 60
+    type: story
+    sprint: 55
+  - id: STORY-105
+    title: Rewrite dashboard — bento grid mission-control page
+    file: docs/scrum/stories/STORY-105-rewrite-dashboard-bento.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 3
+    priority: 61
+    type: story
+    sprint: null
+  - id: STORY-106
+    title: Rewrite availability — windowed uptime vs completeness, new skin
+    file: docs/scrum/stories/STORY-106-rewrite-availability.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 2
+    priority: 62
+    type: story
+    sprint: null
+  - id: STORY-107
+    title: Rewrite approvals — evidence-first queue on new skin
+    file: docs/scrum/stories/STORY-107-rewrite-approvals.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 3
+    priority: 63
+    type: story
+    sprint: null
+  - id: STORY-108
+    title: Rewrite check history — dense operator table
+    file: docs/scrum/stories/STORY-108-rewrite-check-history.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 2
+    priority: 64
+    type: story
+    sprint: null
+  - id: STORY-109
+    title: Rewrite maintenance — schedule form + windows list on new skin
+    file: docs/scrum/stories/STORY-109-rewrite-maintenance.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 2
+    priority: 65
+    type: story
+    sprint: null
+  - id: STORY-110
+    title: Rewrite publications + initiative polish sweep
+    file: docs/scrum/stories/STORY-110-rewrite-publications-polish.md
+    status: ready   # filed+refined 2026-07-18 (ui-rewrite refinement, PO-delegated)
+    points: 3
+    priority: 66
+    type: story
+    sprint: null

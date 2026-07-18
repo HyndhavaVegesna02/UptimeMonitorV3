@@ -1,0 +1,39 @@
+.status-dot {
+  display: inline-flex;
+  align-items: center;
+}
+
+.status-dot__mark {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  flex: none;
+}
+
+.status-dot__mark--up {
+  background: var(--color-health-up);
+}
+
+.status-dot__mark--degraded {
+  background: var(--color-health-degraded);
+}
+
+.status-dot__mark--partial {
+  background: var(--color-health-partial);
+}
+
+.status-dot__mark--down {
+  background: var(--color-health-down);
+}
+
+.status-dot__mark--maintenance {
+  background: var(--color-health-maintenance);
+}
+
+.status-dot__mark--unknown {
+  background: var(--color-health-unknown);
+}
+
+.status-dot__mark--missing {
+  background: var(--color-health-missing);
+}

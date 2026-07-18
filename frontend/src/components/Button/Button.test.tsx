@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import { Button } from './Button'
 
-describe('Button', () => {
+describe('Button (Mission Teal v2 — STORY-103: primary/ghost/danger + loading)', () => {
   it('renders its label', () => {
     render(<Button>Approve</Button>)
     expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument()
@@ -24,17 +24,17 @@ describe('Button', () => {
     )
   })
 
-  it('applies the secondary variant class', () => {
-    render(<Button variant="secondary">Cancel</Button>)
+  it('applies the ghost variant class', () => {
+    render(<Button variant="ghost">Cancel</Button>)
     expect(screen.getByRole('button', { name: 'Cancel' })).toHaveClass(
-      'button--secondary',
+      'button--ghost',
     )
   })
 
-  it('applies the tertiary variant class', () => {
-    render(<Button variant="tertiary">Skip</Button>)
-    expect(screen.getByRole('button', { name: 'Skip' })).toHaveClass(
-      'button--tertiary',
+  it('applies the danger variant class', () => {
+    render(<Button variant="danger">Delete</Button>)
+    expect(screen.getByRole('button', { name: 'Delete' })).toHaveClass(
+      'button--danger',
     )
   })
 
@@ -60,5 +60,46 @@ describe('Button', () => {
     await user.click(screen.getByRole('button', { name: 'Approve' }))
 
     expect(onClick).not.toHaveBeenCalled()
+  })
+
+  describe('loading state', () => {
+    it('sets aria-busy and disables the button while loading', () => {
+      render(<Button loading>Approve</Button>)
+      const button = screen.getByRole('button', { name: 'Approve' })
+      expect(button).toHaveAttribute('aria-busy', 'true')
+      expect(button).toBeDisabled()
+    })
+
+    it('keeps the accessible name while loading (never loses its label)', () => {
+      render(<Button loading>Approve</Button>)
+      expect(screen.getByRole('button', { name: 'Approve' })).toBeInTheDocument()
+    })
+
+    it('renders a decorative loading spinner', () => {
+      const { container } = render(<Button loading>Approve</Button>)
+      const spinner = container.querySelector('.button__spinner')
+      expect(spinner).not.toBeNull()
+      expect(spinner).toHaveAttribute('aria-hidden', 'true')
+    })
+
+    it('does not fire onClick while loading', async () => {
+      const user = userEvent.setup()
+      const onClick = vi.fn()
+      render(
+        <Button onClick={onClick} loading>
+          Approve
+        </Button>,
+      )
+
+      await user.click(screen.getByRole('button', { name: 'Approve' }))
+
+      expect(onClick).not.toHaveBeenCalled()
+    })
+
+    it('does not render the spinner when not loading', () => {
+      const { container } = render(<Button>Approve</Button>)
+      expect(container.querySelector('.button__spinner')).toBeNull()
+      expect(screen.getByRole('button')).not.toHaveAttribute('aria-busy')
+    })
   })
 })

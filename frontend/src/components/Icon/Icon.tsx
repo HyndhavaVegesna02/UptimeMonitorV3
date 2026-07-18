@@ -27,6 +27,7 @@ export type IconName =
   | 'trash'
   | 'zap'
   | 'arrow-right'
+  | 'menu'
 
 const PATHS: Record<IconName, ReactNode> = {
   logo: <path d="M3 12h4l2 6 4-14 2 8h6" />,
@@ -73,6 +74,7 @@ const PATHS: Record<IconName, ReactNode> = {
   trash: <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />,
   zap: <path d="M13 2 3 14h7l-1 8 10-12h-7z" />,
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
+  menu: <path d="M3 6h18M3 12h18M3 18h18" />,
 }
 
 export interface IconProps extends Omit<SVGProps<SVGSVGElement>, 'name'> {

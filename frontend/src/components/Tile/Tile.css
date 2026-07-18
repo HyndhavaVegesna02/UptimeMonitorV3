@@ -1,0 +1,77 @@
+.tile {
+  display: block;
+  width: 100%;
+  background: var(--color-surface-1);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-tile);
+  padding: var(--space-4);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  margin: 0;
+  box-sizing: border-box;
+  border-left-width: 1px;
+}
+
+.tile--elevation-sm {
+  box-shadow: var(--shadow-sm);
+}
+
+.tile--elevation-md {
+  box-shadow: var(--shadow-md);
+}
+
+.tile--elevation-lg {
+  box-shadow: var(--shadow-lg);
+}
+
+/* Status accent — a colored left edge, never the only cue (the tile's own
+   content still carries a StatusBadge/label wherever status matters). */
+.tile--accent-up {
+  border-left-color: var(--color-health-up);
+  border-left-width: 3px;
+}
+.tile--accent-degraded {
+  border-left-color: var(--color-health-degraded);
+  border-left-width: 3px;
+}
+.tile--accent-partial {
+  border-left-color: var(--color-health-partial);
+  border-left-width: 3px;
+}
+.tile--accent-down {
+  border-left-color: var(--color-health-down);
+  border-left-width: 3px;
+}
+.tile--accent-maintenance {
+  border-left-color: var(--color-health-maintenance);
+  border-left-width: 3px;
+}
+.tile--accent-unknown {
+  border-left-color: var(--color-health-unknown);
+  border-left-width: 3px;
+}
+.tile--accent-missing {
+  border-left-color: var(--color-health-missing);
+  border-left-width: 3px;
+}
+
+.tile--interactive {
+  cursor: pointer;
+  transition:
+    transform var(--motion-fast) var(--ease-standard),
+    box-shadow var(--motion-fast) var(--ease-standard),
+    border-color var(--motion-fast) var(--ease-standard);
+}
+
+.tile--interactive:hover {
+  /* Hover scale capped at 1.01 (brief: no layout-shifting hovers). */
+  transform: scale(1.01);
+  box-shadow: var(--shadow-lg);
+}
+
+.tile--interactive:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring), var(--shadow-lg);
+}
