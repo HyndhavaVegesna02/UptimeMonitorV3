@@ -8,6 +8,17 @@ findings that still inform this rewrite's UX semantics.
 
 ## Sprint log
 
+### Sprint 57 (2026-07-18) — wave 3: decision surfaces — 5/5 accepted
+- Shipped: evidence-first approvals on the Tile language (per-location evidence, consequence
+  confirm, live sample-mode round-trip verified) + dense check-history table (deep-link seed,
+  aria-live summary matching API truth exactly, latency tint bands proven on real data,
+  sticky header). Tests 508 -> 606.
+- Lessons: a broken shell chain produced a commit whose message preceded its board edit —
+  corrected next-commit; gate+board sequences now run as separate verified calls. Salvage
+  pointers must be verified to exist before being named in briefs (initialHistoryFilters
+  lived only in the never-green sprint-54 WIP).
+- Next: sprint 58 — maintenance (109) + publications + polish matrix + PO package (110).
+
 ### Sprint 56 (2026-07-18) — wave 2: bento dashboard + availability — 5/5 accepted
 - Shipped: bento mission-control dashboard (hero worst-of KPI, component tiles w/ uptime
   bar + inline-SVG latency spark, neutral-at-zero action tiles, recent-checks feed,

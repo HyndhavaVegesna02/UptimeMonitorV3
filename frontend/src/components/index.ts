@@ -7,6 +7,7 @@ export {
   type HealthStatus,
   type StatusBadgeProps,
 } from './StatusBadge/StatusBadge'
+export { defaultStatusLabel } from './StatusBadge/labels'
 export { Panel, type PanelProps } from './Panel/Panel'
 export { LoadingState, type LoadingStateProps } from './LoadingState/LoadingState'
 export { ErrorState, type ErrorStateProps } from './ErrorState/ErrorState'

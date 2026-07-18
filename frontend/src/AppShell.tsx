@@ -9,7 +9,9 @@ import { SampleModeBanner } from './nav/SampleModeBanner'
 import { TABS } from './nav/tabs'
 import { useDismissibleBanner } from './nav/useDismissibleBanner'
 import { useNavSheet } from './nav/useNavSheet'
+import { ApprovalsPage } from './pages/ApprovalsPage'
 import { AvailabilityPage } from './pages/AvailabilityPage'
+import { CheckHistoryPage } from './pages/CheckHistoryPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { PlaceholderPage } from './pages/PlaceholderPage'
 import { NotFoundPage } from './pages/NotFoundPage'
@@ -96,6 +98,10 @@ export function AppShell() {
                   <DashboardPage />
                 ) : tab.path === '/availability' ? (
                   <AvailabilityPage />
+                ) : tab.path === '/approvals' ? (
+                  <ApprovalsPage />
+                ) : tab.path === '/check-history' ? (
+                  <CheckHistoryPage />
                 ) : (
                   <PlaceholderPage title={tab.label} />
                 )

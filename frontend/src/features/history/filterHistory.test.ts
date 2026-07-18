@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { HistoryRow } from './mergeObservations'
-import { DEFAULT_HISTORY_FILTERS, filterHistoryRows, uniqueLocations } from './filterHistory'
+import {
+  DEFAULT_HISTORY_FILTERS,
+  filterHistoryRows,
+  initialHistoryFilters,
+  uniqueLocations,
+} from './filterHistory'
 
 function makeRow(overrides: Partial<HistoryRow> = {}): HistoryRow {
   return {
@@ -65,6 +70,23 @@ describe('filterHistoryRows', () => {
     const filtered = filterHistoryRows(rows, { query: 'frontend', result: 'up', location: 'LOC-A' })
     expect(filtered).toHaveLength(1)
     expect(filtered[0]).toEqual(rows[0])
+  })
+})
+
+describe('initialHistoryFilters', () => {
+  it('returns the default filters unchanged when no ?signal= param is present (STORY-108 AC1)', () => {
+    expect(initialHistoryFilters(new URLSearchParams())).toEqual(DEFAULT_HISTORY_FILTERS)
+  })
+
+  it('seeds the free-text search query from ?signal= when present', () => {
+    expect(initialHistoryFilters(new URLSearchParams('signal=frontend-http'))).toEqual({
+      ...DEFAULT_HISTORY_FILTERS,
+      query: 'frontend-http',
+    })
+  })
+
+  it('treats an empty ?signal= the same as no param (falls back to the default query)', () => {
+    expect(initialHistoryFilters(new URLSearchParams('signal='))).toEqual(DEFAULT_HISTORY_FILTERS)
   })
 })
 

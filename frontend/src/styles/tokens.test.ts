@@ -196,6 +196,21 @@ describe('tokens.css v2 — StatusBadge label contrast >= 4.5:1 in BOTH themes (
   })
 })
 
+describe('tokens.css v2 — latency threshold tint tokens (STORY-108 AC2, ui-ux-pro-max chart/table domain: "muted <500ms / warn 500-1000 / high >1000")', () => {
+  it.each(['--color-latency-muted', '--color-latency-warn', '--color-latency-high'])(
+    '%s is defined in BOTH theme blocks and holds >= 4.5:1 against the canvas',
+    (name) => {
+      const darkColor = extractVar(DARK_ROOT, name)
+      const darkCanvas = extractVar(DARK_ROOT, '--color-canvas')
+      expect(contrastRatio(darkColor, darkCanvas)).toBeGreaterThanOrEqual(4.5)
+
+      const lightColor = extractVar(LIGHT, name)
+      const lightCanvas = extractVar(LIGHT, '--color-canvas')
+      expect(contrastRatio(lightColor, lightCanvas)).toBeGreaterThanOrEqual(4.5)
+    },
+  )
+})
+
 describe('tokens.css v2 — on-accent text holds contrast against the accent background (buttons)', () => {
   it('dark: --color-on-accent against --color-accent', () => {
     const onAccent = extractVar(DARK_ROOT, '--color-on-accent')

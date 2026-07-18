@@ -23,3 +23,4 @@ designed empty state ('Queue clear').
 
 ## History
 - 2026-07-18: filed at ui-rewrite refinement (PO-delegated); estimate 3.
+- 2026-07-18: refactor note — the orphaned CONFIRM_COPY record was replaced by confirmPrompt()/CONFIRM_LABEL (like-for-like, both prompt texts preserved+tested; no other consumer existed — see frontend-zone.md). Recorded per DoD deletion-trace rule (spec-review note).

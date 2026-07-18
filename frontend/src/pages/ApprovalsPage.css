@@ -1,0 +1,29 @@
+.approvals-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  max-width: 100%;
+}
+
+.approvals-page__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.approvals-page__notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-control);
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.approvals-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

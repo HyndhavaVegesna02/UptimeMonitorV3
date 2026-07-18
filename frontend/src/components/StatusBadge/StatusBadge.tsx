@@ -1,4 +1,5 @@
 import './StatusBadge.css'
+import { DEFAULT_LABELS } from './labels'
 
 export type HealthStatus =
   | 'up'
@@ -13,16 +14,6 @@ export interface StatusBadgeProps {
   status: HealthStatus
   /** Overrides the default per-status label text. */
   label?: string
-}
-
-const DEFAULT_LABELS: Record<HealthStatus, string> = {
-  up: 'Up',
-  down: 'Down',
-  degraded: 'Degraded',
-  partial: 'Partial outage',
-  maintenance: 'Maintenance',
-  unknown: 'Unknown',
-  missing: 'Missing data',
 }
 
 /**
