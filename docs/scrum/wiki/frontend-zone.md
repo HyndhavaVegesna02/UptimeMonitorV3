@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/StatusBadge/labels.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/useProposalEvidence.ts, frontend/src/features/approvals/useApprovalsTopology.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
-verified_sha: bb7644e
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/StatusBadge/labels.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/LatencySpark/LatencySpark.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/dashboard/latencyPoints.ts, frontend/src/features/dashboard/maintenanceSummary.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/useProposalEvidence.ts, frontend/src/features/approvals/useApprovalsTopology.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/history/uptimeSegments.ts, frontend/src/features/history/latencyTone.ts, frontend/src/features/history/historySummary.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js, design-system/uptime-monitor-v3-rewrite/MASTER.md, DESIGN-linear.app.md, frontend/src/styles/tokens.test.ts]
+verified_sha: a7c2508
 verified_sprint: sprint-57
 status: verified
 ---
@@ -585,6 +585,98 @@ an approve-confirm consequence copy.
   anything Facts above state (all of which are unit/hook/component-test
   verified against MSW).
 
+### The Check History tab (STORY-108 — dense operator table)
+`pages/CheckHistoryPage.tsx`/`.css` (NEW, routed at `/check-history` in
+`AppShell.tsx` — the fourth tab, after Dashboard/Availability/Approvals, that
+no longer renders `PlaceholderPage`) is the STORY-108 rewrite of the
+STORY-060/015e incarnation: a dense, system-wide, chronological observation
+ledger. Rewires `features/history/useAllHistory.ts` (the per-signal-parallel-
+fetch-and-merge over the topology, unchanged) and the surviving
+`filterHistory.ts` toolbar helpers verbatim (design brief §Salvage: "re-skin
+freely; keep the tested behavior") — the only NEW logic this story added is
+the URL-seed function below plus two small derivation modules for the new
+summary line and latency tint.
+- **Filters + `?signal=` URL seed (AC1):** a search box (matched against
+  `componentName`/`location`/`signal_key` via the existing
+  `filterHistoryRows`), a Result `<select>` (a fixed `up`/`degraded`/`down`
+  vocabulary), a Location `<select>` (populated from the CURRENTLY-loaded
+  window's real data via `uniqueLocations`, never an invented fixed list),
+  and a 24h/7d/30d `WindowSwitcher` (page-local, duplicating
+  `AvailabilityPage`'s own — this codebase's established per-page
+  file-scope-isolation convention rather than a new shared primitive). NEW:
+  `features/history/filterHistory.ts::initialHistoryFilters(searchParams)`
+  seeds the search box's value from the `?signal=` query param (STORY-107's
+  "View checks" deep link, `/check-history?signal=<signal_key>` — a signal
+  key substring-matches via the SAME free-text query filter, so no separate
+  "signal filter" concept was needed) — read via a LAZY
+  `useState(() => initialHistoryFilters(searchParams))` in
+  `CheckHistoryPage`, exactly ONCE on mount, deliberately never re-synced if
+  the URL changes later (an operator editing the box afterward is never
+  silently overwritten). None of the three filters ever trigger a refetch —
+  only the window toggle does (`useAllHistory`'s own contract, unchanged).
+- **Dense table anatomy (AC2):** built on the shared `Table`/`TableHead`/
+  `TableBody`/`TableRow`/`TableHeaderCell`/`TableCell` primitives, six
+  columns — Timestamp (`RelativeTime`, never a raw ISO string as visible
+  text), Component (the friendly name PLUS the raw `check_type` uppercased
+  as mono secondary text UNDER the name — deliberately no separate "Type"
+  column, unlike the pre-rewrite STORY-060 table), Location
+  (`formatLocationLabel`'s short form as visible text, the raw vendor id as
+  a `title` tooltip, never the raw id as visible text), Result
+  (`StatusBadge` via `observationHealth` — the column's actual semantic
+  carrier), Code (`response_status_code`, an em-dash for `null`), and
+  Latency (mono, an em-dash for `null`). Every data column is `text-mono`
+  (JetBrains Mono, per the brief's "tabular data" rule).
+- **Latency threshold tint (AC2, ui-ux-pro-max chart/table domain — "muted
+  <500ms / warn 500-1000 / high >1000, never color-alone for meaning"):** NEW
+  `features/history/latencyTone.ts::latencyTone(latencyMs)` classifies a
+  reading into `'muted' | 'warn' | 'high' | null` (`null` for a `null`
+  reading — no tint, never a fabricated band); `<500ms` -> muted, `500-
+  1000ms` INCLUSIVE of both boundaries -> warn, `>1000ms` -> high. Backed by
+  three NEW named tokens in `tokens.css`
+  (`--color-latency-muted`/`-warn`/`-high`, literal per-theme hex rather than
+  a `var()` alias so `tokens.test.ts` can contrast-check each independently
+  — all >= 4.5:1 against the canvas, both themes) — a purely REINFORCING
+  visual on the Latency cell; the Result column's `StatusBadge` always
+  carries the actual semantic (a fast response can still be a failing
+  check).
+- **Sticky header (AC2/AC3):** `.check-history-page__table-wrapper` is the
+  table's OWN scroll container (`overflow: auto`, a bounded `max-height`) —
+  the ui-ux-pro-max rule "tables scroll inside their container at narrow
+  widths, never the page." Each `.table__header-cell` (not the `<thead>`
+  itself — `position: sticky` on a `border-collapse` table's `<thead>` does
+  not reliably stick cross-browser) carries `position: sticky; top: 0`
+  scoped to that wrapper, so the header pins to the CONTAINER's top, not the
+  viewport's.
+- **Results summary line (AC2):** NEW `features/history/historySummary.ts`
+  — `countDownRows` (an explicit `0` for an empty input, never a leaked
+  stdlib error), `describeActiveFilters` (an ordered list of plain-English
+  filter-echo fragments, `[]` when every filter is at its default),
+  `buildHistorySummary` (composes both into "N checks · M down" over the
+  CURRENTLY-DISPLAYED filtered rows, plus " — filtered by …" when any filter
+  is active). Rendered in a `<p aria-live="polite">` above the table so a
+  screen-reader user is told the result count on every filter change.
+- **Designed empty states (AC3):** an UNFILTERED-window-empty state ("No
+  observations in this window" + a "try a wider time window" recovery
+  detail) when the loaded window genuinely has zero rows, DISTINCT from a
+  filtered-to-zero state ("No observations match your filters" + "Try
+  widening the time window or clearing a filter.") when rows exist but the
+  toolbar has narrowed them all out — the same two-empty-state distinction
+  the pre-rewrite STORY-060 table made, carried forward.
+- **`AppShell.test.tsx`** gained one new assertion (`'renders the REAL Check
+  History page (not a placeholder) at /check-history'`); the pre-existing
+  `it.each(TABS)` placeholder-heading assertion needed no change
+  (`CheckHistoryPage`'s own `<h1>` is still exactly "Check History").
+- Sonnet-5-implementer TDD pass, one commit per green step; frontend-only;
+  six backend gates untouched (empty diff — no backend source change).
+  Suite: 606 tests / 69 files, all green; `npm run build`/`npm run lint`
+  both exit 0. The sprint-57 plan's Step 4 "live gate" (390px in-container-
+  scroll-only + computed-style tint-threshold verification against a
+  running local stack) was OUT OF this dispatch's scope (the dispatch's own
+  numbered IMPLEMENTATION SHAPE enumerated Steps 1-3 only) — NOT YET
+  LIVE-VERIFIED on this line, a candidate follow-up. `code_refs` +=
+  `pages/CheckHistoryPage.tsx`, `features/history/{latencyTone,
+  historySummary,uptimeSegments}.ts`. verified_sha = a7c2508.
+
 ### Surviving feature hooks (logic UNCHANGED, presentation gone until their tab's rewrite story)
 Every file below still exists and is still unit/hook-tested against MSW
 exactly as before. Files marked "wired" below ARE now imported by a routed
@@ -633,10 +725,18 @@ tab knows this logic already exists and does not need reinventing:
   STORY-106 into `pages/AvailabilityPage.tsx` (see the new "The Availability
   tab" Facts subsection below), rewired verbatim (design brief: "re-skin
   freely; keep the tested behavior"), no hook-level change.
-- **Check History:** `features/history/{observationHealth,signals,
-  filterHistory,mergeObservations,useAllHistory}.ts` — the system-wide
-  per-signal-parallel-fetch-and-merge ledger, the client-side filter
-  toolbar logic, and the separate observation-vocabulary health mapper.
+- **Check History:** ALL wired as of STORY-108 (see the new "The Check
+  History tab" Facts subsection above) — `features/history/{observationHealth,
+  signals,filterHistory,mergeObservations,useAllHistory}.ts` (the system-wide
+  per-signal-parallel-fetch-and-merge ledger, the client-side filter toolbar
+  logic PLUS the STORY-108 additive `filterHistory.ts::initialHistoryFilters`,
+  and the separate observation-vocabulary health mapper) and the two
+  STORY-108-new modules, `latencyTone.ts`/`historySummary.ts`.
+  `features/history/uptimeSegments.ts::buildUptimeSegments` is a DIFFERENT
+  surviving hook, already wired since STORY-069/105/106 into both
+  `features/dashboard/useComponentUptime.ts` and
+  `features/availability/segments.ts::buildAvailabilitySegments` (a
+  sparkline-segment builder, not a Check History concern).
 - **Publications:** `features/publications/usePublications.ts` — the
   simplest read hook, `useFetch(getPublications)`.
 - **Maintenance:** `features/maintenance/{windowState,fieldError,
