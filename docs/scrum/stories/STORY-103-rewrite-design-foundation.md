@@ -38,3 +38,13 @@ quarantine old component CSS so no page renders the old skin from this story on.
 
 ## History
 - 2026-07-18: filed at ui-rewrite refinement (PO-delegated); estimate 3.
+- 2026-07-18: deleted the old shell (nav/Sidebar, TopBar, SampleModeBanner, sidebarState) + all
+  six old pages + features/approvals/ApprovalCard (commit 52f1706) — PO-ordered full rewrite
+  (2026-07-18 pivot); replacements land per-story (shell STORY-104, pages STORY-105..110);
+  surviving feature hooks documented as orphaned in frontend-zone.md.
+- 2026-07-18: reality-gate correction — theme precedence fixed to STORED CHOICE > DARK, period;
+  the OS `prefers-color-scheme` is no longer consulted for the initial theme (most headless/
+  desktop systems report `light` by default, which would make the common first impression light
+  and defeat the brief's dark-first mission-control identity). `resolveTheme.ts`'s
+  `getSystemTheme` was removed, `resolveInitialTheme` is now `getStoredTheme() ?? 'dark'`, and
+  `index.html`'s pre-paint script was updated to match (kept logic-identical, as before).

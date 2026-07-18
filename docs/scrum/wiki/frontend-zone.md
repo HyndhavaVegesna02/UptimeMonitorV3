@@ -125,16 +125,21 @@ see History below for exactly what STORY-103 deleted and why.
   by prefers-reduced-motion" rule — and the two-tone focus-ring rule now
   additionally covers `[role='switch']` (a future sample-mode-switch/tab
   affordance).
-- **Theme engine, now dark-FIRST** (`frontend/src/theme/resolveTheme.ts`):
-  `getSystemTheme()` no longer collapses to `dark ? dark : light` — it checks
-  `(prefers-color-scheme: dark)` explicitly, THEN `(prefers-color-scheme:
-  light)` explicitly, and only falls back to `'dark'` if NEITHER query
-  matches (no stated OS preference, or no `matchMedia` support at all).
-  `resolveInitialTheme()`'s precedence is otherwise unchanged: a
-  `localStorage`-persisted override always wins over the system/default
-  resolution. `frontend/index.html`'s inline pre-paint script was rewritten
-  to the same three-way branch (stored -> explicit dark -> explicit light ->
-  dark) so there is still no flash of the wrong theme before first paint.
+- **Theme engine, STORED CHOICE > DARK, period** (`frontend/src/theme/
+  resolveTheme.ts`; corrected at the STORY-103 REALITY GATE, 2026-07-18 —
+  superseding an earlier in-story attempt that still consulted
+  `prefers-color-scheme`): `resolveInitialTheme()` is now
+  `getStoredTheme() ?? 'dark'` — the OS/browser `prefers-color-scheme` is
+  NEVER read. Rationale: most headless/desktop systems report
+  `prefers-color-scheme: light` by default, so honoring it would make the
+  common first impression light and defeat the brief's dark-first
+  mission-control identity; the user's own explicit toggle (persisted) is
+  the only thing that can ever move the app to light. `getSystemTheme()` was
+  REMOVED entirely (dead code once system preference is never consulted).
+  `frontend/index.html`'s inline pre-paint script mirrors the same
+  two-branch rule (stored -> that value, else `'dark'`) so there is still no
+  flash of the wrong theme before first paint — the two implementations are
+  DELIBERATELY duplicated (the script must run before any module loads).
   `ThemeContext.tsx`/`useTheme.ts`/`theme-context.ts` are UNCHANGED (same
   `{ theme, toggleTheme }` contract, same persistence).
 
@@ -598,4 +603,18 @@ reinventing:
   `lib/{formatTime,formatLocation,useMediaQuery,breakpoints}.ts`, `test/matchMedia.ts`,
   `pages/PlaceholderPage.tsx`, `styles/global.css`, and `docs/scrum/ui-rewrite/design-brief.md`
   (the new design authority, replacing `DESIGN-linear.app.md`). verified_sha = 52f1706.
+- sprint-55 (STORY-103 reality-gate correction, 2026-07-18): the theme-engine Facts entry directly
+  above described an INTERMEDIATE precedence (stored -> explicit system dark -> explicit system
+  light -> dark) that the orchestrator's live gate then corrected to STORED CHOICE > DARK, period
+  — the OS `prefers-color-scheme` is no longer consulted at all (rationale: most headless/desktop
+  systems report `light` by default, defeating the dark-first identity for the common first
+  impression). `resolveTheme.ts::getSystemTheme` was REMOVED; `resolveInitialTheme` is now
+  `getStoredTheme() ?? 'dark'`; `index.html`'s pre-paint script updated to match (still logic-
+  duplicated by design). The Facts entry above has been rewritten in place to describe this FINAL
+  precedence (not the superseded intermediate one) — this History bullet records that a correction
+  happened, per the standing "a contract change rewrites its covering tests/Facts, recorded in
+  History" convention. `resolveTheme.test.ts`/`ThemeContext.test.tsx` rewritten to the new
+  precedence table; frontend suite still green (369 tests / 47 files — three fewer than the prior
+  372 since the now-pointless three-way `getSystemTheme` test cases were removed, not replaced).
+  verified_sha = TBD (see the story file History for the commit).
 
