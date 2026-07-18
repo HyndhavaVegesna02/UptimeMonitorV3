@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
-code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js]
-verified_sha: 52f1706
+code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/CommandBar.tsx, frontend/src/nav/TabNav.tsx, frontend/src/nav/StatusDot.tsx, frontend/src/nav/NavSheet.tsx, frontend/src/nav/useNavSheet.ts, frontend/src/nav/SampleModeSwitch.tsx, frontend/src/nav/SampleModeChip.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/useDismissibleBanner.ts, frontend/src/features/shell/deriveOverallStatus.ts, frontend/src/pages/PlaceholderPage.tsx, frontend/src/pages/NotFoundPage.tsx, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/components/index.ts, frontend/src/components/Tile/Tile.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/components/RelativeTime/RelativeTime.tsx, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/formatTime.ts, frontend/src/lib/formatLocation.ts, frontend/src/lib/useMediaQuery.ts, frontend/src/lib/breakpoints.ts, frontend/src/test/matchMedia.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/test/setup.ts, docs/scrum/ui-rewrite/design-brief.md, frontend/eslint.config.js]
+verified_sha: 5dd72ce
 verified_sprint: sprint-55
 status: verified
 ---
@@ -202,41 +202,118 @@ see History below for exactly what STORY-103 deleted and why.
   for any test needing to simulate a viewport crossing a breakpoint, not
   just a static initial value).
 
-### Minimal placeholder shell (STORY-103 AC5 — STORY-104 builds the real one)
-- `frontend/src/AppShell.tsx` is now a MINIMAL top-bar-stub shell: a
-  `<header>` (brand — `Icon name="logo"` + "Uptime Monitor" — and a theme
-  toggle button whose `aria-label`/icon reflect the CURRENT theme, e.g.
-  "Switch to light theme" + a moon glyph while dark) plus a routed
-  `<main id="main-content">`. `frontend/src/nav/tabs.ts`'s `TABS` array
-  (UNCHANGED — still the single six-tab source of truth: Dashboard ·
-  Availability · Approvals · Check History · Maintenance · Publications,
-  each carrying `path`/`label`/`icon`) drives the `<Routes>` — each tab
-  renders `frontend/src/pages/PlaceholderPage.tsx` (NEW: a `Tile` with one
-  `<h1>` {label} + "Rewrite in progress" copy — one real level-one heading
-  per route, the a11y floor). An unknown path renders
-  `frontend/src/pages/NotFoundPage.tsx` (re-skinned onto `Tile`, same job as
-  before: a heading + a link back to `/`). A skip link (`#main-content`
-  target) is still present (a11y floor, cheap to keep even in the minimal
-  shell). **There is currently NO visible tab-navigation UI** (no sidebar,
-  no horizontal tab bar) — routes are only reachable by direct
-  URL/programmatic navigation until STORY-104 builds the real "top command
-  bar + horizontal tab nav" per the brief's IA section.
-- **DELETED, PO-ordered full rewrite (STORY-103):** `nav/Sidebar.{tsx,css}`,
-  `nav/TopBar.{tsx,css}`, `nav/SampleModeBanner.{tsx,css}`,
-  `nav/sidebarState.ts` (the STORY-056 collapsible-icon-sidebar shell,
-  including the sample-mode trigger switch/chip and its dismissible banner)
-  and all SIX per-tab pages (`pages/{Dashboard,Approvals,Availability,
-  CheckHistory,Maintenance,Publications}Page.{tsx,css}` — the STORY-057-062
-  "Operator Dashboard" Wave-2 rebuilds) plus `features/approvals/
-  ApprovalCard.{tsx,css}` (the old Button-variant-dependent Approvals card
-  presentation). **Consequence for sample-mode:** the frontend sample-mode
-  switch/banner integration described in [[sample-mode]] is TEMPORARILY
-  ABSENT from the routed app — `AppShell.tsx` no longer calls
-  `useSampleMode()` or renders any switch/banner at all. The HOOK itself
-  (`features/dashboard/useSampleMode.ts`) and its test are untouched and
-  still green; STORY-104 Step 3 ("sample-mode switch/chip/banner, ported
-  contracts") re-wires it into the new shell. See [[sample-mode]] for the
-  full detail.
+### The real app shell (STORY-104 — replaces STORY-103's minimal top-bar-stub)
+`frontend/src/AppShell.tsx` now composes the design brief's §IA shell exactly:
+a slim top `CommandBar` (brand + live overall-status dot + horizontal `TabNav`
++ the mode-controls right cluster), a dismissible `SampleModeBanner`, the
+mobile `NavSheet` overlay, and a routed `<main id="main-content">`. There is
+NO left sidebar anywhere in the DOM (design brief §IA, "deliberately
+different from the old shell") — `AppShell.test.tsx` asserts no `<aside>`/
+`.sidebar` element exists on any route. `frontend/src/nav/tabs.ts`'s `TABS`
+array is UNCHANGED (still the single six-tab source of truth); each tab still
+renders `frontend/src/pages/PlaceholderPage.tsx` (a per-tab rewrite is
+sprint-56+'s job, not this story's) via the same `<Routes>` shape. `AppShell`
+calls `useComponents()` and `useSampleMode()` each exactly ONCE and threads
+their results down as props — never a second independent hook call anywhere
+in the tree — so every consumer of a given fetch (the status dot, the
+"Updated Xs ago" text, the switch, the banner, the chip) agrees about its
+current state on the same render.
+- **`nav/CommandBar.tsx`** (NEW): the top bar itself. Left to right: an
+  optional hamburger menu-trigger button (`aria-label="Open navigation
+  menu"`, JS-conditional on `showMenuTrigger` — never CSS-only, so a test can
+  assert its absence at desktop widths the same way the ported
+  `SidebarDrawer`'s `showMenuTrigger` prop always worked); the brand block
+  (`Icon name="logo"` + "Uptime Monitor" text, CSS-hidden at <=480px — see
+  the 390px note below — + the `StatusDot`); the horizontal `TabNav`
+  (`flex: 1`, CSS-hidden at <=768px, `BREAKPOINT_MOBILE_MAX_PX` hardcoded in
+  CSS per the existing `lib/breakpoints.ts` convention); and the right
+  cluster (`margin-left: auto`): the persistent `SampleModeChip` (only when
+  `showSampleChip`), `SampleModeSwitch`, the theme toggle (`useTheme()`
+  called directly here, same as the old `TopBar`), and "Updated
+  `<RelativeTime>`" (only once `fetchedAtIso` is set).
+- **`nav/TabNav.tsx`** (NEW): the six routed `NavLink`s, icon + VISIBLE text
+  label always together (ui-ux-pro-max Navigation guideline: never icon-only
+  in a top bar) — react-router's `NavLink` sets `aria-current="page"`
+  automatically on the active route (AC1), and the `tab-nav__tab--active`
+  class adds a teal underline (`::after`) + a font-weight bump so the active
+  tab is never color-only. An `onNavigate` prop (wired to a sheet's close
+  handler) lets the SAME component serve both the desktop bar (horizontal,
+  `tab-nav` class) and the mobile sheet (vertical, `tab-nav--sheet` class
+  modifier) without duplicating the tab list.
+- **`nav/StatusDot.tsx`** + **`features/shell/deriveOverallStatus.ts`** (NEW,
+  AC2): `deriveOverallStatus(components: ComponentDTO[]): HealthStatus` is
+  the worst-of reducer over a fixed `down > partial > degraded > maintenance
+  > unknown > missing > up` rank table (the brief's exact ordering,
+  `toHealthStatus` never itself producing `maintenance`/`missing` today — the
+  table is total over the whole vocabulary for future-proofing); an EMPTY
+  component list returns `'unknown'` (no signal to assess, never a
+  fabricated "all up" — the explicit, tested empty-input case). `StatusDot`
+  renders a decorative colored dot (`aria-hidden`) plus an `.sr-only`
+  "Overall status: {label}" text — deliberately NOT a reuse of `StatusBadge`
+  (whose label is always VISIBLE, a table/list-cell shape too wide for a
+  slim top bar); `undefined` (loading) renders as "Unknown".
+- **`features/dashboard/useComponents.ts`** gained an ADDITIVE
+  `fetchedAtIso: string | undefined` field (STORY-104, "Updated Xs ago"):
+  tracked via the "compare a mirrored previous-`phase` state during render"
+  pattern (same as `useDismissibleBanner`/`useMediaQuery` below — required
+  by `eslint-plugin-react-hooks`'s `set-state-in-effect` rule), stamping
+  `new Date().toISOString()` every time `state.phase` transitions INTO
+  `'success'`. Display-layer only — never persisted, never sent to the
+  server, not part of the `ComponentDTO` wire shape; every other consumer of
+  `useComponents()`'s existing `{ state, retry }` shape is unaffected.
+- **Sample-mode re-wired into the shell (AC3, ported `ui-redesign`
+  STORY-056/102 contracts — salvage list, re-skinned onto Mission Teal
+  tokens, logic byte-identical):** `nav/SampleModeSwitch.tsx` (the
+  `role="switch"`/`aria-checked` trigger, a visible "Sample mode" text label
+  at >=768px via `useMediaQuery(QUERY_MOBILE_DOWN)`, neutral OFF /
+  degraded-amber ON — never red, which is reserved for the GET-failure retry
+  affordance), `nav/SampleModeChip.tsx` (the persistent "SAMPLE" chip,
+  clicking it calls `onRestore`), `nav/SampleModeBanner.tsx` (the
+  dismissible `role="status"` warning), and `nav/useDismissibleBanner.ts`
+  (lifts the dismiss/re-arm state so the chip and the banner can never
+  disagree — re-arms whenever `visible` cycles `false -> true`). `AppShell`
+  computes `bannerVisible = sampleMode.state.phase === 'success' &&
+  sampleMode.enabled === true` and `showSampleChip = bannerVisible &&
+  dismissed`, threading both down. `features/dashboard/useSampleMode.ts`
+  itself is UNCHANGED — only its caller/wiring moved (STORY-056 -> STORY-104,
+  same as the STORY-038 sidebar->STORY-056 topbar move before it).
+- **Mobile <=768px hamburger sheet (AC4, ported `SidebarDrawer` focus-trap
+  contract — salvage list):** `nav/useNavSheet.ts` (`isMobile` via
+  `useMediaQuery(QUERY_MOBILE_DOWN)` + an `open` boolean that auto-closes
+  the moment the viewport widens past mobile — the "adjusting state when a
+  prop changes" pattern again) and `nav/NavSheet.tsx` (a `role="dialog"
+  aria-modal` overlay dropping down from under the command bar — NOT a left
+  rail, this IA has no sidebar concept at all — wrapping the SAME `TabNav`
+  vertically). Focus management is a straight port of `SidebarDrawer`'s
+  contract: focus moves to the sheet's first focusable element (the header's
+  "Close navigation" button) on open, returns to the hamburger trigger on
+  close regardless of what closed it (Escape, scrim click, the close
+  button, or a nav-link activation — `TabNav`'s `onNavigate` wired to
+  `onClose`), and a same-sheet Tab/Shift+Tab focus trap never lets keyboard
+  focus escape into the page behind the scrim. Enter animation only
+  (150-250ms transform/opacity, no exit animation since the sheet unmounts
+  entirely while closed, matching the ported contract's "renders nothing (no
+  dialog) while closed" test) — both guarded by the existing global
+  `prefers-reduced-motion` reset (STORY-103).
+- **390px hardening:** at <=480px the command bar hides its lowest-priority
+  text (`.command-bar__brand-text`, `.command-bar__updated`) and tightens
+  its own padding/gap, so `[hamburger + brand icon/dot + SAMPLE chip +
+  switch (icon-only at mobile) + theme toggle]` — the worst-case set of
+  simultaneously-visible controls — stays under a 390px viewport with no
+  page-level horizontal scroll (AC4); nothing hidden here is a CONTROL, only
+  supplementary text.
+- **`components/Icon/Icon.tsx`** gained one new glyph, `menu` (three
+  horizontal lines, same feather-style stroke), for the hamburger trigger —
+  the only `Icon` set change this story needed.
+- **DELETED, PO-ordered full rewrite (STORY-103, unchanged by this story):**
+  `nav/Sidebar.{tsx,css}`, `nav/TopBar.{tsx,css}`, the OLD
+  `nav/SampleModeBanner.{tsx,css}` (STORY-104 ships a NEW same-named
+  component at the same path, re-skinned/re-wired — see above),
+  `nav/sidebarState.ts`, and all SIX per-tab pages (`pages/{Dashboard,
+  Approvals,Availability,CheckHistory,Maintenance,Publications}Page.{tsx,css}`
+  — the STORY-057-062 "Operator Dashboard" Wave-2 rebuilds) plus
+  `features/approvals/ApprovalCard.{tsx,css}` remain deleted; a per-tab
+  rewrite is sprint-56+'s job.
 
 ### Surviving feature hooks (logic UNCHANGED, presentation gone — orphaned until their tab's rewrite story)
 Every file below still exists, is still unit/hook-tested against MSW exactly
@@ -245,17 +322,21 @@ deleted, see above). They are documented here so a sprint-56+ implementer
 rebuilding a tab knows this logic already exists and does not need
 reinventing:
 - **Dashboard:** `features/dashboard/useComponents.ts`
-  (`useFetch(getComponents)`), `features/dashboard/summary.ts::
-  summarizeComponents` (real up/degraded/partial/down bucket counts),
-  `features/dashboard/useTopology.ts` (`useFetch(getTopology)`),
-  `features/dashboard/useComponentUptime.ts` (combines the rollup
-  `availability_pct` with a `buildUptimeSegments` sparkline, capped at 30
-  segments, never rejects — a per-component failure degrades gracefully),
-  `features/dashboard/useComponentSignals.ts` (latest-per-location signal
-  rows, a zero-observation signal renders an honest `'missing'` row),
-  `features/dashboard/useMaintenanceWindows.ts` (`useFetch(getMaintenance)`),
-  `features/dashboard/useSampleMode.ts` (load+mutate-in-one-hook; see the
-  sample-mode note above).
+  (`useFetch(getComponents)`, PLUS the STORY-104 additive `fetchedAtIso` —
+  see the real-shell Facts above; the shell now calls this hook, but a
+  future Dashboard tab rewrite will call it too, independently, for its own
+  render) and `features/dashboard/useSampleMode.ts` (load+mutate-in-one-hook
+  — ALSO now called by the shell, STORY-104, not orphaned) are wired into
+  the app shell as of STORY-104; the rest below are still genuinely
+  orphaned. `features/dashboard/summary.ts::summarizeComponents` (real
+  up/degraded/partial/down bucket counts), `features/dashboard/useTopology.ts`
+  (`useFetch(getTopology)`), `features/dashboard/useComponentUptime.ts`
+  (combines the rollup `availability_pct` with a `buildUptimeSegments`
+  sparkline, capped at 30 segments, never rejects — a per-component failure
+  degrades gracefully), `features/dashboard/useComponentSignals.ts`
+  (latest-per-location signal rows, a zero-observation signal renders an
+  honest `'missing'` row), `features/dashboard/useMaintenanceWindows.ts`
+  (`useFetch(getMaintenance)`).
 - **Approvals:** `features/approvals/useApprovals.ts`
   (`useFetch(getApprovals)`), `features/approvals/severity.ts::
   deriveSeverity` (maps `to_status` onto the 7-status health tokens),
@@ -278,9 +359,12 @@ reinventing:
   useMaintenance}.ts` — the half-open upcoming/active/past window-state
   derivation, the 422-detail-to-field mapper, and the load+mutate hook.
 - **Shell:** `features/shell/useApprovalsBadge.ts` — the Approvals
-  pending-count badge fetch (`useFetch(getApprovals)`), currently unused
-  since the minimal shell has no nav UI to badge; STORY-104 will likely
-  re-wire it into the new top command bar.
+  pending-count badge fetch (`useFetch(getApprovals)`), STILL unused after
+  STORY-104: the real command bar's Step-1 scaffold (per the sprint-55 plan)
+  covers brand/tabs/aria-current/right-cluster only, with no pending-count
+  badge on the Approvals tab — deliberately deferred (see the STORY-104
+  story's candidate-backlog note) rather than an unrelated addition to this
+  story's scope. A future story can wire it into `TabNav`'s Approvals link.
 
 ### Typed API client, actor seam, test boundary, shared fetch (UNCHANGED by the rewrite)
 - **Typed API client:** `frontend/src/api/client.ts` — fetch-based, single
@@ -616,5 +700,29 @@ reinventing:
   History" convention. `resolveTheme.test.ts`/`ThemeContext.test.tsx` rewritten to the new
   precedence table; frontend suite still green (369 tests / 47 files — three fewer than the prior
   372 since the now-pointless three-way `getSystemTheme` test cases were removed, not replaced).
-  verified_sha = TBD (see the story file History for the commit).
+  verified_sha = 06ba847 (retroactively filled in by the STORY-104
+  implementer — the frontmatter `verified_sha` was left at 52f1706 through
+  this correction; this bullet's own commit is 06ba847, confirmed via
+  `git log --oneline`).
+
+- sprint-55 (STORY-104 — the real app shell): built the design brief §IA
+  shell described in the new "The real app shell" Facts subsection above —
+  `nav/CommandBar.tsx` + `nav/TabNav.tsx` (AC1: brand + 6 tabs, aria-current,
+  teal active indicator, keyboard-operable via real `NavLink`s), `nav/
+  StatusDot.tsx` + `features/shell/deriveOverallStatus.ts` (AC2: worst-of
+  overall-status dot), the sample-mode switch/chip/banner re-wire (AC3,
+  ported `ui-redesign` STORY-056/102 contracts — `nav/SampleModeSwitch.tsx`,
+  `nav/SampleModeChip.tsx`, `nav/SampleModeBanner.tsx`, `nav/
+  useDismissibleBanner.ts`), and the mobile <=768px hamburger `nav/
+  NavSheet.tsx` + `nav/useNavSheet.ts` (AC4, ported `SidebarDrawer`
+  focus-trap contract) — all rewired through a rewritten `AppShell.tsx`
+  (`AppShell.test.tsx` rewritten to the new contract: routing, the
+  overall-status dot, sample-mode/banner/chip, theme toggle, the mobile
+  sheet, and a "no sidebar in the DOM" assertion). `features/dashboard/
+  useComponents.ts` gained an additive `fetchedAtIso` field ("Updated Xs
+  ago", display-layer only); `components/Icon/Icon.tsx` gained one new
+  `menu` glyph. Frontend-only; six backend gates untouched (empty diff).
+  Suite: 461 tests / 57 files, all green; `npm run build`/`npm run lint`
+  both exit 0. `code_refs` += every new `nav/*`/`features/shell/
+  deriveOverallStatus.ts` file listed above. verified_sha = 5dd72ce.
 
