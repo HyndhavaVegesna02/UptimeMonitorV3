@@ -33,6 +33,35 @@
   margin-left: auto;
 }
 
+.command-bar__theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  background: transparent;
+  color: var(--color-ink-muted);
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--ease-standard),
+    color var(--motion-fast) var(--ease-standard);
+}
+
+.command-bar__theme-toggle:hover {
+  background: var(--color-surface-2);
+  color: var(--color-ink);
+}
+
+.command-bar__updated {
+  flex: none;
+  color: var(--color-ink-subtle);
+  font-family: var(--font-sans);
+  font-size: var(--fs-caption);
+  white-space: nowrap;
+}
+
 /* AC4: <=768px the horizontal tab nav collapses behind the hamburger sheet
    trigger (rendered by AppShell/CommandBar's menu-trigger button) — hidden
    here via plain CSS (removes it from layout AND tab order; no JS branch
