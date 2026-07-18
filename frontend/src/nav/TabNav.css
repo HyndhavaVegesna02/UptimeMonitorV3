@@ -1,0 +1,75 @@
+.tab-nav {
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.tab-nav__tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  min-height: var(--target-min);
+  color: var(--color-ink-muted);
+  text-decoration: none;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body);
+  font-weight: var(--fw-body);
+  white-space: nowrap;
+  border-radius: var(--radius-control);
+  transition:
+    color var(--motion-fast) var(--ease-standard),
+    background-color var(--motion-fast) var(--ease-standard);
+}
+
+.tab-nav__tab:hover {
+  color: var(--color-ink);
+  background: var(--color-surface-2);
+}
+
+/* AC1 / ui-ux-pro-max Navigation: the active tab is never color-only —
+   weight change + a teal underline bar, both below. */
+.tab-nav__tab--active {
+  color: var(--color-ink);
+  font-weight: var(--fw-semibold);
+}
+
+.tab-nav__tab--active::after {
+  content: '';
+  position: absolute;
+  left: var(--space-2);
+  right: var(--space-2);
+  bottom: -1px;
+  height: 2px;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+}
+
+.tab-nav__icon {
+  flex: none;
+}
+
+/* Vertical layout inside the mobile NavSheet (STORY-104 AC4) — same tabs,
+   full-width rows instead of an inline row. */
+.tab-nav--sheet {
+  flex-direction: column;
+  overflow-x: visible;
+  gap: var(--space-1);
+}
+
+.tab-nav--sheet .tab-nav__tab {
+  padding: var(--space-3);
+  border-radius: var(--radius-control);
+}
+
+.tab-nav--sheet .tab-nav__tab--active::after {
+  left: 0;
+  right: auto;
+  top: var(--space-2);
+  bottom: var(--space-2);
+  width: 3px;
+  height: auto;
+}
