@@ -1,95 +1,54 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   THEME_STORAGE_KEY,
   getStoredTheme,
-  getSystemTheme,
   persistTheme,
   resolveInitialTheme,
 } from './resolveTheme'
 
 /**
- * STORY-103 (Mission Teal, dark-first): the system-preference query is now
- * explicit on BOTH queries rather than "dark ? dark : light" — a browser
- * that reports neither `(prefers-color-scheme: dark)` NOR
- * `(prefers-color-scheme: light)` as matching (no stated preference,
- * matchMedia unsupported, etc.) falls back to DARK, never light.
+ * STORY-103 reality-gate correction (2026-07-18): the precedence is now
+ * STORED CHOICE > DARK, period. The OS `prefers-color-scheme` is NEVER
+ * consulted for the initial theme — most headless/desktop systems report
+ * `light` by default, which would make the common first impression light
+ * and defeat the brief's dark-first mission-control identity; the user's
+ * own explicit toggle (persisted) is the only thing that can ever move the
+ * app to light. These tests deliberately do NOT stub `matchMedia` at all
+ * (no `getSystemTheme` export remains) to prove the resolution never reads
+ * it.
  */
-type SystemPreference = 'dark' | 'light' | 'no-preference'
-
-function mockMatchMedia(preference: SystemPreference) {
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockImplementation((query: string) => ({
-      matches:
-        (query === '(prefers-color-scheme: dark)' && preference === 'dark') ||
-        (query === '(prefers-color-scheme: light)' && preference === 'light'),
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  )
-}
-
-describe('getSystemTheme', () => {
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('resolves dark when the dark media query matches', () => {
-    mockMatchMedia('dark')
-    expect(getSystemTheme()).toBe('dark')
-  })
-
-  it('resolves light when the light media query explicitly matches', () => {
-    mockMatchMedia('light')
-    expect(getSystemTheme()).toBe('light')
-  })
-
-  it('defaults to dark when NEITHER media query matches (dark-first)', () => {
-    mockMatchMedia('no-preference')
-    expect(getSystemTheme()).toBe('dark')
-  })
-})
-
 describe('resolveTheme', () => {
   beforeEach(() => {
     window.localStorage.clear()
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('resolves to the system-preferred theme when nothing is stored (dark)', () => {
-    mockMatchMedia('dark')
+  it('resolves to dark when nothing is stored', () => {
     expect(resolveInitialTheme()).toBe('dark')
   })
 
-  it('resolves to the system-preferred theme when nothing is stored (light)', () => {
-    mockMatchMedia('light')
-    expect(resolveInitialTheme()).toBe('light')
-  })
-
-  it('resolves to dark when nothing is stored AND no explicit system preference is reported', () => {
-    mockMatchMedia('no-preference')
-    expect(resolveInitialTheme()).toBe('dark')
-  })
-
-  it('prefers a stored override over the system preference', () => {
-    mockMatchMedia('dark')
+  it('a stored "light" choice resolves to light', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light')
     expect(resolveInitialTheme()).toBe('light')
   })
 
-  it('ignores a corrupt stored value and falls back to system preference', () => {
-    mockMatchMedia('light')
+  it('a stored "dark" choice resolves to dark', () => {
+    window.localStorage.setItem(THEME_STORAGE_KEY, 'dark')
+    expect(resolveInitialTheme()).toBe('dark')
+  })
+
+  it('ignores a corrupt stored value and falls back to dark', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, 'not-a-theme')
-    expect(resolveInitialTheme()).toBe('light')
+    expect(resolveInitialTheme()).toBe('dark')
     expect(getStoredTheme()).toBeNull()
   })
 
   it('persistTheme writes a valid theme to storage under the shared key', () => {
     persistTheme('dark')
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark')
+  })
+
+  it('persistTheme(light) then resolveInitialTheme reflects it', () => {
+    persistTheme('light')
+    expect(resolveInitialTheme()).toBe('light')
   })
 })

@@ -1,22 +1,16 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { ThemeProvider } from './ThemeContext'
 import { THEME_STORAGE_KEY } from './resolveTheme'
 import { useTheme } from './useTheme'
 
-function mockMatchMedia(prefersDark: boolean) {
-  vi.stubGlobal(
-    'matchMedia',
-    vi.fn().mockImplementation((query: string) => ({
-      matches: query === '(prefers-color-scheme: dark)' && prefersDark,
-      media: query,
-      addEventListener: vi.fn(),
-      removeEventListener: vi.fn(),
-    })),
-  )
-}
-
+/**
+ * STORY-103 reality-gate correction (2026-07-18): stored choice > dark,
+ * PERIOD — `prefers-color-scheme` is never consulted, so these tests no
+ * longer stub `matchMedia` at all (there is nothing left for it to
+ * influence).
+ */
 function Probe() {
   const { theme, toggleTheme } = useTheme()
   return (
@@ -33,12 +27,7 @@ describe('ThemeProvider / useTheme', () => {
     document.documentElement.removeAttribute('data-theme')
   })
 
-  afterEach(() => {
-    vi.unstubAllGlobals()
-  })
-
-  it('resolves the system-default theme on first render', () => {
-    mockMatchMedia(true)
+  it('resolves to dark on first render when nothing is stored', () => {
     render(
       <ThemeProvider>
         <Probe />
@@ -50,7 +39,6 @@ describe('ThemeProvider / useTheme', () => {
 
   it('toggles the theme and reflects it on <html data-theme>', async () => {
     const user = userEvent.setup()
-    mockMatchMedia(true)
     render(
       <ThemeProvider>
         <Probe />
@@ -65,7 +53,6 @@ describe('ThemeProvider / useTheme', () => {
 
   it('persists a toggled override to localStorage', async () => {
     const user = userEvent.setup()
-    mockMatchMedia(true)
     render(
       <ThemeProvider>
         <Probe />
@@ -77,8 +64,7 @@ describe('ThemeProvider / useTheme', () => {
     expect(window.localStorage.getItem(THEME_STORAGE_KEY)).toBe('light')
   })
 
-  it('a stored override wins over the system preference on mount', () => {
-    mockMatchMedia(true)
+  it('a stored override wins over the dark default on mount', () => {
     window.localStorage.setItem(THEME_STORAGE_KEY, 'light')
 
     render(
