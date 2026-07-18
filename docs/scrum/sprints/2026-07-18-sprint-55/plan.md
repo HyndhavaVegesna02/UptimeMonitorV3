@@ -29,14 +29,14 @@ gate DB, HMR/:focus-visible false-alarm rules). Dev stack must be restarted on t
 ## Execution order & steps
 
 ### 1. STORY-103 — Design foundation (3 pts)
-- [ ] Step 0: cherry-pick 203ed93 (.claude ruff exclude) + npm install the three @fontsource packages
-- [ ] Step 1: tokens.css v2 (both themes, dark default) + global.css + type stack — token tests where testable
-- [ ] Step 2: theme engine port (resolveTheme/ThemeContext/pre-paint) on data-theme, dark default
-- [ ] Step 3: primitives: Tile, Button, StatusBadge, Icon, RelativeTime (+ ported lib/: formatTime, formatLocation, useMediaQuery, breakpoints, matchMedia stub) — tests first
-- [ ] Step 4: minimal boot shell placeholder on new tokens (old skin dead)
-- [ ] Step 5: suite green; scoped DoD gate
-- [ ] Step 6: live gate: fonts self-hosted (network audit), theme toggle + no-flash, contrast spot checks both themes
-- [ ] Reviews: spec ∥ quality (3-pointer)
+- [x] Step 0: cherry-pick 203ed93 (.claude ruff exclude) + npm install the three @fontsource packages
+- [x] Step 1: tokens.css v2 (both themes, dark default) + global.css + type stack — token tests where testable
+- [x] Step 2: theme engine port (resolveTheme/ThemeContext/pre-paint) on data-theme, dark default
+- [x] Step 3: primitives: Tile, Button, StatusBadge, Icon, RelativeTime (+ ported lib/: formatTime, formatLocation, useMediaQuery, breakpoints, matchMedia stub) — tests first
+- [x] Step 4: minimal boot shell placeholder on new tokens (old skin dead)
+- [x] Step 5: suite green; scoped DoD gate
+- [x] Step 6: live gate: fonts self-hosted (network audit), theme toggle + no-flash, contrast spot checks both themes
+- [x] Reviews: spec ∥ quality (3-pointer)
 
 ### 2. STORY-104 — App shell (3 pts)
 - [ ] Step 1: top command bar + horizontal tab nav (aria-current, keyboard) — tests first

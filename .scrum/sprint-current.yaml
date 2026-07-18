@@ -23,12 +23,37 @@ stories:
     slug: rewrite-design-foundation
     points: 3
     order: 1
-    status: in_progress   # implementer dispatched 2026-07-18 ~03:10 IST
+    status: done          # all 5 AC; commits f3e4eb7..06ba847 (17 impl + 2 fix; fix landed
+                          # by orchestrator after the agent's session-limit crash — verified
+                          # then committed, trivial-tail rule)
+    commits: f3e4eb7..06ba847
+    reviews: "spec FAIL->fixed (sole gap: deletion reason missing from story-file History —
+      added); quality APPROVE (0 major; minors noted: Tile href+onClick footgun, 16
+      forward-looking unused tokens, orphan-comment refs)"
+    reality_gate:
+      ran: true
+      evidence: >-
+        Live (Playwright MCP pre-disconnect + tools/ui-sweep scripted Chromium after):
+        fonts fully self-hosted (0 external font requests; Inter/Space Grotesk woff2 from
+        localhost); light + dark both render the Mission Teal identity (dark canvas
+        rgb(10,14,20), mint light rgb(240,253,250)); theme toggle round-trips; all six
+        routes render placeholder tiles with one h1 + skip link + single main; zero
+        console errors on clean load. DESIGN CORRECTION found at gate: system-light beat
+        the dark default -> precedence fixed to stored>dark (OS pref never consulted);
+        re-verified in a FRESH browser context: first paint dark with no stored pref.
+        Screenshots: sprints/2026-07-18-sprint-55/gate-103/.
+    dod_evidence:   # scoped gate (--only npm), 3/3 exit 0 at 06ba847, 2026-07-18 ~07:45 IST
+      - {command: "npm test", exit_code: 0, output_tail: "47 files / 369 tests passed", commit: 06ba847}
+      - {command: "npm run build", exit_code: 0, commit: 06ba847}
+      - {command: "npm run lint", exit_code: 0, commit: 06ba847}
+    wiki_blast_radius: "frontend-zone.md REWRITTEN for the rewrite era + sample-mode.md
+      substantive update (frontend surface temporarily removed) + 4 pyproject-citing
+      articles re-verified (cherry-pick). Sweep CLEAN."
   - id: STORY-104
     slug: rewrite-app-shell
     points: 3
     order: 2
-    status: todo
+    status: in_progress   # implementer dispatched 2026-07-18 ~07:50 IST
 baseline_gate: "main @ 517fc38 carries sprint-51's 8/8 evidence; step 0 cherry-picks the
   .claude ruff exclude (203ed93) before any gate runs on this line."
 hotfixes: []
