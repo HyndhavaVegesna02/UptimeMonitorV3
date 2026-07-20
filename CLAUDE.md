@@ -35,7 +35,14 @@ backend/src/
 `config/` is reserved at the repo root (outside `backend/`) so that editing it
 reads as a topology change rather than a code change.
 
-### The frontend zone (dossier §17, STORY-015a)
+### The frontend zone (dossier §17, STORY-120)
+
+**Frontend under active greenfield rebuild — sprint-59; structure settling
+across STORY-120–122.** The PO rejected two prior attempts (2026-07-19,
+2026-07-21) and directed a from-scratch rebuild guided by the approved
+refimg prototype; this section describes the THIRD attempt, currently just
+its design-system foundation (STORY-120) — the app shell (STORY-121) and
+the first real page (STORY-122) land later this sprint.
 
 `frontend/` is a separate Vite + React + TypeScript (strict) SPA — the
 operator-cockpit "internal dashboard" surface (dossier §17, "two surfaces,
@@ -46,30 +53,33 @@ backend DoD commands never touch it and vice versa.
 ```
 frontend/
 ├── src/
-│   ├── styles/       # tokens.css (theme-scoped CSS custom properties) + global.css
-│   ├── theme/         # theme resolution (system pref + localStorage override), ThemeProvider/useTheme
-│   ├── components/    # shell primitives: Button, StatusBadge, Panel, Loading/Error/EmptyState,
-│   │                    # Icon, Table, UptimeBar, SummaryCard, Timeline (STORY-055)
-│   ├── nav/            # top nav (six-tab IA) + routing table (tabs.ts)
-│   ├── pages/          # one placeholder per tab (015b-015g fill in real content)
-│   ├── api/             # typed fetch client (client.ts), DTO types mirroring backend/src/api/v1/*/models.py
-│   ├── features/        # per-tab feature code (e.g. features/dashboard/ComponentsProbe.tsx)
-│   ├── mocks/            # MSW handlers + node server (the only mocked I/O edge in frontend tests)
-│   └── test/              # Vitest setup (jest-dom matchers, MSW server lifecycle)
-├── index.html            # pre-paint inline theme-resolution script (no flash)
+│   ├── styles/       # tokens.css (three-layer: primitive -> semantic -> component,
+│   │                   # theme-scoped, light-only for now) + global.css
+│   ├── components/    # Icon (Phosphor wrapper) + primitives: Button, Panel,
+│   │                    # StatusBadge, SummaryCard, Sparkline, Loading/Error/EmptyState
+│   ├── pages/          # StyleguidePage (the /styleguide design-system gallery);
+│   │                    # more pages land with STORY-121/122
+│   ├── lib/             # cx() classname helper
+│   └── test/              # Vitest setup (jest-dom matchers)
+├── index.html            # <html data-theme="light"> (no dark theme this initiative)
 └── vite.config.ts         # dev proxy (/api -> http://localhost:8000) + Vitest config
 ```
 
-Design reference: `DESIGN-linear.app.md` (repo root) — a guide to adapt, not
-a copy target; see `docs/scrum/sprints/2026-07-02-sprint-25/plan.md` for the
-binding design brief (token values, accent discipline, health palette, type
-scale) that STORY-015a built to. Sprint 38 re-skins the design system to the
-imported *Operator Dashboard* mock (`docs/scrum/sprints/2026-07-07-sprint-38/`)
-— retuned tokens, a 7-status health palette (`up`/`degraded`/`partial`/`down`/
-`maintenance`/`unknown`/`missing`), and four shared primitives (`Table`,
-`UptimeBar`, `SummaryCard`, `Timeline`), landed by STORY-055. Fonts are
-self-hosted Geist + Geist Mono (`@fontsource/geist` + `@fontsource/geist-mono`,
-imported in `src/styles/global.css`) — no runtime Google-CDN `<link>`.
+Design reference (binding for this rebuild): the PO-approved refimg prototype
+`docs/scrum/sprints/2026-07-18-ui-prototyping/prototypes/refimg-dashboard.html`
++ its derived token spec `docs/scrum/sprints/2026-07-18-ui-prototyping/
+round-2-refimg-system.md` — a light-first, cool-grey-canvas, single-sky-blue-
+accent system with a 7-status health palette (`up`/`degraded`/`partial`/`down`/
+`maintenance`/`unknown`/`missing`) and contrast-safe text tokens (WCAG AA,
+proven by a live token-contrast test). Icons are `@phosphor-icons/react`
+(STORY-120), wrapped by a thin `Icon` component that requires either
+`aria-hidden` or an accessible `label` at every call site. Fonts are
+self-hosted Inter (`@fontsource/inter`, imported in `src/styles/global.css`)
+— no runtime Google-CDN `<link>` (replaces the second attempt's self-hosted
+Geist/Geist Mono). The prior `DESIGN-linear.app.md`/sprint-25/sprint-38
+design lineage (Geist, the six-tab `nav/` shell, `Table`/`UptimeBar`/
+`Timeline` primitives, the `api/`/`features/`/`mocks/` trees) belonged to the
+now-deleted second attempt and no longer describes the tree.
 `frontend/README.md` has the day-to-day quick reference.
 
 Frontend commands (run from `frontend/`; Node 24 / npm 11):
