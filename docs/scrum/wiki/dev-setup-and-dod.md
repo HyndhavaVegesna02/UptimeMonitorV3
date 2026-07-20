@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 7c53685
-verified_sprint: sprint-50
+verified_sha: 20827e3
+verified_sprint: sprint-59
 status: verified
 ---
 
@@ -107,6 +107,15 @@ status: verified
   it â€” no second editable copy.
 
 ## History
+- sprint-59 (STORY-120, greenfield frontend rebuild): the staleness sweep flagged this article
+  because `frontend/package.json` changed again — `@fontsource/geist`/`@fontsource/geist-mono`
+  replaced by `@fontsource/inter` (self-hosted, same pattern) and `@phosphor-icons/react` added,
+  same shape as the sprint-38 font-swap precedent below. The frontend DoD gate is still the same
+  three commands (`npm test`/`npm run build`/`npm run lint`), still independent of the six backend
+  commands, and `package.json`'s `dependencies`/`devDependencies`/`scripts` shape is unchanged —
+  only which packages sit in `dependencies`. No DoD-gate or command change; no backend diff (this
+  story deleted/rebuilt only `frontend/src/**`, kept the toolchain files this article's
+  `code_refs` covers). verified_sha -> 20827e3.
 - sprint-36 (compile pass): re-pinned verified_sha 6a33edb -> 8237962 â€” the only CLAUDE.md diff in range is f66ecb0, the SAME commit that updated this article to match it (pin had been placed at the code commit instead of the wiki commit). No Facts changed.
 - sprint-0: created (compile pass folding STORY-001/002/003 setup learnings).
 - sprint-3: updated (STORY-019 shared throwaway-DB harness) â€” added the
