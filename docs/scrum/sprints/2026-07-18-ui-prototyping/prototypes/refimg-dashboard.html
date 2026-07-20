@@ -1,0 +1,802 @@
+<!-- @dsCard group="Round 2 — refimg direction" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="theme-color" content="#e6e8ec" />
+<title>Uptime Monitor — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     TOKENS — three-layer (primitive -> semantic -> component)
+     Derived from refimg.jpg. Bright brand colours are fills only;
+     text uses darkened variants (all verified >=4.5:1 on white).
+     ============================================================ */
+  :root {
+    /* -- primitive -- */
+    --white: #ffffff;
+    --grey-25: #fcfcfd;   --grey-50: #f7f8fa;  --grey-100: #f1f2f4;
+    --grey-150: #e9ebee;  --grey-200: #e3e6ea; --grey-300: #d3d7dd;
+    --grey-400: #9ba1ac;  --grey-500: #6c727c; --grey-600: #565c66;
+    --grey-800: #2a2e35;  --grey-900: #17191e;
+
+    --sky-50: #eaf6fc;  --sky-200: #bfe4f5; --sky-400: #4fb0e0;
+    --sky-500: #2e9fd6; --sky-600: #1c88be; --sky-text: #10709e;
+
+    --green-50: #e9f7ef; --green-500: #16a34a; --green-text: #15803d;
+    --red-50: #fdecec;   --red-500: #ef4444;  --red-text: #c42b22;
+    --amber-50: #fef6e7; --amber-500: #f59e0b; --amber-text: #b45309;
+    --violet-50: #efedfd;--violet-500: #7c6bf5;--violet-text: #6d28d9;
+
+    /* -- semantic -- */
+    --canvas: #e6e8ec;
+    --app: var(--white);
+    --surface: var(--white);
+    --surface-subtle: var(--grey-50);
+    --surface-hover: var(--grey-50);
+    --border: var(--grey-150);
+    --border-strong: var(--grey-200);
+
+    --text: var(--grey-900);
+    --text-secondary: var(--grey-600);
+    --text-muted: var(--grey-500);
+
+    --accent: var(--sky-500);
+    --accent-strong: var(--sky-600);
+    --accent-text: var(--sky-text);
+    --accent-tint: var(--sky-50);
+
+    --pos: var(--green-500);   --pos-text: var(--green-text);   --pos-tint: var(--green-50);
+    --neg: var(--red-500);     --neg-text: var(--red-text);     --neg-tint: var(--red-50);
+
+    /* health */
+    --up: var(--green-500);        --up-text: var(--green-text);      --up-tint: var(--green-50);
+    --degraded: var(--amber-500);  --degraded-text: var(--amber-text);--degraded-tint: var(--amber-50);
+    --down: var(--red-500);        --down-text: var(--red-text);      --down-tint: var(--red-50);
+    --maint: var(--violet-500);    --maint-text: var(--violet-text);  --maint-tint: var(--violet-50);
+
+    /* radius / shadow / motion */
+    --r-card: 16px; --r-ctrl: 10px; --r-chip: 8px; --r-pill: 999px;
+    --shadow-card: 0 1px 2px rgba(16,24,40,.04), 0 1px 3px rgba(16,24,40,.05);
+    --shadow-lift: 0 4px 12px rgba(16,24,40,.08), 0 2px 4px rgba(16,24,40,.05);
+    --shadow-pop: 0 12px 32px rgba(16,24,40,.14);
+    --ease-out: cubic-bezier(.23,1,.32,1);
+    --ease-in-out: cubic-bezier(.77,0,.175,1);
+
+    /* -- component -- */
+    --nav-item-active-bg: var(--grey-100);
+    --nav-item-hover-bg: var(--grey-50);
+    --kpi-num: 30px;
+    color-scheme: light;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--canvas);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+    font-variant-numeric: tabular-nums;
+    padding: 20px;
+  }
+  .num { font-variant-numeric: tabular-nums; }
+  h1,h2,h3,h4 { margin: 0; font-weight: 600; letter-spacing: -0.01em; }
+  a { color: inherit; text-decoration: none; }
+  button { font: inherit; }
+  svg { display: block; }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ============================================================ APP FRAME */
+  .app {
+    max-width: 1320px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 248px 1fr;
+    background: var(--app);
+    border: 1px solid var(--border-strong);
+    border-radius: 24px;
+    box-shadow: var(--shadow-card);
+    overflow: hidden;
+    min-height: calc(100vh - 40px);
+  }
+
+  /* ============================================================ SIDEBAR */
+  .sidebar {
+    border-right: 1px solid var(--border);
+    padding: 18px 14px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    background: var(--surface);
+  }
+  .brand {
+    display: flex; align-items: center; gap: 10px;
+    padding: 4px 6px 2px;
+  }
+  .brand-mark {
+    width: 30px; height: 30px; border-radius: 9px;
+    background: linear-gradient(135deg, var(--sky-400), var(--sky-600));
+    display: grid; place-items: center; color: #fff;
+    box-shadow: 0 1px 2px rgba(28,136,190,.35);
+    flex-shrink: 0;
+  }
+  .brand-name { font-weight: 600; font-size: 14.5px; letter-spacing: -0.02em; }
+  .brand-sub { font-size: 11px; color: var(--text-muted); margin-top: -2px; }
+
+  .side-actions { display: flex; gap: 8px; }
+  .btn-create {
+    flex: 1;
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    height: 36px; padding: 0 12px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-pill);
+    color: var(--text-secondary);
+    font-weight: 500; font-size: 13px;
+    cursor: pointer;
+    transition: transform 160ms var(--ease-out), border-color 160ms var(--ease-out), background 160ms var(--ease-out), color 160ms var(--ease-out);
+  }
+  .btn-create:hover { border-color: var(--sky-200); color: var(--accent-text); background: var(--accent-tint); }
+  .btn-create:active { transform: scale(.97); }
+  .icon-btn {
+    width: 36px; height: 36px; flex-shrink: 0;
+    display: grid; place-items: center;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: var(--r-ctrl);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: transform 160ms var(--ease-out), background 160ms var(--ease-out), color 160ms var(--ease-out);
+  }
+  .icon-btn:hover { background: var(--surface-hover); color: var(--text); }
+  .icon-btn:active { transform: scale(.94); }
+
+  .nav-group { display: flex; flex-direction: column; gap: 2px; }
+  .nav-label {
+    font-size: 11px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-muted);
+    padding: 6px 10px 4px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 8px 10px;
+    border-radius: var(--r-ctrl);
+    color: var(--text-secondary);
+    font-size: 13.5px; font-weight: 450;
+    cursor: pointer;
+    position: relative;
+    transition: background 140ms var(--ease-out), color 140ms var(--ease-out);
+  }
+  .nav-item svg { color: var(--text-muted); flex-shrink: 0; transition: color 140ms var(--ease-out); }
+  .nav-item:hover { background: var(--nav-item-hover-bg); color: var(--text); }
+  .nav-item:hover svg { color: var(--text-secondary); }
+  .nav-item[aria-current="page"] {
+    background: var(--nav-item-active-bg);
+    color: var(--text);
+    font-weight: 550;
+  }
+  .nav-item[aria-current="page"] svg { color: var(--text); }
+  .nav-item[aria-current="page"]::before {
+    content: ""; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 18px; border-radius: 2px; background: var(--accent);
+  }
+  .nav-item .grow { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .nav-badge {
+    min-width: 20px; height: 20px; padding: 0 6px;
+    border-radius: var(--r-pill);
+    background: var(--accent-tint); color: var(--accent-text);
+    font-size: 11px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .pin-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+
+  .side-foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--border); }
+  .user-row { display: flex; align-items: center; gap: 10px; padding: 4px 6px; }
+  .avatar {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(135deg, #9db4c9, #5b6b7d);
+    display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 600;
+  }
+  .user-name { font-size: 13px; font-weight: 550; }
+  .user-mail { font-size: 11px; color: var(--text-muted); }
+
+  /* ============================================================ MAIN */
+  .main { display: flex; flex-direction: column; min-width: 0; background: var(--white); }
+  .content { padding: 22px 26px 30px; display: flex; flex-direction: column; gap: 18px; }
+
+  .topbar {
+    display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  }
+  .eyebrow { font-size: 12px; color: var(--text-muted); font-weight: 500; letter-spacing: .02em; }
+  .title-row { display: flex; align-items: center; gap: 12px; margin-top: 2px; }
+  .page-title { font-size: 22px; letter-spacing: -0.02em; }
+  .greeting { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
+  .topbar-right { display: flex; align-items: center; gap: 10px; }
+  .last-updated { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
+  .live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--up); box-shadow: 0 0 0 0 rgba(22,163,74,.5); }
+
+  /* status pill */
+  .status-pill {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 28px; padding: 0 11px 0 9px;
+    border-radius: var(--r-pill);
+    font-size: 12.5px; font-weight: 600;
+    border: 1px solid transparent;
+  }
+  .status-pill svg { width: 14px; height: 14px; }
+  .status-pill .dot { width: 8px; height: 8px; border-radius: 50%; }
+  .status-pill.is-degraded { background: var(--degraded-tint); color: var(--degraded-text); border-color: #f6e3bd; }
+  .status-pill.is-degraded .dot { background: var(--degraded); }
+  .status-pill.is-up { background: var(--up-tint); color: var(--up-text); border-color: #cdeed8; }
+  .status-pill.is-up .dot { background: var(--up); }
+
+  /* ---- KPI ROW ---- */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-card);
+    box-shadow: var(--shadow-card);
+  }
+  .kpi {
+    padding: 16px 16px 14px;
+    display: flex; flex-direction: column; gap: 10px;
+    transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out), border-color 200ms var(--ease-out);
+  }
+  @media (hover: hover) and (pointer: fine) {
+    .kpi:hover { transform: translateY(-2px); box-shadow: var(--shadow-lift); border-color: var(--border-strong); }
+  }
+  .kpi.is-attention { border-color: var(--sky-200); background: linear-gradient(180deg, var(--sky-50), var(--white) 60%); }
+  .kpi-head { display: flex; align-items: center; justify-content: space-between; }
+  .kpi-chip {
+    width: 34px; height: 34px; border-radius: var(--r-chip);
+    display: grid; place-items: center;
+    background: var(--grey-100); color: var(--text-secondary);
+  }
+  .kpi.is-attention .kpi-chip { background: var(--white); color: var(--accent-text); border: 1px solid var(--sky-200); }
+  .kpi-label { font-size: 12.5px; color: var(--text-secondary); font-weight: 500; }
+  .kpi-body { display: flex; align-items: flex-end; justify-content: space-between; gap: 8px; }
+  .kpi-value { font-size: var(--kpi-num); font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .kpi-value .unit { font-size: 15px; font-weight: 600; color: var(--text-muted); margin-left: 2px; letter-spacing: 0; }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 5px; }
+  .delta {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-size: 12px; font-weight: 600;
+    padding: 2px 6px; border-radius: var(--r-pill);
+  }
+  .delta.up { color: var(--pos-text); background: var(--pos-tint); }
+  .delta.down { color: var(--pos-text); background: var(--pos-tint); }   /* latency down = good */
+  .delta.bad { color: var(--neg-text); background: var(--neg-tint); }
+  .delta svg { width: 12px; height: 12px; }
+  .spark { margin-top: 2px; }
+
+  .mini-seg { display: flex; gap: 5px; align-items: center; margin-top: 2px; }
+  .mini-seg .seg { height: 6px; border-radius: 3px; flex: 1; background: var(--grey-150); }
+  .mini-seg .seg.up { background: var(--up); }
+  .mini-seg .seg.degraded { background: var(--degraded); }
+  .mini-seg .seg.maint { background: var(--maint); }
+
+  .attn-cta {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 12.5px; font-weight: 600; color: var(--accent-text);
+  }
+  .attn-cta svg { width: 14px; height: 14px; transition: transform 160ms var(--ease-out); }
+  .kpi.is-attention:hover .attn-cta svg { transform: translateX(3px); }
+
+  /* ---- MID ROW: chart + side ---- */
+  .mid-grid { display: grid; grid-template-columns: 1.85fr 1fr; gap: 16px; align-items: stretch; }
+  .panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 18px 8px; }
+  .panel-title { font-size: 15px; font-weight: 600; }
+  .panel-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; }
+  .range {
+    display: inline-flex; align-items: center; gap: 6px;
+    height: 30px; padding: 0 10px;
+    border: 1px solid var(--border-strong); border-radius: var(--r-ctrl);
+    font-size: 12.5px; font-weight: 500; color: var(--text-secondary);
+    cursor: pointer; background: var(--surface);
+    transition: background 140ms var(--ease-out), border-color 140ms var(--ease-out);
+  }
+  .range:hover { background: var(--surface-hover); border-color: var(--grey-300); }
+  .range svg { width: 13px; height: 13px; color: var(--text-muted); }
+
+  .chart-wrap { padding: 4px 12px 14px; }
+  .chart-svg { width: 100%; height: 218px; overflow: visible; }
+  .chart-legend { display: flex; gap: 18px; padding: 0 18px 16px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-secondary); }
+  .legend-item .swatch { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* map / locations panel */
+  .locations { display: flex; flex-direction: column; }
+  .seg-ctrl {
+    display: inline-flex; padding: 3px; gap: 2px;
+    background: var(--grey-100); border-radius: var(--r-ctrl);
+    margin: 0 18px;
+  }
+  .seg-ctrl button {
+    border: 0; background: transparent; cursor: pointer;
+    font-size: 12px; font-weight: 550; color: var(--text-muted);
+    padding: 5px 12px; border-radius: 7px;
+    transition: color 140ms var(--ease-out), background 140ms var(--ease-out), box-shadow 140ms var(--ease-out);
+  }
+  .seg-ctrl button[aria-pressed="true"] { background: var(--white); color: var(--text); box-shadow: var(--shadow-card); }
+  .seg-ctrl button:active { transform: scale(.97); }
+
+  .map {
+    position: relative;
+    margin: 14px 14px 4px;
+    height: 170px; border-radius: 12px;
+    background:
+      radial-gradient(circle at center, var(--grey-300) 1.05px, transparent 1.15px) 0 0 / 13px 13px;
+    background-color: var(--grey-25);
+    -webkit-mask-image: radial-gradient(ellipse 120% 130% at 50% 40%, #000 55%, transparent 92%);
+            mask-image: radial-gradient(ellipse 120% 130% at 50% 40%, #000 55%, transparent 92%);
+    opacity: .9;
+  }
+  .marker { position: absolute; transform: translate(-50%,-50%); }
+  .marker .ring {
+    width: 16px; height: 16px; border-radius: 50%;
+    display: grid; place-items: center;
+    background: rgba(46,159,214,.16);
+  }
+  .marker .core { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 3px rgba(46,159,214,.18); }
+  .marker.is-degraded .ring { background: rgba(245,158,11,.18); }
+  .marker.is-degraded .core { background: var(--degraded); box-shadow: 0 0 0 3px rgba(245,158,11,.2); }
+  .pulse { position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid var(--accent); opacity: 0; }
+  .marker.is-degraded .pulse { border-color: var(--degraded); }
+
+  .loc-list { padding: 6px 18px 16px; display: flex; flex-direction: column; gap: 2px; }
+  .loc-row { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--border); }
+  .loc-row:first-child { border-top: 0; }
+  .loc-name { font-size: 13px; font-weight: 500; }
+  .loc-meta { font-size: 11.5px; color: var(--text-muted); }
+  .loc-lat { margin-left: auto; font-size: 13px; font-weight: 600; }
+
+  /* upcoming maintenance card */
+  .maint-card { padding: 15px 16px; display: flex; gap: 12px; align-items: flex-start; }
+  .maint-ic { width: 34px; height: 34px; border-radius: var(--r-chip); background: var(--maint-tint); color: var(--maint-text); display: grid; place-items: center; flex-shrink: 0; }
+  .maint-title { font-size: 13.5px; font-weight: 600; }
+  .maint-when { font-size: 12px; color: var(--text-secondary); margin-top: 2px; }
+  .maint-tag { font-size: 11px; color: var(--maint-text); background: var(--maint-tint); padding: 2px 8px; border-radius: var(--r-pill); font-weight: 600; margin-top: 8px; display: inline-block; }
+
+  /* ---- BOTTOM ROW ---- */
+  .bot-grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; align-items: start; }
+  .list-head { display: flex; align-items: center; justify-content: space-between; padding: 16px 18px 10px; }
+  .list-head h3 { font-size: 15px; }
+  .see-all { font-size: 12.5px; font-weight: 550; color: var(--accent-text); display: inline-flex; align-items: center; gap: 4px; }
+  .see-all svg { width: 13px; height: 13px; transition: transform 160ms var(--ease-out); }
+  .see-all:hover svg { transform: translateX(3px); }
+
+  .feed { padding: 2px 8px 10px; }
+  .feed-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 10px; border-radius: 10px;
+    transition: background 140ms var(--ease-out);
+  }
+  .feed-row:hover { background: var(--surface-hover); }
+  .comp-ic {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: grid; place-items: center; background: var(--grey-100); color: var(--text-secondary);
+  }
+  .feed-main { min-width: 0; flex: 1; }
+  .feed-name { font-size: 13.5px; font-weight: 550; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-meta { font-size: 11.5px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .feed-right { text-align: right; flex-shrink: 0; }
+  .feed-lat { font-size: 13px; font-weight: 600; }
+  .health-tag { font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+  .health-tag .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .health-tag.up { color: var(--up-text); } .health-tag.up .dot { background: var(--up); }
+  .health-tag.degraded { color: var(--degraded-text); } .health-tag.degraded .dot { background: var(--degraded); }
+  .health-tag.down { color: var(--down-text); } .health-tag.down .dot { background: var(--down); }
+
+  /* components ranking */
+  .rank { padding: 2px 8px 12px; }
+  .rank-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 10px; border-radius: 10px;
+    transition: background 140ms var(--ease-out);
+  }
+  .rank-row:hover { background: var(--surface-hover); }
+  .rank-no { width: 20px; text-align: center; font-size: 12.5px; font-weight: 600; color: var(--text-muted); flex-shrink: 0; }
+  .rank-main { flex: 1; min-width: 0; }
+  .rank-name { font-size: 13.5px; font-weight: 550; display: flex; align-items: center; gap: 7px; }
+  .rank-name .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+  .rank-name .dot.up { background: var(--up); } .rank-name .dot.degraded { background: var(--degraded); } .rank-name .dot.maint { background: var(--maint); }
+  .rank-sub { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+  .rank-right { text-align: right; flex-shrink: 0; }
+  .rank-up { font-size: 13px; font-weight: 600; }
+  .rank-delta { font-size: 11.5px; font-weight: 600; }
+  .rank-delta.pos { color: var(--pos-text); } .rank-delta.neg { color: var(--neg-text); } .rank-delta.mut { color: var(--text-muted); }
+
+  /* ---- animations (guarded) ---- */
+  @media (prefers-reduced-motion: no-preference) {
+    .live-dot { animation: livepulse 2.4s var(--ease-out) infinite; }
+    @keyframes livepulse { 0%{box-shadow:0 0 0 0 rgba(22,163,74,.5);} 70%{box-shadow:0 0 0 6px rgba(22,163,74,0);} 100%{box-shadow:0 0 0 0 rgba(22,163,74,0);} }
+    .pulse { animation: ping 3s var(--ease-out) infinite; }
+    @keyframes ping { 0%{transform:scale(1);opacity:.7;} 70%{transform:scale(2.6);opacity:0;} 100%{opacity:0;} }
+    .stagger > * { opacity: 0; transform: translateY(8px); animation: rise 420ms var(--ease-out) forwards; }
+    .stagger > *:nth-child(1){animation-delay:20ms;} .stagger > *:nth-child(2){animation-delay:70ms;}
+    .stagger > *:nth-child(3){animation-delay:120ms;} .stagger > *:nth-child(4){animation-delay:170ms;}
+    @keyframes rise { to { opacity:1; transform: translateY(0);} }
+    .draw { stroke-dasharray: 1400; stroke-dashoffset: 1400; animation: draw 1400ms var(--ease-out) .1s forwards; }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+  }
+
+  /* ---- responsive ---- */
+  @media (max-width: 1080px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .mid-grid, .bot-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 860px) {
+    body { padding: 0; }
+    .app { grid-template-columns: 1fr; border-radius: 0; border: 0; min-height: 100vh; }
+    .sidebar { display: none; }
+    .content { padding: 18px 16px 26px; }
+  }
+  @media (max-width: 560px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .topbar { flex-direction: column; }
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============================ SIDEBAR ============================ -->
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      </span>
+      <div>
+        <div class="brand-name">Uptime Monitor</div>
+        <div class="brand-sub">Sock Shop · production</div>
+      </div>
+    </div>
+
+    <div class="side-actions">
+      <button class="btn-create" type="button">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        Maintenance
+      </button>
+      <button class="icon-btn" type="button" aria-label="Search (Command K)">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
+    </div>
+
+    <nav class="nav-group" aria-label="Monitoring">
+      <div class="nav-label">Monitoring</div>
+      <a class="nav-item" href="#" aria-current="page">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span class="grow">Dashboard</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg>
+        <span class="grow">Availability</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18"/><path d="M7 14l3-3 3 3 5-6"/></svg>
+        <span class="grow">History</span>
+      </a>
+    </nav>
+
+    <nav class="nav-group" aria-label="Operations">
+      <div class="nav-label">Operations</div>
+      <a class="nav-item" href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>
+        <span class="grow">Approvals</span>
+        <span class="nav-badge" aria-label="1 pending">1</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg>
+        <span class="grow">Maintenance</span>
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h16v12H5.2L4 18V4z"/><path d="M8 9h8M8 12h5"/></svg>
+        <span class="grow">Publications</span>
+      </a>
+    </nav>
+
+    <nav class="nav-group" aria-label="Pinned components">
+      <div class="nav-label">Pinned</div>
+      <a class="nav-item" href="#">
+        <span class="pin-dot" style="background:var(--degraded)" aria-hidden="true"></span>
+        <span class="grow">Checkout Flow</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="pin-dot" style="background:var(--maint)" aria-hidden="true"></span>
+        <span class="grow">Payment Gateway</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span class="pin-dot" style="background:var(--up)" aria-hidden="true"></span>
+        <span class="grow">Checkout Flow SLA</span>
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <div class="user-row">
+        <span class="avatar" aria-hidden="true">HV</span>
+        <div class="grow">
+          <div class="user-name">Ops on-call</div>
+          <div class="user-mail">alerts@sockshop.io</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============================ MAIN ============================ -->
+  <div class="main">
+    <div class="content">
+
+      <!-- TOPBAR -->
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">Monitoring · Overview</div>
+          <div class="title-row">
+            <h1 class="page-title">System overview</h1>
+            <span class="status-pill is-degraded" title="Worst-of all components">
+              <span class="dot" aria-hidden="true"></span>
+              Degraded
+            </span>
+          </div>
+          <p class="greeting">Good morning. One component is degraded and awaiting review — everything else is steady.</p>
+        </div>
+        <div class="topbar-right">
+          <span class="last-updated"><span class="live-dot" aria-hidden="true"></span> Updated 28s ago</span>
+          <button class="icon-btn" type="button" aria-label="Notifications">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- KPI ROW -->
+      <section class="kpi-grid stagger" aria-label="Key metrics">
+        <!-- 1 availability -->
+        <article class="card kpi">
+          <div class="kpi-head">
+            <span class="kpi-chip" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 6 4-14 2 8h6"/></svg></span>
+            <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>0.04%</span>
+          </div>
+          <div>
+            <div class="kpi-label">Overall availability · 24h</div>
+            <div class="kpi-body"><span class="kpi-value num">99.87<span class="unit">%</span></span></div>
+          </div>
+          <svg class="spark" width="100%" height="30" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true">
+            <polyline class="draw" fill="none" stroke="var(--up)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="0,20 12,19 24,21 36,18 48,19 60,14 72,16 84,12 96,15 108,10 120,12"/>
+          </svg>
+        </article>
+
+        <!-- 2 latency -->
+        <article class="card kpi">
+          <div class="kpi-head">
+            <span class="kpi-chip" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/><path d="m13.5 10.5 3-3"/><path d="M4 18a9 9 0 1 1 16 0"/></svg></span>
+            <span class="delta down"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 7 17 17M9 17h8V9"/></svg>6.2%</span>
+          </div>
+          <div>
+            <div class="kpi-label">Avg response time · 24h</div>
+            <div class="kpi-body"><span class="kpi-value num">428<span class="unit">ms</span></span></div>
+          </div>
+          <svg class="spark" width="100%" height="30" viewBox="0 0 120 30" preserveAspectRatio="none" aria-hidden="true">
+            <polyline class="draw" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" points="0,10 12,13 24,9 36,15 48,12 60,17 72,13 84,19 96,15 108,20 120,18"/>
+          </svg>
+        </article>
+
+        <!-- 3 components healthy -->
+        <article class="card kpi">
+          <div class="kpi-head">
+            <span class="kpi-chip" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="7" rx="1.5"/><rect x="3" y="13" width="18" height="7" rx="1.5"/><path d="M7 7.5h.01M7 16.5h.01"/></svg></span>
+          </div>
+          <div>
+            <div class="kpi-label">Components healthy</div>
+            <div class="kpi-body"><span class="kpi-value num">4<span class="unit">/ 6</span></span></div>
+            <div class="kpi-sub">1 degraded · 1 in maintenance</div>
+          </div>
+          <div class="mini-seg" aria-hidden="true">
+            <span class="seg up"></span><span class="seg up"></span><span class="seg up"></span><span class="seg up"></span><span class="seg degraded"></span><span class="seg maint"></span>
+          </div>
+        </article>
+
+        <!-- 4 pending approvals (attention) -->
+        <a class="card kpi is-attention" href="#" aria-label="1 pending approval, review needed">
+          <div class="kpi-head">
+            <span class="kpi-chip" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-6l-2 3h-4l-2-3H2"/><path d="M5.5 6.5 4 12v6a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-6l-1.5-5.5A1 1 0 0 0 17.5 6h-11a1 1 0 0 0-1 .5z"/></svg></span>
+          </div>
+          <div>
+            <div class="kpi-label">Pending approvals</div>
+            <div class="kpi-body"><span class="kpi-value num">1</span></div>
+            <div class="kpi-sub">Checkout Flow → Degraded</div>
+          </div>
+          <span class="attn-cta">Review now <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+        </a>
+      </section>
+
+      <!-- MID ROW -->
+      <section class="mid-grid">
+        <!-- chart -->
+        <article class="card">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">Response time</h2>
+              <div class="panel-sub">Avg 428&nbsp;ms · p95 612&nbsp;ms · across 2 locations</div>
+            </div>
+            <button class="range" type="button">Last 24 hours <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
+          </div>
+          <div class="chart-wrap">
+            <svg class="chart-svg" viewBox="0 0 720 218" preserveAspectRatio="none" role="img" aria-label="Response time over the last 24 hours, averaging 428 milliseconds, with a spike to about 1240 milliseconds mid-window on the degraded component.">
+              <defs>
+                <linearGradient id="area" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--accent)" stop-opacity="0.16"/>
+                  <stop offset="100%" stop-color="var(--accent)" stop-opacity="0"/>
+                </linearGradient>
+              </defs>
+              <!-- gridlines -->
+              <g stroke="var(--border)" stroke-width="1">
+                <line x1="0" y1="20" x2="720" y2="20"/><line x1="0" y1="69" x2="720" y2="69"/>
+                <line x1="0" y1="118" x2="720" y2="118"/><line x1="0" y1="167" x2="720" y2="167"/>
+              </g>
+              <!-- axis labels -->
+              <g fill="var(--text-muted)" font-size="10" font-family="Inter" text-anchor="start">
+                <text x="4" y="17">1.0 s</text><text x="4" y="66">750 ms</text>
+                <text x="4" y="115">500 ms</text><text x="4" y="164">250 ms</text>
+              </g>
+              <!-- area + line: flat ~430ms with a spike -->
+              <path fill="url(#area)" d="M0,150 C60,148 90,146 120,150 C160,152 190,148 220,146 C260,150 280,120 320,72 C360,40 380,58 410,120 C450,150 480,146 520,150 C560,148 600,150 640,146 C680,150 700,148 720,150 L720,218 L0,218 Z"/>
+              <path class="draw" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M0,150 C60,148 90,146 120,150 C160,152 190,148 220,146 C260,150 280,120 320,72 C360,40 380,58 410,120 C450,150 480,146 520,150 C560,148 600,150 640,146 C680,150 700,148 720,150"/>
+              <!-- spike marker -->
+              <circle cx="320" cy="72" r="4" fill="var(--white)" stroke="var(--degraded)" stroke-width="2.5"/>
+            </svg>
+          </div>
+          <div class="chart-legend">
+            <span class="legend-item"><span class="swatch" style="background:var(--accent)"></span> Median response</span>
+            <span class="legend-item"><span class="swatch" style="background:var(--degraded)"></span> Checkout Flow spike · 1,240&nbsp;ms</span>
+          </div>
+        </article>
+
+        <!-- locations + maintenance -->
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <article class="card locations">
+            <div class="panel-head" style="padding-bottom:12px;">
+              <div><h2 class="panel-title">Probe locations</h2><div class="panel-sub">Live check activity</div></div>
+            </div>
+            <div class="seg-ctrl" role="group" aria-label="Metric">
+              <button type="button" aria-pressed="true">Latency</button>
+              <button type="button" aria-pressed="false">Availability</button>
+              <button type="button" aria-pressed="false">Errors</button>
+            </div>
+            <div class="map" aria-hidden="true">
+              <span class="marker" style="left:34%; top:42%;"><span class="pulse"></span><span class="ring"><span class="core"></span></span></span>
+              <span class="marker is-degraded" style="left:63%; top:56%;"><span class="pulse"></span><span class="ring"><span class="core"></span></span></span>
+            </div>
+            <div class="loc-list">
+              <div class="loc-row">
+                <span class="health-tag up"><span class="dot"></span></span>
+                <div><div class="loc-name">Location …0047</div><div class="loc-meta">N. Virginia · 294&nbsp;ms median</div></div>
+                <span class="loc-lat num">294&nbsp;ms</span>
+              </div>
+              <div class="loc-row">
+                <span class="health-tag degraded"><span class="dot"></span></span>
+                <div><div class="loc-name">Location …0060</div><div class="loc-meta">Frankfurt · elevated latency</div></div>
+                <span class="loc-lat num">659&nbsp;ms</span>
+              </div>
+            </div>
+          </article>
+
+          <article class="card maint-card">
+            <span class="maint-ic" aria-hidden="true"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.3 2.3-2-2 2.3-2.3z"/></svg></span>
+            <div>
+              <div class="maint-title">Upcoming maintenance</div>
+              <div class="maint-when">Payment Gateway · Sat 02:00–04:00 IST</div>
+              <span class="maint-tag">Scheduled</span>
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <!-- BOTTOM ROW -->
+      <section class="bot-grid">
+        <!-- recent checks -->
+        <article class="card">
+          <div class="list-head">
+            <h3>Recent checks</h3>
+            <a class="see-all" href="#">View history <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+          <div class="feed">
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg></span>
+              <div class="feed-main"><div class="feed-name">HTTP Check</div><div class="feed-meta">Location …0047 · 28s ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">294&nbsp;ms</div><span class="health-tag up"><span class="dot"></span>Up</span></div>
+            </div>
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7 0l2-2a5 5 0 0 0-7-7l-1 1"/><path d="M14 11a5 5 0 0 0-7 0l-2 2a5 5 0 0 0 7 7l1-1"/></svg></span>
+              <div class="feed-main"><div class="feed-name">HTTP Check</div><div class="feed-meta">Location …0060 · 1 min ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">659&nbsp;ms</div><span class="health-tag up"><span class="dot"></span>Up</span></div>
+            </div>
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18M16 10a4 4 0 0 1-8 0"/></svg></span>
+              <div class="feed-main"><div class="feed-name">Checkout Flow</div><div class="feed-meta">Location …0047 · 2 min ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">1,240&nbsp;ms</div><span class="health-tag degraded"><span class="dot"></span>Degraded</span></div>
+            </div>
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg></span>
+              <div class="feed-main"><div class="feed-name">Catalogue API</div><div class="feed-meta">Location …0060 · 2 min ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">182&nbsp;ms</div><span class="health-tag up"><span class="dot"></span>Up</span></div>
+            </div>
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.7 13.4a2 2 0 0 0 2 1.6h9.7a2 2 0 0 0 2-1.6L23 6H6"/></svg></span>
+              <div class="feed-main"><div class="feed-name">Cart API</div><div class="feed-meta">Location …0047 · 3 min ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">233&nbsp;ms</div><span class="health-tag up"><span class="dot"></span>Up</span></div>
+            </div>
+            <div class="feed-row">
+              <span class="comp-ic" aria-hidden="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg></span>
+              <div class="feed-main"><div class="feed-name">Frontend Web</div><div class="feed-meta">Location …0060 · 4 min ago</div></div>
+              <div class="feed-right"><div class="feed-lat num">412&nbsp;ms</div><span class="health-tag up"><span class="dot"></span>Up</span></div>
+            </div>
+          </div>
+        </article>
+
+        <!-- components ranking -->
+        <article class="card">
+          <div class="list-head">
+            <h3>Components</h3>
+            <a class="see-all" href="#">All components <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          </div>
+          <div class="rank">
+            <div class="rank-row">
+              <span class="rank-no num">1</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot up"></span>HTTP Check</div><div class="rank-sub">294&nbsp;ms · 2 locations</div></div>
+              <div class="rank-right"><div class="rank-up num">100.00%</div><div class="rank-delta pos">+0.02%</div></div>
+            </div>
+            <div class="rank-row">
+              <span class="rank-no num">2</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot up"></span>Frontend Web</div><div class="rank-sub">412&nbsp;ms · 2 locations</div></div>
+              <div class="rank-right"><div class="rank-up num">99.99%</div><div class="rank-delta pos">+0.01%</div></div>
+            </div>
+            <div class="rank-row">
+              <span class="rank-no num">3</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot up"></span>Catalogue API</div><div class="rank-sub">182&nbsp;ms · 2 locations</div></div>
+              <div class="rank-right"><div class="rank-up num">99.98%</div><div class="rank-delta mut">±0.00%</div></div>
+            </div>
+            <div class="rank-row">
+              <span class="rank-no num">4</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot up"></span>Cart API</div><div class="rank-sub">233&nbsp;ms · 2 locations</div></div>
+              <div class="rank-right"><div class="rank-up num">99.95%</div><div class="rank-delta neg">−0.03%</div></div>
+            </div>
+            <div class="rank-row">
+              <span class="rank-no num">5</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot degraded"></span>Checkout Flow</div><div class="rank-sub">1,240&nbsp;ms · degraded</div></div>
+              <div class="rank-right"><div class="rank-up num">97.42%</div><div class="rank-delta neg">−2.4%</div></div>
+            </div>
+            <div class="rank-row">
+              <span class="rank-no num">6</span>
+              <div class="rank-main"><div class="rank-name"><span class="dot maint"></span>Payment Gateway</div><div class="rank-sub">Under maintenance</div></div>
+              <div class="rank-right"><div class="rank-up num" style="color:var(--text-muted)">—</div><div class="rank-delta mut">paused</div></div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  // Prototype-only: segmented control + range affordance. Page is complete without JS.
+  document.querySelectorAll('.seg-ctrl').forEach(function (group) {
+    group.addEventListener('click', function (e) {
+      var btn = e.target.closest('button'); if (!btn) return;
+      group.querySelectorAll('button').forEach(function (b) { b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'); });
+    });
+  });
+</script>
+</body>
+</html>
