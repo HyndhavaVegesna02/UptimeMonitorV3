@@ -1,0 +1,10 @@
+.styleguide {
+  padding: var(--space-6);
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+.styleguide__intro {
+  color: var(--color-text-secondary);
+  margin-top: var(--space-2);
+}

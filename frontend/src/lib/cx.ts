@@ -1,7 +1,7 @@
 /**
  * Joins classnames, filtering out falsy values (`undefined`, `null`,
- * `false`, `''`). Replaces the `[...].filter(Boolean).join(' ')` idiom that
- * was duplicated across the shell primitives (STORY-041 AC2).
+ * `false`, `''`). A single shared helper so every primitive composes
+ * conditional classnames the same way (STORY-120).
  */
 export function cx(
   ...parts: Array<string | undefined | null | false>

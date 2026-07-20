@@ -1,47 +1,8 @@
 .app-shell {
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
+  min-height: 100vh;
   background: var(--color-canvas);
-  color: var(--color-ink);
-}
-
-.app-shell__content {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
 }
 
 .app-shell__main {
-  flex: 1;
-  overflow-y: auto;
-  padding: var(--space-6);
-}
-
-.skip-link {
-  position: absolute;
-  top: -48px;
-  left: var(--space-4);
-  z-index: 100;
-  background: var(--color-accent);
-  color: var(--color-on-accent);
-  padding: var(--space-2) var(--space-4);
-  border-radius: var(--radius-control);
-  font-family: var(--font-sans);
-  font-size: var(--fs-body);
-  text-decoration: none;
-  transition: top 0.12s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .skip-link {
-    transition: none;
-  }
-}
-
-.skip-link:focus-visible {
-  top: var(--space-4);
-  box-shadow: var(--focus-ring);
+  min-height: 100vh;
 }
