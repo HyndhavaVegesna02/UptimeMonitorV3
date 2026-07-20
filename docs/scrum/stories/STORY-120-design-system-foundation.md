@@ -37,3 +37,12 @@ web-design-guidelines, emil-design-eng, vercel-react-best-practices, design-syst
 Status vocabulary → health mapping: operational→up, degraded_performance→degraded,
 partial_outage→partial, major_outage→down, under_maintenance→maintenance. Bright brand colours
 are fills only; text uses darkened contrast-safe variants.
+
+## History
+- 2026-07-21 (implementation): deleted the entire second frontend attempt's `frontend/src/**`
+  tree (~12k lines) — every component, page, feature hook, the API client, MSW mocks, and the
+  theme system — per the PO's 2026-07-21 greenfield-rebuild decision (two prior attempts
+  rejected, 2026-07-19 and 2026-07-21). Only the build toolchain survived (`vite.config.ts`,
+  `eslint.config.js`, `tsconfig*.json`, `package.json`'s scripts block). This story rebuilt the
+  design-system foundation fresh on top of that clean slate. Feeds the wiki tombstone for
+  `docs/scrum/wiki/frontend-zone.md` at sprint close.
