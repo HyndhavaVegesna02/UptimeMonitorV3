@@ -1,0 +1,32 @@
+.panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--panel-radius);
+  box-shadow: var(--panel-shadow);
+}
+
+.panel__title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-4) var(--space-4) 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .panel--interactive {
+    transition:
+      transform var(--duration-control) var(--ease-out),
+      box-shadow var(--duration-control) var(--ease-out),
+      border-color var(--duration-control) var(--ease-out);
+  }
+
+  .panel--interactive:hover {
+    border-color: var(--color-border-strong);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .panel--interactive:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--panel-shadow-hover);
+    }
+  }
+}
