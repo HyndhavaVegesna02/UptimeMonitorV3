@@ -68,9 +68,9 @@ assertions, as the prior system did).
 
 ### 1. STORY-120 — Design-system foundation + Phosphor (3 pts)
 Everything downstream depends on it; build and validate it first.
-- [ ] Step 1: fresh scaffold of `frontend/src` (clean out rejected src; keep toolchain
+- [x] Step 1: fresh scaffold of `frontend/src` (clean out rejected src; keep toolchain
       config); wire `@phosphor-icons/react`; app boots with an empty shell + `/styleguide`.
-- [ ] Step 2: three-layer tokens (`tokens.css`) from the derived system — cool-grey canvas,
+- [x] Step 2: three-layer tokens (`tokens.css`) from the derived system — cool-grey canvas,
       single sky-blue accent, health palette, contrast-safe text tokens; light theme +
       dark-ready structure. Token contrast test (WCAG-AA) green.
 - [ ] Step 3: type scale (Inter), spacing (8px), radius/shadow, motion tokens (emil curves) +

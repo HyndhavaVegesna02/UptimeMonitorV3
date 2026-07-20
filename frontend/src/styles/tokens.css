@@ -1,18 +1,135 @@
 /*
- * Design tokens (STORY-120 AC2/AC4) — three layers: primitive -> semantic ->
+ * Design tokens (STORY-120) — three layers: primitive -> semantic ->
  * component. Derived from the approved refimg prototype
  * (docs/scrum/sprints/2026-07-18-ui-prototyping/prototypes/refimg-dashboard.html)
- * and its design-system doc (…/round-2-refimg-system.md). Light theme only
- * for now; semantic tokens live under `[data-theme='light']` (which `:root`
- * also matches) so a future `[data-theme='dark']` block is an ADDITIVE
- * override, never a rename (PO: "light-first, dark-ready").
+ * and its design-system doc (…/round-2-refimg-system.md).
  *
- * Full layer build-out lands across this story's steps 2-3; this is the
- * bootstrap placeholder that lets the app render.
+ * Light theme only for now (PO: "light-first, dark-ready"). Semantic tokens
+ * live under a `[data-theme='light']` selector (which the bare `:root` also
+ * matches, since `index.html` hardcodes `data-theme="light"`) so a future
+ * `[data-theme='dark']` block is an ADDITIVE override — no semantic token
+ * gets renamed when dark ships (AC2).
+ *
+ * No component or page CSS/TSX may reference a raw hex literal — every
+ * color is `var(--color-…)`; see `noRawHex.test.ts`.
  */
 
 :root {
-  --color-canvas: #e6e8ec;
+  /* ---------------------------------------------------------------- */
+  /* PRIMITIVE LAYER — raw palette. Not theme-scoped: the swatches      */
+  /* themselves don't change between themes, only which the semantic   */
+  /* layer points to would (a future dark theme swaps that mapping).   */
+  /* ---------------------------------------------------------------- */
+  --white: #ffffff;
+  --grey-25: #fcfcfd;
+  --grey-50: #f7f8fa;
+  --grey-100: #f1f2f4;
+  --grey-150: #e9ebee;
+  --grey-200: #e3e6ea;
+  --grey-300: #d3d7dd;
+  --grey-400: #9ba1ac;
+  --grey-500: #6c727c;
+  --grey-600: #565c66;
+  --grey-800: #2a2e35;
+  --grey-900: #17191e;
+
+  --sky-50: #eaf6fc;
+  --sky-200: #bfe4f5;
+  --sky-400: #4fb0e0;
+  --sky-500: #2e9fd6;
+  --sky-600: #1c88be;
+  --sky-text: #10709e;
+
+  --green-50: #e9f7ef;
+  --green-500: #16a34a;
+  --green-text: #15803d;
+
+  --red-50: #fdecec;
+  --red-500: #ef4444;
+  --red-text: #c42b22;
+
+  --amber-50: #fef6e7;
+  --amber-500: #f59e0b;
+  --amber-text: #b45309;
+
+  --violet-50: #efedfd;
+  --violet-500: #7c6bf5;
+  --violet-text: #6d28d9;
+
+  /* partial-outage health status — distinct hue from `degraded` (amber) */
+  --orange-50: #fdf1e8;
+  --orange-500: #d0620c;
+  --orange-text: #9a4308;
+
+  /* missing-data health status — cool neutral, distinct from grey `unknown` */
+  --indigo-50: #eef2fb;
+  --indigo-500: #5872c9;
+  --indigo-text: #33499e;
+
+  /* Type family — self-hosted Inter (@fontsource/inter, imported in
+     global.css). Full type SCALE (sizes/weights/line-heights) lands in
+     step 3; the family alone is needed by global.css from step 1. */
   --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------- */
+/* SEMANTIC LAYER — theme-scoped ([data-theme='light'], plus :root   */
+/* so it applies even before data-theme is read). Points ONLY at     */
+/* primitives, never used directly by component CSS as a leaf value. */
+/* ---------------------------------------------------------------- */
+:root,
+[data-theme='light'] {
+  color-scheme: light;
+
+  --color-canvas: #e6e8ec;
+  --color-app: var(--white);
+  --color-surface: var(--white);
+  --color-surface-subtle: var(--grey-50);
+  --color-surface-hover: var(--grey-50);
+  --color-border: var(--grey-150);
+  --color-border-strong: var(--grey-200);
+
+  --color-text: var(--grey-900);
+  --color-text-secondary: var(--grey-600);
+  --color-text-muted: var(--grey-500);
+
+  --color-accent: var(--sky-500);
+  --color-accent-strong: var(--sky-600);
+  --color-accent-text: var(--sky-text);
+  --color-accent-tint: var(--sky-50);
+
+  --color-pos: var(--green-500);
+  --color-pos-text: var(--green-text);
+  --color-pos-tint: var(--green-50);
+  --color-neg: var(--red-500);
+  --color-neg-text: var(--red-text);
+  --color-neg-tint: var(--red-50);
+
+  /* Health palette — 7 statuses (dossier status vocabulary -> health
+     mapping: operational->up, degraded_performance->degraded,
+     partial_outage->partial, major_outage->down, under_maintenance->
+     maintenance; `unknown`/`missing` cover no-data cases). Bright fills are
+     for dots/icons/backgrounds ONLY — text always uses the `-text` variant. */
+  --color-up: var(--green-500);
+  --color-up-text: var(--green-text);
+  --color-up-tint: var(--green-50);
+  --color-degraded: var(--amber-500);
+  --color-degraded-text: var(--amber-text);
+  --color-degraded-tint: var(--amber-50);
+  --color-partial: var(--orange-500);
+  --color-partial-text: var(--orange-text);
+  --color-partial-tint: var(--orange-50);
+  --color-down: var(--red-500);
+  --color-down-text: var(--red-text);
+  --color-down-tint: var(--red-50);
+  --color-maintenance: var(--violet-500);
+  --color-maintenance-text: var(--violet-text);
+  --color-maintenance-tint: var(--violet-50);
+  --color-unknown: var(--grey-400);
+  --color-unknown-text: var(--grey-600);
+  --color-unknown-tint: var(--grey-100);
+  --color-missing: var(--indigo-500);
+  --color-missing-text: var(--indigo-text);
+  --color-missing-tint: var(--indigo-50);
 }
