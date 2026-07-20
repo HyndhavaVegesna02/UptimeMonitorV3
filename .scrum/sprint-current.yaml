@@ -26,12 +26,20 @@ started: "2026-07-21T00:00:00+05:30"
 # clean 120-122 block to avoid collision with the frozen rewrite's 097-110.
 # Lock: this session took the lock from the prior codex-...ui-rewrite-codex holder (separate
 # branch/initiative) per PO direction to run this work here on the ui-prototype line.
-# NOT STARTED: PO approved + locked but asked to hold dispatch. No implementer dispatched yet.
-# Baseline gate: to be run green on branch HEAD before STORY-120 dispatch (next work session).
+# STARTED 2026-07-21 (PO: "start the sprint"). Baseline gate GREEN on HEAD 6a4db7c — all 8
+# commands exit 0 (pytest 529 passed, import-linter 8/8, ruff check+format, cfn-lint, npm
+# test 363 passed, npm build, npm lint). First baseline run showed 51 pytest ERRORS in
+# DB-gated tests: a stale `uptime_dynamo` container (Exited 255, 36h old) held port 8001 and
+# broke the session-scoped dynamo_local fixture; removed it and pytest went green (529). Empty
+# code diff since sprint cut 280cac2 (docs-only) + passes in isolation → transient, discounted
+# per agreement 2026-07-06. FOR RETRO: consider a preflight that reaps stale uptime_dynamo* containers.
+# Tooling: ui-ux-pro-max IS installed at .agents/skills/ui-ux-pro-max (not .claude/skills, whose
+# copy is stale bytecode) — invoke `python .agents/skills/ui-ux-pro-max/scripts/search.py`. PO
+# confirmed 2026-07-21. All five mandated skills available.
 stories:
   - id: STORY-120
     title: Design-system foundation + Phosphor icons
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer   # implementer -> spec || quality -> scoped DoD -> reality gate
   - id: STORY-121
