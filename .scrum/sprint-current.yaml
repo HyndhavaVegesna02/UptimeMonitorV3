@@ -1,67 +1,46 @@
 # YourTeam active sprint board
-sprint: 51
-status: done          # PO verdicts 2026-07-17: both stories ACCEPT; redeploy live stack approved;
-                      # sidebar-breakpoint finding filed as STORY-096 (draft). Velocity 4/4.
-mode: in-process      # PO-approved at lock (2026-07-17).
-goal: "Add the server-side limit cap to the history endpoint (STORY-094) and run the first thorough, orchestrator-driven Playwright verification of the live deployed dashboard (STORY-095)."
-branch: sprint-51
-start_tag: sprint-51-start
-start_commit: 1677b72
-started: "2026-07-17T04:30:00+05:30"
-# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive:
-# STORY-094 is a one-zone additive param on existing DTOs; STORY-095 writes no production
-# code (live-UI verification sweep). Skip + reason recorded in plan.md for PO visibility.
-# Baseline: full 8-command gate GREEN on main at 1677b72 (clean tree; first attempt refused
-# on dirty refinement records — committed, re-run).
-# Tooling note: Playwright MCP (.mcp.json) loads at session START only — this sprint drives
-# Playwright directly (headless Chromium via tools/ui-sweep/); MCP takes over next session.
+sprint: 59
+status: active
+mode: in-process      # PO-approved at lock (2026-07-21).
+goal: "Stand up the new greenfield frontend on the approved refimg-derived visual language: a documented design system + Phosphor icons (STORY-120), the re-skinned collapsible app shell (STORY-121), and the full Dashboard live on real backend data (STORY-122). One complete, demoable vertical slice = the approved prototype, running."
+branch: sprint-59
+start_tag: sprint-59-start
+start_commit: 280cac2
+started: "2026-07-21T00:00:00+05:30"
+# PO decisions (2026-07-21): greenfield-then-swap (rebuild frontend/src fresh, keep only build
+# toolchain; PO acceptance at review IS the swap); scope = design system + shell + Dashboard;
+# light-first with dark-ready tokens; collapsible desktop sidebar REQUIRED; animations are a
+# first-class deliverable (STORY-121 bumped 2->3 pts, gets reviewer pair). Reference = the
+# approved prototype (docs/scrum/sprints/2026-07-18-ui-prototyping/prototypes/refimg-dashboard.html)
+# — adapt with craft, not a rigid pixel spec.
+# NON-NEGOTIABLE: frontend only. No backend/config/infra/API/DynamoDB/pipeline edits. No new
+# Docker resources. New API client re-derived from the LIVE /api/v1 contracts (verified at the
+# reality gate); old types.ts read only as a contract reference.
+# Mandatory skills in every implementer + reviewer brief: ui-ux-pro-max, web-design-guidelines,
+# vercel-react-best-practices, emil-design-eng, design-system.
+# Icons: Phosphor (@phosphor-icons/react) behind an accessible Icon wrapper.
+# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive: UI
+# rendering against already-live /api/v1 contracts; no adapter/vendor path, no units/scale
+# logic; in-process. Per-story reality gate (live render-vs-wire) covers contract consumption.
+# Numbering: sprint 59 (52-58 were the rejected rewrite on abandoned branches); stories use a
+# clean 120-122 block to avoid collision with the frozen rewrite's 097-110.
+# Lock: this session took the lock from the prior codex-...ui-rewrite-codex holder (separate
+# branch/initiative) per PO direction to run this work here on the ui-prototype line.
+# NOT STARTED: PO approved + locked but asked to hold dispatch. No implementer dispatched yet.
+# Baseline gate: to be run green on branch HEAD before STORY-120 dispatch (next work session).
 stories:
-  - id: STORY-094
-    status: done          # all 4 AC; 2-pt story ⇒ implementer → scoped DoD gate → reality gate
-    commits: 6ab598c..7f352b8   # TDD cadence; scoped gate at 7f352b8 (pytest 529 / ruff x2 / npm lint all 0)
-    reality_gate:
-      ran: true
-      evidence: >-
-        Local-stack spot check on an ISOLATED DynamoDB Local (container uptime_dynamo_094
-        port 8009, API uvicorn port 8010, both torn down after): limit=2 -> exactly the 2
-        newest of 5 seeded rows (22:31:41, 22:21:41); no limit -> all 5 (unchanged full
-        window); limit=0 -> 422 greater_than_equal. Real-repository test
-        (test_history_limit_against_real_dynamo_repository) runs vs DynamoDB Local in the
-        suite. LIVE stack still runs the pre-fix image by design — live verification at
-        the post-acceptance redeploy (stated in plan; not ship-on-promise). Wiki blast
-        radius: api-five-file-convention.md, frontend-zone.md, sample-mode.md re-verified.
-    slug: history-limit-param
-    points: 2
-    order: 1           # the code change first; sweep is independent of it
-  - id: STORY-095
-    status: done          # all 5 AC PASS against the live deployed system; evidence committed
-    commits: 0e290ee..fbc42ac
-    reality_gate:
-      ran: true
-      evidence: >-
-        The story IS a live reality gate (real headless Chromium vs the deployed stack).
-        AC1: six tabs render via BOTH direct-URL deep load (CloudFront rewrite path) and
-        SPA nav — per-tab PNGs in sprints/2026-07-17-sprint-51/ui-sweep/. AC2: zero
-        console errors + zero failed /api/* across 20+ page loads (evidence JSONs empty).
-        AC3: sample-mode ON (banner + aria-checked + control-table enabled:true) then OFF
-        (verified both ways); maintenance window 'ui-sweep-probe' created via the form,
-        listed, deleted, gone after reload. AC4: light/dark (system-pref emulation + in-app
-        toggle) + 390x844 viewport. AC5: findings.md — empty error table, 3 anomalies
-        (2 EXPLAINED, 1 CANDIDATE-STORY: sidebar keeps desktop width below ~768px).
-        Live system confirmed left clean (SAMPLE_MODE enabled:false; 0 probe rows).
-    slug: playwright-ui-sweep
-    points: 2
-    order: 2           # live-stack sweep (read-mostly; mutations reversed)
-final_gate:
-  head: 3cdf09d
-  dod_evidence:   # full 8-command amended gate, all exit 0 at 2026-07-16T23:19-23:21Z on 3cdf09d
-    - {command: "pytest", exit_code: 0, output_tail: "529 passed in 40.71s", commit: 3cdf09d, at: "2026-07-16T23:19:31+00:00"}
-    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, output_tail: "Contracts: 8 kept, 0 broken.", commit: 3cdf09d, at: "2026-07-16T23:20:12+00:00"}
-    - {command: "ruff check .", exit_code: 0, output_tail: "All checks passed!", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "ruff format --check .", exit_code: 0, output_tail: "205 files already formatted", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, output_tail: "(exit 0, no findings)", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "npm test", exit_code: 0, output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)", commit: 3cdf09d, at: "2026-07-16T23:20:15+00:00"}
-    - {command: "npm run build", exit_code: 0, output_tail: "built", commit: 3cdf09d, at: "2026-07-16T23:20:51+00:00"}
-    - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 3cdf09d, at: "2026-07-16T23:20:56+00:00"}
-hotfixes: []
-interrupts: []
+  - id: STORY-120
+    title: Design-system foundation + Phosphor icons
+    status: todo
+    points: 3
+    ceremony: 3-pointer   # implementer -> spec || quality -> scoped DoD -> reality gate
+  - id: STORY-121
+    title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
+    status: todo
+    points: 3
+    ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
+  - id: STORY-122
+    title: Dashboard page on real backend data
+    status: todo
+    points: 3
+    ceremony: 3-pointer

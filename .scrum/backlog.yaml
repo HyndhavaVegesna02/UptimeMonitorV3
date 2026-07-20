@@ -3,7 +3,11 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 94   # 093 = sprint-49 review minors (container hardening, ECS health grace,
+next_story_id: 123  # 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
+                    # + Phosphor (120), collapsible app shell (121), Dashboard (122). Clean
+                    # 120-block chosen to avoid collision with the frozen ui-rewrite's 097-110
+                    # (abandoned branches, not on this line). 097-119 intentionally unused here.
+                    # 093 = sprint-49 review minors (container hardening, ECS health grace,
                     # test hygiene), filed at sprint-49 review as accept-with-follow-up.
                     # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
                     # AWS epic 082-091 was filed without bumping it); 092 = containerize both
@@ -925,3 +929,27 @@ stories:
     status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
     type: story
     sprint: null
+
+  # ── New-frontend initiative (from the approved refimg prototype) ──────────
+  # Greenfield rebuild on ui-prototype line. PO-approved + locked 2026-07-21 (sprint 59).
+  - id: STORY-120
+    title: Design-system foundation + Phosphor icons
+    file: docs/scrum/stories/STORY-120-design-system-foundation.md
+    status: ready
+    points: 3
+    type: story
+    sprint: 59
+  - id: STORY-121
+    title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
+    file: docs/scrum/stories/STORY-121-app-shell-reskin.md
+    status: ready   # bumped 2->3 pts at lock: PO added collapsible desktop sidebar + first-class animations (2026-07-21).
+    points: 3
+    type: story
+    sprint: 59
+  - id: STORY-122
+    title: Dashboard page on real backend data
+    file: docs/scrum/stories/STORY-122-dashboard-page.md
+    status: ready
+    points: 3
+    type: story
+    sprint: 59
