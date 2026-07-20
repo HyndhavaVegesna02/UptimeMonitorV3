@@ -75,7 +75,7 @@ Everything downstream depends on it; build and validate it first.
       dark-ready structure. Token contrast test (WCAG-AA) green.
 - [x] Step 3: type scale (Inter), spacing (8px), radius/shadow, motion tokens (emil curves) +
       `prefers-reduced-motion` plumbing.
-- [ ] Step 4: `Icon` wrapper (Phosphor) + core primitives re-derived fresh: Button,
+- [x] Step 4: `Icon` wrapper (Phosphor) + core primitives re-derived fresh: Button,
       Card/Panel, StatusBadge/health chip, KPI/SummaryCard, Sparkline, Loading/Error/Empty.
       Each with hover/active/focus-visible states per emil + web-guidelines.
 - [ ] Step 5: `/styleguide` gallery renders all primitives × states; tests per primitive.
