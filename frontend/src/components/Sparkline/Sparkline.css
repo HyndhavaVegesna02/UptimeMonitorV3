@@ -15,19 +15,22 @@
   stroke: var(--color-down);
 }
 
-/* One-shot entrance draw — never replays on data refresh (no keyframe
+/* One-shot entrance fade — never replays on data refresh (no keyframe
    re-trigger on re-render since the animation runs once on mount). Guarded
-   by prefers-reduced-motion; animates stroke-dashoffset only. */
+   by prefers-reduced-motion; animates ONLY opacity + transform (AC5 is
+   unqualified — no other CSS property is allowed to animate, however
+   cheap to paint). */
 @media (prefers-reduced-motion: no-preference) {
-  .sparkline__line {
-    stroke-dasharray: 260;
-    stroke-dashoffset: 260;
-    animation: sparkline-draw 700ms var(--ease-out) 80ms forwards;
+  .sparkline {
+    opacity: 0;
+    transform: translateY(4px);
+    animation: sparkline-rise 320ms var(--ease-out) 40ms forwards;
   }
 
-  @keyframes sparkline-draw {
+  @keyframes sparkline-rise {
     to {
-      stroke-dashoffset: 0;
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 }

@@ -20,8 +20,9 @@ const PADDING = 2
  * Minimal inline-SVG trend line (STORY-120 AC5) — a small, purely
  * decorative visual next to a KPI number; the number + delta pill already
  * carry the accessible meaning, so the sparkline itself is `aria-hidden`.
- * The one-shot entrance draw (stroke-dashoffset) is `prefers-reduced-motion`
- * guarded (Sparkline.css) — no animation on data refresh.
+ * The one-shot entrance fade (opacity + a small translateY, `transform`/
+ * `opacity` only per AC5) is `prefers-reduced-motion` guarded
+ * (Sparkline.css) — no animation on data refresh.
  */
 export function Sparkline({
   data,

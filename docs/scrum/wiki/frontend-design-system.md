@@ -94,9 +94,10 @@ not copied pixel-for-pixel.
   directly from `tokens.css`, so a future edit can't silently drift off the agreed values.
 - `frontend/src/styles/global.css` carries the shared `.stagger` entrance utility (opacity +
   translateY rise, staggered per child) and every primitive's own motion (below) — ALL guarded by
-  `@media (prefers-reduced-motion: no-preference)`, animating only `transform`/`opacity`
-  (`stroke-dashoffset` for the Sparkline draw-in, which is a paint-only SVG property with no
-  layout cost). No rule anywhere uses `transition: all`.
+  `@media (prefers-reduced-motion: no-preference)`, animating ONLY `transform`/`opacity` — AC5 is
+  unqualified, so even a paint-only SVG property (e.g. `stroke-dashoffset`) is disallowed; the
+  Sparkline's entrance (below) is an opacity + small `translateY` fade, not a stroke draw. No rule
+  anywhere uses `transition: all`.
 
 ### Icon wrapper (`frontend/src/components/Icon/Icon.tsx`, AC1)
 - Thin wrapper around a caller-supplied Phosphor icon COMPONENT (`icon: PhosphorIcon` — e.g.
@@ -134,9 +135,10 @@ not copied pixel-for-pixel.
 - **Sparkline** (`Sparkline.tsx`): minimal inline-SVG trend line, `aria-hidden` by DEFAULT (the KPI
   number + delta already carry the meaning). Normalizes `data: number[]` to a 0–1 range per point;
   a FLAT series (`min === max`) draws a level mid-height line instead of dividing by zero; an empty
-  array renders the `<svg>` with no `<polyline>` (no crash). One-shot `stroke-dashoffset` draw-in
-  on mount, `prefers-reduced-motion` guarded — never replays on data refresh (no periodic-refresh
-  animation, per the ui-ux-pro-max chart-domain rule this sprint's plan calls out for STORY-122).
+  array renders the `<svg>` with no `<polyline>` (no crash). One-shot entrance fade (`opacity` +
+  a small `translateY`, `transform`/`opacity` only per AC5) on mount, `prefers-reduced-motion`
+  guarded — never replays on data refresh (no periodic-refresh animation, per the ui-ux-pro-max
+  chart-domain rule this sprint's plan calls out for STORY-122).
 - **LoadingState** (`LoadingState.tsx`): `role="status"` + a visible label (default `"Loading…"`);
   the spinner is `aria-hidden`, rotates via `transform: rotate()`, linear easing (constant motion,
   per the emil decision framework), reduced-motion guarded.

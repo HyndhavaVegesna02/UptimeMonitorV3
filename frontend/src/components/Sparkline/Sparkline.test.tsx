@@ -43,8 +43,12 @@ describe('Sparkline', () => {
     expect(container.querySelector('svg')).toHaveClass('sparkline--positive')
   })
 
-  it('the entrance draw animation is guarded by prefers-reduced-motion and animates stroke-dashoffset only', () => {
+  it('the entrance animation is guarded by prefers-reduced-motion and animates only transform/opacity (AC5)', () => {
     expect(sparklineCss).toMatch(/@media \(prefers-reduced-motion: no-preference\)/)
-    expect(sparklineCss).toMatch(/stroke-dashoffset/)
+    expect(sparklineCss).toMatch(/opacity/)
+    // AC5 is explicit and unqualified: motion animates ONLY transform/opacity —
+    // stroke-dashoffset (however paint-only) is not one of those two properties.
+    expect(sparklineCss).not.toMatch(/stroke-dashoffset/)
+    expect(sparklineCss).not.toMatch(/stroke-dasharray/)
   })
 })
