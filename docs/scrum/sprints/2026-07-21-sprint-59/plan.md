@@ -73,7 +73,7 @@ Everything downstream depends on it; build and validate it first.
 - [x] Step 2: three-layer tokens (`tokens.css`) from the derived system — cool-grey canvas,
       single sky-blue accent, health palette, contrast-safe text tokens; light theme +
       dark-ready structure. Token contrast test (WCAG-AA) green.
-- [ ] Step 3: type scale (Inter), spacing (8px), radius/shadow, motion tokens (emil curves) +
+- [x] Step 3: type scale (Inter), spacing (8px), radius/shadow, motion tokens (emil curves) +
       `prefers-reduced-motion` plumbing.
 - [ ] Step 4: `Icon` wrapper (Phosphor) + core primitives re-derived fresh: Button,
       Card/Panel, StatusBadge/health chip, KPI/SummaryCard, Sparkline, Loading/Error/Empty.

@@ -67,10 +67,61 @@
   --indigo-text: #33499e;
 
   /* Type family — self-hosted Inter (@fontsource/inter, imported in
-     global.css). Full type SCALE (sizes/weights/line-heights) lands in
-     step 3; the family alone is needed by global.css from step 1. */
+     global.css). */
   --font-family-base: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
     Roboto, Helvetica, Arial, sans-serif;
+
+  /* Type scale — matches the prototype's compact, airy hierarchy. */
+  --font-size-xs: 11px;
+  --font-size-sm: 12px;
+  --font-size-base: 13.5px;
+  --font-size-md: 14px;
+  --font-size-lg: 15px;
+  --font-size-xl: 18px;
+  --font-size-2xl: 22px;
+  --font-size-3xl: 30px;
+
+  --line-height-tight: 1.2;
+  --line-height-base: 1.45;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Spacing — 8px base unit (4px half-step for tight/inline gaps). */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Radius */
+  --radius-card: 16px;
+  --radius-ctrl: 10px;
+  --radius-chip: 8px;
+  --radius-pill: 999px;
+
+  /* Shadow — two-layer, whisper-soft; a stronger "lift" for hover. */
+  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.05);
+  --shadow-lift: 0 4px 12px rgba(16, 24, 40, 0.08), 0 2px 4px rgba(16, 24, 40, 0.05);
+  --shadow-pop: 0 12px 32px rgba(16, 24, 40, 0.14);
+
+  /* Motion (emil-design-eng) — custom "strong" easing curves, never a
+     built-in CSS easing; short UI durations (AC4: <=200ms for standard
+     press/control transitions; the drawer/sheet curve+duration are for
+     STORY-121's collapsible sidebar + mobile sheet). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+  --duration-press: 140ms;
+  --duration-control: 180ms;
+  --duration-drawer: 220ms;
 }
 
 /* ---------------------------------------------------------------- */
@@ -132,4 +183,18 @@
   --color-missing: var(--indigo-500);
   --color-missing-text: var(--indigo-text);
   --color-missing-tint: var(--indigo-50);
+}
+
+/* ---------------------------------------------------------------- */
+/* COMPONENT LAYER — narrow, named after the part that consumes them; */
+/* point only at semantic tokens, never back at a primitive directly. */
+/* ---------------------------------------------------------------- */
+:root {
+  --button-radius: var(--radius-pill);
+  --button-height: 36px;
+  --panel-radius: var(--radius-card);
+  --panel-shadow: var(--shadow-card);
+  --panel-shadow-hover: var(--shadow-lift);
+  --badge-radius: var(--radius-pill);
+  --kpi-chip-radius: var(--radius-chip);
 }
