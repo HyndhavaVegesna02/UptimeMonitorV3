@@ -78,7 +78,7 @@ Everything downstream depends on it; build and validate it first.
 - [x] Step 4: `Icon` wrapper (Phosphor) + core primitives re-derived fresh: Button,
       Card/Panel, StatusBadge/health chip, KPI/SummaryCard, Sparkline, Loading/Error/Empty.
       Each with hover/active/focus-visible states per emil + web-guidelines.
-- [ ] Step 5: `/styleguide` gallery renders all primitives × states; tests per primitive.
+- [x] Step 5: `/styleguide` gallery renders all primitives × states; tests per primitive.
 - [ ] Step 6: `frontend-design-system.md` wiki article (code_refs + verified_sha).
 - [ ] Scoped DoD (`--only npm`); reviews spec ∥ quality (3-pointer).
 
