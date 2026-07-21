@@ -60,8 +60,8 @@ export function ResponseTimeChart({ observations, windowLabel }: ResponseTimeCha
       </svg>
       {chart.spike ? (
         <div className="response-time-chart__legend">
-          <span className="response-time-chart__legend-item response-time-chart__legend-item--median">
-            Median response
+          <span className="response-time-chart__legend-item response-time-chart__legend-item--series">
+            Response time
           </span>
           <span className="response-time-chart__legend-item response-time-chart__legend-item--spike">
             Spike at {locationLabel(chart.spike.location)} · {chart.spike.latencyMs.toLocaleString('en-US')}

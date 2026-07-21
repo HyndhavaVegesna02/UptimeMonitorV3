@@ -36,6 +36,15 @@ describe('ResponseTimeChart', () => {
     expect(within(legend as HTMLElement).getByText(/0047/)).toBeInTheDocument()
   })
 
+  it('labels the primary series truthfully — "Response time" (per-check latency), NEVER "Median" (no median is computed or plotted)', () => {
+    const { container } = render(<ResponseTimeChart observations={OBSERVATIONS} windowLabel="last 24 hours" />)
+    const legend = container.querySelector('.response-time-chart__legend')!
+    expect(within(legend as HTMLElement).getByText('Response time')).toBeInTheDocument()
+    expect(within(legend as HTMLElement).queryByText(/Median/)).toBeNull()
+    expect(container.querySelector('.response-time-chart__legend-item--series')).not.toBeNull()
+    expect(container.querySelector('.response-time-chart__legend-item--median')).toBeNull()
+  })
+
   it('renders an EmptyState when there is no history for the window', () => {
     render(<ResponseTimeChart observations={[]} windowLabel="last 24 hours" />)
     expect(screen.queryByRole('img')).toBeNull()

@@ -65,7 +65,7 @@
   flex-shrink: 0;
 }
 
-.response-time-chart__legend-item--median::before {
+.response-time-chart__legend-item--series::before {
   background: var(--color-accent);
 }
 
