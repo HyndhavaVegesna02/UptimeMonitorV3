@@ -3,7 +3,8 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 134  # 129-133 = sprint-60 (2026-07-21): the 5 remaining new-frontend tabs
+next_story_id: 135  # 134 = STORY-129 quality-review minor (sprint-60).
+                    # 129-133 = sprint-60 (2026-07-21): the 5 remaining new-frontend tabs
                     # (129 Availability, 130 Check History, 131 Approvals, 132 Maintenance,
                     # 133 Publications) — external mode, branched from the sprint-59 tip.
                     # 123-124 STORY-120 review; 125-126 STORY-121 review; 127-128 STORY-122 reality gate (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
@@ -1039,3 +1040,8 @@ stories:
     priority: 19
     type: feature
     sprint: 60
+  - id: STORY-134
+    title: Harden the Availability AC5 independence test (deterministic deferred, not a fixed delay) + map a few px spacing literals to tokens
+    status: draft   # STORY-129 quality-review minors (sprint-60, 2026-07-22): the AC5 per-component-independence test uses delay(200) and false-FAILED once under extreme host load (never false-passes — still genuinely guards independence); reviewer's fix = gate the slow MSW handler on a manually-resolved deferred the test resolves only after asserting the fast panel rendered. Also a few raw px spacing literals (ComponentAvailabilityCard.css, WindowToggle.css) could map to space tokens (not colour → not a convention violation). Needs refinement + estimate.
+    type: chore
+    sprint: null

@@ -43,10 +43,27 @@ started: "2026-07-22T00:00:00+05:30"
 stories:
   - id: STORY-129
     title: Availability page — two-grain (rollup + per-signal drill-down), window toggle
-    status: todo
+    status: done
     points: 5
     ceremony: 3-pointer   # in-process: implementer → spec ∥ quality → DoD gate → reality gate
     order: 1
+    reviews:
+      spec: "PASS — all 7 AC MET with genuine AC-to-test traces (×100 scaling + null→'No data' explicitly tested; AC5 independence proven with a delayed MSW fetch; window toggle asserts trailing-Z bounds). 454 tests."
+      quality: "APPROVE — 0 critical / 0 major. Truthful rendering (rollup distinct_locations=0 quirk rendered honestly, signal child=2); fixtures byte-match the plan's live samples; no tests-that-lie. 3 minors → STORY-134 (flaky delay-based AC5 test hardening; a few px spacing literals)."
+    reality_gate: "PASS (live stack, scripted Chromium). Rollup availability 100.00% + completeness 17.71% (fraction×100 exact vs GET /availability/component/http-check), 126/126 verdicts, 0 down, 594 gap, Locations 0 (rollup quirk honest); drill-down reveals real http-check signal with Locations 2; 7d toggle refetches; exactly one h1; no horizontal scroll @390+1440; zero console errors/warnings. My Vite (5174) torn down + port freed; user's 5173 dev server left up."
+    dod_evidence:   # scoped --only npm at HEAD 2280f67
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  59 passed (59) | Tests  454 passed (454)"
+        commit: 2280f67
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 335.13 kB / gzip 100.22 kB)"
+        commit: 2280f67
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 2280f67
   - id: STORY-130
     title: Check History page — multi-signal merge, filter toolbar, dense grid
     status: todo
