@@ -66,10 +66,27 @@ stories:
         commit: 2280f67
   - id: STORY-130
     title: Check History page — multi-signal merge, filter toolbar, dense grid
-    status: todo
+    status: done
     points: 3
-    ceremony: 3-pointer
+    ceremony: 3-pointer   # in-process: implementer → spec ∥ quality → DoD gate → reality gate
     order: 2
+    reviews:
+      spec: "PASS — all 7 AC MET with genuine AC-to-test traces. Interleave (not concat) proven: mergeHistoryRows test asserts an order a naive concat would fail; dedicated toObservationHealth mapper pinned distinct from statusMapping (asserts 'up'!='unknown'); window-empty vs filtered-empty are two distinct branches both asserted; window toggle sends Z-suffixed since/until with a 7-day delta + proves a second network round-trip; render cap injected (renderCap:3 over 8 rows → 'showing latest 3 of 8'). 525 tests."
+      quality: "APPROVE — 0 critical / 0 major. No raw hex (tokens only); WindowToggle/computeWindowRange reused from features/availability (not duplicated); tests genuine per tests-that-lie taxonomy; stable-fetcher discipline correct (no refetch loop). 3 minors → STORY-134 (redundant effect dep; a tbody hover-transition divergence; the merged-row-key note — which the reality gate then PROVED real, see below)."
+    reality_gate: "PASS after a caught-and-fixed BLOCKING defect (live stack, scripted Chromium). FIRST pass FAILED: the merged-row key (signal_key+observed_at+location) is NOT unique on the real wire — live /history contains duplicate (signal_key,observed_at,location) triples (e.g. two rows at 2026-07-21T20:24:41.129Z/…0060), producing 4+ React 'same key' console errors AND visibly corrupted rendering (Location=…0047 filter showed 166×…0047 + 2×…0060 = 168 vs live 164, i.e. React 'duplicated and/or omitted'). Fixed on sprint-60 (ebd413f/7db995f/1d447d7: key by final sorted position + a regression test that reproduces the exact live React error pre-fix). RE-VERIFIED clean: 0 console errors (fresh load + after all filter/window interactions); 329 rows == live 24h count; first row 'Jul 21, 21:33:41 · http · HTTP Check · …0047 · Up · 200 · 274 ms' exact vs GET /history newest; Location=…0047 → exactly 164 rows all …0047; Result=Down → filtered-empty distinct state (window-empty absent); 7d toggle refetched with since=2026-07-14…Z/until=2026-07-21…Z (7-day UTC-Z); exactly one h1; wide grid scrolls in its own div.history-grid__scroll; no horizontal body scroll @390 (doc 375) + @1440. NOTE for retro: the quality reviewer dismissed this exact collision as 'not realistic on the wire' — the reality gate proved it IS. Textbook internal-consistency≠reality catch."
+    dod_evidence:   # scoped --only npm at HEAD 1d447d7 (post reality-gate fix)
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  68 passed (68) | Tests  525 passed (525)"
+        commit: 1d447d7
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 341.14 kB / gzip 101.67 kB)"
+        commit: 1d447d7
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 1d447d7
   - id: STORY-131
     title: Approvals page — pending proposals + approve/reject confirm flow (first mutating page)
     status: todo
