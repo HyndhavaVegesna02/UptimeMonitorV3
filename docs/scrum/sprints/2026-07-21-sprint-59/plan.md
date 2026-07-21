@@ -100,7 +100,7 @@ first-class motion, 2026-07-21) → gets the spec ∥ quality reviewer pair.
 
 ### 3. STORY-122 — Dashboard page on real data (3 pts)
 Highest-value page; exercises the most primitives → validates the system end-to-end.
-- [ ] Step 1: fresh API client methods for the endpoints the page needs (components, history,
+- [x] Step 1: fresh API client methods for the endpoints the page needs (components, history,
       approvals, maintenance, sample-mode), typed from the live contracts.
 - [ ] Step 2: KPI row (availability, avg latency, components healthy, pending approvals) with
       inline SVG sparklines; derived, not invented.
