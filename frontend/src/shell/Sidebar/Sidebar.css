@@ -27,6 +27,15 @@
     width: var(--shell-sidebar-rail-width);
     flex-basis: var(--shell-sidebar-rail-width);
   }
+
+  /* Matches `.shell-sidebar--collapsed` above — set by index.html's
+     pre-paint inline script (STORY-121 AC5) on `<html>` BEFORE React mounts,
+     so a persisted collapsed choice has no flash of the expanded width even
+     in the brief window before hydration. */
+  html.sidebar-collapsed-preload .shell-sidebar {
+    width: var(--shell-sidebar-rail-width);
+    flex-basis: var(--shell-sidebar-rail-width);
+  }
 }
 
 .shell-sidebar__toggle {

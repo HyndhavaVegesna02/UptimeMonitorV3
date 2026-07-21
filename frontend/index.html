@@ -8,6 +8,23 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      // Pre-paint sidebar-collapse read (STORY-121 AC5): runs synchronously,
+      // before React mounts, so the very first paint already reflects a
+      // persisted "collapsed" choice — no flash of the wrong (expanded)
+      // state. `useSidebarCollapse`'s lazy `useState` initializer reads the
+      // same localStorage key once React does mount, so the two always
+      // agree; this script only covers the gap before that.
+      (function () {
+        try {
+          if (window.localStorage.getItem('uptime-monitor:sidebar-collapsed') === 'true') {
+            document.documentElement.classList.add('sidebar-collapsed-preload')
+          }
+        } catch (e) {
+          // Storage disabled (e.g. private browsing) — default to expanded.
+        }
+      })()
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
