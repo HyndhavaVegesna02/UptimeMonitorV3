@@ -95,6 +95,6 @@ stories:
     ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
   - id: STORY-122
     title: Dashboard page on real backend data
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
