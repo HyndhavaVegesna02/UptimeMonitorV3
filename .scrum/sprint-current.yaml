@@ -1,6 +1,13 @@
 # YourTeam active sprint board
 sprint: 59
-status: active
+status: ready-for-review   # all 3 stories done; wiki compiled; full gate green on final HEAD. Awaiting PO accept/reject.
+# SPRINT-CLOSE full 8-command gate — evidence of record, final HEAD 1760067 (2026-07-21), DYNAMO_ENDPOINT_URL unset:
+#   [1] pytest -> PASS (529 passed in 306s)
+#   [2] import-linter -> PASS (8 contracts kept, 0 broken)
+#   [3] ruff check -> PASS   [4] ruff format --check -> PASS   [5] cfn-lint infra/stack.yaml -> PASS
+#   [6] npm test -> PASS (403 passed, 53 files)   [7] npm run build -> PASS   [8] npm run lint -> PASS
+# Wiki compile pass CLEAN (sweep/facts/links/integrity); frontend-zone.md archived+rewritten,
+# sample-mode.md frontend section rehabbed, both re-verified to sprint-59. NOT merged to main.
 mode: in-process      # PO-approved at lock (2026-07-21).
 goal: "Stand up the new greenfield frontend on the approved refimg-derived visual language: a documented design system + Phosphor icons (STORY-120), the re-skinned collapsible app shell (STORY-121), and the full Dashboard live on real backend data (STORY-122). One complete, demoable vertical slice = the approved prototype, running."
 branch: sprint-59
