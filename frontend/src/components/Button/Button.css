@@ -37,7 +37,7 @@
 /* Primary — solid accent fill, the one high-emphasis action per surface. */
 .button--primary {
   background: var(--color-accent);
-  color: var(--white);
+  color: var(--color-on-accent);
   border-color: var(--color-accent);
 }
 
@@ -54,7 +54,7 @@
 }
 
 .button--secondary:hover:not(:disabled) {
-  border-color: var(--sky-200);
+  border-color: var(--color-accent-border);
   color: var(--color-accent-text);
   background: var(--color-accent-tint);
 }

@@ -25,6 +25,10 @@
   --grey-50: #f7f8fa;
   --grey-100: #f1f2f4;
   --grey-150: #e9ebee;
+  /* sits between grey-150/grey-200 — the prototype's canvas backdrop, not a
+     general-purpose ramp step, so it is named for what it is rather than
+     slotted into the numeric sequence. */
+  --grey-canvas: #e6e8ec;
   --grey-200: #e3e6ea;
   --grey-300: #d3d7dd;
   --grey-400: #9ba1ac;
@@ -133,7 +137,7 @@
 [data-theme='light'] {
   color-scheme: light;
 
-  --color-canvas: #e6e8ec;
+  --color-canvas: var(--grey-canvas);
   --color-app: var(--white);
   --color-surface: var(--white);
   --color-surface-subtle: var(--grey-50);
@@ -149,6 +153,16 @@
   --color-accent-strong: var(--sky-600);
   --color-accent-text: var(--sky-text);
   --color-accent-tint: var(--sky-50);
+  /* A soft accent-tinted border — hover states and "needs attention"
+     surfaces (secondary-button hover, the attention SummaryCard/chip). */
+  --color-accent-border: var(--sky-200);
+  /* Text/icon color placed ON TOP OF a solid accent fill (e.g. the primary
+     button's label) — distinct from --color-text, which is for ink on a
+     neutral surface. */
+  --color-on-accent: var(--white);
+  /* Neutral icon-chip background (SummaryCard's kpi-chip) — distinct from
+     --color-surface-subtle (grey-50), one step darker for a filled chip. */
+  --color-chip-surface: var(--grey-100);
 
   --color-pos: var(--green-500);
   --color-pos-text: var(--green-text);

@@ -34,7 +34,7 @@ a.summary-card:focus-visible {
 }
 
 .summary-card--attention {
-  border-color: var(--sky-200);
+  border-color: var(--color-accent-border);
   background: linear-gradient(180deg, var(--color-accent-tint), var(--color-surface) 60%);
 }
 
@@ -50,14 +50,14 @@ a.summary-card:focus-visible {
   border-radius: var(--kpi-chip-radius);
   display: grid;
   place-items: center;
-  background: var(--grey-100);
+  background: var(--color-chip-surface);
   color: var(--color-text-secondary);
 }
 
 .summary-card--attention .summary-card__chip {
   background: var(--color-surface);
   color: var(--color-accent-text);
-  border: 1px solid var(--sky-200);
+  border: 1px solid var(--color-accent-border);
 }
 
 .summary-card__delta {
