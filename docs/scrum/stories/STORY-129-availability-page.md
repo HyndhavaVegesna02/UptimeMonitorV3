@@ -48,3 +48,23 @@ Local stack up. Scripted Chromium: rollup availability % + completeness % + verd
 `http-check` signal child; window toggle refetches with ISO-Z bounds; **first paint is not blocked
 by the slow availability fetch** (frame + loading visible immediately, observed live). 390px + 1440px,
 zero console errors, no horizontal scroll.
+
+## History
+- 2026-07-22: implemented on `sprint-60`. Extended the API client
+  (`frontend/src/api/{client,types}.ts`) with `getTopology()` +
+  `getComponentAvailability(componentId, {since, until})` and the four new DTOs, following the
+  existing `getJson`/`ApiError` patterns; added MSW fixtures/handlers derived from the plan's
+  live-captured samples (`frontend/src/mocks/handlers/topology.ts`, extended `availability.ts`).
+  Built a fresh design (not the old tab layout, per PO directive): a per-component rollup table
+  (`frontend/src/features/availability/ComponentAvailabilityCard.tsx`) with a keyboard-operable
+  `aria-expanded`/`aria-controls` per-signal drill-down (two `<tbody>`s, the second `hidden`
+  while collapsed), a 24h/7d/30d `WindowToggle` (`role="group"`/`aria-pressed`), and pure
+  derivation helpers (`windowRange.ts`, `format.ts`, `joinSignalAvailability.ts`) each with their
+  own unit tests. Each component's availability fetch is independent (its own `useFetch` inside
+  its own `ComponentAvailabilityCard` instance, never a shared `Promise.all`) — verified with an
+  MSW-delayed "slow" component test proving a fast region renders while a slow one is still
+  loading (STORY-122/127 first-paint lesson, AC5). **Deleted the `AvailabilityPage` placeholder**
+  (`PlaceholderPage` usage) — replaced by the real page at
+  `frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx`; `PlaceholderPage` itself is kept
+  (still used by the four not-yet-built tabs). All three frontend DoD gates
+  (`npm test`/`npm run build`/`npm run lint`) green on a clean tree.
