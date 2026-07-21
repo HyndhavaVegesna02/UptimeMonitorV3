@@ -149,6 +149,11 @@
   --color-text-secondary: var(--grey-600);
   --color-text-muted: var(--grey-500);
 
+  /* Dark "inverted" overlay surface — the rail's hover tooltip (STORY-121
+     AC5) is the one place in the light theme that intentionally inverts. */
+  --color-overlay-surface: var(--grey-900);
+  --color-overlay-text: var(--white);
+
   --color-accent: var(--sky-500);
   --color-accent-strong: var(--sky-600);
   --color-accent-text: var(--sky-text);

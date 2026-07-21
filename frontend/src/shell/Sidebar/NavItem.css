@@ -1,0 +1,111 @@
+.nav-item {
+  position: relative;
+  display: block;
+}
+
+.nav-item__link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-ctrl);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  transition:
+    background var(--duration-control) var(--ease-out),
+    color var(--duration-control) var(--ease-out);
+}
+
+.nav-item__link:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-text);
+}
+
+.nav-item__link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.nav-item__link--active {
+  background: var(--color-accent-tint);
+  color: var(--color-accent-text);
+}
+
+.nav-item__icon {
+  flex: 0 0 auto;
+}
+
+.nav-item__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition:
+    opacity var(--duration-control) var(--ease-out),
+    transform var(--duration-control) var(--ease-out);
+}
+
+.nav-item__badge {
+  margin-left: auto;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Rail (collapsed desktop) mode — icon-only; the label collapses out via
+   opacity+translate rather than `display:none` so it participates in the
+   width transition instead of popping (STORY-121 AC7: transform/opacity only). */
+.nav-item--rail .nav-item__link {
+  justify-content: center;
+}
+
+.nav-item--rail .nav-item__label,
+.nav-item--rail .nav-item__badge {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .nav-item__tooltip {
+    transition:
+      transform 125ms var(--ease-out),
+      opacity 125ms var(--ease-out);
+  }
+}
+
+.nav-item__tooltip {
+  position: absolute;
+  left: calc(100% + var(--space-2));
+  top: 50%;
+  transform: translateY(-50%) scale(1);
+  opacity: 1;
+  z-index: 20;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-chip);
+  background: var(--color-overlay-surface);
+  color: var(--color-overlay-text);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  box-shadow: var(--shadow-pop);
+  pointer-events: none;
+}
+
+/* Subsequent tooltips in a "warm" group skip the entrance animation
+   entirely (emil-design-eng: "skip animation on subsequent tooltips"). */
+.nav-item__tooltip--instant {
+  transition-duration: 0ms;
+}
