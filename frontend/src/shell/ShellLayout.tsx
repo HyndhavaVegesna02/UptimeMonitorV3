@@ -1,4 +1,4 @@
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { getApprovals, getComponents } from '../api/client'
 import { deriveOverallStatus } from '../lib/overallStatus'
@@ -38,7 +38,22 @@ export function ShellLayout() {
   const approvalsCount =
     approvalsFetch.state.phase === 'success' ? approvalsFetch.state.data.length : 0
   const overallStatus = deriveOverallStatus(components)
-  const lastUpdated = componentsFetch.state.phase === 'success' ? new Date() : null
+
+  // Quality-review fix: captured ONCE, at the moment the components fetch
+  // actually succeeds — not `new Date()` read fresh on every render (which
+  // made the topbar's last-updated indicator always read "just now", no
+  // matter how much real time had actually passed since the last load).
+  // The effect's dependency is the fetch's own state object, which only
+  // gets a new reference when its phase transitions (e.g. loading ->
+  // success on the initial load or a future retry) — an unrelated
+  // re-render (collapse toggle, approvals fetch settling, route change)
+  // does not re-run it.
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  useEffect(() => {
+    if (componentsFetch.state.phase === 'success') {
+      setLastUpdated(new Date())
+    }
+  }, [componentsFetch.state])
 
   const pageTitle = getTabByPath(location.pathname)?.label ?? 'Dashboard'
 

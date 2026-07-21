@@ -1,7 +1,7 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_PROPOSALS } from '../mocks/handlers/approvals'
 import { AppRoutes } from '../routes'
@@ -70,6 +70,35 @@ describe('ShellLayout', () => {
     renderAt('/dashboard')
     const pinned = await screen.findByRole('navigation', { name: 'Pinned' })
     expect(within(pinned).getByRole('link', { name: new RegExp(FIXTURE_COMPONENTS[0].name) })).toBeInTheDocument()
+  })
+
+  describe('last-updated indicator (quality review fix — captured at fetch success, not every render)', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('stays fixed at the fetch-completion time across an unrelated re-render, instead of reading "just now" forever', async () => {
+      renderAt('/dashboard')
+
+      // Real timers: let the initial GET /api/v1/components resolve.
+      await screen.findByText('Updated just now')
+
+      // Freeze/advance the clock 5 minutes forward for everything AFTER
+      // this point — no fetch is in flight, so nothing needs a fake timer
+      // to be manually advanced. `fireEvent` (not `userEvent`) is
+      // synchronous and schedules no timers of its own, so it's safe to
+      // use once fake timers are active.
+      vi.useFakeTimers({ now: Date.now() + 5 * 60_000 })
+
+      // An UNRELATED re-render (the desktop collapse toggle) must not reset
+      // lastUpdated back to "now" a second time.
+      const toggle = screen.getByRole('button', { name: /collapse sidebar/i })
+      act(() => {
+        fireEvent.click(toggle)
+      })
+
+      expect(screen.getByText('Updated 5m ago')).toBeInTheDocument()
+    })
   })
 
   describe('desktop collapse toggle (AC5)', () => {
