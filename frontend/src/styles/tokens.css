@@ -202,6 +202,11 @@
   --color-missing: var(--indigo-500);
   --color-missing-text: var(--indigo-text);
   --color-missing-tint: var(--indigo-50);
+
+  /* Modal/sheet backdrop scrim (STORY-121 AC6 — the mobile sidebar sheet).
+     A translucent overlay, not a swatch, so it lives here rather than in the
+     primitive palette above; grey-900 at 55% is the same ink as --color-text. */
+  --color-backdrop: rgba(23, 25, 30, 0.55);
 }
 
 /* ---------------------------------------------------------------- */
@@ -216,4 +221,11 @@
   --panel-shadow-hover: var(--shadow-lift);
   --badge-radius: var(--radius-pill);
   --kpi-chip-radius: var(--radius-chip);
+
+  /* Shell (STORY-121) — the breakpoint itself (860/861px) is not usable
+     inside a CSS custom property (media queries can't reference a var), so
+     it is a literal in each `@media` rule, not a token here. */
+  --shell-sidebar-width: 240px;
+  --shell-sidebar-rail-width: 64px;
+  --shell-topbar-height: 56px;
 }
