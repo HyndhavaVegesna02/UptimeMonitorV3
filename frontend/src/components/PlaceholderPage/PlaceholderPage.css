@@ -1,0 +1,10 @@
+.placeholder-page__description {
+  color: var(--color-text-secondary);
+  margin: 0 0 var(--space-2);
+}
+
+.placeholder-page__note {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
