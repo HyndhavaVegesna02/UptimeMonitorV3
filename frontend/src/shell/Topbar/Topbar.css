@@ -1,0 +1,71 @@
+.shell-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  height: var(--shell-topbar-height);
+  padding: 0 var(--space-5);
+  background: var(--color-app);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.shell-topbar__leading,
+.shell-topbar__trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.shell-topbar__title {
+  font-size: var(--font-size-xl);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-topbar__last-updated {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.shell-topbar__maintenance {
+  gap: var(--space-1);
+  white-space: nowrap;
+}
+
+.shell-topbar__mobile-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-ctrl);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+}
+
+.shell-topbar__mobile-toggle:hover {
+  background: var(--color-surface-hover);
+}
+
+.shell-topbar__mobile-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 860px) {
+  .shell-topbar__mobile-toggle {
+    display: inline-flex;
+  }
+
+  .shell-topbar__last-updated {
+    display: none;
+  }
+}
