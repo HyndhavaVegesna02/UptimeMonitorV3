@@ -1,7 +1,7 @@
-import { PlaceholderPage } from '../../components/PlaceholderPage/PlaceholderPage'
+import { HistoryView } from '../../features/history/HistoryView'
 
-/** STORY-121: placeholder. A later story fills this in with the raw
- * per-signal check observation ledger. */
+/** STORY-130: Check History page — multi-signal merge, filter toolbar, dense grid */
 export function HistoryPage() {
-  return <PlaceholderPage description="The raw check-observation ledger, newest first." />
+  return <HistoryView />
 }
+
