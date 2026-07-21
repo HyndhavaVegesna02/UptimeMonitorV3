@@ -1,4 +1,10 @@
-import type { ComponentDTO, ProposalDTO } from './types'
+import type {
+  AvailabilityDTO,
+  ComponentDTO,
+  MaintenanceWindowDTO,
+  ObservationDTO,
+  ProposalDTO,
+} from './types'
 
 /**
  * Fetch-based typed API client (STORY-121). Single base-URL seam: every call
@@ -89,4 +95,31 @@ export function getComponents(): Promise<ComponentDTO[]> {
  * array's length (STORY-121 AC2). */
 export function getApprovals(): Promise<ProposalDTO[]> {
   return getJson<ProposalDTO[]>('/v1/approvals')
+}
+
+/** `GET /api/v1/history?signal_key=...&limit=...` (STORY-122) — per-signal
+ * observation history, most-recent first. `limit` is an optional
+ * server-side cap (`backend/src/api/v1/history/controller.py`); omitted,
+ * the backend returns the full window. */
+export function getHistory(signalKey: string, limit?: number): Promise<ObservationDTO[]> {
+  const params = new URLSearchParams({ signal_key: signalKey })
+  if (limit !== undefined) {
+    params.set('limit', String(limit))
+  }
+  return getJson<ObservationDTO[]>(`/v1/history?${params.toString()}`)
+}
+
+/** `GET /api/v1/availability?signal_key=...` (STORY-122) — per-signal
+ * availability%/completeness% over the default 24h window.
+ * `availability_pct`/`completeness_pct` may be `null` for a degenerate
+ * (no-data) window — callers must handle that, never invent a number. */
+export function getAvailability(signalKey: string): Promise<AvailabilityDTO> {
+  const params = new URLSearchParams({ signal_key: signalKey })
+  return getJson<AvailabilityDTO>(`/v1/availability?${params.toString()}`)
+}
+
+/** `GET /api/v1/maintenance` (STORY-122) — every scheduled maintenance
+ * window, no filtering params (`backend/src/api/v1/maintenance/controller.py`). */
+export function getMaintenance(): Promise<MaintenanceWindowDTO[]> {
+  return getJson<MaintenanceWindowDTO[]>('/v1/maintenance')
 }

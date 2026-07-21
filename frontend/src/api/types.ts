@@ -31,3 +31,48 @@ export interface ProposalDTO {
   state: string
   proposed_at: string
 }
+
+/**
+ * Mirrors `backend/src/api/v1/history/models.py::ObservationDTO` (STORY-122).
+ * `latency_ms`/`response_status_code` are nullable — the normalizer's
+ * source row can omit either.
+ */
+export interface ObservationDTO {
+  signal_key: string
+  observed_at: string
+  health: string
+  location: string
+  latency_ms: number | null
+  response_status_code: number | null
+  check_type: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::AvailabilityDTO`
+ * (STORY-122). `availability_pct`/`completeness_pct` are nullable — a
+ * degenerate (no-data) window computes neither.
+ */
+export interface AvailabilityDTO {
+  availability_pct: number | null
+  completeness_pct: number | null
+  total_verdicts: number
+  passing_verdicts: number
+  maintenance_verdicts: number
+  gap_verdicts: number
+  distinct_locations: number
+  window: string
+  computed_at: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/maintenance/models.py::MaintenanceWindowDTO`
+ * (STORY-122). `reason`/`title` are nullable.
+ */
+export interface MaintenanceWindowDTO {
+  id: number
+  component_id: string
+  starts_at: string
+  ends_at: string
+  reason: string | null
+  title?: string | null
+}
