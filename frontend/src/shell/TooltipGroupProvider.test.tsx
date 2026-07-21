@@ -1,7 +1,8 @@
 import { act, renderHook } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TooltipGroupProvider, useTooltipGroup } from './useTooltipGroup'
+import { TooltipGroupProvider } from './TooltipGroupProvider'
+import { useTooltipGroup } from './tooltipGroupContext'
 
 function wrapper({ children }: { children: ReactNode }) {
   return <TooltipGroupProvider>{children}</TooltipGroupProvider>

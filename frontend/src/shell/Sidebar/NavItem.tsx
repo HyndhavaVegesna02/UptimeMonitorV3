@@ -3,7 +3,7 @@ import { useCallback, useId, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Icon } from '../../components/Icon/Icon'
 import { cx } from '../../lib/cx'
-import { useTooltipGroup } from '../useTooltipGroup'
+import { useTooltipGroup } from '../tooltipGroupContext'
 import './NavItem.css'
 
 /** Opening delay before a COLD (not-yet-warm) tooltip appears — emil-design-eng

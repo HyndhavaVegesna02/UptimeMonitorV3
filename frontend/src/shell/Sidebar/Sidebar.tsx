@@ -6,7 +6,7 @@ import { Icon } from '../../components/Icon/Icon'
 import { cx } from '../../lib/cx'
 import { HEALTH_ICONS } from '../../lib/healthIcons'
 import { NAV_GROUPS } from '../../nav/tabs'
-import { TooltipGroupProvider } from '../useTooltipGroup'
+import { TooltipGroupProvider } from '../TooltipGroupProvider'
 import { NavItem } from './NavItem'
 import './Sidebar.css'
 
@@ -22,6 +22,12 @@ export interface SidebarProps {
    * only applies to the ≥861px desktop rail. */
   mobileOpen: boolean
   onCloseMobile: () => void
+  /** The id the mobile sheet's `<aside>` renders under — `Topbar`'s
+   * hamburger toggle points `aria-controls` at this same id, so the two
+   * shell pieces must agree on it (`ShellLayout` generates one and passes
+   * it to both). Falls back to an internally-generated id when Sidebar is
+   * rendered standalone (e.g. in isolation tests). */
+  navId?: string
 }
 
 const GROUP_LABELS: Record<string, string> = {
@@ -47,8 +53,10 @@ export function Sidebar({
   components,
   mobileOpen,
   onCloseMobile,
+  navId: providedNavId,
 }: SidebarProps) {
-  const navId = useId()
+  const generatedNavId = useId()
+  const navId = providedNavId ?? generatedNavId
 
   useEffect(() => {
     if (!mobileOpen) {

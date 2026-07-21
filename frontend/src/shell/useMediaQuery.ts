@@ -1,4 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
+
+function getSnapshot(query: string): () => boolean {
+  return () => window.matchMedia(query).matches
+}
+
+function subscribe(query: string): (onStoreChange: () => void) => () => void {
+  return (onStoreChange: () => void) => {
+    const mediaQueryList = window.matchMedia(query)
+    mediaQueryList.addEventListener('change', onStoreChange)
+    return () => mediaQueryList.removeEventListener('change', onStoreChange)
+  }
+}
 
 /**
  * Subscribes to a media query's live match state (STORY-121) — used to tell
@@ -6,26 +18,12 @@ import { useEffect, useState } from 'react'
  * off-canvas sheet (`max-width: 860px`) in JS, not just CSS, so behaviour
  * (tooltips, Escape/backdrop dismissal, focus return) only applies at the
  * breakpoint it is meant for even as the viewport is resized live.
+ *
+ * `useSyncExternalStore` (not a manual `useEffect` + `setState`) is the
+ * React-recommended way to subscribe to a browser API's external mutable
+ * state — it also sidesteps the "setState synchronously in an effect"
+ * lint rule a naive effect-based subscription would trip.
  */
 export function useMediaQuery(query: string): boolean {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches)
-
-  useEffect(() => {
-    const mediaQueryList = window.matchMedia(query)
-    setMatches(mediaQueryList.matches)
-
-    function handleChange(event: MediaQueryListEvent | { matches: boolean }) {
-      setMatches(event.matches)
-    }
-
-    mediaQueryList.addEventListener('change', handleChange as (event: MediaQueryListEvent) => void)
-    return () => {
-      mediaQueryList.removeEventListener(
-        'change',
-        handleChange as (event: MediaQueryListEvent) => void,
-      )
-    }
-  }, [query])
-
-  return matches
+  return useSyncExternalStore(subscribe(query), getSnapshot(query))
 }

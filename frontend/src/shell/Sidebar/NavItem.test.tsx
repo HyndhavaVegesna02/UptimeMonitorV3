@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { SquaresFour } from '@phosphor-icons/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { TooltipGroupProvider } from '../useTooltipGroup'
+import { TooltipGroupProvider } from '../TooltipGroupProvider'
 import { NavItem } from './NavItem'
 
 function renderItem(props: Partial<React.ComponentProps<typeof NavItem>> = {}) {

@@ -50,3 +50,10 @@ tooltips; mobile sheet opens/closes; scripted Chromium confirms the transition r
 suppressed under emulated `prefers-reduced-motion: reduce`), zero console errors, no
 horizontal scroll at 375/768/1024/1440. Since this is now a 3-pointer it gets **spec ∥ quality
 reviews** in addition to the gate + reality gate.
+
+## History
+- 2026-07-21: `frontend/src/AppShell.tsx` + `AppShell.css` (STORY-120's minimal mount point —
+  just enough to reach `/styleguide`) deleted and superseded by `frontend/src/shell/ShellLayout.tsx`
+  (the real grouped-sidebar + topbar frame) plus a new `frontend/src/routes.tsx` routing table
+  (a React Router layout route with `<Outlet />`, so `/styleguide` stays a standalone sibling
+  route with its own `<h1>` rather than nesting inside the shell's topbar heading).

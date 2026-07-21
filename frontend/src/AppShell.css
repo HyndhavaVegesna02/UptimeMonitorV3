@@ -1,8 +1,0 @@
-.app-shell {
-  min-height: 100vh;
-  background: var(--color-canvas);
-}
-
-.app-shell__main {
-  min-height: 100vh;
-}
