@@ -85,4 +85,21 @@ describe('NavItem', () => {
       expect(screen.queryByRole('tooltip')).toBeNull()
     })
   })
+
+  describe('badge accessible conveyance (quality review MAJOR fix)', () => {
+    it('folds a positive badge count into the accessible name, not just a visual chip', () => {
+      renderItem({ label: 'Approvals', badge: 3 })
+      expect(screen.getByRole('link', { name: /Approvals.*3 pending/i })).toBeInTheDocument()
+    })
+
+    it('announces nothing extra when there is no badge — the accessible name stays the bare label', () => {
+      renderItem({ label: 'Approvals', badge: undefined })
+      expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument()
+    })
+
+    it('announces nothing extra when the badge count is exactly zero', () => {
+      renderItem({ label: 'Approvals', badge: 0 })
+      expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument()
+    })
+  })
 })

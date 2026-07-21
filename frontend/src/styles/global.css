@@ -59,6 +59,19 @@ svg {
   border-radius: var(--radius-chip);
 }
 
+/* Visually hidden but still in the DOM/accessibility tree (unlike
+   `display: none`/`aria-hidden`) — the standard "sr-only" pattern for text
+   that should reach assistive tech without being seen (e.g. the Approvals
+   sidebar badge's "N pending" count, STORY-121 quality-review MAJOR fix). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* Shared entrance-stagger utility (emil-design-eng): each direct child
    rises in with a short delay after the previous one. Guarded — with
    `prefers-reduced-motion: reduce`, state still changes but nothing moves. */

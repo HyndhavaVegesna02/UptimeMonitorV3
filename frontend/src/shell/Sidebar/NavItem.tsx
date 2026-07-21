@@ -89,9 +89,16 @@ export function NavItem({ path, label, icon, active, showTooltip, badge }: NavIt
         <Icon icon={icon} aria-hidden className="nav-item__icon" />
         <span className="nav-item__label">{label}</span>
         {badge ? (
-          <span className="nav-item__badge" aria-hidden="true">
-            {badge}
-          </span>
+          <>
+            <span className="nav-item__badge" aria-hidden="true">
+              {badge}
+            </span>
+            {/* Quality-review MAJOR fix: the visible chip above is
+               aria-hidden (its count is redundant once this text exists),
+               so a screen-reader operator still learns the pending count —
+               previously the link's accessible name was just "Approvals". */}
+            <span className="sr-only">, {badge} pending</span>
+          </>
         ) : null}
       </Link>
       {showTooltip && visible ? (

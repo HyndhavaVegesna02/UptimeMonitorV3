@@ -73,6 +73,16 @@ describe('Sidebar', () => {
       const link = screen.getByRole('link', { name: 'Approvals' })
       expect(link).not.toHaveTextContent(/\d/)
     })
+
+    it('conveys the pending count to assistive tech, not just a visual chip (quality review MAJOR fix)', () => {
+      renderSidebar({ approvalsCount: 3 })
+      expect(screen.getByRole('link', { name: /Approvals.*3 pending/i })).toBeInTheDocument()
+    })
+
+    it('announces nothing extra beyond "Approvals" when the count is zero', () => {
+      renderSidebar({ approvalsCount: 0 })
+      expect(screen.getByRole('link', { name: 'Approvals' })).toBeInTheDocument()
+    })
   })
 
   describe('Pinned group (component quick-links)', () => {
