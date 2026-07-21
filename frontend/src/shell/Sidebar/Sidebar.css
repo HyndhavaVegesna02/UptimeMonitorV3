@@ -66,6 +66,19 @@
   outline-offset: 2px;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .shell-sidebar__toggle {
+    transition:
+      background var(--duration-control) var(--ease-out),
+      color var(--duration-control) var(--ease-out),
+      transform var(--duration-press) var(--ease-out);
+  }
+
+  .shell-sidebar__toggle:active {
+    transform: scale(0.92);
+  }
+}
+
 /* The rail toggle is desktop-only (AC5) — the mobile sheet uses a separate
    Topbar hamburger button (AC6). */
 @media (max-width: 860px) {

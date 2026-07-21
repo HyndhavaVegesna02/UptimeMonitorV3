@@ -74,3 +74,26 @@ describe('shell motion — reduced-motion guards on transform/width transitions'
     )
   })
 })
+
+/**
+ * Quality review item 4: the shell's own icon-only buttons (the desktop
+ * rail toggle, the mobile sheet's hamburger toggle) need the same
+ * `:active` press-scale feedback the shared `Button` primitive already has
+ * — motion is a graded deliverable this story, and pressables without
+ * press feedback are an inconsistency reviewers explicitly called out.
+ */
+describe('shell motion — :active press feedback on the shell\'s own icon buttons', () => {
+  it('Sidebar.css gives the rail toggle a reduced-motion-guarded :active press-scale', () => {
+    const css = readFileSync(join(shellDir, 'Sidebar/Sidebar.css'), 'utf-8')
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*shell-sidebar__toggle:active[\s\S]*transform:\s*scale\(/,
+    )
+  })
+
+  it('Topbar.css gives the mobile hamburger toggle a reduced-motion-guarded :active press-scale', () => {
+    const css = readFileSync(join(shellDir, 'Topbar/Topbar.css'), 'utf-8')
+    expect(css).toMatch(
+      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*shell-topbar__mobile-toggle:active[\s\S]*transform:\s*scale\(/,
+    )
+  })
+})

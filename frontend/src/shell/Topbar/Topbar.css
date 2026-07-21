@@ -85,6 +85,16 @@
   outline-offset: 2px;
 }
 
+@media (prefers-reduced-motion: no-preference) {
+  .shell-topbar__mobile-toggle {
+    transition: transform var(--duration-press) var(--ease-out);
+  }
+
+  .shell-topbar__mobile-toggle:active {
+    transform: scale(0.92);
+  }
+}
+
 @media (max-width: 860px) {
   .shell-topbar__mobile-toggle {
     display: inline-flex;
