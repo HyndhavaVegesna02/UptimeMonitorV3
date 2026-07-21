@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 125  # 123-124 filed from STORY-120 review (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
+next_story_id: 127  # 123-124 from STORY-120 review; 125-126 from STORY-121 review (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
                     # + Phosphor (120), collapsible app shell (121), Dashboard (122). Clean
                     # 120-block chosen to avoid collision with the frozen ui-rewrite's 097-110
                     # (abandoned branches, not on this line). 097-119 intentionally unused here.
@@ -942,7 +942,7 @@ stories:
   - id: STORY-121
     title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
     file: docs/scrum/stories/STORY-121-app-shell-reskin.md
-    status: ready   # bumped 2->3 pts at lock: PO added collapsible desktop sidebar + first-class animations (2026-07-21).
+    status: done   # sprint-59: impl (crashed on session-limit mid-way, resumed cleanly) + spec PASS || quality FIX_REQUIRED->fixed (CRITICAL prepaint-class + MAJOR badge-a11y) + scoped DoD green (617d362) + full live reality gate PASS. Awaits PO acceptance.
     points: 3
     type: story
     sprint: 59
@@ -964,4 +964,16 @@ stories:
     title: Extend token contrast test to muted/secondary text on the canvas backdrop
     status: draft   # STORY-120 quality-review minor: contrast test covers secondary/muted only on --color-surface, not --color-canvas. Fine today (only body text sits on canvas); revisit if muted text ever lands on the canvas. Needs refinement + estimate.
     type: chore
+    sprint: null
+
+  # ── Filed from STORY-121 review (sprint-59, 2026-07-21) ──────────────────
+  - id: STORY-125
+    title: Mobile nav sheet — full keyboard focus-trap + role="dialog"/aria-modal
+    status: draft   # STORY-121 quality+spec review: AC8 required only Escape/backdrop dismiss + focus-return (all implemented & tested); a full focus-trap + dialog semantics is best-practice a11y hardening not required by AC8. Needs refinement + estimate.
+    type: story
+    sprint: null
+  - id: STORY-126
+    title: Add a skip-to-content link to the app shell
+    status: draft   # STORY-121 review: the <main id="main-content"> target exists but nothing links to it; no AC required it. Cheap a11y add. Needs refinement + estimate.
+    type: story
     sprint: null
