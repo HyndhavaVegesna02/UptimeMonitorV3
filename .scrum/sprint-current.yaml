@@ -62,6 +62,17 @@ stories:
   - id: STORY-121
     title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
     status: in_progress
+    # CRASH-RECOVERY (2026-07-21): first implementer terminated on a session usage limit
+    # (resets 08:30 IST) while starting the useTooltipGroup hook. Committed & green (023ade2..ca400af):
+    #   56a5e38 typed API client (components/approvals) + MSW harness
+    #   687d260 shared useFetch hook + worst-of overall-status derivation (AC4)
+    #   896100c StatusBadge optional leading icon (AC3)
+    #   ca400af health-status icon map + six-route nav table (AC1)
+    # Discarded scrap: nav/useTooltipGroup.test.ts (orphan test, no impl). PRESERVED uncommitted
+    # (coherent, awaiting resume agent's verify+commit as its first step): components/PlaceholderPage/
+    # + 6 page files (Dashboard/Availability/History/Approvals/Maintenance/Publications placeholders).
+    # RESUME: verify+commit the placeholder pages, wire the router, then plan steps 2-5 (collapsible
+    # rail + persist + tooltips; topbar+status pill; mobile sheet; motion polish). Then reality gate.
     points: 3
     ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
   - id: STORY-122
