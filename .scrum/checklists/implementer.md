@@ -25,6 +25,7 @@
 - [ ] Fixtures derive from a REAL captured sample (live call or the producer's own fixtures) — never invented at a plausible-looking scale (2026-07-04).
 - [ ] A story adding side effects to a process entrypoint (env loads, file reads, network, seeding) enumerates every existing test driving that entrypoint and proves each stays hermetic, stated in the report (2026-07-06).
 - [ ] Resource-lifecycle code tears down on EVERY failure path — including partial setup before any finalizer exists — with a leak regression test (2026-06-25).
+- [ ] A consumer/rendering story's LIVE reality gate observes first-paint BEHAVIOR against the real backend, not only the correctness of rendered values: a region that hangs on a slow/serialized endpoint, or fast regions gated behind one slow fetch (a coupled `Promise.all`), is a finding. MSW/zero-latency mocks hide this — it is only visible against the live stack (2026-07-21, sprint-59 STORY-122: the Dashboard rendered correct values but hung 20–120s on the slow `/availability` fetch it had bundled with the fast history fetch).
 
 ## Code conventions (this project)
 
@@ -44,7 +45,7 @@
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 ×2).
 
 - [ ] Any server/container/process you spawn for a reality check ends with an OS-level
-      teardown VERIFICATION � process gone by PID (taskkill/kill + re-check) and port freed
-      (netstat or equivalent) � a wrapper-job kill alone is not evidence (2026-07-17;
-      sprint-51 STORY-094 � the bash-job kill left the port-8010 uvicorn worker alive;
+      teardown VERIFICATION � process gone by PID (taskkill/kill + re-check) and port freed
+      (netstat or equivalent) � a wrapper-job kill alone is not evidence (2026-07-17;
+      sprint-51 STORY-094 � the bash-job kill left the port-8010 uvicorn worker alive;
       an explicit taskkill /PID /F + netstat confirm was required).

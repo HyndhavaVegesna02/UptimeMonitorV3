@@ -5,7 +5,7 @@
 
 ## Tests-that-lie taxonomy — every member is CRITICAL
 
-Read test BODIES, not names. Six incidents, one family — each escape wore a new disguise:
+Read test BODIES, not names. Seven incidents, one family — each escape wore a new disguise:
 
 1. **Rigged path** — the test drives a different path than the behavior it names, dodging the failing one (sprint 17).
 2. **Over-mock** — patching the `__init__`/internals of the thing under assembly; asserting only call counts; a wrong constructor kwarg passes silently (sprint 20: all six gates green, app crashed on startup).
@@ -13,6 +13,7 @@ Read test BODIES, not names. Six incidents, one family — each escape wore a ne
 4. **Invented fixtures** — fixture scale/shape not derived from a real sample; tests validate the shared wrong assumption (sprint 32: percent vs fraction survived 146 green tests and two reviewers).
 5. **Dirty-tree green** — the result reproduces only with uncommitted changes; committed HEAD would fail (sprint 19).
 6. **Asserting nothing** — vacuous/disabled assertions, testing the mock instead of behavior.
+7. **Source-text-as-proof** — a jsdom/DOM test asserts SOURCE text (a CSS rule string, a class name, an attribute) as a proxy for a real-browser behavior it cannot execute (cascade, specificity, hydration, paint, motion, visual label). A wrong CSS property, a class that outlives hydration, or a mislabeled series passes green. Necessary but NOT sufficient — any motion-property / cascade / hydration / visual-label claim must be confirmed by the live reality gate, never a CSS-text assertion alone (sprint-59: Sparkline animating `stroke-dashoffset`, the pre-paint collapse-class hydration bug, the "Median response" mislabel).
 
 When you suspect over-mocking: construct the real object / hit the real entrypoint and compare.
 
@@ -31,9 +32,9 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
 
 - [ ] Any hardcoded external-service identifier in the diff (cloud managed-policy IDs,
       prefix-list IDs, ARNs, account/region-specific values, vendor entity IDs) carries
-      live-derivation evidence � the CLI/API command and output that produced it � never
+      live-derivation evidence � the CLI/API command and output that produced it � never
       accepted from memory or generation. Plausible-looking is not verified. (2026-07-17;
-      sprint-50 STORY-089 � the CloudFront `CachePolicyId` labeled "CachingOptimized" was a
+      sprint-50 STORY-089 � the CloudFront `CachePolicyId` labeled "CachingOptimized" was a
       fabricated ID that survived cfn-lint AND a quality APPROVE, and 404'd only at live
       stack create; the sibling OriginRequestPolicyId was a real ID whose comment named a
       different policy.)

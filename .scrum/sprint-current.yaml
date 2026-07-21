@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 59
-status: accepted-unmerged   # PO ACCEPTED all 3 stories at review 2026-07-21 AND directed: do NOT merge — keep sprint-59 unmerged for now (branch tip holds the accepted work). Velocity +9 recorded. Retro next. Local stack left UP per PO.
+status: closed   # PO ACCEPTED all 3 stories at review 2026-07-21; directed do NOT merge (sprint-59 branch tip holds the accepted work) + keep the local stack UP. Velocity +9. Retro done 2026-07-21: 2 amendments PO-approved + landed (quality-review tests-that-lie #7 'source-text-as-proof'; implementer reality-gate live-first-paint). No active sprint now; next = planning (sprints 60-61 fill the 5 placeholder tabs). Backlog follow-ups: STORY-123..128.
 # SPRINT-CLOSE full 8-command gate — evidence of record, final HEAD 1760067 (2026-07-21), DYNAMO_ENDPOINT_URL unset:
 #   [1] pytest -> PASS (529 passed in 306s)
 #   [2] import-linter -> PASS (8 contracts kept, 0 broken)
