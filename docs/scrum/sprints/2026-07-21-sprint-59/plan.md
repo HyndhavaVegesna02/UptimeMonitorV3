@@ -106,8 +106,8 @@ Highest-value page; exercises the most primitives → validates the system end-t
       inline SVG sparklines; derived, not invented.
 - [x] Step 3: response-time chart (inline SVG, periodic-refresh visuals per ui-ux-pro-max
       chart domain — no ticker), probe-locations panel (segmented control), upcoming-maintenance.
-- [ ] Step 4: recent-checks feed + components roster; worst-of overall-status derivation.
-- [ ] Step 5: per-region loading / error / empty states (reduced-motion guarded); suite green.
+- [x] Step 4: recent-checks feed + components roster; worst-of overall-status derivation.
+- [x] Step 5: per-region loading / error / empty states (reduced-motion guarded); suite green.
 - [ ] Step 6: reality gate (ui-sweep + live API): every rendered number cross-checked vs
       `/api/v1` truth, both mobile/desktop, zero console errors.
 - [ ] Scoped DoD; reviews spec ∥ quality (3-pointer).
