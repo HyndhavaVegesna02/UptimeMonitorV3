@@ -20,7 +20,17 @@
   min-width: 0;
 }
 
+.shell-topbar__leading {
+  flex: 1 1 auto;
+}
+
+.shell-topbar__trailing {
+  flex: 0 0 auto;
+}
+
 .shell-topbar__title {
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: var(--font-size-xl);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -36,6 +46,21 @@
 .shell-topbar__maintenance {
   gap: var(--space-1);
   white-space: nowrap;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 480px) {
+  /* Icon-only below 480px — the label stays in the DOM/accessible tree
+     (unlike `display: none`), just visually hidden, so the link's
+     accessible name is still "Maintenance". */
+  .shell-topbar__maintenance-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
 }
 
 .shell-topbar__mobile-toggle {

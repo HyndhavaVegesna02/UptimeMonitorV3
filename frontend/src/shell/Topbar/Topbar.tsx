@@ -62,7 +62,11 @@ export function Topbar({
         <span className="shell-topbar__last-updated">{formatLastUpdated(lastUpdated, now)}</span>
         <Link to="/maintenance" className="button button--secondary shell-topbar__maintenance">
           <Icon icon={Plus} aria-hidden size={16} />
-          Maintenance
+          {/* Visually hidden (not aria-hidden) below 480px — the link's
+             accessible name stays "Maintenance" even icon-only, avoiding a
+             horizontal-scroll-causing label at the narrowest phone widths
+             (ui-ux-pro-max: Horizontal Scroll, High severity). */}
+          <span className="shell-topbar__maintenance-label">Maintenance</span>
         </Link>
         <Button variant="ghost" iconOnly aria-label="Notifications">
           <Icon icon={Bell} aria-hidden />

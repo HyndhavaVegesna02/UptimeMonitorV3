@@ -85,16 +85,16 @@ Everything downstream depends on it; build and validate it first.
 ### 2. STORY-121 — App shell re-skin, collapsible sidebar (3 pts)
 The frame everything renders in. **Now a 3-pointer** (PO added a collapsible sidebar +
 first-class motion, 2026-07-21) → gets the spec ∥ quality reviewer pair.
-- [ ] Step 1: grouped sidebar (Monitoring / Operations / Pinned) with Phosphor icons, active
+- [x] Step 1: grouped sidebar (Monitoring / Operations / Pinned) with Phosphor icons, active
       state, count badge; router wired to the six existing routes.
-- [ ] Step 2: **collapsible desktop sidebar (PO requirement)** — toggle between expanded and a
+- [x] Step 2: **collapsible desktop sidebar (PO requirement)** — toggle between expanded and a
       narrow icon-only rail, persisted (localStorage, no wrong-state flash), tooltips on rail
       items (emil delayed-tooltip pattern), active route indicated in both states.
-- [ ] Step 3: topbar — page title + worst-of overall status pill (dot+icon+label, never colour
+- [x] Step 3: topbar — page title + worst-of overall status pill (dot+icon+label, never colour
       alone), last-updated, notifications button; "＋ Maintenance" action affordance.
-- [ ] Step 4: responsive — off-canvas **sheet** ≤860px (distinct from desktop rail),
+- [x] Step 4: responsive — off-canvas **sheet** ≤860px (distinct from desktop rail),
       no horizontal scroll 375/768/1024/1440; keyboard-navigable; Escape/backdrop dismiss.
-- [ ] Step 5: **motion polish** (see "Motion is first-class" below) — collapse/expand + sheet
+- [x] Step 5: **motion polish** (see "Motion is first-class" below) — collapse/expand + sheet
       transitions, reduced-motion guards; verified in reality gate.
 - [ ] Scoped DoD; reviews spec ∥ quality (3-pointer) + reality gate.
 
