@@ -102,9 +102,9 @@ first-class motion, 2026-07-21) → gets the spec ∥ quality reviewer pair.
 Highest-value page; exercises the most primitives → validates the system end-to-end.
 - [x] Step 1: fresh API client methods for the endpoints the page needs (components, history,
       approvals, maintenance, sample-mode), typed from the live contracts.
-- [ ] Step 2: KPI row (availability, avg latency, components healthy, pending approvals) with
+- [x] Step 2: KPI row (availability, avg latency, components healthy, pending approvals) with
       inline SVG sparklines; derived, not invented.
-- [ ] Step 3: response-time chart (inline SVG, periodic-refresh visuals per ui-ux-pro-max
+- [x] Step 3: response-time chart (inline SVG, periodic-refresh visuals per ui-ux-pro-max
       chart domain — no ticker), probe-locations panel (segmented control), upcoming-maintenance.
 - [ ] Step 4: recent-checks feed + components roster; worst-of overall-status derivation.
 - [ ] Step 5: per-region loading / error / empty states (reduced-motion guarded); suite green.
