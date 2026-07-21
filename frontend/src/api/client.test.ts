@@ -1,18 +1,21 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
 import { FIXTURE_PROPOSALS } from '../mocks/handlers/approvals'
-import { FIXTURE_AVAILABILITY } from '../mocks/handlers/availability'
+import { FIXTURE_AVAILABILITY, FIXTURE_COMPONENT_AVAILABILITY } from '../mocks/handlers/availability'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_HISTORY } from '../mocks/handlers/history'
 import { FIXTURE_MAINTENANCE } from '../mocks/handlers/maintenance'
+import { FIXTURE_TOPOLOGY } from '../mocks/handlers/topology'
 import { server } from '../mocks/server'
 import {
   ApiError,
   getApprovals,
   getAvailability,
+  getComponentAvailability,
   getComponents,
   getHistory,
   getMaintenance,
+  getTopology,
 } from './client'
 
 describe('getComponents', () => {
@@ -92,6 +95,45 @@ describe('getMaintenance', () => {
     server.use(http.get('/api/v1/maintenance', () => HttpResponse.json([])))
 
     await expect(getMaintenance()).resolves.toEqual([])
+  })
+})
+
+describe('getTopology', () => {
+  it('resolves the fixture topology', async () => {
+    await expect(getTopology()).resolves.toEqual(FIXTURE_TOPOLOGY)
+  })
+})
+
+describe('getComponentAvailability', () => {
+  const since = '2026-07-20T18:20:42.000Z'
+  const until = '2026-07-21T18:20:42.000Z'
+
+  it('resolves the fixture component-grain availability for a known component id', async () => {
+    await expect(getComponentAvailability('http-check', { since, until })).resolves.toEqual(
+      FIXTURE_COMPONENT_AVAILABILITY['http-check'],
+    )
+  })
+
+  it('sends since/until as query params', async () => {
+    let capturedUrl: string | undefined
+    server.use(
+      http.get('/api/v1/availability/component/:componentId', ({ request }) => {
+        capturedUrl = request.url
+        return HttpResponse.json(FIXTURE_COMPONENT_AVAILABILITY['http-check'])
+      }),
+    )
+
+    await getComponentAvailability('http-check', { since, until })
+
+    expect(capturedUrl).toContain(`since=${encodeURIComponent(since)}`)
+    expect(capturedUrl).toContain(`until=${encodeURIComponent(until)}`)
+  })
+
+  it('throws an ApiError on an unknown component id (mirrors the real 404)', async () => {
+    await expect(getComponentAvailability('unknown-component', { since, until })).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 404,
+    })
   })
 })
 

@@ -49,8 +49,9 @@ export interface ObservationDTO {
 
 /**
  * Mirrors `backend/src/api/v1/availability/models.py::AvailabilityDTO`
- * (STORY-122). `availability_pct`/`completeness_pct` are nullable — a
- * degenerate (no-data) window computes neither.
+ * (STORY-122/129). `availability_pct`/`completeness_pct` are 0-1 FRACTIONS
+ * on the wire (never 0-100) and nullable — a degenerate (no-data) window
+ * computes neither; render "no data", never a fabricated `0%`.
  */
 export interface AvailabilityDTO {
   availability_pct: number | null
@@ -75,4 +76,52 @@ export interface MaintenanceWindowDTO {
   ends_at: string
   reason: string | null
   title?: string | null
+}
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py` (STORY-129) — one signal
+ * belonging to a component. `interval_seconds` is nullable: signals that
+ * predate the interval backfill carry no configured interval (sprint-60
+ * plan §Availability edge behavior (b)).
+ */
+export interface TopologySignalDTO {
+  signal_key: string
+  name: string
+  interval_seconds: number | null
+  component_id: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py::ComponentTopologyDTO`
+ * (STORY-129) — `GET /api/v1/topology`'s per-component shape, nesting its
+ * signals (name + interval), used to join display names onto the
+ * `signal_key`-only `SignalAvailabilityDTO` children below.
+ */
+export interface ComponentTopologyDTO {
+  id: string
+  name: string
+  signals: TopologySignalDTO[]
+}
+
+/**
+ * `AvailabilityDTO` plus the `signal_key` it was computed for (STORY-129) —
+ * the per-signal children of `ComponentAvailabilityDTO.signals`. Carries no
+ * display name (that's joined from `TopologySignalDTO.name` by `signal_key`).
+ */
+export interface SignalAvailabilityDTO extends AvailabilityDTO {
+  signal_key: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::ComponentAvailabilityDTO`
+ * (STORY-129) — `GET /api/v1/availability/component/{component_id}`'s
+ * response: a component-grain rollup plus its nested per-signal children.
+ * Verified live quirk (plan-verifier 2026-07-22): `rollup.distinct_locations`
+ * reads `0` while each signal child reads the real count — a backend
+ * rollup-group quirk, rendered honestly, not "fixed" client-side.
+ */
+export interface ComponentAvailabilityDTO {
+  component_id: string
+  rollup: AvailabilityDTO
+  signals: SignalAvailabilityDTO[]
 }

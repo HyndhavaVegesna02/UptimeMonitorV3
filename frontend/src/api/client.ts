@@ -1,6 +1,8 @@
 import type {
   AvailabilityDTO,
+  ComponentAvailabilityDTO,
   ComponentDTO,
+  ComponentTopologyDTO,
   MaintenanceWindowDTO,
   ObservationDTO,
   ProposalDTO,
@@ -122,4 +124,26 @@ export function getAvailability(signalKey: string): Promise<AvailabilityDTO> {
  * window, no filtering params (`backend/src/api/v1/maintenance/controller.py`). */
 export function getMaintenance(): Promise<MaintenanceWindowDTO[]> {
   return getJson<MaintenanceWindowDTO[]>('/v1/maintenance')
+}
+
+/** `GET /api/v1/topology` (STORY-129) — every component and its nested
+ * signals (name + interval), the join source for the `signal_key`-only
+ * `SignalAvailabilityDTO` children `getComponentAvailability` returns. */
+export function getTopology(): Promise<ComponentTopologyDTO[]> {
+  return getJson<ComponentTopologyDTO[]>('/v1/topology')
+}
+
+/** `GET /api/v1/availability/component/{component_id}` (STORY-129) — the
+ * component-grain rollup plus its nested per-signal children, over the
+ * `[since, until)` window. `since`/`until` MUST be tz-aware UTC ISO strings
+ * (trailing `Z`, e.g. `Date.prototype.toISOString()`) — the backend 422s a
+ * naive datetime. */
+export function getComponentAvailability(
+  componentId: string,
+  { since, until }: { since: string; until: string },
+): Promise<ComponentAvailabilityDTO> {
+  const params = new URLSearchParams({ since, until })
+  return getJson<ComponentAvailabilityDTO>(
+    `/v1/availability/component/${encodeURIComponent(componentId)}?${params.toString()}`,
+  )
 }

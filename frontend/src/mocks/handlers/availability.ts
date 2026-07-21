@@ -1,5 +1,5 @@
 import { http, HttpResponse } from 'msw'
-import type { AvailabilityDTO } from '../../api/types'
+import type { AvailabilityDTO, ComponentAvailabilityDTO } from '../../api/types'
 
 /**
  * `GET /api/v1/availability?signal_key=...` fixture (STORY-122) — the EXACT
@@ -37,4 +37,53 @@ export const availabilityHandlers = [
     }
     return HttpResponse.json(data)
   }),
+  http.get('/api/v1/availability/component/:componentId', ({ params }) => {
+    const componentId = String(params.componentId)
+    const data = FIXTURE_COMPONENT_AVAILABILITY[componentId]
+    if (!data) {
+      return HttpResponse.json({ detail: `unknown component ${componentId}` }, { status: 404 })
+    }
+    return HttpResponse.json(data)
+  }),
 ]
+
+/**
+ * `GET /api/v1/availability/component/http-check` fixture (STORY-129) — the
+ * EXACT real response captured from the running local stack (checklist:
+ * fixtures derive from a real captured sample), see
+ * `docs/scrum/sprints/2026-07-21-sprint-60/plan.md` §Appendix. Keyed by
+ * `component_id`, same reasoning as `FIXTURE_AVAILABILITY`. Note the two
+ * verified live quirks (plan-verifier 2026-07-22) preserved faithfully: the
+ * rollup's `distinct_locations` reads `0` while the signal child's reads the
+ * real `2`.
+ */
+export const FIXTURE_COMPONENT_AVAILABILITY: Record<string, ComponentAvailabilityDTO> = {
+  'http-check': {
+    component_id: 'http-check',
+    rollup: {
+      availability_pct: 1.0,
+      completeness_pct: 0.0930555,
+      total_verdicts: 65,
+      passing_verdicts: 65,
+      maintenance_verdicts: 0,
+      gap_verdicts: 655,
+      distinct_locations: 0,
+      window: '24h',
+      computed_at: '2026-07-21T18:20:42Z',
+    },
+    signals: [
+      {
+        signal_key: 'http-check',
+        availability_pct: 1.0,
+        completeness_pct: 0.0930555,
+        total_verdicts: 65,
+        passing_verdicts: 65,
+        maintenance_verdicts: 0,
+        gap_verdicts: 655,
+        distinct_locations: 2,
+        window: '24h',
+        computed_at: '2026-07-21T18:20:42Z',
+      },
+    ],
+  },
+}
