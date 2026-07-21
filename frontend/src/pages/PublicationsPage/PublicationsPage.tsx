@@ -1,7 +1,7 @@
-import { PlaceholderPage } from '../../components/PlaceholderPage/PlaceholderPage'
+import { PublicationsView } from '../../features/publications/PublicationsView'
 
-/** STORY-121: placeholder. A later story fills this in with the recorded
- * Statuspage publish-attempt history. */
+/** STORY-133: Publications page — Statuspage publish-attempt timeline */
 export function PublicationsPage() {
-  return <PlaceholderPage description="Recorded Statuspage publish attempts, newest first." />
+  return <PublicationsView />
 }
+
