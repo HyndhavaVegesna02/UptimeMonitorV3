@@ -1,6 +1,8 @@
 import { render, screen, within } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ComponentTopologyDTO, ObservationDTO } from '../../api/types'
 import type { HistoryRow } from './mergeHistoryRows'
+import { mergeHistoryRows } from './mergeHistoryRows'
 import { HistoryGrid } from './HistoryGrid'
 
 const ROWS: HistoryRow[] = [
@@ -65,5 +67,45 @@ describe('HistoryGrid', () => {
     const scrollContainer = container.querySelector('.history-grid__scroll')
     expect(scrollContainer).not.toBeNull()
     expect(scrollContainer?.contains(screen.getByRole('table'))).toBe(true)
+  })
+
+  describe('a confirmed live wire collision (reality gate 2026-07-22)', () => {
+    let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
+    beforeEach(() => {
+      consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    })
+
+    afterEach(() => {
+      consoleErrorSpy.mockRestore()
+    })
+
+    it('renders exactly one row per input observation — never duplicated/omitted — when two observations share an identical (signal_key, observed_at, location) triple', () => {
+      const topology: ComponentTopologyDTO[] = [
+        { id: 'http-check', name: 'HTTP Check', signals: [{ signal_key: 'http-check', name: 'HTTP Check', interval_seconds: 120, component_id: 'http-check' }] },
+      ]
+      const duplicateTriple: ObservationDTO = {
+        signal_key: 'http-check',
+        observed_at: '2026-07-21T20:24:41.129000Z',
+        health: 'up',
+        location: 'SYNTHETIC_LOCATION-0000000000000060',
+        latency_ms: 400,
+        response_status_code: 200,
+        check_type: 'http',
+      }
+      const observations = [duplicateTriple, { ...duplicateTriple }, { ...duplicateTriple, latency_ms: 401 }]
+
+      const mergedRows = mergeHistoryRows(topology, { 'http-check': observations })
+      render(<HistoryGrid rows={mergedRows} />)
+
+      const table = screen.getByRole('table')
+      expect(within(table).getAllByRole('row')).toHaveLength(1 + observations.length) // header + N
+
+      // No "same key"/"non-unique" React reconciliation warning was logged.
+      const keyCollisionCalls = consoleErrorSpy.mock.calls.filter((call) =>
+        call.some((arg) => typeof arg === 'string' && /same key|non-unique/i.test(arg)),
+      )
+      expect(keyCollisionCalls).toEqual([])
+    })
   })
 })
