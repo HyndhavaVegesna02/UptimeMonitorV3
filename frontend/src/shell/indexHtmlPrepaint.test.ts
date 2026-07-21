@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
-import { SIDEBAR_COLLAPSE_STORAGE_KEY } from './useSidebarCollapse'
+import { SIDEBAR_COLLAPSE_PREPAINT_CLASS, SIDEBAR_COLLAPSE_STORAGE_KEY } from './useSidebarCollapse'
 
 const indexHtmlPath = resolve(dirname(fileURLToPath(import.meta.url)), '../../index.html')
 
@@ -20,8 +20,12 @@ describe('index.html pre-paint sidebar-collapse script', () => {
     expect(html).toContain(`localStorage.getItem('${SIDEBAR_COLLAPSE_STORAGE_KEY}')`)
   })
 
+  it('adds the exact SIDEBAR_COLLAPSE_PREPAINT_CLASS useSidebarCollapse later removes', () => {
+    expect(html).toContain(`classList.add('${SIDEBAR_COLLAPSE_PREPAINT_CLASS}')`)
+  })
+
   it('runs before the app module script mounts React', () => {
-    const prepaintIndex = html.indexOf('sidebar-collapsed-preload')
+    const prepaintIndex = html.indexOf(SIDEBAR_COLLAPSE_PREPAINT_CLASS)
     const moduleScriptIndex = html.indexOf('/src/main.tsx')
     expect(prepaintIndex).toBeGreaterThan(-1)
     expect(moduleScriptIndex).toBeGreaterThan(-1)

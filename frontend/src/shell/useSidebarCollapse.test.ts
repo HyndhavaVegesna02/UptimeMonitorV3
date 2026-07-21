@@ -1,10 +1,15 @@
 import { act, renderHook } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { SIDEBAR_COLLAPSE_STORAGE_KEY, useSidebarCollapse } from './useSidebarCollapse'
+import {
+  SIDEBAR_COLLAPSE_PREPAINT_CLASS,
+  SIDEBAR_COLLAPSE_STORAGE_KEY,
+  useSidebarCollapse,
+} from './useSidebarCollapse'
 
 describe('useSidebarCollapse', () => {
   beforeEach(() => {
     window.localStorage.clear()
+    document.documentElement.classList.remove(SIDEBAR_COLLAPSE_PREPAINT_CLASS)
   })
 
   it('defaults to expanded (not collapsed) when localStorage has no stored value', () => {
@@ -44,5 +49,25 @@ describe('useSidebarCollapse', () => {
 
     const { result: second } = renderHook(() => useSidebarCollapse())
     expect(second.current.collapsed).toBe(true)
+  })
+
+  describe('pre-paint class handoff (quality review CRITICAL fix)', () => {
+    it('removes the pre-paint class from <html> once React has mounted, so it cannot outlive hydration', () => {
+      document.documentElement.classList.add(SIDEBAR_COLLAPSE_PREPAINT_CLASS)
+      renderHook(() => useSidebarCollapse())
+      expect(document.documentElement.classList.contains(SIDEBAR_COLLAPSE_PREPAINT_CLASS)).toBe(
+        false,
+      )
+    })
+
+    it('removes the pre-paint class even when there was never one to begin with (idempotent)', () => {
+      expect(document.documentElement.classList.contains(SIDEBAR_COLLAPSE_PREPAINT_CLASS)).toBe(
+        false,
+      )
+      renderHook(() => useSidebarCollapse())
+      expect(document.documentElement.classList.contains(SIDEBAR_COLLAPSE_PREPAINT_CLASS)).toBe(
+        false,
+      )
+    })
   })
 })

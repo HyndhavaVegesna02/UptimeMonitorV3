@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useLayoutEffect, useState } from 'react'
 
 /**
  * localStorage key for the desktop sidebar's expanded/collapsed choice
@@ -6,6 +6,16 @@ import { useCallback, useState } from 'react'
  * pre-paint inline script (`index.html`) also reads.
  */
 export const SIDEBAR_COLLAPSE_STORAGE_KEY = 'uptime-monitor:sidebar-collapsed'
+
+/**
+ * The class `index.html`'s pre-paint inline script adds to `<html>` (before
+ * React ever mounts) when the persisted choice is collapsed, so `Sidebar.css`
+ * can render the correct rail width on the very first paint. Exported (same
+ * pattern as `SIDEBAR_COLLAPSE_STORAGE_KEY`) so both `index.html`'s literal
+ * string and this hook's cleanup below are provably the same class name
+ * (`indexHtmlPrepaint.test.ts`).
+ */
+export const SIDEBAR_COLLAPSE_PREPAINT_CLASS = 'sidebar-collapsed-preload'
 
 function readStoredCollapsed(): boolean {
   try {
@@ -31,6 +41,21 @@ export interface UseSidebarCollapseResult {
  */
 export function useSidebarCollapse(): UseSidebarCollapseResult {
   const [collapsed, setCollapsed] = useState<boolean>(readStoredCollapsed)
+
+  // Quality-review CRITICAL fix: the pre-paint class must not outlive
+  // hydration. `useLayoutEffect` runs synchronously after this render's DOM
+  // mutations but BEFORE the browser paints, and by this point React has
+  // already applied its own `.shell-sidebar--collapsed` class (from the same
+  // `collapsed` value the pre-paint script read), which resolves to the
+  // IDENTICAL rail width the pre-paint rule set — so removing the pre-paint
+  // class here never changes what's on screen (no flash), but permanently
+  // hands sole ownership of the width to React's class. Without this, the
+  // pre-paint rule (`html.sidebar-collapsed-preload .shell-sidebar`, higher
+  // specificity than `.shell-sidebar--collapsed` alone) would keep pinning
+  // the sidebar at rail width even after clicking Expand.
+  useLayoutEffect(() => {
+    document.documentElement.classList.remove(SIDEBAR_COLLAPSE_PREPAINT_CLASS)
+  }, [])
 
   const toggle = useCallback(() => {
     setCollapsed((prev) => {

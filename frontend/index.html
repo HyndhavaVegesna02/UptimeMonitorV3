@@ -14,7 +14,12 @@
       // persisted "collapsed" choice — no flash of the wrong (expanded)
       // state. `useSidebarCollapse`'s lazy `useState` initializer reads the
       // same localStorage key once React does mount, so the two always
-      // agree; this script only covers the gap before that.
+      // agree; this script only covers the gap before that. The class this
+      // script adds is REMOVED by `useSidebarCollapse` itself in a
+      // `useLayoutEffect` right after mount (quality-review fix — this class
+      // must never outlive hydration, or it pins the sidebar at rail width
+      // even after an Expand click, since it's higher-specificity than
+      // React's own `.shell-sidebar--collapsed`).
       (function () {
         try {
           if (window.localStorage.getItem('uptime-monitor:sidebar-collapsed') === 'true') {
