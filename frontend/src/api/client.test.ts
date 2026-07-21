@@ -14,6 +14,7 @@ import {
   getComponentAvailability,
   getComponents,
   getHistory,
+  getHistoryWindow,
   getMaintenance,
   getTopology,
 } from './client'
@@ -70,6 +71,52 @@ describe('getHistory', () => {
 
     expect(capturedUrl).toContain('signal_key=http-check')
     expect(capturedUrl).toContain('limit=8')
+  })
+})
+
+describe('getHistoryWindow', () => {
+  const since = '2026-07-20T18:20:42.000Z'
+  const until = '2026-07-21T18:20:42.000Z'
+
+  it('resolves the fixture observations for a known signal_key', async () => {
+    await expect(getHistoryWindow({ signal_key: 'http-check', since, until })).resolves.toEqual(
+      FIXTURE_HISTORY['http-check'],
+    )
+  })
+
+  it('resolves an empty array for an unfixtured signal_key', async () => {
+    await expect(getHistoryWindow({ signal_key: 'unknown-signal', since, until })).resolves.toEqual([])
+  })
+
+  it('sends signal_key/since/until (and an optional limit) as query params', async () => {
+    let capturedUrl: string | undefined
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        capturedUrl = request.url
+        return HttpResponse.json([])
+      }),
+    )
+
+    await getHistoryWindow({ signal_key: 'http-check', since, until, limit: 8 })
+
+    expect(capturedUrl).toContain('signal_key=http-check')
+    expect(capturedUrl).toContain(`since=${encodeURIComponent(since)}`)
+    expect(capturedUrl).toContain(`until=${encodeURIComponent(until)}`)
+    expect(capturedUrl).toContain('limit=8')
+  })
+
+  it('omits limit entirely when not given', async () => {
+    let capturedUrl: string | undefined
+    server.use(
+      http.get('/api/v1/history', ({ request }) => {
+        capturedUrl = request.url
+        return HttpResponse.json([])
+      }),
+    )
+
+    await getHistoryWindow({ signal_key: 'http-check', since, until })
+
+    expect(capturedUrl).not.toContain('limit=')
   })
 })
 

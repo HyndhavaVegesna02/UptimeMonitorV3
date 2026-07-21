@@ -111,6 +111,32 @@ export function getHistory(signalKey: string, limit?: number): Promise<Observati
   return getJson<ObservationDTO[]>(`/v1/history?${params.toString()}`)
 }
 
+/** `GET /api/v1/history?signal_key=...&since=...&until=...&limit=...` (STORY-130)
+ * — the windowed variant `getHistory` lacks: per-signal observation history
+ * scoped to a `[since, until)` window, most-recent-first. `since`/`until`
+ * MUST be tz-aware UTC ISO strings (trailing `Z`) — the backend 422s a
+ * naive datetime (global API contract fact). `limit` is an optional
+ * server-side cap applied after sort. Kept distinct from `getHistory`
+ * (which the Dashboard already depends on) rather than widening its
+ * signature — the two callers want different param shapes. */
+export function getHistoryWindow({
+  signal_key,
+  since,
+  until,
+  limit,
+}: {
+  signal_key: string
+  since: string
+  until: string
+  limit?: number
+}): Promise<ObservationDTO[]> {
+  const params = new URLSearchParams({ signal_key, since, until })
+  if (limit !== undefined) {
+    params.set('limit', String(limit))
+  }
+  return getJson<ObservationDTO[]>(`/v1/history?${params.toString()}`)
+}
+
 /** `GET /api/v1/availability?signal_key=...` (STORY-122) — per-signal
  * availability%/completeness% over the default 24h window.
  * `availability_pct`/`completeness_pct` may be `null` for a degenerate
