@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
 code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx]
-verified_sha: 5884177
+verified_sha: a16b893
 verified_sprint: sprint-59
 status: verified
 ---
@@ -113,6 +113,11 @@ not copied pixel-for-pixel.
   unqualified, so even a paint-only SVG property (e.g. `stroke-dashoffset`) is disallowed; the
   Sparkline's entrance (below) is an opacity + small `translateY` fade, not a stroke draw. No rule
   anywhere uses `transition: all`.
+- `frontend/src/styles/global.css` also carries a shared `.sr-only` utility (STORY-121
+  quality-review fix) — the standard visually-hidden-but-in-the-accessibility-tree pattern
+  (`position: absolute`, 1x1px, `clip: rect(0 0 0 0)`), distinct from `aria-hidden` (which removes
+  content from assistive tech entirely). First consumer: the sidebar Approvals badge's "N pending"
+  screen-reader text (STORY-121's own wiki article has the full story).
 
 ### Icon wrapper (`frontend/src/components/Icon/Icon.tsx`, AC1)
 - Thin wrapper around a caller-supplied Phosphor icon COMPONENT (`icon: PhosphorIcon` — e.g.
@@ -230,3 +235,10 @@ not copied pixel-for-pixel.
   `--shell-topbar-height` component tokens) — none of the EXISTING Facts above changed value, so
   only additive; `--ease-drawer`'s "not yet consumed" note is now stale and corrected. No primitive/
   contrast/motion-token test needed a rewrite. verified_sha = 5884177.
+- sprint-59 (STORY-121, quality review fix pass, re-verify): two more small, additive touches to
+  this system's files during the fix-required round. `frontend/index.html`'s pre-paint script
+  comment now notes the class it adds is removed post-hydration by `useSidebarCollapse` (a CRITICAL
+  fix — full story on STORY-121's own article); the class name itself didn't change. `global.css`
+  gained a shared `.sr-only` utility (Facts above updated) for the Approvals badge's screen-reader
+  text (a MAJOR a11y fix). Neither is a Fact this article previously got wrong — both are additive.
+  verified_sha = a16b893.
