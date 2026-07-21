@@ -7,8 +7,12 @@ import { cx } from '../../lib/cx'
 import { HEALTH_ICONS } from '../../lib/healthIcons'
 import { NAV_GROUPS } from '../../nav/tabs'
 import { TooltipGroupProvider } from '../TooltipGroupProvider'
+import { useMediaQuery } from '../useMediaQuery'
 import { NavItem } from './NavItem'
 import './Sidebar.css'
+
+/** Matches Sidebar.css's `@media (min-width: 861px)` desktop-rail breakpoint. */
+const DESKTOP_QUERY = '(min-width: 861px)'
 
 export interface SidebarProps {
   collapsed: boolean
@@ -57,6 +61,13 @@ export function Sidebar({
 }: SidebarProps) {
   const generatedNavId = useId()
   const navId = providedNavId ?? generatedNavId
+  // The rail (icon-only + tooltip) presentation is a DESKTOP-only concept
+  // (AC5); the mobile sheet always shows full labels (AC6) regardless of
+  // the persisted desktop `collapsed` choice, so gate by real viewport too
+  // — not just the `collapsed` boolean, which persists independent of
+  // window size.
+  const isDesktop = useMediaQuery(DESKTOP_QUERY)
+  const railMode = collapsed && isDesktop
 
   useEffect(() => {
     if (!mobileOpen) {
@@ -112,7 +123,7 @@ export function Sidebar({
                       label={tab.label}
                       icon={tab.icon}
                       active={activePath === tab.path}
-                      showTooltip={collapsed}
+                      showTooltip={railMode}
                       badge={tab.path === '/approvals' ? approvalsCount : undefined}
                     />
                   </li>
@@ -132,7 +143,7 @@ export function Sidebar({
                       label={component.name}
                       icon={HEALTH_ICONS[toHealthStatus(component.status)]}
                       active={false}
-                      showTooltip={collapsed}
+                      showTooltip={railMode}
                     />
                   </li>
                 ))}

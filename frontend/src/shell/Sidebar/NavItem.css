@@ -82,17 +82,26 @@
    alone don't remove an element from the accessibility tree (unlike
    `display:none`/`aria-hidden`), so the link's accessible name stays the
    full label even while collapsed — the rail's hover/focus tooltip is for
-   SIGHTED users only. */
-.nav-item--rail .nav-item__link {
-  justify-content: center;
-}
+   SIGHTED users only.
 
-.nav-item--rail .nav-item__label,
-.nav-item--rail .nav-item__badge {
-  opacity: 0;
-  transform: translateX(-6px);
-  max-width: 0;
-  margin: 0;
+   Scoped to the ≥861px desktop breakpoint ONLY: `Sidebar` already gates
+   `showTooltip` (which drives the `nav-item--rail` class) to
+   `collapsed && isDesktop`, but this media guard is defense-in-depth so a
+   mobile-sheet nav item never renders icon-only even if that ever drifts —
+   the mobile sheet always shows full labels (AC6), independent of the
+   desktop collapse choice. */
+@media (min-width: 861px) {
+  .nav-item--rail .nav-item__link {
+    justify-content: center;
+  }
+
+  .nav-item--rail .nav-item__label,
+  .nav-item--rail .nav-item__badge {
+    opacity: 0;
+    transform: translateX(-6px);
+    max-width: 0;
+    margin: 0;
+  }
 }
 
 @media (prefers-reduced-motion: no-preference) {

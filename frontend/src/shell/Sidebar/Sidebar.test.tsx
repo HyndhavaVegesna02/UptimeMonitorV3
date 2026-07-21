@@ -1,8 +1,23 @@
 import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { FIXTURE_COMPONENTS } from '../../mocks/handlers/components'
 import { Sidebar } from './Sidebar'
+
+/** Stubs `window.matchMedia` so `useMediaQuery('(min-width: 861px)')`
+ * resolves to a chosen desktop/mobile viewport, overriding the test
+ * harness's default (`src/test/setup.ts` polyfills every query to
+ * non-matching, i.e. "mobile"). */
+function stubViewport(isDesktop: boolean) {
+  vi.stubGlobal(
+    'matchMedia',
+    vi.fn().mockReturnValue({
+      matches: isDesktop,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+    }),
+  )
+}
 
 function renderSidebar(overrides: Partial<React.ComponentProps<typeof Sidebar>> = {}) {
   return render(
@@ -102,6 +117,24 @@ describe('Sidebar', () => {
       const controlsId = toggle.getAttribute('aria-controls')
       expect(controlsId).toBeTruthy()
       expect(document.getElementById(controlsId!)).not.toBeNull()
+    })
+  })
+
+  describe('rail mode is viewport-gated, not just the persisted `collapsed` choice', () => {
+    afterEach(() => {
+      vi.unstubAllGlobals()
+    })
+
+    it('renders nav items icon-only (rail) when collapsed AND the viewport is desktop-sized', () => {
+      stubViewport(true)
+      const { container } = renderSidebar({ collapsed: true })
+      expect(container.querySelector('.nav-item--rail')).not.toBeNull()
+    })
+
+    it('never renders the icon-only rail on a mobile-sized viewport, even with a persisted collapsed=true', () => {
+      stubViewport(false)
+      const { container } = renderSidebar({ collapsed: true })
+      expect(container.querySelector('.nav-item--rail')).toBeNull()
     })
   })
 })
