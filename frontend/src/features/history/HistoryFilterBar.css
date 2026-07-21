@@ -1,0 +1,68 @@
+.history-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.history-filter-bar__field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 160px;
+}
+
+.history-filter-bar__field--search {
+  flex: 1 1 240px;
+  min-width: 220px;
+}
+
+.history-filter-bar__field label {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.history-filter-bar__field select,
+.history-filter-bar__search-input {
+  height: var(--button-height);
+  border-radius: var(--radius-ctrl);
+  border: 1px solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  transition: border-color var(--duration-control) var(--ease-out);
+}
+
+.history-filter-bar__field select {
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+.history-filter-bar__search-input {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.history-filter-bar__search-input input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+}
+
+.history-filter-bar__field select:focus-visible,
+.history-filter-bar__search-input:focus-within {
+  border-color: var(--color-accent);
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
