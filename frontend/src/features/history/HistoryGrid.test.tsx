@@ -102,7 +102,7 @@ describe('HistoryGrid', () => {
       expect(within(table).getAllByRole('row')).toHaveLength(1 + observations.length) // header + N
 
       // No "same key"/"non-unique" React reconciliation warning was logged.
-      const keyCollisionCalls = consoleErrorSpy.mock.calls.filter((call) =>
+      const keyCollisionCalls = consoleErrorSpy.mock.calls.filter((call: unknown[]) =>
         call.some((arg) => typeof arg === 'string' && /same key|non-unique/i.test(arg)),
       )
       expect(keyCollisionCalls).toEqual([])
