@@ -61,7 +61,7 @@ stories:
         commit: 024d0e4
   - id: STORY-121
     title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
   - id: STORY-122
