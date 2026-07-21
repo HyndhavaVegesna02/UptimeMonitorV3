@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 127  # 123-124 from STORY-120 review; 125-126 from STORY-121 review (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
+next_story_id: 129  # 123-124 STORY-120 review; 125-126 STORY-121 review; 127-128 STORY-122 reality gate (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
                     # + Phosphor (120), collapsible app shell (121), Dashboard (122). Clean
                     # 120-block chosen to avoid collision with the frozen ui-rewrite's 097-110
                     # (abandoned branches, not on this line). 097-119 intentionally unused here.
@@ -949,7 +949,7 @@ stories:
   - id: STORY-122
     title: Dashboard page on real backend data
     file: docs/scrum/stories/STORY-122-dashboard-page.md
-    status: ready
+    status: done   # sprint-59: impl + spec PASS || quality FIX_REQUIRED->fixed (MAJOR chart 'Median' mislabel) + scoped DoD green (93a97c7) + reality gate PASS on correctness (every number exact vs live API). Perf finding -> STORY-127/128. Awaits PO acceptance.
     points: 3
     type: story
     sprint: 59
@@ -975,5 +975,17 @@ stories:
   - id: STORY-126
     title: Add a skip-to-content link to the app shell
     status: draft   # STORY-121 review: the <main id="main-content"> target exists but nothing links to it; no AC required it. Cheap a11y add. Needs refinement + estimate.
+    type: story
+    sprint: null
+
+  # ── Filed from STORY-122 reality gate (sprint-59, 2026-07-21) ────────────
+  - id: STORY-127
+    title: /api/v1/availability is pathologically slow (~20-120s) against DynamoDB-Local
+    status: draft   # STORY-122 reality gate: the 24h availability computation is expensive and DynamoDB-Local (single-threaded) serializes ALL queries behind it, so the whole dashboard first-paint stalls (worse when the pull-loop competes). Likely a local-stack artifact (real DynamoDB should be far faster) — VERIFY against the deployed stack before optimizing; if real too, needs a query/caching fix. BACKEND (was frozen this sprint). Needs refinement + estimate + a live-latency measurement on real DynamoDB.
+    type: defect
+    sprint: null
+  - id: STORY-128
+    title: Dashboard — lazy-load the availability-dependent KPI so fast regions paint first
+    status: draft   # STORY-122 reality gate follow-up: useSignalsData bundles history+availability per signal; decoupling (and deferring the slow availability fetch) would let history-based regions paint immediately with only the availability KPI + roster-uptime showing their own loading state. Marginal while DynamoDB-Local serializes (STORY-127), but correct UX once backend is fast. Also fold in: dedupe the components/approvals double-fetch across ShellLayout + DashboardPage (Outlet context / shared cache). Needs refinement + estimate.
     type: story
     sprint: null

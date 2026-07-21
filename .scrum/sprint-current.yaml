@@ -95,6 +95,23 @@ stories:
     ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
   - id: STORY-122
     title: Dashboard page on real backend data
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
+    reviews:
+      spec: "PASS — all 7 ACs MET; deltas omitted not fabricated; chart aria-label carries real avg/spike; exactly-one-h1 verified end-to-end. 402 tests. (Noted a flaky DashboardPage timeout under heavy parallel load — passed in isolation + re-run; watch at full gate.)"
+      quality: "FIX_REQUIRED->fixed — MAJOR: chart legend labeled the raw per-check series 'Median response' (no median computed) — false statistic, contradicted its own aria-label; relabeled to 'Response time' + renamed --median swatch + regression test. 2 doc minors fixed. Truthful-rendering headline check otherwise excellent (every value traced to a real API field)."
+    reality_gate: "PASS on correctness (live stack, scripted Chromium). Every rendered number EXACT vs live /api/v1: availability 100.00% (avail_pct 1.0), avg 439ms + spike 865ms@…0060 (computed from history — exact match), 1/1 components healthy, 0 approvals, 2 probe locations (…0047/…0060), empty maintenance→empty state, recent-checks feed + roster all real. Chart legend correctly 'Response time' (MAJOR fix confirmed live). Zero console errors; no horizontal scroll @ 390 + 1440; loading/empty states present. FINDING (out of scope, backend/local-stack): first-paint is slow (~20s loop-off; up to ~120s with the pull-loop running) because the /availability endpoint's 24h computation is expensive against DynamoDB-Local (single-threaded → serializes ALL queries behind it). NOT a frontend defect (rendering is correct + fast once data arrives) and unlikely on real DynamoDB; filed backlog STORY-127 (backend availability perf) + STORY-128 (frontend: lazy-load the availability-dependent KPI so fast regions paint first). Full stack torn down, ports 8000/8001/5173 verified FREE, dynamo container removed."
+    dod_evidence:   # scoped --only npm at final HEAD 93a97c7
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  53 passed (53) | Tests  403 passed (403)"
+        commit: 93a97c7
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 328.12 kB / gzip 98.78 kB)"
+        commit: 93a97c7
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 93a97c7
