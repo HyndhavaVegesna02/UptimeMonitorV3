@@ -1,0 +1,94 @@
+.response-time-chart {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.response-time-chart__svg {
+  display: block;
+  width: 100%;
+  height: 218px;
+  overflow: visible;
+}
+
+.response-time-chart__gridlines line {
+  stroke: var(--color-border);
+  stroke-width: 1;
+}
+
+.response-time-chart__axis-labels text {
+  fill: var(--color-text-muted);
+  font-size: 10px;
+  font-family: var(--font-family-base);
+}
+
+.response-time-chart__area {
+  fill: var(--color-accent);
+  fill-opacity: 0.14;
+  stroke: none;
+}
+
+.response-time-chart__line {
+  fill: none;
+  stroke: var(--color-accent);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.response-time-chart__spike {
+  fill: var(--color-surface);
+  stroke: var(--color-degraded);
+  stroke-width: 2.5;
+}
+
+.response-time-chart__legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.response-time-chart__legend-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.response-time-chart__legend-item::before {
+  content: '';
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-chip);
+  flex-shrink: 0;
+}
+
+.response-time-chart__legend-item--median::before {
+  background: var(--color-accent);
+}
+
+.response-time-chart__legend-item--spike::before {
+  background: var(--color-degraded);
+}
+
+/* One-shot entrance (STORY-122 AC2): the chart fades/rises in ONCE on
+   mount, never replaying on a data refresh (no keyframe re-trigger since
+   there is no re-render-based reset), and animates only opacity/transform
+   — never a chart-specific property like stroke-dashoffset. Guarded by
+   prefers-reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  .response-time-chart {
+    opacity: 0;
+    transform: translateY(6px);
+    animation: response-time-chart-rise 360ms var(--ease-out) 40ms forwards;
+  }
+
+  @keyframes response-time-chart-rise {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
