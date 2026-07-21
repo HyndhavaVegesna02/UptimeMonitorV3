@@ -1,13 +1,17 @@
 # YourTeam active sprint board
 sprint: 60
-status: active   # PLANNED + LOCKED 2026-07-22. External mode. Branched from the sprint-59 tip
-                 # (106bdb7, new-frontend/ui-prototype line, unmerged). Plan-verifier verdict
-                 # LOCK_READY (zero gaps) — every /api/v1 contract, unit/scale, status code, and
-                 # the maintenance 422 field-map order verified vs backend/src + live-probed on the
-                 # running stack. Awaiting external-agent delivery per the plan.md delivery contract.
-mode: external   # PO implements via an external AI agent building to plan.md alone. Orchestrator
-                 # does planning + board-keeping + post-impl verification: spec + quality review per
-                 # story REGARDLESS of size, independent yt_gate.py re-run, per-story reality gate.
+status: active   # PLANNED + LOCKED 2026-07-22. Branched from the sprint-59 tip (106bdb7,
+                 # new-frontend/ui-prototype line, unmerged). Plan-verifier LOCK_READY (zero gaps).
+                 # MODE PIVOT 2026-07-22: an external agent delivered all 5 tabs (commits f37f82d..
+                 # b100a1a) but the PO REJECTED the work ("didn't like it"). Those 5 commits were
+                 # reset off the branch (HEAD back to planning commit 947b0d1) and preserved at tag
+                 # scrap/sprint-60-external-rejected. PO directed in-process re-implementation
+                 # ("you only implement"). Same scope, same plan.md spec.
+mode: in-process # PIVOTED from external 2026-07-22 (PO rejected the external delivery). Orchestrator
+                 # dispatches yt-implementer per story (TDD, commit per green step); 3+ pt stories get
+                 # spec ∥ quality reviewers; all get DoD gate + reality gate. plan.md remains the build
+                 # spec (contracts verified LOCK_READY); PO directive: design FRESH with the mandated
+                 # skills — do NOT reuse the rejected external work.
 goal: "Complete the operator cockpit begun in sprint 59: build the 5 remaining tabs — Availability, Check History, Approvals, Maintenance, Publications — as fresh high-craft designs on the sprint-59 design system + shell, each live on the real /api/v1 backend. At sprint end all six routes are real; no placeholders remain."
 branch: sprint-60
 start_tag: sprint-60-start
@@ -41,7 +45,7 @@ stories:
     title: Availability page — two-grain (rollup + per-signal drill-down), window toggle
     status: todo
     points: 5
-    ceremony: 3-pointer   # external mode: spec + quality review + DoD gate + reality gate
+    ceremony: 3-pointer   # in-process: implementer → spec ∥ quality → DoD gate → reality gate
     order: 1
   - id: STORY-130
     title: Check History page — multi-signal merge, filter toolbar, dense grid
@@ -65,5 +69,5 @@ stories:
     title: Publications page — Statuspage publish-attempt timeline (outcome + author)
     status: todo
     points: 2
-    ceremony: 3-pointer
+    ceremony: 1-2 pointer   # in-process: implementer -> DoD gate -> reality gate (no reviewer pair at 2 pts)
     order: 5
