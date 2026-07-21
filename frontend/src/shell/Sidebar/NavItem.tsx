@@ -88,7 +88,7 @@ export function NavItem({ path, label, icon, active, showTooltip, badge }: NavIt
       >
         <Icon icon={icon} aria-hidden className="nav-item__icon" />
         <span className="nav-item__label">{label}</span>
-        {badge && !showTooltip ? (
+        {badge ? (
           <span className="nav-item__badge" aria-hidden="true">
             {badge}
           </span>

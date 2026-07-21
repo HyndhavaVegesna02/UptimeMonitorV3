@@ -14,6 +14,7 @@
   font-size: var(--font-size-base);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
+  overflow: hidden;
   transition:
     background var(--duration-control) var(--ease-out),
     color var(--duration-control) var(--ease-out);
@@ -41,13 +42,14 @@
 .nav-item__label {
   overflow: hidden;
   text-overflow: ellipsis;
-  transition:
-    opacity var(--duration-control) var(--ease-out),
-    transform var(--duration-control) var(--ease-out);
+  opacity: 1;
+  transform: translateX(0);
+  max-width: 160px;
 }
 
 .nav-item__badge {
   margin-left: auto;
+  flex: 0 0 auto;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
@@ -59,23 +61,38 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  opacity: 1;
 }
 
-/* Rail (collapsed desktop) mode — icon-only; the label collapses out via
-   opacity+translate rather than `display:none` so it participates in the
-   width transition instead of popping (STORY-121 AC7: transform/opacity only). */
+@media (prefers-reduced-motion: no-preference) {
+  .nav-item__label,
+  .nav-item__badge {
+    transition:
+      opacity var(--duration-drawer) var(--ease-drawer),
+      transform var(--duration-drawer) var(--ease-drawer),
+      max-width var(--duration-drawer) var(--ease-drawer);
+  }
+}
+
+/* Rail (collapsed desktop) mode — icon-only. The label/badge collapse out
+   via opacity+translate+max-width (STORY-121 AC7: transform/opacity only,
+   plus the one named `max-width` exception the rail's own width transition
+   already takes) rather than an instant `display:none` pop. Opacity/width
+   alone don't remove an element from the accessibility tree (unlike
+   `display:none`/`aria-hidden`), so the link's accessible name stays the
+   full label even while collapsed — the rail's hover/focus tooltip is for
+   SIGHTED users only. */
 .nav-item--rail .nav-item__link {
   justify-content: center;
 }
 
 .nav-item--rail .nav-item__label,
 .nav-item--rail .nav-item__badge {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  white-space: nowrap;
+  opacity: 0;
+  transform: translateX(-6px);
+  max-width: 0;
+  margin: 0;
 }
 
 @media (prefers-reduced-motion: no-preference) {

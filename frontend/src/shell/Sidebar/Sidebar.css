@@ -77,9 +77,15 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: var(--color-text-muted);
-  transition:
-    opacity var(--duration-control) var(--ease-out),
-    transform var(--duration-control) var(--ease-out);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .shell-sidebar__group-label {
+    transition:
+      opacity var(--duration-drawer) var(--ease-drawer),
+      transform var(--duration-drawer) var(--ease-drawer),
+      height var(--duration-drawer) var(--ease-drawer);
+  }
 }
 
 .shell-sidebar__list {
