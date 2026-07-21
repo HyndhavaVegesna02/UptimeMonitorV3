@@ -18,6 +18,10 @@
   flex-shrink: 0;
 }
 
+.status-badge__icon {
+  flex-shrink: 0;
+}
+
 .status-badge--up {
   background: var(--color-up-tint);
   color: var(--color-up-text);

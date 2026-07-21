@@ -1,3 +1,4 @@
+import { CheckCircle } from '@phosphor-icons/react'
 import { render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import { StatusBadge } from './StatusBadge'
@@ -36,5 +37,17 @@ describe('StatusBadge', () => {
   it('applies the status modifier class', () => {
     const { container } = render(<StatusBadge status="maintenance" />)
     expect(container.firstElementChild).toHaveClass('status-badge--maintenance')
+  })
+
+  it('renders an optional leading icon alongside the dot (AC3: "dot + icon + text label")', () => {
+    const { container } = render(<StatusBadge status="up" icon={CheckCircle} />)
+    expect(container.querySelector('.status-badge__dot')).not.toBeNull()
+    expect(container.querySelector('.status-badge__icon')).not.toBeNull()
+    expect(screen.getByText('Up')).toBeInTheDocument()
+  })
+
+  it('renders no icon element when none is given (existing dot+label callers are unaffected)', () => {
+    const { container } = render(<StatusBadge status="up" />)
+    expect(container.querySelector('.status-badge__icon')).toBeNull()
   })
 })
