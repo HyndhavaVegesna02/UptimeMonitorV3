@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
-code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: be2ffcd
-verified_sprint: sprint-51
+code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
+verified_sha: 113e2be
+verified_sprint: sprint-59
 status: verified
 ---
 
@@ -175,31 +175,22 @@ below for the mechanical deletion recipe.
   max(observed_at) from observations group by 1,2`. Full evidence trail:
   `docs/scrum/sprints/2026-07-06-debug-sample-mode/report.md`.
 
-### The frontend consumer â€” shell TopBar trigger + banner (STORY-049, relocated STORY-056)
-- **STORY-056 (sprint-38) relocated this OUT of `DashboardPage` and into the app shell** â€” every
-  tab renders inside the shell, so the trigger no longer needs to live on one specific tab. The
-  hook itself, `features/dashboard/useSampleMode.ts`, is UNCHANGED (still owns both the load
-  `useFetch(getSampleMode)` and the mutation `setEnabled`; see
-  `docs/scrum/wiki/frontend-zone.md`'s per-tab-pattern section for the one-hook design rationale).
-  What changed is WHO calls it and WHERE it renders:
-  - `frontend/src/AppShell.tsx` calls `useSampleMode()` exactly ONCE and passes the result down as
-    a prop to both consumers below â€” never two independent hook calls, which would each run their
-    own GET/override cycle and could disagree the instant one of them PUTs.
-  - `frontend/src/nav/TopBar.tsx` renders the real `<button role="switch" aria-checked
-    aria-label="Sample mode">` (now a âš¡ icon button, right-aligned in the top bar) â€” same
-    role/state contract as the old inline toggle; a GET failure now renders a small retry
-    affordance in the trigger's place instead of a load failure falling back to the full shell
-    `ErrorState` (a 32px icon slot has no room for that block); a failed PUT surfaces a visible
-    `role="alert"` next to the buttons.
-  - `frontend/src/nav/SampleModeBanner.tsx` renders the exact "sample mode â€” signals recorded as
-    DOWN" `role="status"` warning text from the old inline block, now in a shell-level banner
-    region under the top bar, and now DISMISSIBLE (session-scoped local state; re-arms whenever the
-    flag transitions off then on again).
-  - `frontend/src/pages/DashboardPage.tsx` no longer imports `useSampleMode` or renders anything
-    sample-mode-related â€” it is a plain read tab again, same shape as Availability/Publications.
-  This is still the ONLY frontend surface sample mode has; no other tab/page renders anything
-  related to it â€” the surface just moved from "inside one tab's page" to "the shell every tab
-  renders inside."
+### The frontend consumer — REMOVED in the sprint-59 greenfield rebuild
+- **As of sprint-59 (STORY-120/121/122) the frontend has NO sample-mode UI.** The greenfield
+  rebuild deleted all of the old `frontend/src/**`, including every sample-mode consumer that had
+  existed: `features/dashboard/useSampleMode.ts` (the load+mutate hook, STORY-049), the shell
+  toggle in `nav/TopBar.tsx`, the `nav/SampleModeBanner.tsx` warning, the `AppShell.tsx` wiring,
+  the `mocks/handlers/sampleMode.ts` MSW handlers, and the `SampleModeDTO` + `getSampleMode`/
+  `putSampleMode` client seam in `api/types.ts` / `api/client.ts`. The rebuilt frontend
+  ([[frontend-zone]]) does not re-implement any of it — a sample-mode UI is out of scope for the
+  120-122 slice and currently unscheduled.
+- **The BACKEND feature is untouched and fully intact** — `GET`/`PUT /api/v1/sample-mode`, the
+  `SampleModeRepository` port + `DynamoSampleModeRepository`, and the `SampleModeIngest` override
+  in the live loop all still exist and behave exactly as the backend Facts above describe. Sample
+  mode is therefore currently reachable ONLY via the API directly (curl/HTTP), not through any
+  operator UI. A future sample-mode consumer is a fresh frontend story against the still-live
+  backend endpoints; the frontend half of the REMOVAL recipe below is now historical — those
+  files are already gone (they resolve only in git history and in archive/frontend-zone.md).
 
 ### End-to-end proof (T5)
 - `backend/tests/test_sample_mode_end_to_end.py` drives observations through
@@ -313,6 +304,15 @@ publisher/approval chain needs no change either way â€” sample mode only ev
 produced ordinary data flowing through it.
 
 ## History
+- sprint-59 (STORY-120/121/122, greenfield frontend rebuild — sprint-close compile pass): the
+  frontend sample-mode consumer was DELETED with the rest of the old frontend/src (useSampleMode
+  hook, the TopBar toggle, SampleModeBanner, AppShell wiring, the sampleMode MSW handlers, and the
+  SampleModeDTO/getSampleMode/putSampleMode client seam). Rewrote 'The frontend consumer' section
+  to record the removal; the BACKEND feature (endpoint, port, DynamoSampleModeRepository,
+  SampleModeIngest) is UNCHANGED and re-verified present. code_refs dropped the deleted frontend
+  paths (frontend/src/api/{types,client}.ts, mocks/handlers/{sampleMode,index}.ts,
+  features/dashboard/useSampleMode.ts, AppShell.tsx, nav/TopBar.tsx, nav/SampleModeBanner.tsx,
+  pages/DashboardPage.tsx), keeping the backend paths. No backend Fact changed. verified_sha -> 113e2be.
 - sprint-43 (STORY-078, unrelated story â€” mechanical staleness sweep only): this article's
   `code_refs` include `pyproject.toml`, which changed only in the `core-internal-layering`
   contract (added the `src.core.queries` layer for the CQRS-lite move â€” unrelated to the
