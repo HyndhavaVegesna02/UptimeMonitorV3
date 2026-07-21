@@ -6,6 +6,17 @@ import type { SignalsMap } from './types'
 
 const HISTORY_LIMIT = 100
 
+interface Resolved {
+  /** The `signalKeysKey` this resolved state corresponds to — lets the
+   * render-time phase computation below tell "stale result, a fetch for
+   * the CURRENT keys is in flight" apart from "this IS the current
+   * result", without a synchronous `setState` inside the effect body
+   * (react-hooks/set-state-in-effect — every `setState` here happens
+   * inside a genuine async `.then()`/`.catch()`, same pattern as `useFetch`). */
+  key: string
+  state: FetchState<SignalsMap>
+}
+
 /**
  * Fetches per-signal history + availability for every component (STORY-122)
  * — in the current topology a component id IS its signal_key 1:1 (dossier
@@ -24,28 +35,17 @@ export function useSignalsData(componentsState: FetchState<ComponentDTO[]>): Fet
   const signalKeys = useMemo(() => (components ?? []).map((component) => component.id), [components])
   const signalKeysKey = signalKeys.join(',')
 
-  const [state, setState] = useState<FetchState<SignalsMap>>({ phase: 'loading' })
+  const [resolved, setResolved] = useState<Resolved>({ key: '', state: { phase: 'success', data: {} } })
 
   useEffect(() => {
-    if (componentsState.phase === 'loading') {
-      setState({ phase: 'loading' })
+    // Zero components resolves to `{}` at render time below, with no fetch
+    // and no state write at all — nothing to synchronize here.
+    if (componentsState.phase !== 'success' || signalKeysKey === '') {
       return
     }
 
-    if (componentsState.phase === 'error') {
-      setState({ phase: 'error', message: componentsState.message })
-      return
-    }
-
-    const keys = signalKeysKey === '' ? [] : signalKeysKey.split(',')
-
-    if (keys.length === 0) {
-      setState({ phase: 'success', data: {} })
-      return
-    }
-
+    const keys = signalKeysKey.split(',')
     let cancelled = false
-    setState({ phase: 'loading' })
 
     Promise.all(
       keys.map(async (key) => {
@@ -55,20 +55,36 @@ export function useSignalsData(componentsState: FetchState<ComponentDTO[]>): Fet
     )
       .then((entries) => {
         if (!cancelled) {
-          setState({ phase: 'success', data: Object.fromEntries(entries) })
+          setResolved({ key: signalKeysKey, state: { phase: 'success', data: Object.fromEntries(entries) } })
         }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
-          setState({ phase: 'error', message: err instanceof Error ? err.message : 'Unknown error' })
+          setResolved({
+            key: signalKeysKey,
+            state: { phase: 'error', message: err instanceof Error ? err.message : 'Unknown error' },
+          })
         }
       })
 
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [componentsState.phase, signalKeysKey])
 
-  return state
+  if (componentsState.phase === 'loading') {
+    return { phase: 'loading' }
+  }
+  if (componentsState.phase === 'error') {
+    return { phase: 'error', message: componentsState.message }
+  }
+  if (signalKeysKey === '') {
+    return { phase: 'success', data: {} }
+  }
+  // A resolved result for a DIFFERENT key set means the effect above has an
+  // in-flight fetch for the CURRENT keys that hasn't settled yet.
+  if (resolved.key !== signalKeysKey) {
+    return { phase: 'loading' }
+  }
+  return resolved.state
 }
