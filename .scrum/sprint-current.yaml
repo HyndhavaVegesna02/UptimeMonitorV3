@@ -1,124 +1,69 @@
 # YourTeam active sprint board
-sprint: 59
-status: closed   # PO ACCEPTED all 3 stories at review 2026-07-21; directed do NOT merge (sprint-59 branch tip holds the accepted work) + keep the local stack UP. Velocity +9. Retro done 2026-07-21: 2 amendments PO-approved + landed (quality-review tests-that-lie #7 'source-text-as-proof'; implementer reality-gate live-first-paint). No active sprint now; next = planning (sprints 60-61 fill the 5 placeholder tabs). Backlog follow-ups: STORY-123..128.
-# SPRINT-CLOSE full 8-command gate — evidence of record, final HEAD 1760067 (2026-07-21), DYNAMO_ENDPOINT_URL unset:
-#   [1] pytest -> PASS (529 passed in 306s)
-#   [2] import-linter -> PASS (8 contracts kept, 0 broken)
-#   [3] ruff check -> PASS   [4] ruff format --check -> PASS   [5] cfn-lint infra/stack.yaml -> PASS
-#   [6] npm test -> PASS (403 passed, 53 files)   [7] npm run build -> PASS   [8] npm run lint -> PASS
-# Wiki compile pass CLEAN (sweep/facts/links/integrity); frontend-zone.md archived+rewritten,
-# sample-mode.md frontend section rehabbed, both re-verified to sprint-59. NOT merged to main.
-mode: in-process      # PO-approved at lock (2026-07-21).
-goal: "Stand up the new greenfield frontend on the approved refimg-derived visual language: a documented design system + Phosphor icons (STORY-120), the re-skinned collapsible app shell (STORY-121), and the full Dashboard live on real backend data (STORY-122). One complete, demoable vertical slice = the approved prototype, running."
-branch: sprint-59
-start_tag: sprint-59-start
-start_commit: 280cac2
-started: "2026-07-21T00:00:00+05:30"
-# PO decisions (2026-07-21): greenfield-then-swap (rebuild frontend/src fresh, keep only build
-# toolchain; PO acceptance at review IS the swap); scope = design system + shell + Dashboard;
-# light-first with dark-ready tokens; collapsible desktop sidebar REQUIRED; animations are a
-# first-class deliverable (STORY-121 bumped 2->3 pts, gets reviewer pair). Reference = the
-# approved prototype (docs/scrum/sprints/2026-07-18-ui-prototyping/prototypes/refimg-dashboard.html)
-# — adapt with craft, not a rigid pixel spec.
-# NON-NEGOTIABLE: frontend only. No backend/config/infra/API/DynamoDB/pipeline edits. No new
-# Docker resources. New API client re-derived from the LIVE /api/v1 contracts (verified at the
-# reality gate); old types.ts read only as a contract reference.
-# Mandatory skills in every implementer + reviewer brief: ui-ux-pro-max, web-design-guidelines,
-# vercel-react-best-practices, emil-design-eng, design-system.
-# Icons: Phosphor (@phosphor-icons/react) behind an accessible Icon wrapper.
-# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive: UI
-# rendering against already-live /api/v1 contracts; no adapter/vendor path, no units/scale
-# logic; in-process. Per-story reality gate (live render-vs-wire) covers contract consumption.
-# Numbering: sprint 59 (52-58 were the rejected rewrite on abandoned branches); stories use a
-# clean 120-122 block to avoid collision with the frozen rewrite's 097-110.
-# Lock: this session took the lock from the prior codex-...ui-rewrite-codex holder (separate
-# branch/initiative) per PO direction to run this work here on the ui-prototype line.
-# STARTED 2026-07-21 (PO: "start the sprint"). Baseline gate GREEN on HEAD 6a4db7c — all 8
-# commands exit 0 (pytest 529 passed, import-linter 8/8, ruff check+format, cfn-lint, npm
-# test 363 passed, npm build, npm lint). First baseline run showed 51 pytest ERRORS in
-# DB-gated tests: a stale `uptime_dynamo` container (Exited 255, 36h old) held port 8001 and
-# broke the session-scoped dynamo_local fixture; removed it and pytest went green (529). Empty
-# code diff since sprint cut 280cac2 (docs-only) + passes in isolation → transient, discounted
-# per agreement 2026-07-06. FOR RETRO: consider a preflight that reaps stale uptime_dynamo* containers.
-# Tooling: ui-ux-pro-max IS installed at .agents/skills/ui-ux-pro-max (not .claude/skills, whose
-# copy is stale bytecode) — invoke `python .agents/skills/ui-ux-pro-max/scripts/search.py`. PO
-# confirmed 2026-07-21. All five mandated skills available.
+sprint: 60
+status: active   # PLANNED + LOCKED 2026-07-22. External mode. Branched from the sprint-59 tip
+                 # (106bdb7, new-frontend/ui-prototype line, unmerged). Plan-verifier verdict
+                 # LOCK_READY (zero gaps) — every /api/v1 contract, unit/scale, status code, and
+                 # the maintenance 422 field-map order verified vs backend/src + live-probed on the
+                 # running stack. Awaiting external-agent delivery per the plan.md delivery contract.
+mode: external   # PO implements via an external AI agent building to plan.md alone. Orchestrator
+                 # does planning + board-keeping + post-impl verification: spec + quality review per
+                 # story REGARDLESS of size, independent yt_gate.py re-run, per-story reality gate.
+goal: "Complete the operator cockpit begun in sprint 59: build the 5 remaining tabs — Availability, Check History, Approvals, Maintenance, Publications — as fresh high-craft designs on the sprint-59 design system + shell, each live on the real /api/v1 backend. At sprint end all six routes are real; no placeholders remain."
+branch: sprint-60
+start_tag: sprint-60-start
+start_commit: 106bdb7   # the sprint-59 tip this branch was cut from (planning commit sits on top)
+started: "2026-07-22T00:00:00+05:30"
+# PO decisions (2026-07-21):
+#   - Scope = ALL 5 remaining placeholder tabs in one sprint (PO chose "all 5" over the
+#     2-3-tab options; 20 pts, well above ~9 velocity — owned; Publications is the natural
+#     carryover if the review tail runs long).
+#   - DESIGN FRESH: do NOT copy the old tab UI shapes — "be creative and design better ones
+#     with skills." AC pin capabilities + data-binding + states + a11y + motion + responsive;
+#     layout/visual craft is the builder's.
+# NON-NEGOTIABLE: frontend only. No backend/config/infra/API/DynamoDB/pipeline edits, no new
+#   Docker resources. API client re-derived/extended from the LIVE /api/v1 contracts (the
+#   sprint-59 client is GET-only + partial; plan.md §Shared-foundation lists what each page adds).
+# Mandatory skills in every implementer + reviewer brief: ui-ux-pro-max (live copy at
+#   .agents/skills/ui-ux-pro-max), web-design-guidelines, vercel-react-best-practices,
+#   emil-design-eng, design-system.
+# Plan-verifier: DISPATCHED + PASS (external mode = plan.md is the full contract; contract-sensitive
+#   by rule). Verdict LOCK_READY, zero gaps (2026-07-22). Two non-blocking observations folded into
+#   plan.md §Availability (rollup distinct_locations=0 quirk; interval_seconds nullable).
+# External delivery contract (execution-modes.md §2): commit-per-story with STORY-NNN: messages on
+#   sprint-60 (ideally per-green TDD cadence); if work returns as one uncommitted tree the
+#   orchestrator commits it per-story BEFORE reviewing; a self-reported "gates green" is a to-verify
+#   list, never evidence — only the orchestrator's own yt_gate.py on the final HEAD counts.
+# Gates: mid-sprint scoped `yt_gate.py --only npm`; sprint close = full 8-command gate on final HEAD
+#   (DYNAMO_ENDPOINT_URL unset; reap stale uptime_dynamo* containers first). Reality gate per story
+#   against the live stack (already UP: DynamoDB :8001 + API :8000 + loop; Vite :5173 at gate time).
 stories:
-  - id: STORY-120
-    title: Design-system foundation + Phosphor icons
-    status: done
-    points: 3
-    ceremony: 3-pointer   # implementer -> spec || quality -> scoped DoD -> reality gate
-    reviews:
-      spec: "FAIL->fixed — AC5 Sparkline animated stroke-dashoffset (not transform/opacity) + test enshrined it; story-file History missing deletion rationale. Both fixed."
-      quality: "FIX_REQUIRED->fixed — MAJOR: CLAUDE.md frontend section stale (Geist/deleted trees); + 2 in-scope token-layer minors fixed. Button-36px & canvas-contrast -> backlog STORY-123/124."
-    reality_gate: "PASS — live Vite render of /styleguide at 1440px, 0 console errors/warnings; all 7 health badges, KPI cards, sparklines, primitives paint to the approved refimg visual language. Browser+Vite torn down, port 5173 verified free."
-    dod_evidence:   # scoped --only npm at final HEAD 024d0e4 (mid-sprint scoping per plan; full 8-cmd gate at sprint close)
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files  18 passed (18) | Tests  139 passed (139)"
-        commit: 024d0e4
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "built (ships @fontsource/inter; index js 253.44 kB / gzip 80.40 kB)"
-        commit: 024d0e4
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . — clean (no output)"
-        commit: 024d0e4
-  - id: STORY-121
-    title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
-    status: done
-    # CRASH-RECOVERY (2026-07-21): first implementer terminated on a session usage limit
-    # (resets 08:30 IST) while starting the useTooltipGroup hook. Committed & green (023ade2..ca400af):
-    #   56a5e38 typed API client (components/approvals) + MSW harness
-    #   687d260 shared useFetch hook + worst-of overall-status derivation (AC4)
-    #   896100c StatusBadge optional leading icon (AC3)
-    #   ca400af health-status icon map + six-route nav table (AC1)
-    # Discarded scrap: nav/useTooltipGroup.test.ts (orphan test, no impl). PRESERVED uncommitted
-    # (coherent, awaiting resume agent's verify+commit as its first step): components/PlaceholderPage/
-    # + 6 page files (Dashboard/Availability/History/Approvals/Maintenance/Publications placeholders).
-    # RESUME: verify+commit the placeholder pages, wire the router, then plan steps 2-5 (collapsible
-    # rail + persist + tooltips; topbar+status pill; mobile sheet; motion polish). Then reality gate.
-    # ^ RESOLVED: resumed cleanly, all steps landed. Final HEAD for this story: 617d362.
-    reviews:
-      spec: "PASS — all 9 ACs MET, AC-to-test trace verified (zero-badge case, worst-of precedence + empty→unknown, localStorage persistence, index.html prepaint reads same key constant, Escape+focus-return). 255 tests green."
-      quality: "FIX_REQUIRED->fixed — CRITICAL: prepaint 'sidebar-collapsed-preload' class outlived hydration (higher specificity pinned sidebar at 64px rail after collapsed-reload+expand); MAJOR: Approvals count aria-hidden w/ no SR conveyance. Both fixed + 2 in-scope (last-updated captured at fetch-success; :active press on shell icon buttons). Focus-trap/skip-link -> backlog STORY-125/126."
-    reality_gate: "PASS (live stack: DynamoDB 8001 + API 8000 + loop + Vite 5173, scripted Chromium). Renders TRUTHFULLY to live API: badge=0→none (not prototype's fake 1), status pill=Up=worst-of live /components, PINNED=real 'HTTP Check' (not prototype's fake components). CRITICAL fix verified: load-collapsed→expand → 240px full width, label scrollW==clientW (no clipping), prepaint class removed. AC5 persistence bidirectional (collapse & expand both survive reload). Mobile sheet opens (full nav+backdrop), Escape closes + focus returns to toggle. No horizontal scroll @ 375/768/1024/1440. Reduced-motion: sidebar transition 0.22s under no-preference → 0s under emulated reduce. Zero console errors. (Note: two ORPHAN localStorage keys from the deleted old frontend linger in-browser — uptime-monitor-sidebar-expanded + uptime-monitor-theme:dark — ignored by new code; harmless dev-profile cruft.) Browser+Vite torn down, port 5173 verified free; backend stack left UP for STORY-122's gate."
-    dod_evidence:   # scoped --only npm at final HEAD 617d362
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files  34 passed (34) | Tests  270 passed (270)"
-        commit: 617d362
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "built (index js 301.79 kB / gzip 92.36 kB)"
-        commit: 617d362
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . — clean (no output)"
-        commit: 617d362
-    points: 3
-    ceremony: 3-pointer   # bumped from 2 at lock (PO added collapsible sidebar + motion scope)
-  - id: STORY-122
-    title: Dashboard page on real backend data
-    status: done
+  - id: STORY-129
+    title: Availability page — two-grain (rollup + per-signal drill-down), window toggle
+    status: todo
+    points: 5
+    ceremony: 3-pointer   # external mode: spec + quality review + DoD gate + reality gate
+    order: 1
+  - id: STORY-130
+    title: Check History page — multi-signal merge, filter toolbar, dense grid
+    status: todo
     points: 3
     ceremony: 3-pointer
-    reviews:
-      spec: "PASS — all 7 ACs MET; deltas omitted not fabricated; chart aria-label carries real avg/spike; exactly-one-h1 verified end-to-end. 402 tests. (Noted a flaky DashboardPage timeout under heavy parallel load — passed in isolation + re-run; watch at full gate.)"
-      quality: "FIX_REQUIRED->fixed — MAJOR: chart legend labeled the raw per-check series 'Median response' (no median computed) — false statistic, contradicted its own aria-label; relabeled to 'Response time' + renamed --median swatch + regression test. 2 doc minors fixed. Truthful-rendering headline check otherwise excellent (every value traced to a real API field)."
-    reality_gate: "PASS on correctness (live stack, scripted Chromium). Every rendered number EXACT vs live /api/v1: availability 100.00% (avail_pct 1.0), avg 439ms + spike 865ms@…0060 (computed from history — exact match), 1/1 components healthy, 0 approvals, 2 probe locations (…0047/…0060), empty maintenance→empty state, recent-checks feed + roster all real. Chart legend correctly 'Response time' (MAJOR fix confirmed live). Zero console errors; no horizontal scroll @ 390 + 1440; loading/empty states present. FINDING (out of scope, backend/local-stack): first-paint is slow (~20s loop-off; up to ~120s with the pull-loop running) because the /availability endpoint's 24h computation is expensive against DynamoDB-Local (single-threaded → serializes ALL queries behind it). NOT a frontend defect (rendering is correct + fast once data arrives) and unlikely on real DynamoDB; filed backlog STORY-127 (backend availability perf) + STORY-128 (frontend: lazy-load the availability-dependent KPI so fast regions paint first). Full stack torn down, ports 8000/8001/5173 verified FREE, dynamo container removed."
-    dod_evidence:   # scoped --only npm at final HEAD 93a97c7
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "Test Files  53 passed (53) | Tests  403 passed (403)"
-        commit: 93a97c7
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "built (index js 328.12 kB / gzip 98.78 kB)"
-        commit: 93a97c7
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "eslint . — clean (no output)"
-        commit: 93a97c7
+    order: 2
+  - id: STORY-131
+    title: Approvals page — pending proposals + approve/reject confirm flow (first mutating page)
+    status: todo
+    points: 5
+    ceremony: 3-pointer
+    order: 3
+  - id: STORY-132
+    title: Maintenance page — windows list + schedule form + delete (422 field mapping, UTC)
+    status: todo
+    points: 5
+    ceremony: 3-pointer
+    order: 4
+  - id: STORY-133
+    title: Publications page — Statuspage publish-attempt timeline (outcome + author)
+    status: todo
+    points: 2
+    ceremony: 3-pointer
+    order: 5

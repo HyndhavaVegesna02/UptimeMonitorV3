@@ -3,7 +3,10 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 129  # 123-124 STORY-120 review; 125-126 STORY-121 review; 127-128 STORY-122 reality gate (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
+next_story_id: 134  # 129-133 = sprint-60 (2026-07-21): the 5 remaining new-frontend tabs
+                    # (129 Availability, 130 Check History, 131 Approvals, 132 Maintenance,
+                    # 133 Publications) — external mode, branched from the sprint-59 tip.
+                    # 123-124 STORY-120 review; 125-126 STORY-121 review; 127-128 STORY-122 reality gate (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
                     # + Phosphor (120), collapsible app shell (121), Dashboard (122). Clean
                     # 120-block chosen to avoid collision with the frozen ui-rewrite's 097-110
                     # (abandoned branches, not on this line). 097-119 intentionally unused here.
@@ -989,3 +992,50 @@ stories:
     status: draft   # STORY-122 reality gate follow-up: useSignalsData bundles history+availability per signal; decoupling (and deferring the slow availability fetch) would let history-based regions paint immediately with only the availability KPI + roster-uptime showing their own loading state. Marginal while DynamoDB-Local serializes (STORY-127), but correct UX once backend is fast. Also fold in: dedupe the components/approvals double-fetch across ShellLayout + DashboardPage (Outlet context / shared cache). Needs refinement + estimate.
     type: story
     sprint: null
+
+  # ── Sprint-60: the 5 remaining new-frontend tabs (PO 2026-07-21: "all 5 in one sprint") ──
+  #   External mode, branched from the sprint-59 tip (ui-prototype line, unmerged). Frontend
+  #   only; backend/API/config/infra frozen. PO directive: design each page FRESH with craft
+  #   via the mandated skills — do NOT copy the old tab UI. Contracts re-derived from the live
+  #   /api/v1 (see docs/scrum/sprints/2026-07-21-sprint-60/plan.md). Order: 129 → 130 → 131 →
+  #   132 → 133 (Availability + the two mutating pages front-loaded for risk).
+  - id: STORY-129
+    title: Availability page — two-grain (component rollup + per-signal drill-down), window toggle
+    file: docs/scrum/stories/STORY-129-availability-page.md
+    status: ready
+    points: 5
+    priority: 15
+    type: feature
+    sprint: 60
+  - id: STORY-130
+    title: Check History page — multi-signal merge, filter toolbar, dense observation grid
+    file: docs/scrum/stories/STORY-130-check-history-page.md
+    status: ready
+    points: 3
+    priority: 16
+    type: feature
+    sprint: 60
+  - id: STORY-131
+    title: Approvals page — pending proposals + approve/reject confirm flow (first mutating page)
+    file: docs/scrum/stories/STORY-131-approvals-page.md
+    status: ready
+    points: 5
+    priority: 17
+    type: feature
+    sprint: 60
+  - id: STORY-132
+    title: Maintenance page — windows list + schedule form + delete (422 field mapping, UTC discipline)
+    file: docs/scrum/stories/STORY-132-maintenance-page.md
+    status: ready
+    points: 5
+    priority: 18
+    type: feature
+    sprint: 60
+  - id: STORY-133
+    title: Publications page — Statuspage publish-attempt timeline (outcome + author)
+    file: docs/scrum/stories/STORY-133-publications-page.md
+    status: ready
+    points: 2
+    priority: 19
+    type: feature
+    sprint: 60
