@@ -8,6 +8,14 @@ export type FetchState<T> =
 export interface UseFetchResult<T> {
   state: FetchState<T>
   retry: () => void
+  /** Wall-clock time of the most recent SUCCESSFUL completion, or `null`
+   * before the first one — captured inside the fetch promise's own
+   * `.then()` callback (never a render-time `new Date()` read), so a
+   * caller can build a "last updated" indicator without it resetting on
+   * every unrelated re-render (STORY-121 quality-review fix). Stays at its
+   * previous value through an `error` phase — never a fabricated success
+   * time. */
+  succeededAt: Date | null
 }
 
 /**
@@ -26,6 +34,7 @@ export interface UseFetchResult<T> {
  */
 export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
   const [state, setState] = useState<FetchState<T>>({ phase: 'loading' })
+  const [succeededAt, setSucceededAt] = useState<Date | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
@@ -35,6 +44,7 @@ export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
       .then((data) => {
         if (!cancelled) {
           setState({ phase: 'success', data })
+          setSucceededAt(new Date())
         }
       })
       .catch((err: unknown) => {
@@ -59,5 +69,5 @@ export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
     setAttempt((n) => n + 1)
   }, [])
 
-  return { state, retry }
+  return { state, retry, succeededAt }
 }

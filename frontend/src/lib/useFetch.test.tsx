@@ -4,12 +4,13 @@ import { describe, expect, it, vi } from 'vitest'
 import { useFetch } from './useFetch'
 
 function Harness({ fetcher }: { fetcher: () => Promise<string> }) {
-  const { state, retry } = useFetch(fetcher)
+  const { state, retry, succeededAt } = useFetch(fetcher)
   return (
     <div>
       <div data-testid="phase">{state.phase}</div>
       {state.phase === 'success' ? <div data-testid="data">{state.data}</div> : null}
       {state.phase === 'error' ? <div data-testid="message">{state.message}</div> : null}
+      <div data-testid="succeededAt">{succeededAt ? succeededAt.toISOString() : 'null'}</div>
       <button type="button" onClick={retry}>
         Retry
       </button>
@@ -50,6 +51,47 @@ describe('useFetch', () => {
 
     await waitFor(() => expect(screen.getByTestId('data')).toHaveTextContent('second'))
     expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  describe('succeededAt (STORY-121 quality review — a "last updated" timestamp callers can use without reading Date.now() during their own render)', () => {
+    it('stays null while loading', () => {
+      render(<Harness fetcher={() => new Promise(() => undefined)} />)
+      expect(screen.getByTestId('succeededAt')).toHaveTextContent('null')
+    })
+
+    it('is set once the fetch succeeds', async () => {
+      render(<Harness fetcher={() => Promise.resolve('hello')} />)
+      await screen.findByTestId('data')
+      expect(screen.getByTestId('succeededAt')).not.toHaveTextContent('null')
+    })
+
+    it('stays null when the fetch errors (never a fabricated success time)', async () => {
+      render(<Harness fetcher={() => Promise.reject(new Error('boom'))} />)
+      await screen.findByTestId('message')
+      expect(screen.getByTestId('succeededAt')).toHaveTextContent('null')
+    })
+
+    it('gets a fresh value on a successful retry, not the first attempt\'s stale timestamp', async () => {
+      const fetcher = vi.fn().mockResolvedValue('first')
+      render(<Harness fetcher={fetcher} />)
+      await screen.findByTestId('data')
+      const firstSucceededAt = screen.getByTestId('succeededAt').textContent
+
+      // Force real wall-clock separation so a second `new Date()` call is
+      // provably distinct, not just coincidentally re-rendered with the
+      // same millisecond.
+      await act(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 5))
+      })
+
+      fetcher.mockResolvedValue('second')
+      act(() => {
+        screen.getByRole('button', { name: 'Retry' }).click()
+      })
+      await waitFor(() => expect(screen.getByTestId('data')).toHaveTextContent('second'))
+
+      expect(screen.getByTestId('succeededAt').textContent).not.toBe(firstSucceededAt)
+    })
   })
 
   it('never sets state after unmount (cancelled-guarded effect)', async () => {
