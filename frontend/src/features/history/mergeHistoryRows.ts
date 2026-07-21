@@ -37,9 +37,8 @@ export function mergeHistoryRows(
     }
   }
 
-  const rows = Object.entries(observationsBySignal).flatMap(([signalKey, observations]) =>
+  const unkeyed = Object.entries(observationsBySignal).flatMap(([signalKey, observations]) =>
     observations.map((observation) => ({
-      key: `${signalKey}-${observation.observed_at}-${observation.location}`,
       signalKey,
       componentName: componentNameBySignalKey.get(signalKey) ?? signalKey,
       observedAt: observation.observed_at,
@@ -51,5 +50,20 @@ export function mergeHistoryRows(
     })),
   )
 
-  return rows.sort((a, b) => new Date(b.observedAt).getTime() - new Date(a.observedAt).getTime())
+  const sorted = unkeyed.sort(
+    (a, b) => new Date(b.observedAt).getTime() - new Date(a.observedAt).getTime(),
+  )
+
+  // `key` is assigned AFTER sorting, from each row's final position in the
+  // sorted list — NOT `${signalKey}-${observedAt}-${location}` (STORY-130
+  // reality-gate fix, 2026-07-22). That composite is NOT unique on the real
+  // wire: two synthetic probe locations can emit observations that
+  // normalize to the identical millisecond `observed_at` for the same
+  // `location` (confirmed live, e.g. two rows both at
+  // `2026-07-21T20:24:41.129000Z`/`…0060`). A colliding key corrupts React's
+  // list reconciliation (duplicated/omitted rows, console key-collision
+  // errors) — a positional key over the final sorted order is always
+  // unique, regardless of wire duplicates, and never affects sort order or
+  // any other field.
+  return sorted.map((row, index) => ({ key: String(index), ...row }))
 }

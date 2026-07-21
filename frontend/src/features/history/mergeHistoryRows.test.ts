@@ -88,4 +88,36 @@ describe('mergeHistoryRows', () => {
   it('returns an empty array for an empty observations map (a real empty-input behavior, not a crash)', () => {
     expect(mergeHistoryRows(TOPOLOGY, {})).toEqual([])
   })
+
+  it('assigns a UNIQUE key even when two rows share an identical (signal_key, observed_at, location) triple — a confirmed live collision (reality gate 2026-07-22): two synthetic probe locations can normalize to the identical millisecond timestamp for the same location', () => {
+    const duplicateTriple: ObservationDTO = {
+      signal_key: 'http-check',
+      observed_at: '2026-07-21T20:24:41.129000Z',
+      health: 'up',
+      location: 'SYNTHETIC_LOCATION-0000000000000060',
+      latency_ms: 400,
+      response_status_code: 200,
+      check_type: 'http',
+    }
+
+    const rows = mergeHistoryRows(TOPOLOGY, {
+      'http-check': [duplicateTriple, { ...duplicateTriple }],
+    })
+
+    expect(rows).toHaveLength(2)
+    expect(rows[0].key).not.toBe(rows[1].key)
+    // Every OTHER field is still carried through untouched — this is purely
+    // a key-uniqueness fix, not a behavior change.
+    expect(rows[0]).toMatchObject({ observedAt: duplicateTriple.observed_at, location: duplicateTriple.location })
+    expect(rows[1]).toMatchObject({ observedAt: duplicateTriple.observed_at, location: duplicateTriple.location })
+  })
+
+  it('keys are unique across the whole merged+sorted list, not just within one signal', () => {
+    const rows = mergeHistoryRows(TOPOLOGY, {
+      'http-check': FIXTURE_HISTORY['http-check'],
+      'ping-check': PING_CHECK_HISTORY,
+    })
+    const keys = rows.map((row) => row.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
 })
