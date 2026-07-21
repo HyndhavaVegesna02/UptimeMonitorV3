@@ -8,3 +8,22 @@ import { server } from '../mocks/server'
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
+
+// jsdom does not implement `window.matchMedia` (STORY-121's
+// `useMediaQuery` — desktop-rail vs mobile-sheet breakpoint detection —
+// needs it). Defaults every query to non-matching ("mobile"); individual
+// tests that need the desktop breakpoint stub `window.matchMedia`
+// themselves via `vi.stubGlobal`.
+if (!window.matchMedia) {
+  window.matchMedia = (query: string) =>
+    ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: () => undefined,
+      removeListener: () => undefined,
+      addEventListener: () => undefined,
+      removeEventListener: () => undefined,
+      dispatchEvent: () => false,
+    }) as MediaQueryList
+}
