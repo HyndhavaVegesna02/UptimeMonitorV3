@@ -1,6 +1,6 @@
 # YourTeam active sprint board
 sprint: 59
-status: ready-for-review   # all 3 stories done; wiki compiled; full gate green on final HEAD. Awaiting PO accept/reject.
+status: accepted-unmerged   # PO ACCEPTED all 3 stories at review 2026-07-21 AND directed: do NOT merge — keep sprint-59 unmerged for now (branch tip holds the accepted work). Velocity +9 recorded. Retro next. Local stack left UP per PO.
 # SPRINT-CLOSE full 8-command gate — evidence of record, final HEAD 1760067 (2026-07-21), DYNAMO_ENDPOINT_URL unset:
 #   [1] pytest -> PASS (529 passed in 306s)
 #   [2] import-linter -> PASS (8 contracts kept, 0 broken)
