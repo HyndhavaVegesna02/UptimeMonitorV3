@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
-code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/AppShell.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx]
-verified_sha: 6e957f1
+code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/AppShell.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx]
+verified_sha: c189087
 verified_sprint: sprint-59
 status: verified
 ---
@@ -42,33 +42,46 @@ not copied pixel-for-pixel.
 
 ### Three-layer tokens (`frontend/src/styles/tokens.css`, AC2/AC4)
 - **Primitive layer** (bare `:root`, theme-independent): the cool-grey ramp (`--white` through
-  `--grey-900`), the single sky-blue accent ramp (`--sky-50`…`--sky-text`), positive/negative
-  (`--green-*`/`--red-*`), and the health-adjacent hues `--amber-*` (degraded), `--orange-*`
-  (partial — a hue DISTINCT from degraded's amber so the two statuses are never confusable by
-  color alone), `--violet-*` (maintenance), `--indigo-*` (missing). Also the type family
-  (`--font-family-base`, self-hosted Inter), the full type scale (`--font-size-xs`…`--font-size-3xl`,
-  `--line-height-*`, `--font-weight-*`), the 8px spacing scale (`--space-0`…`--space-12`, with a
-  4px half-step), radius (`--radius-card` 16 / `--radius-ctrl` 10 / `--radius-chip` 8 /
-  `--radius-pill` 999), the two-layer shadow (`--shadow-card`/`--shadow-lift`/`--shadow-pop`), and
-  the motion tokens (below).
+  `--grey-900`, plus `--grey-canvas` — the prototype's canvas backdrop hex, named for what it is
+  since it sits between the `-150`/`-200` ramp steps rather than replacing either), the single
+  sky-blue accent ramp (`--sky-50`…`--sky-text`), positive/negative (`--green-*`/`--red-*`), and
+  the health-adjacent hues `--amber-*` (degraded), `--orange-*` (partial — a hue DISTINCT from
+  degraded's amber so the two statuses are never confusable by color alone), `--violet-*`
+  (maintenance), `--indigo-*` (missing). Also the type family (`--font-family-base`, self-hosted
+  Inter), the full type scale (`--font-size-xs`…`--font-size-3xl`, `--line-height-*`,
+  `--font-weight-*`), the 8px spacing scale (`--space-0`…`--space-12`, with a 4px half-step),
+  radius (`--radius-card` 16 / `--radius-ctrl` 10 / `--radius-chip` 8 / `--radius-pill` 999), the
+  two-layer shadow (`--shadow-card`/`--shadow-lift`/`--shadow-pop`), and the motion tokens (below).
 - **Semantic layer** — lives under `:root, [data-theme='light']` (both match today, since
-  `index.html` hardcodes `data-theme="light"` and there is no dark theme yet): `--color-canvas`/
-  `-app`/`-surface`/`-surface-subtle`/`-surface-hover`/`-border`/`-border-strong`, `--color-text`/
-  `-text-secondary`/`-text-muted`, `--color-accent`/`-accent-strong`/`-accent-text`/`-accent-tint`,
-  `--color-pos`/`-neg` (+ `-text`/`-tint` each), and the **7-status health palette** — `up`/
-  `degraded`/`partial`/`down`/`maintenance`/`unknown`/`missing`, each with a bright `--color-{x}`
-  fill (dots/icons/backgrounds ONLY), a darkened `--color-{x}-text` (the ONLY color text may use),
-  and a `--color-{x}-tint` (pill background). Dossier status vocabulary -> health mapping (AC
-  Notes): `operational`->up, `degraded_performance`->degraded, `partial_outage`->partial,
-  `major_outage`->down, `under_maintenance`->maintenance. **This layer is theme-scoped by
-  construction so a future dark theme is an ADDITIVE `[data-theme='dark']` block, not a rename** —
-  no semantic token name changes when dark ships (AC2).
+  `index.html` hardcodes `data-theme="light"` and there is no dark theme yet): `--color-canvas`
+  (points at the `--grey-canvas` primitive — every semantic token resolves to a primitive, none is
+  a raw hex literal itself)/`-app`/`-surface`/`-surface-subtle`/`-surface-hover`/`-border`/
+  `-border-strong`, `--color-text`/`-text-secondary`/`-text-muted`, `--color-accent`/
+  `-accent-strong`/`-accent-text`/`-accent-tint`/`-accent-border` (a soft accent-tinted border for
+  hover/attention surfaces — secondary-button hover, the attention `SummaryCard`)/`-on-accent` (text
+  color placed ON a solid accent fill, e.g. the primary button's label — distinct from
+  `--color-text`, which is ink on a NEUTRAL surface), `--color-chip-surface` (the neutral
+  icon-chip background, one step darker than `--color-surface-subtle`), `--color-pos`/`-neg` (+
+  `-text`/`-tint` each), and the **7-status health palette** — `up`/`degraded`/`partial`/`down`/
+  `maintenance`/`unknown`/`missing`, each with a bright `--color-{x}` fill (dots/icons/backgrounds
+  ONLY), a darkened `--color-{x}-text` (the ONLY color text may use), and a `--color-{x}-tint`
+  (pill background). Dossier status vocabulary -> health mapping (AC Notes): `operational`->up,
+  `degraded_performance`->degraded, `partial_outage`->partial, `major_outage`->down,
+  `under_maintenance`->maintenance. **This layer is theme-scoped by construction so a future dark
+  theme is an ADDITIVE `[data-theme='dark']` block, not a rename** — no semantic token name
+  changes when dark ships (AC2).
 - **Component layer** (bare `:root`, points only at semantic tokens): `--button-radius`/`-height`,
   `--panel-radius`/`-shadow`/`-shadow-hover`, `--badge-radius`, `--kpi-chip-radius`.
-- **No raw hex outside `tokens.css`** — `frontend/src/styles/noRawHex.test.ts` recursively scans
-  every non-test `.css`/`.tsx` under `src/` for a hex-literal pattern (`#[0-9a-fA-F]{3,8}`),
-  allow-listing ONLY `styles/tokens.css` itself (the primitive layer necessarily declares hex).
-  This is a live, gate-covered test (`npm test`), not a review-time grep.
+- **The layering is enforced, not just documented.** `frontend/src/styles/noRawHex.test.ts`
+  recursively scans every non-test `.css`/`.tsx` under `src/` for a hex-literal pattern
+  (`#[0-9a-fA-F]{3,8}`), allow-listing ONLY `styles/tokens.css` itself (the primitive layer
+  necessarily declares hex). `frontend/src/styles/noPrimitiveLeaks.test.ts` (added in the
+  spec/quality review fix pass) is the complementary guard: it scans every `.css` file for a
+  reference to a PRIMITIVE custom property (`var(--grey-*)`, `var(--sky-*)`, `var(--white)`, etc.),
+  again allow-listing only `tokens.css` — so a component reaching past the semantic layer straight
+  into a primitive (as `Button.css`/`SummaryCard.css` briefly did, fixed by the `-accent-border`/
+  `-on-accent`/`-chip-surface` aliases above) is a FAILING test, not a review-time grep. Both are
+  live, gate-covered tests (`npm test`).
 
 ### WCAG-AA contrast proof (AC3)
 - `frontend/src/styles/parseTokens.ts::parseTokenDeclarations`/`resolveToken` — a minimal CSS
@@ -183,3 +196,17 @@ not copied pixel-for-pixel.
   `nav/TopBar.tsx`, `nav/SampleModeBanner.tsx`, `useSampleMode.ts` — none of which exist in the
   fresh tree yet); also flagged, not rewritten, since whether/how sample mode returns to the new
   frontend is a product decision outside this story's scope. verified_sha = 6e957f1.
+- sprint-59 (STORY-120, spec/quality review fix pass): three review-blocking/minor findings fixed.
+  (1) Sparkline's entrance animated `stroke-dashoffset`, violating AC5's unqualified
+  "transform/opacity only" — replaced with an opacity + small `translateY` fade;
+  `Sparkline.test.tsx`'s motion assertion rewritten to the AC-compliant contract (Facts + this
+  article's Sparkline/motion bullets updated to match, no longer describing the removed behavior).
+  (2) Component CSS (`Button.css`/`SummaryCard.css`) was reaching past the semantic layer straight
+  into primitives — added `--color-on-accent`/`-accent-border`/`-chip-surface` semantic aliases and
+  a `--grey-canvas` primitive so `--color-canvas` no longer holds a raw hex itself (Facts above
+  updated); a new `noPrimitiveLeaks.test.ts` guards this going forward. `CLAUDE.md`'s frontend
+  section and `frontend/README.md` — left factually stale after STORY-120's diff (still described
+  Geist fonts and the deleted second-attempt tree) — were corrected in the same story, with an
+  explicit "under active greenfield rebuild" note (DoD standing rule: a story changing frontend
+  facts updates CLAUDE.md in the same commit). The story file gained a History section recording
+  the ~12k-line deletion rationale. verified_sha = c189087.
