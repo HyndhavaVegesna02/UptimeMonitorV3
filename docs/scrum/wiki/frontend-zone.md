@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
-code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/components/PlaceholderPage/PlaceholderPage.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/test/setup.ts]
-verified_sha: 9ffdaba
+code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/components/PlaceholderPage/PlaceholderPage.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/test/setup.ts]
+verified_sha: f67ff1a
 verified_sprint: sprint-60
 status: verified
 ---
@@ -43,9 +43,10 @@ status: verified
     `tooltipGroupContext` implement the emil delayed-tooltip pattern for the collapsed rail.
   - `routes.tsx` / `nav/tabs.ts` — the six routes (Dashboard, Availability, History, Approvals,
     Maintenance, Publications) plus a sibling `/styleguide`. `App.tsx` / `main.tsx` boot it.
-  - `pages/` — `DashboardPage` (STORY-122) and `AvailabilityPage` (STORY-129) are REAL pages;
-    `History/Approvals/Maintenance/Publications` are still `PlaceholderPage` stubs awaiting the
-    rest of sprint 60; `StyleguidePage` renders every primitive × state (STORY-120).
+  - `pages/` — `DashboardPage` (STORY-122), `AvailabilityPage` (STORY-129), and `HistoryPage`
+    (STORY-130) are REAL pages; `Approvals/Maintenance/Publications` are still `PlaceholderPage`
+    stubs awaiting the rest of sprint 60; `StyleguidePage` renders every primitive × state
+    (STORY-120).
   - `api/` — `client.ts` (typed fetch client, `/api` base), `types.ts` (DTOs mirroring
     `backend/src/api/v1/*/models.py`), `statusMapping.ts` (vendor → health).
   - `features/dashboard/` — the STORY-122 dashboard: `useSignalsData` (derives signal keys from
@@ -64,6 +65,23 @@ status: verified
     any other component's — rendering a rollup `<tr>` plus, when `hasSignals`, an
     `aria-expanded`/`aria-controls` toggle revealing a second `hidden`-attribute-gated `<tbody>`
     of per-signal rows).
+  - `features/history/` — the STORY-130 Check History page's pieces:
+    `observationHealth.ts::toObservationHealth` (a DEDICATED raw-observation-vocabulary mapper —
+    up/down/degraded → tokens, unknown → `unknown` — deliberately NOT `statusMapping.ts`'s
+    vendor-status mapper, which mis-maps a raw `"up"` observation onto `unknown`),
+    `mergeHistoryRows.ts` (merges every signal's observations into one list and re-sorts it
+    GLOBALLY by `observed_at` desc — proven by an interleave test, not a per-signal
+    concatenation — joining each row's component name from the topology),
+    `filterHistoryRows.ts` (`RESULT_FILTER_OPTIONS` — the fixed All/Up/Degraded/Down wire
+    vocabulary, pinned, never derived — plus `deriveLocationOptions` from the loaded rows and the
+    case-insensitive search predicate), `capRows.ts` (`DEFAULT_RENDER_CAP` = 1000, injectable),
+    `formatTimestamp.ts::formatObservedAt` (hand-formatted UTC, not `toLocaleString` — locale/
+    timezone-independent), `useHistoryData.ts` (per-signal WINDOWED fetches in parallel, sequenced
+    after topology, re-keyed on `since`/`until` so only the window toggle refetches — same
+    discipline as `dashboard/useSignalsData.ts`), and the presentational `HistoryFilterBar`
+    (labelled search/Result-select/Location-select) + `HistoryGrid` (the dense table, its own
+    `overflow-x` scroll container). Reuses `features/availability/{WindowToggle,windowRange}`
+    directly rather than duplicating window math.
   - `lib/` — `useFetch.ts` (the read-fetch state machine — loading/error/success, cancel-guarded;
     `fetcher` must be a stable ref), `overallStatus.ts` (worst-of derivation: down > partial >
     degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
@@ -77,7 +95,9 @@ status: verified
 - **API client (`api/client.ts`):** `getComponents()`, `getApprovals()`, `getHistory(signalKey,
   limit?)`, `getAvailability(signalKey)`, `getMaintenance()`, `getTopology()` (STORY-129),
   `getComponentAvailability(componentId, {since, until})` (STORY-129, component-grain rollup +
-  nested signal children). DTOs in `api/types.ts`: `ComponentDTO {id,name,status}`, `ProposalDTO`,
+  nested signal children), `getHistoryWindow({signal_key, since, until, limit?})` (STORY-130 — the
+  windowed variant `getHistory` lacks; `getHistory` itself is UNCHANGED, the Dashboard still uses
+  its unwindowed shape). DTOs in `api/types.ts`: `ComponentDTO {id,name,status}`, `ProposalDTO`,
   `ObservationDTO {signal_key, observed_at, health, location, latency_ms, response_status_code,
   check_type}`, `AvailabilityDTO` (`availability_pct`/`completeness_pct` are 0–1 fractions,
   nullable), `MaintenanceWindowDTO`, `ComponentTopologyDTO`/`TopologySignalDTO` (STORY-129 —
@@ -114,8 +134,8 @@ status: verified
   fills should not collide.
 
 ## Known gaps / deferred (filed to backlog)
-- The four remaining tabs (History/Approvals/Maintenance/Publications) are still
-  `PlaceholderPage` stubs — real content lands later in sprint 60.
+- The three remaining tabs (Approvals/Maintenance/Publications) are still `PlaceholderPage`
+  stubs — real content lands later in sprint 60.
 - No sample-mode UI in the new frontend — the old consumer was removed in the rebuild; see
   [[sample-mode]] (backend feature still exists; a new consumer is unscheduled).
 - STORY-125 (mobile-sheet focus-trap + `role="dialog"`), STORY-126 (skip-to-content link),
@@ -142,3 +162,10 @@ status: verified
   `Promise.all`) — the STORY-122/127 first-paint lesson applied proactively this time.
   `AvailabilityPage`'s `PlaceholderPage` stub is gone; the other four tabs are unaffected.
   verified_sha = 9ffdaba.
+- 2026-07-22 (STORY-130, sprint-60): the Check History page shipped as a fresh design, reusing
+  STORY-129's `WindowToggle`/`computeWindowRange` rather than duplicating window math. Added
+  `getHistoryWindow()` to the API client (kept `getHistory` unchanged — the Dashboard still uses
+  it) and the `features/history/**` module (merge + global re-sort, filter, render-cap, a
+  DEDICATED observation-health mapper distinct from the vendor-status one, and a windowed
+  per-signal-parallel fetch hook). `HistoryPage`'s `PlaceholderPage` stub is gone; the other three
+  tabs are unaffected. verified_sha = f67ff1a.
