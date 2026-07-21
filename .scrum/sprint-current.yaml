@@ -39,9 +39,26 @@ started: "2026-07-21T00:00:00+05:30"
 stories:
   - id: STORY-120
     title: Design-system foundation + Phosphor icons
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer   # implementer -> spec || quality -> scoped DoD -> reality gate
+    reviews:
+      spec: "FAIL->fixed — AC5 Sparkline animated stroke-dashoffset (not transform/opacity) + test enshrined it; story-file History missing deletion rationale. Both fixed."
+      quality: "FIX_REQUIRED->fixed — MAJOR: CLAUDE.md frontend section stale (Geist/deleted trees); + 2 in-scope token-layer minors fixed. Button-36px & canvas-contrast -> backlog STORY-123/124."
+    reality_gate: "PASS — live Vite render of /styleguide at 1440px, 0 console errors/warnings; all 7 health badges, KPI cards, sparklines, primitives paint to the approved refimg visual language. Browser+Vite torn down, port 5173 verified free."
+    dod_evidence:   # scoped --only npm at final HEAD 024d0e4 (mid-sprint scoping per plan; full 8-cmd gate at sprint close)
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  18 passed (18) | Tests  139 passed (139)"
+        commit: 024d0e4
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (ships @fontsource/inter; index js 253.44 kB / gzip 80.40 kB)"
+        commit: 024d0e4
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 024d0e4
   - id: STORY-121
     title: App shell re-skin — collapsible sidebar + topbar, responsive, first-class motion
     status: todo

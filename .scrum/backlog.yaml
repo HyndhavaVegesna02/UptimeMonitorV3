@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 123  # 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
+next_story_id: 125  # 123-124 filed from STORY-120 review (sprint-59). 120-122 = new-frontend initiative (sprint 59, 2026-07-21): design system
                     # + Phosphor (120), collapsible app shell (121), Dashboard (122). Clean
                     # 120-block chosen to avoid collision with the frozen ui-rewrite's 097-110
                     # (abandoned branches, not on this line). 097-119 intentionally unused here.
@@ -935,7 +935,7 @@ stories:
   - id: STORY-120
     title: Design-system foundation + Phosphor icons
     file: docs/scrum/stories/STORY-120-design-system-foundation.md
-    status: ready
+    status: done   # sprint-59: impl + spec||quality review (both FAIL→fixed) + scoped DoD green (024d0e4) + reality gate (live /styleguide render, 0 console errors). Awaits PO acceptance at review.
     points: 3
     type: story
     sprint: 59
@@ -953,3 +953,15 @@ stories:
     points: 3
     type: story
     sprint: 59
+
+  # ── Filed from STORY-120 review (sprint-59, 2026-07-21) ──────────────────
+  - id: STORY-123
+    title: Button/control touch-target height below 44px on touch/small viewports
+    status: draft   # STORY-120 quality+spec review minor: --button-height 36px matches the approved prototype (desktop-first) but is under the 44x44 guideline. May be resolved inside STORY-121's ≤860px mobile sheet (fed into its brief); file to track. Needs refinement + estimate if it outlives 121.
+    type: defect
+    sprint: null
+  - id: STORY-124
+    title: Extend token contrast test to muted/secondary text on the canvas backdrop
+    status: draft   # STORY-120 quality-review minor: contrast test covers secondary/muted only on --color-surface, not --color-canvas. Fine today (only body text sits on canvas); revisit if muted text ever lands on the canvas. Needs refinement + estimate.
+    type: chore
+    sprint: null
