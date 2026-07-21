@@ -1,0 +1,34 @@
+.window-toggle {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--color-chip-surface);
+  border-radius: var(--radius-ctrl);
+}
+
+.window-toggle button {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-muted);
+  padding: 5px var(--space-3);
+  border-radius: 7px;
+  transition:
+    color var(--duration-control) var(--ease-out),
+    background var(--duration-control) var(--ease-out),
+    box-shadow var(--duration-control) var(--ease-out);
+}
+
+.window-toggle button[aria-pressed='true'] {
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--panel-shadow);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .window-toggle button:active {
+    transform: scale(0.97);
+  }
+}
