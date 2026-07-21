@@ -1,7 +1,7 @@
-import { PlaceholderPage } from '../../components/PlaceholderPage/PlaceholderPage'
+import { ApprovalsView } from '../../features/approvals/ApprovalsView'
 
-/** STORY-121: placeholder. A later story fills this in with the pending
- * status-proposal approve/reject flow. */
+/** STORY-131: Approvals page — pending proposals + approve/reject confirm flow */
 export function ApprovalsPage() {
-  return <PlaceholderPage description="Pending status-change proposals awaiting human approval." />
+  return <ApprovalsView />
 }
+
