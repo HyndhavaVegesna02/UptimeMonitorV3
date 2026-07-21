@@ -132,16 +132,30 @@
     flex-basis: auto;
     transform: translateX(-100%);
     box-shadow: var(--shadow-pop);
+    /* Closed: not just off-screen but `visibility: hidden` — otherwise its
+       nav links stay in Tab order (and the accessibility tree) even though
+       invisible (web-interface-guidelines: keyboard users must never land
+       on a hidden control). Instant by default/under reduced motion; the
+       `no-preference` block below delays the hide until the slide-out
+       animation finishes, so the closing motion is still seen. */
+    visibility: hidden;
+    transition: visibility 0s 0s;
   }
 
   @media (prefers-reduced-motion: no-preference) {
     .shell-sidebar {
-      transition: transform var(--duration-drawer) var(--ease-drawer);
+      transition:
+        transform var(--duration-drawer) var(--ease-drawer),
+        visibility 0s var(--duration-drawer);
     }
   }
 
   .shell-sidebar--mobile-open {
     transform: translateX(0);
+    visibility: visible;
+    /* Opening is always instant-visible (regardless of motion preference) —
+       only the CLOSING hide is ever delayed. */
+    transition-delay: 0s;
   }
 
   /* Never a rail on mobile — always full labels, regardless of the

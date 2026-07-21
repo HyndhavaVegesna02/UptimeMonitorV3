@@ -52,8 +52,14 @@ describe('shell motion — reduced-motion guards on transform/width transitions'
   it('Sidebar.css guards the mobile sheet transform transition', () => {
     const css = readFileSync(join(shellDir, 'Sidebar/Sidebar.css'), 'utf-8')
     expect(css).toMatch(
-      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*transition: transform var\(--duration-drawer\)/,
+      /@media \(prefers-reduced-motion: no-preference\)[\s\S]*transition:\s*transform var\(--duration-drawer\)/,
     )
+  })
+
+  it('Sidebar.css hides the closed mobile sheet from Tab order (visibility, not just off-screen transform)', () => {
+    const css = readFileSync(join(shellDir, 'Sidebar/Sidebar.css'), 'utf-8')
+    expect(css).toMatch(/visibility:\s*hidden/)
+    expect(css).toMatch(/\.shell-sidebar--mobile-open\s*\{[^}]*visibility:\s*visible/)
   })
 
   it('Sidebar.css guards the group-label opacity+transform collapse', () => {
