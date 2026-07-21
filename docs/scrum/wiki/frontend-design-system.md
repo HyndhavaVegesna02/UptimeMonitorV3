@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
-code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/AppShell.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx]
-verified_sha: c189087
+code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx]
+verified_sha: 5884177
 verified_sprint: sprint-59
 status: verified
 ---
@@ -99,8 +99,10 @@ not copied pixel-for-pixel.
 
 ### Motion tokens (AC4, emil-design-eng)
 - `--ease-out: cubic-bezier(0.23, 1, 0.32, 1)`, `--ease-in-out: cubic-bezier(0.77, 0, 0.175, 1)`,
-  `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)` (the last is for STORY-121's sidebar
-  collapse/mobile sheet — not consumed by anything in this story). Duration tokens:
+  `--ease-drawer: cubic-bezier(0.32, 0.72, 0, 1)` — the last is now consumed by STORY-121's
+  desktop sidebar collapse (`frontend/src/shell/Sidebar/Sidebar.css`'s rail width transition and
+  the mobile off-canvas sheet's transform) and the rail's label/badge opacity+translate+max-width
+  collapse (`frontend/src/shell/Sidebar/NavItem.css`). Duration tokens:
   `--duration-press: 140ms`, `--duration-control: 180ms` (both `<=200ms`, AC4), `--duration-drawer:
   220ms` (STORY-121's 200–250ms allowance per the sprint plan's "Motion is first-class" section).
   `frontend/src/styles/motionTokens.test.ts` pins the exact curve strings and duration bounds
@@ -136,7 +138,10 @@ not copied pixel-for-pixel.
 - **StatusBadge** (`StatusBadge.tsx`): the 7-status `HealthStatus` union (`up`/`degraded`/
   `partial`/`down`/`maintenance`/`unknown`/`missing`) as a dot+label pill. The dot is
   `aria-hidden`; the label — using the contrast-verified `-text` token, never the dot color alone
-  — IS the accessible name. Default labels: Up/Degraded/Partial outage/Down/Maintenance/Unknown/
+  — IS the accessible name. STORY-121 added an optional leading `icon` prop (a Phosphor icon,
+  `aria-hidden`, rendered between the dot and label) — the topbar's worst-of overall status pill
+  (`frontend/src/shell/Topbar/Topbar.tsx`) is "dot + icon + text", never colour alone; existing
+  dot+label-only call sites are unaffected since `icon` is optional. Default labels: Up/Degraded/Partial outage/Down/Maintenance/Unknown/
   Missing data, all overridable via `label`.
 - **SummaryCard** (`SummaryCard.tsx`): the KPI card — icon chip, label, big `tabular-nums` value +
   optional unit, optional delta pill (`sentiment: 'positive' | 'negative'` is the COLOR, decoupled
@@ -167,11 +172,15 @@ not copied pixel-for-pixel.
   `StyleguideSection` (`<section aria-label={title}>`, implicit ARIA `role="region"` since it has
   an accessible name) — independently addressable by screen-reader landmark navigation and by
   `StyleguidePage.test.tsx`'s `within(screen.getByRole('region', {name}))` queries.
-- `frontend/src/AppShell.tsx` is currently a MINIMAL frame (no sidebar/topbar — that is STORY-121):
-  `<Routes>` maps `/` and `/styleguide` both to `StyleguidePage`, and `*` redirects to
-  `/styleguide` too. `App.test.tsx` renders `<App/>` (which mounts `AppShell` inside a
-  `BrowserRouter`) and asserts the "Design system" `h1` is present at the default route — the
-  render-test proof that `/styleguide` is reachable in the running app (AC6).
+- STORY-121 deleted the minimal `frontend/src/AppShell.tsx` placeholder (superseded by the real
+  grouped-sidebar + topbar shell) and replaced the routing table with `frontend/src/routes.tsx`'s
+  `AppRoutes`: `/styleguide` is now a standalone SIBLING route (own `<h1>Design system</h1>`, no
+  shell chrome around it — deliberately not nested under `ShellLayout`'s topbar, which renders its
+  own page-title `<h1>`), while the six operator tabs are children of a `ShellLayout` LAYOUT route
+  (`<Outlet/>`). `App.test.tsx` renders `<App/>` and asserts the Dashboard tab (the new default
+  route) is reached; `StyleguidePage.test.tsx` covers the gallery itself in isolation. Full detail
+  on the shell (Sidebar/Topbar/collapse/mobile sheet) belongs to STORY-121's own wiki article, not
+  this one — this article's scope stays the design-system primitives/tokens/gallery.
 
 ### Test discipline
 - Every primitive's test co-reads its own `.css` file via `node:fs` (not jsdom computed styles) to
@@ -210,3 +219,14 @@ not copied pixel-for-pixel.
   explicit "under active greenfield rebuild" note (DoD standing rule: a story changing frontend
   facts updates CLAUDE.md in the same commit). The story file gained a History section recording
   the ~12k-line deletion rationale. verified_sha = c189087.
+- sprint-59 (STORY-121, re-verify): the app shell (grouped sidebar + topbar, collapsible desktop
+  rail, mobile off-canvas sheet — its own wiki article, not this one) consumed several of this
+  system's pieces and touched a few of its files, so re-verified rather than rewritten wholesale.
+  `frontend/src/AppShell.tsx` (STORY-120's minimal placeholder) was deleted, superseded by
+  `frontend/src/shell/ShellLayout.tsx` + a new `frontend/src/routes.tsx` routing table (`/styleguide`
+  Facts + code_refs updated above); `StatusBadge.tsx` gained an optional leading `icon` prop (Facts
+  updated); `tokens.css` gained new semantic tokens this story needed (`--color-overlay-surface`/
+  `-text`, `--color-backdrop`, and the non-color `--shell-sidebar-width`/`-rail-width`/
+  `--shell-topbar-height` component tokens) — none of the EXISTING Facts above changed value, so
+  only additive; `--ease-drawer`'s "not yet consumed" note is now stale and corrected. No primitive/
+  contrast/motion-token test needed a rewrite. verified_sha = 5884177.
