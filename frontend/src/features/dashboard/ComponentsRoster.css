@@ -1,0 +1,54 @@
+.components-roster__list {
+  list-style: none;
+  margin: 0;
+  padding: var(--space-1) var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+}
+
+.components-roster__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-2);
+  border-radius: var(--radius-ctrl);
+  transition: background var(--duration-control) var(--ease-out);
+}
+
+.components-roster__row:hover {
+  background: var(--color-surface-hover);
+}
+
+.components-roster__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.components-roster__name {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-medium);
+}
+
+.components-roster__sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 1px;
+  font-variant-numeric: tabular-nums;
+}
+
+.components-roster__trend {
+  flex-shrink: 0;
+  width: 64px;
+}
+
+.components-roster__uptime {
+  font-size: var(--font-size-base);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 56px;
+  text-align: right;
+}
