@@ -1,7 +1,7 @@
-import { PlaceholderPage } from '../../components/PlaceholderPage/PlaceholderPage'
+import { AvailabilityView } from '../../features/availability/AvailabilityView'
 
-/** STORY-121: placeholder. A later story fills this in with per-component
- * availability rollups and windowing. */
+/** STORY-129: Availability page — two-grain (rollup + per-signal drill-down), window toggle */
 export function AvailabilityPage() {
-  return <PlaceholderPage description="Per-component availability, windowed and broken down by signal." />
+  return <AvailabilityView />
 }
+

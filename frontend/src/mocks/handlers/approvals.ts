@@ -26,4 +26,14 @@ export const approvalsHandlers = [
   http.get('/api/v1/approvals', () => {
     return HttpResponse.json(FIXTURE_PROPOSALS)
   }),
+  http.post('/api/v1/decisions/:proposalId', async ({ params, request }) => {
+    const proposalId = Number(params.proposalId)
+    const body = (await request.json()) as { action: string; actor: string }
+    return HttpResponse.json({
+      proposal_id: proposalId,
+      state: body.action === 'approve' ? 'approved' : 'rejected',
+      resolved_at: new Date().toISOString(),
+    })
+  }),
 ]
+

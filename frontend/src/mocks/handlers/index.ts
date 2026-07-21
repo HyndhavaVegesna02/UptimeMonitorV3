@@ -1,8 +1,14 @@
 import { approvalsHandlers, FIXTURE_PROPOSALS } from './approvals'
-import { availabilityHandlers, FIXTURE_AVAILABILITY } from './availability'
+import {
+  availabilityHandlers,
+  FIXTURE_AVAILABILITY,
+  FIXTURE_COMPONENT_AVAILABILITY,
+  FIXTURE_TOPOLOGY,
+} from './availability'
 import { componentsHandlers, FIXTURE_COMPONENTS } from './components'
 import { FIXTURE_HISTORY, historyHandlers } from './history'
 import { FIXTURE_MAINTENANCE, maintenanceHandlers } from './maintenance'
+import { FIXTURE_PUBLICATIONS, publicationsHandlers } from './publications'
 
 /**
  * Composes each feature's MSW handler module into the single array the Node
@@ -16,6 +22,18 @@ export const handlers = [
   ...historyHandlers,
   ...availabilityHandlers,
   ...maintenanceHandlers,
+  ...publicationsHandlers,
 ]
 
-export { FIXTURE_AVAILABILITY, FIXTURE_COMPONENTS, FIXTURE_HISTORY, FIXTURE_MAINTENANCE, FIXTURE_PROPOSALS }
+export {
+  FIXTURE_AVAILABILITY,
+  FIXTURE_COMPONENT_AVAILABILITY,
+  FIXTURE_COMPONENTS,
+  FIXTURE_HISTORY,
+  FIXTURE_MAINTENANCE,
+  FIXTURE_PROPOSALS,
+  FIXTURE_PUBLICATIONS,
+  FIXTURE_TOPOLOGY,
+}
+
+

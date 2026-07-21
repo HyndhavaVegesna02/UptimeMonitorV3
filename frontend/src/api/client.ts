@@ -1,9 +1,15 @@
 import type {
   AvailabilityDTO,
+  ComponentAvailabilityDTO,
   ComponentDTO,
+  ComponentTopologyDTO,
+  CreateMaintenanceRequest,
+  DecisionRequest,
+  DecisionResponse,
   MaintenanceWindowDTO,
   ObservationDTO,
   ProposalDTO,
+  PublicationDTO,
 } from './types'
 
 /**
@@ -43,7 +49,21 @@ async function readDetail(response: Response): Promise<string | undefined> {
     const body: unknown = await response.clone().json()
     if (body && typeof body === 'object' && 'detail' in body) {
       const detail = (body as { detail: unknown }).detail
-      return typeof detail === 'string' ? detail : undefined
+      if (typeof detail === 'string') {
+        return detail
+      }
+      if (Array.isArray(detail)) {
+        return detail
+          .map((item) =>
+            typeof item === 'object' && item && 'msg' in item
+              ? String((item as { msg: unknown }).msg)
+              : JSON.stringify(item),
+          )
+          .join('; ')
+      }
+      if (detail && typeof detail === 'object') {
+        return JSON.stringify(detail)
+      }
     }
   } catch {
     // Non-JSON or empty body — no detail available.
@@ -85,41 +105,144 @@ async function getJson<T>(path: string): Promise<T> {
   return readOkJson<T>(response, path)
 }
 
-/** `GET /api/v1/components` — the sidebar's Pinned quick-links and the
- * topbar's worst-of overall status pill both derive from this. */
+async function postJson<TBody, TResult>(path: string, body: TBody): Promise<TResult> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
+  } catch {
+    throw new ApiError(`Network error while posting to ${path}`)
+  }
+
+  return readOkJson<TResult>(response, path)
+}
+
+async function deleteRequest(path: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'DELETE',
+    })
+  } catch {
+    throw new ApiError(`Network error while deleting ${path}`)
+  }
+
+  if (!response.ok) {
+    const detail = await readDetail(response)
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+      detail,
+    )
+  }
+}
+
+/** `GET /api/v1/components` */
 export function getComponents(): Promise<ComponentDTO[]> {
   return getJson<ComponentDTO[]>('/v1/components')
 }
 
-/** `GET /api/v1/approvals` — the sidebar's Approvals badge count is this
- * array's length (STORY-121 AC2). */
+/** `GET /api/v1/topology` (STORY-129) */
+export function getTopology(): Promise<ComponentTopologyDTO[]> {
+  return getJson<ComponentTopologyDTO[]>('/v1/topology')
+}
+
+/** `GET /api/v1/approvals` */
 export function getApprovals(): Promise<ProposalDTO[]> {
   return getJson<ProposalDTO[]>('/v1/approvals')
 }
 
-/** `GET /api/v1/history?signal_key=...&limit=...` (STORY-122) — per-signal
- * observation history, most-recent first. `limit` is an optional
- * server-side cap (`backend/src/api/v1/history/controller.py`); omitted,
- * the backend returns the full window. */
-export function getHistory(signalKey: string, limit?: number): Promise<ObservationDTO[]> {
-  const params = new URLSearchParams({ signal_key: signalKey })
-  if (limit !== undefined) {
-    params.set('limit', String(limit))
-  }
-  return getJson<ObservationDTO[]>(`/v1/history?${params.toString()}`)
+export interface GetHistoryParams {
+  signalKey?: string
+  since?: string
+  until?: string
+  limit?: number
 }
 
-/** `GET /api/v1/availability?signal_key=...` (STORY-122) — per-signal
- * availability%/completeness% over the default 24h window.
- * `availability_pct`/`completeness_pct` may be `null` for a degenerate
- * (no-data) window — callers must handle that, never invent a number. */
+/** `GET /api/v1/history` (STORY-122, extended STORY-130) */
+export function getHistory(
+  signalKeyOrParams: string | GetHistoryParams,
+  limitLegacy?: number,
+): Promise<ObservationDTO[]> {
+  const params = new URLSearchParams()
+  if (typeof signalKeyOrParams === 'string') {
+    params.set('signal_key', signalKeyOrParams)
+    if (limitLegacy !== undefined) {
+      params.set('limit', String(limitLegacy))
+    }
+  } else {
+    if (signalKeyOrParams.signalKey) {
+      params.set('signal_key', signalKeyOrParams.signalKey)
+    }
+    if (signalKeyOrParams.since) {
+      params.set('since', signalKeyOrParams.since)
+    }
+    if (signalKeyOrParams.until) {
+      params.set('until', signalKeyOrParams.until)
+    }
+    if (signalKeyOrParams.limit !== undefined) {
+      params.set('limit', String(signalKeyOrParams.limit))
+    }
+  }
+  const queryString = params.toString()
+  return getJson<ObservationDTO[]>(`/v1/history${queryString ? `?${queryString}` : ''}`)
+}
+
+/** `GET /api/v1/availability` */
 export function getAvailability(signalKey: string): Promise<AvailabilityDTO> {
   const params = new URLSearchParams({ signal_key: signalKey })
   return getJson<AvailabilityDTO>(`/v1/availability?${params.toString()}`)
 }
 
-/** `GET /api/v1/maintenance` (STORY-122) — every scheduled maintenance
- * window, no filtering params (`backend/src/api/v1/maintenance/controller.py`). */
+export interface GetAvailabilityOptions {
+  since?: string
+  until?: string
+}
+
+/** `GET /api/v1/availability/component/{id}` (STORY-129) */
+export function getComponentAvailability(
+  componentId: string,
+  options?: GetAvailabilityOptions,
+): Promise<ComponentAvailabilityDTO> {
+  const params = new URLSearchParams()
+  if (options?.since) params.set('since', options.since)
+  if (options?.until) params.set('until', options.until)
+  const query = params.toString()
+  return getJson<ComponentAvailabilityDTO>(
+    `/v1/availability/component/${encodeURIComponent(componentId)}${query ? `?${query}` : ''}`,
+  )
+}
+
+/** `GET /api/v1/maintenance` */
 export function getMaintenance(): Promise<MaintenanceWindowDTO[]> {
   return getJson<MaintenanceWindowDTO[]>('/v1/maintenance')
 }
+
+/** `POST /api/v1/decisions/{proposal_id}` (STORY-131) */
+export function postDecision(
+  proposalId: number,
+  body: DecisionRequest,
+): Promise<DecisionResponse> {
+  return postJson<DecisionRequest, DecisionResponse>(`/v1/decisions/${proposalId}`, body)
+}
+
+/** `POST /api/v1/maintenance` (STORY-132) */
+export function postMaintenance(
+  body: CreateMaintenanceRequest,
+): Promise<MaintenanceWindowDTO> {
+  return postJson<CreateMaintenanceRequest, MaintenanceWindowDTO>('/v1/maintenance', body)
+}
+
+/** `DELETE /api/v1/maintenance/{window_id}` (STORY-132) */
+export function deleteMaintenance(windowId: number): Promise<void> {
+  return deleteRequest(`/v1/maintenance/${windowId}`)
+}
+
+/** `GET /api/v1/publications` (STORY-133) */
+export function getPublications(): Promise<PublicationDTO[]> {
+  return getJson<PublicationDTO[]>('/v1/publications')
+}
+

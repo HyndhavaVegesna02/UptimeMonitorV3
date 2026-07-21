@@ -76,3 +76,81 @@ export interface MaintenanceWindowDTO {
   reason: string | null
   title?: string | null
 }
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py::TopologySignalDTO` (STORY-129).
+ */
+export interface TopologySignalDTO {
+  signal_key: string
+  name: string
+  interval_seconds: number | null
+  component_id: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/topology/models.py::ComponentTopologyDTO` (STORY-129).
+ */
+export interface ComponentTopologyDTO {
+  id: string
+  name: string
+  signals: TopologySignalDTO[]
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::SignalAvailabilityDTO` (STORY-129).
+ */
+export interface SignalAvailabilityDTO extends AvailabilityDTO {
+  signal_key: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/availability/models.py::ComponentAvailabilityDTO` (STORY-129).
+ */
+export interface ComponentAvailabilityDTO {
+  component_id: string
+  rollup: AvailabilityDTO
+  signals: SignalAvailabilityDTO[]
+}
+
+/**
+ * Mirrors `backend/src/api/v1/approvals/models.py::DecisionRequest` (STORY-131).
+ */
+export interface DecisionRequest {
+  action: 'approve' | 'reject'
+  actor: string
+  notes?: string | null
+}
+
+/**
+ * Mirrors `backend/src/api/v1/approvals/models.py::DecisionResponse` (STORY-131).
+ */
+export interface DecisionResponse {
+  proposal_id: number
+  state: string
+  resolved_at: string
+}
+
+/**
+ * Mirrors `backend/src/api/v1/maintenance/models.py::CreateMaintenanceRequest` (STORY-132).
+ */
+export interface CreateMaintenanceRequest {
+  component_id: string
+  starts_at: string
+  ends_at: string
+  reason?: string | null
+  title?: string | null
+}
+
+/**
+ * Mirrors `backend/src/api/v1/publications/models.py::PublicationDTO` (STORY-133).
+ */
+export interface PublicationDTO {
+  id: number
+  component_id: string
+  status: string
+  published_at: string
+  proposal_id: number | null
+  outcome: 'succeeded' | 'failed'
+  author: string | null
+}
+

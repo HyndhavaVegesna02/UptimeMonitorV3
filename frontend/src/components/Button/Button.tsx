@@ -18,7 +18,7 @@ type LabelledProps = {
 
 export type ButtonProps = Omit<
   ButtonHTMLAttributes<HTMLButtonElement>,
-  'type' | 'children' | 'aria-label'
+  'children' | 'aria-label'
 > & {
   variant?: ButtonVariant
 } & (IconOnlyProps | LabelledProps)
@@ -33,12 +33,13 @@ export type ButtonProps = Omit<
 export function Button({
   variant = 'primary',
   iconOnly = false,
+  type = 'button',
   className,
   ...rest
 }: ButtonProps) {
   return (
     <button
-      type="button"
+      type={type}
       className={cx('button', `button--${variant}`, iconOnly && 'button--icon-only', className)}
       {...rest}
     />
