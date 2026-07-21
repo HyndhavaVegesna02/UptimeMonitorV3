@@ -10,8 +10,8 @@ import type {
  * Fetch-based typed API client (STORY-121). Single base-URL seam: every call
  * goes through `API_BASE_URL`, which is `/api` in both dev (proxied by Vite
  * to the local backend — vite.config.ts) and production (same-origin
- * `/api/*`, dossier §17). STORY-122 adds the remaining endpoints (history,
- * availability, maintenance, sample-mode) onto this same seam.
+ * `/api/*`, dossier §17). STORY-122 adds the Dashboard's remaining endpoints
+ * (history, availability, maintenance) onto this same seam.
  */
 export const API_BASE_URL = '/api'
 

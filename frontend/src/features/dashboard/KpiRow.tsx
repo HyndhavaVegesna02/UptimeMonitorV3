@@ -10,7 +10,11 @@ export interface KpiRowProps {
   availabilityPct: number | null
   /** Per-check pass/fail proxy series, oldest-first (`healthSeries`). */
   availabilityTrend: number[]
-  /** `AvailabilityDTO.distinct_locations` — real, not invented. */
+  /** The count of distinct real `location` values seen across the fetched
+   * history window (`DashboardPage.tsx`'s `new Set(...).size` over
+   * `combinedHistory`) — real, not invented; not `AvailabilityDTO`'s own
+   * `distinct_locations` field (the two are equal today with one signal,
+   * but this prop's actual source is the history-derived set). */
   distinctLocations: number
   avgLatencyMs: number | null
   /** Latency series, oldest-first (`latencySeries`). */
