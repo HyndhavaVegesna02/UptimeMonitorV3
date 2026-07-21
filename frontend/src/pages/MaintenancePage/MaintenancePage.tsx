@@ -1,8 +1,7 @@
-import { PlaceholderPage } from '../../components/PlaceholderPage/PlaceholderPage'
+import { MaintenanceView } from '../../features/maintenance/MaintenanceView'
 
-/** STORY-121: placeholder. A later story fills this in with scheduled
- * maintenance windows + the create-window flow the "＋ Maintenance" topbar
- * affordance opens. */
+/** STORY-132: Maintenance page — windows list + schedule form + delete */
 export function MaintenancePage() {
-  return <PlaceholderPage description="Scheduled maintenance windows — upcoming, active, and past." />
+  return <MaintenanceView />
 }
+
