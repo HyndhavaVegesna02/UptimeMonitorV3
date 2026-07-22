@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { http } from 'msw'
+import { HttpResponse, http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
@@ -149,6 +149,42 @@ describe('ShellLayout', () => {
         'aria-expanded',
         'false',
       )
+    })
+  })
+
+  describe('shared fetch dedup on a Dashboard mount (STORY-137 AC1)', () => {
+    it('fires each distinct endpoint (/components, /approvals, /maintenance) exactly once across the shell + the Dashboard page, not once per consumer', async () => {
+      let componentsCalls = 0
+      let approvalsCalls = 0
+      let maintenanceCalls = 0
+      server.use(
+        http.get('/api/v1/components', () => {
+          componentsCalls += 1
+          return HttpResponse.json(FIXTURE_COMPONENTS)
+        }),
+        http.get('/api/v1/approvals', () => {
+          approvalsCalls += 1
+          return HttpResponse.json(FIXTURE_PROPOSALS)
+        }),
+        http.get('/api/v1/maintenance', () => {
+          maintenanceCalls += 1
+          return HttpResponse.json([])
+        }),
+      )
+
+      renderAt('/dashboard')
+
+      // Both consumers of GET /api/v1/approvals — the sidebar badge and the
+      // Dashboard's own "Pending approvals" KPI — must have settled, plus
+      // the Dashboard's maintenance panel (the one region ShellLayout does
+      // NOT also fetch, proving dedup doesn't over-collapse either).
+      const sidebarApprovals = await screen.findByRole('link', { name: /Approvals/ })
+      await waitFor(() => expect(sidebarApprovals).toHaveTextContent(String(FIXTURE_PROPOSALS.length)))
+      await screen.findByText(/No maintenance scheduled/)
+
+      expect(componentsCalls).toBe(1)
+      expect(approvalsCalls).toBe(1)
+      expect(maintenanceCalls).toBe(1)
     })
   })
 
