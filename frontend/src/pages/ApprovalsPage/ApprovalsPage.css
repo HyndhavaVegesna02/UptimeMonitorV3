@@ -1,0 +1,18 @@
+.approvals-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.approvals-page__description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  max-width: 60ch;
+}
+
+.approvals-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

@@ -174,6 +174,7 @@ export function ProposalCard({
           <Button
             disabled={isBlocked}
             variant="secondary"
+            aria-label={`Approve ${proposal.component_id}`}
             onClick={(event) => handleRequestConfirm('approve', event.currentTarget)}
           >
             Approve
@@ -182,6 +183,7 @@ export function ProposalCard({
             disabled={isBlocked}
             variant="secondary"
             className={cx('proposal-card__reject-button')}
+            aria-label={`Reject ${proposal.component_id}`}
             onClick={(event) => handleRequestConfirm('reject', event.currentTarget)}
           >
             Reject
