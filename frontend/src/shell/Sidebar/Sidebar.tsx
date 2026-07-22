@@ -1,4 +1,4 @@
-import { CaretLineLeft, CaretLineRight } from '@phosphor-icons/react'
+import { CaretLineLeft, CaretLineRight, X } from '@phosphor-icons/react'
 import { useEffect, useId } from 'react'
 import { toHealthStatus } from '../../api/statusMapping'
 import type { ComponentDTO } from '../../api/types'
@@ -100,6 +100,24 @@ export function Sidebar({
           mobileOpen && 'shell-sidebar--mobile-open',
         )}
       >
+        {/* Mobile off-canvas sheet header only (STORY-141 AC2) — CSS-hidden
+           on the ≥861px desktop rail/expanded presentations, matching the
+           existing convention of always-rendering + CSS-gating visibility
+           per breakpoint (e.g. `.shell-sidebar__toggle` below). Gives the
+           drawer a brand/title landmark AND an explicit close affordance,
+           in addition to the existing backdrop/Escape dismissal. */}
+        <div className="shell-sidebar__mobile-header">
+          <span className="shell-sidebar__brand">Uptime Monitor</span>
+          <button
+            type="button"
+            className="shell-sidebar__mobile-close"
+            aria-label="Close menu"
+            onClick={onCloseMobile}
+          >
+            <Icon icon={X} aria-hidden size={18} />
+          </button>
+        </div>
+
         <button
           type="button"
           className="shell-sidebar__toggle"

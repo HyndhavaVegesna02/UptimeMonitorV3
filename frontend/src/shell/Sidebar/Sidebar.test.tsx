@@ -130,6 +130,40 @@ describe('Sidebar', () => {
     })
   })
 
+  // The mobile drawer header (brand + close button) is only VISUALLY shown
+  // at the ≤860px breakpoint (Sidebar.css) — jsdom's default viewport is
+  // desktop-sized, so it is legitimately CSS-hidden here (as it would be on
+  // a real desktop) and role queries would report it as inaccessible.
+  // Select by class instead of role+name, mirroring the established pattern
+  // for Topbar's mobile toggle (`Topbar.test.tsx`'s `getMobileToggle`).
+  describe('mobile drawer header (STORY-141 AC2)', () => {
+    function getCloseButton(container: HTMLElement): HTMLButtonElement {
+      const button = container.querySelector<HTMLButtonElement>('.shell-sidebar__mobile-close')
+      if (!button) {
+        throw new Error('mobile drawer close button not found')
+      }
+      return button
+    }
+
+    it('renders an in-drawer brand/title header', () => {
+      const { container } = renderSidebar()
+      expect(container.querySelector('.shell-sidebar__brand')).toHaveTextContent('Uptime Monitor')
+    })
+
+    it('renders an explicit, accessibly-labelled close (X) button distinct from the desktop collapse toggle', () => {
+      const { container } = renderSidebar()
+      const button = getCloseButton(container)
+      expect(button).toHaveAttribute('aria-label', 'Close menu')
+    })
+
+    it('calls onCloseMobile when the in-drawer close button is activated', () => {
+      const onCloseMobile = vi.fn()
+      const { container } = renderSidebar({ mobileOpen: true, onCloseMobile })
+      getCloseButton(container).click()
+      expect(onCloseMobile).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe('rail mode is viewport-gated, not just the persisted `collapsed` choice', () => {
     afterEach(() => {
       vi.unstubAllGlobals()
