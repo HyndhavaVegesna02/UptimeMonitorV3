@@ -118,6 +118,13 @@ a.summary-card:focus-visible {
   margin-top: 5px;
 }
 
+/* Matches `.summary-card__value-row`'s own top offset so a card's "no data
+   yet" empty treatment (STORY-140 AC1) sits at the same vertical rhythm as
+   its populated sibling cards. */
+.summary-card__body > .empty-state {
+  margin-top: var(--space-2);
+}
+
 .summary-card__extra {
   margin-top: var(--space-2);
   min-height: var(--kpi-visual-height);

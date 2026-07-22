@@ -2,6 +2,7 @@ import { ArrowUp, ArrowDown } from '@phosphor-icons/react'
 import type { Icon as PhosphorIcon } from '@phosphor-icons/react'
 import type { ReactNode } from 'react'
 import { cx } from '../../lib/cx'
+import { EmptyState } from '../EmptyState/EmptyState'
 import { Icon } from '../Icon/Icon'
 import './SummaryCard.css'
 
@@ -27,6 +28,13 @@ export interface SummaryCardProps {
    * "Pending approvals" KPI is a single clickable card, not a card + a
    * separate link). */
   href?: string
+  /** When given, replaces the value/unit/sub block with a compact
+   * `EmptyState` (STORY-140 AC1) — the "no data yet" treatment for a
+   * genuinely degenerate (null) KPI window, instead of a bare "— %"/"— ms"
+   * value plus a misleading "Across 0 probe locations" sub line. `value`/
+   * `unit`/`sub` are still accepted (so callers don't need a branch) but
+   * are not rendered while `empty` is set. */
+  empty?: { message: string; detail?: string }
   /** Extra content below the value — a Sparkline, a mini-segment bar, etc. */
   children?: ReactNode
 }
@@ -47,6 +55,7 @@ export function SummaryCard({
   delta,
   attention = false,
   href,
+  empty,
   children,
 }: SummaryCardProps) {
   const deltaDirection = delta?.direction ?? (delta?.sentiment === 'positive' ? 'up' : 'down')
@@ -68,13 +77,19 @@ export function SummaryCard({
       </div>
       <div className="summary-card__body">
         <div className="summary-card__label">{label}</div>
-        <div className="summary-card__value-row">
-          <span className="summary-card__value">
-            {value}
-            {unit ? <span className="summary-card__unit">{unit}</span> : null}
-          </span>
-        </div>
-        {sub ? <div className="summary-card__sub">{sub}</div> : null}
+        {empty ? (
+          <EmptyState compact message={empty.message} detail={empty.detail} />
+        ) : (
+          <>
+            <div className="summary-card__value-row">
+              <span className="summary-card__value">
+                {value}
+                {unit ? <span className="summary-card__unit">{unit}</span> : null}
+              </span>
+            </div>
+            {sub ? <div className="summary-card__sub">{sub}</div> : null}
+          </>
+        )}
       </div>
       {children ? <div className="summary-card__extra">{children}</div> : null}
     </>

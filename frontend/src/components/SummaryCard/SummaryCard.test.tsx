@@ -74,6 +74,36 @@ describe('SummaryCard', () => {
     expect(screen.getByTestId('extra-slot')).toBeInTheDocument()
   })
 
+  it('renders a compact EmptyState in place of the value/unit/sub block when `empty` is given (STORY-140 AC1)', () => {
+    render(
+      <SummaryCard
+        icon={ArrowUpRight}
+        label="Overall availability · 24h"
+        value="—"
+        unit="%"
+        sub="Across 0 probe locations"
+        empty={{ message: 'No data yet' }}
+      />,
+    )
+    expect(screen.getByText('No data yet')).toBeInTheDocument()
+    expect(screen.queryByText('—')).toBeNull()
+    expect(screen.queryByText('Across 0 probe locations')).toBeNull()
+    expect(screen.queryByText('%')).toBeNull()
+  })
+
+  it('passes an optional detail through to the empty treatment', () => {
+    render(
+      <SummaryCard
+        icon={ArrowUpRight}
+        label="Avg response time · 24h"
+        value="—"
+        unit="ms"
+        empty={{ message: 'No data yet', detail: 'Checks will appear here once probes report in.' }}
+      />,
+    )
+    expect(screen.getByText('Checks will appear here once probes report in.')).toBeInTheDocument()
+  })
+
   it('declares hover/active/focus-visible affordances, guarded by prefers-reduced-motion', () => {
     expect(summaryCardCss).toMatch(/\.summary-card(--[\w-]+)?:hover/)
     expect(summaryCardCss).toMatch(/:focus-visible/)
