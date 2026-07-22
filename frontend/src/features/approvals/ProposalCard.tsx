@@ -7,7 +7,6 @@ import { Button } from '../../components/Button/Button'
 import { Icon } from '../../components/Icon/Icon'
 import { Panel } from '../../components/Panel/Panel'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
-import { cx } from '../../lib/cx'
 import { formatRelativeTime } from '../../lib/relativeTime'
 import type { DecisionAction, DecisionNotice } from './useApprovalsDecisions'
 import './ProposalCard.css'
@@ -190,7 +189,7 @@ export function ProposalCard({
           <Button
             disabled={isBlocked}
             variant="secondary"
-            className={cx('proposal-card__reject-button')}
+            className="proposal-card__reject-button"
             data-role="reject"
             aria-label={`Reject ${proposal.component_id}`}
             onClick={() => handleRequestConfirm('reject')}
