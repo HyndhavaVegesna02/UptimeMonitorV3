@@ -105,13 +105,30 @@ stories:
         commit: 03c6fc8
   - id: STORY-139
     title: Response-time chart axis (0 baseline, nice ticks, reserved label gutter)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 4
+    reviews:
+      spec: "PASS — all 4 AC MET with genuine geometric proofs. AC1: new pure computeNiceAxis; points normalize as latency/niceMax (0 is a REAL scale anchor) — min-independence test drops the 293ms dataset-minimum obs and asserts the 951ms point's y is UNCHANGED (a cosmetic-0-label bug would shift it). AC2: computeNiceAxis(951,4)→[0,500,1000,1500], (700,4)→[0,250,500,750]; property test niceMax≥maxValue over 8 inputs; real fixture labels ['1,500 ms'..'0 ms'] NOT the old 951/809/536/262. AC3: gutter proven by COMPUTED geometry (labelX<AXIS_GUTTER, labelY===gridline.y i.e. centered not the old y-4 offset, point.x≥AXIS_GUTTER) + rendered SVG DOM-attribute assertions (<line x1>/<text x>) — not CSS-text (#7). AC4: zero deletions to the EmptyState/role=img/aria-label paths; empty-state carve-out for live-populated is pre-declared in the story. 724 tests; no assertions deleted."
+      quality: "APPROVE — 0 critical / 0 major / 3 minors. computeNiceAxis correct: niceMax≥maxValue holds by construction (property-tested); edge cases handled (maxValue≤0 & tickCount<2 → zeroed axis, sub-1 via negative exponent). Y-scale consistent (points + gridlines both map [0,niceMax]→[padding,padding+usableHeight]; old min/range fully DELETED, not commented, no residual ref). Gutter geometry sound (last point flush to right edge, no overflow; AXIS_GUTTER/AXIS_LABEL_INSET named+documented). Tests genuine (min-independence truly distinguishes the fix; geometry on numeric values not CSS-text; empty-state preserved; real live-api-sample fixtures). Tokens only, pure fn isolated in lib/, no dead code. Minors → STORY-134 (Heckpert→Heckbert typo; NaN maxValue defensive guard; pre-existing CHART_WIDTH/DEFAULT_WIDTH duplication)."
+    reality_gate: "PASS (live stack, Playwright, fresh dev server confirmed serving current code — newContentGrid present). The response-time chart renders its EMPTY state live ('No response-time data available / for the last 24 hours') — AC4 confirmed. The populated axis (AC1/2/3) cannot render live because the local DB is empty (Dynatrace off) — pre-declared story carve-out; proven instead by the genuine pure unit tests over the real captured max-951ms fixture + rendered-SVG-attribute component tests (both reviewers verified load-bearing). Zero console errors on the Dashboard. Bonus: STORY-138's KPI footer meters were also visible live this pass (green bar 'Components healthy 1/1', grey 'Pending approvals 0' — AC3/AC4 confirmed live)."
+    dod_evidence:   # scoped --only npm at HEAD 6c8c1cc
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  88 passed (88) | Tests  724 passed (724)"
+        commit: 6c8c1cc
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 703ms"
+        commit: 6c8c1cc
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 6c8c1cc
   - id: STORY-140
     title: Empty-state & data-formatting polish (No-data-yet KPI, History tz label, location label)
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
     order: 5
