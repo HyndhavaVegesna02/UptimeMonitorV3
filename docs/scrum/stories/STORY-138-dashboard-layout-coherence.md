@@ -33,3 +33,15 @@ This is the highest-visibility story — fresh, high-craft layout on the sprint-
 Honor `ui-ux-pro-max`, `web-design-guidelines`, `emil-design-eng`, `design-system`. Use
 design-system spacing tokens, not raw px. Make the grid decision principled (one grid,
 named columns), not a per-row patch.
+
+## History
+- sprint-61 (2026-07-22): **Deleted** the two divergent-ratio grid classes
+  `.dashboard-page__mid-grid` (1.85fr/1fr) and `.dashboard-page__bottom-grid` (1.1fr/1fr),
+  plus the `--side-stack` helper, from `DashboardPage.css`. Reason: they were the root cause
+  of the jagged center gutter (AC1) — two rows on separate grids with different column ratios
+  put the divider at different x-positions (measured ~145px jump). Replaced by ONE shared
+  named-line grid `.dashboard-page__content-grid` (`[main-start] minmax(0,2fr) [main-end
+  side-start] minmax(0,1fr) [side-end]`) whose columns are placed by grid-line name so a
+  future edit cannot silently reintroduce a second ratio. `ComponentsRoster` moved from the
+  old bottom grid into the side column (content rebalance, AC2). Commits 61d29cd/bcd0278/
+  d9d0bf9; wiki recorded in `docs/scrum/wiki/frontend-zone.md` (2026-07-22).
