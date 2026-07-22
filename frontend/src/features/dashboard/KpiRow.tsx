@@ -42,6 +42,12 @@ export interface KpiRowProps {
  * vocabulary (`deriveKpiTone.ts`), so no card is left looking emptier than
  * its siblings and the accent coloring is deliberate, never an accidental
  * green/blue/none mix.
+ *
+ * The availability and response-time cards render a clean "No data yet"
+ * treatment (`SummaryCard`'s `empty` prop -> a compact `EmptyState`,
+ * STORY-140 AC1) when their value is genuinely `null` (a degenerate
+ * no-data window) — never a bare "— %"/"— ms" value plus a misleading
+ * "Across 0 probe locations" sub line.
  */
 export function KpiRow({
   availabilityPct,
@@ -62,6 +68,11 @@ export function KpiRow({
         value={formatPercent(availabilityPct)}
         unit="%"
         sub={`Across ${distinctLocations} probe location${distinctLocations === 1 ? '' : 's'}`}
+        empty={
+          availabilityPct === null
+            ? { message: 'No data yet', detail: 'Availability will appear once probes report in.' }
+            : undefined
+        }
       >
         <Sparkline data={availabilityTrend} tone="positive" />
       </SummaryCard>
@@ -71,6 +82,11 @@ export function KpiRow({
         label="Avg response time · 24h"
         value={formatLatency(avgLatencyMs)}
         unit="ms"
+        empty={
+          avgLatencyMs === null
+            ? { message: 'No data yet', detail: 'Response times will appear once probes report in.' }
+            : undefined
+        }
       >
         <Sparkline data={latencyTrend} tone="accent" />
       </SummaryCard>

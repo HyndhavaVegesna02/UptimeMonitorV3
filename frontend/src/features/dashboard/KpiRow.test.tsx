@@ -26,16 +26,25 @@ describe('KpiRow', () => {
     expect(screen.getByText('100.00')).toBeInTheDocument()
   })
 
-  it('renders an em dash when availability_pct is null (degenerate window) rather than a fabricated number', () => {
-    render(<KpiRow {...DEFAULT_PROPS} availabilityPct={null} />)
+  it('renders a clean "No data yet" treatment when availability_pct is null (degenerate window) — never a bare "— %" + "Across 0 probe locations" (STORY-140 AC1)', () => {
+    render(<KpiRow {...DEFAULT_PROPS} availabilityPct={null} distinctLocations={0} />)
     const availabilityCard = screen.getByText('Overall availability · 24h').closest('article, a')!
-    expect(within(availabilityCard as HTMLElement).getByText('—')).toBeInTheDocument()
+    expect(within(availabilityCard as HTMLElement).getByText('No data yet')).toBeInTheDocument()
+    expect(within(availabilityCard as HTMLElement).queryByText('—')).toBeNull()
+    expect(within(availabilityCard as HTMLElement).queryByText(/Across 0 probe locations/)).toBeNull()
   })
 
   it('renders the avg response time KPI in ms', () => {
     render(<KpiRow {...DEFAULT_PROPS} />)
     expect(screen.getByText('Avg response time · 24h')).toBeInTheDocument()
     expect(screen.getByText('553')).toBeInTheDocument()
+  })
+
+  it('renders a clean "No data yet" treatment when avg_latency_ms is null (degenerate window) — consistent with the availability KPI (STORY-140 AC1)', () => {
+    render(<KpiRow {...DEFAULT_PROPS} avgLatencyMs={null} />)
+    const latencyCard = screen.getByText('Avg response time · 24h').closest('article, a')!
+    expect(within(latencyCard as HTMLElement).getByText('No data yet')).toBeInTheDocument()
+    expect(within(latencyCard as HTMLElement).queryByText('—')).toBeNull()
   })
 
   it('renders components healthy as n/total with the real breakdown as a sub-line', () => {
