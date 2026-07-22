@@ -62,7 +62,7 @@ describe('DashboardPage', () => {
     expect(pendingLink).not.toHaveClass('summary-card--attention')
   })
 
-  it('renders the response-time chart with the real spike (951ms at …0047)', async () => {
+  it('renders the response-time chart with the real spike (951ms at #0047)', async () => {
     useRealComponents()
     renderDashboard()
 
@@ -77,8 +77,8 @@ describe('DashboardPage', () => {
 
     const group = await screen.findByRole('group', { name: 'Metric' })
     const panel = group.closest('.panel')!
-    expect(within(panel as HTMLElement).getByText(/…0047/)).toBeInTheDocument()
-    expect(within(panel as HTMLElement).getByText(/…0060/)).toBeInTheDocument()
+    expect(within(panel as HTMLElement).getByText(/#0047/)).toBeInTheDocument()
+    expect(within(panel as HTMLElement).getByText(/#0060/)).toBeInTheDocument()
   })
 
   it('renders a tidy empty state for maintenance (the real sample is [])', async () => {

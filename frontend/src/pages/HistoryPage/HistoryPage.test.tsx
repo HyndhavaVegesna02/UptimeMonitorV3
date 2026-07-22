@@ -133,7 +133,7 @@ describe('HistoryPage', () => {
 
     const rows = within(screen.getByRole('table')).getAllByRole('row').slice(1)
     expect(rows.length).toBeGreaterThan(0)
-    expect(rows.every((row) => within(row).getByText('…0060'))).toBeTruthy()
+    expect(rows.every((row) => within(row).getByText('#0060'))).toBeTruthy()
   })
 
   it('AC2: the window toggle recomputes since/until as tz-aware UTC ISO and refetches', async () => {
@@ -167,7 +167,7 @@ describe('HistoryPage', () => {
   it('AC3: renders the dense grid with the real captured http-check values', async () => {
     renderPage()
     const table = await screen.findByRole('table')
-    expect(within(table).getAllByText('…0060').length).toBeGreaterThan(0)
+    expect(within(table).getAllByText('#0060').length).toBeGreaterThan(0)
     expect(within(table).getByText('588')).toBeInTheDocument()
     expect(within(table).getAllByText('200').length).toBeGreaterThan(0)
   })

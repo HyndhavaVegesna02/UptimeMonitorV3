@@ -60,7 +60,7 @@ export function mergeHistoryRows(
   // wire: two synthetic probe locations can emit observations that
   // normalize to the identical millisecond `observed_at` for the same
   // `location` (confirmed live, e.g. two rows both at
-  // `2026-07-21T20:24:41.129000Z`/`…0060`). A colliding key corrupts React's
+  // `2026-07-21T20:24:41.129000Z`/`#0060`). A colliding key corrupts React's
   // list reconciliation (duplicated/omitted rows, console key-collision
   // errors) — a positional key over the final sorted order is always
   // unique, regardless of wire duplicates, and never affects sort order or

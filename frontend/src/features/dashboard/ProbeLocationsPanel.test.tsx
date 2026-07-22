@@ -7,7 +7,7 @@ import { ProbeLocationsPanel } from './ProbeLocationsPanel'
 const LOCATIONS: ProbeLocationRow[] = [
   {
     location: 'SYNTHETIC_LOCATION-0000000000000047',
-    label: '…0047',
+    label: '#0047',
     health: 'up',
     latestLatencyMs: 951,
     availabilityPct: 0.5,
@@ -15,7 +15,7 @@ const LOCATIONS: ProbeLocationRow[] = [
   },
   {
     location: 'SYNTHETIC_LOCATION-0000000000000060',
-    label: '…0060',
+    label: '#0060',
     health: 'up',
     latestLatencyMs: 588,
     availabilityPct: 1,
@@ -26,8 +26,8 @@ const LOCATIONS: ProbeLocationRow[] = [
 describe('ProbeLocationsPanel', () => {
   it('renders one row per real probe location, with health dot+label', () => {
     render(<ProbeLocationsPanel locations={LOCATIONS} />)
-    expect(screen.getByText(/…0047/)).toBeInTheDocument()
-    expect(screen.getByText(/…0060/)).toBeInTheDocument()
+    expect(screen.getByText(/#0047/)).toBeInTheDocument()
+    expect(screen.getByText(/#0060/)).toBeInTheDocument()
     expect(screen.getAllByText('Up')).toHaveLength(2)
   })
 

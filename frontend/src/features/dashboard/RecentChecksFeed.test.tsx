@@ -7,15 +7,15 @@ import { RecentChecksFeed } from './RecentChecksFeed'
 import type { SignalsMap } from './types'
 
 const ROWS: RecentCheckRow[] = [
-  { key: '1', componentName: 'HTTP Check', locationLabel: '…0047', relativeTime: '28s ago', latencyMs: 294, health: 'up' },
-  { key: '2', componentName: 'HTTP Check', locationLabel: '…0060', relativeTime: '1 min ago', latencyMs: null, health: 'down' },
+  { key: '1', componentName: 'HTTP Check', locationLabel: '#0047', relativeTime: '28s ago', latencyMs: 294, health: 'up' },
+  { key: '2', componentName: 'HTTP Check', locationLabel: '#0060', relativeTime: '1 min ago', latencyMs: null, health: 'down' },
 ]
 
 describe('RecentChecksFeed', () => {
   it('renders one row per recent check with component, location, relative time, latency, and health tag', () => {
     render(<RecentChecksFeed rows={ROWS} />)
     expect(screen.getAllByText('HTTP Check')).toHaveLength(2)
-    expect(screen.getByText(/…0047/)).toBeInTheDocument()
+    expect(screen.getByText(/#0047/)).toBeInTheDocument()
     expect(screen.getByText(/28s ago/)).toBeInTheDocument()
     expect(screen.getByText('294')).toBeInTheDocument()
     expect(screen.getByText('Up')).toBeInTheDocument()

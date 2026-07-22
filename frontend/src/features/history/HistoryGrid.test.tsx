@@ -43,7 +43,7 @@ describe('HistoryGrid', () => {
   it('renders the real captured values for the http-check row (timestamp, location tail, latency, code)', () => {
     render(<HistoryGrid rows={ROWS} />)
     expect(screen.getByText('Jul 21, 07:58:41 UTC')).toBeInTheDocument()
-    expect(screen.getByText('…0060')).toBeInTheDocument()
+    expect(screen.getByText('#0060')).toBeInTheDocument()
     expect(screen.getByText('588')).toBeInTheDocument()
     expect(screen.getByText('200')).toBeInTheDocument()
   })

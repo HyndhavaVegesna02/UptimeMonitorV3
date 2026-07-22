@@ -57,7 +57,7 @@ describe('deriveRecentChecks', () => {
 
   it('renders a friendly location label and relative time', () => {
     const rows = deriveRecentChecks(COMPONENTS, SIGNALS, NOW, 10)
-    expect(rows[0].locationLabel).toBe('…0047')
+    expect(rows[0].locationLabel).toBe('#0047')
     expect(rows[0].relativeTime).toBe('28s ago')
   })
 

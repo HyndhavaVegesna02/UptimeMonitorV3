@@ -27,7 +27,7 @@ describe('deriveProbeLocations', () => {
     expect(loc60.latestLatencyMs).toBe(588)
 
     const loc47 = rows.find((row) => row.location.endsWith('0047'))!
-    // Most recent for …0047 is the 07:57:41 "up" check, not the later
+    // Most recent for #0047 is the 07:57:41 "up" check, not the later
     // 07:56:41 "down" one it's chronologically after in this fixture — the
     // derivation must pick by observed_at, not array order.
     expect(loc47.health).toBe('up')
@@ -37,7 +37,7 @@ describe('deriveProbeLocations', () => {
   it('computes a per-location availability percentage from the fetched sample', () => {
     const rows = deriveProbeLocations(OBSERVATIONS)
     const loc47 = rows.find((row) => row.location.endsWith('0047'))!
-    // 1 of 2 …0047 observations is "up".
+    // 1 of 2 #0047 observations is "up".
     expect(loc47.availabilityPct).toBeCloseTo(0.5)
   })
 
@@ -53,7 +53,7 @@ describe('deriveProbeLocations', () => {
   it('renders a friendly label alongside the raw location id', () => {
     const rows = deriveProbeLocations(OBSERVATIONS)
     const loc60 = rows.find((row) => row.location.endsWith('0060'))!
-    expect(loc60.label).toBe('…0060')
+    expect(loc60.label).toBe('#0060')
   })
 
   it('returns an empty array for no observations rather than a crash', () => {
