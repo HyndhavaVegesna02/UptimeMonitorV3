@@ -1,8 +1,8 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
 code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx, frontend/src/shell/Sidebar/Sidebar.css, frontend/src/shell/Sidebar/NavItem.css, frontend/src/shell/Topbar/Topbar.tsx]
-verified_sha: a16b893
-verified_sprint: sprint-59
+verified_sha: 0a0e421
+verified_sprint: sprint-61
 status: verified
 ---
 
@@ -147,7 +147,10 @@ not copied pixel-for-pixel.
   `aria-hidden`, rendered between the dot and label) — the topbar's worst-of overall status pill
   (`frontend/src/shell/Topbar/Topbar.tsx`) is "dot + icon + text", never colour alone; existing
   dot+label-only call sites are unaffected since `icon` is optional. Default labels: Up/Degraded/Partial outage/Down/Maintenance/Unknown/
-  Missing data, all overridable via `label`.
+  Missing data, all overridable via `label`. **`Topbar`'s `overallStatus` prop is `HealthStatus |
+  null` (STORY-136 AC2 fix)** — `null` (the components fetch hasn't SUCCEEDED yet) renders
+  `LoadingState`'s compact variant instead of the badge; `StatusBadge status="unknown"` only ever
+  renders for a SUCCEEDED fetch that is genuinely unknown (never as a stand-in for "still loading").
 - **SummaryCard** (`SummaryCard.tsx`): the KPI card — icon chip, label, big `tabular-nums` value +
   optional unit, optional delta pill (`sentiment: 'positive' | 'negative'` is the COLOR, decoupled
   from `direction: 'up' | 'down'`, the arrow — a latency DECREASE is `positive`/green even though
@@ -164,7 +167,10 @@ not copied pixel-for-pixel.
   chart-domain rule this sprint's plan calls out for STORY-122).
 - **LoadingState** (`LoadingState.tsx`): `role="status"` + a visible label (default `"Loading…"`);
   the spinner is `aria-hidden`, rotates via `transform: rotate()`, linear easing (constant motion,
-  per the emil decision framework), reduced-motion guarded.
+  per the emil decision framework), reduced-motion guarded. An optional `compact` prop (STORY-136
+  AC2) renders the `loading-state--compact` modifier — no block padding/centering — for tight
+  inline spaces (first consumer: the topbar's overall-status slot while its data fetch is still
+  in flight); the default (full-panel) rendering is unchanged.
 - **ErrorState** (`ErrorState.tsx`): `role="alert"` + a visible message (default `"Something went
   wrong"`); the warning `Icon` is colored `--color-down` and marked `aria-hidden` — the TEXT never
   depends on color to convey the error. An optional `onRetry` renders a secondary `Button`.
@@ -242,3 +248,10 @@ not copied pixel-for-pixel.
   gained a shared `.sr-only` utility (Facts above updated) for the Approvals badge's screen-reader
   text (a MAJOR a11y fix). Neither is a Fact this article previously got wrong — both are additive.
   verified_sha = a16b893.
+- 2026-07-22 (STORY-136, sprint-61, additive re-verify): `LoadingState` gained an optional
+  `compact` prop/modifier (block padding/centering removed) so it can render inline rather than as
+  a full-panel block; first consumer is `Topbar`'s overall-status slot, which now renders it in
+  place of `StatusBadge` while the components fetch is loading (AC2 — the `unknown` badge is
+  reserved for a SUCCEEDED-but-genuinely-unknown fetch, never a stand-in for "still loading").
+  `Topbar`'s `overallStatus` prop is now `HealthStatus | null` (Facts above updated). No existing
+  Fact was wrong, purely additive. verified_sha = 0a0e421.
