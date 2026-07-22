@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HttpResponse, http, delay } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
@@ -87,6 +87,33 @@ describe('AvailabilityPage', () => {
     expect(within(slowPanel).queryByRole('table')).toBeNull()
 
     expect(await within(slowPanel).findByRole('table')).toBeInTheDocument()
+  })
+
+  it('STORY-137: two different components fetching concurrently each fire their OWN availability request exactly once — never coalesced into one', async () => {
+    const COMPONENT_A = 'component-a'
+    const COMPONENT_B = 'component-b'
+    const topology: ComponentTopologyDTO[] = [
+      { id: COMPONENT_A, name: 'Component A', signals: [] },
+      { id: COMPONENT_B, name: 'Component B', signals: [] },
+    ]
+    const callsByComponent: Record<string, number> = {}
+    server.use(
+      http.get('/api/v1/topology', () => HttpResponse.json(topology)),
+      http.get('/api/v1/availability/component/:componentId', ({ params }) => {
+        const id = String(params.componentId)
+        callsByComponent[id] = (callsByComponent[id] ?? 0) + 1
+        return HttpResponse.json({ ...FIXTURE_COMPONENT_AVAILABILITY['http-check'], component_id: id })
+      }),
+    )
+
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Component A', level: 2 })
+    await screen.findByRole('heading', { name: 'Component B', level: 2 })
+    await waitFor(() => expect(screen.getAllByRole('table')).toHaveLength(2))
+
+    expect(callsByComponent[COMPONENT_A]).toBe(1)
+    expect(callsByComponent[COMPONENT_B]).toBe(1)
   })
 
   it('recomputes since/until as tz-aware UTC ISO (trailing Z) and refetches on window change', async () => {
