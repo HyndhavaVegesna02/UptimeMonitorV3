@@ -1,0 +1,43 @@
+.window-state-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--badge-radius);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.window-state-badge__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.window-state-badge--upcoming {
+  color: var(--color-accent-text);
+  background: var(--color-accent-tint);
+}
+
+.window-state-badge--upcoming .window-state-badge__dot {
+  background: var(--color-accent);
+}
+
+.window-state-badge--active {
+  color: var(--color-maintenance-text);
+  background: var(--color-maintenance-tint);
+}
+
+.window-state-badge--active .window-state-badge__dot {
+  background: var(--color-maintenance);
+}
+
+.window-state-badge--past {
+  color: var(--color-unknown-text);
+  background: var(--color-unknown-tint);
+}
+
+.window-state-badge--past .window-state-badge__dot {
+  background: var(--color-unknown);
+}
