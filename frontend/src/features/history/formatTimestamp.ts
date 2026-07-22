@@ -25,11 +25,17 @@ function pad2(n: number): string {
  * which would make this non-deterministic in CI and mismatch the reality
  * gate's live-captured UTC values). No year: this is a recent-history
  * window, not a long-term archive.
+ *
+ * Carries an explicit trailing `" UTC"` label (STORY-140 AC2) — the same
+ * convention `formatWindowRange` (Maintenance card) already established for
+ * its own hand-formatted UTC fields, so History-row timestamps are no
+ * longer the one place on the Dashboard/History surfaces with an
+ * unlabelled, ambiguous absolute time.
  */
 export function formatObservedAt(observedAt: string): string {
   const date = new Date(observedAt)
   const month = MONTHS[date.getUTCMonth()]
   const day = pad2(date.getUTCDate())
   const time = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())}:${pad2(date.getUTCSeconds())}`
-  return `${month} ${day}, ${time}`
+  return `${month} ${day}, ${time} UTC`
 }

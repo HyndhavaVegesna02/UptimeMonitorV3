@@ -87,11 +87,11 @@ describe('HistoryPage', () => {
     // Correct global order interleaves the two signals — ping's 07:57:41
     // slots between http's 07:57:41.375 and 07:56:41.164, proving this is
     // a real re-sort, not a per-signal concatenation.
-    expect(within(rows[0]).getByText('Jul 21, 07:58:41')).toBeInTheDocument()
+    expect(within(rows[0]).getByText('Jul 21, 07:58:41 UTC')).toBeInTheDocument()
     expect(within(rows[0]).getByText('HTTP Check')).toBeInTheDocument()
-    expect(within(rows[1]).getByText('Jul 21, 07:57:41')).toBeInTheDocument()
+    expect(within(rows[1]).getByText('Jul 21, 07:57:41 UTC')).toBeInTheDocument()
     expect(within(rows[1]).getByText('HTTP Check')).toBeInTheDocument()
-    expect(within(rows[2]).getByText('Jul 21, 07:57:41')).toBeInTheDocument()
+    expect(within(rows[2]).getByText('Jul 21, 07:57:41 UTC')).toBeInTheDocument()
     expect(within(rows[2]).getByText('Ping Check')).toBeInTheDocument()
     expect(within(rows[3]).getByText('HTTP Check')).toBeInTheDocument()
   })
