@@ -3,6 +3,7 @@ import type { RefObject } from 'react'
 import { Link } from 'react-router-dom'
 import { Button } from '../../components/Button/Button'
 import { Icon } from '../../components/Icon/Icon'
+import { LoadingState } from '../../components/LoadingState/LoadingState'
 import type { HealthStatus } from '../../components/StatusBadge/StatusBadge'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { HEALTH_ICONS } from '../../lib/healthIcons'
@@ -11,7 +12,12 @@ import './Topbar.css'
 
 export interface TopbarProps {
   title: string
-  overallStatus: HealthStatus
+  /** `null` means the components fetch that feeds the worst-of overall
+   * status hasn't SUCCEEDED yet (loading or error) — rendered as a neutral
+   * loading treatment (STORY-136 AC2), never the `unknown` StatusBadge.
+   * `unknown` is a real, meaningful value: it means the fetch succeeded and
+   * genuinely found no components to judge health by. */
+  overallStatus: HealthStatus | null
   lastUpdated: Date | null
   /** Injected "now" so relative-time rendering stays deterministic/testable
    * — never `Date.now()` read directly inside the component. */
@@ -55,7 +61,11 @@ export function Topbar({
           <Icon icon={List} aria-hidden size={20} />
         </button>
         <h1 className="shell-topbar__title">{title}</h1>
-        <StatusBadge status={overallStatus} icon={HEALTH_ICONS[overallStatus]} />
+        {overallStatus === null ? (
+          <LoadingState compact label="Updating status…" />
+        ) : (
+          <StatusBadge status={overallStatus} icon={HEALTH_ICONS[overallStatus]} />
+        )}
       </div>
 
       <div className="shell-topbar__trailing">

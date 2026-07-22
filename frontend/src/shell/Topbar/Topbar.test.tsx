@@ -1,5 +1,5 @@
 import { createRef } from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { Topbar } from './Topbar'
@@ -31,6 +31,21 @@ describe('Topbar', () => {
   it('renders the worst-of overall status as a dot+icon+text pill, never colour alone', () => {
     renderTopbar({ overallStatus: 'down' })
     expect(screen.getByText('Down')).toBeInTheDocument()
+  })
+
+  describe('overall-status loading treatment (STORY-136 AC2)', () => {
+    it('renders a neutral compact loading indicator, never the "Unknown" StatusBadge, while overallStatus is null (fetch in flight)', () => {
+      renderTopbar({ overallStatus: null })
+      expect(screen.queryByText('Unknown')).not.toBeInTheDocument()
+      const topbar = screen.getByRole('banner')
+      expect(within(topbar).getByRole('status')).toBeInTheDocument()
+    })
+
+    it('renders the real "Unknown" StatusBadge once the fetch has SUCCEEDED and is genuinely unknown', () => {
+      renderTopbar({ overallStatus: 'unknown' })
+      expect(screen.getByText('Unknown')).toBeInTheDocument()
+      expect(screen.queryByRole('status')).not.toBeInTheDocument()
+    })
   })
 
   it('renders a last-updated indicator', () => {

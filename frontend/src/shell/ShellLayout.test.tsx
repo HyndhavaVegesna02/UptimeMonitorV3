@@ -1,9 +1,11 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { http } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_PROPOSALS } from '../mocks/handlers/approvals'
+import { server } from '../mocks/server'
 import { AppRoutes } from '../routes'
 import { SIDEBAR_COLLAPSE_STORAGE_KEY } from './useSidebarCollapse'
 
@@ -64,6 +66,28 @@ describe('ShellLayout', () => {
     // FIXTURE_COMPONENTS includes an under_maintenance component and no
     // down/partial/degraded ones, so the worst-of is "maintenance".
     await waitFor(() => expect(within(topbar).getByText('Maintenance')).toBeInTheDocument())
+  })
+
+  describe('topbar overall-status loading treatment (STORY-136 AC2)', () => {
+    it('shows a neutral loading indicator, never the "Unknown" StatusBadge, while GET /api/v1/components is in flight', () => {
+      server.use(http.get('/api/v1/components', () => new Promise(() => undefined)))
+      renderAt('/dashboard')
+
+      const topbar = screen.getByRole('banner')
+      expect(within(topbar).getByRole('status')).toBeInTheDocument()
+      expect(within(topbar).queryByText('Unknown')).not.toBeInTheDocument()
+    })
+
+    it('shows the real worst-of status once the fetch SUCCEEDS with data', async () => {
+      renderAt('/dashboard')
+
+      const topbar = screen.getByRole('banner')
+      // FIXTURE_COMPONENTS includes an under_maintenance component and no
+      // down/partial/degraded ones, so the worst-of is "maintenance", not
+      // "unknown" and not a loading indicator.
+      await waitFor(() => expect(within(topbar).getByText('Maintenance')).toBeInTheDocument())
+      expect(within(topbar).queryByRole('status')).not.toBeInTheDocument()
+    })
   })
 
   it('renders the Pinned sidebar group from the same components fetch', async () => {

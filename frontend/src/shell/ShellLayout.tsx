@@ -37,7 +37,12 @@ export function ShellLayout() {
   const components = componentsFetch.state.phase === 'success' ? componentsFetch.state.data : []
   const approvalsCount =
     approvalsFetch.state.phase === 'success' ? approvalsFetch.state.data.length : 0
-  const overallStatus = deriveOverallStatus(components)
+  // `null` while the components fetch hasn't SUCCEEDED yet (loading OR
+  // error) — the topbar renders a neutral loading treatment for that, never
+  // `deriveOverallStatus([])`'s `unknown` (STORY-136 AC2: `unknown` must only
+  // render for a fetch that genuinely SUCCEEDED with no components to judge).
+  const overallStatus =
+    componentsFetch.state.phase === 'success' ? deriveOverallStatus(componentsFetch.state.data) : null
 
   // Quality-review fix: `succeededAt` is captured by `useFetch` itself
   // inside the fetch promise's own `.then()` callback — not `new Date()`
