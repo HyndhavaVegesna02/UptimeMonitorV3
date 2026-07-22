@@ -56,7 +56,14 @@ export interface UseFetchResult<T> {
  * moment share ONE underlying network request instead of firing one each.
  * This is pure promise-coalescing, not a result cache — see
  * `fetchDedup.ts` — so `retry` always genuinely re-invokes the fetcher once
- * the shared request has settled.
+ * the shared request has settled. The effect's cleanup ALSO calls
+ * `forgetFetch` (quality-review fix on top of STORY-137) — an unmount
+ * before the request settles/times out must evict the in-flight entry too,
+ * or a never-settling fetcher (a hung backend the STORY-136 timeout only
+ * hides from THIS instance, since it never aborts the underlying fetch)
+ * would orphan the entry forever, and a later mount of the same fetcher
+ * would silently rejoin the dead promise instead of issuing a fresh
+ * request.
  */
 export function useFetch<T>(
   fetcher: () => Promise<T>,
@@ -104,6 +111,22 @@ export function useFetch<T>(
     return () => {
       cancelled = true
       clearTimeout(timeoutId)
+      // Quality-review MAJOR fix: without this, an unmount BEFORE the
+      // request settles (or times out) leaves the `dedupedFetch` in-flight
+      // entry behind forever — its own `.finally()` still runs once the
+      // real network call eventually settles, but nothing here awaits
+      // that, so the entry sits in the map as an "orphan" in the meantime.
+      // A later mount of the SAME stable fetcher (e.g. the user navigating
+      // back to a page using it) would otherwise silently rejoin that
+      // orphaned promise instead of issuing a fresh request. Evicting here
+      // trades an occasional redundant request (when a sibling still
+      // shares the in-flight promise) for never rejoining a possibly-dead
+      // one — the correct tradeoff. This is a harmless no-op when the
+      // request already settled (its own `.finally()` already deleted the
+      // entry) and does not affect a still-mounted sibling awaiting the
+      // SAME promise object, since eviction only clears the map slot for
+      // FUTURE `dedupedFetch` calls, never the promise instance itself.
+      forgetFetch(fetcher)
     }
   }, [attempt, fetcher, timeoutMs])
 
