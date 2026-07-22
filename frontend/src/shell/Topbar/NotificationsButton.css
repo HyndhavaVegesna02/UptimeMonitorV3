@@ -1,0 +1,22 @@
+.notifications-button {
+  position: relative;
+}
+
+.notifications-button__trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.notifications-button__panel {
+  position: absolute;
+  top: calc(100% + var(--space-2));
+  right: 0;
+  z-index: 30;
+  width: min(320px, 90vw);
+  box-shadow: var(--shadow-pop);
+}
+
+.notifications-button__panel:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

@@ -1,13 +1,13 @@
-import { Bell, List, Plus } from '@phosphor-icons/react'
+import { List, Plus } from '@phosphor-icons/react'
 import type { RefObject } from 'react'
 import { Link } from 'react-router-dom'
-import { Button } from '../../components/Button/Button'
 import { Icon } from '../../components/Icon/Icon'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import type { HealthStatus } from '../../components/StatusBadge/StatusBadge'
 import { StatusBadge } from '../../components/StatusBadge/StatusBadge'
 import { HEALTH_ICONS } from '../../lib/healthIcons'
 import { formatLastUpdated } from './formatLastUpdated'
+import { NotificationsButton } from './NotificationsButton'
 import './Topbar.css'
 
 export interface TopbarProps {
@@ -31,8 +31,9 @@ export interface TopbarProps {
 /**
  * The shell's topbar (STORY-121 AC3): page title, the worst-of overall
  * status pill (dot + icon + text — never colour alone, StatusBadge AC3),
- * a last-updated indicator, a notifications button, and the "＋ Maintenance"
- * affordance. Also hosts the mobile off-canvas sheet's hamburger toggle
+ * a last-updated indicator, a notifications popover (`NotificationsButton`,
+ * STORY-141 AC1), and the "＋ Maintenance" affordance. Also hosts the mobile
+ * off-canvas sheet's hamburger toggle
  * (AC6) — a button distinct from the desktop rail's collapse toggle
  * (`Sidebar.tsx`), only visible at the ≤860px breakpoint (`Topbar.css`).
  */
@@ -78,9 +79,7 @@ export function Topbar({
              (ui-ux-pro-max: Horizontal Scroll, High severity). */}
           <span className="shell-topbar__maintenance-label">Maintenance</span>
         </Link>
-        <Button variant="ghost" iconOnly aria-label="Notifications">
-          <Icon icon={Bell} aria-hidden />
-        </Button>
+        <NotificationsButton />
       </div>
     </header>
   )
