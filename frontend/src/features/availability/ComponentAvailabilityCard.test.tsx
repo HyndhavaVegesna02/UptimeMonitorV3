@@ -98,6 +98,24 @@ describe('ComponentAvailabilityCard', () => {
     expect(screen.queryByText(/low data/i)).toBeNull()
   })
 
+  it('right-aligns the numeric columns (header + cells), review refinement sprint-60', async () => {
+    renderCard()
+    await screen.findByRole('table')
+
+    const table = screen.getByRole('table')
+    const numericHeaders = ['Availability', 'Completeness', 'Total', 'Passing', 'Maintenance', 'Down', 'Gap', 'Locations']
+    numericHeaders.forEach((name) => {
+      expect(within(table).getByRole('columnheader', { name })).toHaveClass('is-numeric')
+    })
+    expect(within(table).getByRole('columnheader', { name: 'Component' })).not.toHaveClass('is-numeric')
+
+    const cells = within(getRollupRow()).getAllByRole('cell')
+    expect(cells[0]).not.toHaveClass('is-numeric') // Component name stays left
+    cells.slice(1).forEach((cell) => {
+      expect(cell).toHaveClass('is-numeric')
+    })
+  })
+
   it('offers no drill-down affordance for a zero-signal component (no crash)', async () => {
     server.use(
       http.get('/api/v1/availability/component/:componentId', () =>

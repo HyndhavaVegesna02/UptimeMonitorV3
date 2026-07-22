@@ -37,6 +37,11 @@ const COLUMN_HEADERS = [
   'Locations',
 ]
 
+/** Numeric columns (STORY-129 review refinement, sprint-60) - right-aligned
+ * header + cells together (`.is-numeric`) so magnitude scans read by digit
+ * place. `Component` is the only label column and stays left. */
+const NUMERIC_COLUMNS = new Set(COLUMN_HEADERS.filter((header) => header !== 'Component'))
+
 /** A percentage table cell: the numeric part from `formatAvailabilityPercent`
  * plus a `%` unit rendered as a sibling JSX text node with a literal
  * `&nbsp;` (never embedded in the formatter's returned string - matches
@@ -70,8 +75,8 @@ function AvailabilityRow({
   return (
     <tr>
       <td className="component-availability-card__name-cell">{nameCell}</td>
-      <td>{renderPercentCell(availability.availability_pct)}</td>
-      <td>
+      <td className="is-numeric">{renderPercentCell(availability.availability_pct)}</td>
+      <td className="is-numeric">
         {renderPercentCell(availability.completeness_pct)}
         {lowCompleteness ? (
           <span className="component-availability-card__low-flag">
@@ -80,12 +85,12 @@ function AvailabilityRow({
           </span>
         ) : null}
       </td>
-      <td>{availability.total_verdicts}</td>
-      <td>{availability.passing_verdicts}</td>
-      <td>{availability.maintenance_verdicts}</td>
-      <td>{deriveDownCount(availability)}</td>
-      <td>{availability.gap_verdicts}</td>
-      <td>{availability.distinct_locations}</td>
+      <td className="is-numeric">{availability.total_verdicts}</td>
+      <td className="is-numeric">{availability.passing_verdicts}</td>
+      <td className="is-numeric">{availability.maintenance_verdicts}</td>
+      <td className="is-numeric">{deriveDownCount(availability)}</td>
+      <td className="is-numeric">{availability.gap_verdicts}</td>
+      <td className="is-numeric">{availability.distinct_locations}</td>
     </tr>
   )
 }
@@ -148,7 +153,7 @@ function ComponentAvailabilityTable({
         <thead>
           <tr>
             {COLUMN_HEADERS.map((header) => (
-              <th key={header} scope="col">
+              <th key={header} scope="col" className={NUMERIC_COLUMNS.has(header) ? 'is-numeric' : undefined}>
                 {header}
               </th>
             ))}

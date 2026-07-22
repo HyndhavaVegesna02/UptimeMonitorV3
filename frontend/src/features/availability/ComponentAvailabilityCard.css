@@ -82,3 +82,14 @@
 .component-availability-card__signals td:first-child {
   padding-left: var(--space-6);
 }
+
+/* Numeric columns right-align header + cells together so magnitude scans
+   read by digit place (design review, STORY-129 review refinement,
+   sprint-60). Scoped to this table for specificity over the shared
+   `th, td { text-align: left }` rule above. The Completeness cell's number
+   + "Low data" chip stay a single right-aligned inline run - no separate
+   flex wrapper needed since `white-space: nowrap` keeps them on one line. */
+.component-availability-card__table th.is-numeric,
+.component-availability-card__table td.is-numeric {
+  text-align: right;
+}
