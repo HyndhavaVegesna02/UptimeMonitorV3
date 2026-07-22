@@ -112,10 +112,27 @@ stories:
         commit: bfcca9b
   - id: STORY-132
     title: Maintenance page — windows list + schedule form + delete (422 field mapping, UTC)
-    status: todo
+    status: done
     points: 5
-    ceremony: 3-pointer
+    ceremony: 3-pointer   # in-process: implementer → spec ∥ quality → DoD gate → reality gate
     order: 4
+    reviews:
+      spec: "PASS — all 7 AC MET with genuine AC-to-test traces. The crux 422 field-mapping proven order-sensitive at 3 levels (pure mapMaintenanceError, hook, and full form): a message naming BOTH 'strictly greater than' and 'starts_at' maps to ends_at (aria-invalid=true) while starts_at is asserted aria-invalid=false — would fail if the order were flipped. deriveWindowState takes `now` as a param with boundary instants pinned (now===starts_at→active, now===ends_at→past). datetime-local→UTC-Z asserted (endsWith Z). Delete-404 → notice.kind==='gone' + a real second getMaintenance() refetch (call-count) + zero console.error, at hook AND page level (not silent success). deleteRequest 204 handled without body-parse. 643 tests."
+      quality: "APPROVE — 0 critical / 0 major. New deleteRequest(path) is 204-safe (never .json() on empty body, reuses readDetail for ApiError.status/.detail on non-2xx, void on ok) and general; postJson reused from STORY-131. mapMaintenanceError pure + order-correct in CODE (not just test). Uncontrolled FormData form (no per-keystroke state); real <label> per field; single new Date(v).toISOString() (no double-convert); aria-invalid/aria-describedby/role=alert on field errors. No raw hex; semantic state-badge tokens; confirm entrance transform/opacity under prefers-reduced-motion; both mutation hooks catch (console-error spy zero). 2 cosmetic minors → STORY-134 (<time dateTime> encodes only start; badge test asserts label not dot)."
+    reality_gate: "PASS — full live create→verify→delete cycle (live stack, scripted Chromium + curl), state left clean. Empty state live (GET /api/v1/maintenance → []). CREATE via the real POST through the UI form: entered 08:00/10:00 local (IST +05:30) → stored 2026-09-01T02:30:00Z / 04:30:00Z (id=2) — datetime-local→UTC-Z conversion PROVEN live; the card rendered with title 'Reality-gate probe window', reason, and a correctly-derived 'Upcoming' badge; the form reset on success. END-BEFORE-START: submit showed the inline ends_at error (aria-invalid=true on ends_at, false on starts_at) — client-side guard fired first (correct defense-in-depth); the REAL server 422 {\"detail\":\"ends_at must be strictly greater than starts_at.\"} was separately confirmed via direct curl + the forced-422 test maps that server detail to ends_at. DELETE via the UI inline confirm ('Confirm delete') → 204 → list reconciled to empty; live GET → [] (clean). Not-idempotent 404 confirmed via curl (repeat DELETE → 404 'Maintenance window with ID 1 not found.'). Exactly one h1 ('Maintenance'); zero console errors and no horizontal body scroll @1440 (doc 1440) + @390 (doc 390). Reality-gate-created window deleted — live state left clean per the plan directive."
+    dod_evidence:   # scoped --only npm at HEAD b818dc3
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  82 passed (82) | Tests  643 passed (643)"
+        commit: b818dc3
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 357.67 kB / gzip 105.29 kB)"
+        commit: b818dc3
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: b818dc3
   - id: STORY-133
     title: Publications page — Statuspage publish-attempt timeline (outcome + author)
     status: todo
