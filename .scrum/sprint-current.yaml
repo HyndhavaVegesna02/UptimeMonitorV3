@@ -59,7 +59,7 @@ stories:
         commit: 62f2bb8
   - id: STORY-137
     title: Shared fetch dedup/cache (one request per endpoint per mount, in-house minimal layer)
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
     order: 2
