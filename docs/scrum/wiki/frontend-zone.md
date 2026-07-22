@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
 code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/Topbar/NotificationsButton.tsx, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/fetchDedup.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/lib/niceAxis.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/locationLabel.ts, frontend/src/features/dashboard/KpiMeter.tsx, frontend/src/features/dashboard/deriveKpiTone.ts, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
-verified_sha: 5781630
+verified_sha: 4945fba
 verified_sprint: sprint-61
 status: verified
 ---
@@ -186,7 +186,11 @@ status: verified
     `aria-invalid`/`aria-describedby`/`role="alert"`; a detail naming no field renders a
     form-level banner; the shared `Button` primitive can't be the submit button since it hardcodes
     `type="button"` — a plain native `<button type="submit">` is used instead, same visual
-    classes).
+    classes; STORY-142 wraps Start/End's `<input type="datetime-local">` — the SAME control, so the
+    STORY-132 datetime-local→UTC-Z conversion + 422 field-mapping contracts stay byte-identical —
+    in a `.schedule-maintenance-form__datetime` container with a leading `CalendarBlank` icon and a
+    tinted `::-webkit-calendar-picker-indicator`, so the native OS picker chrome reads as part of
+    the design system).
   - `features/publications/` — the STORY-133 Publications page's pieces, the sprint's LAST page and
     its simplest (read-only, no mutation): `OutcomeChip` (dot + text `succeeded`/`failed` pill,
     using the `--color-pos-*`/`--color-neg-*` semantic tokens — a DELIBERATELY separate vocabulary
@@ -497,3 +501,14 @@ status: verified
   sufficient. `NotificationsButton.tsx` added to this article's `code_refs`. Full suite green, 744
   tests. verified_sha = 5781630.
   verified_sha = b5bc195.
+
+- **2026-07-22, STORY-142 (sprint-61):** `ScheduleMaintenanceForm.tsx`'s Start/End fields kept the
+  SAME `<input type="datetime-local">` control (no mechanism swap — the STORY-132 UTC-conversion +
+  order-sensitive 422 field-mapping contracts, and their covering tests in
+  `localDateTimeToUtcIso.test.ts`/`mapMaintenanceError.test.ts`/`useScheduleMaintenance.test.tsx`/
+  `ScheduleMaintenanceForm.test.tsx`, are unmodified and still pass) and gained a styled
+  `.schedule-maintenance-form__datetime` wrapper (leading `CalendarBlank` icon, shared
+  border/height/focus tokens, a tinted-down `::-webkit-calendar-picker-indicator`) so the native OS
+  picker chrome no longer clashes with the rest of the form system. One new structural test
+  (necessary-not-sufficient — the actual visual legibility claim is reality-gate-only, no real
+  layout engine in jsdom). Full suite green, 745 tests. verified_sha = 4945fba.
