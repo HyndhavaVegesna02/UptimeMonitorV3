@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
 code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/fetchDedup.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
-verified_sha: 4ed312b
+verified_sha: ef53653
 verified_sprint: sprint-61
 status: verified
 ---
@@ -164,11 +164,19 @@ status: verified
     `getComponents` export — that are in flight at the same moment now share ONE underlying
     request; two DIFFERENT fetcher references, even resolving to the same value, are NEVER
     coalesced [a `ComponentAvailabilityCard` per component keeps its own `useCallback`'d fetcher,
-    so distinct components/args are always distinct identities]. `useFetch`'s STORY-136 timeout
-    calls `forgetFetch` so a never-settling request's `retry` isn't silently rejoined to the same
-    still-hung promise), `overallStatus.ts` (worst-of derivation: down > partial >
-    degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
-    `relativeTime.ts`, `cx.ts`, `combineFetchStates.ts`.
+    so distinct components/args are always distinct identities]. `useFetch.ts::useFetch`'s effect
+    calls `forgetFetch(fetcher)` from BOTH the STORY-136 timeout handler AND the effect's own
+    cleanup (quality-review MAJOR fix, sprint-61) — the cleanup fires on every unmount AND on every
+    dependency change (a `retry`), so a component that unmounts while its request is still hung
+    (e.g. the user navigates away inside the 15s timeout window) evicts the in-flight entry too,
+    rather than only the timeout path; otherwise a never-settling fetcher's promise is orphaned in
+    the map forever (its own `.finally` never runs) and a LATER mount of the same stable fetcher
+    silently rejoins the dead promise instead of issuing a fresh request. Harmless no-op when the
+    request already settled (self-deleted) or when a still-mounted sibling shares the same promise
+    instance — eviction only clears the map slot for future `dedupedFetch` calls, never an
+    in-flight promise object already handed out), `overallStatus.ts` (worst-of derivation: down >
+    partial > degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`,
+    `format.ts`, `relativeTime.ts`, `cx.ts`, `combineFetchStates.ts`.
   - `mocks/` — MSW is the ONLY mocked I/O edge; per-endpoint handlers
     (`handlers/{components,approvals,history,availability,maintenance,topology,publications}.ts`)
     composed in `handlers/index.ts`, wired in `test/setup.ts` — which ALSO resets
@@ -375,3 +383,18 @@ status: verified
   `getComponentAvailability` fetches are never wrongly coalesced. No page/route/DTO change; no
   behavioral regression (full suite green, 690 tests). Folds the "dedupe the components/approvals
   fetch" half of the STORY-128 known-gap above. verified_sha = 4ed312b.
+- 2026-07-22 (STORY-137 quality-review MAJOR fix, sprint-61): the unmount cleanup only cleared
+  `cancelled`/`timeoutId`, never calling `forgetFetch` — so a component that unmounted BEFORE a
+  never-settling request's 15s timeout fired left the `dedupedFetch` in-flight entry orphaned in
+  the map forever (the promise's own `.finally` never runs, since the underlying fetch never
+  settles and the STORY-136 timeout never aborts it). A later mount of the same stable fetcher
+  silently rejoined the dead promise instead of issuing a fresh request, requiring a manual retry
+  even once the backend recovered. Fix: `useFetch.ts::useFetch`'s effect cleanup now ALSO calls
+  `forgetFetch(fetcher)`, the same call the timeout handler already made — harmless no-op when the
+  request already settled or a sibling still shares the same in-flight promise instance (eviction
+  only clears the map slot for future `dedupedFetch` calls, never the promise object already handed
+  out). Regression test in `useFetch.test.tsx` reproduces the exact production interleaving (mount
+  against a never-settling fetcher, unmount before timeout, remount the same fetcher, assert a
+  genuinely fresh invocation) — verified to fail pre-fix. No Fact above was wrong beyond the one
+  updated in the `lib/` bullet; AC1 dedup-count test and STORY-136 timeout tests remain green; full
+  suite green, 693 tests. verified_sha = ef53653.
