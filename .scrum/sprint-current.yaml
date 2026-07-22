@@ -89,10 +89,27 @@ stories:
         commit: 1d447d7
   - id: STORY-131
     title: Approvals page — pending proposals + approve/reject confirm flow (first mutating page)
-    status: todo
+    status: done
     points: 5
-    ceremony: 3-pointer
+    ceremony: 3-pointer   # in-process: implementer → spec ∥ quality → DoD gate → reality gate
     order: 3
+    reviews:
+      spec: "PASS — all 8 AC MET with genuine AC-to-test traces. Forced 409 AND 404 tests exist at BOTH hook and page level, using server.use to force real MSW statuses (not stubbed returns); each asserts the friendly notice, a GENUINE second getApprovals() refetch (approvalsCallCount incremented inside the real GET handler), and consoleErrorSpy uncalled. Success = server refresh proven by a two-call GET handler (proposal then []), not optimistic local removal. from→to via statusMapping.toHealthStatus (correct — proposals carry vendor vocab); null from_status → 'New'; no fabricated severity/reason (negative test). 567 tests."
+      quality: "APPROVE — 0 critical / 0 major. The new write path is clean + general: postJson<T> routes through the same readOkJson/ApiError as getJson (.status/.detail identical on non-2xx), Content-Type set, network throws wrapped — reusable by STORY-132. 409/404 branch keys off numeric ApiError.status (not message strings); every rejection caught, nothing re-throws (console-error spy uncalled x6). No raw hex; stable module-level fetcher (no refetch loop); confirm entrance one-shot opacity/transform under prefers-reduced-motion; focus→Confirm then back to trigger via a stable data-role query (avoids the unmount-stale-ref trap). 2 minors → STORY-134 (relative-time lacks tabular-nums but reflows anyway; hand-rolled native confirm button because Button lacks forwardRef)."
+    reality_gate: "PASS (live stack, scripted Chromium + live HTTP probe). Live queue empty (GET /api/v1/approvals → []) → the 'Queue clear — No pending proposals right now, nothing needs your review' empty state renders; exactly one h1 ('Approvals'); zero console errors and no horizontal body scroll @1440 (doc 1440) + @390 (doc 390). Live WRITE-endpoint contract confirmed by direct probe: POST /api/v1/decisions/999999 → 404 {\"detail\":\"Proposal 999999 not found.\"} (the exact ProposalNotFoundError the UI maps to 'no longer exists'); POST with a bad action → 422 {\"detail\":\"Action must be 'approve' or 'reject'...\"}. The full UI mutation (approve/reject success + 409 double-submit) could not be exercised live because the queue is empty and there is NO create-proposal API in frontend scope (proposals are written only by the backend loop's degradation flow) — matches the plan's '§Approvals reality gate: where a proposal is available' framing; those paths are proven by the forced 409/404/success MSW tests above."
+    dod_evidence:   # scoped --only npm at HEAD bfcca9b
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  72 passed (72) | Tests  567 passed (567)"
+        commit: bfcca9b
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 347.52 kB / gzip 103.22 kB)"
+        commit: bfcca9b
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: bfcca9b
   - id: STORY-132
     title: Maintenance page — windows list + schedule form + delete (422 field mapping, UTC)
     status: todo
