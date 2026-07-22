@@ -1,6 +1,9 @@
 # YourTeam active sprint board
 sprint: 60
-status: active   # PLANNED + LOCKED 2026-07-22. Branched from the sprint-59 tip (106bdb7,
+status: accepted   # PO-ACCEPTED 2026-07-22, kept UNMERGED per PO directive (new-frontend line stays on
+                 # sprint-60/ui-prototype branch; main untouched). Velocity +20 (all 5 stories) recorded.
+                 # Includes the PO-directed numeric-column right-align review refinement (HEAD 26ad735).
+                 # Retro next. Was: active. PLANNED + LOCKED 2026-07-22. Branched from the sprint-59 tip (106bdb7,
                  # new-frontend/ui-prototype line, unmerged). Plan-verifier LOCK_READY (zero gaps).
                  # MODE PIVOT 2026-07-22: an external agent delivered all 5 tabs (commits f37f82d..
                  # b100a1a) but the PO REJECTED the work ("didn't like it"). Those 5 commits were
