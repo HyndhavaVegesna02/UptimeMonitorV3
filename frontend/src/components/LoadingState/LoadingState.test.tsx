@@ -33,4 +33,18 @@ describe('LoadingState', () => {
     expect(loadingCss).toMatch(/@media \(prefers-reduced-motion: no-preference\)/)
     expect(loadingCss).toMatch(/transform:\s*rotate/)
   })
+
+  describe('compact variant (STORY-136 AC2 — an inline loading treatment for tight spaces like the topbar)', () => {
+    it('applies the compact modifier class instead of the default block padding/centering', () => {
+      const { container } = render(<LoadingState compact label="Updating status…" />)
+      const root = container.querySelector('.loading-state')
+      expect(root).toHaveClass('loading-state--compact')
+      expect(screen.getByRole('status')).toHaveTextContent('Updating status…')
+    })
+
+    it('omits the compact modifier by default (existing full-panel usage unchanged)', () => {
+      const { container } = render(<LoadingState />)
+      expect(container.querySelector('.loading-state')).not.toHaveClass('loading-state--compact')
+    })
+  })
 })

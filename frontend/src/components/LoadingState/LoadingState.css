@@ -8,6 +8,16 @@
   justify-content: center;
 }
 
+/* Inline modifier (STORY-136 AC2) — for tight spaces (e.g. the topbar's
+   overall-status slot) rather than a full-panel block. Drops the block
+   padding/centering and shrinks toward the surrounding text size. */
+.loading-state--compact {
+  padding: 0;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+}
+
 .loading-state__spinner {
   width: 16px;
   height: 16px;
