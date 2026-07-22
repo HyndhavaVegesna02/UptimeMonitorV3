@@ -76,4 +76,28 @@ describe('deriveRecentChecks', () => {
     const rows = deriveRecentChecks([], SIGNALS, NOW, 10)
     expect(rows[0].componentName).toBe('http-check')
   })
+
+  it('assigns a UNIQUE key even when two observations share an identical (signal_key, observed_at, location) triple — the same live collision class STORY-130 fixed on History (reality gate 2026-07-22)', () => {
+    const duplicateTriple = SIGNALS['http-check'].history[0]
+    const signalsWithDuplicate: SignalsMap = {
+      'http-check': {
+        ...SIGNALS['http-check'],
+        history: [duplicateTriple, { ...duplicateTriple }],
+      },
+    }
+
+    const rows = deriveRecentChecks(COMPONENTS, signalsWithDuplicate, NOW, 10)
+
+    expect(rows).toHaveLength(2)
+    expect(rows[0].key).not.toBe(rows[1].key)
+    // Every other field is still carried through untouched.
+    expect(rows[0]).toMatchObject({ latencyMs: duplicateTriple.latency_ms, health: 'up' })
+    expect(rows[1]).toMatchObject({ latencyMs: duplicateTriple.latency_ms, health: 'up' })
+  })
+
+  it('keys are unique across the whole sorted+capped list, not derived from wire fields', () => {
+    const rows = deriveRecentChecks(COMPONENTS, SIGNALS, NOW, 10)
+    const keys = rows.map((row) => row.key)
+    expect(new Set(keys).size).toBe(keys.length)
+  })
 })

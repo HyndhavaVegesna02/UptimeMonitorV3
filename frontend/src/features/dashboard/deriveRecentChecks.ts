@@ -42,8 +42,17 @@ export function deriveRecentChecks(
       (a, b) => new Date(b.observation.observed_at).getTime() - new Date(a.observation.observed_at).getTime(),
     )
     .slice(0, limit)
-    .map(({ signalKey, observation }) => ({
-      key: `${signalKey}-${observation.observed_at}-${observation.location}`,
+    .map(({ signalKey, observation }, index) => ({
+      // `key` is the row's final sorted position, NOT
+      // `${signalKey}-${observation.observed_at}-${observation.location}`
+      // (STORY-136 AC1 fix, matching the STORY-130 History fix). That
+      // composite is not unique on the real wire — two synthetic probe
+      // locations can normalize to the identical millisecond `observed_at`
+      // for the same `location`, corrupting React's list reconciliation. A
+      // positional key over the final sorted+capped order is always
+      // unique, regardless of wire duplicates, and never affects sort order
+      // or any other field.
+      key: String(index),
       componentName: nameBySignalKey.get(signalKey) ?? signalKey,
       locationLabel: locationLabel(observation.location),
       relativeTime: formatRelativeTime(new Date(observation.observed_at), now),
