@@ -63,7 +63,14 @@ export function ProposalCard({
   onConfirmDecision,
 }: ProposalCardProps) {
   const confirmButtonRef = useRef<HTMLButtonElement>(null)
-  const lastTriggerRef = useRef<HTMLButtonElement | null>(null)
+  // The Approve/Reject trigger buttons UNMOUNT when the confirm block
+  // replaces them (a different subtree, not just a hidden one) and a fresh
+  // pair mounts back on cancel — a captured `event.currentTarget` from
+  // BEFORE the unmount would be a detached, un-focusable node by then. This
+  // container ref + a `data-role` query instead targets whichever button
+  // the DOM actually holds at refocus time.
+  const actionsRef = useRef<HTMLDivElement>(null)
+  const lastAction = useRef<DecisionAction | null>(null)
   const pendingRefocus = useRef(false)
 
   // Focus moves TO the Confirm button the instant the two-step prompt opens
@@ -82,7 +89,7 @@ export function ProposalCard({
   useEffect(() => {
     if (!isConfirming && !isSubmitting && pendingRefocus.current) {
       pendingRefocus.current = false
-      lastTriggerRef.current?.focus()
+      actionsRef.current?.querySelector<HTMLButtonElement>(`[data-role="${lastAction.current}"]`)?.focus()
     }
   }, [isConfirming, isSubmitting])
 
@@ -97,8 +104,8 @@ export function ProposalCard({
     }
   }
 
-  function handleRequestConfirm(nextAction: DecisionAction, trigger: HTMLButtonElement | null) {
-    lastTriggerRef.current = trigger
+  function handleRequestConfirm(nextAction: DecisionAction) {
+    lastAction.current = nextAction
     onRequestConfirm(nextAction)
   }
 
@@ -170,12 +177,13 @@ export function ProposalCard({
           </div>
         </div>
       ) : (
-        <div className="proposal-card__actions">
+        <div className="proposal-card__actions" ref={actionsRef}>
           <Button
             disabled={isBlocked}
             variant="secondary"
+            data-role="approve"
             aria-label={`Approve ${proposal.component_id}`}
-            onClick={(event) => handleRequestConfirm('approve', event.currentTarget)}
+            onClick={() => handleRequestConfirm('approve')}
           >
             Approve
           </Button>
@@ -183,8 +191,9 @@ export function ProposalCard({
             disabled={isBlocked}
             variant="secondary"
             className={cx('proposal-card__reject-button')}
+            data-role="reject"
             aria-label={`Reject ${proposal.component_id}`}
-            onClick={(event) => handleRequestConfirm('reject', event.currentTarget)}
+            onClick={() => handleRequestConfirm('reject')}
           >
             Reject
           </Button>

@@ -186,6 +186,19 @@ describe('ApprovalsPage', () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled()
   })
 
+  it('AC7: focus moves to Confirm when opening, then back to the trigger after Cancel/Escape', async () => {
+    server.use(http.get('/api/v1/approvals', () => HttpResponse.json([TRANSITION_PROPOSAL])))
+    renderPage()
+    const approveButton = await screen.findByRole('button', { name: /^approve sockshop-checkout$/i })
+
+    const user = userEvent.setup()
+    await user.click(approveButton)
+    expect(screen.getByRole('button', { name: /^confirm approve$/i })).toHaveFocus()
+
+    await user.keyboard('{Escape}')
+    expect(screen.getByRole('button', { name: /^approve sockshop-checkout$/i })).toHaveFocus()
+  })
+
   it('has exactly one <h1> on the full routed page (the shell topbar owns it, not this page)', async () => {
     render(
       <MemoryRouter initialEntries={['/approvals']}>
