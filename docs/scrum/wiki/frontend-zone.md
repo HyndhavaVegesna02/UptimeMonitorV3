@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
-code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/components/PlaceholderPage/PlaceholderPage.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/test/setup.ts]
-verified_sha: 3a8a2b3
+code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/components/PlaceholderPage/PlaceholderPage.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/test/setup.ts]
+verified_sha: 5129bc2
 verified_sprint: sprint-60
 status: verified
 ---
@@ -44,9 +44,9 @@ status: verified
   - `routes.tsx` / `nav/tabs.ts` — the six routes (Dashboard, Availability, History, Approvals,
     Maintenance, Publications) plus a sibling `/styleguide`. `App.tsx` / `main.tsx` boot it.
   - `pages/` — `DashboardPage` (STORY-122), `AvailabilityPage` (STORY-129), `HistoryPage`
-    (STORY-130), and `ApprovalsPage` (STORY-131) are REAL pages; `Maintenance`/`Publications` are
-    still `PlaceholderPage` stubs awaiting the rest of sprint 60; `StyleguidePage` renders every
-    primitive × state (STORY-120).
+    (STORY-130), `ApprovalsPage` (STORY-131), and `MaintenancePage` (STORY-132) are REAL pages;
+    `PublicationsPage` is still a `PlaceholderPage` stub awaiting the rest of sprint 60;
+    `StyleguidePage` renders every primitive × state (STORY-120).
   - `api/` — `client.ts` (typed fetch client, `/api` base), `types.ts` (DTOs mirroring
     `backend/src/api/v1/*/models.py`), `statusMapping.ts` (vendor → health).
   - `features/dashboard/` — the STORY-122 dashboard: `useSignalsData` (derives signal keys from
@@ -96,6 +96,33 @@ status: verified
     and focus-managed — Confirm gets focus on open, the ORIGINAL trigger gets it back on cancel,
     found by a `data-role` container query rather than a captured DOM ref, since the trigger buttons
     live in a different subtree than the confirm block and unmount/remount across that transition).
+  - `features/maintenance/` — the STORY-132 Maintenance page's pieces, the sprint's SECOND mutating
+    feature (schedule + delete): `deriveWindowState.ts::deriveMaintenanceWindowState` (the DTO has
+    NO state field — half-open `[starts_at, ends_at)` rule against a caller-supplied `now`, `now ===
+    starts_at` is ACTIVE, `now === ends_at` is PAST, boundary instants pinned+tested),
+    `mapMaintenanceError.ts::mapMaintenanceError` (THE crux of this page — order-sensitive 422
+    `detail`-string → field mapping; "strictly greater than" is checked BEFORE the plain
+    "starts_at" check, so the end-before-start message maps to `ends_at`, not the `starts_at` it
+    also names), `localDateTimeToUtcIso.ts` (`datetime-local` wall-clock → tz-aware UTC ISO,
+    round-trip tested), `formatWindowRange.ts` (UTC same-day vs multi-day range text),
+    `WindowStateBadge` (dot + text upcoming/active/past — a DISTINCT small vocabulary from
+    `StatusBadge`'s `HealthStatus`, not an overload of it), `useScheduleMaintenance` (client-side
+    guards `component_id` non-blank and `ends_at > starts_at` BEFORE ever calling the API; maps a
+    server 422 through `mapMaintenanceError`; resets/refreshes the list on 201; never throws),
+    `useMaintenanceDeletion` (the SAME confirm/submit shape as Approvals'
+    `useApprovalsDecisions`, simplified to one action — delete is NOT idempotent, so a 404 sets a
+    non-destructive notice AND still calls the refresh, never a silent success),
+    `MaintenanceWindowCard` (title tidy-fallback "Maintenance window", the state badge, UTC range,
+    reason `—` when null, inline delete confirm — the delete trigger stays MOUNTED [only disabled]
+    through confirm/submit rather than being replaced, so a single stable ref refocuses it after
+    Cancel, unlike `ProposalCard`'s two-trigger `data-role` workaround), and
+    `ScheduleMaintenanceForm` (UNCONTROLLED inputs read via `FormData` on submit rather than
+    per-keystroke controlled state — vercel-react-best-practices; its OWN `getComponents`
+    fetch/loading/error, independent of the windows list's per AC5; field errors carry
+    `aria-invalid`/`aria-describedby`/`role="alert"`; a detail naming no field renders a
+    form-level banner; the shared `Button` primitive can't be the submit button since it hardcodes
+    `type="button"` — a plain native `<button type="submit">` is used instead, same visual
+    classes).
   - `lib/` — `useFetch.ts` (the read-fetch state machine — loading/error/success, cancel-guarded;
     `fetcher` must be a stable ref), `overallStatus.ts` (worst-of derivation: down > partial >
     degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
@@ -104,7 +131,11 @@ status: verified
     (`handlers/{components,approvals,history,availability,maintenance,topology}.ts`) composed in
     `handlers/index.ts`, wired in `test/setup.ts`. Fixtures derive from REAL captured `/api/v1`
     responses (`docs/scrum/sprints/2026-07-21-sprint-59/live-api-samples.md` +
-    `docs/scrum/sprints/2026-07-21-sprint-60/plan.md` §Appendix).
+    `docs/scrum/sprints/2026-07-21-sprint-60/plan.md` §Appendix). `handlers/maintenance.ts`
+    (STORY-132) now also has a populated upcoming/active/past list fixture (year 2000/2099
+    instants, so the derived badge state is stable regardless of when the suite runs) plus
+    `POST /api/v1/maintenance` (201) and `DELETE /api/v1/maintenance/:windowId` (204) handlers,
+    alongside the pre-existing empty-list `GET` default.
 
 - **API client (`api/client.ts`):** `getComponents()`, `getApprovals()`, `getHistory(signalKey,
   limit?)`, `getAvailability(signalKey)`, `getMaintenance()`, `getTopology()` (STORY-129),
@@ -113,19 +144,28 @@ status: verified
   windowed variant `getHistory` lacks; `getHistory` itself is UNCHANGED, the Dashboard still uses
   its unwindowed shape), `postDecision(proposalId, DecisionRequest)` (STORY-131 — the sprint's
   FIRST write path: `POST /api/v1/decisions/{proposal_id}`, note the path is `/decisions/`, NOT
-  nested under `/approvals`). The write path is a private `postJson<T>` alongside the existing
-  `getJson`, sharing the same `readOkJson`/`ApiError` handling so `.status`/`.detail` populate
-  identically for a non-2xx POST (a 409/404 the same way a GET caller would see them) — built to be
-  reused as-is by STORY-132's Maintenance mutations. DTOs in `api/types.ts`: `ComponentDTO
-  {id,name,status}`, `ProposalDTO`, `ObservationDTO {signal_key, observed_at, health, location,
-  latency_ms, response_status_code, check_type}`, `AvailabilityDTO` (`availability_pct`/
-  `completeness_pct` are 0–1 fractions, nullable), `MaintenanceWindowDTO`,
-  `ComponentTopologyDTO`/`TopologySignalDTO` (STORY-129 — `interval_seconds` is `int | null`),
+  nested under `/approvals`), `postMaintenance(CreateMaintenanceRequest)` (STORY-132 — `POST
+  /api/v1/maintenance`, **201**) and `deleteMaintenance(windowId)` (STORY-132 — `DELETE
+  /api/v1/maintenance/{window_id}`, **204**, NOT idempotent — a 404 on an already-deleted window is
+  a real `ApiError.status === 404`, never a silent success). The write path is a private
+  `postJson<T>` alongside the existing `getJson`, sharing the same `readOkJson`/`ApiError` handling
+  so `.status`/`.detail` populate identically for a non-2xx POST (a 409/404 the same way a GET
+  caller would see them); STORY-132 adds a THIRD private helper, `deleteRequest(path):
+  Promise<void>`, distinct from both because a 204 response has NO body — it never calls
+  `response.json()` on the ok path (that throws on an empty body), while still extracting
+  `ApiError`'s `.status`/`.detail` on a non-2xx response via the same `readDetail`. DTOs in
+  `api/types.ts`: `ComponentDTO {id,name,status}`, `ProposalDTO`, `ObservationDTO {signal_key,
+  observed_at, health, location, latency_ms, response_status_code, check_type}`, `AvailabilityDTO`
+  (`availability_pct`/`completeness_pct` are 0–1 fractions, nullable), `MaintenanceWindowDTO`
+  (`title: string | null` — TIGHTENED from `title?: string | null` in STORY-132, since the field is
+  always present on the wire, just nullable), `CreateMaintenanceRequest {component_id, starts_at,
+  ends_at, reason?, title?}` (STORY-132 — the `POST` body), `ComponentTopologyDTO`/
+  `TopologySignalDTO` (STORY-129 — `interval_seconds` is `int | null`),
   `ComponentAvailabilityDTO`/`SignalAvailabilityDTO` (STORY-129 — the latter is `AvailabilityDTO` +
   `signal_key`, no display name), `DecisionRequest {action: "approve"|"reject", actor, notes?}` /
   `DecisionResponse {proposal_id, state, resolved_at}` (STORY-131). Re-derived fresh from the LIVE
-  contracts (verified at the STORY-121/122/129/131 reality gates); extends cleanly as later tabs
-  need more endpoints. `statusMapping.ts` maps the vendor `ComponentStatus` vocabulary
+  contracts (verified at the STORY-121/122/129/131/132 reality gates); extends cleanly as later
+  tabs need more endpoints. `statusMapping.ts` maps the vendor `ComponentStatus` vocabulary
   (operational/degraded_performance/partial_outage/major_outage/under_maintenance) onto the
   7-status health palette (…→up/degraded/partial/down/maintenance; else→unknown) — STORY-131's
   Approvals page reuses this SAME mapper for a proposal's `from_status`/`to_status` (both carry the
@@ -158,13 +198,17 @@ status: verified
   fills should not collide.
 
 ## Known gaps / deferred (filed to backlog)
-- The two remaining tabs (Maintenance/Publications) are still `PlaceholderPage` stubs — real
-  content lands later in sprint 60.
+- The one remaining tab (Publications) is still a `PlaceholderPage` stub — real content lands
+  later in sprint 60.
 - The shared `Button` primitive does not forward refs (a plain function component, not
-  `forwardRef`) — `ProposalCard`'s Confirm button had to fall back to a hand-rolled native
-  `<button className="button button--primary">` to get an imperative focus target. If a future
-  story needs a ref into `Button` again, that's the trigger to add `forwardRef` there once, rather
-  than a third one-off native-button workaround.
+  `forwardRef`) — `ProposalCard`'s Confirm button and `MaintenanceWindowCard`'s Delete/Confirm
+  buttons (STORY-132) both had to fall back to a hand-rolled native
+  `<button className="button button--primary">`/`<button type="submit" className="button
+  button--primary">` to get an imperative focus target or a genuine submit button (`Button`
+  hardcodes `type="button"`, so it can't be a form's submit control either —
+  `ScheduleMaintenanceForm` hits this too). Three independent call sites have now hit this same
+  wall; that's the trigger to add `forwardRef` (and a `type` passthrough) to `Button` once, rather
+  than a fourth one-off native-button workaround.
 - `Button.css`'s `--button-height` is 36px — under the 44×44px (iOS)/48×48dp (Material) minimum
   touch-target guideline (ui-ux-pro-max checklist item 2, STORY-131 review). Pre-existing
   (STORY-120), app-wide, not something a single-page story should change unilaterally.
@@ -217,3 +261,16 @@ status: verified
   unique on the real wire — two synthetic locations can share an identical millisecond
   `observed_at`). No Fact above was wrong, just unconfirmed against the newer commits; this sweep
   re-verified it. verified_sha = 3a8a2b3.
+- 2026-07-22 (STORY-132, sprint-60): the Maintenance page shipped — schedule + delete, the
+  sprint's SECOND mutating page and its most complex mutation (form + order-sensitive 422 field
+  mapping + UTC datetime conversion + a NOT-idempotent delete). Tightened
+  `MaintenanceWindowDTO.title` to `title: string | null` (was optional) and added
+  `CreateMaintenanceRequest`; added a THIRD private client helper, `deleteRequest` (204-body-safe,
+  alongside `getJson`/`postJson`), plus `postMaintenance`/`deleteMaintenance`. New
+  `features/maintenance/**` module (see the `features/` bullet above for the full breakdown) —
+  every derivation/mapping/conversion pure and unit-tested BEFORE the components that use it
+  (`deriveWindowState`, `mapMaintenanceError`, `localDateTimeToUtcIso`, `formatWindowRange`).
+  `MaintenancePage`'s `PlaceholderPage` stub is gone (Publications is now the only remaining one).
+  This sweep also re-verified the `bfcca9b` STORY-131 fixup (dropped an unused `cx` import/no-op
+  call in `ProposalCard.tsx`'s reject-button `className`) that landed after STORY-131's own
+  verified_sha — confirmed cosmetic only, no Fact above it was affected. verified_sha = 5129bc2.
