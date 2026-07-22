@@ -128,13 +128,30 @@ stories:
         commit: 6c8c1cc
   - id: STORY-140
     title: Empty-state & data-formatting polish (No-data-yet KPI, History tz label, location label)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 5
+    reviews:
+      spec: "PASS — all 4 AC MET. AC1: KpiRow.test.tsx asserts 'No data yet' PRESENT and old '—'/'Across 0 probe locations' ABSENT for both availability + response-time cards (two-sided); SummaryCard.empty prop swaps the value/unit/sub block for a compact EmptyState only when set. AC2: formatObservedAt appends ' UTC' — TRUTHFUL (impl uses getUTCMonth/Date/Hours/Minutes/Seconds exclusively, never toLocaleString), matching formatWindowRange convention. AC3: locationLabel '…0060'→'#0060' (deliberate short-id, no name synthesis); STORY-144 backend block recorded in BOTH a doc-comment and the story History. AC4: build+lint exit 0, 729/729 tests. Consumer-test rewrites are 1:1 contract-change literal updates, no coverage dropped. (Noted a pre-existing flake in AvailabilityPage.test.tsx — untouched by this diff, isolated-pass + full-rerun-pass — already logged in STORY-134.)"
+      quality: "APPROVE — 0 critical / 0 major / 1 minor. Highest-value checks both clean: (1) the empty branch keys off STRICT === null (KpiRow.tsx:72,86; format.ts) so a real 0 / 0% renders as data, never 'No data yet' — no false-empty on real zero; the two 0-bearing KPIs don't use empty at all. (2) ' UTC' is truthful (getUTC* formatting confirmed). empty prop mutually exclusive with the value block (no half-render); reuses EmptyState via a new compact modifier (not a one-off); tokens only; locationLabel fabricates no name. Tests-that-lie audit clean — every rewrite legitimate, AC1 test strengthened (two-sided). Minor → STORY-134 (empty-state card still renders a blank aria-hidden empty Sparkline in the footer slot — harmless dead space, preserves rhythm)."
+    reality_gate: "PASS (live stack, Playwright). AC1 CONFIRMED LIVE: both KPI cards render 'No data yet' + a helpful detail ('Availability will appear once probes report in.' / 'Response times will appear once probes report in.') — the old bare '— %'/'— ms'/'Across 0 probe locations' is GONE. Zero console errors. AC2 (History tz label) + AC3 (#0047) are unit-tested + reviewer-verified but not live-viewable (empty DB → no History rows/timestamps/locations to render). NOTE: capturing AC1 live took several reloads purely due to the Vite dev-proxy stale-socket artifact (the first request on a stale keep-alive socket hangs past the 15s STORY-136 timeout → 'Request timed out'+Retry, while curl on fresh connections is <1s) — a dev-only artifact the PO pre-flagged, absent in production same-origin; incidentally more live proof of STORY-136's timeout→ErrorState→Retry working across all regions."
+    dod_evidence:   # scoped --only npm at HEAD 3dd7fab
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  88 passed (88) | Tests  729 passed (729)"
+        commit: 3dd7fab
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 840ms (index js 361.54 kB / gzip 106.51 kB)"
+        commit: 3dd7fab
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 3dd7fab
   - id: STORY-141
     title: Shell interaction polish (notifications bell panel, mobile drawer close+header, styleguide states)
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
     order: 6
