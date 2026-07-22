@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
 code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx, frontend/src/shell/Sidebar/Sidebar.css, frontend/src/shell/Sidebar/NavItem.css, frontend/src/shell/Topbar/Topbar.tsx]
-verified_sha: d9d0bf9
+verified_sha: b5bc195
 verified_sprint: sprint-61
 status: verified
 ---
@@ -166,7 +166,11 @@ not copied pixel-for-pixel.
   rules its color: `componentsHealthTone`/`approvalsTone`), so no card is left looking emptier than
   its siblings and the accent coloring across all 4 cards is now deliberate-by-rule rather than an
   accidental green/blue/none mix (AC4) — see [[frontend-zone]]'s Dashboard bullet for the
-  `KpiRow`/`KpiMeter` wiring detail.
+  `KpiRow`/`KpiMeter` wiring detail. **Gained an optional `empty?: { message; detail? }` prop
+  (STORY-140 AC1, sprint-61)** — when set, replaces the value/unit/sub block with a compact
+  `EmptyState` (above) instead of rendering a bare "— %"/"— ms" value plus a misleading sub line
+  for a genuinely degenerate (null) KPI; `value`/`unit`/`sub` are still accepted but not rendered
+  while `empty` is set (so callers don't need a separate conditional branch).
 - **Sparkline** (`Sparkline.tsx`): minimal inline-SVG trend line, `aria-hidden` by DEFAULT (the KPI
   number + delta already carry the meaning). Normalizes `data: number[]` to a 0–1 range per point;
   a FLAT series (`min === max`) draws a level mid-height line instead of dividing by zero; an empty
@@ -185,7 +189,10 @@ not copied pixel-for-pixel.
   depends on color to convey the error. An optional `onRetry` renders a secondary `Button`.
 - **EmptyState** (`EmptyState.tsx`): required `message` + optional `detail` — the explicit
   "no items yet" affordance every list-rendering surface needs (ui-ux-pro-max: "show a helpful
-  message and action", not a blank white space).
+  message and action", not a blank white space). Gained an optional `compact` modifier (STORY-140
+  AC1, sprint-61 — no block padding, left-aligned) so the SAME idiom can embed inside a tighter
+  grain, e.g. a `SummaryCard`'s KPI value area, rather than a one-off empty string there; the
+  default (full, centered, padded block) is unchanged for whole-panel list surfaces.
 
 ### `/styleguide` gallery (`frontend/src/pages/StyleguidePage/`, AC6)
 - `StyleguidePage.tsx` renders every primitive above in every state, each wrapped in a
@@ -270,3 +277,11 @@ not copied pixel-for-pixel.
   component-layer token, `--kpi-visual-height` (30px). `SummaryCard.css`'s `.summary-card__extra`
   now reserves that height (flex-centered) for whichever visual a card passes as `children`. No
   existing token/Fact changed value — purely additive. verified_sha = d9d0bf9.
+- 2026-07-22 (STORY-140, sprint-61, additive re-verify): fixed the bare-dash KPI empty state
+  (design-QA finding). `EmptyState.tsx` gained an optional `compact` modifier (no block padding,
+  left-aligned) and `SummaryCard.tsx` gained an optional `empty?: { message; detail? }` prop that
+  swaps its value/unit/sub block for a compact `EmptyState` — first consumer is `KpiRow`'s
+  availability/response-time cards, which now render "No data yet" instead of a bare "— %"/"— ms"
+  value plus a misleading "Across 0 probe locations" sub line when the underlying value is
+  genuinely `null` (see [[frontend-zone]]'s Dashboard bullet for the `KpiRow` wiring detail). No
+  existing Fact changed value — purely additive. verified_sha = b5bc195.
