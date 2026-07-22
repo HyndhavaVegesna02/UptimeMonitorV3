@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 135  # 134 = STORY-129 quality-review minor (sprint-60).
+next_story_id: 136  # 134 = STORY-129 quality-review minor (sprint-60); 135 = sample-mode cockpit surface.
                     # 129-133 = sprint-60 (2026-07-21): the 5 remaining new-frontend tabs
                     # (129 Availability, 130 Check History, 131 Approvals, 132 Maintenance,
                     # 133 Publications) — external mode, branched from the sprint-59 tip.
@@ -1044,4 +1044,9 @@ stories:
     title: Harden the Availability AC5 independence test (deterministic deferred, not a fixed delay) + map a few px spacing literals to tokens
     status: draft   # STORY-129 quality-review minors (sprint-60, 2026-07-22): the AC5 per-component-independence test uses delay(200) and false-FAILED once under extreme host load (never false-passes — still genuinely guards independence); reviewer's fix = gate the slow MSW handler on a manually-resolved deferred the test resolves only after asserting the fast panel rendered. Also a few raw px spacing literals (ComponentAvailabilityCard.css, WindowToggle.css) could map to space tokens (not colour → not a convention violation). Needs refinement + estimate.
     type: chore
+    sprint: null
+  - id: STORY-135
+    title: Surface sample mode in the operator cockpit (indicator, maybe toggle) — new consumer dropped in the rebuild
+    status: draft   # PO-directed 2026-07-22 ("new story, next sprint"): the greenfield rebuild removed the old sample-mode UI (TopBar toggle + SampleModeBanner); new cockpit has no sample-mode surface at all (confirmed: zero refs in frontend/src; wiki frontend-zone notes "a new consumer is unscheduled"). Backend intact (GET/PUT /api/v1/sample-mode, currently enabled:false). Full draft + proposed AC in docs/scrum/stories/STORY-135-sample-mode-cockpit.md. TWO OPEN QUESTIONS before it's Ready: (1) read-only indicator vs full PUT toggle; (2) the feature is flagged TEMPORARY with a REMOVAL inventory (models.py / wiki sample-mode.md, PO directive 2026-07-03) — confirm it's still wanted before building UI for it. Est ~2 (indicator) / ~3 (with toggle). Frontend only.
+    type: feature
     sprint: null
