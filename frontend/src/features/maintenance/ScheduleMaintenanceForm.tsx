@@ -1,8 +1,10 @@
+import { CalendarBlank } from '@phosphor-icons/react'
 import { useId, useRef } from 'react'
 import type { FormEvent } from 'react'
 import { getComponents } from '../../api/client'
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import { ErrorState } from '../../components/ErrorState/ErrorState'
+import { Icon } from '../../components/Icon/Icon'
 import { LoadingState } from '../../components/LoadingState/LoadingState'
 import { useFetch } from '../../lib/useFetch'
 import type { ScheduleMaintenanceValues } from './useScheduleMaintenance'
@@ -36,6 +38,12 @@ function readFormValues(form: HTMLFormElement): ScheduleMaintenanceValues {
  * value-per-keystroke. Field errors carry `aria-invalid` +
  * `aria-describedby` + `role="alert"` (web-design-guidelines); a detail
  * naming no field renders as a form-level banner instead.
+ *
+ * Start/End (STORY-142 AC1) keep the SAME `<input type="datetime-local">`
+ * control — the STORY-132 datetime-local->UTC-Z value contract is
+ * byte-identical — wrapped in a styled `.schedule-maintenance-form__datetime`
+ * container (leading calendar icon, consistent border/height) so the native
+ * OS picker chrome no longer clashes with the rest of the form system.
  */
 export function ScheduleMaintenanceForm({ onScheduled }: ScheduleMaintenanceFormProps) {
   const componentsFetch = useFetch(getComponents)
@@ -112,13 +120,16 @@ export function ScheduleMaintenanceForm({ onScheduled }: ScheduleMaintenanceForm
       <div className="schedule-maintenance-form__row">
         <div className="schedule-maintenance-form__field">
           <label htmlFor={startsAtId}>Start</label>
-          <input
-            id={startsAtId}
-            name="starts_at"
-            type="datetime-local"
-            aria-invalid={Boolean(schedule.fieldErrors.starts_at)}
-            aria-describedby={schedule.fieldErrors.starts_at ? startsAtErrorId : undefined}
-          />
+          <div className="schedule-maintenance-form__datetime">
+            <Icon icon={CalendarBlank} aria-hidden className="schedule-maintenance-form__datetime-icon" />
+            <input
+              id={startsAtId}
+              name="starts_at"
+              type="datetime-local"
+              aria-invalid={Boolean(schedule.fieldErrors.starts_at)}
+              aria-describedby={schedule.fieldErrors.starts_at ? startsAtErrorId : undefined}
+            />
+          </div>
           {schedule.fieldErrors.starts_at ? (
             <p id={startsAtErrorId} className="schedule-maintenance-form__field-error" role="alert">
               {schedule.fieldErrors.starts_at}
@@ -128,13 +139,16 @@ export function ScheduleMaintenanceForm({ onScheduled }: ScheduleMaintenanceForm
 
         <div className="schedule-maintenance-form__field">
           <label htmlFor={endsAtId}>End</label>
-          <input
-            id={endsAtId}
-            name="ends_at"
-            type="datetime-local"
-            aria-invalid={Boolean(schedule.fieldErrors.ends_at)}
-            aria-describedby={schedule.fieldErrors.ends_at ? endsAtErrorId : undefined}
-          />
+          <div className="schedule-maintenance-form__datetime">
+            <Icon icon={CalendarBlank} aria-hidden className="schedule-maintenance-form__datetime-icon" />
+            <input
+              id={endsAtId}
+              name="ends_at"
+              type="datetime-local"
+              aria-invalid={Boolean(schedule.fieldErrors.ends_at)}
+              aria-describedby={schedule.fieldErrors.ends_at ? endsAtErrorId : undefined}
+            />
+          </div>
           {schedule.fieldErrors.ends_at ? (
             <p id={endsAtErrorId} className="schedule-maintenance-form__field-error" role="alert">
               {schedule.fieldErrors.ends_at}

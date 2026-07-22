@@ -50,6 +50,47 @@
   cursor: pointer;
 }
 
+/* Start/End (STORY-142 AC1) — the native `datetime-local` control stays
+   the underlying input (byte-identical value/UTC-conversion contract); this
+   wrapper gives it the same visual chrome as the rest of the form (border,
+   radius, focus ring already come from the shared `input` rule above) plus
+   a leading calendar glyph so the OS picker affordance reads as part of the
+   design system rather than a foreign control. */
+.schedule-maintenance-form__datetime {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.schedule-maintenance-form__datetime input {
+  width: 100%;
+  padding-left: var(--space-8);
+  color-scheme: light;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedule-maintenance-form__datetime-icon {
+  position: absolute;
+  left: var(--space-3);
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+/* The browser-drawn calendar-picker button (Chrome/Edge) — tinted down to
+   match the muted icon beside it instead of its default OS-grey render.
+   Firefox/Safari have no equivalent pseudo-element; the field still reads
+   correctly there via the shared border/padding/icon above. */
+.schedule-maintenance-form__datetime input::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.55;
+  transition: opacity var(--duration-control) var(--ease-out);
+}
+
+.schedule-maintenance-form__datetime input::-webkit-calendar-picker-indicator:hover,
+.schedule-maintenance-form__datetime input:focus-visible::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
+
 .schedule-maintenance-form__field textarea {
   resize: vertical;
   font-family: var(--font-family-base);

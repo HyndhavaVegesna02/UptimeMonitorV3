@@ -51,6 +51,24 @@ describe('ScheduleMaintenanceForm', () => {
     }
   })
 
+  it('AC1: Start/End are wrapped in the styled datetime control (still real datetime-local inputs, unchanged type/value semantics)', async () => {
+    render(<ScheduleMaintenanceForm onScheduled={vi.fn()} />)
+    await screen.findByLabelText(/component/i)
+
+    const startInput = screen.getByLabelText(/^start/i)
+    const endInput = screen.getByLabelText(/^end/i)
+
+    // Still the same underlying control (STORY-132's UTC conversion +
+    // datetime-local value semantics are byte-identical) — only the visual
+    // wrapper is new. This is a NECESSARY-not-SUFFICIENT check: it proves
+    // the styled wrapper markup exists, not that it renders legibly — the
+    // live reality gate is what confirms the actual visual result.
+    expect(startInput).toHaveAttribute('type', 'datetime-local')
+    expect(endInput).toHaveAttribute('type', 'datetime-local')
+    expect(startInput.closest('.schedule-maintenance-form__datetime')).not.toBeNull()
+    expect(endInput.closest('.schedule-maintenance-form__datetime')).not.toBeNull()
+  })
+
   it('AC3: blocks submit client-side when end <= start, without calling the API, and marks ends_at invalid', async () => {
     let called = false
     server.use(
