@@ -1,7 +1,7 @@
 import { act, render, screen, waitFor } from '@testing-library/react'
 import { useState } from 'react'
 import { describe, expect, it, vi } from 'vitest'
-import { useFetch } from './useFetch'
+import { DEFAULT_FETCH_TIMEOUT_MS, useFetch } from './useFetch'
 
 function Harness({ fetcher }: { fetcher: () => Promise<string> }) {
   const { state, retry, succeededAt } = useFetch(fetcher)
@@ -91,6 +91,55 @@ describe('useFetch', () => {
       await waitFor(() => expect(screen.getByTestId('data')).toHaveTextContent('second'))
 
       expect(screen.getByTestId('succeededAt').textContent).not.toBe(firstSucceededAt)
+    })
+  })
+
+  describe('request timeout (STORY-136 AC3 — a never-settling request must not spin forever)', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('transitions a never-settling request to the error phase once the default timeout elapses, and a retry re-issues a fresh request', async () => {
+      vi.useFakeTimers()
+      const fetcher = vi.fn(() => new Promise<string>(() => undefined))
+
+      render(<Harness fetcher={fetcher} />)
+      expect(screen.getByTestId('phase')).toHaveTextContent('loading')
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(DEFAULT_FETCH_TIMEOUT_MS)
+      })
+
+      expect(screen.getByTestId('phase')).toHaveTextContent('error')
+      expect(screen.getByTestId('message')).toHaveTextContent(/timed out/i)
+      expect(fetcher).toHaveBeenCalledTimes(1)
+
+      act(() => {
+        screen.getByRole('button', { name: 'Retry' }).click()
+      })
+
+      expect(screen.getByTestId('phase')).toHaveTextContent('loading')
+      expect(fetcher).toHaveBeenCalledTimes(2)
+    })
+
+    it('does not fire the timeout once the fetch has already settled (existing error/retry behavior preserved)', async () => {
+      vi.useFakeTimers()
+      const fetcher = vi.fn().mockRejectedValue(new Error('boom'))
+
+      render(<Harness fetcher={fetcher} />)
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0)
+      })
+
+      expect(screen.getByTestId('message')).toHaveTextContent('boom')
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(DEFAULT_FETCH_TIMEOUT_MS)
+      })
+
+      // Still the original rejection message, not a timeout overwrite.
+      expect(screen.getByTestId('message')).toHaveTextContent('boom')
     })
   })
 

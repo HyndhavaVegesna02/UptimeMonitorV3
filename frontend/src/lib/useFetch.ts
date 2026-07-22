@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
+/** Default request timeout (STORY-136 AC3) — a never-settling request (a
+ * hung network call, a backend that never responds) transitions to the
+ * `error` phase instead of leaving the caller spinning forever. Chosen as a
+ * generous ceiling for the shell's own fetches (components/approvals) well
+ * above any real observed latency, while still bounding the worst case.
+ * Overridable per call site via `useFetch`'s second argument. */
+export const DEFAULT_FETCH_TIMEOUT_MS = 15_000
+
 export type FetchState<T> =
   | { phase: 'loading' }
   | { phase: 'error'; message: string }
@@ -31,8 +39,19 @@ export interface UseFetchResult<T> {
  * `getComponents`/`getApprovals`, not a fresh inline closure per render) —
  * it is a `useEffect` dependency, so a fetcher that changes identity every
  * render would refetch every render.
+ *
+ * `timeoutMs` (STORY-136 AC3, default `DEFAULT_FETCH_TIMEOUT_MS`) bounds how
+ * long a request may stay in the `loading` phase: if neither `.then()` nor
+ * `.catch()` has fired by then, the hook forces the `error` phase itself
+ * (surfacing the existing `ErrorState` + retry) rather than leaving the
+ * caller spinning on a hung request forever. The timer is cleared the
+ * moment the real fetch settles, on unmount, and on every retry, so it never
+ * fires against a request that already resolved.
  */
-export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
+export function useFetch<T>(
+  fetcher: () => Promise<T>,
+  timeoutMs: number = DEFAULT_FETCH_TIMEOUT_MS,
+): UseFetchResult<T> {
   const [state, setState] = useState<FetchState<T>>({ phase: 'loading' })
   const [succeededAt, setSucceededAt] = useState<Date | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -40,15 +59,26 @@ export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
   useEffect(() => {
     let cancelled = false
 
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        cancelled = true
+        setState({ phase: 'error', message: 'Request timed out' })
+      }
+    }, timeoutMs)
+
     fetcher()
       .then((data) => {
         if (!cancelled) {
+          cancelled = true
+          clearTimeout(timeoutId)
           setState({ phase: 'success', data })
           setSucceededAt(new Date())
         }
       })
       .catch((err: unknown) => {
         if (!cancelled) {
+          cancelled = true
+          clearTimeout(timeoutId)
           setState({
             phase: 'error',
             message: err instanceof Error ? err.message : 'Unknown error',
@@ -58,8 +88,9 @@ export function useFetch<T>(fetcher: () => Promise<T>): UseFetchResult<T> {
 
     return () => {
       cancelled = true
+      clearTimeout(timeoutId)
     }
-  }, [attempt, fetcher])
+  }, [attempt, fetcher, timeoutMs])
 
   const retry = useCallback(() => {
     // Reset to loading in the event handler, not synchronously inside the
