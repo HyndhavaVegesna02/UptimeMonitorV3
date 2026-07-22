@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
 code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx, frontend/src/shell/Sidebar/Sidebar.css, frontend/src/shell/Sidebar/NavItem.css, frontend/src/shell/Topbar/Topbar.tsx]
-verified_sha: 0a0e421
+verified_sha: d9d0bf9
 verified_sprint: sprint-61
 status: verified
 ---
@@ -158,6 +158,15 @@ not copied pixel-for-pixel.
   mini-segment strip, etc.). Renders as a whole-card `<a>` when `href` is given (the "Pending
   approvals" attention card is ONE clickable surface, not a card plus a separate link) — hover-lift
   + `:active` scale(0.99) + `:focus-visible`, all reduced-motion guarded; otherwise an `<article>`.
+  **`.summary-card__extra`'s footer slot has a `min-height: var(--kpi-visual-height)` (30px, a new
+  component-layer token pinned to `Sparkline`'s own default rendered height) + flex-centers its
+  content (STORY-138 AC3, sprint-61)** — every KPI card that passes `children` now reserves the
+  SAME footer band, whether it renders a `Sparkline` (the two trend cards) or the new `KpiMeter`
+  (`features/dashboard/KpiMeter.tsx` — a thin filled-bar meter, `features/dashboard/deriveKpiTone.ts`
+  rules its color: `componentsHealthTone`/`approvalsTone`), so no card is left looking emptier than
+  its siblings and the accent coloring across all 4 cards is now deliberate-by-rule rather than an
+  accidental green/blue/none mix (AC4) — see [[frontend-zone]]'s Dashboard bullet for the
+  `KpiRow`/`KpiMeter` wiring detail.
 - **Sparkline** (`Sparkline.tsx`): minimal inline-SVG trend line, `aria-hidden` by DEFAULT (the KPI
   number + delta already carry the meaning). Normalizes `data: number[]` to a 0–1 range per point;
   a FLAT series (`min === max`) draws a level mid-height line instead of dividing by zero; an empty
@@ -255,3 +264,9 @@ not copied pixel-for-pixel.
   reserved for a SUCCEEDED-but-genuinely-unknown fetch, never a stand-in for "still loading").
   `Topbar`'s `overallStatus` prop is now `HealthStatus | null` (Facts above updated). No existing
   Fact was wrong, purely additive. verified_sha = 0a0e421.
+- 2026-07-22 (STORY-138, sprint-61, additive re-verify): fixed the KPI-card footer-visual
+  inconsistency (design-QA finding: cards 1-2 had a `Sparkline`, cards 3-4 left an empty band; the
+  Sparkline's own tone was green/blue/none — an accidental accent mix). `tokens.css` gained one new
+  component-layer token, `--kpi-visual-height` (30px). `SummaryCard.css`'s `.summary-card__extra`
+  now reserves that height (flex-centered) for whichever visual a card passes as `children`. No
+  existing token/Fact changed value — purely additive. verified_sha = d9d0bf9.
