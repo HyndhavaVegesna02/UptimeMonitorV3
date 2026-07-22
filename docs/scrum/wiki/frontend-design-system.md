@@ -1,7 +1,7 @@
 ---
 title: Frontend design system — tokens, Phosphor icons, primitives, /styleguide
-code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguideSection.tsx, frontend/src/shell/Sidebar/Sidebar.css, frontend/src/shell/Sidebar/NavItem.css, frontend/src/shell/Topbar/Topbar.tsx]
-verified_sha: b5bc195
+code_refs: [frontend/package.json, frontend/index.html, frontend/tsconfig.app.json, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/lib/cx.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/parseTokens.ts, frontend/src/styles/contrastRatio.ts, frontend/src/styles/tokens.contrast.test.ts, frontend/src/styles/noRawHex.test.ts, frontend/src/styles/noPrimitiveLeaks.test.ts, frontend/src/styles/motionTokens.test.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.css, frontend/src/pages/StyleguidePage/StyleguideSection.tsx, frontend/src/shell/Sidebar/Sidebar.css, frontend/src/shell/Sidebar/NavItem.css, frontend/src/shell/Topbar/Topbar.tsx]
+verified_sha: 5781630
 verified_sprint: sprint-61
 status: verified
 ---
@@ -199,6 +199,12 @@ not copied pixel-for-pixel.
   `StyleguideSection` (`<section aria-label={title}>`, implicit ARIA `role="region"` since it has
   an accessible name) — independently addressable by screen-reader landmark navigation and by
   `StyleguidePage.test.tsx`'s `within(screen.getByRole('region', {name}))` queries.
+- The gallery's stacked rows use `.styleguide-row--stack` (`align-items: stretch`, StyleguidePage.css)
+  by default. The Loading/Error/Empty entries additionally take a `.styleguide-row--start`
+  modifier (`align-items: flex-start`, STORY-141 AC3, sprint-61) so `LoadingState`/`ErrorState`/
+  `EmptyState` — each of which centers its OWN content internally — shrink to their own content
+  width and sit at the row's left edge instead of stretching full-width and reading as
+  page-centered; the Panel section's row is untouched (still plain `--stack`).
 - STORY-121 deleted the minimal `frontend/src/AppShell.tsx` placeholder (superseded by the real
   grouped-sidebar + topbar shell) and replaced the routing table with `frontend/src/routes.tsx`'s
   `AppRoutes`: `/styleguide` is now a standalone SIBLING route (own `<h1>Design system</h1>`, no
@@ -285,3 +291,14 @@ not copied pixel-for-pixel.
   value plus a misleading "Across 0 probe locations" sub line when the underlying value is
   genuinely `null` (see [[frontend-zone]]'s Dashboard bullet for the `KpiRow` wiring detail). No
   existing Fact changed value — purely additive. verified_sha = b5bc195.
+- 2026-07-22 (STORY-141, sprint-61, additive re-verify): fixed the Loading/Error/Empty gallery
+  entries reading center-aligned while sibling sections read left-aligned (design-QA finding).
+  `StyleguidePage.css` gained a `.styleguide-row--start` modifier (`align-items: flex-start`); the
+  Loading/Error/Empty row alone now carries it alongside `--stack`, so those three primitives —
+  which each already center their OWN content internally — shrink to their content width and sit
+  left-aligned like every other gallery row, instead of stretching full-row-width via `--stack`'s
+  `align-items: stretch` (the Panel section's row is untouched). No primitive's own CSS changed;
+  purely a gallery-presentation fix. The Topbar/Sidebar interaction changes this same story made
+  (notifications popover, mobile drawer header/close) are shell-behavior, not design-system-primitive
+  changes — full detail lives in [[frontend-zone]]'s History, not repeated here. Full suite green,
+  744 tests. verified_sha = 5781630.
