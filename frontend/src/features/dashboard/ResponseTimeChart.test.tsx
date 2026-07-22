@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { describe, expect, it } from 'vitest'
 import type { ObservationDTO } from '../../api/types'
+import { AXIS_GUTTER } from './deriveChartData'
 import { ResponseTimeChart } from './ResponseTimeChart'
 
 const chartCss = readFileSync(
@@ -27,6 +28,26 @@ describe('ResponseTimeChart', () => {
   it('renders axis gridline labels', () => {
     render(<ResponseTimeChart observations={OBSERVATIONS} windowLabel="last 24 hours" />)
     expect(screen.getAllByText(/ms$/).length).toBeGreaterThan(0)
+  })
+
+  it('reserves an axis gutter: gridlines start after it, labels sit inside it (AC3)', () => {
+    const { container } = render(<ResponseTimeChart observations={OBSERVATIONS} windowLabel="last 24 hours" />)
+    const gridlineEls = container.querySelectorAll('.response-time-chart__gridlines line')
+    expect(gridlineEls.length).toBeGreaterThan(0)
+    for (const line of Array.from(gridlineEls)) {
+      expect(Number(line.getAttribute('x1'))).toBe(AXIS_GUTTER)
+    }
+
+    const labelEls = container.querySelectorAll('.response-time-chart__axis-labels text')
+    expect(labelEls.length).toBeGreaterThan(0)
+    for (const label of Array.from(labelEls)) {
+      expect(Number(label.getAttribute('x'))).toBeLessThan(AXIS_GUTTER)
+    }
+  })
+
+  it('renders a 0-baseline bottom gridline label, never the data minimum (AC1)', () => {
+    render(<ResponseTimeChart observations={OBSERVATIONS} windowLabel="last 24 hours" />)
+    expect(screen.getByText('0 ms')).toBeInTheDocument()
   })
 
   it('renders a legend calling out the spike location and value', () => {

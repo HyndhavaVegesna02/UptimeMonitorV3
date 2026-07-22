@@ -1,6 +1,6 @@
 import { EmptyState } from '../../components/EmptyState/EmptyState'
 import type { ObservationDTO } from '../../api/types'
-import { deriveChartData } from './deriveChartData'
+import { AXIS_GUTTER, deriveChartData } from './deriveChartData'
 import { locationLabel } from './locationLabel'
 import './ResponseTimeChart.css'
 
@@ -37,12 +37,12 @@ export function ResponseTimeChart({ observations, windowLabel }: ResponseTimeCha
       >
         <g className="response-time-chart__gridlines">
           {chart.gridlines.map((gridline) => (
-            <line key={gridline.y} x1={0} y1={gridline.y} x2={CHART_WIDTH} y2={gridline.y} />
+            <line key={gridline.y} x1={AXIS_GUTTER} y1={gridline.y} x2={CHART_WIDTH} y2={gridline.y} />
           ))}
         </g>
         <g className="response-time-chart__axis-labels" aria-hidden="true">
           {chart.gridlines.map((gridline) => (
-            <text key={gridline.y} x={4} y={gridline.y - 4}>
+            <text key={gridline.y} x={gridline.labelX} y={gridline.labelY} textAnchor="end" dominantBaseline="middle">
               {gridline.label}
             </text>
           ))}
