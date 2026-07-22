@@ -28,7 +28,11 @@
 # `alembic upgrade head` and `python scripts/check_fk_direction.py` are retired.
 
 ## Commands (backend)
-- [ ] Tests pass: `pytest` -> exit 0
+- [ ] Tests pass: `python -m pytest` -> exit 0
+      (2026-07-22, retro sprint-60 A1: invocation changed from the `pytest` exe shim, which the
+       same Windows Application Control / Device Guard policy that blocks `lint-imports.exe` also
+       blocks — `pytest.exe` returned "blocked by your organization's Device Guard policy" (exit
+       4551) so `yt_gate.py` false-RED'd on green code; module path is the same test run)
 - [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
       (2026-07-12: invocation changed from the `lint-imports` exe shim, which a Windows
        Application Control policy now blocks; same check, same 8 contracts, module path)
@@ -37,8 +41,11 @@
        adapter-independence, api-feature-independence, src-no-tests)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
-- [ ] CloudFormation template lint: `cfn-lint infra/stack.yaml` -> exit 0
+- [ ] CloudFormation template lint: `python -c "import sys; sys.argv=['cfn-lint','infra/stack.yaml']; from cfnlint.runner import main; sys.exit(main())"` -> exit 0
       (second half of the 2026-07-14 DoD amendment, landed STORY-088)
+      (2026-07-22, retro sprint-60 A1: invocation changed from the `cfn-lint` exe shim — Device
+       Guard blocks `cfn-lint.exe` (exit 4551) like `pytest.exe`/`lint-imports.exe`; same lint via
+       the `cfnlint.runner:main` callable, exit code preserved)
 
 ## Commands (frontend — live from STORY-015a, Sprint 25, run from `frontend/`)
 - [ ] Frontend tests pass: `npm test` -> exit 0

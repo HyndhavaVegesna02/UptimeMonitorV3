@@ -60,6 +60,11 @@ a standing check without adding a gate command.
 but that lesson is narrow to this one initiative; leaving it as an observation, not an amendment,
 unless the PO wants it landed.)*
 
-## PO decision requested
-Approve A1 and/or A2 (and say whether to land the dropped-feature-inventory note too). On approval I
-land each at its rung with the date + motivating incident, per the working-agreement format.
+## PO decision (2026-07-22): ALL THREE APPROVED — landed
+- **A1** → `.scrum/definition-of-done.md`: `pytest`→`python -m pytest`; `cfn-lint …`→ the
+  `cfnlint.runner:main` callable form (Device-Guard `.exe`-block workaround, dated notes).
+- **A2** → `.scrum/checklists/quality-review.md`: new tests-that-lie taxonomy member #8
+  "Fixture-cardinality gap / 'not realistic on the wire'".
+- **A3** → `.scrum/checklists/implementer.md`: Process-discipline item — a rebuild that drops a
+  user-facing consumer records it + files a follow-up (backing feature existing is not an excuse).
+Each carries its date + motivating incident. Sprint 60 closed.

@@ -13,6 +13,7 @@
 - [ ] Report green only from a CLEAN committed tree — a gate result over uncommitted changes does not count (2026-06-29).
 - [ ] A story that changes DoD/build/test/run commands updates CLAUDE.md in the same commit (2026-06-23).
 - [ ] A story that deletes code records the why in the story file History — it feeds the wiki tombstone.
+- [ ] A rebuild/replacement story that DROPS a previously user-facing feature or consumer (a UI surface, a route, an endpoint's only client) records the drop EXPLICITLY in the story History AND files a follow-up backlog item if the capability is still wanted — even when the backing feature (endpoint/service) still exists. A greenfield rewrite must not let a live surface vanish silently (2026-07-22, retro sprint-60 A3: the sprint-59 frontend rebuild dropped the sample-mode UI consumer — TopBar toggle + banner — with no story record; the gap surfaced only when the PO noticed it missing at the sprint-60 review, filed reactively as STORY-135).
 
 ## Test discipline
 
