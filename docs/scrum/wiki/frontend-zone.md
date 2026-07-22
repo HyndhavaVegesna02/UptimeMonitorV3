@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
 code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
-verified_sha: e488202
-verified_sprint: sprint-60
+verified_sha: 0a0e421
+verified_sprint: sprint-61
 status: verified
 ---
 
@@ -31,13 +31,20 @@ status: verified
     contrast test's engine). See [[frontend-design-system]].
   - `components/` — the primitives: `Icon` (Phosphor wrapper; decorative-`aria-hidden`-or-labelled
     is prop-enforced), `Button`, `Panel`, `StatusBadge` (dot + icon + text; never colour alone),
-    `SummaryCard`, `Sparkline` (inline SVG), `LoadingState`, `ErrorState`, `EmptyState`.
+    `SummaryCard`, `Sparkline` (inline SVG), `LoadingState` (an optional `compact` prop, STORY-136
+    AC2, renders it inline with no block padding/centering — first consumer: the topbar's
+    overall-status slot), `ErrorState`, `EmptyState`.
     `PlaceholderPage` (the shared not-yet-built-tab stub) was DELETED in STORY-133 once
     `PublicationsPage` — its last mount — became a real page; no component under `src/` references
     it anymore.
   - `shell/` — `ShellLayout.tsx` composes the collapsible `Sidebar/` (grouped nav + `NavItem`) and
     the `Topbar/` (page title + worst-of status pill + last-updated + notifications + "＋
-    Maintenance") around a routed `<Outlet>`. `useSidebarCollapse.ts` persists the collapse choice
+    Maintenance") around a routed `<Outlet>`. `Topbar`'s `overallStatus` prop is `HealthStatus |
+    null` (STORY-136 AC2 fix) — `ShellLayout` passes `null` until its `getComponents` fetch
+    SUCCEEDS (loading OR error both read as `null`), and `Topbar` renders `LoadingState`'s compact
+    variant ("Updating status…") for `null` instead of `deriveOverallStatus([])`'s `unknown`; the
+    `unknown` `StatusBadge` now only ever renders for a succeeded fetch that is genuinely unknown.
+    `useSidebarCollapse.ts` persists the collapse choice
     to `localStorage` (key + `SIDEBAR_COLLAPSE_PREPAINT_CLASS` shared with the `index.html`
     pre-paint script, which is removed via `useLayoutEffect` after mount so it never outlives
     hydration — STORY-121 review-fix). `useMediaQuery.ts` (a `useSyncExternalStore` wrapper) gates
@@ -57,6 +64,10 @@ status: verified
     `deriveChartData`, `deriveProbeLocations`, `deriveRecentChecks`, `deriveRoster`,
     `aggregateSignals`), and the view components (`KpiRow`, `ResponseTimeChart`,
     `ProbeLocationsPanel`, `MaintenancePanel`, `RecentChecksFeed`, `ComponentsRoster`).
+    `deriveRecentChecks.ts` now keys each row by its FINAL sorted+capped position, NOT
+    `` `${signalKey}-${observed_at}-${location}` `` (STORY-136 AC1 fix — the same live-wire
+    collision class STORY-130 fixed on `mergeHistoryRows.ts`; two synthetic probe observations can
+    share that triple).
   - `features/availability/` — the STORY-129 Availability page's pieces: `WindowToggle`
     (24h/7d/30d `role="group"`/`aria-pressed`), `windowRange.ts` (`computeWindowRange` — tz-aware
     UTC ISO `since`/`until`, `Z`-suffixed, pinned to a caller-supplied `now`), `format.ts`
@@ -140,7 +151,11 @@ status: verified
     Reuses `features/history/formatTimestamp.ts::formatObservedAt` for the published-at column
     rather than duplicating an identical UTC-formatting helper.
   - `lib/` — `useFetch.ts` (the read-fetch state machine — loading/error/success, cancel-guarded;
-    `fetcher` must be a stable ref), `overallStatus.ts` (worst-of derivation: down > partial >
+    `fetcher` must be a stable ref; STORY-136 AC3 added a `DEFAULT_FETCH_TIMEOUT_MS` [15s,
+    overridable via a second `timeoutMs` argument] request timeout — a never-settling request now
+    forces the `error` phase itself, surfacing the existing `ErrorState` + retry rather than
+    spinning forever; the timer is cleared the moment the real fetch settles, on unmount, and per
+    retry attempt), `overallStatus.ts` (worst-of derivation: down > partial >
     degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
     `relativeTime.ts`, `cx.ts`, `combineFetchStates.ts`.
   - `mocks/` — MSW is the ONLY mocked I/O edge; per-endpoint handlers
@@ -315,3 +330,15 @@ status: verified
   Gap, Locations — Component stays left), and `PublicationsTimeline.tsx` (Proposal only). No
   layout/spacing/Fact change otherwise — cosmetic, mechanical sweep confirmed no other article
   references alignment. verified_sha = e488202.
+- 2026-07-22 (STORY-136, sprint-61): three design-QA-review correctness defects fixed on the
+  Dashboard/shell, no new page/route. (1) `deriveRecentChecks.ts`'s row key changed from the
+  colliding `` `${signalKey}-${observed_at}-${location}` `` triple to the final sorted+capped
+  position (matching the STORY-130 `mergeHistoryRows.ts` fix — the same live-wire duplicate-triple
+  collision class). (2) `Topbar`'s `overallStatus` prop is now `HealthStatus | null`; `ShellLayout`
+  passes `null` until `getComponents` SUCCEEDS (loading or error), and `Topbar` renders
+  `LoadingState`'s new `compact` variant instead of the `unknown` `StatusBadge` for that case — the
+  `unknown` badge is now reserved for a genuinely-unknown SUCCEEDED fetch. (3) `useFetch` gained a
+  `DEFAULT_FETCH_TIMEOUT_MS` (15s, overridable) request timeout so a never-settling fetch reaches
+  the `error` phase (existing `ErrorState` + retry) instead of spinning forever; the timer is
+  cleared on settle/unmount/retry so it never fires against an already-settled request. No Fact
+  above was wrong, all three purely additive/corrective. verified_sha = 0a0e421.
