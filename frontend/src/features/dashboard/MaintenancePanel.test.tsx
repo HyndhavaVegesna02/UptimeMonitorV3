@@ -27,7 +27,7 @@ describe('MaintenancePanel', () => {
 
   it('falls back to the reason when there is no title, and to the component id when there is neither', () => {
     const windows: MaintenanceWindowDTO[] = [
-      { id: 2, component_id: 'http-check', starts_at: '2026-07-25T02:00:00Z', ends_at: '2026-07-25T04:00:00Z', reason: null },
+      { id: 2, component_id: 'http-check', starts_at: '2026-07-25T02:00:00Z', ends_at: '2026-07-25T04:00:00Z', reason: null, title: null },
     ]
     render(<MaintenancePanel windows={windows} />)
     expect(screen.getByText('http-check')).toBeInTheDocument()

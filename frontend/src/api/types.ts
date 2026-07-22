@@ -67,7 +67,9 @@ export interface AvailabilityDTO {
 
 /**
  * Mirrors `backend/src/api/v1/maintenance/models.py::MaintenanceWindowDTO`
- * (STORY-122). `reason`/`title` are nullable.
+ * (STORY-122, tightened STORY-132). `reason`/`title` are nullable but
+ * ALWAYS present on the wire — `title` is a required (never-absent) nullable
+ * field, not an optional one (sprint-60 plan §Shared foundation).
  */
 export interface MaintenanceWindowDTO {
   id: number
@@ -75,6 +77,21 @@ export interface MaintenanceWindowDTO {
   starts_at: string
   ends_at: string
   reason: string | null
+  title: string | null
+}
+
+/**
+ * Mirrors `backend/src/api/v1/maintenance/models.py::CreateMaintenanceRequest`
+ * (STORY-132) — the body of `POST /api/v1/maintenance`. `starts_at`/`ends_at`
+ * MUST be tz-aware UTC ISO strings (trailing `Z`) — the backend 422s a
+ * naive or non-UTC datetime, and 422s `ends_at <= starts_at` (global API
+ * contract fact + plan §Maintenance edge behavior).
+ */
+export interface CreateMaintenanceRequest {
+  component_id: string
+  starts_at: string
+  ends_at: string
+  reason?: string | null
   title?: string | null
 }
 
