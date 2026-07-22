@@ -98,6 +98,20 @@ Flaky delay-based AC5 test hardening; a few px spacing literals; relative-time `
 `Button` `forwardRef`/`type` passthrough (4 hand-rolled native-button call sites now); `<time>`
 encodes only start; shared dense-table primitive (History/Availability/Publications duplicate CSS).
 
+## Review refinement folded in (PO-directed, 2026-07-22) — `8247aa0..26ad735`
+After a design-QA pass (measured type scale / spacing / alignment via scripted-Chromium), the PO
+directed one refinement be folded into this sprint rather than deferred: **right-align numeric
+data-grid columns** for magnitude scanning (they were left-aligned). Applied via a shared
+`.is-numeric` th/td modifier (per-table scoped for deterministic specificity):
+- **History** (STORY-130): Status Code, Latency right-aligned.
+- **Availability** (STORY-129): Availability, Completeness (number + "Low data" chip kept coherent
+  as one right-aligned run), Total, Passing, Maintenance, Down, Gap, Locations.
+- **Publications** (STORY-133): Proposal (`proposal_id`).
+Categorical/label columns stay left. DoD green @ `26ad735` (npm test **666**, build, lint exit 0);
+visually re-verified live on History + Availability (headers + cells right-aligned, chip cell clean,
+no layout regression). Diff since the full gate is frontend+docs only, so the backend/infra gate
+results above still hold. **Final sprint HEAD: `26ad735`.**
+
 ## Verdict requested (PO)
 Per-story accept / reject. Recommendation: accept all five (branch stays unmerged on the
 ui-prototype line unless you direct a swap).
