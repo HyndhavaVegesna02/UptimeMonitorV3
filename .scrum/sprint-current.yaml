@@ -135,7 +135,21 @@ stories:
         commit: b818dc3
   - id: STORY-133
     title: Publications page — Statuspage publish-attempt timeline (outcome + author)
-    status: todo
+    status: done
     points: 2
     ceremony: 1-2 pointer   # in-process: implementer -> DoD gate -> reality gate (no reviewer pair at 2 pts)
     order: 5
+    reality_gate: "PASS (live stack, scripted Chromium). Empty state live: GET /api/v1/publications → [] → 'Nothing published yet' + the ~50-cap note ('showing up to the 50 most recent attempts, server-capped, no pagination') rendered; exactly one h1 ('Publications'); zero console errors and no horizontal body scroll @1440 (doc 1440) + @390 (doc 390). Populated timeline (given-order render, outcome chip distinct from health status, proposal_id/author null→'—', no fabricated incident_id) proven by component tests against the plan's fixture shape — per the plan's §Publications reality-gate line (live list is empty). NOTE: this was the LAST placeholder tab; PlaceholderPage deleted (grep-confirmed no remaining refs) — all six nav routes now real."
+    dod_evidence:   # scoped --only npm at HEAD ce33f8c
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  84 passed (84) | Tests  663 passed (663)"
+        commit: ce33f8c
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built (index js 359.36 kB / gzip 105.58 kB)"
+        commit: ce33f8c
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: ce33f8c
