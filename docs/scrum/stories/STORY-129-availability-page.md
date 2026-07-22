@@ -68,3 +68,4 @@ zero console errors, no horizontal scroll.
   `frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx`; `PlaceholderPage` itself is kept
   (still used by the four not-yet-built tabs). All three frontend DoD gates
   (`npm test`/`npm run build`/`npm run lint`) green on a clean tree.
+- 2026-07-22: Review refinement (PO-directed, sprint-60): numeric columns right-aligned.

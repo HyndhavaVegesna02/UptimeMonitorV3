@@ -66,3 +66,4 @@ errors, no horizontal scroll (the wide grid scrolls within its own container).
   test, same technique `AvailabilityPage.test.tsx`'s AC5 test already established) rather than
   mutating the shared `mocks/handlers/{topology,history}.ts` defaults — that avoids perturbing the
   Availability page's own default-fixture test coverage.
+- 2026-07-22: Review refinement (PO-directed, sprint-60): numeric columns right-aligned.

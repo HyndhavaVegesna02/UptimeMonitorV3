@@ -56,3 +56,4 @@ zero console errors, no horizontal scroll.
   non-conflation crux (a `failed` outcome paired with an `operational`/"Up" status, asserting both
   render distinctly). All three frontend DoD gates (`npm test` / `npm run build` / `npm run lint`)
   green on a clean tree.
+- 2026-07-22: Review refinement (PO-directed, sprint-60): numeric columns right-aligned.
