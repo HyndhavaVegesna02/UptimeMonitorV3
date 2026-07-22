@@ -11,6 +11,11 @@ export interface PublicationsTimelineProps {
 
 const COLUMN_HEADERS = ['Time', 'Component', 'Status', 'Outcome', 'Proposal', 'Author']
 
+/** Numeric column (STORY-133 review refinement, sprint-60) - right-aligned
+ * header + cells together (`.is-numeric`); every other column is a
+ * label/categorical and stays left. */
+const NUMERIC_COLUMNS = new Set(['Proposal'])
+
 /**
  * The publish-attempt timeline (STORY-133 AC1) — one row per
  * `PublicationDTO`, rendered in the EXACT order given (the endpoint already
@@ -34,7 +39,7 @@ export function PublicationsTimeline({ publications }: PublicationsTimelineProps
         <thead>
           <tr>
             {COLUMN_HEADERS.map((header) => (
-              <th key={header} scope="col">
+              <th key={header} scope="col" className={NUMERIC_COLUMNS.has(header) ? 'is-numeric' : undefined}>
                 {header}
               </th>
             ))}
@@ -53,7 +58,7 @@ export function PublicationsTimeline({ publications }: PublicationsTimelineProps
               <td>
                 <OutcomeChip outcome={publication.outcome} />
               </td>
-              <td className="publications-timeline__proposal">{publication.proposal_id ?? '—'}</td>
+              <td className="publications-timeline__proposal is-numeric">{publication.proposal_id ?? '—'}</td>
               <td className="publications-timeline__author">{publication.author ?? '—'}</td>
             </tr>
           ))}

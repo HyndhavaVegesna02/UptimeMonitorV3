@@ -45,6 +45,19 @@ describe('PublicationsTimeline', () => {
     expect(screen.getByText('Failed')).toBeInTheDocument()
   })
 
+  it('right-aligns the numeric Proposal column (header + cells), review refinement sprint-60', () => {
+    render(<PublicationsTimeline publications={[SUCCEEDED_ENTRY]} />)
+
+    expect(screen.getByRole('columnheader', { name: 'Proposal' })).toHaveClass('is-numeric')
+    ;['Time', 'Component', 'Status', 'Outcome', 'Author'].forEach((name) => {
+      expect(screen.getByRole('columnheader', { name })).not.toHaveClass('is-numeric')
+    })
+
+    const row = screen.getByRole('row', { name: /http-check/i })
+    const proposalCell = within(row).getByText('1')
+    expect(proposalCell).toHaveClass('is-numeric')
+  })
+
   it('proposal_id: null renders "—", never "0"', () => {
     render(<PublicationsTimeline publications={[FAILED_NULL_EDGES_ENTRY]} />)
 

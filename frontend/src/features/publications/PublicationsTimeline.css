@@ -46,3 +46,12 @@
 .publications-timeline__author {
   color: var(--color-text-secondary);
 }
+
+/* The numeric Proposal column right-aligns header + cells together so
+   magnitude scans read by digit place (design review, STORY-133 review
+   refinement, sprint-60). Scoped to this table for specificity over the
+   shared `th, td { text-align: left }` rule above. */
+.publications-timeline__table th.is-numeric,
+.publications-timeline__table td.is-numeric {
+  text-align: right;
+}
