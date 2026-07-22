@@ -62,4 +62,22 @@ describe('StyleguidePage', () => {
     expect(within(section).getByRole('button', { name: 'Retry' })).toBeInTheDocument()
     expect(within(section).getByText('No components yet')).toBeInTheDocument()
   })
+
+  describe('Loading/Error/Empty gallery alignment (STORY-141 AC3)', () => {
+    // NOTE: this is a STRUCTURAL check only (necessary, not sufficient) —
+    // jsdom does not compute layout, so it cannot itself PROVE the entries
+    // render left-aligned. The actual visual left-alignment claim is
+    // confirmed at the live reality gate.
+    it('presents the demo row left-aligned, distinct from the Panel section\'s stretched stack', () => {
+      render(<StyleguidePage />)
+      const statesSection = screen.getByRole('region', { name: /Loading .* Empty/ })
+      const statesRow = statesSection.querySelector('.styleguide-row')
+      expect(statesRow).toHaveClass('styleguide-row--start')
+
+      const panelSection = screen.getByRole('region', { name: 'Panel' })
+      const panelRow = panelSection.querySelector('.styleguide-row')
+      expect(panelRow).not.toHaveClass('styleguide-row--start')
+      expect(panelRow).toHaveClass('styleguide-row--stack')
+    })
+  })
 })

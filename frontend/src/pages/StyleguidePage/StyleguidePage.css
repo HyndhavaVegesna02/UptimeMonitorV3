@@ -35,6 +35,17 @@
   align-items: stretch;
 }
 
+/* Left-aligns a stacked gallery entry that would otherwise stretch full-row
+   width (STORY-141 AC3) — used where the child primitive itself centers its
+   OWN content internally (LoadingState/ErrorState/EmptyState), so stretching
+   it to the row's width made that internal centering read as page-centered.
+   Shrinking each entry to its own content width via `flex-start` presents it
+   left-aligned, matching the sibling sections, without touching the
+   primitives' own centering. */
+.styleguide-row--start {
+  align-items: flex-start;
+}
+
 .styleguide-row--sparkline > * {
   width: 160px;
 }

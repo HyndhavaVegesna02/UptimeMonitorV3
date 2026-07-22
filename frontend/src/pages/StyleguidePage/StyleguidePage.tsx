@@ -107,7 +107,16 @@ export function StyleguidePage() {
       </StyleguideSection>
 
       <StyleguideSection title="Loading / Error / Empty states">
-        <div className="styleguide-row styleguide-row--stack">
+        {/* `--start` (STORY-141 AC3): the state primitives each keep their
+           OWN internal centering (LoadingState/ErrorState/EmptyState all
+           center their content within their own box) — the defect was the
+           gallery CELL stretching them to the row's full width via
+           `--stack`'s `align-items: stretch`, which made that internal
+           centering read as page-center-aligned instead of left-aligned
+           like the sibling sections. `--start` overrides to
+           `align-items: flex-start` so each demo shrinks to its own
+           content width and sits at the row's left edge, same as Panel. */}
+        <div className="styleguide-row styleguide-row--stack styleguide-row--start">
           <LoadingState />
           <ErrorState />
           <ErrorState message="Could not load components" onRetry={() => undefined} />
