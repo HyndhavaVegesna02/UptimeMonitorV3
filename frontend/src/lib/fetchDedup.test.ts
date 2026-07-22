@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { dedupedFetch } from './fetchDedup'
+import { dedupedFetch, forgetFetch, resetFetchDedupCache } from './fetchDedup'
 
 /**
  * Unit tests for the in-house promise-coalescing cache (STORY-137). These
@@ -44,6 +44,50 @@ describe('dedupedFetch', () => {
     await expect(dedupedFetch(fetcher)).rejects.toThrow('boom')
     await expect(dedupedFetch(fetcher)).resolves.toBe('recovered')
     expect(fetcher).toHaveBeenCalledTimes(2)
+  })
+
+  it('forgetFetch evicts a NEVER-SETTLING in-flight entry, so the next call genuinely re-invokes the fetcher (STORY-136 timeout composition)', async () => {
+    let firstCallSettles: (() => void) | undefined
+    const fetcher = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<string>((resolve) => {
+            firstCallSettles = () => resolve('too-late')
+          }),
+      )
+      .mockResolvedValueOnce('fresh')
+
+    const firstPromise = dedupedFetch(fetcher)
+    forgetFetch(fetcher)
+
+    const second = await dedupedFetch(fetcher)
+
+    expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(second).toBe('fresh')
+
+    // The original (never-settling-until-now) call is still a live promise
+    // for whoever holds it — evicting it from the cache does not reject it.
+    firstCallSettles?.()
+    await expect(firstPromise).resolves.toBe('too-late')
+  })
+
+  it('forgetFetch on a key with no in-flight entry is a harmless no-op', () => {
+    const fetcher = vi.fn()
+    expect(() => forgetFetch(fetcher)).not.toThrow()
+  })
+
+  it('resetFetchDedupCache wipes every in-flight entry, even a NEVER-SETTLING one — the test-isolation escape hatch a single test-file-wide fetcher reference needs (a test that deliberately never resolves a fetch to assert the loading state must not poison every later test sharing that reference)', () => {
+    const hungFetcher = vi.fn(() => new Promise<string>(() => undefined))
+    void dedupedFetch(hungFetcher) // never settles, never self-evicts
+    expect(hungFetcher).toHaveBeenCalledTimes(1)
+
+    resetFetchDedupCache()
+
+    // Post-reset, the SAME reference is a fresh invocation, not a rejoin of
+    // the orphaned still-pending promise.
+    void dedupedFetch(hungFetcher)
+    expect(hungFetcher).toHaveBeenCalledTimes(2)
   })
 
   it('coalesces concurrent callers even when one of them is racing an in-flight REJECTION', async () => {

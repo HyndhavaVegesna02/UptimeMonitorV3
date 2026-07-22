@@ -143,6 +143,55 @@ describe('useFetch', () => {
     })
   })
 
+  describe('shared fetch dedup (STORY-137 AC1/AC2 — concurrent identical fetches coalesce)', () => {
+    it('invokes a fetcher shared by two concurrently-mounted instances only ONCE', async () => {
+      const fetcher = vi.fn().mockResolvedValue('shared')
+
+      render(
+        <div>
+          <Harness fetcher={fetcher} />
+          <Harness fetcher={fetcher} />
+        </div>,
+      )
+
+      const dataNodes = await screen.findAllByTestId('data')
+      expect(dataNodes).toHaveLength(2)
+      dataNodes.forEach((node) => expect(node).toHaveTextContent('shared'))
+      expect(fetcher).toHaveBeenCalledTimes(1)
+    })
+
+    it('never coalesces two DIFFERENT fetcher references, even resolving to the same value', async () => {
+      const fetcherA = vi.fn().mockResolvedValue('same-value')
+      const fetcherB = vi.fn().mockResolvedValue('same-value')
+
+      render(
+        <div>
+          <Harness fetcher={fetcherA} />
+          <Harness fetcher={fetcherB} />
+        </div>,
+      )
+
+      await screen.findAllByTestId('data')
+      expect(fetcherA).toHaveBeenCalledTimes(1)
+      expect(fetcherB).toHaveBeenCalledTimes(1)
+    })
+
+    it('retry re-issues a REAL request, not a served-from-cache stale failure, once the shared request has settled', async () => {
+      const fetcher = vi.fn().mockRejectedValueOnce(new Error('boom')).mockResolvedValueOnce('recovered')
+
+      render(<Harness fetcher={fetcher} />)
+      await screen.findByTestId('message')
+      expect(fetcher).toHaveBeenCalledTimes(1)
+
+      act(() => {
+        screen.getByRole('button', { name: 'Retry' }).click()
+      })
+
+      await waitFor(() => expect(screen.getByTestId('data')).toHaveTextContent('recovered'))
+      expect(fetcher).toHaveBeenCalledTimes(2)
+    })
+  })
+
   it('never sets state after unmount (cancelled-guarded effect)', async () => {
     let resolveFetch: (value: string) => void = () => undefined
     const fetcher = () =>

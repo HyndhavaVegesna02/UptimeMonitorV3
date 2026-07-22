@@ -37,3 +37,34 @@ export function dedupedFetch<T>(fetcher: () => Promise<T>): Promise<T> {
   inFlight.set(fetcher, promise)
   return promise
 }
+
+/**
+ * Evicts a fetcher's in-flight entry (if any) WITHOUT touching the promise
+ * itself — a harmless no-op when nothing is in flight for it. Exists for
+ * `useFetch`'s own client-side request timeout (STORY-136 AC3): a fetcher
+ * that never settles would otherwise leave a permanent in-flight entry
+ * behind (its `.finally` never runs), so a later `retry` would silently
+ * rejoin the same still-hung promise instead of issuing a genuinely fresh
+ * request. Calling this when the timeout fires clears the slot so the next
+ * `dedupedFetch(fetcher)` call — the retry — always starts a real request.
+ */
+export function forgetFetch(fetcher: () => Promise<unknown>): void {
+  inFlight.delete(fetcher)
+}
+
+/**
+ * Wipes every in-flight entry, including a never-settling one whose own
+ * `.finally` will never run to self-evict it. The module-level cache is a
+ * process-wide singleton, so the test suite's own hygiene boundary (a test
+ * that deliberately renders a component against a NEVER-resolving handler,
+ * to assert its loading state, and returns without ever awaiting
+ * settlement) must reset it between tests — `src/test/setup.ts` calls this
+ * in the shared `afterEach`, the same place `server.resetHandlers()` lives
+ * — otherwise that orphaned in-flight promise would silently poison every
+ * later test in the process that shares the same fetcher reference (e.g.
+ * `getApprovals`), which never actually calls the real (per-test) MSW
+ * handler again. Production code never needs to call this.
+ */
+export function resetFetchDedupCache(): void {
+  inFlight.clear()
+}

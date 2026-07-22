@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { dedupedFetch, forgetFetch } from './fetchDedup'
 
 /** Default request timeout (STORY-136 AC3) — a never-settling request (a
  * hung network call, a backend that never responds) transitions to the
@@ -47,6 +48,15 @@ export interface UseFetchResult<T> {
  * caller spinning on a hung request forever. The timer is cleared the
  * moment the real fetch settles, on unmount, and on every retry, so it never
  * fires against a request that already resolved.
+ *
+ * The actual fetch is issued via `dedupedFetch` (STORY-137), not `fetcher()`
+ * directly: two `useFetch` instances that share the same stable fetcher
+ * reference (e.g. the shell and the Dashboard page both calling the
+ * module-level `getComponents`) and happen to be in flight at the same
+ * moment share ONE underlying network request instead of firing one each.
+ * This is pure promise-coalescing, not a result cache — see
+ * `fetchDedup.ts` — so `retry` always genuinely re-invokes the fetcher once
+ * the shared request has settled.
  */
 export function useFetch<T>(
   fetcher: () => Promise<T>,
@@ -62,11 +72,16 @@ export function useFetch<T>(
     const timeoutId = setTimeout(() => {
       if (!cancelled) {
         cancelled = true
+        // A never-settling fetcher would otherwise leave a permanent
+        // `dedupedFetch` in-flight entry behind (STORY-137) — evict it so
+        // the next `retry` genuinely re-issues a request instead of
+        // silently rejoining the same still-hung promise.
+        forgetFetch(fetcher)
         setState({ phase: 'error', message: 'Request timed out' })
       }
     }, timeoutMs)
 
-    fetcher()
+    dedupedFetch(fetcher)
       .then((data) => {
         if (!cancelled) {
           cancelled = true
