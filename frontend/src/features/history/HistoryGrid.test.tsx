@@ -69,6 +69,24 @@ describe('HistoryGrid', () => {
     expect(scrollContainer?.contains(screen.getByRole('table'))).toBe(true)
   })
 
+  it('right-aligns the numeric Status code and Latency columns (header + cells), review refinement sprint-60', () => {
+    render(<HistoryGrid rows={ROWS} />)
+    const table = screen.getByRole('table')
+
+    expect(within(table).getByRole('columnheader', { name: 'Status code' })).toHaveClass('is-numeric')
+    expect(within(table).getByRole('columnheader', { name: 'Latency' })).toHaveClass('is-numeric')
+    ;['Time', 'Check type', 'Component', 'Location', 'Result'].forEach((name) => {
+      expect(within(table).getByRole('columnheader', { name })).not.toHaveClass('is-numeric')
+    })
+
+    const firstDataRow = within(table).getAllByRole('row')[1]
+    const cells = within(firstDataRow).getAllByRole('cell')
+    expect(cells[5]).toHaveClass('is-numeric') // Status code
+    expect(cells[6]).toHaveClass('is-numeric') // Latency
+    expect(cells[0]).not.toHaveClass('is-numeric') // Time stays left
+    expect(cells[4]).not.toHaveClass('is-numeric') // Result stays left
+  })
+
   describe('a confirmed live wire collision (reality gate 2026-07-22)', () => {
     let consoleErrorSpy: ReturnType<typeof vi.spyOn>
 

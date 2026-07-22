@@ -45,3 +45,12 @@
 .history-grid__unit {
   color: var(--color-text-muted);
 }
+
+/* Numeric columns (Status code, Latency) right-align header + cells
+   together so magnitude scans read by digit place (design review, STORY-130
+   review refinement, sprint-60). Scoped to this table for specificity over
+   the shared `th, td { text-align: left }` rule above. */
+.history-grid__table th.is-numeric,
+.history-grid__table td.is-numeric {
+  text-align: right;
+}

@@ -11,6 +11,11 @@ export interface HistoryGridProps {
 
 const COLUMN_HEADERS = ['Time', 'Check type', 'Component', 'Location', 'Result', 'Status code', 'Latency']
 
+/** Numeric columns (STORY-130 review refinement, sprint-60) - right-aligned
+ * header + cells together (`.is-numeric`) so magnitude scans read by digit
+ * place. Every other column is a label/categorical and stays left. */
+const NUMERIC_COLUMNS = new Set(['Status code', 'Latency'])
+
 /** `null` -> "—" (never a fabricated `0`/`0 ms` — STORY-130 AC3/edge
  * behavior). A real `0` status code never occurs on the wire, but this
  * stays symmetric with the latency column regardless. */
@@ -33,7 +38,7 @@ export function HistoryGrid({ rows }: HistoryGridProps) {
         <thead>
           <tr>
             {COLUMN_HEADERS.map((header) => (
-              <th key={header} scope="col">
+              <th key={header} scope="col" className={NUMERIC_COLUMNS.has(header) ? 'is-numeric' : undefined}>
                 {header}
               </th>
             ))}
@@ -49,8 +54,8 @@ export function HistoryGrid({ rows }: HistoryGridProps) {
               <td>
                 <StatusBadge status={toObservationHealth(row.health)} />
               </td>
-              <td>{renderNullable(row.responseStatusCode)}</td>
-              <td>
+              <td className="is-numeric">{renderNullable(row.responseStatusCode)}</td>
+              <td className="is-numeric">
                 {renderNullable(row.latencyMs)}
                 {row.latencyMs !== null ? <span className="history-grid__unit">&nbsp;ms</span> : null}
               </td>
