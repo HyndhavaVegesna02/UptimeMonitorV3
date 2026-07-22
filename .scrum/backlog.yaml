@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 136  # 134 = STORY-129 quality-review minor (sprint-60); 135 = sample-mode cockpit surface.
+next_story_id: 146  # 134 = STORY-129 quality-review minor (sprint-60); 135 = sample-mode cockpit surface; 136-143 = sprint-61 design-QA fixes; 144/145 = sprint-61 out-of-frontend-scope follow-ups.
                     # 129-133 = sprint-60 (2026-07-21): the 5 remaining new-frontend tabs
                     # (129 Availability, 130 Check History, 131 Approvals, 132 Maintenance,
                     # 133 Publications) — external mode, branched from the sprint-59 tip.
@@ -1049,4 +1049,64 @@ stories:
     title: Surface sample mode in the operator cockpit (indicator, maybe toggle) — new consumer dropped in the rebuild
     status: draft   # PO-directed 2026-07-22 ("new story, next sprint"): the greenfield rebuild removed the old sample-mode UI (TopBar toggle + SampleModeBanner); new cockpit has no sample-mode surface at all (confirmed: zero refs in frontend/src; wiki frontend-zone notes "a new consumer is unscheduled"). Backend intact (GET/PUT /api/v1/sample-mode, currently enabled:false). Full draft + proposed AC in docs/scrum/stories/STORY-135-sample-mode-cockpit.md. TWO OPEN QUESTIONS before it's Ready: (1) read-only indicator vs full PUT toggle; (2) the feature is flagged TEMPORARY with a REMOVAL inventory (models.py / wiki sample-mode.md, PO directive 2026-07-03) — confirm it's still wanted before building UI for it. Est ~2 (indicator) / ~3 (with toggle). Frontend only.
     type: feature
+    sprint: null
+  # ---- Sprint 61 (design-QA fixes from the 2026-07-22 review; verified before scoping) ----
+  - id: STORY-136
+    title: Dashboard/shell correctness hardening (dup React key, unknown-during-load, fetch timeout)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-137
+    title: Shared fetch dedup/cache (one request per endpoint per mount, in-house minimal layer)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-138
+    title: Dashboard layout coherence (one shared grid, no jagged gutter/void, equal KPI cards)
+    status: ready
+    points: 5
+    type: defect
+    sprint: 61
+  - id: STORY-139
+    title: Response-time chart axis (0 baseline, nice ticks, reserved label gutter)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-140
+    title: Empty-state & data-formatting polish (No-data-yet KPI, History tz label, location label)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-141
+    title: Shell interaction polish (notifications bell panel, mobile drawer close+header, styleguide states)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-142
+    title: Maintenance schedule date fields (styled, locale-clear; preserve UTC + 422 mapping)
+    status: ready
+    points: 3
+    type: defect
+    sprint: 61
+  - id: STORY-143
+    title: Component-scoped availability view + repoint pinned nav item
+    status: ready
+    points: 5
+    type: defect
+    sprint: 61
+  # ---- Out-of-frontend-scope follow-ups filed at sprint-61 planning (NOT in the sprint) ----
+  - id: STORY-144
+    title: Expose human-readable location name in observation/availability API (unblocks true location labels)
+    status: draft   # 2026-07-22 sprint-61 planning: the cockpit can only truncate the raw location id ("…0047") because the API exposes no name field (ObservationDTO.location is a raw id; AvailabilityDTO has only a distinct_locations count). True human-readable names need a backend field (e.g. location_name). Frontend STORY-140 AC3 records the block. Needs refinement + estimate. Backend.
+    type: feature
+    sprint: null
+  - id: STORY-145
+    title: CI job running npm ci + build/test/lint (catch lockfile drift / stale installs)
+    status: draft   # 2026-07-22 sprint-61 planning: the design review's "stale node_modules" finding was NOT a repo defect (lock committed, deps correct, no Geist) — but it exposed a real gap: there is no CI, so `npm ci` reproducibility is never exercised and lockfile drift is only ever caught by hand. Add a CI job. Needs refinement + estimate. Infra/CI (out of the frontend-only sprint scope).
+    type: chore
     sprint: null
