@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { ObservationDTO } from '../../api/types'
-import { deriveChartData } from './deriveChartData'
+import { AXIS_GUTTER, deriveChartData } from './deriveChartData'
 
 // Real-shaped sample (live-api-samples.md), most-recent first.
 const OBSERVATIONS: ObservationDTO[] = [
@@ -62,6 +62,55 @@ describe('deriveChartData', () => {
     expect(chart.points).toHaveLength(1)
     expect(chart.avgLatencyMs).toBe(588)
     expect(chart.spike?.latencyMs).toBe(588)
+  })
+
+  it('uses a 0 baseline for the bottom gridline, never the data minimum (AC1)', () => {
+    const chart = deriveChartData(OBSERVATIONS, { windowLabel: 'last 24 hours' })
+    const bottomGridline = chart.gridlines[chart.gridlines.length - 1]
+    // The real data minimum is 293ms; the bottom tick must be 0, not 293.
+    expect(bottomGridline.label).toBe('0 ms')
+  })
+
+  it('produces rounded "nice" tick values derived from a niced max, not raw data-derived values (AC2)', () => {
+    const chart = deriveChartData(OBSERVATIONS, { windowLabel: 'last 24 hours' })
+    // Real captured max is 951ms (live-api-samples.md) -> niced max 1500,
+    // step 500 -> nice round ticks, never the old max/min-derived
+    // 951/809/536/262-style values.
+    expect(chart.gridlines.map((gridline) => gridline.label)).toEqual([
+      '1,500 ms',
+      '1,000 ms',
+      '500 ms',
+      '0 ms',
+    ])
+  })
+
+  it('scales the plotted line against [0, nicedMax] so the 0 baseline is real, not just a label (AC1)', () => {
+    const chart = deriveChartData(OBSERVATIONS, { windowLabel: 'last 24 hours' })
+    const spikePoint = chart.points.find((point) => point.latencyMs === 951)!
+    // niceMax=1500, padding=20, usableHeight=178 (default height 218):
+    // y = 20 + (1 - 951/1500) * 178
+    expect(spikePoint.y).toBeCloseTo(20 + (1 - 951 / 1500) * 178, 1)
+
+    // The scale must be independent of the dataset's minimum: dropping the
+    // lowest-latency observation must NOT move the y-position of the same
+    // 951ms point (a min-based scale, the old defect, would shift it).
+    const withoutMin = OBSERVATIONS.filter((observation) => observation.latency_ms !== 293)
+    const chartWithoutMin = deriveChartData(withoutMin, { windowLabel: 'last 24 hours' })
+    const spikePointWithoutMin = chartWithoutMin.points.find((point) => point.latencyMs === 951)!
+    expect(spikePointWithoutMin.y).toBeCloseTo(spikePoint.y, 5)
+  })
+
+  it('reserves an axis gutter: labels sit left of the plot, never over the gridlines/line (AC3)', () => {
+    const chart = deriveChartData(OBSERVATIONS, { windowLabel: 'last 24 hours' })
+    expect(chart.gridlines.length).toBeGreaterThan(0)
+    for (const gridline of chart.gridlines) {
+      expect(gridline.labelX).toBeLessThan(AXIS_GUTTER)
+      // Vertically centered on its own gridline, not offset above it.
+      expect(gridline.labelY).toBe(gridline.y)
+    }
+    for (const point of chart.points) {
+      expect(point.x).toBeGreaterThanOrEqual(AXIS_GUTTER)
+    }
   })
 
   it('ignores observations with a null latency rather than plotting a fabricated 0', () => {

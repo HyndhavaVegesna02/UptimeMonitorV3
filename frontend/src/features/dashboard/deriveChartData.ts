@@ -1,4 +1,5 @@
 import type { ObservationDTO } from '../../api/types'
+import { computeNiceAxis } from '../../lib/niceAxis'
 
 export interface ChartPoint {
   x: number
@@ -19,6 +20,13 @@ export interface ChartSpike {
 export interface ChartGridline {
   y: number
   label: string
+  /** X position of the label, reserved inside the left axis gutter
+   * (STORY-139 AC3) — always `< AXIS_GUTTER`, so it never overlaps the
+   * gridlines/plotted line, which start at `AXIS_GUTTER`. */
+  labelX: number
+  /** Y position of the label — equal to `y` (vertically centered on its
+   * own gridline via `dominant-baseline: middle`), never offset above it. */
+  labelY: number
 }
 
 export interface ChartData {
@@ -46,6 +54,13 @@ const DEFAULT_WIDTH = 720
 const DEFAULT_HEIGHT = 218
 const DEFAULT_PADDING = 20
 const GRIDLINE_COUNT = 4
+
+/** Left gutter reserved for the Y-axis labels (STORY-139 AC3) — the plot
+ * (gridlines, line, area, points) starts at this x, never at 0, so labels
+ * never overlap it. */
+export const AXIS_GUTTER = 48
+/** Gap between a right-aligned label's edge and the gutter/plot boundary. */
+const AXIS_LABEL_INSET = 8
 
 /**
  * Derives the response-time chart's plot geometry + accessible description
@@ -77,16 +92,19 @@ export function deriveChartData(
   }
 
   const latencies = valid.map((observation) => observation.latency_ms)
-  const minLatency = Math.min(...latencies)
   const maxLatency = Math.max(...latencies)
   const avgLatencyMs = Math.round(latencies.reduce((total, value) => total + value, 0) / latencies.length)
-  const range = maxLatency - minLatency
   const usableHeight = height - padding * 2
-  const xStep = valid.length > 1 ? width / (valid.length - 1) : 0
+  // 0-baseline "nice" axis (STORY-139 AC1/AC2): the plotted line scales
+  // against [0, niceMax], never [dataMin, dataMax], so a 0 baseline is a
+  // real scale anchor, not just a label.
+  const { niceMax } = computeNiceAxis(maxLatency, GRIDLINE_COUNT)
+  const plotWidth = width - AXIS_GUTTER
+  const xStep = valid.length > 1 ? plotWidth / (valid.length - 1) : 0
 
   const points: ChartPoint[] = valid.map((observation, index) => {
-    const x = valid.length > 1 ? xStep * index : width / 2
-    const normalized = range === 0 ? 0.5 : (observation.latency_ms - minLatency) / range
+    const x = valid.length > 1 ? AXIS_GUTTER + xStep * index : AXIS_GUTTER + plotWidth / 2
+    const normalized = niceMax === 0 ? 0 : observation.latency_ms / niceMax
     const y = padding + (1 - normalized) * usableHeight
     return {
       x,
@@ -112,11 +130,15 @@ export function deriveChartData(
     location: spikePoint.location,
   }
 
+  const labelX = AXIS_GUTTER - AXIS_LABEL_INSET
   const gridlines: ChartGridline[] = Array.from({ length: GRIDLINE_COUNT }, (_, index) => {
     const fraction = index / (GRIDLINE_COUNT - 1)
     const y = padding + fraction * usableHeight
-    const value = Math.round(maxLatency - fraction * range)
-    return { y, label: `${value.toLocaleString('en-US')} ms` }
+    // Top gridline (fraction 0) = niceMax; bottom (fraction 1) = 0 — a real
+    // 0 baseline, never the data minimum (AC1), in rounded "nice" steps
+    // (AC2).
+    const value = Math.round(niceMax * (1 - fraction))
+    return { y, label: `${value.toLocaleString('en-US')} ms`, labelX, labelY: y }
   })
 
   const ariaLabel = `Response time over the ${windowLabel}, averaging ${avgLatencyMs} milliseconds, with a spike to ${spike.latencyMs} milliseconds.`
