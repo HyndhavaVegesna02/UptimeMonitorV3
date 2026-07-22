@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
-code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/components/PlaceholderPage/PlaceholderPage.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/test/setup.ts]
-verified_sha: 5129bc2
+code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
+verified_sha: 2e97408
 verified_sprint: sprint-60
 status: verified
 ---
@@ -31,8 +31,10 @@ status: verified
     contrast test's engine). See [[frontend-design-system]].
   - `components/` — the primitives: `Icon` (Phosphor wrapper; decorative-`aria-hidden`-or-labelled
     is prop-enforced), `Button`, `Panel`, `StatusBadge` (dot + icon + text; never colour alone),
-    `SummaryCard`, `Sparkline` (inline SVG), `LoadingState`, `ErrorState`, `EmptyState`, and
-    `PlaceholderPage` (the shared stub the not-yet-built tabs render).
+    `SummaryCard`, `Sparkline` (inline SVG), `LoadingState`, `ErrorState`, `EmptyState`.
+    `PlaceholderPage` (the shared not-yet-built-tab stub) was DELETED in STORY-133 once
+    `PublicationsPage` — its last mount — became a real page; no component under `src/` references
+    it anymore.
   - `shell/` — `ShellLayout.tsx` composes the collapsible `Sidebar/` (grouped nav + `NavItem`) and
     the `Topbar/` (page title + worst-of status pill + last-updated + notifications + "＋
     Maintenance") around a routed `<Outlet>`. `useSidebarCollapse.ts` persists the collapse choice
@@ -44,9 +46,10 @@ status: verified
   - `routes.tsx` / `nav/tabs.ts` — the six routes (Dashboard, Availability, History, Approvals,
     Maintenance, Publications) plus a sibling `/styleguide`. `App.tsx` / `main.tsx` boot it.
   - `pages/` — `DashboardPage` (STORY-122), `AvailabilityPage` (STORY-129), `HistoryPage`
-    (STORY-130), `ApprovalsPage` (STORY-131), and `MaintenancePage` (STORY-132) are REAL pages;
-    `PublicationsPage` is still a `PlaceholderPage` stub awaiting the rest of sprint 60;
-    `StyleguidePage` renders every primitive × state (STORY-120).
+    (STORY-130), `ApprovalsPage` (STORY-131), `MaintenancePage` (STORY-132), and `PublicationsPage`
+    (STORY-133) are ALL real pages now — **every one of the six nav routes renders real content,
+    no placeholder remains** (`StyleguidePage` renders every primitive × state, STORY-120, and is
+    the one non-tab sibling route).
   - `api/` — `client.ts` (typed fetch client, `/api` base), `types.ts` (DTOs mirroring
     `backend/src/api/v1/*/models.py`), `statusMapping.ts` (vendor → health).
   - `features/dashboard/` — the STORY-122 dashboard: `useSignalsData` (derives signal keys from
@@ -123,19 +126,36 @@ status: verified
     form-level banner; the shared `Button` primitive can't be the submit button since it hardcodes
     `type="button"` — a plain native `<button type="submit">` is used instead, same visual
     classes).
+  - `features/publications/` — the STORY-133 Publications page's pieces, the sprint's LAST page and
+    its simplest (read-only, no mutation): `OutcomeChip` (dot + text `succeeded`/`failed` pill,
+    using the `--color-pos-*`/`--color-neg-*` semantic tokens — a DELIBERATELY separate vocabulary
+    from `StatusBadge`'s health tokens, since `outcome` [the Statuspage-call result] and `status`
+    [the published health] are different concepts that must never visually conflate, even when a
+    `failed` outcome pairs with an `operational`/"Up" status) and `PublicationsTimeline` (the dense
+    grid, same `overflow-x`-scrolled-table shape as `HistoryGrid`/`ComponentAvailabilityCard`;
+    renders `PublicationDTO[]` in the EXACT order given — no re-sort, since the endpoint already
+    returns most-recent-first capped ~50 server-side — proven by a test that puts the
+    chronologically-older fixture entry first in the array and asserts it renders first in the
+    DOM; `proposal_id: null`→"—", `author: null`→"—", no `incident_id` or other fabricated field).
+    Reuses `features/history/formatTimestamp.ts::formatObservedAt` for the published-at column
+    rather than duplicating an identical UTC-formatting helper.
   - `lib/` — `useFetch.ts` (the read-fetch state machine — loading/error/success, cancel-guarded;
     `fetcher` must be a stable ref), `overallStatus.ts` (worst-of derivation: down > partial >
     degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
     `relativeTime.ts`, `cx.ts`, `combineFetchStates.ts`.
   - `mocks/` — MSW is the ONLY mocked I/O edge; per-endpoint handlers
-    (`handlers/{components,approvals,history,availability,maintenance,topology}.ts`) composed in
-    `handlers/index.ts`, wired in `test/setup.ts`. Fixtures derive from REAL captured `/api/v1`
-    responses (`docs/scrum/sprints/2026-07-21-sprint-59/live-api-samples.md` +
+    (`handlers/{components,approvals,history,availability,maintenance,topology,publications}.ts`)
+    composed in `handlers/index.ts`, wired in `test/setup.ts`. Fixtures derive from REAL captured
+    `/api/v1` responses (`docs/scrum/sprints/2026-07-21-sprint-59/live-api-samples.md` +
     `docs/scrum/sprints/2026-07-21-sprint-60/plan.md` §Appendix). `handlers/maintenance.ts`
     (STORY-132) now also has a populated upcoming/active/past list fixture (year 2000/2099
     instants, so the derived badge state is stable regardless of when the suite runs) plus
     `POST /api/v1/maintenance` (201) and `DELETE /api/v1/maintenance/:windowId` (204) handlers,
-    alongside the pre-existing empty-list `GET` default.
+    alongside the pre-existing empty-list `GET` default. `handlers/publications.ts` (STORY-133)
+    default-exports the real captured empty list (`FIXTURE_PUBLICATIONS = []`) plus a populated
+    two-entry `FIXTURE_PUBLICATIONS_TIMELINE` (the plan appendix sample + a second entry exercising
+    the `proposal_id: null`/`author: null`/`outcome: 'failed'` edges), swapped in per-test via
+    `server.use(...)`.
 
 - **API client (`api/client.ts`):** `getComponents()`, `getApprovals()`, `getHistory(signalKey,
   limit?)`, `getAvailability(signalKey)`, `getMaintenance()`, `getTopology()` (STORY-129),
@@ -147,7 +167,9 @@ status: verified
   nested under `/approvals`), `postMaintenance(CreateMaintenanceRequest)` (STORY-132 — `POST
   /api/v1/maintenance`, **201**) and `deleteMaintenance(windowId)` (STORY-132 — `DELETE
   /api/v1/maintenance/{window_id}`, **204**, NOT idempotent — a 404 on an already-deleted window is
-  a real `ApiError.status === 404`, never a silent success). The write path is a private
+  a real `ApiError.status === 404`, never a silent success), and `getPublications()` (STORY-133 —
+  `GET /api/v1/publications`, the timeline read most-recent-first as returned and rendered without
+  re-sorting, capped ~50 server-side, no pagination). The write path is a private
   `postJson<T>` alongside the existing `getJson`, sharing the same `readOkJson`/`ApiError` handling
   so `.status`/`.detail` populate identically for a non-2xx POST (a 409/404 the same way a GET
   caller would see them); STORY-132 adds a THIRD private helper, `deleteRequest(path):
@@ -163,7 +185,11 @@ status: verified
   `TopologySignalDTO` (STORY-129 — `interval_seconds` is `int | null`),
   `ComponentAvailabilityDTO`/`SignalAvailabilityDTO` (STORY-129 — the latter is `AvailabilityDTO` +
   `signal_key`, no display name), `DecisionRequest {action: "approve"|"reject", actor, notes?}` /
-  `DecisionResponse {proposal_id, state, resolved_at}` (STORY-131). Re-derived fresh from the LIVE
+  `DecisionResponse {proposal_id, state, resolved_at}` (STORY-131), and `PublicationDTO {id,
+  component_id, status, published_at, proposal_id: number|null, outcome: "succeeded"|"failed",
+  author: string|null}` (STORY-133 — NO `incident_id`; `status` uses the SAME vendor vocabulary as
+  `ComponentDTO.status`, mapped via `statusMapping.ts`; `outcome` is a SEPARATE concept, never
+  conflated with `status`). Re-derived fresh from the LIVE
   contracts (verified at the STORY-121/122/129/131/132 reality gates); extends cleanly as later
   tabs need more endpoints. `statusMapping.ts` maps the vendor `ComponentStatus` vocabulary
   (operational/degraded_performance/partial_outage/major_outage/under_maintenance) onto the
@@ -198,8 +224,6 @@ status: verified
   fills should not collide.
 
 ## Known gaps / deferred (filed to backlog)
-- The one remaining tab (Publications) is still a `PlaceholderPage` stub — real content lands
-  later in sprint 60.
 - The shared `Button` primitive does not forward refs (a plain function component, not
   `forwardRef`) — `ProposalCard`'s Confirm button and `MaintenanceWindowCard`'s Delete/Confirm
   buttons (STORY-132) both had to fall back to a hand-rolled native
@@ -274,3 +298,13 @@ status: verified
   This sweep also re-verified the `bfcca9b` STORY-131 fixup (dropped an unused `cx` import/no-op
   call in `ProposalCard.tsx`'s reject-button `className`) that landed after STORY-131's own
   verified_sha — confirmed cosmetic only, no Fact above it was affected. verified_sha = 5129bc2.
+- 2026-07-22 (STORY-133, sprint-60): the Publications page shipped — the sprint's LAST page and its
+  simplest (read-only, no mutation). Added `getPublications()` and `PublicationDTO` to the API
+  client (`GET /api/v1/publications`), a new `mocks/handlers/publications.ts`, and the
+  `features/publications/**` module (`OutcomeChip`, `PublicationsTimeline` — see the `features/`
+  bullet above). **Deleted the `PlaceholderPage` component** (`components/PlaceholderPage/`) —
+  `PublicationsPage` was its last mount; a repo grep after the delete confirmed zero remaining
+  references. **All six nav routes are now real pages — the placeholder era is over.** No dedicated
+  wiki article existed for `PlaceholderPage` itself (it was only ever documented as a Fact inside
+  this article), so there is nothing to archive/tombstone separately — this entry IS that record.
+  verified_sha = 2e97408.
