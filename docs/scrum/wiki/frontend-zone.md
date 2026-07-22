@@ -1,7 +1,7 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (rebuilt, sprint-59/60)
-code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
-verified_sha: 0a0e421
+code_refs: [frontend/package.json, frontend/index.html, frontend/vite.config.ts, frontend/eslint.config.js, frontend/src/main.tsx, frontend/src/App.tsx, frontend/src/routes.tsx, frontend/src/nav/tabs.ts, frontend/src/styles/tokens.css, frontend/src/styles/global.css, frontend/src/styles/contrastRatio.ts, frontend/src/styles/parseTokens.ts, frontend/src/components/Icon/Icon.tsx, frontend/src/components/Button/Button.tsx, frontend/src/components/Panel/Panel.tsx, frontend/src/components/StatusBadge/StatusBadge.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Sparkline/Sparkline.tsx, frontend/src/components/LoadingState/LoadingState.tsx, frontend/src/components/ErrorState/ErrorState.tsx, frontend/src/components/EmptyState/EmptyState.tsx, frontend/src/shell/ShellLayout.tsx, frontend/src/shell/Sidebar/Sidebar.tsx, frontend/src/shell/Sidebar/NavItem.tsx, frontend/src/shell/Topbar/Topbar.tsx, frontend/src/shell/Topbar/formatLastUpdated.ts, frontend/src/shell/useSidebarCollapse.ts, frontend/src/shell/useMediaQuery.ts, frontend/src/shell/TooltipGroupProvider.tsx, frontend/src/shell/tooltipGroupContext.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/lib/useFetch.ts, frontend/src/lib/fetchDedup.ts, frontend/src/lib/cx.ts, frontend/src/lib/format.ts, frontend/src/lib/relativeTime.ts, frontend/src/lib/overallStatus.ts, frontend/src/lib/healthIcons.ts, frontend/src/lib/combineFetchStates.ts, frontend/src/features/dashboard/useSignalsData.ts, frontend/src/features/dashboard/deriveKpis.ts, frontend/src/features/dashboard/deriveChartData.ts, frontend/src/features/dashboard/deriveProbeLocations.ts, frontend/src/features/dashboard/deriveRecentChecks.ts, frontend/src/features/dashboard/deriveRoster.ts, frontend/src/features/dashboard/aggregateSignals.ts, frontend/src/features/dashboard/KpiRow.tsx, frontend/src/features/dashboard/ResponseTimeChart.tsx, frontend/src/features/dashboard/ProbeLocationsPanel.tsx, frontend/src/features/dashboard/MaintenancePanel.tsx, frontend/src/features/dashboard/RecentChecksFeed.tsx, frontend/src/features/dashboard/ComponentsRoster.tsx, frontend/src/features/availability/ComponentAvailabilityCard.tsx, frontend/src/features/availability/WindowToggle.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/joinSignalAvailability.ts, frontend/src/pages/DashboardPage/DashboardPage.tsx, frontend/src/pages/AvailabilityPage/AvailabilityPage.tsx, frontend/src/pages/HistoryPage/HistoryPage.tsx, frontend/src/pages/ApprovalsPage/ApprovalsPage.tsx, frontend/src/pages/StyleguidePage/StyleguidePage.tsx, frontend/src/features/history/mergeHistoryRows.ts, frontend/src/features/history/filterHistoryRows.ts, frontend/src/features/history/capRows.ts, frontend/src/features/history/formatTimestamp.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/useHistoryData.ts, frontend/src/features/history/HistoryFilterBar.tsx, frontend/src/features/history/HistoryGrid.tsx, frontend/src/features/approvals/operatorActor.ts, frontend/src/features/approvals/useApprovalsDecisions.ts, frontend/src/features/approvals/ProposalCard.tsx, frontend/src/features/maintenance/deriveWindowState.ts, frontend/src/features/maintenance/mapMaintenanceError.ts, frontend/src/features/maintenance/localDateTimeToUtcIso.ts, frontend/src/features/maintenance/formatWindowRange.ts, frontend/src/features/maintenance/WindowStateBadge.tsx, frontend/src/features/maintenance/useScheduleMaintenance.ts, frontend/src/features/maintenance/useMaintenanceDeletion.ts, frontend/src/features/maintenance/MaintenanceWindowCard.tsx, frontend/src/features/maintenance/ScheduleMaintenanceForm.tsx, frontend/src/pages/MaintenancePage/MaintenancePage.tsx, frontend/src/features/publications/OutcomeChip.tsx, frontend/src/features/publications/PublicationsTimeline.tsx, frontend/src/pages/PublicationsPage/PublicationsPage.tsx, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/topology.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/test/setup.ts]
+verified_sha: 4ed312b
 verified_sprint: sprint-61
 status: verified
 ---
@@ -155,12 +155,27 @@ status: verified
     overridable via a second `timeoutMs` argument] request timeout — a never-settling request now
     forces the `error` phase itself, surfacing the existing `ErrorState` + retry rather than
     spinning forever; the timer is cleared the moment the real fetch settles, on unmount, and per
-    retry attempt), `overallStatus.ts` (worst-of derivation: down > partial >
+    retry attempt), `fetchDedup.ts` (STORY-137 — `dedupedFetch`/`forgetFetch`/
+    `resetFetchDedupCache`: an in-house promise-coalescing cache `useFetch` routes every fetch
+    through, keyed on the fetcher's OWN identity, NOT a result cache — an entry lives in the
+    module-level `Map` only while its request is in flight and is deleted the instant it settles,
+    so a `retry` always genuinely re-invokes the fetcher. Two `useFetch` instances sharing the same
+    stable fetcher reference — e.g. `ShellLayout` and `DashboardPage` both calling the literal
+    `getComponents` export — that are in flight at the same moment now share ONE underlying
+    request; two DIFFERENT fetcher references, even resolving to the same value, are NEVER
+    coalesced [a `ComponentAvailabilityCard` per component keeps its own `useCallback`'d fetcher,
+    so distinct components/args are always distinct identities]. `useFetch`'s STORY-136 timeout
+    calls `forgetFetch` so a never-settling request's `retry` isn't silently rejoined to the same
+    still-hung promise), `overallStatus.ts` (worst-of derivation: down > partial >
     degraded > maintenance > unknown > up; empty → unknown), `healthIcons.ts`, `format.ts`,
     `relativeTime.ts`, `cx.ts`, `combineFetchStates.ts`.
   - `mocks/` — MSW is the ONLY mocked I/O edge; per-endpoint handlers
     (`handlers/{components,approvals,history,availability,maintenance,topology,publications}.ts`)
-    composed in `handlers/index.ts`, wired in `test/setup.ts`. Fixtures derive from REAL captured
+    composed in `handlers/index.ts`, wired in `test/setup.ts` — which ALSO resets
+    `fetchDedup.ts`'s process-wide cache in its shared `afterEach` (STORY-137), alongside
+    `server.resetHandlers()`: a test that deliberately renders against a never-resolving handler
+    (to assert a loading state) would otherwise leave an orphaned in-flight entry that starves
+    every LATER test sharing that same fetcher reference. Fixtures derive from REAL captured
     `/api/v1` responses (`docs/scrum/sprints/2026-07-21-sprint-59/live-api-samples.md` +
     `docs/scrum/sprints/2026-07-21-sprint-60/plan.md` §Appendix). `handlers/maintenance.ts`
     (STORY-132) now also has a populated upcoming/active/past list fixture (year 2000/2099
@@ -257,8 +272,9 @@ status: verified
   STORY-127 (`/api/v1/availability` is slow against DynamoDB-Local → dashboard first-paint stall;
   STORY-129's `ComponentAvailabilityCard` independent-fetch pattern is the mitigation the
   Availability page itself needed, but the Dashboard's own STORY-122 KPI fetch is untouched by
-  this story), STORY-128 (lazy-load the availability-dependent KPI + dedupe the
-  components/approvals fetch).
+  this story), STORY-128 (lazy-load the availability-dependent KPI — the OTHER half of
+  STORY-128's original scope, "dedupe the components/approvals fetch", is now DONE via STORY-137's
+  `fetchDedup.ts`, sprint-61).
 
 ## History
 - sprint-59 (STORY-120/121/122, greenfield rebuild — sprint-close compile pass): the old article
@@ -342,3 +358,20 @@ status: verified
   the `error` phase (existing `ErrorState` + retry) instead of spinning forever; the timer is
   cleared on settle/unmount/retry so it never fires against an already-settled request. No Fact
   above was wrong, all three purely additive/corrective. verified_sha = 0a0e421.
+- 2026-07-22 (STORY-137, sprint-61): shared fetch dedup/cache — fixes the "shell + Dashboard page
+  each fetch `/components`/`/approvals` independently" finding. New `lib/fetchDedup.ts`
+  (`dedupedFetch`/`forgetFetch`/`resetFetchDedupCache`, an in-house identity-keyed promise-
+  coalescing cache, explicitly NOT a result cache — no new dependency, no React Query/SWR).
+  `useFetch.ts` now issues its fetch via `dedupedFetch`, and calls `forgetFetch` from its
+  STORY-136 timeout handler so a never-settling request's `retry` still genuinely re-issues a
+  fresh call. `test/setup.ts` resets the cache in the shared `afterEach` — discovered via TDD: the
+  process-wide cache initially broke 30 tests across 6 files, because a test rendering against a
+  deliberately never-resolving handler (to assert a loading state) left an orphaned in-flight
+  entry that silently starved every later test in the file sharing that fetcher reference (e.g.
+  `ApprovalsPage.test.tsx`). Proven: an MSW call-count test (`ShellLayout.test.tsx`) asserts each
+  of `/components`/`/approvals`/`/maintenance` fires exactly once across the shell + Dashboard
+  page on one mount; a companion test (verified to fail with the dedup wiring reverted) confirms
+  it; a second safeguard test (`AvailabilityPage.test.tsx`) asserts two DIFFERENT components'
+  `getComponentAvailability` fetches are never wrongly coalesced. No page/route/DTO change; no
+  behavioral regression (full suite green, 690 tests). Folds the "dedupe the components/approvals
+  fetch" half of the STORY-128 known-gap above. verified_sha = 4ed312b.
