@@ -36,10 +36,27 @@ started: "2026-07-22T17:00:00+05:30"
 stories:
   - id: STORY-136
     title: Dashboard/shell correctness hardening (dup React key, unknown-during-load, fetch timeout)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 1
+    reviews:
+      spec: "PASS — AC1-AC4 all MET with genuine AC-to-test traces. AC1: RecentChecksFeed.test.tsx constructs a REAL duplicate (signal_key,observed_at,location) triple → 3 listitems in order + console.error spy asserts no dup-key warning; deriveRecentChecks now keys by String(index) over the sorted+capped array. AC2: ShellLayout.test.tsx forces a never-resolving MSW /components handler → topbar shows role=status ('Updating status…'), 'Unknown' absent; success path shows real worst-of 'Maintenance'. AC3: useFetch.test.tsx fake-timers + never-resolving fetcher → error phase 'timed out' + retry re-issues; companion test proves an already-rejected message isn't clobbered by a late timeout. AC4: 677/677 tests, build+lint exit 0, no routing files touched. Zero deleted assertions."
+      quality: "APPROVE — 0 critical / 0 major / 1 minor. Tests-that-lie audit clean (all 8): reviewer REVERTED the fix and confirmed both the uniqueness + collision tests fail (React's real 'same key' console.error fires at real wire cardinality) — load-bearing. String(index) collision-free by construction over sorted+capped; useFetch timer cleared on settle/unmount/retry (no leaked timer, no setState-after-unmount); overallStatus:null doesn't mask a real status. Tokens only in LoadingState compact; stable-fetcher preserved; no over-abstraction vs History (YAGNI). Minor → STORY-134."
+    reality_gate: "PASS (live stack, Playwright @1440 + @390). Dashboard + all six routes render with ZERO console errors/warnings on a fresh load — crucially no React duplicate-key warning on the Recent-checks feed. Settled topbar shows the real 'Up' status (not the 'Unknown' token) with no loading role — AC2's core guarantee (unknown never shown when data present) confirmed live; the loading-branch itself is reality-gated by the forced never-resolving-fetch integration test (ShellLayout.test.tsx) since the live API is fast + the DB empty. AC3 15s timeout proven by fake-timer tests (can't trigger live without breaking the API) — per the sprint live-data caveat. No route regression."
+    dod_evidence:   # scoped --only npm at HEAD 62f2bb8
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  84 passed (84) | Tests  677 passed (677)"
+        commit: 62f2bb8
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 763ms (index js 360.11 kB / gzip 105.78 kB)"
+        commit: 62f2bb8
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 62f2bb8
   - id: STORY-137
     title: Shared fetch dedup/cache (one request per endpoint per mount, in-house minimal layer)
     status: todo

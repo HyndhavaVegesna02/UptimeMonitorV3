@@ -1042,7 +1042,7 @@ stories:
     sprint: 60
   - id: STORY-134
     title: Harden the Availability AC5 independence test (deterministic deferred, not a fixed delay) + map a few px spacing literals to tokens
-    status: draft   # STORY-129 quality-review minors (sprint-60, 2026-07-22): the AC5 per-component-independence test uses delay(200) and false-FAILED once under extreme host load (never false-passes — still genuinely guards independence); reviewer's fix = gate the slow MSW handler on a manually-resolved deferred the test resolves only after asserting the fast panel rendered. Also a few raw px spacing literals (ComponentAvailabilityCard.css, WindowToggle.css) could map to space tokens (not colour → not a convention violation). Needs refinement + estimate.
+    status: draft   # STORY-129 quality-review minors (sprint-60, 2026-07-22): the AC5 per-component-independence test uses delay(200) and false-FAILED once under extreme host load (never false-passes — still genuinely guards independence); reviewer's fix = gate the slow MSW handler on a manually-resolved deferred the test resolves only after asserting the fast panel rendered. Also a few raw px spacing literals (ComponentAvailabilityCard.css, WindowToggle.css) could map to space tokens (not colour → not a convention violation). PLUS STORY-136 minor (sprint-61, both reviewers): ShellLayout.tsx maps the components-fetch ERROR phase (not just loading) to overallStatus=null, so on a genuine components-fetch failure the topbar shows 'Updating status…' indefinitely rather than an error affordance (main content still shows ErrorState+retry, so no real status is masked). Needs refinement + estimate.
     type: chore
     sprint: null
   - id: STORY-135
