@@ -2,7 +2,12 @@ import { approvalsHandlers, FIXTURE_PROPOSALS } from './approvals'
 import { availabilityHandlers, FIXTURE_AVAILABILITY, FIXTURE_COMPONENT_AVAILABILITY } from './availability'
 import { componentsHandlers, FIXTURE_COMPONENTS } from './components'
 import { FIXTURE_HISTORY, historyHandlers } from './history'
-import { FIXTURE_MAINTENANCE, maintenanceHandlers } from './maintenance'
+import {
+  FIXTURE_CREATED_MAINTENANCE_WINDOW,
+  FIXTURE_MAINTENANCE,
+  FIXTURE_MAINTENANCE_WINDOWS,
+  maintenanceHandlers,
+} from './maintenance'
 import { FIXTURE_TOPOLOGY, topologyHandlers } from './topology'
 
 /**
@@ -24,8 +29,10 @@ export {
   FIXTURE_AVAILABILITY,
   FIXTURE_COMPONENT_AVAILABILITY,
   FIXTURE_COMPONENTS,
+  FIXTURE_CREATED_MAINTENANCE_WINDOW,
   FIXTURE_HISTORY,
   FIXTURE_MAINTENANCE,
+  FIXTURE_MAINTENANCE_WINDOWS,
   FIXTURE_PROPOSALS,
   FIXTURE_TOPOLOGY,
 }

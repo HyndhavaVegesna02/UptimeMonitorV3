@@ -3,6 +3,7 @@ import type {
   ComponentAvailabilityDTO,
   ComponentDTO,
   ComponentTopologyDTO,
+  CreateMaintenanceRequest,
   DecisionRequest,
   DecisionResponse,
   MaintenanceWindowDTO,
@@ -112,6 +113,33 @@ async function postJson<T>(path: string, body: unknown): Promise<T> {
   return readOkJson<T>(response, path)
 }
 
+/**
+ * DELETE counterpart to `getJson`/`postJson` (STORY-132). A success response
+ * is **204 No Content** — there is no JSON body to parse, so (unlike
+ * `readOkJson`) this never calls `.response.json()` on the ok path (that
+ * throws on an empty body). A non-2xx response still extracts `ApiError`
+ * with `.status`/`.detail` via `readDetail`, exactly like `getJson`/
+ * `postJson` — callers switch on `.status === 404` (already gone; delete is
+ * NOT idempotent) the same way a GET/POST caller would.
+ */
+async function deleteRequest(path: string): Promise<void> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, { method: 'DELETE' })
+  } catch {
+    throw new ApiError(`Network error while requesting ${path}`)
+  }
+
+  if (!response.ok) {
+    const detail = await readDetail(response)
+    throw new ApiError(
+      `Request to ${path} failed with status ${response.status}`,
+      response.status,
+      detail,
+    )
+  }
+}
+
 /** `GET /api/v1/components` — the sidebar's Pinned quick-links and the
  * topbar's worst-of overall status pill both derive from this. */
 export function getComponents(): Promise<ComponentDTO[]> {
@@ -207,4 +235,24 @@ export function getComponentAvailability(
  * plus a list refresh rather than crashing. */
 export function postDecision(proposalId: number, body: DecisionRequest): Promise<DecisionResponse> {
   return postJson<DecisionResponse>(`/v1/decisions/${encodeURIComponent(String(proposalId))}`, body)
+}
+
+/** `POST /api/v1/maintenance` (STORY-132, **201**) — schedule a new
+ * maintenance window. `starts_at`/`ends_at` MUST already be tz-aware UTC ISO
+ * strings (callers convert a `datetime-local` value via
+ * `new Date(value).toISOString()` before calling this). Rejects with
+ * `ApiError.status === 422` on the server's field-validation failures
+ * (naive/non-UTC datetime, `ends_at <= starts_at`, blank `component_id`) —
+ * callers map `.detail` to the offending field (plan §Maintenance edge
+ * behavior's ordered match). */
+export function postMaintenance(body: CreateMaintenanceRequest): Promise<MaintenanceWindowDTO> {
+  return postJson<MaintenanceWindowDTO>('/v1/maintenance', body)
+}
+
+/** `DELETE /api/v1/maintenance/{window_id}` (STORY-132, **204**) — delete a
+ * scheduled window. NOT idempotent: deleting an already-gone window rejects
+ * with `ApiError.status === 404` — callers map that to a non-destructive
+ * notice plus a list refresh rather than a silent success. */
+export function deleteMaintenance(windowId: number): Promise<void> {
+  return deleteRequest(`/v1/maintenance/${encodeURIComponent(String(windowId))}`)
 }

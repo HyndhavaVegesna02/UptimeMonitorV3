@@ -4,11 +4,12 @@ import { FIXTURE_DECISION_RESPONSE, FIXTURE_PROPOSALS } from '../mocks/handlers/
 import { FIXTURE_AVAILABILITY, FIXTURE_COMPONENT_AVAILABILITY } from '../mocks/handlers/availability'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_HISTORY } from '../mocks/handlers/history'
-import { FIXTURE_MAINTENANCE } from '../mocks/handlers/maintenance'
+import { FIXTURE_CREATED_MAINTENANCE_WINDOW, FIXTURE_MAINTENANCE } from '../mocks/handlers/maintenance'
 import { FIXTURE_TOPOLOGY } from '../mocks/handlers/topology'
 import { server } from '../mocks/server'
 import {
   ApiError,
+  deleteMaintenance,
   getApprovals,
   getAvailability,
   getComponentAvailability,
@@ -18,6 +19,7 @@ import {
   getMaintenance,
   getTopology,
   postDecision,
+  postMaintenance,
 } from './client'
 
 describe('getComponents', () => {
@@ -240,6 +242,108 @@ describe('postDecision', () => {
       name: 'ApiError',
       status: 404,
       detail: 'Proposal not found',
+    })
+  })
+})
+
+describe('postMaintenance', () => {
+  it('resolves the fixture created window on a 201 success', async () => {
+    await expect(
+      postMaintenance({
+        component_id: 'http-check',
+        starts_at: '2026-07-22T00:00:00Z',
+        ends_at: '2026-07-22T02:00:00Z',
+        reason: 'DB upgrade',
+        title: 'Planned DB maintenance',
+      }),
+    ).resolves.toEqual(FIXTURE_CREATED_MAINTENANCE_WINDOW)
+  })
+
+  it('POSTs a JSON body with Content-Type: application/json to /v1/maintenance', async () => {
+    let capturedUrl: string | undefined
+    let capturedMethod: string | undefined
+    let capturedContentType: string | null = null
+    let capturedBody: unknown
+    server.use(
+      http.post('/api/v1/maintenance', async ({ request }) => {
+        capturedUrl = request.url
+        capturedMethod = request.method
+        capturedContentType = request.headers.get('content-type')
+        capturedBody = await request.json()
+        return HttpResponse.json(FIXTURE_CREATED_MAINTENANCE_WINDOW, { status: 201 })
+      }),
+    )
+
+    await postMaintenance({
+      component_id: 'http-check',
+      starts_at: '2026-07-22T00:00:00Z',
+      ends_at: '2026-07-22T02:00:00Z',
+    })
+
+    expect(capturedUrl).toContain('/v1/maintenance')
+    expect(capturedMethod).toBe('POST')
+    expect(capturedContentType).toContain('application/json')
+    expect(capturedBody).toEqual({
+      component_id: 'http-check',
+      starts_at: '2026-07-22T00:00:00Z',
+      ends_at: '2026-07-22T02:00:00Z',
+    })
+  })
+
+  it('throws an ApiError carrying the 422 detail string (end-before-start)', async () => {
+    server.use(
+      http.post('/api/v1/maintenance', () =>
+        HttpResponse.json({ detail: 'ends_at must be strictly greater than starts_at.' }, { status: 422 }),
+      ),
+    )
+
+    await expect(
+      postMaintenance({
+        component_id: 'http-check',
+        starts_at: '2026-07-22T02:00:00Z',
+        ends_at: '2026-07-22T00:00:00Z',
+      }),
+    ).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 422,
+      detail: 'ends_at must be strictly greater than starts_at.',
+    })
+  })
+})
+
+describe('deleteMaintenance', () => {
+  it('resolves (void) on a 204 success, without attempting to parse a body', async () => {
+    await expect(deleteMaintenance(4)).resolves.toBeUndefined()
+  })
+
+  it('sends a DELETE to /v1/maintenance/{window_id}', async () => {
+    let capturedUrl: string | undefined
+    let capturedMethod: string | undefined
+    server.use(
+      http.delete('/api/v1/maintenance/:windowId', ({ request }) => {
+        capturedUrl = request.url
+        capturedMethod = request.method
+        return new HttpResponse(null, { status: 204 })
+      }),
+    )
+
+    await deleteMaintenance(4)
+
+    expect(capturedUrl).toContain('/v1/maintenance/4')
+    expect(capturedMethod).toBe('DELETE')
+  })
+
+  it('throws an ApiError carrying status 404 (already gone — delete is not idempotent)', async () => {
+    server.use(
+      http.delete('/api/v1/maintenance/:windowId', () =>
+        HttpResponse.json({ detail: 'Maintenance window not found' }, { status: 404 }),
+      ),
+    )
+
+    await expect(deleteMaintenance(999)).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 404,
+      detail: 'Maintenance window not found',
     })
   })
 })
