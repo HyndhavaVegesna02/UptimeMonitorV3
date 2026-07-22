@@ -4,29 +4,54 @@
   gap: var(--space-4);
 }
 
-.dashboard-page__mid-grid {
+/* STORY-138 AC1 — ONE shared 2-column grid for everything below the KPI
+   row (was two separate grids with divergent ratios: 1.85fr/1fr then
+   1.1fr/1fr, producing a ~145px gutter jump between rows). Named grid
+   lines (`main`/`side`) are the single source of truth for the split —
+   `.dashboard-page__col--main`/`--side` below declare their span against
+   these names rather than relying on source order, so there is no way for
+   a later edit to reintroduce a second, divergent ratio. `minmax(0, …)`
+   keeps a long table/chart from blowing out its column (standard grid
+   practice). `align-items: start` — each column is its own independent
+   flex stack (below) that ends at its own natural height; nothing is
+   force-stretched into blank space (AC2: "not a stretch hack that leaves
+   whitespace"). */
+.dashboard-page__content-grid {
   display: grid;
-  grid-template-columns: 1.85fr 1fr;
-  gap: var(--space-4);
-  align-items: stretch;
-}
-
-.dashboard-page__side-stack {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-}
-
-.dashboard-page__bottom-grid {
-  display: grid;
-  grid-template-columns: 1.1fr 1fr;
+  grid-template-columns: [main-start] minmax(0, 2fr) [main-end side-start] minmax(0, 1fr) [side-end];
   gap: var(--space-4);
   align-items: start;
 }
 
+/* STORY-138 AC2 — the content REBALANCE: the main column stacks the two
+   naturally-large regions (the chart, and the up-to-6-row recent-checks
+   feed); the side column stacks the three naturally-compact regions (probe
+   locations, the single soonest-maintenance-window summary, and the
+   components roster) so its total height tracks the main column's more
+   closely than the previous 1-panel-vs-1-panel per-row pairing did — a
+   deliberate composition, not a stretch hack. */
+.dashboard-page__col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.dashboard-page__col--main {
+  grid-column: main-start / main-end;
+}
+
+.dashboard-page__col--side {
+  grid-column: side-start / side-end;
+}
+
 @media (max-width: 1080px) {
-  .dashboard-page__mid-grid,
-  .dashboard-page__bottom-grid {
+  .dashboard-page__content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-page__col--main,
+  .dashboard-page__col--side {
+    grid-column: auto;
   }
 }

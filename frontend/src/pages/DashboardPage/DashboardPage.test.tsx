@@ -1,11 +1,16 @@
 import { render, screen, within } from '@testing-library/react'
 import { HttpResponse, http } from 'msw'
+import { readFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import type { ComponentDTO } from '../../api/types'
 import { server } from '../../mocks/server'
 import { AppRoutes } from '../../routes'
 import { DashboardPage } from './DashboardPage'
+
+const dashboardCss = readFileSync(resolve(dirname(fileURLToPath(import.meta.url)), 'DashboardPage.css'), 'utf-8')
 
 /** The real captured single-component sample (live-api-samples.md) — the
  * shared default `componentsHandlers`/`approvalsHandlers` fixtures serve a
@@ -116,5 +121,39 @@ describe('DashboardPage', () => {
     )
 
     expect(await screen.findAllByRole('heading', { level: 1 })).toHaveLength(1)
+  })
+
+  it('lays out the response-time chart and recent-checks feed in one column, and probe locations/maintenance/components roster in the other — both inside ONE shared content grid, not two mismatched per-row grids (STORY-138 AC1/AC2)', async () => {
+    useRealComponents()
+    const { container } = renderDashboard()
+    await screen.findByText('Recent checks')
+
+    expect(container.querySelectorAll('.dashboard-page__content-grid')).toHaveLength(1)
+    expect(container.querySelector('.dashboard-page__mid-grid')).toBeNull()
+    expect(container.querySelector('.dashboard-page__bottom-grid')).toBeNull()
+
+    const mainCol = container.querySelector('.dashboard-page__col--main') as HTMLElement
+    const sideCol = container.querySelector('.dashboard-page__col--side') as HTMLElement
+    expect(mainCol).toBeInTheDocument()
+    expect(sideCol).toBeInTheDocument()
+
+    expect(within(mainCol).getByRole('heading', { name: 'Response time' })).toBeInTheDocument()
+    expect(within(mainCol).getByRole('heading', { name: 'Recent checks' })).toBeInTheDocument()
+    expect(within(sideCol).getByRole('heading', { name: 'Probe locations' })).toBeInTheDocument()
+    expect(within(sideCol).getByRole('heading', { name: 'Upcoming maintenance' })).toBeInTheDocument()
+    expect(within(sideCol).getByRole('heading', { name: 'Components' })).toBeInTheDocument()
+  })
+
+  // Necessary-but-not-sufficient (tests-that-lie #7): jsdom cannot compute
+  // real layout/geometry. This asserts the SOURCE TEXT declares one shared
+  // grid + one responsive collapse rule, never proof of the live pixel
+  // gutter/void — that is the reality gate's job (AC1/AC2/AC5).
+  it('CSS: defines exactly one shared content-grid (no divergent-ratio mid/bottom-grid pair) with a single collapse breakpoint', () => {
+    expect(dashboardCss).toMatch(/\.dashboard-page__content-grid\s*\{[^}]*grid-template-columns/)
+    expect(dashboardCss).not.toMatch(/\.dashboard-page__mid-grid/)
+    expect(dashboardCss).not.toMatch(/\.dashboard-page__bottom-grid/)
+    expect(dashboardCss).not.toMatch(/\.dashboard-page__side-stack/)
+    expect(dashboardCss.match(/grid-template-columns:\s*\[main-start\]/g)?.length).toBe(1)
+    expect(dashboardCss).toMatch(/@media \(max-width: 1080px\)/)
   })
 })

@@ -119,30 +119,29 @@ export function DashboardPage() {
         )
       })}
 
-      <div className="dashboard-page__mid-grid">
-        <Panel title="Response time">
+      <div className="dashboard-page__content-grid">
+        <div className="dashboard-page__col dashboard-page__col--main">
+          <Panel title="Response time">
+            {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
+              <ResponseTimeChart observations={combinedHistory} windowLabel={WINDOW_LABEL} />
+            ))}
+          </Panel>
           {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
-            <ResponseTimeChart observations={combinedHistory} windowLabel={WINDOW_LABEL} />
+            <RecentChecksFeed rows={deriveRecentChecks(components, signalsData, now, RECENT_CHECKS_LIMIT)} />
           ))}
-        </Panel>
+        </div>
 
-        <div className="dashboard-page__side-stack">
+        <div className="dashboard-page__col dashboard-page__col--side">
           {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
             <ProbeLocationsPanel locations={deriveProbeLocations(combinedHistory)} />
           ))}
           {renderRegion(maintenancePhase, maintenanceError, () => maintenanceFetch.retry(), () => (
             <MaintenancePanel windows={maintenanceWindows} />
           ))}
+          {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
+            <ComponentsRoster rows={deriveRoster(components, signalsData)} />
+          ))}
         </div>
-      </div>
-
-      <div className="dashboard-page__bottom-grid">
-        {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
-          <RecentChecksFeed rows={deriveRecentChecks(components, signalsData, now, RECENT_CHECKS_LIMIT)} />
-        ))}
-        {renderRegion(signalsPhase, signalsError, retrySignalsRegion, () => (
-          <ComponentsRoster rows={deriveRoster(components, signalsData)} />
-        ))}
       </div>
     </div>
   )
