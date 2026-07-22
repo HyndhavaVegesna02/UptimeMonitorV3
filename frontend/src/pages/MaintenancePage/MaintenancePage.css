@@ -1,0 +1,31 @@
+.maintenance-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.maintenance-page__description {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-base);
+  max-width: 70ch;
+}
+
+.maintenance-page__list-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.maintenance-page__list-heading {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.maintenance-page__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
