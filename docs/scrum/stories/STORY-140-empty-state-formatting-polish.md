@@ -29,3 +29,24 @@ filed as STORY-144; this story only improves the client-side treatment.
 ## Design / skills
 Honor the mandated skills. The "No data yet" treatment should reuse/extend the design-system
 EmptyState idiom at the KPI grain, not a one-off string.
+
+## History
+- 2026-07-22 (implementer): AC1 — `EmptyState` gained a `compact` modifier (no block padding,
+  left-aligned) so it can embed inside a `SummaryCard`'s value area; `SummaryCard` gained an
+  `empty?: { message; detail? }` prop that swaps the value/unit/sub block for a compact
+  `EmptyState` when a KPI's underlying value is genuinely `null` (a degenerate no-data window).
+  `KpiRow`'s availability and response-time cards now render "No data yet" via this prop instead
+  of a bare "— %"/"— ms" plus a misleading "Across 0 probe locations" sub line.
+- 2026-07-22 (implementer): AC2 — `formatObservedAt` (History grid's timestamp column) now
+  appends an explicit `" UTC"` label, matching the convention `formatWindowRange` (Maintenance
+  card) already established for its own hand-formatted (`getUTC*`) fields. Confirmed
+  `formatObservedAt` was already formatting UTC fields (never `toLocaleString`), so the "UTC"
+  label is truthful, not a guess.
+- 2026-07-22 (implementer): AC3 — `locationLabel` now renders a `#`-prefixed short id (`#0047`)
+  instead of the ellipsis-prefixed tail (`…0047`) — a readable "deliberate short id" idiom (same
+  as a ticket/PR number) rather than "truncated, something hidden". **True human-readable
+  location names remain blocked**: the `/api/v1` `ObservationDTO.location` field is a raw
+  synthetic-location id with no accompanying name, and this story does NOT invent one
+  client-side. The real fix — a backend `location_name` field — is filed as **STORY-144**
+  (backend, not in this sprint's scope). Recorded here per the checklist's "drops/blocks a
+  user-facing capability" rule, and as a doc-comment on `locationLabel.ts` itself.
