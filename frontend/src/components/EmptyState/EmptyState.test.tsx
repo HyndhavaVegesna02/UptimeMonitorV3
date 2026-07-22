@@ -17,4 +17,14 @@ describe('EmptyState', () => {
     const { container } = render(<EmptyState message="No components yet" />)
     expect(container.querySelector('.empty-state__detail')).toBeNull()
   })
+
+  it('renders a compact modifier for embedding inside a tight grain (e.g. a KPI card) — STORY-140 AC1', () => {
+    const { container } = render(<EmptyState message="No data yet" compact />)
+    expect(container.querySelector('.empty-state')).toHaveClass('empty-state--compact')
+  })
+
+  it('is not compact by default (the full centered block stays the default for list-rendering surfaces)', () => {
+    const { container } = render(<EmptyState message="No components yet" />)
+    expect(container.querySelector('.empty-state')).not.toHaveClass('empty-state--compact')
+  })
 })
