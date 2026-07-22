@@ -1,0 +1,93 @@
+.maintenance-window-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.maintenance-window-card__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.maintenance-window-card__component {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.maintenance-window-card__range {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.maintenance-window-card__reason {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
+.maintenance-window-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.maintenance-window-card__delete-button:hover:not(:disabled) {
+  border-color: var(--color-neg-text);
+  background: var(--color-neg-tint);
+  color: var(--color-neg-text);
+}
+
+.maintenance-window-card__confirm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-surface-subtle);
+  border-radius: var(--radius-chip);
+}
+
+.maintenance-window-card__confirm-prompt {
+  margin: 0;
+  font-size: var(--font-size-base);
+  color: var(--color-text-secondary);
+}
+
+.maintenance-window-card__notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-chip);
+  font-size: var(--font-size-sm);
+}
+
+.maintenance-window-card__notice--info {
+  color: var(--color-degraded-text);
+  background: var(--color-degraded-tint);
+}
+
+.maintenance-window-card__notice--error {
+  color: var(--color-down-text);
+  background: var(--color-down-tint);
+}
+
+/* The confirm block's entrance is decorative only, skipped entirely under
+   prefers-reduced-motion (state change still happens instantly —
+   emil-design-eng). No motion on the notice text or the submitting label
+   swap (never animate a data-refresh-adjacent state change). */
+@media (prefers-reduced-motion: no-preference) {
+  .maintenance-window-card__confirm {
+    animation: maintenance-window-card-confirm-reveal var(--duration-control) var(--ease-out);
+  }
+
+  @keyframes maintenance-window-card-confirm-reveal {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+}
