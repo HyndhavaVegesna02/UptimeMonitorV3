@@ -3,6 +3,8 @@ import type {
   ComponentAvailabilityDTO,
   ComponentDTO,
   ComponentTopologyDTO,
+  DecisionRequest,
+  DecisionResponse,
   MaintenanceWindowDTO,
   ObservationDTO,
   ProposalDTO,
@@ -80,6 +82,29 @@ async function getJson<T>(path: string): Promise<T> {
   let response: Response
   try {
     response = await fetch(`${API_BASE_URL}${path}`)
+  } catch {
+    throw new ApiError(`Network error while requesting ${path}`)
+  }
+
+  return readOkJson<T>(response, path)
+}
+
+/**
+ * POST counterpart to `getJson` (STORY-131 — the sprint's first mutating
+ * page introduces the write path). Same `readOkJson`/`ApiError` handling as
+ * the GET path, so `.status`/`.detail` are populated identically on a
+ * non-2xx response — callers (e.g. `postDecision`) switch on `.status` (409
+ * conflict, 404 not-found) exactly like a GET caller would. Reused as-is by
+ * STORY-132's Maintenance mutations.
+ */
+async function postJson<T>(path: string, body: unknown): Promise<T> {
+  let response: Response
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    })
   } catch {
     throw new ApiError(`Network error while requesting ${path}`)
   }
@@ -172,4 +197,14 @@ export function getComponentAvailability(
   return getJson<ComponentAvailabilityDTO>(
     `/v1/availability/component/${encodeURIComponent(componentId)}?${params.toString()}`,
   )
+}
+
+/** `POST /api/v1/decisions/{proposal_id}` (STORY-131 — note: **decisions**,
+ * not nested under `/approvals`) — approve or reject an open proposal.
+ * Rejects with `ApiError.status === 409` (`ProposalNotOpenError`: already
+ * resolved, lost race, or a double-submit) or `404` (`ProposalNotFoundError`:
+ * no longer exists) — callers map both to a friendly, non-destructive notice
+ * plus a list refresh rather than crashing. */
+export function postDecision(proposalId: number, body: DecisionRequest): Promise<DecisionResponse> {
+  return postJson<DecisionResponse>(`/v1/decisions/${encodeURIComponent(String(proposalId))}`, body)
 }

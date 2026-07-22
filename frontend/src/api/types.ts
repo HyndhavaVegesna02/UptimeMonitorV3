@@ -104,6 +104,29 @@ export interface ComponentTopologyDTO {
 }
 
 /**
+ * Mirrors `backend/src/api/v1/decisions/models.py::DecisionRequest`
+ * (STORY-131) — the body of `POST /api/v1/decisions/{proposal_id}`. `action`
+ * must be exactly `"approve"`/`"reject"` and `actor` non-blank, else the API
+ * 422s (the UI only ever sends valid values — `ApprovalsPage` never lets a
+ * blank/other value reach this type).
+ */
+export interface DecisionRequest {
+  action: 'approve' | 'reject'
+  actor: string
+  notes?: string | null
+}
+
+/**
+ * Mirrors `backend/src/api/v1/decisions/models.py::DecisionResponse`
+ * (STORY-131) — the 200 response of `POST /api/v1/decisions/{proposal_id}`.
+ */
+export interface DecisionResponse {
+  proposal_id: number
+  state: string
+  resolved_at: string
+}
+
+/**
  * `AvailabilityDTO` plus the `signal_key` it was computed for (STORY-129) —
  * the per-signal children of `ComponentAvailabilityDTO.signals`. Carries no
  * display name (that's joined from `TopologySignalDTO.name` by `signal_key`).

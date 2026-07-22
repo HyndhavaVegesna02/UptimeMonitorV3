@@ -1,6 +1,6 @@
 import { HttpResponse, http } from 'msw'
 import { describe, expect, it } from 'vitest'
-import { FIXTURE_PROPOSALS } from '../mocks/handlers/approvals'
+import { FIXTURE_DECISION_RESPONSE, FIXTURE_PROPOSALS } from '../mocks/handlers/approvals'
 import { FIXTURE_AVAILABILITY, FIXTURE_COMPONENT_AVAILABILITY } from '../mocks/handlers/availability'
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_HISTORY } from '../mocks/handlers/history'
@@ -17,6 +17,7 @@ import {
   getHistoryWindow,
   getMaintenance,
   getTopology,
+  postDecision,
 } from './client'
 
 describe('getComponents', () => {
@@ -180,6 +181,65 @@ describe('getComponentAvailability', () => {
     await expect(getComponentAvailability('unknown-component', { since, until })).rejects.toMatchObject({
       name: 'ApiError',
       status: 404,
+    })
+  })
+})
+
+describe('postDecision', () => {
+  it('resolves the fixture DecisionResponse on success', async () => {
+    await expect(postDecision(1, { action: 'approve', actor: 'dashboard-operator' })).resolves.toEqual(
+      FIXTURE_DECISION_RESPONSE,
+    )
+  })
+
+  it('POSTs a JSON body with Content-Type: application/json to /v1/decisions/{proposal_id}', async () => {
+    let capturedUrl: string | undefined
+    let capturedMethod: string | undefined
+    let capturedContentType: string | null = null
+    let capturedBody: unknown
+    server.use(
+      http.post('/api/v1/decisions/:proposalId', async ({ request }) => {
+        capturedUrl = request.url
+        capturedMethod = request.method
+        capturedContentType = request.headers.get('content-type')
+        capturedBody = await request.json()
+        return HttpResponse.json(FIXTURE_DECISION_RESPONSE)
+      }),
+    )
+
+    await postDecision(7, { action: 'reject', actor: 'dashboard-operator', notes: 'flaky check' })
+
+    expect(capturedUrl).toContain('/v1/decisions/7')
+    expect(capturedMethod).toBe('POST')
+    expect(capturedContentType).toContain('application/json')
+    expect(capturedBody).toEqual({ action: 'reject', actor: 'dashboard-operator', notes: 'flaky check' })
+  })
+
+  it('throws an ApiError carrying status 409 (proposal not open / lost race / double-submit)', async () => {
+    server.use(
+      http.post('/api/v1/decisions/:proposalId', () =>
+        HttpResponse.json({ detail: 'Proposal is not open' }, { status: 409 }),
+      ),
+    )
+
+    await expect(postDecision(1, { action: 'approve', actor: 'dashboard-operator' })).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 409,
+      detail: 'Proposal is not open',
+    })
+  })
+
+  it('throws an ApiError carrying status 404 (proposal no longer exists)', async () => {
+    server.use(
+      http.post('/api/v1/decisions/:proposalId', () =>
+        HttpResponse.json({ detail: 'Proposal not found' }, { status: 404 }),
+      ),
+    )
+
+    await expect(postDecision(999, { action: 'reject', actor: 'dashboard-operator' })).rejects.toMatchObject({
+      name: 'ApiError',
+      status: 404,
+      detail: 'Proposal not found',
     })
   })
 })
