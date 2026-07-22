@@ -165,3 +165,24 @@ export interface ComponentAvailabilityDTO {
   rollup: AvailabilityDTO
   signals: SignalAvailabilityDTO[]
 }
+
+/**
+ * Mirrors `backend/src/api/v1/publications/models.py::PublicationDTO`
+ * (STORY-133) — `GET /api/v1/publications`'s per-attempt shape, most-recent-
+ * first, capped ~50 server-side (no pagination). `status` is the raw vendor
+ * status vocabulary (like `ComponentDTO.status`) — map with
+ * `api/statusMapping.ts::toHealthStatus`, NOT the observation health mapper.
+ * `outcome` is a SEPARATE concept from `status` (the Statuspage-call result
+ * vs the published health) — never conflate the two. `proposal_id`/`author`
+ * are nullable; there is NO `incident_id` field (STORY-081 unbuilt) — do not
+ * invent one.
+ */
+export interface PublicationDTO {
+  id: number
+  component_id: string
+  status: string
+  published_at: string
+  proposal_id: number | null
+  outcome: 'succeeded' | 'failed'
+  author: string | null
+}

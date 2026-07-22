@@ -5,6 +5,7 @@ import { FIXTURE_AVAILABILITY, FIXTURE_COMPONENT_AVAILABILITY } from '../mocks/h
 import { FIXTURE_COMPONENTS } from '../mocks/handlers/components'
 import { FIXTURE_HISTORY } from '../mocks/handlers/history'
 import { FIXTURE_CREATED_MAINTENANCE_WINDOW, FIXTURE_MAINTENANCE } from '../mocks/handlers/maintenance'
+import { FIXTURE_PUBLICATIONS, FIXTURE_PUBLICATIONS_TIMELINE } from '../mocks/handlers/publications'
 import { FIXTURE_TOPOLOGY } from '../mocks/handlers/topology'
 import { server } from '../mocks/server'
 import {
@@ -17,6 +18,7 @@ import {
   getHistory,
   getHistoryWindow,
   getMaintenance,
+  getPublications,
   getTopology,
   postDecision,
   postMaintenance,
@@ -345,6 +347,18 @@ describe('deleteMaintenance', () => {
       status: 404,
       detail: 'Maintenance window not found',
     })
+  })
+})
+
+describe('getPublications', () => {
+  it('resolves an empty array by default (the real captured sample — nothing published yet)', async () => {
+    await expect(getPublications()).resolves.toEqual(FIXTURE_PUBLICATIONS)
+  })
+
+  it('resolves the fixture timeline as returned, without re-sorting it', async () => {
+    server.use(http.get('/api/v1/publications', () => HttpResponse.json(FIXTURE_PUBLICATIONS_TIMELINE)))
+
+    await expect(getPublications()).resolves.toEqual(FIXTURE_PUBLICATIONS_TIMELINE)
   })
 })
 

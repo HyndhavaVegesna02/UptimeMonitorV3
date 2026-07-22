@@ -9,6 +9,7 @@ import type {
   MaintenanceWindowDTO,
   ObservationDTO,
   ProposalDTO,
+  PublicationDTO,
 } from './types'
 
 /**
@@ -255,4 +256,12 @@ export function postMaintenance(body: CreateMaintenanceRequest): Promise<Mainten
  * notice plus a list refresh rather than a silent success. */
 export function deleteMaintenance(windowId: number): Promise<void> {
   return deleteRequest(`/v1/maintenance/${encodeURIComponent(String(windowId))}`)
+}
+
+/** `GET /api/v1/publications` (STORY-133) — the Statuspage publish-attempt
+ * timeline, most-recent-first as returned, capped ~50 server-side (no
+ * pagination) — callers render the array in the order received, never
+ * re-sorting it. */
+export function getPublications(): Promise<PublicationDTO[]> {
+  return getJson<PublicationDTO[]>('/v1/publications')
 }
