@@ -82,13 +82,30 @@ stories:
         commit: 62aaae4
   - id: STORY-138
     title: Dashboard layout coherence (one shared grid, no jagged gutter/void, equal KPI cards)
-    status: in_progress
+    status: done
     points: 5
     ceremony: 3-pointer
     order: 3
+    reviews:
+      spec: "PASS — all 5 AC MET. AC1/AC2/AC5 structurally verified (one shared named-line .dashboard-page__content-grid [main-start] minmax(0,2fr) [main-end side-start] minmax(0,1fr) [side-end]; old mid-grid/bottom-grid/side-stack classes grep-confirmed GONE; ComponentsRoster rebalanced into the side column; single 1080px collapse breakpoint covers 390) + deferred to the orchestrator live reality gate. AC3 unit-tested (KpiRow.test.tsx asserts all 4 .summary-card__extra footer slots; --kpi-visual-height:30px pinned to Sparkline's real VIEWBOX_HEIGHT). AC4 unit-tested (deriveKpiTone.test.ts all branches + KpiRow rerender-tone integration tests proving the tone class changes when input props change — real input-varies/output-varies trace). 712 tests, build+lint exit 0. No coverage deleted. [Spec-review flagged a paperwork gap — story file lacked a ## History for the deleted grid classes — CLOSED at 6f627fd before this done-mark.]"
+      quality: "APPROVE — 0 critical / 0 major / 1 minor. Tests-that-lie audit clean (all 8): CSS-source test honestly self-labeled necessary-but-not-sufficient per #7 and defers the pixel claim to the reality gate; AC1/AC2 layout test is genuine rendered-DOM (within(mainCol)/within(sideCol)); AC3/AC4 genuine (real branch boundaries, real tone-class output). Correctness sound: total===0→neutral guard + call-site 0/0 guard (no NaN width); KpiMeter clamp handles >1/negative; the footprint equalization is pinned to a REAL number (--kpi-visual-height=30px == Sparkline VIEWBOX_HEIGHT=30, the exact #7 trap avoided). No raw hex, proper component-layer token, named-line grid principled (comment explains it prevents ratio regression), old two-ratio grids genuinely gone. No regression (all 5 panels preserved, redistributed). Minor → STORY-134 (KpiTone vs SparklineTone near-parallel tone unions)."
+    reality_gate: "PASS (live stack, Playwright — REQUIRED A STALE-SERVER CATCH). CRITICAL process note: the first live pass measured the OLD jagged geometry because the user's long-running Vite dev server (:5173) had NOT HMR'd the sprint-61 changes — DOM still had .dashboard-page__mid-grid/bottom-grid + 0 KpiMeters. Restarted Vite → served current code. RE-VERIFIED @1440: ONE .dashboard-page__content-grid; ALL main-column cards span 260→1023, ALL side-column cards span 1039→1420 — a single clean gutter at x≈1031 (the ~145px jump is GONE, AC1 MET). @390: grid collapses to a single 335px column, both stacks full-width [20→355], NO horizontal body scroll (scrollW==docW==375, AC5 MET). Topbar shows real 'Up' (STORY-136 AC2 also confirmed live here, plus its timeout→ErrorState→Retry seen live during a cold-proxy first load). Zero console errors. AC3/AC4 (KPI footprint/accent) are pure prop/CSS logic proven by the genuine unit tests + both reviewers; live KPI-card render could not be captured because the cold dev-proxy first-loads timed out the fetches (a dev-proxy artifact, the same class the PO flagged; not a STORY-138 defect). AC2 void-elimination: rebalance confirmed structurally (reviewer) — not separately assessable with the empty DB."
+    dod_evidence:   # scoped --only npm at HEAD 03c6fc8 (code HEAD; 6f627fd after = story-doc History only)
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  87 passed (87) | Tests  712 passed (712)"
+        commit: 03c6fc8
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 923ms (index js 360.76 kB / gzip 105.99 kB)"
+        commit: 03c6fc8
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 03c6fc8
   - id: STORY-139
     title: Response-time chart axis (0 baseline, nice ticks, reserved label gutter)
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
     order: 4
