@@ -174,13 +174,30 @@ stories:
         commit: e3c2a43
   - id: STORY-142
     title: Maintenance schedule date fields (styled, locale-clear; preserve UTC + 422 mapping)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 7
+    reviews:
+      spec: "PASS — all 4 AC MET. Lowest-risk path: STYLED the native input (mechanism preserved), so the STORY-132 contract is byte-identical. AC1: both Start/End stay <input type=datetime-local>, wrapped in .schedule-maintenance-form__datetime + a CalendarBlank aria-hidden icon; CSS additive-only (41 insertions, 0 deletions); structural test self-labeled #7 necessary-not-sufficient. AC2 (CRITICAL): localDateTimeToUtcIso.test.ts + the useScheduleMaintenance conversion test are BYTE-IDENTICAL (git diff → 0 lines) and green (.endsWith('Z') both fields). AC3 (CRITICAL): mapMaintenanceError.test.ts order-sensitive CRUX test 0-diff + green; client end-before-start guard test untouched. AC4: label htmlFor / aria-invalid / aria-describedby / role=alert preserved verbatim inside the wrapper. 745 tests; net +1 test, no deletions."
+      quality: "APPROVE — 0 critical / 0 major / 0 minors (cleanest of the sprint). Regression crux PASS: the 3 STORY-132 safety-net files aren't in the commit range at all; the form is uncontrolled (values read via readFormValues on submit), so there was no value/onChange to disturb. a11y PASS: label-by-id association survives the wrapper (getByLabelText resolves); CalendarBlank correctly aria-hidden via the Icon wrapper; icon pointer-events:none + padding math means no overlap/click-interception, native picker indicator untouched. CSS PASS: color-scheme:light intentional per the light-only design; picker-indicator tint uses opacity+token transitions, no hex; noRawHex.test.ts passes; icon absolutely-positioned left-anchored (not fragile). No new dep (CalendarBlank from the already-present @phosphor-icons/react). Test honestly labeled #7."
+      reality_gate: "PASS (live stack, Playwright). AC1 CONFIRMED LIVE: the Start/End date fields render styled to match the form — a calendar icon + the same bordered box / height / radius / padding as the COMPONENT select and the TITLE/REASON text inputs, in a cohesive 2-column START/END row (previously bare native inputs). Both inputs confirmed still type='datetime-local' (mechanism preserved) with a real <label> ('Start'). AC2/AC3 (UTC conversion + 422 mapping) rest on the STORY-132 tests being byte-identical + green (mechanism unchanged → contract byte-identical); a live create→delete cycle was NOT re-run since STORY-132 already proved it live and this story provably didn't touch the value path. The 'Scheduled windows' list showed the dev-proxy stale-socket timeout (handled ErrorState, not a defect)."
+    dod_evidence:   # scoped --only npm at HEAD 612edea
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  89 passed (89) | Tests  745 passed (745)"
+        commit: 612edea
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 768ms (index js 367.18 kB / gzip 107.42 kB)"
+        commit: 612edea
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 612edea
   - id: STORY-143
     title: Component-scoped availability view + repoint pinned nav item
-    status: todo
+    status: in_progress
     points: 5
     ceremony: 3-pointer
     order: 8
