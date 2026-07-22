@@ -151,13 +151,30 @@ stories:
         commit: 3dd7fab
   - id: STORY-141
     title: Shell interaction polish (notifications bell panel, mobile drawer close+header, styleguide states)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 6
+    reviews:
+      spec: "PASS — all AC MET (AC4 live clause deferred to orchestrator, DONE). AC1: NotificationsButton.test.tsx (7 userEvent cases) — opens, aria-expanded/haspopup/controls with real id↔panel match, focus into panel, Escape closes+refocuses trigger, outside-click (real sibling button) closes, inside-click does NOT, re-click toggles; dead <Button> removed from Topbar. AC2: Sidebar.test.tsx — brand 'Uptime Monitor' + close button aria-label 'Close menu', click calls onCloseMobile; backdrop/Escape untouched; class-selector justified by jsdom media-query (matches pre-existing Topbar getMobileToggle precedent). AC3: --start row modifier (align-items:flex-start) on the states row only, Panel row asserted unchanged, no primitive files touched; structural test self-labeled #7 necessary-not-sufficient, visual deferred to reality gate. 744 tests; test files purely additive (no deletions)."
+      quality: "APPROVE — 0 critical / 0 major / 2 minors. a11y crux sound: focus restoration verified on ALL close paths (Escape→refocus trigger; re-click→focus stays; outside-click→focus follows the click, correct non-modal model; inside-click→stays open). Correctly non-modal (no aria-modal/trap — right for an empty dismissible popover); role=dialog + aria-haspopup=dialog + aria-label internally consistent (APG-conformant). No setState-after-unmount (listeners keyed [open,close], torn down in cleanup; optional-chaining guard). forwardRef/querySelector workaround ROBUST — selectors target attributes the component sets, forwarded to Button/Panel ROOT via {...rest} (verified), not internal DOM shape. Tests genuine (real userEvent + document.activeElement). Tokens only (13 confirmed), no raw hex; always-render+CSS-gate matches sidebar toggle convention; no regressions. Minors → STORY-134 (outside-click refocus-then-native-focus redundancy; Tab-out doesn't dismiss non-modal popover)."
+    reality_gate: "PASS (live stack, Playwright, on a freshly-restarted dev server serving committed code — verified). AC1 bell CONFIRMED LIVE: click opens the popover (aria-expanded true, role=dialog, 'No notifications' empty state, focus moved into the panel); Escape closes it AND returns focus to the bell trigger (aria-expanded false). AC2 mobile drawer @390 CONFIRMED LIVE: drawer shows a 'Uptime Monitor' brand header + an explicit close (X) button (aria-label 'Close menu'); clicking it dismisses the drawer (aside translated off-screen to left=-320, backdrop gone, focus returned to the hamburger). AC3 styleguide CONFIRMED LIVE: the Loading/Error/Empty states row content now left-aligns to x=196 — identical to EVERY sibling section (Buttons/StatusBadge/Sparkline all 196); its align-items is flex-start vs the siblings' rows. Console CLEAN (0 errors) on fresh committed code. NOTE: a transient 'Button is not defined @ Topbar.tsx:111' + some /api 500s appeared earlier in the session — both proven STALE artifacts (committed Topbar.tsx is 82 lines with ZERO Button references and passes tsc -b + 744 tests; API re-probed 200; a dev-server restart cleared the HMR drift and the fresh load is clean). Same dev-server HMR/stale-socket class already documented for STORY-138."
+    dod_evidence:   # scoped --only npm at HEAD e3c2a43
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  89 passed (89) | Tests  744 passed (744)"
+        commit: e3c2a43
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 859ms (index js 364.68 kB / gzip 106.98 kB)"
+        commit: e3c2a43
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: e3c2a43
   - id: STORY-142
     title: Maintenance schedule date fields (styled, locale-clear; preserve UTC + 422 mapping)
-    status: todo
+    status: in_progress
     points: 3
     ceremony: 3-pointer
     order: 7
