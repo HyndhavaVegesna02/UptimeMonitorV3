@@ -1,0 +1,48 @@
+.publications-timeline__scroll {
+  overflow-x: auto;
+}
+
+.publications-timeline__table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: var(--font-size-base);
+  font-variant-numeric: tabular-nums;
+}
+
+.publications-timeline__table th,
+.publications-timeline__table td {
+  padding: var(--space-2);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.publications-timeline__table th {
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+}
+
+.publications-timeline__table tbody tr {
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--duration-control) var(--ease-out);
+}
+
+.publications-timeline__table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.publications-timeline__table tbody tr:hover {
+  background: var(--color-surface-hover);
+}
+
+.publications-timeline__proposal,
+.publications-timeline__author {
+  color: var(--color-text-secondary);
+}
