@@ -1,0 +1,34 @@
+.outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 2px var(--space-2);
+  border-radius: var(--badge-radius);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+}
+
+.outcome-chip__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.outcome-chip--succeeded {
+  color: var(--color-pos-text);
+  background: var(--color-pos-tint);
+}
+
+.outcome-chip--succeeded .outcome-chip__dot {
+  background: var(--color-pos);
+}
+
+.outcome-chip--failed {
+  color: var(--color-neg-text);
+  background: var(--color-neg-tint);
+}
+
+.outcome-chip--failed .outcome-chip__dot {
+  background: var(--color-neg);
+}
