@@ -85,4 +85,27 @@ describe('KpiRow', () => {
     render(<KpiRow {...DEFAULT_PROPS} />)
     expect(screen.getByRole('region', { name: 'Key metrics' })).toHaveClass('stagger')
   })
+
+  it('gives every one of the 4 KPI cards a footer visual — none left with a visibly empty footprint vs its siblings (STORY-138 AC3)', () => {
+    const { container } = render(<KpiRow {...DEFAULT_PROPS} />)
+    expect(container.querySelectorAll('.summary-card__extra')).toHaveLength(4)
+  })
+
+  it('accents "Components healthy" by rule — negative when unhealthy, positive when all up (STORY-138 AC4)', () => {
+    const { container, rerender } = render(
+      <KpiRow {...DEFAULT_PROPS} componentsHealthy={2} componentsTotal={3} />,
+    )
+    expect(container.querySelector('.kpi-meter__fill--negative')).toBeInTheDocument()
+
+    rerender(<KpiRow {...DEFAULT_PROPS} componentsHealthy={3} componentsTotal={3} />)
+    expect(container.querySelector('.kpi-meter__fill--positive')).toBeInTheDocument()
+  })
+
+  it('accents "Pending approvals" by rule — accent when something is pending, neutral when the queue is empty (STORY-138 AC4)', () => {
+    const { container, rerender } = render(<KpiRow {...DEFAULT_PROPS} pendingApprovals={0} />)
+    expect(container.querySelector('.kpi-meter__fill--neutral')).toBeInTheDocument()
+
+    rerender(<KpiRow {...DEFAULT_PROPS} pendingApprovals={3} />)
+    expect(container.querySelector('.kpi-meter__fill--accent')).toBeInTheDocument()
+  })
 })

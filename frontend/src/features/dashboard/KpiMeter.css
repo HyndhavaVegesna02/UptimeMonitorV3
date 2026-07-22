@@ -1,0 +1,28 @@
+.kpi-meter {
+  width: 100%;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  overflow: hidden;
+}
+
+.kpi-meter__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+.kpi-meter__fill--positive {
+  background: var(--color-up);
+}
+
+.kpi-meter__fill--accent {
+  background: var(--color-accent);
+}
+
+.kpi-meter__fill--negative {
+  background: var(--color-down);
+}
+
+.kpi-meter__fill--neutral {
+  background: var(--color-text-muted);
+}

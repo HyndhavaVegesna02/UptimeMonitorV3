@@ -2,6 +2,8 @@ import { ClipboardText, Gauge, Stack, Timer } from '@phosphor-icons/react'
 import { formatLatency, formatPercent } from '../../lib/format'
 import { Sparkline } from '../../components/Sparkline/Sparkline'
 import { SummaryCard } from '../../components/SummaryCard/SummaryCard'
+import { approvalsTone, componentsHealthTone } from './deriveKpiTone'
+import { KpiMeter } from './KpiMeter'
 import './KpiRow.css'
 
 export interface KpiRowProps {
@@ -32,6 +34,14 @@ export interface KpiRowProps {
  * omitted: no prior-period baseline is fetched by this story, and
  * fabricating one would violate "never invent a number" (web-interface-
  * guidelines) more than an absent delta pill costs in polish.
+ *
+ * Every one of the 4 cards carries a footer visual (STORY-138 AC3/AC4): the
+ * two cards with a real time series (availability, response time) get a
+ * `Sparkline`; the two without one (components healthy, pending approvals)
+ * get a `KpiMeter` — same footprint, colored by the SAME rule-driven tone
+ * vocabulary (`deriveKpiTone.ts`), so no card is left looking emptier than
+ * its siblings and the accent coloring is deliberate, never an accidental
+ * green/blue/none mix.
  */
 export function KpiRow({
   availabilityPct,
@@ -71,7 +81,12 @@ export function KpiRow({
         value={componentsHealthy}
         unit={`/ ${componentsTotal}`}
         sub={componentsBreakdown ?? 'All components healthy'}
-      />
+      >
+        <KpiMeter
+          ratio={componentsTotal > 0 ? componentsHealthy / componentsTotal : 0}
+          tone={componentsHealthTone(componentsHealthy, componentsTotal)}
+        />
+      </SummaryCard>
 
       <SummaryCard
         icon={ClipboardText}
@@ -80,7 +95,9 @@ export function KpiRow({
         href="/approvals"
         attention={pendingApprovals > 0}
         sub={pendingApprovals > 0 ? 'Review needed' : 'Nothing awaiting review'}
-      />
+      >
+        <KpiMeter ratio={1} tone={approvalsTone(pendingApprovals)} />
+      </SummaryCard>
     </section>
   )
 }

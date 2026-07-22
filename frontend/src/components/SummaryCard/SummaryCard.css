@@ -120,4 +120,7 @@ a.summary-card:focus-visible {
 
 .summary-card__extra {
   margin-top: var(--space-2);
+  min-height: var(--kpi-visual-height);
+  display: flex;
+  align-items: center;
 }

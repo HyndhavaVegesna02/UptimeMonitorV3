@@ -221,6 +221,12 @@
   --panel-shadow-hover: var(--shadow-lift);
   --badge-radius: var(--radius-pill);
   --kpi-chip-radius: var(--radius-chip);
+  /* Shared KPI-card footer band (STORY-138 AC3) — `Sparkline`'s own default
+     rendered height (30px, `Sparkline.tsx`'s `VIEWBOX_HEIGHT`), pinned here
+     so `SummaryCard.css`'s footer slot reserves the SAME band for a
+     `KpiMeter` (6px tall, vertically centered) — every KPI card ends up
+     with an identical footprint, whichever visual it renders. */
+  --kpi-visual-height: 30px;
 
   /* Shell (STORY-121) — the breakpoint itself (860/861px) is not usable
      inside a CSS custom property (media queries can't reference a var), so
