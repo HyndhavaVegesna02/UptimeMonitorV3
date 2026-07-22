@@ -192,6 +192,89 @@ describe('useFetch', () => {
     })
   })
 
+  describe('unmount eviction (quality-review MAJOR fix — a never-settling request must not orphan the dedup cache entry on unmount)', () => {
+    afterEach(() => {
+      vi.useRealTimers()
+    })
+
+    it('evicts the in-flight entry on unmount, before the timeout fires, so a later mount of the SAME fetcher issues a genuinely fresh request instead of rejoining the orphaned promise', async () => {
+      vi.useFakeTimers()
+      const fetcher = vi.fn(() => new Promise<string>(() => undefined)) // never settles
+
+      const { unmount } = render(<Harness fetcher={fetcher} />)
+      expect(fetcher).toHaveBeenCalledTimes(1)
+
+      // Unmount well before the 15s default timeout would fire — the
+      // production sequence: user navigates away while the backend is
+      // still hanging.
+      act(() => {
+        unmount()
+      })
+
+      // Mount a second instance against the SAME stable fetcher reference —
+      // simulating the user returning to a page that shares it.
+      render(<Harness fetcher={fetcher} />)
+
+      expect(fetcher).toHaveBeenCalledTimes(2)
+    })
+
+    it('a still-pending request that settles after an unmount is a harmless no-op eviction (already-absent key delete)', async () => {
+      let resolveFetch: (value: string) => void = () => undefined
+      const fetcher = vi.fn(
+        () =>
+          new Promise<string>((resolve) => {
+            resolveFetch = resolve
+          }),
+      )
+
+      const { unmount } = render(<Harness fetcher={fetcher} />)
+      unmount()
+
+      // Resolving after unmount must not throw, and a subsequent fresh
+      // mount must still get a genuinely new request (not somehow break
+      // from the earlier `.finally()` deleting an already-absent key).
+      await act(async () => {
+        resolveFetch('too late')
+      })
+
+      render(<Harness fetcher={fetcher} />)
+      await waitFor(() => expect(fetcher).toHaveBeenCalledTimes(2))
+    })
+
+    it('two components sharing one in-flight promise: one unmounting does not break the surviving sibling', async () => {
+      let resolveFetch: (value: string) => void = () => undefined
+      const fetcher = vi.fn(
+        () =>
+          new Promise<string>((resolve) => {
+            resolveFetch = resolve
+          }),
+      )
+
+      function Siblings({ showFirst }: { showFirst: boolean }) {
+        return (
+          <div>
+            {showFirst ? <Harness fetcher={fetcher} /> : null}
+            <Harness fetcher={fetcher} />
+          </div>
+        )
+      }
+
+      const { rerender } = render(<Siblings showFirst={true} />)
+      expect(fetcher).toHaveBeenCalledTimes(1)
+
+      // Unmount the first sibling only — the second is still mounted and
+      // still awaiting the SAME shared promise.
+      rerender(<Siblings showFirst={false} />)
+
+      await act(async () => {
+        resolveFetch('shared-value')
+      })
+
+      const secondData = await screen.findAllByTestId('data')
+      expect(secondData.some((node) => node.textContent === 'shared-value')).toBe(true)
+    })
+  })
+
   it('never sets state after unmount (cancelled-guarded effect)', async () => {
     let resolveFetch: (value: string) => void = () => undefined
     const fetcher = () =>
