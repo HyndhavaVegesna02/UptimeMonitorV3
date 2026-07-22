@@ -59,13 +59,30 @@ stories:
         commit: 62f2bb8
   - id: STORY-137
     title: Shared fetch dedup/cache (one request per endpoint per mount, in-house minimal layer)
-    status: in_progress
+    status: done
     points: 3
     ceremony: 3-pointer
     order: 2
+    reviews:
+      spec: "PASS — AC1-AC4 all MET with genuine AC-to-test traces. AC1: ShellLayout.test.tsx renders shell+DashboardPage together via the real route table + per-endpoint MSW counters → /components,/approvals,/maintenance each ===1 (verified genuinely regressive: without dedup shell+page each fetch → 2/2/1); distinct requests proven NOT coalesced two ways (fetchDedup.test.ts different refs; AvailabilityPage.test.tsx two components each fire own URL once). AC2: no package.json/lock diff; fetchDedup.ts is a ~70-line Map-based in-flight-only coalescer (no TTL/result cache). AC3: retry-is-real proven at 3 layers + forgetFetch never-settling test; STORY-136 timeout test unchanged+green. AC4: 693/693, build+lint exit 0; no assertion deletions."
+      quality: "APPROVE (after a fix loop). Initial review found 1 MAJOR: useFetch unmount cleanup cleared the timeout WITHOUT calling forgetFetch, so a component unmounting while a backend call hangs orphaned the in-flight entry → next mount of the same stable fetcher rejoined the dead promise → 15s timeout before manual recovery (contradicted the design's own leak guarantee). FIXED (4ef0f00 failing regression test reproducing the exact unmount→remount interleaving; ef53653 adds forgetFetch(fetcher) to the unmount cleanup). Re-review: RESOLVED — reviewer reverted the one-line fix and confirmed the regression test fails (called 1× not 2×), restored; verified sibling-survival, harmless late-settle no-op delete, cancelled-guard intact, AC1 exactly-once still holds. Call-site audit clean (all stable fetchers are no-arg module exports; arg-bearing getComponentAvailability is per-call useCallback'd; getHistoryWindow/signals bypass dedup). 0 critical / 0 major / 3 minors → STORY-134 (delete-by-key vs promise-identity edge; no unmount-interleave coverage note now covered; heterogeneous Promise<unknown> cast)."
+    reality_gate: "PASS (live stack, Playwright, HEAD 62aaae4). Zero console errors on a fresh Dashboard mount. AC1 exactly-once is a PRODUCTION guarantee, proven deterministically + load-bearingly by the MSW integration test (revert→2, both reviewers confirmed). HONEST live note: the Vite dev server shows INFLATED per-load counts (approvals ×4, maintenance ×2) because the app is wrapped in <StrictMode> (main.tsx:8) whose dev-only mount→unmount→remount double-invoke interacts with the new (correct) unmount-eviction — each consumer fetches twice in dev, and the two consumers don't coalesce across StrictMode's sequential remount. This is STRIPPED in a production build (no StrictMode double-invoke; a normal concurrent mount has no unmount, so shell+page coalesce to 1× — exactly what the MSW test models). Same class of dev-only artifact as the dev-proxy noise already triaged out. Not a production regression; the fix (evict-on-unmount) correctly trades occasional dev noise for closing the real backend-hang leak."
+    dod_evidence:   # scoped --only npm at HEAD 62aaae4 (post fix loop)
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files  85 passed (85) | Tests  693 passed (693)"
+        commit: 62aaae4
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 772ms (index js 360.27 kB / gzip 105.84 kB)"
+        commit: 62aaae4
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "eslint . — clean (no output)"
+        commit: 62aaae4
   - id: STORY-138
     title: Dashboard layout coherence (one shared grid, no jagged gutter/void, equal KPI cards)
-    status: todo
+    status: in_progress
     points: 5
     ceremony: 3-pointer
     order: 3
