@@ -3,12 +3,16 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 156  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
+next_story_id: 173  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
                     # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
                     # reserved 144/145 (`git show sprint-61:.scrum/backlog.yaml`). Sprint-62
                     # stories therefore start at 146 so no id ever names two different stories
                     # across live branches. 146-149 = sprint-62 (ready); 150-155 = deferred
-                    # pipeline/fleet-readiness work filed at sprint-62 planning (drafts).
+                    # pipeline/fleet-readiness work filed at sprint-62 planning (drafts);
+                    # 156-168 = the frontend rebuild programme + its enabling endpoints
+                    # (drafts); 169-172 = explicitly deferred/dropped by PO decision, filed so
+                    # the decision is traceable rather than forgotten. Every 150-172 entry is a
+                    # DRAFT needing refinement + estimate before it may enter a sprint.
                     # 093 = sprint-49 review minors (container hardening, ECS health grace,
                     # test hygiene), filed at sprint-49 review as accept-with-follow-up.
                     # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
@@ -928,7 +932,12 @@ stories:
   - id: STORY-096
     title: Sidebar keeps desktop width below ~768px — add a narrow-viewport breakpoint
     file: docs/scrum/stories/STORY-096-sidebar-narrow-viewport.md
-    status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
+    status: superseded  # was draft (sprint-51 review, STORY-095 390px finding). SUPERSEDED
+                    # 2026-07-28: it describes the sprint-38 frontend's sidebar, which the
+                    # 3rd-attempt rebuild replaces wholesale. The requirement itself is NOT
+                    # lost — responsive-at-390 is an AC of STORY-157 (app shell), and the
+                    # reference UI has no responsive handling at all, so it is called out
+                    # there explicitly rather than inherited.
     type: story
     sprint: null
   # ── Sprint 62 — fleet readiness foundation ───────────────────────
@@ -1018,4 +1027,183 @@ stories:
     status: draft   # ~2pts. Removal inventory already written: docs/scrum/wiki/sample-mode.md
                     # (port + adapter + fake + API feature + the one seam line in run.py).
     type: chore
+    sprint: null
+  # ── Frontend rebuild programme (3rd attempt line), filed at sprint-62 planning ──
+  # ALL drafts — each needs a refinement pass + estimate before entering a sprint.
+  # Binding design target: the PO-built reference at `C:\Hyn\new ui\ops-pulse-react`
+  # (screenshots: docs/scrum/sprints/2026-07-28-sprint-62/newui-0{1..8}-*.png).
+  # It is a STATIC scraped-JSX visual reference with NO data layer (0 .map() calls across
+  # 6565 lines) — a spec to read, not code to port. Its 10 confirmed defects must NOT be
+  # ported (ui-backend-gap-analysis.md §0.3): no responsive handling at all, truncated
+  # component names, meaningless meter bars, a dark-mode-invisible badge, two React console
+  # errors, two different greens for one meaning.
+  # PO decisions binding on this line (ui-backend-gap-analysis.md §3a + decisions D1-D4):
+  #   layouts scale n=1 -> n=12+ (no hardcoded column counts); Tailwind v4 with the palette
+  #   and type scale in the theme layer as single source of truth + the contrast test kept;
+  #   the reference's 4-status teal ramp verbatim (it is a 1:1 fit for ComponentStatus) with
+  #   maintenance as a sky CHIP replacing the pill, gaps as visible breaks, loading making no
+  #   status claim; History tabs use OUR vocabulary (up/degraded/down), not the reference's
+  #   invented Success/Slow/Timeout/Failure; no confidence %; no fake user avatar.
+  #   Rebuild base: branch from main and cherry-pick ONLY sprint-61's design-neutral infra
+  #   under the rule "if it renders, rebuild it; if it's data->data, keep it" (no .css
+  #   sibling, no JSX) — api/client.ts, api/types.ts, api/statusMapping.ts, lib/useFetch.ts,
+  #   lib/fetchDedup.ts, the MSW harness, ~20 pure helpers. Verified salvageable: there is
+  #   ZERO backend divergence between main and sprint-61.
+  - id: STORY-156
+    title: Design system — Tailwind v4 theme from the reference + contrast gate + styleguide
+    file: null
+    status: draft   # First frontend story. Tokens: --bg-main rgb(243,244,247), glass
+                    # rgba(255,255,255,.66)+blur(12px), soft shadow, radii 1.5/1/0.5rem,
+                    # Manrope + JetBrains Mono, teal->amber->orange->rose 4-status ramp.
+                    # Keep the WCAG-AA contrast test pointed at the theme values.
+                    # Also carries the cherry-pick of sprint-61's design-neutral infra.
+    type: feature
+    sprint: null
+  - id: STORY-157
+    title: App shell — dark inset sidebar, topbar, routing, responsive at 390
+    file: null
+    status: draft   # The reference has NO responsive handling (fixed sidebar + horizontal
+                    # body scroll at 390 — newui-08-dashboard-390.png); ours must collapse.
+                    # No fake user avatar (no auth exists); reserve a topbar-right region for
+                    # the future user menu. Nav badge counts from /approvals + /maintenance.
+                    # Cmd-K search is CLIENT-SIDE over /topology — no new endpoint.
+                    # PO look-and-feel CHECKPOINT lands with this + STORY-156, BEFORE six
+                    # pages are built on the language (the fix for 3 post-build rejections).
+    type: feature
+    sprint: null
+  - id: STORY-158
+    title: Dashboard page — hero, KPIs, component cards on real fleet-scale data
+    file: null
+    status: draft   # 3 of 4 KPIs are already free from existing endpoints; only fleet uptime
+                    # needs aggregation, so do NOT block this on STORY-159 — use per-component
+                    # calls and add the summary endpoint when the N+1 actually hurts.
+    type: feature
+    sprint: null
+  - id: STORY-159
+    title: Fleet summary endpoint (B1) — worst-of status, bucket counts, fleet availability
+    file: null
+    status: draft   # ~5pts. One call for the hero + all four KPIs + the Availability footer.
+                    # Also needs signals-healthy/total and a last-check instant (B5), which
+                    # converges with the per-signal latest-outcome state STORY-151 must persist
+                    # for worst-of — build once, serve both.
+    type: feature
+    sprint: null
+  - id: STORY-160
+    title: Availability page — two-grain table, range tabs, completeness column
+    file: null
+    status: draft   # completeness_pct ALREADY exists on AvailabilityDTO (free). The 30-block
+                    # uptime bars need STORY-161. Fix the reference's defects: meter bars that
+                    # ignore their value, and a "30D" header while the 24h tab is active.
+    type: feature
+    sprint: null
+  - id: STORY-161
+    title: Bucketed availability series (B3) — N per-bucket verdicts over a window
+    file: null
+    status: draft   # ~5pts. Powers sparklines, the 30-block bars and the 14-day fleet strip.
+                    # Gaps must render as visible BREAKS, never zero-height bars that read as
+                    # healthy (decision D1/§3a).
+    type: feature
+    sprint: null
+  - id: STORY-162
+    title: Check History page — fleet-wide feed, filters, pagination, OUR result vocabulary
+    file: null
+    status: draft   # Tabs are All/Up/Degraded/Down (Health, signal.py:21-23) - NOT the
+                    # reference's Success/Slow/Timeout/Failure. latency_ms and
+                    # response_status_code stay as COLUMNS but never manufacture categories.
+                    # Degraded/Down tabs sit empty until STORY-154 maps the failure codes;
+                    # demo-engine scenarios populate them. Needs STORY-163.
+    type: feature
+    sprint: null
+  - id: STORY-163
+    title: Fleet history endpoint (B2) — optional signal_key, filters, offset, total count
+    file: null
+    status: draft   # ~5pts. /history currently REQUIRES signal_key (history/controller.py:22),
+                    # so the design's core fleet-wide view is impossible in one call; and it
+                    # returns a bare list with no count, so "97 observations - page 1 of 4"
+                    # cannot be rendered. Envelope {items, total, offset, limit}.
+                    # Add component_id / location / health filters.
+    type: feature
+    sprint: null
+  - id: STORY-164
+    title: Approvals page — master/detail, reasoning + evidence, approve/reject
+    file: null
+    status: draft   # NO confidence % (the engine is threshold-based, not probabilistic - a
+                    # fabricated number on an operator approval screen is worse than none).
+                    # actor stays the fixed `dashboard-operator` constant until STORY-171.
+                    # Needs STORY-165: the reasoning text is LOAD-BEARING for decision D2
+                    # (an operator can only tell a real regional outage from a flaky probe by
+                    # seeing WHICH locations and how many).
+    type: feature
+    sprint: null
+  - id: STORY-165
+    title: Populate StatusProposal.reason at open time (B8)
+    file: null
+    status: draft   # ~2pts (cheaper than first scoped). The field ALREADY exists
+                    # (core/domain/proposal.py:51) and the repository persists it; the gap is
+                    # that _open_proposal (decide.py:176-184) takes no reason param, so it is
+                    # populated on resolve but always None for the OPEN proposals the page
+                    # lists. Compose from what the engine knows at the decision point:
+                    # threshold crossed, consecutive cycles, failing-location count.
+    type: feature
+    sprint: null
+  - id: STORY-166
+    title: Maintenance page — status tabs, window cards, schedule form
+    file: null
+    status: draft   # Single affected component per window (multi-component is STORY-170,
+                    # dropped for now). Status tabs derived from window vs now.
+    type: feature
+    sprint: null
+  - id: STORY-167
+    title: Publications page — timeline of publish attempts
+    file: null
+    status: draft   # KEEP the `outcome` field (succeeded/failed) even though the reference has
+                    # no visual for it - a failed Statuspage publish must stay visible.
+                    # Headline/body prose is STORY-169 (deferred).
+    type: feature
+    sprint: null
+  - id: STORY-168
+    title: Batch component availability (B6) — kill the dashboard/availability N+1
+    file: null
+    status: draft   # ~3pts. GET /availability/components?ids=... Only worth doing once the
+                    # per-component fan-out measurably hurts at real fleet size.
+    type: chore
+    sprint: null
+  # ── Deferred by explicit PO decision (recorded, not forgotten) ──
+  - id: STORY-169
+    title: Publication headline + body — authored incident notes (B9)
+    file: null
+    status: draft   # DEFERRED by PO 2026-07-28 to ~sprint 64. Real value for a status page,
+                    # but it converts publications from "recorded status changes" into
+                    # "authored incident notes" - a product expansion, not a UI adaptation.
+    type: feature
+    sprint: null
+  - id: STORY-170
+    title: Multi-component maintenance windows + publications (B10)
+    file: null
+    status: draft   # DROPPED FOR NOW by PO 2026-07-28. ~5pts, the most expensive item, and it
+                    # buys one visual (a second affected-component chip). Revisit when the
+                    # fleet is large enough that genuinely shared windows occur.
+    type: feature
+    sprint: null
+  - id: STORY-171
+    title: Real auth — replace the fixed `dashboard-operator` actor constant
+    file: null
+    status: draft   # PO 2026-07-28: "for now let it be option a, but in near future we will
+                    # have real auth". Deliberately NOT an operator-typed name in the interim:
+                    # an unverified name in an audit trail claims knowledge the system lacks,
+                    # which is worse than an honest placeholder. One swap point exists.
+                    # Needs an identity-provider decision at refinement.
+    type: feature
+    sprint: null
+  - id: STORY-172
+    title: Per-location streak persistence — separate a regional outage from a flaky probe (F2)
+    file: null
+    status: draft   # DEFERRED by PO 2026-07-28. Breadth (D1) is measured PER CYCLE, so it
+                    # cannot distinguish one location failing for two hours (real, actionable)
+                    # from locations flickering in and out (noise). Per-(signal,location)
+                    # streaks would separate decision D2's two worlds automatically instead of
+                    # relying on an operator reading the reasoning text.
+                    # BUILD ONLY IF minority-failure proposals prove noisy once real
+                    # multi-location monitors are live — an observation to make, not predict.
+    type: feature
     sprint: null
