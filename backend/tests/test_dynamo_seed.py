@@ -4,7 +4,7 @@ from src.adapters.persistence.dynamo_component_repository import (
     DynamoComponentRepository,
 )
 from src.adapters.persistence.dynamo_signal_repository import DynamoSignalRepository
-from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
 from src.composition.seed_dynamo import seed_topology_dynamo
 from src.composition.settings import load_settings
 from src.core.domain.status import ComponentStatus
@@ -23,23 +23,29 @@ def test_seed_topology_dynamo(dynamo_resource):
         name="Test App",
         monitor_provider="dynatrace",
         components=[
-            ComponentConfig(id="comp-a", name="Component A"),
-            ComponentConfig(id="comp-b", name="Component B"),
-        ],
-        signals=[
-            SignalConfig(
-                signal_key="sig-x",
-                native_id="NATIVE-X",
-                name="Signal X",
-                component_id="comp-a",
-                interval_seconds=60,
+            ComponentConfig(
+                id="comp-a",
+                name="Component A",
+                monitors=[
+                    MonitorConfig(
+                        signal_key="sig-x",
+                        native_id="NATIVE-X",
+                        name="Signal X",
+                        interval_seconds=60,
+                    )
+                ],
             ),
-            SignalConfig(
-                signal_key="sig-y",
-                native_id="NATIVE-Y",
-                name="Signal Y",
-                component_id="comp-b",
-                interval_seconds=120,
+            ComponentConfig(
+                id="comp-b",
+                name="Component B",
+                monitors=[
+                    MonitorConfig(
+                        signal_key="sig-y",
+                        native_id="NATIVE-Y",
+                        name="Signal Y",
+                        interval_seconds=120,
+                    )
+                ],
             ),
         ],
         thresholds=AntiFlapThresholds(major=3, partial=2, degraded=1, recovery=1),
@@ -86,17 +92,19 @@ def test_seed_topology_dynamo(dynamo_resource):
         name="Test App",
         monitor_provider="dynatrace",
         components=[
-            ComponentConfig(id="comp-a", name="Component A Modified"),
-            ComponentConfig(id="comp-b", name="Component B"),
-        ],
-        signals=[
-            SignalConfig(
-                signal_key="sig-x",
-                native_id="NATIVE-X",
-                name="Signal X Modified",
-                component_id="comp-a",
-                interval_seconds=90,
+            ComponentConfig(
+                id="comp-a",
+                name="Component A Modified",
+                monitors=[
+                    MonitorConfig(
+                        signal_key="sig-x",
+                        native_id="NATIVE-X",
+                        name="Signal X Modified",
+                        interval_seconds=90,
+                    )
+                ],
             ),
+            ComponentConfig(id="comp-b", name="Component B"),
         ],
         thresholds=AntiFlapThresholds(major=3, partial=2, degraded=1, recovery=1),
     )

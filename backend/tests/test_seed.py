@@ -31,9 +31,10 @@ app:
   name: CLI App
   monitor_provider: dynatrace
 components:
-  - { id: cli-comp, name: CLI Comp }
-signals:
-  - { signal_key: cli-sig, native_id: N-1, name: CLI Sig, component_id: cli-comp, interval_seconds: 30 }
+  - id: cli-comp
+    name: CLI Comp
+    monitors:
+      - { signal_key: cli-sig, native_id: N-1, name: CLI Sig, interval_seconds: 30 }
 """
     (config_dir / "cli_app.yaml").write_text(yaml_content, encoding="utf-8")
 
@@ -105,9 +106,10 @@ app:
   name: Startup App
   monitor_provider: dynatrace
 components:
-  - { id: startup-comp, name: Startup Comp }
-signals:
-  - { signal_key: startup-sig, native_id: N-2, name: Startup Sig, component_id: startup-comp, interval_seconds: 45 }
+  - id: startup-comp
+    name: Startup Comp
+    monitors:
+      - { signal_key: startup-sig, native_id: N-2, name: Startup Sig, interval_seconds: 45 }
 """
     (config_dir / "startup_app.yaml").write_text(yaml_content, encoding="utf-8")
 

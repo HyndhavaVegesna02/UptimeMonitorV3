@@ -21,7 +21,7 @@ from src.composition.config import (
     AppConfig,
     ComponentConfig,
     Config,
-    SignalConfig,
+    MonitorConfig,
 )
 from src.composition.orchestrate import orchestrate_signal
 from src.composition.publish_helper import RecordingPublisher, StatusWritebackPublisher
@@ -75,20 +75,18 @@ def _build_config(
     thresholds = AntiFlapThresholds(
         major=major, partial=partial, degraded=degraded, recovery=recovery
     )
-    sig = SignalConfig(
+    mon = MonitorConfig(
         signal_key=signal_key,
         native_id="SYNTHETIC_TEST-X",
         name="Checkout HTTP",
-        component_id=component_id,
         interval_seconds=interval_seconds,
     )
-    comp = ComponentConfig(id=component_id, name="Checkout")
+    comp = ComponentConfig(id=component_id, name="Checkout", monitors=[mon])
     app = AppConfig(
         id="sockshop",
         name="Sock Shop",
         monitor_provider="dynatrace",
         components=[comp],
-        signals=[sig],
         thresholds=thresholds,
     )
     return Config([app])

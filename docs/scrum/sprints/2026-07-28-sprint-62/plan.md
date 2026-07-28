@@ -208,11 +208,19 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
 - [x] 7. Failing test: `locations`/`freshness` are per-app — two apps with different values
       resolve independently via `Config.locations_for(app_id)` / `freshness_for(app_id)`. No
       global merge exists to conflict. Then implement.
-- [ ] 8. Migrate the test-side surface to the nested shape: **13 files** — 17 `AppConfig(` sites
+- [x] 8. Migrate the test-side surface to the nested shape: **13 files** — 17 `AppConfig(` sites
       and 10 flat `signals:` YAML blocks, enumerated in the contracts section above. AC2's
       raising derive-validator makes any missed site fail **loudly** rather than silently
       yielding `signals == []`, which is why that raise is required.
-- [ ] 9. Migrate `config/apps/httpcheck.yaml` — **nesting only**, no `locations:`, no
+      Actual surface after mechanical grep verification (recorded in story History): 8 files touched
+      `AppConfig(`/`ComponentConfig(`/`SignalConfig(` sites (`test_config.py`, `test_dynamo_seed.py`,
+      `test_orchestration_integration.py`, `test_run_live_loop.py`, `test_orchestrate.py`,
+      `test_pull_loop.py`, `test_vendor_health.py`) and 3 files with flat `signals:` YAML fixture
+      blocks needing migration (`test_config.py`, `test_seed.py`, `test_topology_endpoint.py`);
+      `fakes.py`, `test_dynamo_adapters.py`, and `test_availability_endpoint.py` were verified by
+      grep to contain no `AppConfig(`/flat `signals:` construction (only incidental docstring/
+      variable-name matches of the word "signals") and needed no change.
+- [x] 9. Migrate `config/apps/httpcheck.yaml` — **nesting only**, no `locations:`, no
       `expected_locations` (AC8: unverifiable vendor ids must not enter live config). AC8 test:
       assert `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`,
       `thresholds_for`, and `statuspage_mapping()` against **literals captured before the

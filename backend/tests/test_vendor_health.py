@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 
-from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
 from src.composition.vendor_health import (
     build_vendor_health_query,
     check_vendor_id_health,
@@ -32,14 +32,18 @@ def _one_signal_config(
                 id="app-1",
                 name="App 1",
                 monitor_provider="dynatrace",
-                components=[ComponentConfig(id="comp-1", name="Comp 1")],
-                signals=[
-                    SignalConfig(
-                        signal_key=signal_key,
-                        native_id=native_id,
-                        name="Signal 1",
-                        component_id="comp-1",
-                        interval_seconds=30,
+                components=[
+                    ComponentConfig(
+                        id="comp-1",
+                        name="Comp 1",
+                        monitors=[
+                            MonitorConfig(
+                                signal_key=signal_key,
+                                native_id=native_id,
+                                name="Signal 1",
+                                interval_seconds=30,
+                            )
+                        ],
                     )
                 ],
             )
@@ -54,22 +58,25 @@ def _two_signal_config() -> Config:
                 id="app-1",
                 name="App 1",
                 monitor_provider="dynatrace",
-                components=[ComponentConfig(id="comp-1", name="Comp 1")],
-                signals=[
-                    SignalConfig(
-                        signal_key="sig-dead",
-                        native_id="HTTP_CHECK-DEAD",
-                        name="Dead Signal",
-                        component_id="comp-1",
-                        interval_seconds=30,
-                    ),
-                    SignalConfig(
-                        signal_key="sig-alive",
-                        native_id="HTTP_CHECK-ALIVE",
-                        name="Alive Signal",
-                        component_id="comp-1",
-                        interval_seconds=30,
-                    ),
+                components=[
+                    ComponentConfig(
+                        id="comp-1",
+                        name="Comp 1",
+                        monitors=[
+                            MonitorConfig(
+                                signal_key="sig-dead",
+                                native_id="HTTP_CHECK-DEAD",
+                                name="Dead Signal",
+                                interval_seconds=30,
+                            ),
+                            MonitorConfig(
+                                signal_key="sig-alive",
+                                native_id="HTTP_CHECK-ALIVE",
+                                name="Alive Signal",
+                                interval_seconds=30,
+                            ),
+                        ],
+                    )
                 ],
             )
         ]

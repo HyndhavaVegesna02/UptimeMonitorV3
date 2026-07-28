@@ -20,11 +20,12 @@ from src.composition.config import (
     Config,
     FlatSignalsRejectedError,
     InvalidFreshnessError,
+    MonitorConfig,
     SignalConfig,
+    UndeclaredLocationAliasError,
     UnknownAppError,
     UnknownComponentError,
     UnknownSignalError,
-    UndeclaredLocationAliasError,
     load_config,
 )
 from src.core.services.pipeline import AntiFlapThresholds
@@ -34,24 +35,29 @@ from src.core.services.pipeline import AntiFlapThresholds
 # ---------------------------------------------------------------------------
 
 _VALID_COMPONENTS = [
-    ComponentConfig(id="checkout", name="Checkout"),
-    ComponentConfig(id="catalogue", name="Catalogue"),
-]
-
-_VALID_SIGNALS = [
-    SignalConfig(
-        signal_key="checkout-http",
-        native_id="SYNTHETIC_TEST-ABC",
-        name="Checkout HTTP",
-        component_id="checkout",
-        interval_seconds=60,
+    ComponentConfig(
+        id="checkout",
+        name="Checkout",
+        monitors=[
+            MonitorConfig(
+                signal_key="checkout-http",
+                native_id="SYNTHETIC_TEST-ABC",
+                name="Checkout HTTP",
+                interval_seconds=60,
+            )
+        ],
     ),
-    SignalConfig(
-        signal_key="catalogue-http",
-        native_id="SYNTHETIC_TEST-DEF",
-        name="Catalogue HTTP",
-        component_id="catalogue",
-        interval_seconds=60,
+    ComponentConfig(
+        id="catalogue",
+        name="Catalogue",
+        monitors=[
+            MonitorConfig(
+                signal_key="catalogue-http",
+                native_id="SYNTHETIC_TEST-DEF",
+                name="Catalogue HTTP",
+                interval_seconds=60,
+            )
+        ],
     ),
 ]
 
@@ -59,13 +65,17 @@ _DEFAULT_THRESHOLDS = AntiFlapThresholds(major=5, partial=3, degraded=2, recover
 
 
 def _valid_app(**overrides) -> AppConfig:
-    """Return a minimal valid AppConfig; override individual fields to probe rules."""
+    """Return a minimal valid AppConfig; override individual fields to probe rules.
+
+    STORY-146: no `signals=` default — `signals` is derived from
+    `components[].monitors` (AC2/AC7); pass `components=` to vary the
+    monitors under test.
+    """
     defaults = dict(
         id="sockshop",
         name="Sock Shop",
         monitor_provider="dynatrace",
         components=list(_VALID_COMPONENTS),
-        signals=list(_VALID_SIGNALS),
         thresholds=_DEFAULT_THRESHOLDS,
     )
     defaults.update(overrides)
@@ -94,20 +104,22 @@ class TestAppConfigHappyPath:
             name="Sock Shop",
             monitor_provider="dynatrace",
             components=list(_VALID_COMPONENTS),
-            signals=list(_VALID_SIGNALS),
         )
         assert app.thresholds == AntiFlapThresholds(
             major=5, partial=3, degraded=2, recovery=2
         )
 
     def test_app_with_no_signals_is_valid(self):
-        """An app may declare zero signals (edge case — tested per working agreements)."""
+        """An app may declare components with zero monitors — zero derived
+        signals (edge case — tested per working agreements)."""
         app = AppConfig(
             id="empty-app",
             name="Empty App",
             monitor_provider="dynatrace",
-            components=list(_VALID_COMPONENTS),
-            signals=[],
+            components=[
+                ComponentConfig(id="checkout", name="Checkout"),
+                ComponentConfig(id="catalogue", name="Catalogue"),
+            ],
         )
         assert app.signals == []
 
@@ -123,15 +135,20 @@ class TestAppConfigValidationRejects:
     # `TestFlatSignalsRejected` for the compensating check.
 
     def test_duplicate_signal_key_within_app_raises(self):
-        dup = SignalConfig(
-            signal_key="checkout-http",  # duplicate
-            native_id="SYNTHETIC_TEST-DUP",
-            name="Dup Signal",
-            component_id="checkout",
-            interval_seconds=60,
+        dup_component = ComponentConfig(
+            id="checkout-dup-source",
+            name="Checkout Duplicate Source",
+            monitors=[
+                MonitorConfig(
+                    signal_key="checkout-http",  # duplicate
+                    native_id="SYNTHETIC_TEST-DUP",
+                    name="Dup Signal",
+                    interval_seconds=60,
+                )
+            ],
         )
         with pytest.raises(ValueError, match="signal_key"):
-            _valid_app(signals=[*_VALID_SIGNALS, dup])
+            _valid_app(components=[*_VALID_COMPONENTS, dup_component])
 
     def test_duplicate_component_id_within_app_raises(self):
         dup = ComponentConfig(id="checkout", name="Checkout Copy")  # duplicate id
@@ -149,7 +166,6 @@ class TestAppConfigValidationRejects:
                 name="No ID",
                 monitor_provider="dynatrace",
                 components=[],
-                signals=[],
             )
 
 
@@ -178,11 +194,14 @@ app:
   name: Sock Shop
   monitor_provider: dynatrace
 components:
-  - { id: checkout, name: Checkout }
-  - { id: catalogue, name: Catalogue }
-signals:
-  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, component_id: checkout, interval_seconds: 60 }
-  - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, component_id: catalogue, interval_seconds: 60 }
+  - id: checkout
+    name: Checkout
+    monitors:
+      - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-ABC, name: Checkout HTTP, interval_seconds: 60 }
+  - id: catalogue
+    name: Catalogue
+    monitors:
+      - { signal_key: catalogue-http, native_id: SYNTHETIC_TEST-DEF, name: Catalogue HTTP, interval_seconds: 60 }
 thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
 """
 
@@ -213,9 +232,10 @@ app:
   name: Other App
   monitor_provider: dynatrace
 components:
-  - { id: frontend, name: Frontend }
-signals:
-  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend, interval_seconds: 60 }
+  - id: frontend
+    name: Frontend
+    monitors:
+      - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "other.yaml", other_yaml)
         cfg = load_config(tmp_config_dir)
@@ -257,9 +277,10 @@ app:
   name: Another App
   monitor_provider: dynatrace
 components:
-  - { id: some-component, name: Some Component }
-signals:
-  - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-DUP, name: Dup, component_id: some-component, interval_seconds: 60 }
+  - id: some-component
+    name: Some Component
+    monitors:
+      - { signal_key: checkout-http, native_id: SYNTHETIC_TEST-DUP, name: Dup, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "another.yaml", dup_yaml)
         with pytest.raises(ValueError, match="signal_key"):
@@ -274,7 +295,6 @@ app:
   monitor_provider: dynatrace
 components:
   - { id: checkout, name: Checkout Dup }
-signals: []
 """
         _write_yaml(tmp_config_dir, "another.yaml", dup_yaml)
         with pytest.raises(ValueError, match="component.*id"):
@@ -331,9 +351,10 @@ app:
   name: Bare App
   monitor_provider: dynatrace
 components:
-  - { id: frontend, name: Frontend }
-signals:
-  - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, component_id: frontend, interval_seconds: 60 }
+  - id: frontend
+    name: Frontend
+    monitors:
+      - { signal_key: frontend-http, native_id: SYNTHETIC_TEST-FE, name: Frontend HTTP, interval_seconds: 60 }
 """
         _write_yaml(tmp_config_dir, "bare.yaml", yaml_no_thresholds)
         cfg = load_config(tmp_config_dir)
@@ -430,7 +451,6 @@ class TestSignalConfigIntervalSeconds:
                         id="comp-2", name="Comp 2", statuspage_component_id=None
                     ),
                 ],
-                signals=[],
             )
         ]
         cfg = Config(apps)
@@ -469,9 +489,7 @@ components:
 class TestNestedMonitors:
     """AC1: monitors nest under their component; ownership is structural."""
 
-    def test_nested_monitor_resolved_component_id_is_parent(
-        self, tmp_config_dir: Path
-    ):
+    def test_nested_monitor_resolved_component_id_is_parent(self, tmp_config_dir: Path):
         _write_yaml(tmp_config_dir, "nested.yaml", NESTED_YAML)
         cfg = load_config(tmp_config_dir)
         assert len(cfg.apps) == 1
@@ -586,9 +604,7 @@ components:
         assert app.freshness.stale_after_cycles == 3
         assert app.freshness.reentry_cycles == 2
 
-    def test_freshness_explicit_values_load_as_plain_counts(
-        self, tmp_config_dir: Path
-    ):
+    def test_freshness_explicit_values_load_as_plain_counts(self, tmp_config_dir: Path):
         yaml_content = """\
 app:
   id: fresh-app
@@ -696,3 +712,39 @@ components:
             cfg.locations_for("does-not-exist")
         with pytest.raises(UnknownAppError):
             cfg.freshness_for("does-not-exist")
+
+
+class TestRealHttpcheckYamlMigratedNestingOnly:
+    """AC8: config/apps/httpcheck.yaml is migrated to the nested shape, and
+    load_config yields byte-identical downstream values.
+
+    The literals below were captured from the PRE-migration flat file
+    (`components:`/`signals:` siblings joined by `component_id`) BEFORE it was
+    edited to nest `monitors:` under `components:` — they are not recomputed
+    from the new file, per AC8.
+    """
+
+    def test_migrated_config_yields_identical_downstream_values(self):
+        repo_root = Path(__file__).parent.parent.parent
+        cfg = load_config(repo_root / "config" / "apps")
+        httpcheck = next(a for a in cfg.apps if a.id == "httpcheck")
+
+        assert len(httpcheck.signals) == 1
+        sig = httpcheck.signals[0]
+        assert sig.signal_key == "http-check"
+        assert sig.native_id == "HTTP_CHECK-38B092E93932C002"
+        assert sig.interval_seconds == 120
+
+        assert cfg.component_for_signal("http-check") == "http-check"
+        assert cfg.thresholds_for("http-check") == AntiFlapThresholds(
+            major=5, partial=3, degraded=2, recovery=2
+        )
+        assert cfg.statuspage_mapping() == {"http-check": "xdnywbx77npw"}
+
+        # AC8: nesting ONLY — no locations:/expected_locations were added,
+        # because real Dynatrace location ids/names cannot be verified while
+        # the trial is expired.
+        assert httpcheck.locations == {}
+        for comp in httpcheck.components:
+            for mon in comp.monitors:
+                assert mon.expected_locations == []

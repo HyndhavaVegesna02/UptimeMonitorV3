@@ -15,7 +15,7 @@ from src.adapters.persistence.dynamo_observation_repository import (
     DynamoObservationRepository,
 )
 from src.adapters.persistence.dynamo_proposal_repository import DynamoProposalRepository
-from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
 from src.composition.orchestrate import orchestrate_signal
 from src.composition.seed_dynamo import seed_topology_dynamo
 from src.composition.settings import load_settings
@@ -48,20 +48,18 @@ def test_orchestrate_signal_db_integration(
 
     # Build memory Config
     thresholds = AntiFlapThresholds(major=3, partial=2, degraded=2, recovery=2)
-    sig_cfg = SignalConfig(
+    mon_cfg = MonitorConfig(
         signal_key=signal_key,
         native_id="SYNTHETIC_TEST-ABC",
         name="Checkout HTTP",
-        component_id=component_id,
         interval_seconds=60,
     )
-    comp_cfg = ComponentConfig(id=component_id, name="Checkout")
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout", monitors=[mon_cfg])
     app_cfg = AppConfig(
         id=app_id,
         name="Sock Shop",
         monitor_provider="dynatrace",
         components=[comp_cfg],
-        signals=[sig_cfg],
         thresholds=thresholds,
     )
     config = Config([app_cfg])

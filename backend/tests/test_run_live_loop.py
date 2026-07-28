@@ -10,7 +10,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fakes import FakeClock
 from src.adapters.outbound.statuspage import StatuspagePublisher
-from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
 from src.composition.publish_helper import (
     BestEffortPublisher,
     RecordingPublisher,
@@ -57,24 +57,24 @@ def test_build_live_loop_assembly():
                 monitor_provider="dynatrace",
                 components=[
                     ComponentConfig(
-                        id="comp-1", name="Comp 1", statuspage_component_id="sp-1"
+                        id="comp-1",
+                        name="Comp 1",
+                        statuspage_component_id="sp-1",
+                        monitors=[
+                            MonitorConfig(
+                                signal_key="sig-1",
+                                native_id="N-1",
+                                name="Sig 1",
+                                interval_seconds=30,
+                            ),
+                            MonitorConfig(
+                                signal_key="sig-2",
+                                native_id="N-2",
+                                name="Sig 2",
+                                interval_seconds=60,
+                            ),
+                        ],
                     )
-                ],
-                signals=[
-                    SignalConfig(
-                        signal_key="sig-1",
-                        native_id="N-1",
-                        name="Sig 1",
-                        component_id="comp-1",
-                        interval_seconds=30,
-                    ),
-                    SignalConfig(
-                        signal_key="sig-2",
-                        native_id="N-2",
-                        name="Sig 2",
-                        component_id="comp-1",
-                        interval_seconds=60,
-                    ),
                 ],
                 thresholds=AntiFlapThresholds(
                     major=3, partial=2, degraded=1, recovery=1
@@ -190,16 +190,17 @@ def test_build_live_loop_assembly_statuspage_absent():
                 monitor_provider="dynatrace",
                 components=[
                     ComponentConfig(
-                        id="comp-1", name="Comp 1", statuspage_component_id="sp-1"
-                    )
-                ],
-                signals=[
-                    SignalConfig(
-                        signal_key="sig-1",
-                        native_id="N-1",
-                        name="Sig 1",
-                        component_id="comp-1",
-                        interval_seconds=30,
+                        id="comp-1",
+                        name="Comp 1",
+                        statuspage_component_id="sp-1",
+                        monitors=[
+                            MonitorConfig(
+                                signal_key="sig-1",
+                                native_id="N-1",
+                                name="Sig 1",
+                                interval_seconds=30,
+                            )
+                        ],
                     )
                 ],
                 thresholds=AntiFlapThresholds(

@@ -169,10 +169,11 @@ app:
   name: Topo App
   monitor_provider: dynatrace
 components:
-  - { id: topo-comp, name: Topo Comp }
-signals:
-  - { signal_key: topo-sig-a, native_id: N-A, name: Sig A, component_id: topo-comp, interval_seconds: 60 }
-  - { signal_key: topo-sig-b, native_id: N-B, name: Sig B, component_id: topo-comp, interval_seconds: 120 }
+  - id: topo-comp
+    name: Topo Comp
+    monitors:
+      - { signal_key: topo-sig-a, native_id: N-A, name: Sig A, interval_seconds: 60 }
+      - { signal_key: topo-sig-b, native_id: N-B, name: Sig B, interval_seconds: 120 }
 """
     (config_dir / "topo_app.yaml").write_text(yaml_content, encoding="utf-8")
 

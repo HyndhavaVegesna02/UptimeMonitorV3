@@ -262,7 +262,7 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal(monkeypatch)
         FakeProposalRepository,
         RecordingStatusPublisher,
     )
-    from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+    from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
     from src.composition.pull_loop import run_cycle
     from src.core.domain import Component, ComponentStatus
     from src.core.ports import SignalIngestPort
@@ -287,20 +287,18 @@ def test_run_cycle_with_orchestration_ingests_and_produces_proposal(monkeypatch)
 
     # Build a minimal Config
     thresholds = AntiFlapThresholds(major=3, partial=2, degraded=2, recovery=2)
-    sig = SignalConfig(
+    mon = MonitorConfig(
         signal_key=signal_key,
         native_id=native_id,
         name="Checkout HTTP",
-        component_id=component_id,
         interval_seconds=60,
     )
-    comp_cfg = ComponentConfig(id=component_id, name="Checkout")
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout", monitors=[mon])
     app = AppConfig(
         id="sockshop",
         name="Sock Shop",
         monitor_provider="dynatrace",
         components=[comp_cfg],
-        signals=[sig],
         thresholds=thresholds,
     )
     config = Config([app])
@@ -401,7 +399,7 @@ def test_run_periodic_with_orchestration_passes_extras():
         FakeProposalRepository,
         RecordingStatusPublisher,
     )
-    from src.composition.config import AppConfig, ComponentConfig, Config, SignalConfig
+    from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
     from src.composition.pull_loop import run_periodic
     from src.core.domain import Component, ComponentStatus
     from src.core.services.decide import DecideAction, DecideService
@@ -413,20 +411,18 @@ def test_run_periodic_with_orchestration_passes_extras():
     now_ts = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
 
     # Config setup
-    comp_cfg = ComponentConfig(id=component_id, name="Checkout")
-    sig_cfg = SignalConfig(
+    mon_cfg = MonitorConfig(
         signal_key=signal_key,
         native_id=native_id,
         name="Checkout Link",
-        component_id=component_id,
         interval_seconds=60,
     )
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout", monitors=[mon_cfg])
     app_cfg = AppConfig(
         id="sockshop",
         name="Sock Shop",
         monitor_provider="dynatrace",
         components=[comp_cfg],
-        signals=[sig_cfg],
         thresholds=AntiFlapThresholds(major=3, partial=2, degraded=1, recovery=1),
     )
     config = Config([app_cfg])
