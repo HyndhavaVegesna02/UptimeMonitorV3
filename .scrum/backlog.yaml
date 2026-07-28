@@ -3,7 +3,13 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 94   # 093 = sprint-49 review minors (container hardening, ECS health grace,
+next_story_id: 156  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
+                    # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
+                    # reserved 144/145 (`git show sprint-61:.scrum/backlog.yaml`). Sprint-62
+                    # stories therefore start at 146 so no id ever names two different stories
+                    # across live branches. 146-149 = sprint-62 (ready); 150-155 = deferred
+                    # pipeline/fleet-readiness work filed at sprint-62 planning (drafts).
+                    # 093 = sprint-49 review minors (container hardening, ECS health grace,
                     # test hygiene), filed at sprint-49 review as accept-with-follow-up.
                     # bumped 2026-07-16 (sprint-49 planning): counter was stale at 82 (the
                     # AWS epic 082-091 was filed without bumping it); 092 = containerize both
@@ -924,4 +930,92 @@ stories:
     file: docs/scrum/stories/STORY-096-sidebar-narrow-viewport.md
     status: draft   # filed from the sprint-51 review (STORY-095 390px finding; PO approved filing 2026-07-17). Needs refinement + estimate.
     type: story
+    sprint: null
+  # ── Sprint 62 — fleet readiness foundation ───────────────────────
+  # Refined 2026-07-28 from the new-UI planning discussion. Ids start at 146, NOT 097:
+  # the unmerged sprint-59/60/61 line already used 097-143 and reserved 144/145
+  # (`git show sprint-61:.scrum/backlog.yaml` -> next_story_id: 146). Reusing those numbers
+  # would create two different STORY-136s across live branches, so the counter jumps.
+  # Provenance for all four: docs/scrum/sprints/2026-07-28-sprint-62/ (gap analysis,
+  # config-shape proposal, calculations walkthrough, decisions D1-D4/F1-F3, roadmap).
+  - id: STORY-146
+    title: Config authoring shape — nested monitors, declared locations, freshness block
+    file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
+    status: ready   # AC approved + estimated; no open questions
+    points: 3
+    priority: 52
+    type: chore
+    sprint: 62
+  - id: STORY-147
+    title: Component group + description — config to ComponentDTO
+    file: docs/scrum/stories/STORY-147-component-group-description.md
+    status: ready
+    points: 2
+    priority: 53
+    type: feature
+    sprint: 62
+  - id: STORY-148
+    title: Local Grail-shaped demo engine — scripted scenarios, no Dynatrace
+    file: docs/scrum/stories/STORY-148-grail-demo-engine.md
+    status: ready
+    points: 5
+    priority: 54
+    type: chore
+    sprint: 62
+  - id: STORY-149
+    title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
+    file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
+    status: ready
+    points: 1
+    priority: 55
+    type: defect
+    sprint: 62
+  # ── Deferred / future work, filed at sprint-62 planning (drafts) ──
+  - id: STORY-150
+    title: Anti-flap Phase 2 — breadth sets a severity ceiling, duration climbs to it (D1/D2)
+    file: null      # story file written at refinement
+    status: draft   # ~5pts. Fixes the major_outage severity ceiling + the degraded semantic
+                    # conflation. PREREQUISITE for real multi-location components.
+    type: feature
+    sprint: null
+  - id: STORY-151
+    title: Per-component decision rollup — one writer of a component's status (worst-of)
+    file: null
+    status: draft   # ~5pts. Today each signal independently calls decide() for the shared
+                    # component, so a healthy monitor OBSOLETEs a failing sibling's proposal
+                    # and publishes a recovery. PREREQUISITE for multi-monitor components.
+                    # PO chose per-component loop (option B) + worst-of + freshness exclusion.
+    type: defect
+    sprint: null
+  - id: STORY-152
+    title: Completeness uses expected locations, not observed ones
+    file: null
+    status: draft   # ~3pts. distinct_locations is COUNT(DISTINCT observed), so a fully-dark
+                    # location leaves its own denominator and completeness reads ~100%.
+                    # Consumes STORY-146's expected_locations declaration.
+    type: defect
+    sprint: null
+  - id: STORY-153
+    title: Rejected proposal reopens on the next cycle — needs a suppression window (F1)
+    file: null
+    status: draft   # ~3pts. CONFIRMED pre-existing defect: reject resolves to terminal
+                    # REJECTED with no suppression, so get_open() returns None next cycle and
+                    # an identical proposal reopens (every 60s on a fast monitor).
+    type: defect
+    sprint: null
+  - id: STORY-154
+    title: Map the real Dynatrace HTTP failure codes (blocked on trial renewal)
+    file: null
+    status: draft   # ~3pts. map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise,
+                    # so no live-path mapping produces DOWN or DEGRADED at all. BLOCKED: needs
+                    # a live tenant to observe the real codes. Unblocks re-verifying every
+                    # assumption STORY-148 bakes in.
+    type: chore
+    sprint: null
+  - id: STORY-155
+    title: Remove sample_mode (superseded by the demo engine)
+    file: null
+    status: draft   # ~2pts. Removal inventory already written: docs/scrum/wiki/sample-mode.md
+                    # (port + adapter + fake + API feature + the one seam line in run.py).
+    type: chore
     sprint: null
