@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 173  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
+next_story_id: 174  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
                     # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
                     # reserved 144/145 (`git show sprint-61:.scrum/backlog.yaml`). Sprint-62
                     # stories therefore start at 146 so no id ever names two different stories
@@ -1194,6 +1194,23 @@ stories:
                     # which is worse than an honest placeholder. One swap point exists.
                     # Needs an identity-provider decision at refinement.
     type: feature
+    sprint: null
+  - id: STORY-173
+    title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
+    file: null
+    status: draft   # OBSERVED 2026-07-28 during the sprint-62 baseline gate, twice.
+                    # Repro: start `yt_gate.py`, kill it mid-pytest (e.g. a 10-min tool
+                    # timeout). The session-scoped `dynamo_local` fixture
+                    # (backend/tests/conftest.py) leaves its container running
+                    # (`uptime_dynamo_pytest_<pid>_<hash>`, seen up 20 min after its python
+                    # process was gone). The NEXT gate run then stalls in pytest — four python
+                    # processes at ~0 CPU for 20 min, no progress — and only recovers after
+                    # `docker rm -f` on the orphans.
+                    # Enforcement-ladder candidate (retro routing): the fixture should reap
+                    # containers matching its own name pattern whose owning PID is dead, at
+                    # session start — a SCRIPT-level fix, not a prose warning. Same family as
+                    # STORY-080 (dev_db CLI port collision, sprint-44 gate contention).
+    type: defect
     sprint: null
   - id: STORY-172
     title: Per-location streak persistence — separate a regional outage from a flaky probe (F2)
