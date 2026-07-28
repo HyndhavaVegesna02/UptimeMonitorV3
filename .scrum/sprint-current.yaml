@@ -149,7 +149,7 @@ stories:
   - id: STORY-146
     title: Config authoring shape — nested monitors, declared locations, freshness block
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
-    status: ready
+    status: in_progress   # dispatched 2026-07-28; resume point = plan.md step checkboxes
     points: 5                # re-estimated from 3 at the 2nd verifier pass: 9 ACs, 4 models,
                              # 3 error classes, 2 accessors, 13-file test migration surface
     ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
