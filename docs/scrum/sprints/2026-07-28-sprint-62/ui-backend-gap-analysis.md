@@ -120,9 +120,25 @@ builds, and what fidelity means here):
 4. **Teal as the single accent** — teal for brand/active/primary-action, with the
    amber/orange/rose ramp reserved strictly for health.
 
-**Palette conflict to resolve:** this is a **teal/emerald** system. Sprint-59's
-(PO-approved, then rejected) system was **single-sky-blue** with a 7-status palette. The
-7 statuses also don't map onto the reference's 4. See §4 Q3.
+**Palette — RESOLVED 2026-07-28, and an earlier claim here was wrong.** An earlier revision
+of this document said "our domain has 7 statuses"; that was the *sprint-59 frontend's*
+invented palette (`up`/`degraded`/`partial`/`down`/`maintenance`/`unknown`/`missing`), not
+the domain vocabulary. The real domain sets are:
+
+- `ComponentStatus` (`core/domain/status.py:23-26`) — `operational`, `degraded`,
+  `partial_outage`, `major_outage`. **Exactly four**, which the reference's
+  teal → amber → orange → rose ramp maps onto 1:1. No extension, no collapsing.
+- `Health` (`core/domain/signal.py:21-23`) — `up`, `down`, `degraded`. Three per-signal
+  dot colours, also a clean fit.
+
+**PO decision (2026-07-28):** adopt the reference's 4-status ramp verbatim. The three
+things that still need a visual are *not statuses* and get non-status treatments:
+
+| Condition | Source | Treatment |
+| --------- | ------ | --------- |
+| Under maintenance | `maintenance_verdicts` (`AvailabilityDTO`), active window | a distinct sky-blue **chip that replaces the status pill** while a window is active — never a peer status colour |
+| No data / gap | `gap_verdicts` (`AvailabilityDTO`) | a visible **break** in the series (hollow/hatched block), never a zero-height bar that reads as healthy |
+| Loading / not yet known | client state | skeleton, making **no status claim at all** (the STORY-136 rule) |
 
 ---
 
@@ -273,6 +289,75 @@ B1–B4 alone unblock roughly 80% of the design. B8–B10 are the expensive tail
 least.
 
 ---
+
+## 3a. PO decisions taken 2026-07-28 (discussion, one question at a time)
+
+**Fleet density — RESOLVED.** The lone `http-check` component is temporary; the PO confirmed
+"many more components will come along sooner". So: **design to scale**. Layouts must read as
+deliberate at n=1 AND stay correct at n=12+ without a redesign — auto-fitting grids over
+hardcoded column counts, tables built for pagination from day one, no per-component
+hardcoding. Neither "expand the fleet first" (blocks UI work behind Dynatrace setup, which
+is currently deactivated) nor "build dense as drawn" (renders 3/4 void today).
+
+**Palette — RESOLVED.** Adopt the reference's 4-status teal→amber→orange→rose ramp verbatim;
+it is a 1:1 fit for `ComponentStatus`. Maintenance renders as a **sky-blue chip that replaces
+the status pill** while a window is active — not a peer status colour. Gaps render as visible
+breaks in a series; loading makes no status claim. See §1.
+
+**Confidence % — DROPPED, with evidence.** The engine is threshold-based, not probabilistic:
+`config/apps/httpcheck.yaml` declares `thresholds: {major: 5, partial: 3, degraded: 2,
+recovery: 2}` — consecutive-cycle counts crossing a line. There is no probability anywhere in
+the decision path, so a confidence badge would be a fabricated number shown to an operator
+about to take a production action.
+
+**Proposal reasoning — CHEAPER THAN ESTIMATED (B8: 3pts → ~2pts).**
+`StatusProposal.reason` **already exists** (`core/domain/proposal.py:51`) and the repository
+already persists it. The only gap: `_open_proposal` (`decide.py:176-184`) takes no `reason`
+parameter, so the field is populated on *resolve* but is always `None` for exactly the OPEN
+proposals the Approvals page lists. Work = thread a reason through `_open_proposal`, compose
+it in the anti-flap caller from what it already knows at the decision point (threshold
+crossed, consecutive cycles, failing-signal count), expose the existing field on
+`ProposalDTO`. Yields an honest version of the reference's "3 of 5 signals failing in
+eu-west-1 + us-east-1" — derived, never fabricated.
+
+**Component `group` + `description` — IN SCOPE for sprint 62 (B4).** Five-file vertical
+slice, normal dependency direction: `ComponentConfig` (`composition/config.py:57`) →
+`seed_dynamo.py:42` → `Component` (`core/domain/component.py:22`) → Dynamo component
+repository → `ComponentDTO` (`api/v1/components/models.py:12`). Decisions taken:
+
+- **Internal only.** Neither field reaches Statuspage; Statuspage owns its own component
+  naming. This is operator-cockpit metadata.
+- **`group` is free text, normalized to a slug at config load, title-cased/upper-cased for
+  display.** A closed enum would make every new category a code change + deploy, which fights
+  dossier §4 (editing config is a topology change, not a code change). Slug normalization
+  stops `Platform`/`platform`/`PLATFORM` forking into phantom groups.
+- **`group` is decorative in sprint 62, structural later if wanted.** It renders as a mono
+  sub-label only. Slug storage means promoting it to grid sections or a filter in sprint 63
+  is a pure frontend change with no stored-data cleanup. Deliberately NOT sectioning now:
+  with one component, sectioning yields five headings and four empty sections, and whether
+  "group" is even the right axis to cut a 30-component fleet is a judgment that needs real
+  cards on screen (it might want to be status, or failing-first).
+- **Both optional; the UI omits the chip when `group` is absent** — no "Uncategorized"
+  filler. A newly-added component exists before anyone categorizes it, so the empty case is
+  a legitimate state to design, not to paper over.
+- **`description` is length-capped (~80 chars) and validated at load.** The reference's
+  descriptions are one ~40-char line and already ellipsize in the card; enforcing the cap
+  where content is authored beats discovering it via a broken layout.
+- **Sequencing:** this lands BEFORE the fleet expansion. Whoever adds the new components is
+  already authoring `id`/`name`/`statuspage_component_id`; if the schema has `group` and
+  `description` they fill them in the same edit instead of editing every entry twice.
+
+**Publication headline + body — DEFERRED to sprint 64.** Real value, but it converts
+publications from "recorded status changes" into "authored incident notes" — a product
+expansion, not a UI adaptation. Worth doing deliberately.
+
+**Multi-component maintenance/publications — DROPPED for now.** Most expensive item (B10,
+5pts) and buys one visual (a second chip). Revisit when the fleet is large enough that
+genuinely shared windows occur.
+
+**Keep `outcome` against the reference.** `PublicationDTO.outcome` (`succeeded`/`failed`)
+exists and the reference has no visual for it. A failed Statuspage publish must stay
+visible — we keep it even though the design omits it.
 
 ## 4. PO decisions needed before a sprint can lock
 
