@@ -219,6 +219,52 @@ class SignalConfig(BaseModel):
         return self
 
 
+class LocationConfig(BaseModel):
+    """A declared probe location alias (STORY-146 AC3).
+
+    ``native_id`` matches the vendor's opaque
+    ``dt.entity.synthetic_location`` value (e.g.
+    ``SYNTHETIC_LOCATION-000000000000005C``); ``label`` is the
+    operator-facing display name.  Declared once per app, keyed by a short,
+    non-cloud-provider alias (e.g. ``loc-a``, ``mumbai``, ``dublin`` —
+    deliberately NOT an AWS region name, so no reader mistakes a probe
+    location for an AWS deployment region).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    native_id: str
+    """The vendor's opaque location entity id."""
+
+    label: str
+    """Operator-facing display name for this location."""
+
+
+class FreshnessConfig(BaseModel):
+    """Per-app freshness thresholds for the component rollup (STORY-146 AC4).
+
+    Both fields are CYCLE COUNTS, not seconds — each is multiplied by the
+    owning monitor's own ``interval_seconds`` at the point of use
+    (STORY-151/152 consume this; this story only loads, validates, and
+    exposes the counts).
+
+    Carries plain ``int`` fields with NO pydantic validator, deliberately —
+    do NOT follow the ``SignalConfig._require_positive_interval`` /
+    ``MonitorConfig._require_positive_interval`` precedent here. Positivity is
+    checked in ``load_config`` (``InvalidFreshnessError``, AC5) instead,
+    because a validator cannot raise a named error that survives to the
+    caller (probed twice, independently — see the AC5 module comment above).
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    stale_after_cycles: int = 3
+    """Consecutive missed cycles before a signal is considered stale."""
+
+    reentry_cycles: int = 2
+    """Consecutive fresh cycles required before a stale signal re-enters."""
+
+
 def _component_id_and_monitors(comp: Any) -> tuple[str, list[Any]]:
     """Extract ``(id, monitors)`` from a component entry (STORY-146 AC7).
 
@@ -296,6 +342,14 @@ class AppConfig(BaseModel):
     thresholds: AntiFlapThresholds = _SECTION_10_DEFAULTS
     """Per-app anti-flap thresholds (dossier §10).  Defaults to 5/3/2/2 when omitted."""
 
+    locations: dict[str, LocationConfig] = Field(default_factory=dict)
+    """Declared probe locations, keyed by alias (STORY-146 AC3/AC6). Per-app —
+    no global merge; two apps may declare different aliases without conflict."""
+
+    freshness: FreshnessConfig = Field(default_factory=FreshnessConfig)
+    """Per-app freshness thresholds (STORY-146 AC4/AC6), defaulting to
+    stale_after_cycles=3 / reentry_cycles=2 when omitted."""
+
     @model_validator(mode="before")
     @classmethod
     def _derive_signals_from_monitors(cls, data: Any) -> Any:
@@ -335,18 +389,24 @@ class AppConfig(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def _validate_referential_and_uniqueness(self) -> "AppConfig":
-        """Enforce intra-app referential integrity and uniqueness invariants.
+    def _validate_uniqueness_and_thresholds(self) -> "AppConfig":
+        """Enforce intra-app uniqueness invariants and threshold positivity.
 
         Three rules (dossier §7 Option C):
-        1. Every ``signal.component_id`` must reference a declared component.
+        1. No duplicate ``component.id`` within the app.
         2. No duplicate ``signal_key`` within the app.
-        3. No duplicate ``component.id`` within the app.
-        4. All threshold fields must be positive integers (dossier §10).
+        3. All threshold fields must be positive integers (dossier §10).
+
+        STORY-146 AC2 DELETES the fourth rule this validator used to enforce —
+        "every ``signal.component_id`` references a declared component" — because
+        it is now structurally impossible to violate: ``signals`` is derived
+        from ``components[].monitors`` (see ``_derive_signals_from_monitors``),
+        so every derived signal's ``component_id`` is its parent's id by
+        construction. A monitor can no longer author a bogus reference at all.
         """
         component_ids = {c.id for c in self.components}
 
-        # 3. Duplicate component.id
+        # 1. Duplicate component.id
         if len(component_ids) != len(self.components):
             seen: set[str] = set()
             for c in self.components:
@@ -367,16 +427,7 @@ class AppConfig(BaseModel):
                 )
             seen_keys.add(sig.signal_key)
 
-        # 1. Referential integrity: signal.component_id → declared component
-        for sig in self.signals:
-            if sig.component_id not in component_ids:
-                raise ValueError(
-                    f"Signal {sig.signal_key!r} references component_id "
-                    f"{sig.component_id!r}, which is not declared in app {self.id!r}. "
-                    "Declare the component first."
-                )
-
-        # 4. Threshold positivity (dossier §10 — thresholds must be positive ints)
+        # 3. Threshold positivity (dossier §10 — thresholds must be positive ints)
         t = self.thresholds
         for field_name, value in [
             ("major", t.major),
@@ -419,6 +470,8 @@ class Config:
         self._signal_to_component: dict[str, str] = {}
         self._component_to_thresholds: dict[str, AntiFlapThresholds] = {}
         self._signal_key_to_signal: dict[str, SignalConfig] = {}
+        self._app_id_to_locations: dict[str, dict[str, LocationConfig]] = {}
+        self._app_id_to_freshness: dict[str, FreshnessConfig] = {}
 
         for app in apps:
             for sig in app.signals:
@@ -426,6 +479,8 @@ class Config:
                 self._signal_key_to_signal[sig.signal_key] = sig
             for comp in app.components:
                 self._component_to_thresholds[comp.id] = app.thresholds
+            self._app_id_to_locations[app.id] = app.locations
+            self._app_id_to_freshness[app.id] = app.freshness
 
     def component_for_signal(self, signal_key: str) -> str:
         """Return the ``component_id`` that ``signal_key`` feeds (dossier §7).
@@ -474,6 +529,36 @@ class Config:
                 "Check config/apps/*.yaml for the correct signal_key."
             ) from None
 
+    def locations_for(self, app_id: str) -> dict[str, LocationConfig]:
+        """Return the declared ``locations:`` map for ``app_id`` (STORY-146 AC6).
+
+        Per-app, no global merge — matches the ``thresholds_for`` precedent.
+        Raises ``UnknownAppError`` (named, never a raw ``KeyError``) when
+        ``app_id`` is not registered.
+        """
+        try:
+            return self._app_id_to_locations[app_id]
+        except KeyError:
+            raise UnknownAppError(
+                f"App id {app_id!r} is not registered in any loaded app config. "
+                "Check config/apps/*.yaml for the correct app id."
+            ) from None
+
+    def freshness_for(self, app_id: str) -> FreshnessConfig:
+        """Return the ``FreshnessConfig`` for ``app_id`` (STORY-146 AC4/AC6).
+
+        Per-app, no global merge — matches the ``thresholds_for`` precedent.
+        Raises ``UnknownAppError`` (named, never a raw ``KeyError``) when
+        ``app_id`` is not registered.
+        """
+        try:
+            return self._app_id_to_freshness[app_id]
+        except KeyError:
+            raise UnknownAppError(
+                f"App id {app_id!r} is not registered in any loaded app config. "
+                "Check config/apps/*.yaml for the correct app id."
+            ) from None
+
     def statuspage_mapping(self) -> dict[str, str]:
         """Return a mapping of internal component IDs to Statuspage component IDs (dossier §6).
 
@@ -493,11 +578,23 @@ def load_config(config_dir: str | Path) -> Config:
     Fail-fast: raises a clear, descriptive error on:
     - malformed YAML (``yaml.YAMLError`` propagates with file context);
     - a missing required field (pydantic ``ValidationError`` with field name);
-    - a ``signal.component_id`` referencing no declared component;
     - a duplicate ``signal_key`` or ``component.id`` within an app;
     - a non-positive threshold;
     - a duplicate ``signal_key`` or ``component.id`` ACROSS apps (ids are
-      globally stable per dossier §7 Option C).
+      globally stable per dossier §7 Option C);
+    - a raw top-level ``signals:`` key (``FlatSignalsRejectedError``, STORY-146
+      AC2 — monitors are authored nested under ``components[].monitors``);
+    - a monitor's ``expected_locations`` naming an undeclared alias
+      (``UndeclaredLocationAliasError``, STORY-146 AC3/AC5);
+    - a non-positive ``freshness.stale_after_cycles``/``reentry_cycles``
+      (``InvalidFreshnessError``, STORY-146 AC4/AC5).
+
+    The last three checks run OUTSIDE the ``except (TypeError, ValueError)``
+    block below, so their named subclasses (all ``ConfigError``) survive to
+    the caller — a pydantic ``model_validator`` cannot do this (probed twice,
+    independently: it converts a raised ``ValueError`` subclass to
+    ``ValidationError``, losing the subclass), which is why they live here
+    instead of on a model.
 
     An empty ``config_dir`` (no ``*.yaml`` files) returns an empty ``Config``.
 
@@ -524,9 +621,14 @@ def load_config(config_dir: str | Path) -> Config:
             )
 
         # Build AppConfig — pydantic validates intra-app invariants here. The
-        # sub-entry construction (components/signals/thresholds) is INSIDE the
-        # try too, so a malformed sub-entry also gets the filename-prefixed
-        # error rather than a bare pydantic/TypeError.
+        # sub-entry construction (components/thresholds/locations/freshness) is
+        # INSIDE the try too, so a malformed sub-entry also gets the
+        # filename-prefixed error rather than a bare pydantic/TypeError.
+        # NOTE: `signals` is deliberately NOT built from `raw.get("signals")`
+        # here — AppConfig derives it from `components[].monitors` (AC2/AC7);
+        # a raw top-level `signals:` key is rejected below, outside this try,
+        # so `FlatSignalsRejectedError` survives instead of being converted to
+        # a bare `ValueError` by the generic `except` clause.
         app_block: dict[str, Any] = raw.get("app", {})
         try:
             app_kwargs: dict[str, Any] = {
@@ -536,13 +638,57 @@ def load_config(config_dir: str | Path) -> Config:
                 "components": [
                     ComponentConfig(**c) for c in (raw.get("components") or [])
                 ],
-                "signals": [SignalConfig(**s) for s in (raw.get("signals") or [])],
             }
             if "thresholds" in raw and raw["thresholds"] is not None:
                 app_kwargs["thresholds"] = AntiFlapThresholds(**raw["thresholds"])
+            if "locations" in raw and raw["locations"] is not None:
+                app_kwargs["locations"] = {
+                    alias: LocationConfig(**loc)
+                    for alias, loc in raw["locations"].items()
+                }
+            if "freshness" in raw and raw["freshness"] is not None:
+                app_kwargs["freshness"] = FreshnessConfig(**raw["freshness"])
             app = AppConfig(**app_kwargs)
         except (TypeError, ValueError) as exc:
             raise ValueError(f"Invalid config in {yaml_path.name}: {exc}") from exc
+
+        # --- STORY-146 AC5: named errors, raised OUTSIDE the try/except above ---
+
+        # AC2(a): a raw top-level `signals:` key is flat authoring — rejected
+        # regardless of what load_config did with it (it was never fed to
+        # AppConfig above).
+        if "signals" in raw:
+            raise FlatSignalsRejectedError(
+                f"{yaml_path.name} declares a top-level `signals:` key; author "
+                "monitors nested under components[].monitors instead "
+                "(STORY-146 — see docs/scrum/wiki/config-layer.md)."
+            )
+
+        # AC3: every monitor's expected_locations must reference a declared
+        # locations alias.
+        declared_aliases = set(app.locations.keys())
+        for comp in app.components:
+            for mon in comp.monitors:
+                for alias in mon.expected_locations:
+                    if alias not in declared_aliases:
+                        raise UndeclaredLocationAliasError(
+                            f"{yaml_path.name}: monitor {mon.signal_key!r} "
+                            f"(component {comp.id!r}) references "
+                            f"expected_locations alias {alias!r}, which is not "
+                            f"declared in this app's `locations:` block."
+                        )
+
+        # AC4: freshness cycle counts must be positive ints.
+        if app.freshness.stale_after_cycles <= 0:
+            raise InvalidFreshnessError(
+                f"{yaml_path.name}: freshness.stale_after_cycles must be a "
+                f"positive integer (got {app.freshness.stale_after_cycles!r})."
+            )
+        if app.freshness.reentry_cycles <= 0:
+            raise InvalidFreshnessError(
+                f"{yaml_path.name}: freshness.reentry_cycles must be a "
+                f"positive integer (got {app.freshness.reentry_cycles!r})."
+            )
 
         # Global uniqueness checks across apps (dossier §7 — ids are globally stable)
         for sig in app.signals:

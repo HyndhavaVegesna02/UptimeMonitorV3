@@ -184,18 +184,18 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
 
 ### Steps
 
-- [ ] 1. Failing test: a nested-shape YAML fixture loads, and each monitor's resolved
+- [x] 1. Failing test: a nested-shape YAML fixture loads, and each monitor's resolved
       `component_id` equals its parent component's id (no `component_id` field authored).
-- [ ] 2. Add `MonitorConfig` (nested; `signal_key`/`native_id`/`name`/`interval_seconds`/
+- [x] 2. Add `MonitorConfig` (nested; `signal_key`/`native_id`/`name`/`interval_seconds`/
       optional `expected_locations`), nest it under `ComponentConfig`, keep the positive-int
       interval validator. Add the `model_validator(mode="before")` on `AppConfig` that
       synthesizes `signals` from `components[].monitors`, stamping the parent id — this is what
       keeps all eight consumers working (AC7).
-- [ ] 3. Delete the referential validator (`:182-189`) **and both its tests**
+- [x] 3. Delete the referential validator (`:182-189`) **and both its tests**
       (`test_config.py:112-121` model-level, `:244-262` loader-level). Add the compensating
       check: a raw top-level `signals:` key is rejected with `FlatSignalsRejectedError` (AC2) —
       without this, deleting the validator silently permits a bogus `component_id`.
-- [ ] 4. Add the `ConfigError(ValueError)` hierarchy (`UndeclaredLocationAliasError`,
+- [x] 4. Add the `ConfigError(ValueError)` hierarchy (`UndeclaredLocationAliasError`,
       `FlatSignalsRejectedError`, `InvalidFreshnessError`) and a post-construction validation
       step in `load_config` **outside** the `try` at `:343-357`. Failing test asserts the
       specific class, not `ValueError`.

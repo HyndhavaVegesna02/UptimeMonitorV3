@@ -18,6 +18,7 @@ from src.composition.config import (
     AppConfig,
     ComponentConfig,
     Config,
+    FlatSignalsRejectedError,
     SignalConfig,
     UnknownComponentError,
     UnknownSignalError,
@@ -109,16 +110,14 @@ class TestAppConfigHappyPath:
 
 
 class TestAppConfigValidationRejects:
-    def test_signal_referencing_undeclared_component_raises(self):
-        bad_signal = SignalConfig(
-            signal_key="orphan-http",
-            native_id="SYNTHETIC_TEST-XYZ",
-            name="Orphan",
-            component_id="does-not-exist",
-            interval_seconds=60,
-        )
-        with pytest.raises(ValueError, match="component_id"):
-            _valid_app(signals=[bad_signal])
+    # STORY-146 AC2: the referential-integrity check this class used to test
+    # (`test_signal_referencing_undeclared_component_raises` — a
+    # `signal.component_id` referencing an undeclared component) is DELETED
+    # along with `AppConfig._validate_referential_and_uniqueness`'s check #1.
+    # It loses nothing: `signals` is no longer author-settable at all (a
+    # monitor's `component_id` is now structural — AC1), so a bogus reference
+    # is no longer expressible in the first place. See
+    # `TestFlatSignalsRejected` for the compensating check.
 
     def test_duplicate_signal_key_within_app_raises(self):
         dup = SignalConfig(
@@ -241,25 +240,11 @@ signals: []
         with pytest.raises(ValueError):
             load_config(tmp_config_dir)
 
-    def test_signal_referencing_undeclared_component_raises_at_load(
-        self, tmp_config_dir: Path
-    ):
-        _write_yaml(
-            tmp_config_dir,
-            "bad.yaml",
-            """\
-app:
-  id: bad-app
-  name: Bad App
-  monitor_provider: dynatrace
-components:
-  - { id: checkout, name: Checkout }
-signals:
-  - { signal_key: orphan-http, native_id: SYNTHETIC_TEST-X, name: Orphan, component_id: does-not-exist, interval_seconds: 60 }
-""",
-        )
-        with pytest.raises(Exception, match="component_id"):
-            load_config(tmp_config_dir)
+    # STORY-146 AC2: `test_signal_referencing_undeclared_component_raises_at_load`
+    # is DELETED along with the referential-integrity check it exercised — a
+    # flat `signals:` YAML block (which is what carried the bogus
+    # `component_id`) is now rejected outright by `TestFlatSignalsRejected`
+    # below, before any referential check could even run.
 
     def test_duplicate_signal_key_across_apps_raises(self, tmp_config_dir: Path):
         _write_yaml(tmp_config_dir, "sockshop.yaml", SOCKSHOP_YAML)
@@ -496,3 +481,38 @@ class TestNestedMonitors:
         assert by_key["web-http"].native_id == "NATIVE-WEB"
         assert by_key["web-http"].interval_seconds == 60
         assert by_key["api-http"].interval_seconds == 45
+
+
+class TestFlatSignalsRejected:
+    """AC2: flat `signals:` authoring is rejected at both levels."""
+
+    def test_raw_top_level_signals_key_in_yaml_raises(self, tmp_config_dir: Path):
+        flat_yaml = """\
+app:
+  id: flat-app
+  name: Flat App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+signals:
+  - { signal_key: sig-a, native_id: N-A, name: Sig A, component_id: comp-a, interval_seconds: 60 }
+"""
+        _write_yaml(tmp_config_dir, "flat.yaml", flat_yaml)
+        with pytest.raises(FlatSignalsRejectedError):
+            load_config(tmp_config_dir)
+
+    def test_explicit_nonempty_signals_on_direct_construction_raises(self):
+        """AC2b: the mode="before" derive validator raises rather than
+        silently deriving over an explicit non-empty `signals=`. Pydantic
+        wraps the raised `FlatSignalsRejectedError` as a `ValidationError`
+        (probed, see AC5) — the important thing is that it raises LOUDLY,
+        not that the exact subclass survives at this call site."""
+        bad_signal = SignalConfig(
+            signal_key="orphan-http",
+            native_id="SYNTHETIC_TEST-XYZ",
+            name="Orphan",
+            component_id="does-not-exist",
+            interval_seconds=60,
+        )
+        with pytest.raises(ValueError):
+            _valid_app(signals=[bad_signal])
