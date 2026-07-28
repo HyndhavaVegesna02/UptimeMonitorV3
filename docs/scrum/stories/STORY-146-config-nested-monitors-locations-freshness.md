@@ -174,4 +174,3 @@ Only demo/fixture configs declare locations at all (see AC8).
   (cycle counts, not seconds) and per-app-vs-global scoping were undefined, now AC4/AC6;
   (6) the migrated real config is now explicitly forbidden from gaining unverifiable vendor
   location ids, and the alias-vocabulary contradiction against the shape proposal is resolved.
-</content>

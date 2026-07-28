@@ -3,7 +3,8 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 177  # 176 CONSUMED 2026-07-28 by the post-verifier split of STORY-148 into
+next_story_id: 178  # 177 CONSUMED 2026-07-28 by PO decision D-A (provisional failure mapping).
+                    # 176 CONSUMED 2026-07-28 by the post-verifier split of STORY-148 into
                     # 148 (wire contract) + 176 (scenario player, demo fleet, loop run).
                     # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
                     # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
@@ -953,7 +954,9 @@ stories:
     title: Config authoring shape — nested monitors, declared locations, freshness block
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
     status: ready   # AC approved + estimated; no open questions
-    points: 3
+    points: 5   # RE-ESTIMATED from 3 (2nd verifier pass): 9 ACs, 4 models, 3 error classes,
+                # 2 accessors, and a 13-FILE test migration surface (17 AppConfig( sites +
+                # 10 flat `signals:` YAML blocks) that the plan had understated as one file.
     priority: 52
     type: chore
     sprint: 62
@@ -979,11 +982,27 @@ stories:
     title: Grail demo engine part 2 — scenario player, demo fleet, and the real loop run
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
     status: ready
-    points: 3
+    points: 4   # re-estimated from 3; rescoped to UP+absence scenarios by PO decision D-A
     priority: 55
     type: chore
-    sprint: 62
+    sprint: 63  # DEFERRED out of 62 by PO decision D-B (2026-07-28): honest sprint re-estimate
+                # was 12-13 pts vs the ~9-11 baseline. Opens 63, where its fleet-scale data also
+                # feeds the frontend rebuild. Plan section carried forward verbatim in
+                # docs/scrum/sprints/2026-07-28-sprint-62/story-176-carried-to-sprint-63.md
     depends_on: [STORY-146, STORY-148]
+  - id: STORY-177
+    title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
+    file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md
+    status: draft   # AC drafted but NOT refined; 3 open questions. Needs a refinement pass +
+                    # estimate before it may enter a sprint (Definition of Ready).
+    points: null
+    priority: 56
+    type: chore
+    sprint: null    # Created by PO decision D-A (2026-07-28). No DOWN/DEGRADED observation can
+                    # reach the system through the real ingest path at all: map_synthetic_status
+                    # RAISES on any non-healthy code (health_mapping.py:65-70, deliberately) and
+                    # dispatch.py:80 then loses the whole batch. Blocks failure-path demos,
+                    # STORY-150's breadth model and STORY-151's rollup from end-to-end verification.
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
@@ -1031,7 +1050,9 @@ stories:
     status: draft   # ~3pts. map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise,
                     # so no live-path mapping produces DOWN or DEGRADED at all. BLOCKED: needs
                     # a live tenant to observe the real codes. Unblocks re-verifying every
-                    # assumption STORY-148 bakes in.
+                    # assumption STORY-148 bakes in. See STORY-177 — the PROVISIONAL mapping
+                    # stopgap, which is NOT blocked and replaces this story's role until a
+                    # tenant exists. 154 then replaces 177's constant rather than duplicating it.
     type: chore
     sprint: null
   - id: STORY-155

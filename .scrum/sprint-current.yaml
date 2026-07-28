@@ -1,31 +1,36 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 62
-status: planning   # none | planning | active | review | closed | aborted
-                   # PLANNING, not yet locked. TWO yt-plan-verifier passes run 2026-07-28.
-                   # Pass 1: GAPS (13 gaps, 4 risks) — all closed. Pass 2 (independent, fresh
-                   # context, briefed to attack the FIXES): GAPS again — found 3 fix-introduced
-                   # errors (all closed) plus ONE BLOCKER both passes missed.
-                   # BLOCKED ON PO DECISION, see plan.md "Open decisions":
-                   #   D-A  no demo scenario can produce a DOWN/DEGRADED observation
-                   #        (health_mapping.py:65-70 RAISES on non-healthy codes; its docstring
-                   #        says inventing codes is "deliberately NOT done"). Kills 3 of 5
-                   #        STORY-176 scenarios + AC7, and makes STORY-149's reality gate a
-                   #        FALSE PASS. Recommend option B (UP+dark demo now; failure codes
-                   #        become a first-class story under STORY-154).
-                   #   D-B  honest re-estimate is 12-13 pts, not 10 (146 -> 5 on a 13-file
-                   #        migration surface; 176 -> 4-5). Recommend moving STORY-176 to 63,
-                   #        leaving a 9-pt foundations sprint.
-                   # Points below are the OLD 3/3/3/1 and are corrected at lock, once D-A/D-B
-                   # are answered. Flip to `active` only then.
+status: active     # none | planning | active | review | closed | aborted
+                   # LOCKED 2026-07-28 on PO approval ("i am ok with your recomendation").
+                   # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
+                   #
+                   # Two yt-plan-verifier passes ran pre-lock, both verdict GAPS, all closed:
+                   #   Pass 1 — 13 gaps, 4 risks. Split STORY-148, deferred STORY-147.
+                   #   Pass 2 — independent/fresh context, briefed to attack the FIXES. Found
+                   #     3 fix-introduced errors (config.py:183 listed as untouched while being
+                   #     deleted; the publish guard missing the API's own CONFIG_DIR route; the
+                   #     "6-digit fraction" claim, wrong because isoformat() drops the fraction
+                   #     at whole seconds) plus ONE BLOCKER both passes and the SM missed.
+                   # PO decisions resolving pass 2, recorded in plan.md "Decisions — RESOLVED":
+                   #   D-A -> Option B. No DOWN/DEGRADED observation can reach the system via the
+                   #     real ingest path at all (health_mapping.py:65-70 RAISES; dispatch.py:80
+                   #     then loses the whole batch), so the demo is scoped to UP + absence.
+                   #     STORY-149's gate moved to orchestrate_signal-level over SEEDED
+                   #     observations — as a demo gate it would have FALSE-PASSED step 1 (no
+                   #     proposal because nothing ingested, not because anti-flap damped it) and
+                   #     failed step 2 on the sprint's last story. Provisional mapping = STORY-177.
+                   #   D-B -> STORY-176 moved to sprint 63. Honest re-estimate was 12-13 pts vs
+                   #     the ~9-11 baseline; this sprint is 9 pts / 3 stories and the goal was
+                   #     restated from "the fleet exists, and it flows".
 mode: in-process   # Standing directive after the sprint-60 external rejection: "you only
-                   # implement". 146/148/176 are 3 pt -> implementer -> spec ∥ quality
+                   # implement". 146 (5 pt) and 148 (3 pt) -> implementer -> spec ∥ quality
                    # reviewers; 149 (1 pt) -> implementer -> gate.
                    # Every story gets the DoD gate + a reality gate.
-goal: "Make a realistic multi-component / multi-signal / multi-location fleet flow through the REAL pipeline without Dynatrace, on a config shape that communicates the component -> monitor -> location hierarchy, and close the one anti-flap damping hole that goes live the moment a second location exists. Backend only; no frontend work."
+goal: "Land the config authoring shape that communicates the component -> monitor -> location hierarchy; build a Grail-faithful demo-engine wire contract proven field-and-scale against a real captured sample and through the real executor; and close the one anti-flap damping hole that goes live the moment a second location exists. Backend only; no frontend work. The 12-component fleet RUN is STORY-176, opening sprint 63 (PO decision D-B)."
 branch: sprint-62
 start_tag: sprint-62-start
 start_commit: 517fc38   # main tip (sprint-51 retro close). main UNTOUCHED; nothing merges to it.
-started: null           # set at lock
+started: "2026-07-28"   # locked on PO approval of the twice-verified plan
 # ── Provenance ────────────────────────────────────────────────────────────────
 # This sprint follows the PO's rejection of the sprint-59/60/61 operator cockpit
 # ("i dont like this ui also", 2026-07-28) and the sprint-61 abort
@@ -39,41 +44,49 @@ started: null           # set at lock
 #   plan.md                        — this sprint's contracts, steps, reality gates
 # ── Scope discipline ──────────────────────────────────────────────────────────
 # PO approved scope option (a) (~21 pts) but directed "do it multi sprint, with carefull
-# verification, no need to rush in single stretch" — so it is SPLIT. This sprint is 10 pts,
+# verification, no need to rush in single stretch" — so it is SPLIT. This sprint is 9 pts,
 # at the ~9-11 baseline. Frontend lands sprint 63+ (design system + shell first, with a PO
 # look-and-feel checkpoint BEFORE six pages are built on the language — the pilot fix for the
 # process failure behind three rejections).
-# Post-verifier scope changes (2026-07-28, both MINE not the verifier's, both flagged for PO
-# pushback in plan.md): STORY-148 SPLIT into 148 (wire contract, 3) + STORY-176 (scenario
-# player + demo fleet + loop run, 3) after being assessed at 7-8 pts as one story; STORY-147
-# DEFERRED to sprint 63 where its consuming frontend lands (purely decorative until then, and
-# it now depends on the ConfigError hierarchy STORY-146 introduces). Total scope unchanged.
-# EXPLICITLY OUT: all frontend work; STORY-147 (deferred to 63), STORY-150 (breadth model
-# D1/D2), STORY-151 (per-component decision rollup), STORY-152 (expected-locations
-# completeness), STORY-153 (rejection suppression F1), STORY-154 (map real failure codes —
-# BLOCKED on trial renewal), STORY-155 (sample_mode removal), STORY-173 (leaked-container
-# fixture fix).
+# Scope changes across the two verifier passes, all PO-approved at lock:
+#   STORY-148 SPLIT into 148 (wire contract, 3) + STORY-176 (fleet + loop run) after being
+#     assessed at 7-8 pts as one story;
+#   STORY-147 DEFERRED to 63 where its consuming frontend lands (decorative until then, and it
+#     now depends on the ConfigError hierarchy STORY-146 introduces);
+#   STORY-176 DEFERRED to 63 (D-B) and rescoped to UP+absence (D-A), re-estimated 3 -> 4;
+#   STORY-146 re-estimated 3 -> 5 (13-file test migration surface the plan had understated);
+#   STORY-177 CREATED (D-A) as the first-class provisional-failure-mapping story.
+# Total programme scope is unchanged; it is redistributed across 62/63.
+# EXPLICITLY OUT: all frontend work; STORY-147 + STORY-176 (both 63); STORY-177 (draft, needs
+# refinement); STORY-150 (breadth model D1/D2), STORY-151 (per-component decision rollup),
+# STORY-152 (expected-locations completeness), STORY-153 (rejection suppression F1), STORY-154
+# (map real failure codes — BLOCKED on trial renewal), STORY-155 (sample_mode removal),
+# STORY-173 (leaked-container fixture fix).
 # ── Live-data caveat ──────────────────────────────────────────────────────────
 # The Dynatrace trial expired 2026-07-28: no observations arrive, nothing is reality-gateable
 # against real vendor data, and sample_mode (which flips already-normalized rows) is inert.
-# STORY-148 + STORY-176 exist to replace that. 148's reality gate is therefore a WIRE-SHAPE
-# comparison against real captured fixtures (backend/tests/fixtures/dynatrace/
-# grail_synthetic_events.json) plus a round trip through the REAL make_grail_executor over real
-# HTTP — not "the loop didn't crash". Every failure-state row rests on ASSUMED vendor codes —
-# map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise
-# (adapters/inbound/dynatrace/health_mapping.py:65-70). That limit is stated in the evidence,
-# never absorbed as "the failure path is tested".
+# STORY-148 exists to replace that. Its reality gate is therefore a FIELD-AND-SCALE comparison
+# against a real captured fixture (backend/tests/fixtures/dynatrace/grail_synthetic_events.json)
+# plus a round trip through the REAL make_grail_executor over real HTTP — not "the loop didn't
+# crash".
+# NOTE (PO decision D-A): the engine emits NO failure-coded rows at all this sprint, so there is
+# no "assumed vendor codes" caveat to carry — map_synthetic_status RAISES on anything that is not
+# "0"/"HEALTHY" (health_mapping.py:65-70) and dispatch.py:80 then discards the whole batch, so a
+# failure row is not an unverified row, it is an unusable one. Failure-path ingest arrives with
+# STORY-177. Nothing in this sprint may be reported as "the failure path is tested".
 # ── Safety precondition (non-negotiable) ──────────────────────────────────────
-# decide publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py:122-126). A demo run
-# wired to the real publisher would post fake statuses to the LIVE public Statuspage.
-# The verifier found the original stub-based guard UNIMPLEMENTABLE (no publisher injection point
-# in run.py:121-128 under a no-backend/src-changes constraint) and the exposure LARGER than
-# described: run.py:178 load_dotenv() walks up from the source file, so the existing repo-root
-# .env supplies Statuspage creds from any CWD, and a SECOND route exists via the API approve
-# trigger (composition/app.py:160-182). STORY-176 AC3 replaces it with a CONFIG-ONLY guard:
-# no statuspage_component_id anywhere in the demo config => statuspage_mapping() == {} =>
-# publish_helper.py:211 falls through to LoggingPublisher on BOTH roots, even with real creds
-# present. NO demo loop is started before that AC passes.
+# decide publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py:122-126), so any loop
+# run wired to the real publisher can post to the LIVE public Statuspage.
+# NO DEMO LOOP RUNS THIS SPRINT (STORY-176 moved to 63), so the demo guard moves with it —
+# recorded in STORY-176 AC3: a CONFIG-ONLY guard (no statuspage_component_id => mapping {} =>
+# publish_helper.py:211 falls through to LoggingPublisher on BOTH roots even with real creds),
+# PLUS CONFIG_DIR set on the API process, which the 2nd verifier pass found is a separate
+# process reading its own config (settings.py:32 defaults to config/apps, whose httpcheck.yaml:6
+# carries a real statuspage_component_id).
+# THE ONE LOOP RUN IN THIS SPRINT is STORY-146's reality gate, and it uses the REAL config/apps
+# (mapping non-empty) with the real .env (run.py:178). It therefore RUNS WITH STATUSPAGE_API_KEY
+# UNSET, recorded in the evidence — today it is otherwise safe only circumstantially (expired
+# trial => no observation => no verdict; Dynamo -inMemory).
 # ── Baseline ──────────────────────────────────────────────────────────────────
 # First full-gate attempt on this branch was RED: `npm run build` exit 1. Diagnosed as
 # ENVIRONMENT staleness, not a code defect — the on-disk frontend/node_modules was left from
@@ -137,37 +150,31 @@ stories:
     title: Config authoring shape — nested monitors, declared locations, freshness block
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
     status: ready
-    points: 3
+    points: 5                # re-estimated from 3 at the 2nd verifier pass: 9 ACs, 4 models,
+                             # 3 error classes, 2 accessors, 13-file test migration surface
     ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
     order: 1                 # highest blast radius (SEVEN surviving consumers of app.signals —
                              # an 8th listed earlier was inside the validator this story deletes;
                              # plus 13 test files to migrate); STORY-176's demo config must be
                              # authored in the final shape, not twice
   - id: STORY-148
-    title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
+    title: Grail demo engine — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
     status: ready
-    points: 3                # was 5 as one story; split post-verifier
+    points: 3                # was 5 as one story; split post-verifier (176 took the other half)
     ceremony: 3-pointer
     order: 2                 # highest RISK (new component, vendor wire-shape fidelity), and
                              # independent of the config work so it verifies on its own terms
-  - id: STORY-176
-    title: Grail demo engine part 2 — scenario player, demo fleet, and the real loop run
-    file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
-    status: ready
-    points: 3
-    ceremony: 3-pointer
-    order: 3                 # consumes STORY-146's config shape AND STORY-148's engine
-    depends_on: [STORY-146, STORY-148]
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
     status: ready
     points: 1
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
-    order: 4                 # fully independent, 4 lines; its scenario-level reality gate
-                             # needs STORY-176's engine and a SINGLE-MONITOR component (so the
-                             # known STORY-151 sibling-OBSOLETE path cannot spoof the evidence)
+    order: 3                 # fully independent, 4 lines. Reality gate is NOT a demo-engine run
+                             # (PO decision D-A): it is orchestrate_signal-level over SEEDED
+                             # multi-location observations, because no demo scenario can produce
+                             # a DOWN at all and a demo gate would have FALSE-PASSED step 1.
 final_gate:
   head: null
   dod_evidence: []

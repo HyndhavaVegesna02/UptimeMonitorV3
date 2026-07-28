@@ -109,6 +109,16 @@ drives a `DEGRADED` collapse — `Health.DEGRADED` appears only in `test_anti_fl
   of this sprint. Note that on the live HTTP path today no vendor mapping produces `DOWN` or
   `DEGRADED` at all (`health_mapping.py:65-70`), so this fix is verified against fixtures and
   demo-engine scenarios rather than live vendor failures.
+- 2026-07-28: **second verifier pass + PO decision D-A — the reality gate no longer uses the demo
+  engine.** It was to be a demo-engine scenario making one location fail for one cycle. That would
+  have been a **false pass**: no demo scenario can produce a `DOWN` observation at all
+  (`map_synthetic_status` raises on any non-healthy code, `health_mapping.py:65-70`;
+  `dispatch.py:80` loses the whole batch when it does), so step 1's "no proposal appears" would
+  have held because nothing was ingested, not because anti-flap damped it — and step 2 would then
+  have failed, on the last story of the sprint. The gate is now an `orchestrate_signal`-level test
+  over **seeded** multi-location observations, which enters the pipeline below the vendor mapping
+  and exercises the real `collapse → streak → anti_flap → decide` chain plus real persistence and
+  the live HTTP surface, with no invented vendor codes. See `plan.md` "Reality gate (149)".
 - 2026-07-28: **amended after `yt-plan-verifier` (pre-lock, verdict GAPS).** Three additions,
   all from reading the existing tests rather than assuming a 4-line change is self-contained:
   the length-0 outcome was unspecified while `test_anti_flap.py:240-248` explicitly asserts

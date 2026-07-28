@@ -1,14 +1,16 @@
-# Sprint 62 Plan — "the fleet exists, and it flows"
+# Sprint 62 Plan — "the shape and the wire are right"
 
-- **Sprint goal:** Make a realistic multi-component / multi-signal / multi-location fleet flow
-  through the **real** pipeline without Dynatrace, on a config shape that communicates the
-  component → monitor → location hierarchy, and close the one anti-flap damping hole that goes
-  live the moment a second location exists. **Backend only — no frontend work this sprint.**
+- **Sprint goal:** Land the config authoring shape that communicates the component → monitor →
+  location hierarchy, build a Grail-faithful demo engine wire contract proven against a real
+  captured sample, and close the one anti-flap damping hole that goes live the moment a second
+  location exists. **Backend only — no frontend work this sprint.** The 12-component fleet run
+  itself is STORY-176, opening sprint 63.
 - **Mode:** `in-process` (standing directive after the sprint-60 external rejection: "you only
   implement").
-- **Size:** 10 pts across 4 stories. The PO approved scope option (a) but directed *"do it multi
+- **Size:** 9 pts across 3 stories. The PO approved scope option (a) but directed *"do it multi
   sprint, with carefull verification, no need to rush in single stretch"* — so option (a)'s
-  ~21 pts are split, with the frontend landing in sprint 63+ (see `program-roadmap.md`).
+  ~21 pts are split across sprints, with the frontend landing in 63+ (see `program-roadmap.md`).
+  The goal was restated from "the fleet exists, and it flows" when STORY-176 moved to 63 (D-B).
 - **Preconditions (verified, not assumed):** working tree clean apart from two unrelated
   untracked files (`package.json`, `package-lock.json` — a stray `framer-motion` scratch, left
   in place deliberately and not part of this sprint); branch `sprint-62` cut from `main` at
@@ -16,28 +18,25 @@
   evidence recorded verbatim from `yt_gate.py` in `sprint-current.yaml`. Code baseline holds at
   HEAD (`git diff --name-only 282be8d..HEAD -- backend/ frontend/ config/ infra/` is empty).
 - **Stories & order** (dependencies first, then blast radius, then risk, then size):
-  1. **STORY-146** (3) — config authoring shape. First: highest blast radius (eight consumers of
-     `app.signals`), and STORY-176's demo config must be authored in the final shape, not twice.
-  2. **STORY-148** (3) — demo engine part 1, the wire contract. Second: highest risk, and
-     independent of the config work, so it can be verified on its own terms.
-  3. **STORY-176** (3) — demo engine part 2, scenario player + demo fleet + real loop run.
-     Third: consumes both STORY-146's shape and STORY-148's engine.
-  4. **STORY-149** (1) — anti-flap `DEGRADED` streak check. Last: fully independent, four lines,
-     and its scenario-level reality gate benefits from the engine existing.
-- **Plan-verifier: DISPATCHED, verdict GAPS, all gaps closed in this revision.** See
-  "Verifier pass" below for what changed and why. This sprint is contract-sensitive by the
-  skill's own test: STORY-148 must reproduce a **vendor wire contract** exactly, and STORY-146
-  changes a shape read by eight consumers.
+  1. **STORY-146** (5) — config authoring shape. First: highest blast radius (seven surviving
+     consumers of `app.signals`, plus a 13-file test migration), and STORY-176's demo config must
+     be authored in the final shape, not twice.
+  2. **STORY-148** (3) — the demo engine wire contract. Second: highest risk, and independent of
+     the config work, so it verifies on its own terms.
+  3. **STORY-149** (1) — anti-flap `DEGRADED` streak check. Last: fully independent, four lines.
+- **Two verifier passes run, both GAPS, all gaps closed.** See "Verifier pass" and "Second
+  verifier pass" below. This sprint is contract-sensitive by the skill's own test: STORY-148 must
+  reproduce a **vendor wire contract** exactly, and STORY-146 changes a shape seven consumers read.
 - **Live-data caveat:** the Dynatrace trial expired 2026-07-28 (memory: `dynatrace-trial-expired`).
-  Nothing can be reality-gated against real vendor data. The demo-engine stories exist to
-  replace that, and their reality gates are therefore **wire-shape comparisons against real
-  captured fixtures** plus a real-loop run, not "the loop didn't crash". STORY-154 (map the real
-  failure codes) stays blocked on renewal.
-- **Safety precondition for every demo run:** `decide` publishes recoveries with **no human
-  gate** (`core/services/decide.py:122-126`). A demo run wired to the real publisher would post
-  fake statuses to the live public Statuspage. STORY-176 AC3 makes this a **config-only**
-  guarantee that holds even with real credentials present, and no demo loop is started before
-  that AC passes.
+  Nothing can be reality-gated against real vendor data. STORY-148 exists to replace that, and its
+  reality gate is a **field-and-scale comparison against a real captured fixture** plus a round
+  trip through the real executor — not "the loop didn't crash". STORY-154 (map the real failure
+  codes) stays blocked on renewal, and STORY-177 (a provisional mapping) is the unblocking story
+  for failure-path demos.
+- **No demo loop runs this sprint**, so the publish-safety precondition does not arise here — it
+  moves with STORY-176 (AC3: config-only guard + `CONFIG_DIR` on both processes). The one loop run
+  that *does* happen, STORY-146's reality gate, uses the **real** `config/apps` and therefore runs
+  with `STATUSPAGE_API_KEY` unset; see that gate.
 
 ---
 
@@ -148,7 +147,7 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
 
 ---
 
-## STORY-146 — config authoring shape (3 pts)
+## STORY-146 — config authoring shape (5 pts)
 
 ### Verified contracts / constraints (cited)
 
@@ -245,7 +244,7 @@ construction instead.
 
 ---
 
-## STORY-148 — demo engine part 1: the wire contract (3 pts)
+## STORY-148 — the demo engine wire contract (3 pts)
 
 ### Verified contracts / constraints (cited)
 
@@ -324,86 +323,6 @@ sample; the *failure codes* are assumed (AC8), because none has ever been observ
 
 ---
 
-## STORY-176 — demo engine part 2: scenario player, demo fleet, real loop run (3 pts)
-
-### Verified contracts / constraints (cited)
-
-- **Publish exposure, both routes.** `run.py:178 load_dotenv()` walks up from the source file,
-  not CWD, so the existing repo-root `.env` supplies `STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY`
-  from any launch directory. Route 1: `run.py:121-128` → `build_publisher`. Route 2 (the API's
-  approve trigger, and the reality gate runs the API): `composition/app.py:160-182` →
-  `load_statuspage_secrets()` + `seed_config.statuspage_mapping()` → the same `build_publisher`.
-- **The single gate both routes pass through** (`publish_helper.py:211`):
-  `if statuspage_page_id and statuspage_api_token and component_mapping:` — so an **empty
-  mapping** forces `StatusWritebackPublisher(LoggingPublisher(), …)` even with real credentials.
-  `statuspage_mapping()` includes only components declaring a non-None
-  `statuspage_component_id` (`config.py:292-299`). Neither root has a publisher injection point,
-  which is why the guard is config-only.
-- **Ingest window:** `orchestrate.py:94-98` — `since = until - (max_threshold + 2) * interval`,
-  a rolling **7-cycle** window (§10 defaults) ending at `clock.now()`. Rows outside it never
-  become verdicts.
-- **Timestamp strictness:** `parse_ns_timestamp` feeds `SignalObservation`, which rejects naive
-  or non-UTC datetimes (`signal.py:81-91`: "observed_at must be a tz-aware UTC datetime"). A
-  raise kills the cycle while `run_periodic` survives — i.e. silent no-data, not a crash.
-- **The sibling-OBSOLETE path (known, deliberately unfixed):** `orchestrate.py:88,153` resolves
-  the component per signal, and `decide.py:157-169` OBSOLETEs an open proposal when a sibling
-  reports healthy — publishing a recovery. This is STORY-151; at ~3 monitors/component it makes
-  proposal evidence racy in both directions.
-- **Recovery is ungated:** `decide.py:122-126` publishes recoveries with no human approval.
-- STORY-146's nested shape and per-app `locations:`/`freshness:`; STORY-148's engine.
-
-### Steps
-
-- [ ] 1. Failing test: scenario file → per-signal, per-cycle, per-location outcome sequence; the
-      player expands it into rows at each monitor's `interval_seconds`, asserting exact row
-      counts per location per cycle. Then implement.
-- [ ] 2. Failing tests for each of AC2's four time-base constraints: rows land inside the
-      7-cycle window; timestamps are `Z`-suffixed 9-digit UTC matching the fixture **format**;
-      emission is monotonic across successive queries; demo intervals ≤ 60 s. Each violated
-      constraint yields silent no-data, so each is asserted rather than assumed.
-- [ ] 3. **AC3 before any loop run** — author the demo config with **no**
-      `statuspage_component_id` anywhere; two tests: `statuspage_mapping() == {}` for the loaded
-      demo config, and `build_publisher` with an empty mapping + non-empty credentials returns a
-      chain whose delegate is a `LoggingPublisher`. Document the guard and both routes in the
-      demo README.
-- [ ] 4. Author the demo config directory (≥12 components, ≥40 signals, ≥4 locations) in
-      STORY-146's nested shape, with declared `locations:` (short non-cloud-provider aliases) and
-      a `freshness:` block. Fabricated `SYNTHETIC_LOCATION-*` ids are fine here — demo config,
-      never `config/apps/`.
-- [ ] 5. Scenario set per AC5: a clean fleet; a degradation crossing the anti-flap ladder to an
-      open proposal (on a **single-monitor** component, AC7); a minority-location failure; a
-      fully dark location; two monitors on one component disagreeing.
-- [ ] 6. Run the **unmodified** `python -m src.composition.run` against the engine + demo config;
-      verify observations for ≥12 components / ≥40 signals / ≥4 locations, and that
-      `check_vendor_id_health` reports **no** dead monitor ids (the end-to-end proof of
-      STORY-148 AC5).
-- [ ] 7. AC7: capture the open-proposal evidence from the single-monitor component; exercise the
-      multi-monitor "fight" scenario separately as a demonstration of the known STORY-151 defect.
-- [ ] 8. AC8: verify the story diff touches no file under `backend/src/`.
-- [ ] 9. Document the demo recipe in `CLAUDE.md` (append-only) — the two env vars and the
-      publisher guard.
-- [ ] 10. Wiki: add the demo engine as a new article (`code_refs` → `tools/demo_engine/`), and
-      record in `sample-mode.md` that this supersedes `sample_mode` (removal is STORY-155).
-
-### Reality gate (176)
-
-Start DynamoDB Local, point `DYNATRACE_ENV_URL` at the demo engine and `CONFIG_DIR` at the demo
-config, run the **unmodified** `python -m src.composition.run`, and show:
-
-1. observations landing for ≥12 components / ≥40 signals / ≥4 locations;
-2. `GET /api/v1/components` + `/api/v1/topology` returning that fleet over live HTTP;
-3. `check_vendor_id_health` reporting no dead monitor ids at startup;
-4. a scripted degradation opening a real proposal on `GET /api/v1/approvals` — from a
-   **single-monitor** component, so no healthy sibling can OBSOLETE it (AC7);
-5. the log/recording proving no Statuspage call was attempted, with `statuspage_mapping() == {}`
-   as the mechanism.
-
-**Honest limits to state in the evidence:** every failure-state row rests on assumed vendor
-codes (STORY-148 AC8) — the pipeline's handling of them is verified, the codes themselves are
-not; and the fleet is fictional, so this proves the *system* handles a fleet, not that any
-particular real monitor behaves this way.
-
----
 
 ## STORY-149 — anti-flap `DEGRADED` streak check (1 pt)
 
@@ -450,19 +369,50 @@ particular real monitor behaves this way.
 
 ### Reality gate (149)
 
-A demo-engine scenario (from STORY-176) on a **single-monitor** component — pinned deliberately,
-so the STORY-151 sibling-OBSOLETE path cannot spoof the result in either direction. Make exactly
-one location fail for a single cycle and confirm **no proposal appears** on
-`GET /api/v1/approvals`; then extend the same failure past `thresholds.degraded` and confirm one
-**does**. This is the defect's real-world shape — a single-location blip — exercised end to end
-rather than only at the unit boundary.
+An **`orchestrate_signal`-level** test over a seeded observation stream, not a demo-engine run.
+Construct multi-location `SignalObservation`s directly (`Health.UP` from two locations, `DOWN`
+from a third) so `_collapse_health` returns `DEGRADED` from a genuine location disagreement —
+the defect's real-world shape — then drive `orchestrate_signal` with a real `DecideService` over
+DynamoDB Local and a recording publisher, and assert:
 
-**Honest limit:** rests on assumed failure codes (STORY-148 AC8). The unit-level ACs are the
-primary evidence; this gate is corroboration at the system level.
+1. a **single** disagreeing cycle writes **no** proposal to the proposals table, and
+   `GET /api/v1/approvals` returns empty over live HTTP;
+2. extending the disagreement past `thresholds.degraded` **does** write one, and the endpoint
+   returns it.
+
+**Why not the demo engine** (changed by decision D-A): no demo scenario can produce a `DOWN`
+observation at all — `map_synthetic_status` raises on any non-healthy code
+(`health_mapping.py:65-70`) and `dispatch.py:80` loses the whole batch when it does. A
+demo-engine gate would therefore have **passed step 1 for the wrong reason** — no proposal
+because nothing was ingested, not because anti-flap damped it — and then failed step 2. Seeding
+observations directly enters the pipeline *below* the vendor mapping, so it exercises the real
+`collapse → streak → anti_flap → decide` chain and the real persistence and HTTP surface, with
+no invented vendor codes anywhere.
+
+**Honest limit:** this proves the fix against a *constructed* location disagreement. It does not
+prove Dynatrace reports failures the way we assume — nothing can, until STORY-154/177. The
+unit-level ACs remain the primary evidence; this gate is system-level corroboration.
 
 ---
 
-## Open decisions — the sprint does NOT lock until these are answered
+## Decisions — RESOLVED by the PO 2026-07-28 ("i am ok with your recommendation")
+
+**D-A → Option B.** The demo is scoped to `UP` + absence scenarios. STORY-176 AC5 lost its three
+failure cases and gained three absence cases instead (dark monitor, staggered intervals, late
+return — each exercising the freshness path, which the original set never touched). AC7 **inverted**
+from "prove a proposal opens" to "prove none can, and state that plainly in the README", which also
+retires the STORY-151 confound entirely. The provisional failure mapping became **STORY-177**, a
+first-class story with its own review rather than a demo prerequisite smuggled into `backend/src/`.
+STORY-149's reality gate is replaced with an `orchestrate_signal`-level test over a seeded
+observation stream — see that story's gate below.
+
+**D-B → move STORY-176 to sprint 63.** Sprint 62 is 9 pts across 3 stories
+(146 at 5, 148 at 3, 149 at 1) and the goal is restated to "the shape and the wire are right".
+STORY-176 opens sprint 63, where its fleet-scale data also feeds the frontend work.
+
+The original decision text is kept below, unedited, because the reasoning is the record of *why*
+the sprint has this shape — and because the rejected option A is the one a future sprint will
+revisit under STORY-177.
 
 ### D-A · How do we get a `DOWN` observation into the demo? (blocker)
 
@@ -525,14 +475,18 @@ STORY-176 is smaller, so (ii) becomes more tenable if the PO prefers to keep the
 - **Wiki compile pass** before review: fold in the config-shape change, the demo engine as a new
   article, the `sample_mode` supersession note, and the anti-flap correction; rehabilitate
   anything the sweep marks stale; lint links. Sweep was clean at planning (`8554c7b`).
-- **Demo script:** migrated real config seeds identically (146) → demo rows proven
-  field-and-scale identical to the captured fixture, through the real executor over real HTTP
-  (148) → the unmodified loop running a 12-component fictional fleet with a real open proposal
-  and a provably silent publisher (176) → a single-location blip proposes nothing while a
-  sustained one does (149).
+- **Demo script:** the nested config reads as a hierarchy and the migrated real config seeds
+  byte-identically (146) → demo rows proven field-and-scale identical to the real captured
+  fixture, answered over real HTTP through the real `make_grail_executor`, both query grammars
+  (148) → a single-cycle location disagreement proposes nothing while a sustained one does,
+  end to end through `orchestrate_signal` and `GET /api/v1/approvals` (149).
+- **What this sprint does NOT demo, stated plainly at review** so nobody mistakes the scope: no
+  12-component fleet (STORY-176, sprint 63), and no failure-path ingest at all — the demo engine
+  can serve rows but the vendor mapping raises on any non-healthy code, so the ladder is
+  demonstrable only from seeded observations until STORY-177 lands a provisional mapping.
 - **Not in this sprint, and stated at review so scope is unambiguous:** all frontend work
-  (sprint 63+), STORY-147 (deferred to 63, where its consumer lands), STORY-150 breadth model,
-  STORY-151 per-component rollup, STORY-152 expected-locations completeness, STORY-153 rejection
-  suppression, STORY-154 failure codes (blocked on trial renewal), STORY-155 sample_mode removal,
-  STORY-173 the leaked-container fixture fix.
-</content>
+  (sprint 63+); STORY-147 (deferred to 63, where its consumer lands); STORY-176 (deferred to 63,
+  decision D-B); STORY-177 (provisional failure mapping, created by decision D-A); STORY-150
+  breadth model; STORY-151 per-component rollup; STORY-152 expected-locations completeness;
+  STORY-153 rejection suppression; STORY-154 real failure codes (blocked on trial renewal);
+  STORY-155 sample_mode removal; STORY-173 the leaked-container fixture fix.

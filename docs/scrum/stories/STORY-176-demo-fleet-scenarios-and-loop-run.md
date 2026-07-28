@@ -128,10 +128,20 @@ guard: a property of the config, not a promise about wiring.
       declared `locations:` and a `freshness:` block. Location aliases are short non-cloud-provider
       strings per STORY-146. Fabricated `SYNTHETIC_LOCATION-*` ids are acceptable **here** —
       this is demo config, explicitly not live config.
-- [ ] **AC5 (scenario coverage)** — Scenarios cover the cases the planning discussion
-      identified: a clean fleet; a degradation crossing the anti-flap ladder to an open
-      proposal; a minority-location failure; a fully dark location; and two monitors on one
-      component disagreeing (the STORY-151 bug, reproducible on demand rather than by accident).
+- [ ] **AC5 (scenario coverage — `UP` and absence only; see the scope note)** — Scenarios cover
+      every case reachable without a failure-code mapping:
+      (a) a clean fleet across all locations;
+      (b) a **fully dark location** — a declared location that stops reporting entirely, which
+      exercises the `expected_locations` gap and the completeness denominator;
+      (c) a **fully dark monitor** — every location silent, which exercises the freshness
+      (`stale_after_cycles`) path;
+      (d) **staggered intervals** — monitors at different `interval_seconds` on one component, so
+      cycle boundaries do not line up;
+      (e) a **late-returning monitor** — dark, then reporting again, exercising `reentry_cycles`.
+      **Deliberately NOT in this story:** any scenario requiring a `DOWN` or `DEGRADED`
+      observation (a ladder-crossing degradation, a minority-location failure, two monitors
+      disagreeing). Those are unreachable through the real ingest path — see the scope note below
+      — and arrive with STORY-177.
 - [ ] **AC6 (real loop, real fleet)** — Running the **unmodified**
       `python -m src.composition.run` with `DYNATRACE_ENV_URL` → the demo engine and
       `CONFIG_DIR` → the demo config ingests observations into DynamoDB for ≥12 components,
@@ -139,18 +149,38 @@ guard: a property of the config, not a promise about wiring.
       `GET /api/v1/components` and `/api/v1/topology` returning that fleet over live HTTP.
       The startup `check_vendor_id_health` probe reports **no** dead monitor ids (this is the
       observable proof that STORY-148 AC5's second grammar works end to end).
-- [ ] **AC7 (proposal evidence must not be spoofable)** — The scenario used to demonstrate a
-      real open proposal on `GET /api/v1/approvals` targets a **single-monitor** component.
-      Reason: at ≥12 components / ≥40 signals the fleet averages ~3 monitors per component, and
-      `orchestrate.py:88,153` + `decide.py:157-169` mean every healthy sibling resolves an open
-      proposal to `OBSOLETED` and publishes a recovery (STORY-151, deliberately unfixed). On a
-      multi-monitor component the evidence is racy in both directions. The multi-monitor "fight"
-      scenario from AC5 is exercised **separately and deliberately**, as a demonstration of the
-      known defect rather than as proposal evidence.
+- [ ] **AC7 (no proposal evidence is claimed, and the absence is stated)** — This story makes
+      **no claim** about proposals appearing on `GET /api/v1/approvals`, because none can: with
+      only `UP` observations and gaps, `anti_flap` reaches `_propose(OPERATIONAL)` at most, which
+      `decide.py:122-126` publishes as a recovery or resolves at `:157-169` — it never calls
+      `_open_proposal`. The endpoint is verified to return a well-formed **empty** result, and the
+      demo README states plainly that the proposal/approval path is **not** exercised by the demo
+      until STORY-177 lands. This is recorded as an AC rather than omitted so that a future reader
+      cannot mistake "the demo ran clean" for "the approval path works".
 - [ ] **AC8 (production untouched)** — `git diff` touches only `tools/`, the demo config
       directory, `docs/`, `CLAUDE.md`, and tests under `backend/tests/`. No file under
       `backend/src/` is modified, verified mechanically from the commit range.
 - [ ] **AC9** — All five backend DoD gate commands exit 0.
+
+## Scope note — why there are no failure scenarios (PO decision, 2026-07-28)
+
+A demo engine speaking HTTP **cannot** produce a `DOWN` or `DEGRADED` observation, because the
+failure path does not exist in the ingest code yet:
+
+- `map_synthetic_status` maps only `"0"`/`"HEALTHY"` → `UP` and **raises**
+  `UnknownVendorStatusError` on everything else (`health_mapping.py:65-70`). Its docstring states
+  the omission is deliberate: *"Inventing failure codes here would silently mis-map (or mask) the
+  real failure value during that verification, so it is deliberately NOT done."*
+- `dispatch.py:80` normalizes rows in a bare list comprehension, so a single failure-coded row
+  raises and **the whole batch for that signal in that cycle is lost**, healthy rows included.
+- The codebase's own wiring test proves monkeypatching is the only route
+  (`backend/tests/test_pull_loop.py:139-145`) — unavailable to a process talking over a socket.
+
+Found by the second `yt-plan-verifier` pass. An earlier draft of this story framed emitted failure
+codes as "assumptions", which was wrong: an assumed code is not an *unverified* row, it is an
+*unusable* one. The PO chose to scope the demo to `UP` + absence rather than add a provisional
+mapping to `backend/src/` as a demo prerequisite — so the provisional mapping is now STORY-177,
+a first-class story with its own review, and the failure-path scenarios land with it.
 
 ## Open Questions
 
@@ -166,7 +196,17 @@ None.
   runs through `load_dotenv()` picking up the existing `.env` plus a second, unmentioned route
   via the API's approve trigger; it is now a config-only guard that holds even with real
   credentials present; (2) the scenario time base was unspecified, and four separate constraints
-  (7-cycle window, timestamp format, monotonicity, short intervals) each cause **silent** no-data
+  (7-cycle window, timestamp format, monotonicity, short intervals) each cause no-data
   if violated; (3) the "real open proposal" evidence was confounded by the known STORY-151
-  sibling-OBSOLETE path and is now pinned to a single-monitor component.
-</content>
+  sibling-OBSOLETE path and was pinned to a single-monitor component.
+- 2026-07-28: **second verifier pass + PO decision — rescoped to `UP` + absence, and DEFERRED to
+  sprint 63.** The failure-path scenarios were unreachable (see the Scope note): AC5 lost its
+  three failure cases and gained three absence cases instead (dark monitor, staggered intervals,
+  late return — each exercising freshness, which the original set never touched); AC7 inverted
+  from "prove a proposal opens" to "prove none can, and say so", which also retires the STORY-151
+  confound; the provisional failure mapping became STORY-177. AC3 grew the
+  `CONFIG_DIR`-on-both-processes requirement after the verifier found the API reaches a live
+  `StatuspagePublisher` through its own config; AC2 gained the ≥2 h backfill constraint.
+  Deferred to sprint 63 per the PO's pacing directive: the honest re-estimate put sprint 62 at
+  12–13 pts against a ~9–11 baseline, and this story opens 63 where its fleet-scale data also
+  feeds the frontend work.
