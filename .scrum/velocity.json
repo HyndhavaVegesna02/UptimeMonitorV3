@@ -254,6 +254,12 @@
       "sprint": 60,
       "committed": 20,
       "accepted": 20
+    },
+    {
+      "sprint": 61,
+      "committed": 28,
+      "accepted": 0,
+      "note": "ABORTED 2026-07-28 by PO directive — UI direction rejected wholesale, not the work. 7 stories were done-and-green but nothing merged, so accepted=0. See docs/scrum/sprints/2026-07-22-sprint-61/aborted.md. Do NOT read this 0 as a capability signal when planning sprint 62."
     }
   ]
 }

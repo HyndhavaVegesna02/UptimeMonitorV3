@@ -1,6 +1,16 @@
 # YourTeam active sprint board
 sprint: 61
-status: active   # PLANNED + LOCKED 2026-07-22. Branched from the sprint-60 tip (a1c9b12,
+status: aborted  # ABORTED 2026-07-28 by explicit PO directive ("i dont like this ui also") —
+                 # the UI being hardened is being REPLACED, so the sprint goal is moot.
+                 # Abort option 3 chosen: keep all work unmerged. Branch sprint-61 tip 56b7fc8
+                 # stays for reference; main untouched (no sprint-59/60/61 frontend ever merged).
+                 # Velocity records 0 points. STORY-136..142 done-but-unmerged; STORY-143
+                 # abandoned mid-TDD at step 2 (c8c2f62). All return to the backlog as
+                 # `superseded`, NOT re-estimated — they describe defects in a dead UI.
+                 # Full record: docs/scrum/sprints/2026-07-22-sprint-61/aborted.md
+                 # NEXT: sprint-62 planning — adapt the existing backend to the PO's new
+                 # inspiration UI at C:\Hyn\new ui\ops-pulse-react (localhost:5173).
+                 # PLANNED + LOCKED 2026-07-22. Branched from the sprint-60 tip (a1c9b12,
                  # new-frontend/ui-prototype line, unmerged). main untouched.
 mode: in-process # PO decision 2026-07-22: the /yourteam arg said "external" but the standing
                  # directive after the sprint-60 external rejection is "you only implement".
