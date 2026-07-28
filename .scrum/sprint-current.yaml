@@ -1,67 +1,96 @@
-# YourTeam active sprint board
-sprint: 51
-status: done          # PO verdicts 2026-07-17: both stories ACCEPT; redeploy live stack approved;
-                      # sidebar-breakpoint finding filed as STORY-096 (draft). Velocity 4/4.
-mode: in-process      # PO-approved at lock (2026-07-17).
-goal: "Add the server-side limit cap to the history endpoint (STORY-094) and run the first thorough, orchestrator-driven Playwright verification of the live deployed dashboard (STORY-095)."
-branch: sprint-51
-start_tag: sprint-51-start
-start_commit: 1677b72
-started: "2026-07-17T04:30:00+05:30"
-# Plan-verifier: SKIPPED (token economy, PO-approved 2026-07-15) — not contract-sensitive:
-# STORY-094 is a one-zone additive param on existing DTOs; STORY-095 writes no production
-# code (live-UI verification sweep). Skip + reason recorded in plan.md for PO visibility.
-# Baseline: full 8-command gate GREEN on main at 1677b72 (clean tree; first attempt refused
-# on dirty refinement records — committed, re-run).
-# Tooling note: Playwright MCP (.mcp.json) loads at session START only — this sprint drives
-# Playwright directly (headless Chromium via tools/ui-sweep/); MCP takes over next session.
+# YourTeam active sprint board. No active sprint when status: none.
+sprint: 62
+status: planning   # none | planning | active | review | closed | aborted
+                   # PLANNING, not yet locked. Awaits (1) yt-plan-verifier dispatch —
+                   # this sprint IS contract-sensitive, see plan.md — and (2) PO approval.
+                   # Flip to `active` only at lock.
+mode: in-process   # Standing directive after the sprint-60 external rejection: "you only
+                   # implement". All 4 stories are 3+ pt except STORY-149 (1 pt), so 146/147/148
+                   # get implementer -> spec ∥ quality reviewers; 149 gets implementer -> gate.
+                   # Every story gets the DoD gate + a reality gate.
+goal: "Make a realistic multi-component / multi-signal / multi-location fleet flow through the REAL pipeline without Dynatrace, on a config shape that communicates the component -> monitor -> location hierarchy, and close the one anti-flap damping hole that goes live the moment a second location exists. Backend only; no frontend work."
+branch: sprint-62
+start_tag: sprint-62-start
+start_commit: 517fc38   # main tip (sprint-51 retro close). main UNTOUCHED; nothing merges to it.
+started: null           # set at lock
+# ── Provenance ────────────────────────────────────────────────────────────────
+# This sprint follows the PO's rejection of the sprint-59/60/61 operator cockpit
+# ("i dont like this ui also", 2026-07-28) and the sprint-61 abort
+# (docs/scrum/sprints/2026-07-22-sprint-61/aborted.md, keep-all-unmerged).
+# Planning artefacts, all in docs/scrum/sprints/2026-07-28-sprint-62/:
+#   ui-backend-gap-analysis.md     — the new reference UI vs the api/v1 surface; PO decisions §3a
+#   config-shape-proposal.yaml     — the nested authoring shape (PO: "this shape looks good")
+#   calculations-under-new-config.md — full calculation walkthrough + the two defects it surfaces
+#   decisions-and-future-work.md   — D1-D4 decided, F1-F3 future work
+#   program-roadmap.md             — option (a) split across sprints per PO pacing directive
+#   plan.md                        — this sprint's contracts, steps, reality gates
+# ── Scope discipline ──────────────────────────────────────────────────────────
+# PO approved scope option (a) (~21 pts) but directed "do it multi sprint, with carefull
+# verification, no need to rush in single stretch" — so it is SPLIT. This sprint is 11 pts,
+# near the ~9 baseline. Frontend lands sprint 63+ (design system + shell first, with a PO
+# look-and-feel checkpoint BEFORE six pages are built on the language — the pilot fix for the
+# process failure behind three rejections).
+# EXPLICITLY OUT: all frontend work; STORY-150 (breadth model D1/D2), STORY-151 (per-component
+# decision rollup), STORY-152 (expected-locations completeness), STORY-153 (rejection
+# suppression F1), STORY-154 (map real failure codes — BLOCKED on trial renewal),
+# STORY-155 (sample_mode removal).
+# ── Live-data caveat ──────────────────────────────────────────────────────────
+# The Dynatrace trial expired 2026-07-28: no observations arrive, nothing is reality-gateable
+# against real vendor data, and sample_mode (which flips already-normalized rows) is inert.
+# STORY-148 exists to replace that. Its reality gate is therefore a WIRE-SHAPE comparison
+# against real captured fixtures (backend/tests/fixtures/dynatrace/grail_synthetic_events.json),
+# not "the loop didn't crash". Every failure-state row rests on ASSUMED vendor codes —
+# map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise
+# (adapters/inbound/dynatrace/health_mapping.py:65-70). That limit is stated in the evidence,
+# never absorbed as "the failure path is tested".
+# ── Safety precondition (non-negotiable) ──────────────────────────────────────
+# decide publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py:122-126). A demo run
+# wired to the real publisher would post fake statuses to the LIVE public Statuspage.
+# STORY-148 AC4 makes the stub a tested guarantee; NO demo loop is started before it exists.
+# ── Baseline ──────────────────────────────────────────────────────────────────
+# First full-gate attempt on this branch was RED: `npm run build` exit 1. Diagnosed as
+# ENVIRONMENT staleness, not a code defect — the on-disk frontend/node_modules was left from
+# the sprint-59+ line (@fontsource/inter) while main's frontend declares @fontsource/geist +
+# geist-mono, so the @import could not resolve. `npm install` restored it (021c9b6 records the
+# 23 additive optional platform transitives; no real dependency version changed). Full-gate
+# evidence recorded below at lock.
+baseline:
+  head: 021c9b6
+  dod_evidence: []   # filled from yt_gate.py's emitted fragment at lock — never hand-transcribed
 stories:
-  - id: STORY-094
-    status: done          # all 4 AC; 2-pt story ⇒ implementer → scoped DoD gate → reality gate
-    commits: 6ab598c..7f352b8   # TDD cadence; scoped gate at 7f352b8 (pytest 529 / ruff x2 / npm lint all 0)
-    reality_gate:
-      ran: true
-      evidence: >-
-        Local-stack spot check on an ISOLATED DynamoDB Local (container uptime_dynamo_094
-        port 8009, API uvicorn port 8010, both torn down after): limit=2 -> exactly the 2
-        newest of 5 seeded rows (22:31:41, 22:21:41); no limit -> all 5 (unchanged full
-        window); limit=0 -> 422 greater_than_equal. Real-repository test
-        (test_history_limit_against_real_dynamo_repository) runs vs DynamoDB Local in the
-        suite. LIVE stack still runs the pre-fix image by design — live verification at
-        the post-acceptance redeploy (stated in plan; not ship-on-promise). Wiki blast
-        radius: api-five-file-convention.md, frontend-zone.md, sample-mode.md re-verified.
-    slug: history-limit-param
+  - id: STORY-146
+    title: Config authoring shape — nested monitors, declared locations, freshness block
+    file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
+    status: ready
+    points: 3
+    ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
+    order: 1                 # highest blast radius (7 consumers of app.signals); STORY-148's
+                             # demo config must be authored in the final shape, not twice
+  - id: STORY-147
+    title: Component group + description — config to ComponentDTO
+    file: docs/scrum/stories/STORY-147-component-group-description.md
+    status: ready
     points: 2
-    order: 1           # the code change first; sweep is independent of it
-  - id: STORY-095
-    status: done          # all 5 AC PASS against the live deployed system; evidence committed
-    commits: 0e290ee..fbc42ac
-    reality_gate:
-      ran: true
-      evidence: >-
-        The story IS a live reality gate (real headless Chromium vs the deployed stack).
-        AC1: six tabs render via BOTH direct-URL deep load (CloudFront rewrite path) and
-        SPA nav — per-tab PNGs in sprints/2026-07-17-sprint-51/ui-sweep/. AC2: zero
-        console errors + zero failed /api/* across 20+ page loads (evidence JSONs empty).
-        AC3: sample-mode ON (banner + aria-checked + control-table enabled:true) then OFF
-        (verified both ways); maintenance window 'ui-sweep-probe' created via the form,
-        listed, deleted, gone after reload. AC4: light/dark (system-pref emulation + in-app
-        toggle) + 390x844 viewport. AC5: findings.md — empty error table, 3 anomalies
-        (2 EXPLAINED, 1 CANDIDATE-STORY: sidebar keeps desktop width below ~768px).
-        Live system confirmed left clean (SAMPLE_MODE enabled:false; 0 probe rows).
-    slug: playwright-ui-sweep
-    points: 2
-    order: 2           # live-stack sweep (read-mostly; mutations reversed)
+    ceremony: 3-pointer      # 2 pts, but it crosses 5 files/4 zones — reviewed as a 3-pointer
+    order: 2                 # same config files as 146, so adjacent work avoids rework
+  - id: STORY-148
+    title: Local Grail-shaped demo engine — scripted scenarios, no Dynatrace
+    file: docs/scrum/stories/STORY-148-grail-demo-engine.md
+    status: ready
+    points: 5
+    ceremony: 3-pointer
+    order: 3                 # highest RISK (new component, vendor wire-shape fidelity);
+                             # consumes both config stories
+  - id: STORY-149
+    title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
+    file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
+    status: ready
+    points: 1
+    ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
+    order: 4                 # fully independent, 4 lines; its scenario-level reality gate
+                             # benefits from STORY-148 existing first
 final_gate:
-  head: 3cdf09d
-  dod_evidence:   # full 8-command amended gate, all exit 0 at 2026-07-16T23:19-23:21Z on 3cdf09d
-    - {command: "pytest", exit_code: 0, output_tail: "529 passed in 40.71s", commit: 3cdf09d, at: "2026-07-16T23:19:31+00:00"}
-    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, output_tail: "Contracts: 8 kept, 0 broken.", commit: 3cdf09d, at: "2026-07-16T23:20:12+00:00"}
-    - {command: "ruff check .", exit_code: 0, output_tail: "All checks passed!", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "ruff format --check .", exit_code: 0, output_tail: "205 files already formatted", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, output_tail: "(exit 0, no findings)", commit: 3cdf09d, at: "2026-07-16T23:20:13+00:00"}
-    - {command: "npm test", exit_code: 0, output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)", commit: 3cdf09d, at: "2026-07-16T23:20:15+00:00"}
-    - {command: "npm run build", exit_code: 0, output_tail: "built", commit: 3cdf09d, at: "2026-07-16T23:20:51+00:00"}
-    - {command: "npm run lint", exit_code: 0, output_tail: "eslint . — clean", commit: 3cdf09d, at: "2026-07-16T23:20:56+00:00"}
+  head: null
+  dod_evidence: []
 hotfixes: []
 interrupts: []
