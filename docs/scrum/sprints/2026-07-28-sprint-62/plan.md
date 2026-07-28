@@ -6,31 +6,77 @@
   live the moment a second location exists. **Backend only — no frontend work this sprint.**
 - **Mode:** `in-process` (standing directive after the sprint-60 external rejection: "you only
   implement").
-- **Size:** 11 pts across 4 stories, deliberately near the ~9 baseline. The PO approved scope
-  option (a) but directed *"do it multi sprint, with carefull verification, no need to rush in
-  single stretch"* — so option (a)'s ~21 pts are split, with the frontend landing in sprint 63+
-  (see `program-roadmap.md`).
+- **Size:** 10 pts across 4 stories. The PO approved scope option (a) but directed *"do it multi
+  sprint, with carefull verification, no need to rush in single stretch"* — so option (a)'s
+  ~21 pts are split, with the frontend landing in sprint 63+ (see `program-roadmap.md`).
+- **Preconditions (verified, not assumed):** working tree clean apart from two unrelated
+  untracked files (`package.json`, `package-lock.json` — a stray `framer-motion` scratch, left
+  in place deliberately and not part of this sprint); branch `sprint-62` cut from `main` at
+  `517fc38` with `main` untouched; **green baseline at `282be8d`** — all 8 DoD commands exit 0,
+  evidence recorded verbatim from `yt_gate.py` in `sprint-current.yaml`. Code baseline holds at
+  HEAD (`git diff --name-only 282be8d..HEAD -- backend/ frontend/ config/ infra/` is empty).
 - **Stories & order** (dependencies first, then blast radius, then risk, then size):
-  1. **STORY-146** (3) — config authoring shape. First: highest blast radius (7 consumers), and
-     the demo config in 148 must be authored in the final shape rather than twice.
-  2. **STORY-147** (2) — `group` + `description`. Second: same config files as 146, so adjacent
-     work avoids rework; also lets 148's demo config carry groups/descriptions immediately.
-  3. **STORY-148** (5) — the demo engine. Third: highest risk (new component, vendor wire-shape
-     fidelity), and it consumes both config stories.
-  4. **STORY-149** (1) — anti-flap `DEGRADED` streak check. Last: fully independent, 4 lines,
-     and its scenario-level verification benefits from 148 existing.
-- **Plan-verifier: TO BE DISPATCHED** (not skipped). This sprint IS contract-sensitive by the
+  1. **STORY-146** (3) — config authoring shape. First: highest blast radius (eight consumers of
+     `app.signals`), and STORY-176's demo config must be authored in the final shape, not twice.
+  2. **STORY-148** (3) — demo engine part 1, the wire contract. Second: highest risk, and
+     independent of the config work, so it can be verified on its own terms.
+  3. **STORY-176** (3) — demo engine part 2, scenario player + demo fleet + real loop run.
+     Third: consumes both STORY-146's shape and STORY-148's engine.
+  4. **STORY-149** (1) — anti-flap `DEGRADED` streak check. Last: fully independent, four lines,
+     and its scenario-level reality gate benefits from the engine existing.
+- **Plan-verifier: DISPATCHED, verdict GAPS, all gaps closed in this revision.** See
+  "Verifier pass" below for what changed and why. This sprint is contract-sensitive by the
   skill's own test: STORY-148 must reproduce a **vendor wire contract** exactly, and STORY-146
-  changes a shape read by seven consumers. The PO asked for the stories to be written first, so
-  `yt-plan-verifier` runs against this plan before the sprint locks.
+  changes a shape read by eight consumers.
 - **Live-data caveat:** the Dynatrace trial expired 2026-07-28 (memory: `dynatrace-trial-expired`).
-  Nothing can be reality-gated against real vendor data. STORY-148 exists to replace that, and
-  its own reality gate is therefore a **wire-shape comparison against real captured fixtures**,
-  not "the loop didn't crash". STORY-154 (map the real failure codes) stays blocked on renewal.
+  Nothing can be reality-gated against real vendor data. The demo-engine stories exist to
+  replace that, and their reality gates are therefore **wire-shape comparisons against real
+  captured fixtures** plus a real-loop run, not "the loop didn't crash". STORY-154 (map the real
+  failure codes) stays blocked on renewal.
 - **Safety precondition for every demo run:** `decide` publishes recoveries with **no human
   gate** (`core/services/decide.py:122-126`). A demo run wired to the real publisher would post
-  fake statuses to the live public Statuspage. STORY-148 AC4 makes the stub a tested guarantee,
-  and no demo loop is started before it exists.
+  fake statuses to the live public Statuspage. STORY-176 AC3 makes this a **config-only**
+  guarantee that holds even with real credentials present, and no demo loop is started before
+  that AC passes.
+
+---
+
+## Verifier pass (`yt-plan-verifier`, pre-lock, 2026-07-28)
+
+Verdict **GAPS** — 13 gaps, 4 risks. Every gap is closed in this revision; I independently
+re-verified the eight load-bearing findings against the producing code before acting on them,
+and all eight held. What materially changed:
+
+| # | Finding | Fix |
+|---|---------|-----|
+| G1 | The demo row's required-field set was **5, not 7** — `result.status.code` and `result.status.message` are `require_field` in the *normalizer* (`http_normalizer.py:22-23`). The original list came from `_assembly`'s docstring, which documents only `_assembly`'s needs. A row built to it passes a fidelity test, then raises `MalformedDqlRowError` on the first real row. | STORY-148 AC1 asserts all seven |
+| G2 | **Units/scale:** `result.statistics.duration` is a **nanosecond** count carried as a **string** (`"755000000"`, fixture:15 → `//1_000_000`, `_assembly.py:92`). Emitting `"755"` is the same *type* and silently yields `latency_ms == 0` fleet-wide. | STORY-148 AC2 asserts a scale-sane round trip, not just type |
+| G3 | The publish guard was **unsatisfiable**: `run.py:121-128` builds the publisher inside `build_live_loop` with no injection point, while AC3 demanded an unmodified `run.py` and AC6 forbade touching `backend/src/`. The real exposure is also larger — `run.py:178 load_dotenv()` walks up from the source file, so the existing repo-root `.env` supplies Statuspage creds from any CWD, and a **second** route exists via the API approve trigger (`app.py:160-182`). | STORY-176 AC3: config-only guard — no `statuspage_component_id` ⇒ `statuspage_mapping() == {}` ⇒ `LoggingPublisher` on both roots (`publish_helper.py:211`), even with real creds |
+| G4 | The "named error" ACs were unsatisfiable where the plan put them. **Probed:** a `ValueError` subclass raised in a pydantic `model_validator` becomes `ValidationError`, which `config.py:356` re-raises as a bare `ValueError`. | STORY-146 AC5 / STORY-147 AC1 name the classes and pin them **outside** that try block |
+| G5 | "Seven consumers" is **eight** — `scripts/seed_topology.py:44` was missing. And AC4 self-contradicted: a `Config`-level accessor cannot serve consumers reading `AppConfig.signals`. | STORY-146 AC7 lists eight; the mechanism is now named — `AppConfig.signals` survives, synthesized from `components[].monitors` |
+| G6 | Deleting the referential validator **does** lose a real check, because `AppConfig.signals` stays settable. Also it has **two** tests, not one. | STORY-146 AC2 rejects flat `signals:` authoring and names both tests |
+| G7 | A **second query grammar** exists and was entirely unaccounted for: `composition/vendor_health.py:40-53` (`summarize count()`, `from:now()-2h`, response keyed `"count()"`), run at every startup for every signal (`run.py:192-196`). An ingest-only engine makes startup warn that all 40 monitor ids are dead — polluting the exact evidence the gate collects. | STORY-148 AC5 |
+| G8 | The Grail HTTP envelope, endpoints, auth and **async** protocol were never specified; `grail_executor.py:97` returns `[]` **silently** when they are wrong, and a sync-only server exercises only the fallback branch — undercutting D4's stated rationale. | STORY-148 AC6 pins them literally, async mode |
+| G9 | The scenario time base was unspecified. Four separate constraints each cause **silent** no-data: the rolling 7-cycle window (`orchestrate.py:94-98`), timestamp format (`signal.py:81-91` rejects naive/non-UTC), monotonicity across queries, and interval length. | STORY-176 AC2 (a)–(d) |
+| G10 | The watermark bound **cannot be string-compared**: `query.py:96` emits a 6-digit fraction, rows carry 9, and `'0' < 'Z'` excludes an equal instant — reproducing the STORY-051 stall inside the demo engine. A naive old-vs-new test passes anyway. | STORY-148 AC4, with a precision-boundary case |
+| G11 | STORY-149 was **not** self-contained: two existing tests assert the current behaviour (`test_anti_flap.py:185-190`, `:240-248`), the length-0 case was unspecified, and `pipeline.py:210-211` documents the defect verbatim. | STORY-149 AC5/AC6/AC7 |
+| G12 | `tools/demo-engine/` is not an importable package name, and `pyproject.toml:29` sets `testpaths = ["backend/tests"]` — tests under `tools/` would **never run** while the gate stayed green. `tools/` is also *not* in ruff's excludes. | STORY-148 AC9: `tools/demo_engine/`, tests under `backend/tests/` |
+| G13 | Both demo reality gates were confounded by the known STORY-151 sibling-OBSOLETE path (`decide.py:157-169`) — at ~3 monitors/component a healthy sibling can spoof the proposal evidence in either direction. | STORY-176 AC7 and STORY-149's gate pinned to single-monitor components |
+
+**Risks accepted or actioned:** R1 (STORY-148 under-estimated at 5, real work 7–8) → **split**
+into STORY-148 (3, wire contract) + STORY-176 (3, fleet + run), and **STORY-147 deferred to
+sprint 63** where its consumer lands, keeping the sprint at 10 pts with verification headroom.
+R2 (fabricated vendor location ids reaching live config) → STORY-146 AC8 forbids `locations:`
+in the migrated real file; demo-only per STORY-176 AC4. R3 (alias vocabulary contradiction —
+the stories forbade AWS region names the PO-approved sketch used) → resolved to short
+non-cloud-provider aliases, and `config-shape-proposal.yaml` amended to match. R4 (`freshness:`
+had no provenance, units or resolution rule) → STORY-146 AC4/AC6 fix units (cycle counts) and
+scoping (per-app, no global merge), and the block is added to the shape proposal.
+
+**Judgement call flagged for the PO:** deferring STORY-147 and splitting STORY-148 are both
+mine, not the verifier's decision to make. Neither changes total scope — 147 moves to the sprint
+where it is consumed, and the split is the same work in two verifiable halves. Say the word and
+either goes back.
 
 ---
 
@@ -41,17 +87,27 @@
 - `ComponentConfig` (`backend/src/composition/config.py:57-73`) — `id`, `name`,
   `statuspage_component_id`. `SignalConfig` (`:76-113`) — `signal_key`, `native_id`, `name`,
   `component_id`, `interval_seconds` (+ positive-int validator at `:105`).
-- `AppConfig` (`:116-140`) holds flat `components` + `signals`; its `model_validator` enforces
-  three invariants, including **referential integrity** `signal.component_id → declared
-  component` at `:182-188` — this is the check nesting makes unrepresentable.
-- **Seven consumers of `app.signals` that must not move:** `config.py:174`, `:183`, `:236`,
-  `:360`; `run.py:136`; `seed_dynamo.py:56`; `vendor_health.py:97`.
+- `AppConfig` (`:116-144`) holds flat `components` (`:141-142`) + `signals` (`:143-144`); its
+  `model_validator` (`:149-197`) enforces four invariants, including **referential integrity**
+  `signal.component_id → declared component` at `:182-189`.
+- **Eight consumers of `app.signals` that must not move:** `composition/config.py:174`, `:183`,
+  `:236`, `:360`; `composition/run.py:136`; `seed_dynamo.py:56`;
+  `composition/vendor_health.py:97`; `scripts/seed_topology.py:44`.
+- **Test-side consumers** (will change, and that is expected): `backend/tests/test_config.py:78`,
+  `:108`, `:425`, plus ~15 sites constructing `AppConfig(signals=[…])` or authoring flat
+  `signals:` YAML (`SOCKSHOP_YAML` at `:173-185` and five further inline blocks).
+- **Probed, not inferred:** pydantic 2.13.4 converts a `ValueError` subclass raised in a
+  `model_validator` to `ValidationError`; `ValidationError` *is* a `ValueError`, so
+  `load_config`'s `except (TypeError, ValueError)` (`:355-357`) re-raises it as a bare
+  `ValueError`. Named errors must therefore be raised outside that block.
 - Real location values are opaque vendor entity ids —
   `"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-000000000000005C"`
-  (`backend/tests/fixtures/dynatrace/grail_synthetic_events.json:12`, real captured sample).
-  The friendly `us-east-1` strings appear only in hand-written fixtures.
+  (`backend/tests/fixtures/dynatrace/grail_synthetic_events.json:12`, real captured sample, from
+  monitor `HTTP_CHECK-DB5792CB88D14CF4` — **not** the live `HTTP_CHECK-38B092E93932C002`, so
+  even this one id is not re-derivable for the live monitor while the trial is expired).
 - `Config` already exposes `component_for_signal`, `thresholds_for`, `statuspage_mapping()`
-  (`config.py:219-298`) — these are the downstream values AC5 pins.
+  (`config.py:242-299`) — the precedent AC6's `locations_for`/`freshness_for` follow, and the
+  downstream values AC8 pins.
 - `config/` sits outside `backend/` on purpose (dossier §4): editing it is a topology change,
   which is why `group`/`monitors` are config-authored rather than enum-coded.
 
@@ -61,140 +117,208 @@
       `component_id` equals its parent component's id (no `component_id` field authored).
 - [ ] 2. Add `MonitorConfig` (nested; `signal_key`/`native_id`/`name`/`interval_seconds`/
       optional `expected_locations`), nest it under `ComponentConfig`, keep the positive-int
-      interval validator. Delete the now-unrepresentable referential validator (`:182-188`)
-      **and its test**, replacing the test with AC1's structural assertion.
-- [ ] 3. Failing test: `locations:` map (alias → `native_id` + `label`); an
-      `expected_locations` alias with no declaration raises a **named** error naming the monitor
-      and the alias. Then implement.
-- [ ] 4. Failing test: `freshness:` block — defaults `stale_after_cycles: 3`,
-      `reentry_cycles: 2`; zero/negative rejected. Then implement + expose on `Config`.
-- [ ] 5. Add the flattened per-signal accessor (synthesizing `component_id` from the parent).
-      Test that it returns the same tuples the old `app.signals` did for an equivalent config.
-- [ ] 6. Migrate `config/apps/httpcheck.yaml` to the nested shape. AC5 test: assert
-      `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`, `thresholds_for`,
-      and `statuspage_mapping()` against **literals captured before the migration** — not
-      recomputed from the new file.
-- [ ] 7. Verify the seven consumer lines are untouched in the story diff (`git diff` check,
+      interval validator. Add the `model_validator(mode="before")` on `AppConfig` that
+      synthesizes `signals` from `components[].monitors`, stamping the parent id — this is what
+      keeps all eight consumers working (AC7).
+- [ ] 3. Delete the referential validator (`:182-189`) **and both its tests**
+      (`test_config.py:112-121` model-level, `:244-262` loader-level). Add the compensating
+      check: a raw top-level `signals:` key is rejected with `FlatSignalsRejectedError` (AC2) —
+      without this, deleting the validator silently permits a bogus `component_id`.
+- [ ] 4. Add the `ConfigError(ValueError)` hierarchy (`UndeclaredLocationAliasError`,
+      `FlatSignalsRejectedError`, `InvalidFreshnessError`) and a post-construction validation
+      step in `load_config` **outside** the `try` at `:343-357`. Failing test asserts the
+      specific class, not `ValueError`.
+- [ ] 5. Failing test: `locations:` map (alias → `native_id` + `label`); an `expected_locations`
+      alias with no declaration raises `UndeclaredLocationAliasError` naming the monitor and the
+      alias. Then implement.
+- [ ] 6. Failing test: `freshness:` block — defaults `stale_after_cycles: 3`, `reentry_cycles: 2`,
+      zero/negative rejected, values held as **cycle counts** with no multiplication anywhere in
+      this story. Then implement.
+- [ ] 7. Failing test: `locations`/`freshness` are per-app — two apps with different values
+      resolve independently via `Config.locations_for(app_id)` / `freshness_for(app_id)`. No
+      global merge exists to conflict. Then implement.
+- [ ] 8. Migrate the ~15 test-side flat-`signals:` construction sites and the three
+      `test_config.py` consumers to the nested shape.
+- [ ] 9. Migrate `config/apps/httpcheck.yaml` — **nesting only**, no `locations:`, no
+      `expected_locations` (AC8: unverifiable vendor ids must not enter live config). AC8 test:
+      assert `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`,
+      `thresholds_for`, and `statuspage_mapping()` against **literals captured before the
+      migration** — not recomputed from the new file.
+- [ ] 10. Verify the eight consumer lines are untouched in the story diff (`git diff` check,
       recorded in the story History).
-- [ ] 8. Wiki blast radius: articles whose `code_refs` include `composition/config.py`,
-      `seed_dynamo.py`, `run.py` — update or re-verify + bump `verified_sha`.
+- [ ] 11. Wiki blast radius: articles whose `code_refs` include `composition/config.py` or
+      `seed_dynamo.py` — update or re-verify + bump `verified_sha`. **Note:** `run.py` is
+      deliberately *excluded* from this predicate. It is a `code_ref` in four articles (the
+      sweep flags it as an amplifier) and AC7 requires it untouched, so including it would
+      over-quarantine four articles for a file this story does not change.
 
 ### Reality gate (146)
 
 Run the real loop against the **existing** single real monitor with the migrated config
 (`python -m src.composition.run`, DynamoDB Local) and confirm the topology seed writes the same
 `COMPONENT#`/`SIGNAL#` items as before the migration — a byte-level before/after comparison of
-the seeded items. This is executable today with no Dynatrace: the seed runs at startup,
-independent of whether any observation ever arrives.
+the seeded items. **Verified executable today with no Dynatrace:** the seed runs at
+`run.py:202`, before and independent of any observation arriving.
 
 ---
 
-## STORY-147 — component `group` + `description` (2 pts)
-
-### Verified contracts / constraints (cited)
-
-- The full vertical slice: `ComponentConfig` (`config.py:57`) → `seed_dynamo.py:42-52`
-  (`update_item` with `if_not_exists` preserving `status`) → `Component`
-  (`core/domain/component.py:22-33`: `id`, `name`, `status`, `app_id`) → Dynamo component
-  repository → `ComponentDTO` (`api/v1/components/models.py:12-19`).
-- `statuspage_mapping()` (`config.py:292-298`) includes only components declaring a non-None
-  `statuspage_component_id` — this is the payload AC4 pins as unchanged.
-- Dossier §4 rationale for config-authored (not enum-coded) categories.
-
-### Steps
-
-- [ ] 1. Failing test: `group: Commerce`, `COMMERCE`, `commerce` all load as `commerce`.
-      Implement slug normalization at load.
-- [ ] 2. Failing test: a non-slug-safe `group` and an 81-char `description` each raise a
-      **named** error naming the component and field. Implement (no silent truncation).
-- [ ] 3. Failing test: both fields absent → `Component`/`ComponentDTO` carry `None`, and
-      `GET /api/v1/components` serializes `null` (asserted on the JSON, not the model).
-- [ ] 4. Thread through `seed_dynamo` → domain → repository → DTO; round-trip test against
-      DynamoDB Local.
-- [ ] 5. AC4 test: Statuspage publish payload + `statuspage_mapping()` byte-identical to before.
-- [ ] 6. Confirm every existing components-endpoint test passes untouched (additive optional).
-- [ ] 7. Wiki blast radius for `api/v1/components/*`, `core/domain/component.py`.
-
-### Reality gate (147)
-
-Author `group`/`description` on the real `http-check` component, run the boot-time seed against
-DynamoDB Local, and read them back over live HTTP from `GET /api/v1/components` — a real
-end-to-end read of the new fields through the running API, then confirm the Statuspage mapping
-is unchanged. No Dynatrace needed (the seed and the components endpoint are independent of
-observations).
-
----
-
-## STORY-148 — Grail-shaped demo engine (5 pts)
+## STORY-148 — demo engine part 1: the wire contract (3 pts)
 
 ### Verified contracts / constraints (cited)
 
 - **The seam:** `Executor = Callable[[str], list[dict]]` (`adapters/inbound/dynatrace/query.py:32`),
   documented for injected fakes. Real one built by `make_grail_executor(env_url, api_token)`.
-- **Query shape to honour** (`query.py:85-100`): exactly
-  `dt.synthetic.monitor.id == "<native_id>"` AND `event.type == "http_monitor_execution"`,
-  plus `timestamp >= toTimestamp("<iso>")` when a watermark exists; emitted as
+- **Ingest grammar — THREE clauses** (`query.py:85-97`):
+  `dt.synthetic.monitor.id == "<native_id>"` AND `event.type == "http_monitor_execution"`, plus
+  `timestamp >= toTimestamp("<iso>")` when a watermark exists; emitted as
   `fetch dt.synthetic.events | filter … | sort timestamp asc`. `toTimestamp()` is load-bearing —
-  a bare string literal silently matches nothing (STORY-051, live-confirmed).
-- **Required row fields** (subscripted directly, `_assembly.py:24`): `timestamp`, `event.id`,
-  `dt.synthetic.monitor.id`, `event.type`, `dt.entity.synthetic_location`. Optional via `.get`:
-  `result.statistics.duration` → `latency_ms`; `result.statistics.response_status_code` →
-  **a STRING-typed number on the real wire** (`_assembly.py:80-84`).
+  a bare string literal silently matches nothing (STORY-051, live-confirmed). The bound is
+  `since.isoformat().replace("+00:00","Z")` → **6**-digit fraction, against **9**-digit rows.
+- **Second grammar** (`composition/vendor_health.py:40-53`):
+  `fetch dt.synthetic.events, from:now()-2h | filter dt.synthetic.monitor.id == "…" |
+  summarize count()`, response a single row keyed literally `"count()"` (`_extract_count`,
+  `:56-76`; `"count"` also accepted). Called at `run.py:192-196` for every signal, before the
+  loops are built. Never raises — a probe error is logged, so a wrong response shows up as a
+  false "monitor id is dead" warning, not a crash.
+- **Required row fields — SEVEN.** Five from the assembler (`_assembly.py:86,108,111,114`):
+  `timestamp`, `event.id`, `dt.synthetic.monitor.id`, `dt.entity.synthetic_location`, plus
+  `event.type` for dispatch. **Two from the normalizer** (`http_normalizer.py:22-23`, both
+  `require_field`): `result.status.code`, `result.status.message`.
+- **Optional fields, with scale** (`_assembly.py:88-102`): `result.statistics.duration` — a
+  **string of NANOSECONDS** (`"755000000"`, fixture:15), `//1_000_000` → `latency_ms`;
+  `result.statistics.response_status_code` — a **string-typed number** (`"200"`).
+- **HTTP protocol** (`grail_executor.py:43-97`): POST
+  `{env_url}/platform/storage/query/v1/query:execute`, body `{"query": …}`, header
+  `Authorization: Api-Token …`. Either 200 + `{"records": […]}` / `{"result":{"records":[…]}}`
+  (sync fallback), or 202 + `requestToken` → GET `…/query:poll?request-token=…` until
+  `state == "SUCCEEDED"`. At `:97`, **no `requestToken` and non-202 ⇒ `return []`, silently.**
 - **One row = one location execution**; the normalizer never aggregates
   (`http_normalizer.py:4-7`); dispatch registry maps `event.type` → normalizer
   (`dispatch.py:44-46`) and raises `UnsupportedMonitorTypeError` otherwise.
 - **Health mapping is deliberately partial:** `map_synthetic_status` maps only `"0"`/`"HEALTHY"`
   → `UP` and **raises** on anything else (`health_mapping.py:65-70`). Failure codes are
-  unobserved; anything we emit is an assumption (AC5).
-- **Publish danger:** `decide` publishes recoveries ungated (`decide.py:122-126`) via the
-  publisher built in `run.py:121-128` from `statuspage_page_id`/`statuspage_api_token`.
-- Import-linter contracts cover `src.*`; `tools/` is outside them, so nothing new to declare.
+  unobserved; anything we emit is an assumption (AC8).
+- `pyproject.toml:29` — `testpaths = ["backend/tests"]`. `pyproject.toml:111` — ruff excludes
+  `.agents`, `.venv`, `frontend` — **not** `tools/`. Repo-root import precedent:
+  `backend/tests/conftest.py:16-19`.
+- Import-linter contracts cover `src.*`; `tools/` is outside all eight, so nothing to declare.
 
 ### Steps
 
 - [ ] 1. Failing test first (fidelity before features): a hand-built demo row is compared
-      field-by-field against `grail_synthetic_events.json` — same keys, same value **types**,
-      including `response_status_code` as a string. Then write the row builder.
-- [ ] 2. Failing test: scenario file → per-signal, per-cycle, per-location outcome sequence;
-      the player expands it into timestamped rows at the signal's interval. Then implement.
-- [ ] 3. Failing test: query parsing honours the monitor-id filter (monitor A's query never
-      returns B's rows) and the `toTimestamp` lower bound (older rows excluded); output sorted
-      `timestamp asc`. Then implement.
-- [ ] 4. Wrap it in an HTTP server answering the same POST `make_grail_executor` issues; test
-      through the **real** executor against the local server (this is what option (b) buys over
-      a fake callable).
-- [ ] 5. **AC4 before any loop run:** demo composition wires a recording/no-op publisher; test
-      asserts the demo wiring's publisher is not the real HTTP one. Document the guard in the
-      demo README.
-- [ ] 6. Author the demo config directory (≥12 components, ≥40 signals, ≥4 locations) in
-      STORY-146's nested shape with STORY-147's groups/descriptions. Aliases deliberately not
-      AWS region names.
-- [ ] 7. Scenario set covering the cases the discussion identified: a clean fleet; a degradation
-      crossing the anti-flap ladder to an open proposal; a minority-location failure; a fully
-      dark location; two monitors on one component disagreeing (the STORY-151 bug, reproducible
-      on demand).
-- [ ] 8. AC5: collect every invented vendor code into ONE named constant with the
+      field-by-field against `grail_synthetic_events.json` — all **seven** required keys present,
+      same value types, `response_status_code` a string. Then write the row builder.
+- [ ] 2. Failing test: a row intended as 755 ms assembles to `latency_ms == 755` (i.e. the
+      builder emits nanoseconds as a string). Then implement. This is the AC2 scale check, kept
+      separate from AC1's type check because type-equality cannot catch it.
+- [ ] 3. Failing test: ingest-grammar parsing honours all three clauses — monitor A's query never
+      returns B's rows, a non-matching `event.type` returns nothing, the watermark bound excludes
+      older rows; output sorted `timestamp asc`. Then implement.
+- [ ] 4. Failing test: the watermark bound is **parsed**, not string-compared — a row at
+      `…746000000Z` against a bound of `…746000Z` is **included**. Then implement.
+- [ ] 5. Failing test: the second grammar (`summarize count()`) returns `[{"count()": N}]` for a
+      known monitor and a 0-count for an unknown one. Then implement.
+- [ ] 6. Wrap it in an HTTP server implementing the pinned protocol (POST `query:execute` → 202
+      + `requestToken`, GET `query:poll` → `SUCCEEDED` + `records`), with the `Api-Token` header
+      honoured.
+- [ ] 7. Test through the **real** `make_grail_executor` against the local server, asserting
+      assembled `SignalObservation`s (AC7 — this is what option (b) buys over option (a)).
+- [ ] 8. AC8: collect every invented vendor code into ONE named constant with the
       unverified-assumption comment; README states plainly what "failure path tested" means.
-- [ ] 9. AC6: verify the story diff touches no file under `backend/src/` (mechanical check over
-      the commit range, recorded in the story History).
-- [ ] 10. Document the demo recipe in `CLAUDE.md` (append-only) — the two env vars and the
-      publisher guard.
+- [ ] 9. AC9: `tools/demo_engine/` (underscore), tests under `backend/tests/`, verify the story
+      diff touches no file under `backend/src/` (mechanical check over the commit range), and
+      confirm `ruff check`/`ruff format` cover the new `tools/` code.
 
 ### Reality gate (148)
 
-Two parts, both executable without Dynatrace:
+The AC1/AC2 field-and-scale comparison against the real captured fixture, **plus** the AC7 round
+trip through the real `make_grail_executor` and the real HTTP client against the running server,
+asserting assembled domain objects. Both are mechanical and executable today with no Dynatrace.
+The story's core claim is fidelity, so it is proven by comparison, never by inspection.
 
-1. **Wire fidelity** — the AC1 field-by-field comparison against the real captured fixture. This
-   is the story's core claim and is proven mechanically, not by inspection.
-2. **Real loop, real fleet** — start DynamoDB Local, point `DYNATRACE_ENV_URL` at the demo
-   engine and `CONFIG_DIR` at the demo config, run the **unmodified**
-   `python -m src.composition.run`, and show: observations landing for ≥12 components / ≥40
-   signals / ≥4 locations; `GET /api/v1/components` + `/api/v1/topology` returning that fleet
-   over live HTTP; a scripted degradation producing a real open proposal on
-   `GET /api/v1/approvals`; and the recording publisher proving no Statuspage call was attempted.
+**Honest limit to state in the evidence:** the *shape* is verified against a real captured
+sample; the *failure codes* are assumed (AC8), because none has ever been observed.
 
-**Honest limit to state in the evidence:** every failure-state row rests on assumed vendor
-codes. The pipeline's handling of them is verified; the codes themselves are not.
+---
+
+## STORY-176 — demo engine part 2: scenario player, demo fleet, real loop run (3 pts)
+
+### Verified contracts / constraints (cited)
+
+- **Publish exposure, both routes.** `run.py:178 load_dotenv()` walks up from the source file,
+  not CWD, so the existing repo-root `.env` supplies `STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY`
+  from any launch directory. Route 1: `run.py:121-128` → `build_publisher`. Route 2 (the API's
+  approve trigger, and the reality gate runs the API): `composition/app.py:160-182` →
+  `load_statuspage_secrets()` + `seed_config.statuspage_mapping()` → the same `build_publisher`.
+- **The single gate both routes pass through** (`publish_helper.py:211`):
+  `if statuspage_page_id and statuspage_api_token and component_mapping:` — so an **empty
+  mapping** forces `StatusWritebackPublisher(LoggingPublisher(), …)` even with real credentials.
+  `statuspage_mapping()` includes only components declaring a non-None
+  `statuspage_component_id` (`config.py:292-299`). Neither root has a publisher injection point,
+  which is why the guard is config-only.
+- **Ingest window:** `orchestrate.py:94-98` — `since = until - (max_threshold + 2) * interval`,
+  a rolling **7-cycle** window (§10 defaults) ending at `clock.now()`. Rows outside it never
+  become verdicts.
+- **Timestamp strictness:** `parse_ns_timestamp` feeds `SignalObservation`, which rejects naive
+  or non-UTC datetimes (`signal.py:81-91`: "observed_at must be a tz-aware UTC datetime"). A
+  raise kills the cycle while `run_periodic` survives — i.e. silent no-data, not a crash.
+- **The sibling-OBSOLETE path (known, deliberately unfixed):** `orchestrate.py:88,153` resolves
+  the component per signal, and `decide.py:157-169` OBSOLETEs an open proposal when a sibling
+  reports healthy — publishing a recovery. This is STORY-151; at ~3 monitors/component it makes
+  proposal evidence racy in both directions.
+- **Recovery is ungated:** `decide.py:122-126` publishes recoveries with no human approval.
+- STORY-146's nested shape and per-app `locations:`/`freshness:`; STORY-148's engine.
+
+### Steps
+
+- [ ] 1. Failing test: scenario file → per-signal, per-cycle, per-location outcome sequence; the
+      player expands it into rows at each monitor's `interval_seconds`, asserting exact row
+      counts per location per cycle. Then implement.
+- [ ] 2. Failing tests for each of AC2's four time-base constraints: rows land inside the
+      7-cycle window; timestamps are `Z`-suffixed 9-digit UTC matching the fixture **format**;
+      emission is monotonic across successive queries; demo intervals ≤ 60 s. Each violated
+      constraint yields silent no-data, so each is asserted rather than assumed.
+- [ ] 3. **AC3 before any loop run** — author the demo config with **no**
+      `statuspage_component_id` anywhere; two tests: `statuspage_mapping() == {}` for the loaded
+      demo config, and `build_publisher` with an empty mapping + non-empty credentials returns a
+      chain whose delegate is a `LoggingPublisher`. Document the guard and both routes in the
+      demo README.
+- [ ] 4. Author the demo config directory (≥12 components, ≥40 signals, ≥4 locations) in
+      STORY-146's nested shape, with declared `locations:` (short non-cloud-provider aliases) and
+      a `freshness:` block. Fabricated `SYNTHETIC_LOCATION-*` ids are fine here — demo config,
+      never `config/apps/`.
+- [ ] 5. Scenario set per AC5: a clean fleet; a degradation crossing the anti-flap ladder to an
+      open proposal (on a **single-monitor** component, AC7); a minority-location failure; a
+      fully dark location; two monitors on one component disagreeing.
+- [ ] 6. Run the **unmodified** `python -m src.composition.run` against the engine + demo config;
+      verify observations for ≥12 components / ≥40 signals / ≥4 locations, and that
+      `check_vendor_id_health` reports **no** dead monitor ids (the end-to-end proof of
+      STORY-148 AC5).
+- [ ] 7. AC7: capture the open-proposal evidence from the single-monitor component; exercise the
+      multi-monitor "fight" scenario separately as a demonstration of the known STORY-151 defect.
+- [ ] 8. AC8: verify the story diff touches no file under `backend/src/`.
+- [ ] 9. Document the demo recipe in `CLAUDE.md` (append-only) — the two env vars and the
+      publisher guard.
+- [ ] 10. Wiki: add the demo engine as a new article (`code_refs` → `tools/demo_engine/`), and
+      record in `sample-mode.md` that this supersedes `sample_mode` (removal is STORY-155).
+
+### Reality gate (176)
+
+Start DynamoDB Local, point `DYNATRACE_ENV_URL` at the demo engine and `CONFIG_DIR` at the demo
+config, run the **unmodified** `python -m src.composition.run`, and show:
+
+1. observations landing for ≥12 components / ≥40 signals / ≥4 locations;
+2. `GET /api/v1/components` + `/api/v1/topology` returning that fleet over live HTTP;
+3. `check_vendor_id_health` reporting no dead monitor ids at startup;
+4. a scripted degradation opening a real proposal on `GET /api/v1/approvals` — from a
+   **single-monitor** component, so no healthy sibling can OBSOLETE it (AC7);
+5. the log/recording proving no Statuspage call was attempted, with `statuspage_mapping() == {}`
+   as the mechanism.
+
+**Honest limits to state in the evidence:** every failure-state row rests on assumed vendor
+codes (STORY-148 AC8) — the pipeline's handling of them is verified, the codes themselves are
+not; and the fleet is fictional, so this proves the *system* handles a fleet, not that any
+particular real monitor behaves this way.
 
 ---
 
@@ -204,36 +328,54 @@ codes. The pipeline's handling of them is verified; the codes themselves are not
 
 - The defect: `pipeline.py:226-227` proposes `degraded` for a `DEGRADED` streak of any length,
   with no threshold comparison — asymmetric with the `DOWN` ladder at `:215-224`, which checks
-  `major` → `partial` → `degraded` and returns `_INTERNAL_WARNING` for `length == 1`.
+  `major` → `partial` → `degraded`, returns `_INTERNAL_WARNING` for `length == 1`, and
+  `_NOTHING` otherwise (including length 0).
+- **The docstring documents the defect** (`:210-211`): "always `degraded` — … so no length
+  comparison is needed". It changes with the code (AC7).
 - `_collapse_health` (`:84-97`): `DOWN` only when **every** location is down; **any** mix →
   `DEGRADED`. So the unguarded path is near-dead at 1 location and hot at 3+.
 - `thresholds.degraded` already means "consecutive bad cycles before degraded"
   (`AntiFlapThresholds`, `:146-147`) — no new config.
-- `AntiFlapOutcome` enforces the status↔warning coherence invariant at construction (`:171+`),
+- `AntiFlapOutcome` enforces the status↔warning coherence invariant at construction (`:171-187`),
   so the warning outcome cannot be conflated with a proposed status.
+- **Two existing tests assert the current behaviour and are rewritten:**
+  `backend/tests/test_anti_flap.py:185-190` (streak of 1 → `degraded`) and `:240-248` (streak of
+  0 → `degraded`).
+- **Verified to have no downstream effect:** `orchestrate.py:124-139` already returns NOOP when
+  `proposed_status is None`; and `Health.DEGRADED` appears only in `test_anti_flap`,
+  `test_pipeline`, `test_streak`, `test_availability`, `test_dynatrace_adapter` — no
+  orchestration or e2e test drives a `DEGRADED` collapse. The fix cannot alter `decide`.
 - **Out of scope:** Phase 2 (breadth ceiling, D1/D2) — STORY-150.
 
 ### Steps
 
 - [ ] 1. Failing test: `DEGRADED` streak of 1 → internal warning (`proposed_status is None`,
-      `internal_warning is True`), NOT a `degraded` proposal.
+      `internal_warning is True`), NOT a `degraded` proposal. Rewrites
+      `test_anti_flap.py:185-190` (keeping its intent, renamed to state the new rule).
 - [ ] 2. Failing test: `DEGRADED` streak above 1 but below `thresholds.degraded` → nothing
       proposed, no warning (use `thresholds.degraded > 2` to make the band reachable).
-- [ ] 3. Failing test: `DEGRADED` streak `>= thresholds.degraded` → proposes `degraded`
+- [ ] 3. Failing test: `DEGRADED` streak of 0 → nothing, symmetric with `DOWN` at `:224`.
+      Rewrites `test_anti_flap.py:240-248`.
+- [ ] 4. Failing test: `DEGRADED` streak `>= thresholds.degraded` → proposes `degraded`
       (unchanged sustained behaviour).
-- [ ] 4. Implement the four-line symmetry in the `DEGRADED` branch.
-- [ ] 5. AC5: confirm every existing `DOWN`/`UP` anti-flap assertion passes **untouched** — the
-      two ladders byte-identical in the diff, nothing weakened or deleted.
-- [ ] 6. Revert-check (AC4): revert the fix, confirm the streak-of-1 test fails, restore.
+- [ ] 5. Implement the symmetry in the `DEGRADED` branch **and update the `:210-211` docstring**
+      in the same diff (AC7).
+- [ ] 6. AC8: confirm every existing `DOWN`/`UP` anti-flap assertion passes **untouched** — both
+      ladders byte-identical in the diff, nothing weakened or deleted.
+- [ ] 7. Revert-check (AC4): revert the fix, confirm the streak-of-1 test fails, restore.
       Recorded as evidence that the test is load-bearing.
 
 ### Reality gate (149)
 
-A demo-engine scenario (from 148) that makes exactly one location of one monitor fail for a
-single cycle, run through the real loop: confirm **no proposal appears** on
-`GET /api/v1/approvals`, and that extending the same failure past `thresholds.degraded` **does**
-open one. This is the defect's real-world shape — a single-location blip — exercised end to end
-rather than only at the unit boundary. (Rests on assumed failure codes; stated in the evidence.)
+A demo-engine scenario (from STORY-176) on a **single-monitor** component — pinned deliberately,
+so the STORY-151 sibling-OBSOLETE path cannot spoof the result in either direction. Make exactly
+one location fail for a single cycle and confirm **no proposal appears** on
+`GET /api/v1/approvals`; then extend the same failure past `thresholds.degraded` and confirm one
+**does**. This is the defect's real-world shape — a single-location blip — exercised end to end
+rather than only at the unit boundary.
+
+**Honest limit:** rests on assumed failure codes (STORY-148 AC8). The unit-level ACs are the
+primary evidence; this gate is corroboration at the system level.
 
 ---
 
@@ -245,12 +387,16 @@ rather than only at the unit boundary. (Rests on assumed failure codes; stated i
 - **Final gate:** the FULL five-command backend gate on the final HEAD, clean tree — this is the
   evidence of record. No frontend gates apply (no `frontend/` diff this sprint).
 - **Wiki compile pass** before review: fold in the config-shape change, the demo engine as a new
-  article, and the anti-flap correction; rehabilitate anything the sweep marks stale; lint links.
-- **Demo script:** migrated real config seeds identically (146) → new fields live over HTTP
-  (147) → demo engine wire-fidelity proof, then the real loop running a 12-component fleet with
-  a real open proposal and a silent publisher (148) → single-location blip proposes nothing,
-  sustained failure does (149).
+  article, the `sample_mode` supersession note, and the anti-flap correction; rehabilitate
+  anything the sweep marks stale; lint links. Sweep was clean at planning (`8554c7b`).
+- **Demo script:** migrated real config seeds identically (146) → demo rows proven
+  field-and-scale identical to the captured fixture, through the real executor over real HTTP
+  (148) → the unmodified loop running a 12-component fictional fleet with a real open proposal
+  and a provably silent publisher (176) → a single-location blip proposes nothing while a
+  sustained one does (149).
 - **Not in this sprint, and stated at review so scope is unambiguous:** all frontend work
-  (sprint 63+), STORY-150 breadth model, STORY-151 per-component rollup, STORY-152 expected-
-  locations completeness, STORY-153 rejection suppression, STORY-154 failure codes (blocked on
-  trial renewal), STORY-155 sample_mode removal.
+  (sprint 63+), STORY-147 (deferred to 63, where its consumer lands), STORY-150 breadth model,
+  STORY-151 per-component rollup, STORY-152 expected-locations completeness, STORY-153 rejection
+  suppression, STORY-154 failure codes (blocked on trial renewal), STORY-155 sample_mode removal,
+  STORY-173 the leaked-container fixture fix.
+</content>

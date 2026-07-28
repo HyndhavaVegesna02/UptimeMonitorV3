@@ -89,7 +89,9 @@ cosmetic** — see the `StatusProposal.reason` finding in `ui-backend-gap-analys
 | **P1** | Add the streak-length check to the `DEGRADED` branch of `anti_flap`, symmetric with the `DOWN` ladder. Closes defect 1 alone. Four lines, no modelling debate. | ~1 | can land any time |
 | **P2** | The full D1/D2 breadth model: verdict carries the location counts, `anti_flap` takes both dimensions, config gains the majority boundary. Closes defects 2 and 3. | ~5 | **prerequisite for real multi-location components** |
 
-Neither is in sprint-62 (UI) scope.
+**P1 IS in sprint 62** — it is STORY-149. P2 is not; it is STORY-150, deferred. (Corrected
+2026-07-28 after `yt-plan-verifier` flagged the original line, "Neither is in sprint-62 (UI)
+scope", as wrong on both counts: P1 is in the sprint, and sprint 62 is backend-only, not UI.)
 
 **Dependency to resolve first.** `map_synthetic_status` — the live HTTP path — maps **only**
 `code == "0"` / `"HEALTHY"` → `Health.UP` and *raises* on anything else

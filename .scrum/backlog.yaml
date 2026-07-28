@@ -3,7 +3,9 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 176  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
+next_story_id: 177  # 176 CONSUMED 2026-07-28 by the post-verifier split of STORY-148 into
+                    # 148 (wire contract) + 176 (scenario player, demo fleet, loop run).
+                    # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
                     # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
                     # reserved 144/145 (`git show sprint-61:.scrum/backlog.yaml`). Sprint-62
                     # stories therefore start at 146 so no id ever names two different stories
@@ -962,21 +964,32 @@ stories:
     points: 2
     priority: 53
     type: feature
-    sprint: 62
+    sprint: 63   # DEFERRED out of 62 post-verifier (2026-07-28): purely decorative, no
+                 # consumer until the frontend lands in 63, and it now depends on the
+                 # ConfigError hierarchy STORY-146 introduces. Keeps 62 at 10 pts.
   - id: STORY-148
-    title: Local Grail-shaped demo engine — scripted scenarios, no Dynatrace
+    title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
     status: ready
-    points: 5
+    points: 3   # WAS 5 as a single story; split post-verifier (assessed 7-8 pts of real work)
     priority: 54
     type: chore
     sprint: 62
+  - id: STORY-176
+    title: Grail demo engine part 2 — scenario player, demo fleet, and the real loop run
+    file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
+    status: ready
+    points: 3
+    priority: 55
+    type: chore
+    sprint: 62
+    depends_on: [STORY-146, STORY-148]
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
     status: ready
     points: 1
-    priority: 55
+    priority: 56
     type: defect
     sprint: 62
   # ── Deferred / future work, filed at sprint-62 planning (drafts) ──

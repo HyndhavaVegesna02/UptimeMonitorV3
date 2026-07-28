@@ -47,9 +47,15 @@ real cards on screen to judge (PO discussion 2026-07-28).
 ## Acceptance Criteria
 
 - [ ] **AC1** — `ComponentConfig` accepts optional `group` and `description`. A `group` that is
-      not slug-safe after normalization, or a `description` longer than 80 characters, raises a
-      **named** error at load naming the offending component and field — never a bare
-      `ValueError`, and never silent truncation.
+      not slug-safe after normalization, or a `description` longer than 80 characters, raises
+      `InvalidComponentFieldError` (a `ConfigError`/`ValueError` subclass — the hierarchy
+      STORY-146 AC5 introduces) naming the offending component and field — never a bare
+      `ValueError`, and never silent truncation. **The check runs in `load_config` OUTSIDE the
+      `try/except (TypeError, ValueError)` at `config.py:343-357`**: verified by probe, a
+      `ValueError` subclass raised inside a pydantic `model_validator` is converted to
+      `ValidationError` (losing the subclass), which `config.py:356` then re-raises as a bare
+      `ValueError(f"Invalid config in {file}: …")`. A validator-based implementation cannot
+      satisfy this AC. The test asserts the specific class, not `ValueError`.
 - [ ] **AC2** — `group` is normalized to a lowercase slug at load: `Commerce`, `COMMERCE`, and
       `commerce` all load as `commerce`. A test asserts all three inputs produce one value.
       Display-casing is the frontend's concern, not config's.
@@ -76,3 +82,18 @@ None.
   for now, both optional with the chip omitted when absent, `description` length-capped and
   validated where it is authored. Recorded in
   `docs/scrum/sprints/2026-07-28-sprint-62/ui-backend-gap-analysis.md` §3a.
+- 2026-07-28: **amended and DEFERRED out of sprint 62 after `yt-plan-verifier` (pre-lock).**
+  Two changes. (1) AC1's "named error" was unsatisfiable as specified — the same pydantic
+  conversion issue found in STORY-146 — so AC1 now names `InvalidComponentFieldError` and pins
+  where it is raised; it also now depends on the `ConfigError` hierarchy STORY-146 introduces,
+  which is a further reason to sequence it after that story rather than beside it.
+  (2) Deferred to **sprint 63**, where the frontend that consumes these fields lands. Both
+  fields are purely decorative with **no consumer until then** (`group` is explicitly a display
+  sub-label, AC-level: "decorative in this story"), so landing them a sprint earlier buys
+  nothing, while deferring keeps sprint 62 at ~10 pts with real verification headroom on the
+  demo-engine work. This matches the PO's standing pacing directive ("do it multi sprint, with
+  carefull verification, no need to rush in single stretch"). Verified as safe to defer: the
+  verifier confirmed AC4 is *structurally* guaranteed — the Statuspage payload is
+  `{"component": {"status": …}}` (`adapters/outbound/statuspage/__init__.py:54`), so neither
+  field can leak regardless of when this lands. Citation fix: `ComponentDTO` is
+  `api/v1/components/models.py:9-17` (the file is 17 lines; the earlier `:12-19` overran it).

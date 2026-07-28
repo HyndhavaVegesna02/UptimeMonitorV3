@@ -59,15 +59,39 @@ degraded" (`AntiFlapThresholds`, `pipeline.py:146-147`), so no new config is nee
 - [ ] **AC4 (regression — proves the defect is gone)** — A test asserts the OLD behaviour no
       longer holds: a `DEGRADED` streak of 1 previously proposed `degraded`, and now does not.
       This test must fail if the fix is reverted.
-- [ ] **AC5 (no collateral change)** — Every existing `anti_flap` test for the `DOWN` and `UP`
+- [ ] **AC5 (degenerate length 0)** — A `DEGRADED` streak of length 0 returns **nothing**
+      (`proposed_status is None`, `internal_warning is False`), exactly as a `DOWN` streak of
+      length 0 does (`pipeline.py:224`). This is a deliberate behaviour change:
+      `backend/tests/test_anti_flap.py:240-248`
+      (`test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded`) asserts today's
+      outcome and is **intentionally rewritten**, not deleted — its replacement asserts the new
+      symmetric outcome and keeps the "does not crash / does not mis-bucket" intent.
+- [ ] **AC6 (the two tests that assert the defect, named)** — Exactly two existing tests encode
+      the old rule and are rewritten with it:
+      `test_anti_flap.py:185-190` (`test_sustained_degraded_streak_of_length_one_proposes_degraded`)
+      and `test_anti_flap.py:240-248` (above). No other `anti_flap` test changes. Each rewrite
+      keeps the original test's intent and renames it to state the new rule.
+- [ ] **AC7 (the docstring documents the defect and must change with it)** —
+      `pipeline.py:210-211` currently reads "`Health.DEGRADED` … always `degraded` — there is
+      only one failing-adjacent bucket for this health, so **no length comparison is needed**".
+      That sentence is the defect written down. The docstring is updated in the same diff to
+      describe the streak requirement.
+- [ ] **AC8 (no collateral change)** — Every existing `anti_flap` test for the `DOWN` and `UP`
       branches passes **untouched** — no assertion is edited, weakened, or deleted. The
       `DOWN` ladder (`major`/`partial`/`degraded`/warning) and the `UP` recovery threshold are
       byte-identical in the diff.
-- [ ] **AC6** — All five backend DoD gate commands exit 0.
+- [ ] **AC9** — All five backend DoD gate commands exit 0.
 
 ## Open Questions
 
 None.
+
+**Verified to have no downstream effect** (checked pre-lock, so it is not re-litigated during
+implementation): `orchestrate.py:124-139` already returns NOOP when `proposed_status is None`,
+so the new "nothing proposed" outcomes need no caller change; and no orchestration or e2e test
+drives a `DEGRADED` collapse — `Health.DEGRADED` appears only in `test_anti_flap`, `test_pipeline`,
+`test_streak`, `test_availability`, and `test_dynatrace_adapter`. The fix therefore cannot alter
+`decide` behaviour.
 
 ## History
 
@@ -78,3 +102,12 @@ None.
   of this sprint. Note that on the live HTTP path today no vendor mapping produces `DOWN` or
   `DEGRADED` at all (`health_mapping.py:65-70`), so this fix is verified against fixtures and
   demo-engine scenarios rather than live vendor failures.
+- 2026-07-28: **amended after `yt-plan-verifier` (pre-lock, verdict GAPS).** Three additions,
+  all from reading the existing tests rather than assuming a 4-line change is self-contained:
+  the length-0 outcome was unspecified while `test_anti_flap.py:240-248` explicitly asserts
+  today's behaviour (now AC5); the two tests that encode the defect are now named (AC6) — the
+  original draft said the fix touched no existing test, which was wrong; and the docstring at
+  `pipeline.py:210-211` states the old rule verbatim, so it is in scope (AC7). Also recorded:
+  the verifier confirmed the fix has no effect in `decide` or in any e2e test, and the reality
+  gate is pinned to a **single-monitor** component so the known STORY-151 sibling-OBSOLETE path
+  cannot spoof the evidence in either direction.

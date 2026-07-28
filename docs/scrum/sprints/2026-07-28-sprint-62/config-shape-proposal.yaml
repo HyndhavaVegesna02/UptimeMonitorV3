@@ -1,10 +1,14 @@
 # PROPOSAL — not live config. Illustrates the authoring shape discussed 2026-07-28.
+# REVISED 2026-07-28 after yt-plan-verifier: location aliases are now short
+# non-cloud-provider names (were us-east-1 etc., which read as AWS deployment
+# regions rather than probe locations — R3); the freshness block at the bottom
+# was added (R4); the referential-validator citation was corrected to :182-189.
 # Live config today is config/apps/httpcheck.yaml (1 component, 1 monitor).
 #
 # Three changes vs today:
 #   1. monitors nest UNDER their component  (tree is visible; the
 #      "signal.component_id must reference a declared component" validator at
-#      composition/config.py:174 becomes structurally unrepresentable)
+#      composition/config.py:182-189 becomes structurally unrepresentable)
 #   2. the middle level is called `monitors:`, and each one names the
 #      `signal_key` it produces  ("this monitor produces this signal")
 #   3. a top-level `locations:` block maps the vendor's opaque entity id ->
@@ -28,10 +32,10 @@ app:
 #   native_id  -> what the vendor actually sends, matched on ingest
 #   label      -> what an operator reads in the cockpit
 locations:
-  us-east-1:  { native_id: SYNTHETIC_LOCATION-000000000000005C, label: US East (Virginia) }
-  eu-west-1:  { native_id: SYNTHETIC_LOCATION-0000000000000047, label: EU West (Ireland) }
-  ap-south-1: { native_id: SYNTHETIC_LOCATION-0000000000000063, label: AP South (Mumbai) }
-  sa-east-1:  { native_id: SYNTHETIC_LOCATION-0000000000000071, label: SA East (São Paulo) }
+  virginia:  { native_id: SYNTHETIC_LOCATION-000000000000005C, label: US East (Virginia) }
+  dublin:  { native_id: SYNTHETIC_LOCATION-0000000000000047, label: EU West (Ireland) }
+  mumbai: { native_id: SYNTHETIC_LOCATION-0000000000000063, label: AP South (Mumbai) }
+  saopaulo:  { native_id: SYNTHETIC_LOCATION-0000000000000071, label: SA East (São Paulo) }
 
 # ─── Components, each with the monitors that feed it ───────────────────────
 components:
@@ -47,7 +51,7 @@ components:
         native_id: HTTP_CHECK-38B092E93932C002
         name: Checkout API
         interval_seconds: 120
-        expected_locations: [us-east-1, eu-west-1, ap-south-1]
+        expected_locations: [virginia, dublin, mumbai]
 
   # One component, TWO monitors of the SAME kind at different cadences —
   # e.g. a fast liveness check plus a slower deep health probe. Both are
@@ -62,13 +66,13 @@ components:
         native_id: HTTP_CHECK-7A1F44C2E8B90D31
         name: Gateway health endpoint
         interval_seconds: 60
-        expected_locations: [us-east-1, eu-west-1, ap-south-1, sa-east-1]
+        expected_locations: [virginia, dublin, mumbai, saopaulo]
 
       - signal_key: api-gateway-graphql
         native_id: HTTP_CHECK-B93E20D7F1A6C845
         name: GraphQL introspection
         interval_seconds: 300
-        expected_locations: [us-east-1, eu-west-1]
+        expected_locations: [virginia, dublin]
 
   # One component, THREE monitors — and the slot where a non-HTTP monitor
   # goes once clickpath/browser ingest lands. Commented out ON PURPOSE:
@@ -86,20 +90,20 @@ components:
         native_id: HTTP_CHECK-3C5D81A4B7E20F69
         name: Login endpoint
         interval_seconds: 120
-        expected_locations: [us-east-1, eu-west-1, ap-south-1]
+        expected_locations: [virginia, dublin, mumbai]
 
       - signal_key: user-auth-oauth
         native_id: HTTP_CHECK-E4082B6C9D1A73F5
         name: OAuth token exchange
         interval_seconds: 120
-        expected_locations: [us-east-1, eu-west-1]
+        expected_locations: [virginia, dublin]
 
       # FUTURE — needs per-kind event.type querying first (STORY-016c).
       # - signal_key: user-auth-journey
       #   native_id: SYNTHETIC_TEST-A1B2C3D4E5F60718
       #   name: Sign-in clickpath
       #   interval_seconds: 900
-      #   expected_locations: [us-east-1, eu-west-1]
+      #   expected_locations: [virginia, dublin]
 
   # A component with NO group — a legitimate state, not an error. The UI omits
   # the category chip rather than printing "Uncategorized" filler (decision
@@ -113,7 +117,7 @@ components:
         native_id: HTTP_CHECK-D71C3E85F0A92B46
         name: Search query endpoint
         interval_seconds: 120
-        expected_locations: [us-east-1, ap-south-1]
+        expected_locations: [virginia, mumbai]
 
   # A component whose monitor runs from ONE location only — proves
   # expected_locations is per-monitor, not per-app. Availability completeness
@@ -128,7 +132,23 @@ components:
         native_id: HTTP_CHECK-58F1D0A3C6E42B97
         name: Primary TCP reachability
         interval_seconds: 60
-        expected_locations: [us-east-1]
+        expected_locations: [virginia]
 
 # ─── Anti-flap thresholds (unchanged; per-app, consecutive-cycle counts) ────
 thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
+
+# ─── Freshness (per-app; CYCLE COUNTS, never seconds) ──────────────────────
+# Added 2026-07-28 in the post-verifier revision. This block was discussed and
+# agreed with the PO ("if a monitor doesnt produce any signals for a long
+# multiples of its cycle, then its latest state shouldn't affect the components
+# state until it starts again and completes some cycles let us put these
+# numbers also in config") but was missing from this file, so the plan carried
+# it with no provenance — flagged by yt-plan-verifier as R4.
+#
+# Both numbers are COUNTS OF CYCLES, multiplied by each monitor's OWN
+# interval_seconds at the point of use. A monitor at 60s goes stale after
+# 180s; the 300s monitor above after 900s. STORY-146 loads and validates them
+# and performs NO multiplication; STORY-151/152 consume them.
+freshness:
+  stale_after_cycles: 3    # missed cycles before a monitor stops counting toward its component
+  reentry_cycles: 2        # cycles it must complete after returning before it counts again

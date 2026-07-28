@@ -11,18 +11,23 @@ pre-commit scope.
 
 ---
 
-## Sprint 62 — "the fleet exists, and it flows" (≈11 pts)
+## Sprint 62 — "the fleet exists, and it flows" (10 pts)
 
 **Goal:** a scripted multi-component / multi-signal / multi-location fleet flowing through
 the **real** pipeline into DynamoDB, and the existing API returning fleet-scale data for the
 first time. No frontend work.
 
+*Revised 2026-07-28 after `yt-plan-verifier` (verdict GAPS): the demo engine is split in two,
+and `group`/`description` moves to sprint 63 where its consuming frontend lands. Total
+programme scope is unchanged — see `plan.md` "Verifier pass".*
+
 | Story | Est | Why here |
 | ----- | --- | -------- |
-| **Demo engine** — local Grail-shaped HTTP server + scenario files (D4, option b) | 5 | Unblocks everything else; nothing is verifiable without it |
-| **Config reshape** — nested `monitors:` under components, `locations:` block, `freshness:` block | 3 | The authoring shape everything downstream reads; lands before the fleet grows so entries are authored once |
-| **`group` + `description`** on `ComponentConfig` → `ComponentDTO` (B4) | 2 | Same edit as the config reshape; unblocks category chips later |
-| **P1** — `degraded` streak check in `anti_flap` | 1 | 4 lines, closes the no-damping defect, no modelling debate |
+| **STORY-146 · Config reshape** — nested `monitors:` under components, `locations:` block, `freshness:` block | 3 | The authoring shape everything downstream reads; lands before the fleet grows so entries are authored once. Highest blast radius (8 consumers of `app.signals`) |
+| **STORY-148 · Demo engine pt 1** — the wire contract: 7-field rows at real scale, **both** DQL grammars, the async Grail HTTP protocol, proven through the real executor | 3 | Fidelity is the whole value of D4 option (b), and three separate code paths return *silently empty* when it is wrong — so it is verified on its own before anything is built on it |
+| **STORY-176 · Demo engine pt 2** — scenario player, ≥12-component demo fleet, config-only publish guard, real loop run | 3 | Consumes 146's shape and 148's engine; this is the story that makes the fleet real |
+| **STORY-149 · P1** — `degraded` streak check in `anti_flap` | 1 | 4 lines, closes the no-damping defect, no modelling debate |
+| ~~`group` + `description` (B4)~~ | ~~2~~ | **Deferred to sprint 63** — purely decorative with no consumer until the frontend, and it now depends on the `ConfigError` hierarchy STORY-146 introduces |
 
 **Demo:** point `DYNATRACE_ENV_URL` at the demo engine, run the real loop, and show 12
 components / ~50 signals / 4 locations landing in DynamoDB — then every existing `/api/v1`
@@ -79,7 +84,7 @@ until the N+1 actually hurts** rather than blocking the page on a new endpoint.
 | 1 | **Rebuild base** — branch from `main` + cherry-pick sprint-61's design-neutral infra (`api/`, `useFetch`, `fetchDedup`, pure helpers, MSW harness), fully clean, or from the sprint-61 tip? Recommendation: cherry-pick, under the rule *"if it renders, rebuild it; if it's data→data, keep it."* | sprint 63 |
 | 2 | **Check History result taxonomy** — the reference's `Success / Slow / Timeout / Failure` vs our `up / down / degraded`. Relabel the design, or add latency-threshold "slow" and a timeout distinction to the domain? | sprint 65 |
 | 3 | **Actor on an approval** — `POST /decisions/{id}` needs an `actor` for the audit trail; the reference hardcodes "Nadia M."; there are no users in the backend. Build-time name, operator-typed field, or real auth? | the Approvals sprint |
-| 4 | **Real Dynatrace location ids + names** for the `locations:` block, and aliases that match Dynatrace's own vocabulary rather than borrowed AWS region names. | can be provisional in sprint 62; needs real values on trial renewal |
+| 4 | **Real Dynatrace location ids + names** for the `locations:` block, and aliases that match Dynatrace's own vocabulary. | Resolved for sprint 62: aliases are short non-cloud-provider names, and the migrated **live** config gets no `locations:` block at all (STORY-146 AC8) — fabricated vendor ids stay in demo config only. Real values still need trial renewal |
 
 Decided already and recorded: `ui-backend-gap-analysis.md` §3a (fleet density, palette,
 confidence %, `group`/`description`, publication deferral, multi-component drop) and

@@ -1,12 +1,13 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 62
 status: planning   # none | planning | active | review | closed | aborted
-                   # PLANNING, not yet locked. Awaits (1) yt-plan-verifier dispatch —
-                   # this sprint IS contract-sensitive, see plan.md — and (2) PO approval.
+                   # PLANNING, not yet locked. yt-plan-verifier DISPATCHED 2026-07-28 —
+                   # verdict GAPS (13 gaps, 4 risks), all closed in the plan revision; see
+                   # plan.md "Verifier pass". Awaits PO approval only.
                    # Flip to `active` only at lock.
 mode: in-process   # Standing directive after the sprint-60 external rejection: "you only
-                   # implement". All 4 stories are 3+ pt except STORY-149 (1 pt), so 146/147/148
-                   # get implementer -> spec ∥ quality reviewers; 149 gets implementer -> gate.
+                   # implement". 146/148/176 are 3 pt -> implementer -> spec ∥ quality
+                   # reviewers; 149 (1 pt) -> implementer -> gate.
                    # Every story gets the DoD gate + a reality gate.
 goal: "Make a realistic multi-component / multi-signal / multi-location fleet flow through the REAL pipeline without Dynatrace, on a config shape that communicates the component -> monitor -> location hierarchy, and close the one anti-flap damping hole that goes live the moment a second location exists. Backend only; no frontend work."
 branch: sprint-62
@@ -26,27 +27,41 @@ started: null           # set at lock
 #   plan.md                        — this sprint's contracts, steps, reality gates
 # ── Scope discipline ──────────────────────────────────────────────────────────
 # PO approved scope option (a) (~21 pts) but directed "do it multi sprint, with carefull
-# verification, no need to rush in single stretch" — so it is SPLIT. This sprint is 11 pts,
-# near the ~9 baseline. Frontend lands sprint 63+ (design system + shell first, with a PO
+# verification, no need to rush in single stretch" — so it is SPLIT. This sprint is 10 pts,
+# at the ~9-11 baseline. Frontend lands sprint 63+ (design system + shell first, with a PO
 # look-and-feel checkpoint BEFORE six pages are built on the language — the pilot fix for the
 # process failure behind three rejections).
-# EXPLICITLY OUT: all frontend work; STORY-150 (breadth model D1/D2), STORY-151 (per-component
-# decision rollup), STORY-152 (expected-locations completeness), STORY-153 (rejection
-# suppression F1), STORY-154 (map real failure codes — BLOCKED on trial renewal),
-# STORY-155 (sample_mode removal).
+# Post-verifier scope changes (2026-07-28, both MINE not the verifier's, both flagged for PO
+# pushback in plan.md): STORY-148 SPLIT into 148 (wire contract, 3) + STORY-176 (scenario
+# player + demo fleet + loop run, 3) after being assessed at 7-8 pts as one story; STORY-147
+# DEFERRED to sprint 63 where its consuming frontend lands (purely decorative until then, and
+# it now depends on the ConfigError hierarchy STORY-146 introduces). Total scope unchanged.
+# EXPLICITLY OUT: all frontend work; STORY-147 (deferred to 63), STORY-150 (breadth model
+# D1/D2), STORY-151 (per-component decision rollup), STORY-152 (expected-locations
+# completeness), STORY-153 (rejection suppression F1), STORY-154 (map real failure codes —
+# BLOCKED on trial renewal), STORY-155 (sample_mode removal), STORY-173 (leaked-container
+# fixture fix).
 # ── Live-data caveat ──────────────────────────────────────────────────────────
 # The Dynatrace trial expired 2026-07-28: no observations arrive, nothing is reality-gateable
 # against real vendor data, and sample_mode (which flips already-normalized rows) is inert.
-# STORY-148 exists to replace that. Its reality gate is therefore a WIRE-SHAPE comparison
-# against real captured fixtures (backend/tests/fixtures/dynatrace/grail_synthetic_events.json),
-# not "the loop didn't crash". Every failure-state row rests on ASSUMED vendor codes —
+# STORY-148 + STORY-176 exist to replace that. 148's reality gate is therefore a WIRE-SHAPE
+# comparison against real captured fixtures (backend/tests/fixtures/dynatrace/
+# grail_synthetic_events.json) plus a round trip through the REAL make_grail_executor over real
+# HTTP — not "the loop didn't crash". Every failure-state row rests on ASSUMED vendor codes —
 # map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise
 # (adapters/inbound/dynatrace/health_mapping.py:65-70). That limit is stated in the evidence,
 # never absorbed as "the failure path is tested".
 # ── Safety precondition (non-negotiable) ──────────────────────────────────────
 # decide publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py:122-126). A demo run
 # wired to the real publisher would post fake statuses to the LIVE public Statuspage.
-# STORY-148 AC4 makes the stub a tested guarantee; NO demo loop is started before it exists.
+# The verifier found the original stub-based guard UNIMPLEMENTABLE (no publisher injection point
+# in run.py:121-128 under a no-backend/src-changes constraint) and the exposure LARGER than
+# described: run.py:178 load_dotenv() walks up from the source file, so the existing repo-root
+# .env supplies Statuspage creds from any CWD, and a SECOND route exists via the API approve
+# trigger (composition/app.py:160-182). STORY-176 AC3 replaces it with a CONFIG-ONLY guard:
+# no statuspage_component_id anywhere in the demo config => statuspage_mapping() == {} =>
+# publish_helper.py:211 falls through to LoggingPublisher on BOTH roots, even with real creds
+# present. NO demo loop is started before that AC passes.
 # ── Baseline ──────────────────────────────────────────────────────────────────
 # First full-gate attempt on this branch was RED: `npm run build` exit 1. Diagnosed as
 # ENVIRONMENT staleness, not a code defect — the on-disk frontend/node_modules was left from
@@ -114,21 +129,22 @@ stories:
     ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
     order: 1                 # highest blast radius (7 consumers of app.signals); STORY-148's
                              # demo config must be authored in the final shape, not twice
-  - id: STORY-147
-    title: Component group + description — config to ComponentDTO
-    file: docs/scrum/stories/STORY-147-component-group-description.md
-    status: ready
-    points: 2
-    ceremony: 3-pointer      # 2 pts, but it crosses 5 files/4 zones — reviewed as a 3-pointer
-    order: 2                 # same config files as 146, so adjacent work avoids rework
   - id: STORY-148
-    title: Local Grail-shaped demo engine — scripted scenarios, no Dynatrace
+    title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
     status: ready
-    points: 5
+    points: 3                # was 5 as one story; split post-verifier
     ceremony: 3-pointer
-    order: 3                 # highest RISK (new component, vendor wire-shape fidelity);
-                             # consumes both config stories
+    order: 2                 # highest RISK (new component, vendor wire-shape fidelity), and
+                             # independent of the config work so it verifies on its own terms
+  - id: STORY-176
+    title: Grail demo engine part 2 — scenario player, demo fleet, and the real loop run
+    file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
+    status: ready
+    points: 3
+    ceremony: 3-pointer
+    order: 3                 # consumes STORY-146's config shape AND STORY-148's engine
+    depends_on: [STORY-146, STORY-148]
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
@@ -136,7 +152,8 @@ stories:
     points: 1
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
     order: 4                 # fully independent, 4 lines; its scenario-level reality gate
-                             # benefits from STORY-148 existing first
+                             # needs STORY-176's engine and a SINGLE-MONITOR component (so the
+                             # known STORY-151 sibling-OBSOLETE path cannot spoof the evidence)
 final_gate:
   head: null
   dod_evidence: []
