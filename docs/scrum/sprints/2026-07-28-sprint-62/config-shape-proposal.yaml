@@ -1,0 +1,134 @@
+# PROPOSAL — not live config. Illustrates the authoring shape discussed 2026-07-28.
+# Live config today is config/apps/httpcheck.yaml (1 component, 1 monitor).
+#
+# Three changes vs today:
+#   1. monitors nest UNDER their component  (tree is visible; the
+#      "signal.component_id must reference a declared component" validator at
+#      composition/config.py:174 becomes structurally unrepresentable)
+#   2. the middle level is called `monitors:`, and each one names the
+#      `signal_key` it produces  ("this monitor produces this signal")
+#   3. a top-level `locations:` block maps the vendor's opaque entity id ->
+#      a short alias -> an operator-facing label, mirroring the dossier §7
+#      three-arrow pattern already used for signals
+#      (native_id -> signal_key -> component_id)
+
+app:
+  id: sockshop
+  name: Sock Shop
+  monitor_provider: dynatrace
+
+# ─── Probe locations ────────────────────────────────────────────────────────
+# `native_id` is the REAL wire value: Dynatrace sends an opaque entity id in
+# `dt.entity.synthetic_location` (see backend/tests/fixtures/dynatrace/
+# grail_synthetic_events.json:12 — a real captured sample). Without this block
+# the UI has no choice but to show operators
+# "SYNTHETIC_LOCATION-000000000000005C".
+#
+#   alias      -> what you type in `expected_locations` below
+#   native_id  -> what the vendor actually sends, matched on ingest
+#   label      -> what an operator reads in the cockpit
+locations:
+  us-east-1:  { native_id: SYNTHETIC_LOCATION-000000000000005C, label: US East (Virginia) }
+  eu-west-1:  { native_id: SYNTHETIC_LOCATION-0000000000000047, label: EU West (Ireland) }
+  ap-south-1: { native_id: SYNTHETIC_LOCATION-0000000000000063, label: AP South (Mumbai) }
+  sa-east-1:  { native_id: SYNTHETIC_LOCATION-0000000000000071, label: SA East (São Paulo) }
+
+# ─── Components, each with the monitors that feed it ───────────────────────
+components:
+
+  # One component, ONE monitor — the simple case (this is all we have live today)
+  - id: checkout
+    name: Checkout
+    group: commerce
+    description: Cart, payments and order placement
+    statuspage_component_id: xdnywbx77npw
+    monitors:
+      - signal_key: checkout-http
+        native_id: HTTP_CHECK-38B092E93932C002
+        name: Checkout API
+        interval_seconds: 120
+        expected_locations: [us-east-1, eu-west-1, ap-south-1]
+
+  # One component, TWO monitors of the SAME kind at different cadences —
+  # e.g. a fast liveness check plus a slower deep health probe. Both are
+  # ingestable today.
+  - id: api-gateway
+    name: API Gateway
+    group: platform
+    description: Public REST + GraphQL edge
+    statuspage_component_id: 4k2j8xqmn3rt
+    monitors:
+      - signal_key: api-gateway-health
+        native_id: HTTP_CHECK-7A1F44C2E8B90D31
+        name: Gateway health endpoint
+        interval_seconds: 60
+        expected_locations: [us-east-1, eu-west-1, ap-south-1, sa-east-1]
+
+      - signal_key: api-gateway-graphql
+        native_id: HTTP_CHECK-B93E20D7F1A6C845
+        name: GraphQL introspection
+        interval_seconds: 300
+        expected_locations: [us-east-1, eu-west-1]
+
+  # One component, THREE monitors — and the slot where a non-HTTP monitor
+  # goes once clickpath/browser ingest lands. Commented out ON PURPOSE:
+  # adding it today would produce ZERO observations silently, because
+  # build_dql_query hardcodes `event.type == "http_monitor_execution"`
+  # (adapters/inbound/dynatrace/query.py:87, explicitly out of scope per
+  # STORY-016c). The shape anticipates it; the config does not pretend.
+  - id: user-auth
+    name: User Authentication
+    group: platform
+    description: Login, sessions, OAuth
+    statuspage_component_id: 9wq1p5vzhy8b
+    monitors:
+      - signal_key: user-auth-login
+        native_id: HTTP_CHECK-3C5D81A4B7E20F69
+        name: Login endpoint
+        interval_seconds: 120
+        expected_locations: [us-east-1, eu-west-1, ap-south-1]
+
+      - signal_key: user-auth-oauth
+        native_id: HTTP_CHECK-E4082B6C9D1A73F5
+        name: OAuth token exchange
+        interval_seconds: 120
+        expected_locations: [us-east-1, eu-west-1]
+
+      # FUTURE — needs per-kind event.type querying first (STORY-016c).
+      # - signal_key: user-auth-journey
+      #   native_id: SYNTHETIC_TEST-A1B2C3D4E5F60718
+      #   name: Sign-in clickpath
+      #   interval_seconds: 900
+      #   expected_locations: [us-east-1, eu-west-1]
+
+  # A component with NO group — a legitimate state, not an error. The UI omits
+  # the category chip rather than printing "Uncategorized" filler (decision
+  # 2026-07-28); a newly added component exists before anyone categorizes it.
+  - id: search
+    name: Search
+    description: Product & content search index
+    statuspage_component_id: mt6r0cxk4wsd
+    monitors:
+      - signal_key: search-query
+        native_id: HTTP_CHECK-D71C3E85F0A92B46
+        name: Search query endpoint
+        interval_seconds: 120
+        expected_locations: [us-east-1, ap-south-1]
+
+  # A component whose monitor runs from ONE location only — proves
+  # expected_locations is per-monitor, not per-app. Availability completeness
+  # for this signal has a denominator of 1 location, not 4.
+  - id: db-primary
+    name: Database — Primary
+    group: data
+    description: Primary Postgres cluster
+    statuspage_component_id: 0zn7h2ldb3py
+    monitors:
+      - signal_key: db-primary-tcp
+        native_id: HTTP_CHECK-58F1D0A3C6E42B97
+        name: Primary TCP reachability
+        interval_seconds: 60
+        expected_locations: [us-east-1]
+
+# ─── Anti-flap thresholds (unchanged; per-app, consecutive-cycle counts) ────
+thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
