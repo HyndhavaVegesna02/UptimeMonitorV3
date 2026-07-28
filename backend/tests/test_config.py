@@ -454,3 +454,45 @@ class TestSignalConfigIntervalSeconds:
         cfg = load_config(repo_root / "config" / "apps")
         mapping = cfg.statuspage_mapping()
         assert mapping == {"http-check": "xdnywbx77npw"}
+
+
+# ---------------------------------------------------------------------------
+# STORY-146 — nested monitors, declared locations, freshness block
+# ---------------------------------------------------------------------------
+
+NESTED_YAML = """\
+app:
+  id: nested-app
+  name: Nested App
+  monitor_provider: dynatrace
+components:
+  - id: web
+    name: Web
+    monitors:
+      - { signal_key: web-http, native_id: NATIVE-WEB, name: Web HTTP, interval_seconds: 60 }
+      - { signal_key: web-ping, native_id: NATIVE-WEB-PING, name: Web Ping, interval_seconds: 30 }
+  - id: api
+    name: API
+    monitors:
+      - { signal_key: api-http, native_id: NATIVE-API, name: API HTTP, interval_seconds: 45 }
+"""
+
+
+class TestNestedMonitors:
+    """AC1: monitors nest under their component; ownership is structural."""
+
+    def test_nested_monitor_resolved_component_id_is_parent(
+        self, tmp_config_dir: Path
+    ):
+        _write_yaml(tmp_config_dir, "nested.yaml", NESTED_YAML)
+        cfg = load_config(tmp_config_dir)
+        assert len(cfg.apps) == 1
+        app = cfg.apps[0]
+        by_key = {sig.signal_key: sig for sig in app.signals}
+        assert by_key["web-http"].component_id == "web"
+        assert by_key["web-ping"].component_id == "web"
+        assert by_key["api-http"].component_id == "api"
+        # Every signal's interval_seconds/native_id came from its monitor entry.
+        assert by_key["web-http"].native_id == "NATIVE-WEB"
+        assert by_key["web-http"].interval_seconds == 60
+        assert by_key["api-http"].interval_seconds == 45

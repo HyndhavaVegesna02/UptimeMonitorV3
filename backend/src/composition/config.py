@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.core.services.pipeline import AntiFlapThresholds
 
@@ -49,9 +49,109 @@ class UnknownComponentError(ValueError):
     """
 
 
+class UnknownAppError(ValueError):
+    """Raised by ``Config.locations_for``/``Config.freshness_for`` when
+    ``app_id`` is not registered.
+
+    Follows the ``UnknownSignalError``/``UnknownComponentError`` precedent
+    (STORY-146 AC6) — named, never a raw ``KeyError`` leak.
+    """
+
+
+# ---------------------------------------------------------------------------
+# Config authoring errors (STORY-146 AC5) — raised by ``load_config`` OUTSIDE
+# the generic ``except (TypeError, ValueError)`` block, so the named subclass
+# survives to the caller.  Probed (twice, independently): a ``ValueError``
+# subclass raised INSIDE a pydantic ``model_validator`` is converted to
+# ``pydantic.ValidationError`` in both ``mode="before"`` and ``mode="after"``
+# — losing the subclass — so these three classes are only guaranteed to
+# survive when raised directly in ``load_config``'s own code, not from a
+# validator.  (``FlatSignalsRejectedError`` is ALSO raised from the
+# ``mode="before"`` derive validator on direct ``AppConfig(signals=…)``
+# construction — AC2b — where it is expected to arrive as a wrapped
+# ``ValidationError`` instead; that call site's job is "raise loudly", not
+# "preserve the exact class".)
+# ---------------------------------------------------------------------------
+
+
+class ConfigError(ValueError):
+    """Base class for config authoring errors surfaced by ``load_config``."""
+
+
+class FlatSignalsRejectedError(ConfigError):
+    """Raised when an app's config authors flat ``signals:`` directly instead
+    of nesting monitors under their component (STORY-146 AC2).
+
+    Two raise sites: ``load_config`` (a raw top-level ``signals:`` key in a
+    YAML file) and ``AppConfig``'s ``mode="before"`` derive validator (an
+    explicitly-supplied non-empty ``signals=`` on direct construction).
+    """
+
+
+class UndeclaredLocationAliasError(ConfigError):
+    """Raised when a monitor's ``expected_locations`` names an alias that is
+    not declared in the same app's ``locations:`` block (STORY-146 AC3/AC5).
+    """
+
+
+class InvalidFreshnessError(ConfigError):
+    """Raised when an app's ``freshness:`` block has a non-positive
+    ``stale_after_cycles`` or ``reentry_cycles`` (STORY-146 AC4/AC5).
+    """
+
+
 # ---------------------------------------------------------------------------
 # Config models (frozen pydantic; model_validator enforces invariants)
 # ---------------------------------------------------------------------------
+
+
+class MonitorConfig(BaseModel):
+    """A single monitor nested under its owning component (STORY-146 AC1).
+
+    The word ``monitors`` is deliberate: what an operator configures is a
+    monitor; what it produces is a signal.  ``monitors: [ { signal_key: … } ]``
+    reads as "this monitor produces this signal" — the actual model, since one
+    ``native_id`` is one vendor monitor, fanning out across locations
+    (``adapters/inbound/dynatrace/query.py:86``, ``http_normalizer.py:4``).
+
+    A monitor has **no** ``component_id`` field — ownership is structural
+    (it is nested inside its parent ``ComponentConfig``).  ``AppConfig``'s
+    ``mode="before"`` derive validator stamps the parent component's id onto
+    the ``SignalConfig`` it synthesizes from this monitor (STORY-146 AC7).
+
+    Deliberately NOT in scope: a ``kind:`` field.  ``native_kind`` is
+    discovered from the vendor's ``event.type`` per row (``dispatch.py:44``);
+    a declared field nothing reads would let config lie.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    signal_key: str
+    """Canonical, globally-unique internal key for this monitor's signal."""
+
+    native_id: str
+    """Provider-native monitor identifier (e.g. Dynatrace SYNTHETIC_TEST-…)."""
+
+    name: str
+    """Human-readable display name."""
+
+    interval_seconds: int
+    """Expected cadence in seconds (positive int, > 0; dossier §8 / §10 window math)."""
+
+    expected_locations: list[str] = Field(default_factory=list)
+    """Aliases (declared in the app's ``locations:`` block, STORY-146 AC3) this
+    monitor is expected to report from.  Declaration only in this story —
+    *consuming* it in the completeness denominator is a separate story."""
+
+    @model_validator(mode="after")
+    def _require_positive_interval(self) -> "MonitorConfig":
+        """Enforce the interval_seconds > 0 frozen-type invariant (2026-06-26)."""
+        if self.interval_seconds <= 0:
+            raise ValueError(
+                f"interval_seconds must be a positive integer (got {self.interval_seconds!r}). "
+                "See dossier §8 and the 2026-06-26 frozen-type invariant agreement."
+            )
+        return self
 
 
 class ComponentConfig(BaseModel):
@@ -59,6 +159,9 @@ class ComponentConfig(BaseModel):
 
     ``id`` is the stable, globally-unique identifier used by both the pipeline
     resolvers and the dashboard; ``name`` is the human-readable display label.
+    ``monitors`` (STORY-146) is the nested-authoring list of ``MonitorConfig``
+    entries this component owns; ``AppConfig`` derives its flat ``signals``
+    from these at construction time.
     """
 
     model_config = ConfigDict(frozen=True)
@@ -71,6 +174,9 @@ class ComponentConfig(BaseModel):
 
     statuspage_component_id: str | None = None
     """Statuspage component ID (optional mapping, dossier §6)."""
+
+    monitors: list[MonitorConfig] = Field(default_factory=list)
+    """Monitors nested under this component (STORY-146 AC1)."""
 
 
 class SignalConfig(BaseModel):
@@ -113,6 +219,44 @@ class SignalConfig(BaseModel):
         return self
 
 
+def _component_id_and_monitors(comp: Any) -> tuple[str, list[Any]]:
+    """Extract ``(id, monitors)`` from a component entry (STORY-146 AC7).
+
+    Handles both an already-constructed ``ComponentConfig`` (the shape every
+    call site in this codebase actually passes — ``load_config`` builds these
+    explicitly before constructing ``AppConfig``, and every test constructs
+    ``ComponentConfig(...)`` instances directly) and a raw dict, defensively.
+    """
+    if isinstance(comp, ComponentConfig):
+        return comp.id, list(comp.monitors)
+    if isinstance(comp, dict):
+        return comp["id"], list(comp.get("monitors") or [])
+    raise TypeError(f"Unexpected component entry type: {type(comp)!r}")
+
+
+def _monitor_fields(mon: Any) -> dict[str, Any]:
+    """Extract the ``SignalConfig``-shaped fields from a monitor entry.
+
+    Deliberately excludes ``expected_locations`` — that field lives on
+    ``MonitorConfig`` only (STORY-146 AC3); ``SignalConfig`` has no such field.
+    """
+    if isinstance(mon, MonitorConfig):
+        return {
+            "signal_key": mon.signal_key,
+            "native_id": mon.native_id,
+            "name": mon.name,
+            "interval_seconds": mon.interval_seconds,
+        }
+    if isinstance(mon, dict):
+        return {
+            "signal_key": mon["signal_key"],
+            "native_id": mon["native_id"],
+            "name": mon["name"],
+            "interval_seconds": mon["interval_seconds"],
+        }
+    raise TypeError(f"Unexpected monitor entry type: {type(mon)!r}")
+
+
 class AppConfig(BaseModel):
     """Per-app config: components, signals, and anti-flap thresholds (dossier §7/§10).
 
@@ -140,11 +284,55 @@ class AppConfig(BaseModel):
     components: list[ComponentConfig]
     """Ordered list of components declared in this app's config."""
 
-    signals: list[SignalConfig]
-    """Ordered list of signals (native monitors) declared in this app's config."""
+    signals: list[SignalConfig] = Field(default_factory=list)
+    """Ordered list of signals (native monitors), SYNTHESIZED from
+    ``components[].monitors`` by ``_derive_signals_from_monitors`` (STORY-146
+    AC7) — not authored directly.  Kept as an ``AppConfig`` attribute (not
+    replaced by a ``Config``-level accessor) because every existing consumer
+    reads ``app.signals`` off an ``AppConfig`` (``run.py:136``,
+    ``seed_dynamo.py:56``, ``composition/vendor_health.py:97``,
+    ``scripts/seed_topology.py:44``, plus three sites in this module)."""
 
     thresholds: AntiFlapThresholds = _SECTION_10_DEFAULTS
     """Per-app anti-flap thresholds (dossier §10).  Defaults to 5/3/2/2 when omitted."""
+
+    @model_validator(mode="before")
+    @classmethod
+    def _derive_signals_from_monitors(cls, data: Any) -> Any:
+        """Synthesize ``signals`` from ``components[].monitors`` (STORY-146 AC2/AC7).
+
+        Stamps each monitor's parent component id onto the ``SignalConfig``
+        dict it derives, which is what keeps every surviving `app.signals`
+        reader working unchanged (AC7) without a `component_id` field ever
+        being authored on a monitor (AC1 — ownership is structural).
+
+        Rejects an explicitly-supplied non-empty ``signals=`` rather than
+        silently deriving over it (AC2b): an unconditional derive would
+        silently discard a caller's explicit ``signals=[…]``, which is worse
+        than the referential-integrity check this mechanism replaces — a
+        bogus ``component_id`` would vanish instead of raising.
+        """
+        if not isinstance(data, dict):
+            return data
+
+        explicit_signals = data.get("signals")
+        if explicit_signals:
+            raise FlatSignalsRejectedError(
+                "AppConfig.signals is derived from components[].monitors and "
+                "can no longer be authored directly (STORY-146 AC2) — got an "
+                f"explicit signals={explicit_signals!r}. Nest monitors under "
+                "their component (`components[].monitors`) instead."
+            )
+
+        derived: list[dict[str, Any]] = []
+        for comp in data.get("components") or []:
+            comp_id, monitors = _component_id_and_monitors(comp)
+            for mon in monitors:
+                derived.append({**_monitor_fields(mon), "component_id": comp_id})
+
+        data = dict(data)
+        data["signals"] = derived
+        return data
 
     @model_validator(mode="after")
     def _validate_referential_and_uniqueness(self) -> "AppConfig":
