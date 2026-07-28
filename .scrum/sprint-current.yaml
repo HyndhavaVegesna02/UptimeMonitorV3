@@ -55,8 +55,56 @@ started: null           # set at lock
 # 23 additive optional platform transitives; no real dependency version changed). Full-gate
 # evidence recorded below at lock.
 baseline:
-  head: 021c9b6
-  dod_evidence: []   # filled from yt_gate.py's emitted fragment at lock — never hand-transcribed
+  head: 282be8d      # GREEN. Two commits since (fb61186, 012c75e) touch ONLY .scrum/backlog.yaml —
+                     # verified `git diff --name-only 282be8d..HEAD -- backend/ frontend/ config/
+                     # infra/` is empty — so this code baseline holds at the current HEAD.
+  # Gate-run note (process, worth the retro): the FIRST attempt was red on `npm run build` (stale
+  # node_modules, fixed at 021c9b6). The SECOND attempt hit the 10-min tool timeout and was
+  # killed, which LEAKED its DynamoDB Local container; the THIRD attempt then stalled ~20 min at
+  # ~0 CPU until both orphans were `docker rm -f`'d. Filed as STORY-173 with a script-level fix
+  # (the fixture should reap containers whose owning PID is dead). This run is the fourth, on a
+  # cleaned host.
+  dod_evidence:      # merged VERBATIM from yt_gate.py's emitted fragment — never hand-transcribed
+    - command: "pytest"
+      exit_code: 0
+      output_tail: "======================= 529 passed in 241.52s (0:04:01) ======================="
+      commit: 282be8d
+      at: "2026-07-28T12:14:52+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "Analyzed 150 files, 427 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+      commit: 282be8d
+      at: "2026-07-28T12:18:57+00:00"
+    - command: "ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 282be8d
+      at: "2026-07-28T12:18:58+00:00"
+    - command: "ruff format --check ."
+      exit_code: 0
+      output_tail: "205 files already formatted"
+      commit: 282be8d
+      at: "2026-07-28T12:18:58+00:00"
+    - command: "cfn-lint infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: 282be8d
+      at: "2026-07-28T12:18:59+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "Test Files  51 passed (51) | Tests  363 passed (363)"
+      commit: 282be8d
+      at: "2026-07-28T12:19:09+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB / gzip 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB / gzip 85.39 kB | built in 1.64s"
+      commit: 282be8d
+      at: "2026-07-28T12:21:10+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint . (clean, no output)"
+      commit: 282be8d
+      at: "2026-07-28T12:21:24+00:00"
 stories:
   - id: STORY-146
     title: Config authoring shape — nested monitors, declared locations, freshness block
