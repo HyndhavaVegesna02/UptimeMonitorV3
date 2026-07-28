@@ -59,9 +59,16 @@ degraded" (`AntiFlapThresholds`, `pipeline.py:146-147`), so no new config is nee
 - [ ] **AC4 (regression — proves the defect is gone)** — A test asserts the OLD behaviour no
       longer holds: a `DEGRADED` streak of 1 previously proposed `degraded`, and now does not.
       This test must fail if the fix is reverted.
-- [ ] **AC5 (degenerate length 0)** — A `DEGRADED` streak of length 0 returns **nothing**
-      (`proposed_status is None`, `internal_warning is False`), exactly as a `DOWN` streak of
-      length 0 does (`pipeline.py:224`). This is a deliberate behaviour change:
+- [ ] **AC5 (degenerate length 0 — symmetry only, NOT a field-impact change)** — A `DEGRADED`
+      streak of length 0 returns **nothing** (`proposed_status is None`,
+      `internal_warning is False`), exactly as a `DOWN` streak of length 0 does
+      (`pipeline.py:224`).
+      **`Streak(DEGRADED, 0)` is unreachable from `streak()`** — verified: `pipeline.py:117-121`
+      starts `length` at 0 and the first `reversed()` iteration always compares
+      `non_maintenance[-1].health` to itself, so any non-`None` return has `length >= 1`; and
+      `collapse` emits `health=None` only with `under_maintenance=True`, which `:112` filters out.
+      So this AC keeps the ladder symmetric at the unit boundary and nothing more. Nobody should
+      hunt for a scenario that produces it. It is a deliberate change to a
       `backend/tests/test_anti_flap.py:240-248`
       (`test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded`) asserts today's
       outcome and is **intentionally rewritten**, not deleted — its replacement asserts the new

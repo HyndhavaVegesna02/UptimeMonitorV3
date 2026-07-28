@@ -96,4 +96,9 @@ None.
   verifier confirmed AC4 is *structurally* guaranteed — the Statuspage payload is
   `{"component": {"status": …}}` (`adapters/outbound/statuspage/__init__.py:54`), so neither
   field can leak regardless of when this lands. Citation fix: `ComponentDTO` is
-  `api/v1/components/models.py:9-17` (the file is 17 lines; the earlier `:12-19` overran it).
+  `api/v1/components/models.py:9-16` (the file is 16 lines; the earlier `:12-19` overran it — and
+  the first correction to `:9-17` overran it by one, caught by the second verifier pass).
+- 2026-07-28: second verifier pass — AC2 normalizes `group` inside the model while AC1 validates
+  it, and the same pydantic trap applies: a `ValueError` subclass raised in a validator becomes
+  `ValidationError`. Normalization may live in the model; the **validation** must be in
+  `load_config` outside the `try` at `config.py:343-357`, per AC1.

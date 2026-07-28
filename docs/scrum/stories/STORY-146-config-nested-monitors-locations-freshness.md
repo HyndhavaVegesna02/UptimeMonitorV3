@@ -66,12 +66,17 @@ ingest lands.
       structural. A test asserts a monitor's resolved `component_id` is always its parent's id.
 - [ ] **AC2 (the deleted validator loses nothing)** — The referential validator that enforced
       "every `signal.component_id` references a declared component"
-      (`backend/src/composition/config.py:182-189`) is deleted, **and a raw top-level
-      `signals:` key in a config file is rejected with a named error**. Both halves are
-      required: because `AppConfig.signals` remains a settable attribute (see Description),
-      deleting the validator without rejecting flat authoring would silently accept a bogus
-      `component_id`. A test asserts a file containing `signals:` is rejected, and a second
-      asserts the nested path cannot express the state the old validator caught.
+      (`backend/src/composition/config.py:182-189`) is deleted, **and flat `signals` authoring is
+      rejected at BOTH levels with `FlatSignalsRejectedError`**:
+      (a) a raw top-level `signals:` key in a YAML file, and
+      (b) an explicitly-supplied non-empty `signals=` on the `AppConfig` constructor — the
+      `mode="before"` derive validator raises rather than deriving.
+      Both halves are required. Probed: an *unconditional* derive **silently discards** an
+      explicit `signals=[…]`, leaving `signals == []`. That is worse than the state the deleted
+      validator caught — a bogus `component_id` would vanish instead of raising, and the ~9
+      existing `AppConfig(signals=[…])` test sites would silently pass with an empty list instead
+      of failing loudly during migration. Raising in the before-validator is one line and
+      restores the invariant at the model level, not just the loader level.
       **Two existing tests assert the deleted rule and are removed with it:**
       `backend/tests/test_config.py:112-121` (model level) and `:244-262` (loader level).
 - [ ] **AC3 (declared locations)** — A top-level `locations:` mapping keyed by a short alias,
@@ -79,21 +84,33 @@ ingest lands.
       `dt.entity.synthetic_location`) and `label` (operator-facing name). Every
       `expected_locations` entry MUST reference a declared alias.
 - [ ] **AC4 (freshness)** — A top-level `freshness:` block with `stale_after_cycles`
-      (default 3) and `reentry_cycles` (default 2), both validated as positive ints. **Both are
+      (default 3) and `reentry_cycles` (default 2), both required to be positive ints. **Both are
       cycle COUNTS, not seconds** — each is multiplied by the owning monitor's own
       `interval_seconds` at the point of use. This story performs **no** multiplication and
       stores no derived seconds; it loads, validates, and exposes the counts. (The consumer is
       STORY-151/152.)
+      **`FreshnessConfig` carries plain `int` fields with NO pydantic validator** — do *not*
+      follow the `SignalConfig._require_positive_interval` precedent (`config.py:105-113`) here.
+      Positivity is checked in `load_config` per AC5, because a validator cannot raise a named
+      error (see AC5's probe result). This is stated as a constraint because the natural instinct
+      is to copy the existing precedent, which would make AC5 unsatisfiable.
 - [ ] **AC5 (error classes named, and raised where they survive)** — Add a `ConfigError(ValueError)`
       base with `UndeclaredLocationAliasError`, `FlatSignalsRejectedError`, and
       `InvalidFreshnessError`. Each message names the offending file and the offending
       monitor/alias/field. **These checks run in `load_config` OUTSIDE the
-      `try/except (TypeError, ValueError)` at `config.py:343-357`** — verified by probe, a
-      `ValueError` subclass raised inside a pydantic `model_validator` is converted to
-      `ValidationError` (losing the subclass) and would then be re-raised as a bare
-      `ValueError(f"Invalid config in {file}: …")`, so a validator-based implementation cannot
-      satisfy this AC. A test asserts `pytest.raises(UndeclaredLocationAliasError)` — the
-      specific class, not `ValueError`.
+      `try/except (TypeError, ValueError)` at `config.py:343-357`** — verified by probe (twice,
+      independently), a `ValueError` subclass raised inside a pydantic `model_validator` is
+      converted to `ValidationError` in **both** `mode="before"` and `mode="after"` (losing the
+      subclass), and would then be re-raised as a bare
+      `ValueError(f"Invalid config in {file}: …")`. A validator-based implementation therefore
+      cannot satisfy this AC. A workable raise site is confirmed to exist: after `config.py:357`,
+      `yaml_path`, `raw` and `app` are all still in scope, so file / component / monitor / alias
+      are all available for the message. A test asserts
+      `pytest.raises(UndeclaredLocationAliasError)` — the specific class, not `ValueError`.
+      **Known limit to state, not to fix:** `scripts/seed_topology.py:26-31` catches
+      `(ValueError, TypeError)` and prints a generic failure line, so the named class does not
+      reach an operator running *that* script. In-scope callers (`run.py:182`, `app.py:138`) do
+      not guard `load_config` and are unaffected.
 - [ ] **AC6 (scoping is per-app, stated)** — `locations:` and `freshness:` are **per-app**
       (per-file) blocks held on `AppConfig` as `locations: dict[str, LocationConfig]` and
       `freshness: FreshnessConfig`. `Config` exposes `locations_for(app_id)` and
@@ -101,11 +118,20 @@ ingest lands.
       (`config.py:242-299`). There is deliberately no global merge, so two app files declaring
       different aliases or freshness values cannot conflict. A test covers two apps with
       different `freshness` values resolving independently.
-- [ ] **AC7 (consumers untouched — EIGHT of them)** — All eight existing readers of
-      `app.signals` keep working with no edit: `composition/config.py` (×4 — lines 174, 183,
-      236, 360), `composition/run.py:136`, `adapters/persistence/…/seed_dynamo.py:56`,
-      `composition/vendor_health.py:97`, and `scripts/seed_topology.py:44`. Verified
-      mechanically: those eight call-site lines are **untouched in this story's diff**.
+- [ ] **AC7 (consumers keep working — SEVEN of them, checked semantically)** — All seven
+      *surviving* readers of `app.signals` keep working with no change to their expressions:
+      `composition/config.py:174`, `:236`, `:360`; `composition/run.py:136`;
+      `adapters/persistence/…/seed_dynamo.py:56`; `composition/vendor_health.py:97`; and
+      `scripts/seed_topology.py:44`.
+      **Not eight, and not a line-number check.** An earlier draft listed `config.py:183` as an
+      eighth untouched reader — but `:183` is `for sig in self.signals:` *inside* the referential
+      validator that AC2 deletes (`:182-189`), so it cannot be both deleted and untouched. And a
+      line-number diff check is unusable regardless: this story adds `MonitorConfig`,
+      `LocationConfig`, `FreshnessConfig`, a `mode="before"` validator and three error classes to
+      the same file, so `:236` and `:360` shift no matter what.
+      The check is therefore **semantic and grep-based**: `app.signals` remains the read API at
+      those seven call sites and no call site's expression changes. Recorded in the story History
+      with the grep output, not with line numbers.
 - [ ] **AC8 (real config migrated, downstream values identical)** — `config/apps/httpcheck.yaml`
       is migrated to the nested shape, and `load_config` yields **byte-identical downstream
       values**: same `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`

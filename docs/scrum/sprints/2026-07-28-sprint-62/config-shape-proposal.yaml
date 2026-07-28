@@ -3,6 +3,11 @@
 # non-cloud-provider names (were us-east-1 etc., which read as AWS deployment
 # regions rather than probe locations — R3); the freshness block at the bottom
 # was added (R4); the referential-validator citation was corrected to :182-189.
+# REVISED AGAIN 2026-07-28 (second verifier pass): LABELS were still AWS region
+# names ("US East (Virginia)"), which defeated the point of renaming the aliases —
+# now plain place names. NOTE: the `group:`/`description:` keys below land in
+# SPRINT 63 (STORY-147), deferred out of 62. ComponentConfig is extra="ignore",
+# so authoring them today is silently dropped rather than rejected.
 # Live config today is config/apps/httpcheck.yaml (1 component, 1 monitor).
 #
 # Three changes vs today:
@@ -32,10 +37,10 @@ app:
 #   native_id  -> what the vendor actually sends, matched on ingest
 #   label      -> what an operator reads in the cockpit
 locations:
-  virginia:  { native_id: SYNTHETIC_LOCATION-000000000000005C, label: US East (Virginia) }
-  dublin:  { native_id: SYNTHETIC_LOCATION-0000000000000047, label: EU West (Ireland) }
-  mumbai: { native_id: SYNTHETIC_LOCATION-0000000000000063, label: AP South (Mumbai) }
-  saopaulo:  { native_id: SYNTHETIC_LOCATION-0000000000000071, label: SA East (São Paulo) }
+  virginia:  { native_id: SYNTHETIC_LOCATION-000000000000005C, label: Virginia }
+  dublin:  { native_id: SYNTHETIC_LOCATION-0000000000000047, label: Dublin }
+  mumbai: { native_id: SYNTHETIC_LOCATION-0000000000000063, label: Mumbai }
+  saopaulo:  { native_id: SYNTHETIC_LOCATION-0000000000000071, label: Sao Paulo }
 
 # ─── Components, each with the monitors that feed it ───────────────────────
 components:

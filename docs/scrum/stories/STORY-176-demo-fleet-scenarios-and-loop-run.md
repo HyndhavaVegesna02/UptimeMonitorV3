@@ -76,17 +76,53 @@ guard: a property of the config, not a promise about wiring.
       watermark bound excludes cycle 2 onward.
       (d) **Interval** — demo monitors use short intervals (≤ 60 s) so a 5-cycle anti-flap
       ladder completes in minutes rather than ~25.
-- [ ] **AC3 (publish safety — non-negotiable, and config-only)** — No demo run can POST to a
-      real Statuspage, **even with real credentials in the repo-root `.env`**. The demo config
-      declares no `statuspage_component_id` on any component, so `statuspage_mapping() == {}`
-      and both composition roots fall through to `LoggingPublisher`. Two tests: one asserts
-      `statuspage_mapping() == {}` for the loaded demo config; one asserts `build_publisher`
-      with an empty mapping and non-empty credentials returns a chain whose delegate is a
-      `LoggingPublisher`, not a `StatuspagePublisher`. The demo README states the guard and names
-      both routes (`run.py:121`, `app.py:160-182`). **No demo loop is started before this AC
-      passes** — `decide` publishes recoveries with no human gate
-      (`core/services/decide.py:122-126`), so fake recoveries would otherwise reach the live
-      public page.
+      (e) **Backfill ≥ 2 hours** — the engine serves history relative to each *request* instant,
+      covering at least the last 2 hours, not history beginning at engine start.
+      `check_vendor_id_health` runs at `run.py:196` **before any loop is built**, querying
+      `from:now()-2h` per signal, and WARNs when the count is 0 (`vendor_health.py:113-124`). An
+      engine that starts emitting at t₀ returns 0 for every one of the ≥40 signals at that
+      moment, failing AC6's "no dead monitor ids" — which is the observable proof STORY-148 AC5
+      exists to produce.
+
+      Note on diagnosing (a)–(d) during implementation: violations of (b) in particular are
+      **logged, not silent** — `pull_loop.py:200-207` catches and `logger.exception`s at ERROR
+      with a full traceback. The loop's ERROR log is the fastest route to a timestamp, mapping, or
+      malformed-row problem. Genuinely silent failures are only three: `grail_executor.py:97`'s
+      `return []`, `_extract_count` → 0, and a window/watermark miss.
+- [ ] **AC3 (publish safety — non-negotiable; config-only AND `CONFIG_DIR` on BOTH processes)** —
+      No demo run can POST to a real Statuspage, **even with real credentials in the repo-root
+      `.env`**. Two things are required together, and the second was missed in the first draft of
+      this AC:
+
+      **(a) The demo config declares no `statuspage_component_id` on any component**, so
+      `statuspage_mapping() == {}` and `publish_helper.py:211` falls through to
+      `StatusWritebackPublisher(LoggingPublisher(), …)`. Verified: that line is the **only**
+      construction of `StatuspagePublisher`/`make_statuspage_executor` anywhere in `backend/src/`;
+      `StatusWritebackPublisher.publish` (`publish_helper.py:172-180`) makes no external call
+      (a DynamoDB `set_status`, then the delegate); `app.py:184-196`'s other branches reach only
+      `LoggingPublisher`; and no approve/reject endpoint builds its own publisher —
+      `ApprovalService` takes the injected one (`app.py:201-203`).
+
+      **(b) `CONFIG_DIR` must point at the demo config on the API process too, not just the
+      loop.** The API is a **separate process that loads its own config**:
+      `app.py:171-175` takes the mapping from `app.state.seed_config.statuspage_mapping()`,
+      `app.py:137-138` resolves `config_dir or settings.config_dir`, and `settings.py:32`
+      defaults `CONFIG_DIR` to **`config/apps`** — whose `httpcheck.yaml:6` declares
+      `statuspage_component_id: xdnywbx77npw`. With `asgi.py:36`'s `load_dotenv()` supplying real
+      credentials, an API started per the documented recipe (CLAUDE.md "Run the app locally"
+      step 4, no `CONFIG_DIR`) while the loop runs on demo config wires a **real
+      `StatuspagePublisher`** on the approve trigger — and its lifespan seed additionally writes
+      the real `http-check` component into the demo table. Guard (a) alone does not close this,
+      because (a) is a property of the *demo* config and the API never reads it.
+
+      **Three tests / checks:** `statuspage_mapping() == {}` for the loaded demo config;
+      `build_publisher` with an empty mapping and non-empty credentials returns a chain whose
+      delegate is a `LoggingPublisher`; and the running API's **runtime** mapping is `{}`
+      (asserted against the live process, not only the loaded config). The demo README and the
+      recipe state `CONFIG_DIR` as required on **both** processes and name both routes.
+      **No demo loop is started before this AC passes** — `decide` publishes recoveries with no
+      human gate (`core/services/decide.py:122-126`), so fake recoveries would otherwise reach
+      the live public page.
 - [ ] **AC4 (the demo fleet)** — A demo config directory (never `config/apps/`) declaring
       **≥12 components, ≥40 signals, ≥4 locations**, authored in STORY-146's nested shape with
       declared `locations:` and a `freshness:` block. Location aliases are short non-cloud-provider

@@ -80,6 +80,74 @@ either goes back.
 
 ---
 
+## Second verifier pass (independent, fresh context, 2026-07-28)
+
+A second `yt-plan-verifier` was dispatched over the revision — fresh rather than a continuation,
+so it would not grade fixes written in its own vocabulary, and briefed to attack the **new**
+claims the fixes introduced rather than confirm the old ones were addressed.
+
+Verdict **GAPS**. It confirmed the mechanism at the heart of STORY-146 (the `mode="before"`
+derive on a `frozen=True` model) actually works — including for the pre-built `ComponentConfig`
+instances `load_config:348-351` passes, a case the plan never mentioned — and confirmed the
+seven-field set, the units, the async protocol, the split boundary, and board/backlog/plan
+agreement. It also found **three fix-introduced errors and one blocker both earlier passes
+missed.**
+
+### Closed in this revision
+
+| # | Finding | Fix |
+|---|---------|-----|
+| **G2** | **Fix-introduced.** AC7 listed `config.py:183` as an untouched reader, but `:183` is `for sig in self.signals:` *inside* the `:182-189` block AC2 deletes. Merging "eight consumers" with "delete the validator" created a self-contradiction. A line-number check was unusable anyway — this story's own additions shift `:236` and `:360`. | STORY-146 AC7: **seven** surviving readers, checked semantically by grep, not line numbers |
+| **G3** | **Fix-introduced.** The config-only publish guard covered the *loop's* config but not the *API's*. The API is a separate process reading its own `CONFIG_DIR`, which `settings.py:32` defaults to `config/apps` — whose `httpcheck.yaml:6` declares a real `statuspage_component_id`. With `asgi.py:36` loading the real `.env`, an API started per the documented recipe wires a **real `StatuspagePublisher`** on the approve trigger, and lifespan-seeds the real component into the demo table. | STORY-176 AC3 now requires `CONFIG_DIR` on **both** processes and asserts the API's *runtime* mapping is `{}` |
+| **G5** | **Fix-introduced.** AC4's "6-digit fraction" is categorically wrong: `datetime.isoformat()` omits the fraction entirely when `microsecond == 0`, so the bound is **0- or 6-digit**. An implementer slicing six digits per the AC gets the STORY-051 stall the AC exists to prevent — and whole-second timestamps are the *likeliest* demo shape. | STORY-148 AC4: parse both sides, pin **three** precisions (0/6/9) |
+| **G4** | `check_vendor_id_health` queries `from:now()-2h` at `run.py:196` before any loop exists. A player emitting from engine-start forward returns 0 for all ≥40 signals, failing AC6's "no dead monitor ids". | STORY-176 AC2(e): ≥2 h backfill relative to the request instant; cross-referenced in STORY-148 AC5 |
+| **G6** | AC4 said freshness values are "validated as positive ints" while plan step 2 told the implementer to follow the `config.py:105-113` validator precedent — which makes AC5's named error unreachable (probed: conversion happens in **both** validator modes). | STORY-146 AC4: `FreshnessConfig` carries plain ints with **no** validator, stated as a constraint because copying the precedent is the natural instinct |
+| **R1** | An unconditional `mode="before"` derive **silently discards** an explicit `signals=[…]` — worse than the invariant it replaced, and the ~9 `AppConfig(signals=…)` migrations would pass silently instead of failing loudly. | STORY-146 AC2: the derive validator **raises** `FlatSignalsRejectedError` on explicit non-empty `signals` |
+| nits | Labels were still AWS region names after the aliases were renamed (defeating the point); roadmap still promised a stubbed publisher; board still said "7 consumers"; STORY-147's citation fix overran a 16-line file by one; "silent no-data" was wrong in three places (`pull_loop.py:200-207` logs at ERROR with a traceback — genuinely silent are only `grail_executor.py:97`, `_extract_count` → 0, and a window miss); `config-shape-proposal.yaml` still showed `group`/`description` with no sprint-63 marker. | all fixed |
+
+### OPEN — needs a PO decision before lock
+
+**BLOCKER: no demo scenario can produce a `DOWN` or `DEGRADED` observation.** Both earlier
+passes and I reasoned past this. `map_synthetic_status` **raises** `UnknownVendorStatusError` on
+any non-healthy code (`health_mapping.py:65-70`) — its own docstring states that inventing
+failure codes is *"deliberately NOT done"*. `dispatch.py:80` is a bare list comprehension, so one
+failure row destroys the whole batch including healthy rows. And the codebase's own test proves
+monkeypatching is the only route (`test_pull_loop.py:139-145`: *"Production map_synthetic_status
+is fail-loud on any non-healthy code … Mock the vendor-mapping edge so this wiring test can drive
+a DOWN through run_cycle"*). A demo engine speaking HTTP over the wire cannot monkeypatch.
+
+My STORY-148 AC8 framed emitted failure codes as *"assumptions"* — mapped but unverified. They
+are not mapped at all. An assumed code does not make a row unverified; it makes the row
+**unusable**.
+
+What this costs, under the current no-`backend/src/`-changes rule:
+
+- STORY-176 AC5 — 3 of 5 scenarios die (ladder-crossing degradation, minority-location failure,
+  two-monitors-disagreeing). "Clean fleet" and "fully dark location" survive.
+- STORY-176 AC7 and reality-gate item 4 — no proposal can open by any route.
+- **STORY-149's reality gate is worse than unobtainable — it is a false pass.** Step 1 ("one
+  location fails for one cycle → confirm no proposal appears") would PASS because nothing was
+  ingested, not because anti-flap damped it. Step 2 would then fail, on the last story, after
+  9 points are spent. This is exactly the tests-that-lie category the quality checklist exists
+  for.
+
+Options are recorded in "Open decisions" below. This is a PO call, not a wording fix.
+
+**Sizing.** Independent re-estimate: STORY-146 is 3–5 (nine ACs, four models, three error
+classes, two accessors, and a migration surface of **13 test files** — the plan named only
+`test_config.py`, while `test_seed.py`, `test_topology_endpoint.py`, `test_dynamo_adapters.py`,
+`test_availability_endpoint.py`, `fakes.py` and six more carry flat `signals:` or
+`AppConfig(signals=…)`); STORY-176 is 4–5. Honest sprint total is **12–13, not 10** — the split
+booked 6 points for work the first pass assessed at 7–8 while asserting it was "the same work in
+two halves". That arithmetic did not close, and I should have caught it when I wrote it.
+
+**Also actioned:** STORY-146's reality gate is the one loop run this sprint with a **live**
+publisher wired (real `config/apps` mapping + real `.env` via `run.py:178`), and it runs *first*,
+before STORY-176 AC3 exists. It is safe only circumstantially today (expired trial, `-inMemory`
+Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evidence.
+
+---
+
 ## STORY-146 — config authoring shape (3 pts)
 
 ### Verified contracts / constraints (cited)
@@ -93,9 +161,13 @@ either goes back.
 - **Eight consumers of `app.signals` that must not move:** `composition/config.py:174`, `:183`,
   `:236`, `:360`; `composition/run.py:136`; `seed_dynamo.py:56`;
   `composition/vendor_health.py:97`; `scripts/seed_topology.py:44`.
-- **Test-side consumers** (will change, and that is expected): `backend/tests/test_config.py:78`,
-  `:108`, `:425`, plus ~15 sites constructing `AppConfig(signals=[…])` or authoring flat
-  `signals:` YAML (`SOCKSHOP_YAML` at `:173-185` and five further inline blocks).
+- **Test-side migration surface — 13 files, counted not estimated** (will change, and that is
+  expected). 17 `AppConfig(` construction sites across `test_config.py`, `test_dynamo_seed.py`,
+  `test_orchestrate.py`, `test_orchestration_integration.py`, `test_pull_loop.py`,
+  `test_run_live_loop.py`, `test_vendor_health.py`; plus 10 flat `signals:` YAML blocks across
+  `fakes.py`, `test_availability_endpoint.py`, `test_config.py`, `test_dynamo_adapters.py`,
+  `test_seed.py`, `test_topology_endpoint.py`. An earlier draft said "~15 sites" and named only
+  `test_config.py` — understating the *breadth*, which is what drives the estimate.
 - **Probed, not inferred:** pydantic 2.13.4 converts a `ValueError` subclass raised in a
   `model_validator` to `ValidationError`; `ValidationError` *is* a `ValueError`, so
   `load_config`'s `except (TypeError, ValueError)` (`:355-357`) re-raises it as a bare
@@ -137,8 +209,10 @@ either goes back.
 - [ ] 7. Failing test: `locations`/`freshness` are per-app — two apps with different values
       resolve independently via `Config.locations_for(app_id)` / `freshness_for(app_id)`. No
       global merge exists to conflict. Then implement.
-- [ ] 8. Migrate the ~15 test-side flat-`signals:` construction sites and the three
-      `test_config.py` consumers to the nested shape.
+- [ ] 8. Migrate the test-side surface to the nested shape: **13 files** — 17 `AppConfig(` sites
+      and 10 flat `signals:` YAML blocks, enumerated in the contracts section above. AC2's
+      raising derive-validator makes any missed site fail **loudly** rather than silently
+      yielding `signals == []`, which is why that raise is required.
 - [ ] 9. Migrate `config/apps/httpcheck.yaml` — **nesting only**, no `locations:`, no
       `expected_locations` (AC8: unverifiable vendor ids must not enter live config). AC8 test:
       assert `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`,
@@ -158,7 +232,16 @@ Run the real loop against the **existing** single real monitor with the migrated
 (`python -m src.composition.run`, DynamoDB Local) and confirm the topology seed writes the same
 `COMPONENT#`/`SIGNAL#` items as before the migration — a byte-level before/after comparison of
 the seeded items. **Verified executable today with no Dynatrace:** the seed runs at
-`run.py:202`, before and independent of any observation arriving.
+`run.py:202`, before and independent of any observation arriving, and both
+`check_vendor_id_health` (`vendor_health.py:99-110`) and `run_periodic` (`pull_loop.py:200`)
+swallow the expired-trial errors, so the process starts, seeds, and stays up.
+
+**Run it with `STATUSPAGE_API_KEY` unset, and record that in the evidence.** This is the only
+loop run this sprint with a live publisher wired — it uses the **real** `config/apps` (mapping
+non-empty, `httpcheck.yaml:6`) and the real `.env` (`run.py:178`), and it runs *before*
+STORY-176 AC3's guard exists. Today it is safe only circumstantially (no observation can arrive,
+so no verdict can form, and Dynamo is `-inMemory`); unsetting the key makes it safe by
+construction instead.
 
 ---
 
@@ -376,6 +459,59 @@ rather than only at the unit boundary.
 
 **Honest limit:** rests on assumed failure codes (STORY-148 AC8). The unit-level ACs are the
 primary evidence; this gate is corroboration at the system level.
+
+---
+
+## Open decisions — the sprint does NOT lock until these are answered
+
+### D-A · How do we get a `DOWN` observation into the demo? (blocker)
+
+The demo engine cannot produce a failure observation through the real ingest path
+(`health_mapping.py:65-70` raises; see "Second verifier pass"). Two ways forward:
+
+**Option A — extend `health_mapping.py` with an explicitly-provisional failure mapping.**
+Add a named, commented, unverified-pending-trial-renewal code set that maps to `DOWN`/`DEGRADED`.
+Keeps all five scenarios, STORY-176 AC7, and STORY-149's end-to-end gate.
+*Costs:* amends STORY-148 AC9 / STORY-176 AC8 (the no-`backend/src/` rule that makes both stories
+low-risk), takes a slice of STORY-154, and runs against that file's **documented intent** —
+`health_mapping.py:57-63` argues explicitly that inventing codes "would silently mis-map (or mask)
+the real failure value during that verification, so it is deliberately NOT done". If the real code
+later turns out to mean something else, we have baked in a wrong mapping.
+*Variant A′:* gate the provisional mapping behind an env var so production behaviour stays
+byte-identical and fail-loud unless explicitly enabled. Narrower risk, but still a production-code
+change and a new config surface, and it partly re-invents `sample_mode` (which STORY-155 removes).
+
+**Option B — scope the demo to `UP` + gap/dark scenarios this sprint.** Delete STORY-176 AC7, cut
+AC5's three failure scenarios, and move all failure-path evidence to unit tests over hand-built
+`Health.DOWN` observations. STORY-149's reality gate becomes an `orchestrate_signal`-level test
+with a seeded observation stream rather than a demo-engine run.
+*Keeps:* the no-`backend/src/` rule, and the fleet-scale claim (≥12 components / ≥40 signals /
+≥4 locations of real ingest) which is most of STORY-176's value.
+*Costs:* the demo cannot exercise the anti-flap ladder end to end this sprint — which is part of
+what the PO asked the demo engine for ("we can test all the cases"). That capability moves to the
+sprint that lands the real failure codes.
+
+**Recommendation: Option B for this sprint**, with the failure-code mapping folded into STORY-154
+as a first-class story rather than smuggled in as a demo prerequisite. Reasons: STORY-149's
+*primary* evidence is its unit ACs, which are unaffected; the fleet claim survives intact; and
+inventing vendor codes against the producing file's explicit written intent is the kind of
+decision that should be a story with its own review, not a side effect. It also fits the PO's
+pacing directive. If the PO wants the ladder demonstrable now, A′ is the safer form of A.
+
+### D-B · Sizing — the sprint is 12–13 points, not 10
+
+Honest re-estimate after the second pass: STORY-146 3→**5** (13-file migration surface),
+STORY-176 3→**4–5**. With 148 (3) and 149 (1) that is 13, against a ~9–11 baseline and the PO's
+explicit "no need to rush in single stretch".
+
+Options: (i) **move STORY-176 to sprint 63**, leaving a 9-point foundations sprint
+(146 + 148 + 149) whose goal restates to "the shape and the wire are right" — the fleet then opens
+sprint 63 where it also feeds the frontend work real data; (ii) accept 13 and let the sprint run
+long; (iii) trim STORY-176's fleet size, which weakens the one claim it exists to make.
+
+**Recommendation: (i).** It keeps every story fully verified rather than three verified and one
+rushed, and STORY-176 is the natural opener for 63. Note this interacts with D-A: under Option B
+STORY-176 is smaller, so (ii) becomes more tenable if the PO prefers to keep the fleet in 62.
 
 ---
 

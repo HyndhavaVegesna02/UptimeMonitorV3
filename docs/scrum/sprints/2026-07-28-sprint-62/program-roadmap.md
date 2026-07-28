@@ -37,8 +37,13 @@ anti-flap ladder and opening a proposal.
 **Verification notes:** the demo engine's fidelity to the Dynatrace wire shape is the whole
 value, so its reality gate is a **byte-shape comparison against the real captured fixtures**
 (`backend/tests/fixtures/dynatrace/grail_synthetic_events.json` etc.), not just "the loop
-didn't crash". The publisher **must** be stubbed or pointed at a throwaway Statuspage page
-before the loop runs (D4 constraint 1).
+didn't crash". The publisher must be neutralized before the loop runs (D4 constraint 1) — but
+**not** by stubbing it, which the second verifier pass proved unimplementable (there is no
+publisher injection point in `run.py:121-128`, and no `backend/src/` change is in scope). The
+guard is instead a property of the demo **config**: no `statuspage_component_id` anywhere ⇒
+`statuspage_mapping() == {}` ⇒ `publish_helper.py:211` falls through to `LoggingPublisher` on
+both composition roots, even with real credentials loaded. It also requires `CONFIG_DIR` set on
+the API process, not just the loop — see STORY-176 AC3.
 
 **Explicitly NOT in scope:** P2 breadth model, Option B per-component loop, any frontend.
 

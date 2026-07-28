@@ -71,14 +71,24 @@ enter the production image and import-linter contracts are untouched.
       in `timestamp asc` order. Tests prove a query for monitor A never returns monitor B's rows,
       that a non-matching `event.type` returns nothing, and that the watermark bound excludes
       older rows.
-- [ ] **AC4 (the watermark bound must be parsed, not string-compared)** — `query.py:96` emits
-      `since.isoformat().replace("+00:00","Z")` → a **6**-digit fraction
-      (`…40.746000Z`), while rows carry **9** (`…40.746000000Z`, fixture:4). A lexicographic
-      comparison puts `'0' < 'Z'`, so a row at the *same instant* sorts before the bound and is
-      wrongly excluded — the demo would ingest one cycle and then stall, reproducing the exact
-      STORY-051 failure mode inside the demo engine. Both sides are parsed to datetimes before
-      comparison, and a test covers the precision boundary specifically (row `…746000000Z`
-      against bound `…746000Z` must be **included**).
+- [ ] **AC4 (the watermark bound must be PARSED, at three precisions)** — `query.py:96` emits
+      `since.isoformat().replace("+00:00","Z")`, whose fractional precision **varies**:
+      `datetime.isoformat()` omits the fraction entirely when `microsecond == 0` and emits
+      **6** digits otherwise, while rows carry **9** (`…40.746000000Z`, fixture:4). Probed:
+
+      | watermark | emitted bound |
+      |---|---|
+      | whole second | `2026-07-28T10:00:00Z` — **no fraction** |
+      | `.746000` | `2026-07-28T10:00:00.746000Z` — 6 digits |
+
+      Any lexicographic comparison is wrong (`'0' < 'Z'`, so an equal instant sorts *before* a
+      9-digit row and is excluded), and a fixed six-digit slice is wrong for the whole-second
+      case — which is the **likeliest** demo shape, since cycle arithmetic naturally lands on
+      whole seconds. Getting this wrong means the demo ingests one cycle and then stalls,
+      reproducing the exact STORY-051 failure mode inside the demo engine.
+      Both sides are parsed to `datetime` before comparison, and tests pin **all three**
+      precisions — 0-, 6- and 9-digit fractions — each asserting a row at the same instant as the
+      bound is **included**.
 - [ ] **AC5 (the SECOND query grammar — runs at every startup, for every signal)** — The engine
       also answers `build_vendor_health_query` (`composition/vendor_health.py:40-53`), a
       different grammar entirely: `fetch dt.synthetic.events, from:now()-2h | filter
@@ -90,16 +100,27 @@ enter the production image and import-linter contracts are untouched.
       dead — polluting the very evidence STORY-176's reality gate collects, and mimicking the
       STORY-070 drift defect. A test asserts a live count for a known monitor and 0 for an
       unknown one.
+      **The window is `from:now()-2h`, so the engine must serve a ≥2-hour backfill relative to
+      the request instant** — not history starting at engine start. An engine that begins
+      emitting at t₀ returns 0 for every signal when this probe runs, which is *before* any loop
+      is built (`run.py:196`). See STORY-176 AC2(e).
 - [ ] **AC6 (the HTTP protocol, pinned literally)** — The server implements what
       `make_grail_executor` actually calls (`grail_executor.py:43-97`): POST
       `{env_url}/platform/storage/query/v1/query:execute` with body `{"query": …}` and header
       `Authorization: Api-Token …`. It responds in the **asynchronous** mode the real vendor
       uses — `202` + `requestToken`, then `GET …/query:poll?request-token=…` returning
-      `state: "SUCCEEDED"` with `{"records": [...]}`. Async is chosen deliberately: a sync-only
-      server exercises only the executor's *fallback* branch, which would undercut D4's stated
-      reason for preferring option (b) over a fake callable. Note the failure mode being guarded
-      against — at `grail_executor.py:97`, a non-202 response with no `requestToken` returns
-      `[]` **silently**.
+      `state: "SUCCEEDED"` with `{"records": [...]}` (or `{"result": {"records": …}}`). Async is
+      chosen deliberately: a sync-only server exercises only the executor's *fallback* branch,
+      which would undercut D4's stated reason for preferring option (b) over a fake callable.
+      **Three server obligations that are easy to miss** (each turns success into a loud failure
+      or a silent empty):
+      (a) the `202` must carry a **JSON body** — `grail_executor.py:73` parses it unconditionally;
+      (b) every poll response must carry `state` — a bare `{"records": …}` raises "unknown state:
+      None" (`:136-137`), and `FAILED`/`CANCELLED` raise while `RUNNING`/`NOT_STARTED` continue;
+      (c) `httpx`'s **5 s default timeout** applies, and polling gives up after
+      `poll_attempts=60` (`:139-141`).
+      Note the silent failure mode being guarded against — at `grail_executor.py:97`, a 2xx
+      response with no `requestToken` returns `[]` **silently**.
 - [ ] **AC7 (proven through the real executor, not a fake)** — At least one test drives
       `make_grail_executor(env_url=<local server>, api_token=<any>)` against the running demo
       server and asserts assembled `SignalObservation`s come back correct. This is the specific

@@ -1,10 +1,22 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 62
 status: planning   # none | planning | active | review | closed | aborted
-                   # PLANNING, not yet locked. yt-plan-verifier DISPATCHED 2026-07-28 —
-                   # verdict GAPS (13 gaps, 4 risks), all closed in the plan revision; see
-                   # plan.md "Verifier pass". Awaits PO approval only.
-                   # Flip to `active` only at lock.
+                   # PLANNING, not yet locked. TWO yt-plan-verifier passes run 2026-07-28.
+                   # Pass 1: GAPS (13 gaps, 4 risks) — all closed. Pass 2 (independent, fresh
+                   # context, briefed to attack the FIXES): GAPS again — found 3 fix-introduced
+                   # errors (all closed) plus ONE BLOCKER both passes missed.
+                   # BLOCKED ON PO DECISION, see plan.md "Open decisions":
+                   #   D-A  no demo scenario can produce a DOWN/DEGRADED observation
+                   #        (health_mapping.py:65-70 RAISES on non-healthy codes; its docstring
+                   #        says inventing codes is "deliberately NOT done"). Kills 3 of 5
+                   #        STORY-176 scenarios + AC7, and makes STORY-149's reality gate a
+                   #        FALSE PASS. Recommend option B (UP+dark demo now; failure codes
+                   #        become a first-class story under STORY-154).
+                   #   D-B  honest re-estimate is 12-13 pts, not 10 (146 -> 5 on a 13-file
+                   #        migration surface; 176 -> 4-5). Recommend moving STORY-176 to 63,
+                   #        leaving a 9-pt foundations sprint.
+                   # Points below are the OLD 3/3/3/1 and are corrected at lock, once D-A/D-B
+                   # are answered. Flip to `active` only then.
 mode: in-process   # Standing directive after the sprint-60 external rejection: "you only
                    # implement". 146/148/176 are 3 pt -> implementer -> spec ∥ quality
                    # reviewers; 149 (1 pt) -> implementer -> gate.
@@ -127,8 +139,10 @@ stories:
     status: ready
     points: 3
     ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
-    order: 1                 # highest blast radius (7 consumers of app.signals); STORY-148's
-                             # demo config must be authored in the final shape, not twice
+    order: 1                 # highest blast radius (SEVEN surviving consumers of app.signals —
+                             # an 8th listed earlier was inside the validator this story deletes;
+                             # plus 13 test files to migrate); STORY-176's demo config must be
+                             # authored in the final shape, not twice
   - id: STORY-148
     title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
