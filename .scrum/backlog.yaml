@@ -3,7 +3,7 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 174  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
+next_story_id: 176  # BUMPED 2026-07-28 (sprint-62 refinement) from a stale 94 — 094-096 already
                     # existed on main, and the UNMERGED sprint-59/60/61 line consumed 097-143 and
                     # reserved 144/145 (`git show sprint-61:.scrum/backlog.yaml`). Sprint-62
                     # stories therefore start at 146 so no id ever names two different stories
@@ -1050,12 +1050,20 @@ stories:
   #   lib/fetchDedup.ts, the MSW harness, ~20 pure helpers. Verified salvageable: there is
   #   ZERO backend divergence between main and sprint-61.
   - id: STORY-156
-    title: Design system — Tailwind v4 theme from the reference + contrast gate + styleguide
+    title: Design system — Tailwind v4 theme from the reference, light + dark, contrast gate
     file: null
-    status: draft   # First frontend story. Tokens: --bg-main rgb(243,244,247), glass
+    status: draft   # First frontend story. Light tokens: --bg-main rgb(243,244,247), glass
                     # rgba(255,255,255,.66)+blur(12px), soft shadow, radii 1.5/1/0.5rem,
                     # Manrope + JetBrains Mono, teal->amber->orange->rose 4-status ramp.
-                    # Keep the WCAG-AA contrast test pointed at the theme values.
+                    # DARK MODE IS IN SCOPE: the reference ships a working dark theme (see
+                    # newui-07-dashboard-dark-1440.png) encoded as `dark:` variants on
+                    # essentially every utility — a major reason Tailwind was chosen, since
+                    # those port directly instead of being re-derived as token overrides.
+                    # The reference's dark theme has a CONFIRMED defect not to port: the
+                    # sidebar badge becomes an unreadable solid circle because `.badge` sets
+                    # `color: white` over `background: var(--text-main)`, which inverts
+                    # (index.css:220-228). Contrast test (WCAG AA) must cover BOTH themes,
+                    # pointed at the theme-layer values.
                     # Also carries the cherry-pick of sprint-61's design-neutral infra.
     type: feature
     sprint: null
@@ -1194,6 +1202,35 @@ stories:
                     # which is worse than an honest placeholder. One swap point exists.
                     # Needs an identity-provider decision at refinement.
     type: feature
+    sprint: null
+  - id: STORY-174
+    title: Expose probe-location labels through the API (B7 consumption side)
+    file: null
+    status: draft   # ~2pts. STORY-146 DECLARES the alias/native_id/label mapping in config;
+                    # this is the consumption half. `ObservationDTO.location` is the RAW vendor
+                    # entity id (history/models.py) — the real wire value is
+                    # SYNTHETIC_LOCATION-000000000000005C
+                    # (tests/fixtures/dynatrace/grail_synthetic_events.json:12), so without
+                    # this the cockpit shows operators that string instead of
+                    # "US East (Virginia)". Decide at refinement: a label field on the DTO, or
+                    # a locations endpoint the frontend joins against (prefer the endpoint —
+                    # the location set is small, stable, and needed by the History filter
+                    # dropdown anyway). Blocks the location column/filter in STORY-162/163.
+    type: feature
+    sprint: null
+  - id: STORY-175
+    title: Fleet expansion — author the real multi-component topology
+    file: null
+    status: draft   # BLOCKED on Dynatrace trial renewal (see STORY-154) and on real monitored
+                    # endpoints existing. This is the work the pipeline-correctness stories are
+                    # prerequisites FOR: PO confirmed 2026-07-28 that the lone http-check
+                    # component is temporary and "many more components will come along sooner".
+                    # STORY-150 (breadth) + STORY-151 (per-component rollup) MUST land before
+                    # this, or the first multi-monitor component will flap the live Statuspage.
+                    # Authors real components/monitors/locations in the STORY-146 shape with
+                    # STORY-147 groups+descriptions, and replaces the provisional demo aliases
+                    # with Dynatrace's real location ids and names.
+    type: chore
     sprint: null
   - id: STORY-173
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
