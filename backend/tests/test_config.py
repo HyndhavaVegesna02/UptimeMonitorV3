@@ -19,9 +19,12 @@ from src.composition.config import (
     ComponentConfig,
     Config,
     FlatSignalsRejectedError,
+    InvalidFreshnessError,
     SignalConfig,
+    UnknownAppError,
     UnknownComponentError,
     UnknownSignalError,
+    UndeclaredLocationAliasError,
     load_config,
 )
 from src.core.services.pipeline import AntiFlapThresholds
@@ -516,3 +519,180 @@ signals:
         )
         with pytest.raises(ValueError):
             _valid_app(signals=[bad_signal])
+
+
+class TestDeclaredLocations:
+    """AC3: a top-level `locations:` map, alias -> {native_id, label}."""
+
+    def test_locations_map_loads(self, tmp_config_dir: Path):
+        yaml_content = """\
+app:
+  id: loc-app
+  name: Loc App
+  monitor_provider: dynatrace
+components:
+  - id: web
+    name: Web
+    monitors:
+      - { signal_key: web-http, native_id: N-WEB, name: Web HTTP, interval_seconds: 60 }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-AAA, label: "Location A" }
+  loc-b: { native_id: SYNTHETIC_LOCATION-BBB, label: "Location B" }
+"""
+        _write_yaml(tmp_config_dir, "loc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        app = cfg.apps[0]
+        assert set(app.locations.keys()) == {"loc-a", "loc-b"}
+        assert app.locations["loc-a"].native_id == "SYNTHETIC_LOCATION-AAA"
+        assert app.locations["loc-a"].label == "Location A"
+
+    def test_undeclared_expected_locations_alias_raises(self, tmp_config_dir: Path):
+        yaml_content = """\
+app:
+  id: loc-app
+  name: Loc App
+  monitor_provider: dynatrace
+components:
+  - id: web
+    name: Web
+    monitors:
+      - { signal_key: web-http, native_id: N-WEB, name: Web HTTP, interval_seconds: 60, expected_locations: [loc-a, ghost-loc] }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-AAA, label: "Location A" }
+"""
+        _write_yaml(tmp_config_dir, "loc.yaml", yaml_content)
+        with pytest.raises(UndeclaredLocationAliasError) as exc_info:
+            load_config(tmp_config_dir)
+        message = str(exc_info.value)
+        assert "web-http" in message
+        assert "ghost-loc" in message
+
+
+class TestFreshnessBlock:
+    """AC4: a top-level `freshness:` block, cycle counts, no multiplication."""
+
+    def test_freshness_defaults_when_omitted(self, tmp_config_dir: Path):
+        yaml_content = """\
+app:
+  id: bare-fresh-app
+  name: Bare Fresh App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+"""
+        _write_yaml(tmp_config_dir, "bare_fresh.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        app = cfg.apps[0]
+        assert app.freshness.stale_after_cycles == 3
+        assert app.freshness.reentry_cycles == 2
+
+    def test_freshness_explicit_values_load_as_plain_counts(
+        self, tmp_config_dir: Path
+    ):
+        yaml_content = """\
+app:
+  id: fresh-app
+  name: Fresh App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+freshness: { stale_after_cycles: 5, reentry_cycles: 4 }
+"""
+        _write_yaml(tmp_config_dir, "fresh.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        app = cfg.apps[0]
+        # Plain counts — NO multiplication by interval_seconds anywhere here.
+        assert app.freshness.stale_after_cycles == 5
+        assert app.freshness.reentry_cycles == 4
+
+    def test_zero_stale_after_cycles_raises_invalid_freshness_error(
+        self, tmp_config_dir: Path
+    ):
+        yaml_content = """\
+app:
+  id: fresh-app
+  name: Fresh App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+freshness: { stale_after_cycles: 0, reentry_cycles: 2 }
+"""
+        _write_yaml(tmp_config_dir, "fresh.yaml", yaml_content)
+        with pytest.raises(InvalidFreshnessError):
+            load_config(tmp_config_dir)
+
+    def test_negative_reentry_cycles_raises_invalid_freshness_error(
+        self, tmp_config_dir: Path
+    ):
+        yaml_content = """\
+app:
+  id: fresh-app
+  name: Fresh App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+freshness: { stale_after_cycles: 3, reentry_cycles: -1 }
+"""
+        _write_yaml(tmp_config_dir, "fresh.yaml", yaml_content)
+        with pytest.raises(InvalidFreshnessError):
+            load_config(tmp_config_dir)
+
+
+class TestLocationsAndFreshnessArePerApp:
+    """AC6: locations/freshness are per-app; no global merge."""
+
+    def test_two_apps_with_different_freshness_resolve_independently(
+        self, tmp_config_dir: Path
+    ):
+        app_a_yaml = """\
+app:
+  id: app-a
+  name: App A
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-AAA, label: "Location A" }
+freshness: { stale_after_cycles: 5, reentry_cycles: 3 }
+"""
+        app_b_yaml = """\
+app:
+  id: app-b
+  name: App B
+  monitor_provider: dynatrace
+components:
+  - { id: comp-b, name: Comp B }
+locations:
+  loc-b: { native_id: SYNTHETIC_LOCATION-BBB, label: "Location B" }
+freshness: { stale_after_cycles: 10, reentry_cycles: 1 }
+"""
+        _write_yaml(tmp_config_dir, "app_a.yaml", app_a_yaml)
+        _write_yaml(tmp_config_dir, "app_b.yaml", app_b_yaml)
+        cfg = load_config(tmp_config_dir)
+
+        assert cfg.freshness_for("app-a").stale_after_cycles == 5
+        assert cfg.freshness_for("app-a").reentry_cycles == 3
+        assert cfg.freshness_for("app-b").stale_after_cycles == 10
+        assert cfg.freshness_for("app-b").reentry_cycles == 1
+
+        assert set(cfg.locations_for("app-a").keys()) == {"loc-a"}
+        assert set(cfg.locations_for("app-b").keys()) == {"loc-b"}
+        # No global merge: app-a never sees app-b's alias and vice versa.
+        assert "loc-b" not in cfg.locations_for("app-a")
+        assert "loc-a" not in cfg.locations_for("app-b")
+
+    def test_unknown_app_id_raises_named_error(self, tmp_config_dir: Path):
+        yaml_content = """\
+app:
+  id: only-app
+  name: Only App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A }
+"""
+        _write_yaml(tmp_config_dir, "only.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        with pytest.raises(UnknownAppError):
+            cfg.locations_for("does-not-exist")
+        with pytest.raises(UnknownAppError):
+            cfg.freshness_for("does-not-exist")

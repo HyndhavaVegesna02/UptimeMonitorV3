@@ -199,13 +199,13 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
       `FlatSignalsRejectedError`, `InvalidFreshnessError`) and a post-construction validation
       step in `load_config` **outside** the `try` at `:343-357`. Failing test asserts the
       specific class, not `ValueError`.
-- [ ] 5. Failing test: `locations:` map (alias → `native_id` + `label`); an `expected_locations`
+- [x] 5. Failing test: `locations:` map (alias → `native_id` + `label`); an `expected_locations`
       alias with no declaration raises `UndeclaredLocationAliasError` naming the monitor and the
       alias. Then implement.
-- [ ] 6. Failing test: `freshness:` block — defaults `stale_after_cycles: 3`, `reentry_cycles: 2`,
+- [x] 6. Failing test: `freshness:` block — defaults `stale_after_cycles: 3`, `reentry_cycles: 2`,
       zero/negative rejected, values held as **cycle counts** with no multiplication anywhere in
       this story. Then implement.
-- [ ] 7. Failing test: `locations`/`freshness` are per-app — two apps with different values
+- [x] 7. Failing test: `locations`/`freshness` are per-app — two apps with different values
       resolve independently via `Config.locations_for(app_id)` / `freshness_for(app_id)`. No
       global merge exists to conflict. Then implement.
 - [ ] 8. Migrate the test-side surface to the nested shape: **13 files** — 17 `AppConfig(` sites
