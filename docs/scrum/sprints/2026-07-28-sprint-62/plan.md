@@ -225,8 +225,15 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
       assert `signal_key`, `native_id`, `interval_seconds`, `component_for_signal`,
       `thresholds_for`, and `statuspage_mapping()` against **literals captured before the
       migration** — not recomputed from the new file.
-- [ ] 10. Verify the eight consumer lines are untouched in the story diff (`git diff` check,
-      recorded in the story History).
+- [x] 10. Verify the eight consumer lines are untouched in the story diff (`git diff` check,
+      recorded in the story History). Verified: `git diff --name-only 282be8d..HEAD -- run.py
+      seed_dynamo.py vendor_health.py scripts/seed_topology.py` is EMPTY — none of the four
+      external files changed at all. Within `config.py`, `git diff 282be8d..HEAD` shows the
+      referential-integrity loop's `for sig in self.signals:` (line 183 pre-story) as the only
+      REMOVED `app.signals`/`self.signals` expression (deliberate, AC2); the other three
+      `config.py`-internal expressions (`Config.__init__`, `load_config`'s global uniqueness
+      check, the surviving duplicate-signal_key check) are unchanged context lines. Seven
+      surviving readers total, all byte-identical expressions — recorded in the story History.
 - [ ] 11. Wiki blast radius: articles whose `code_refs` include `composition/config.py` or
       `seed_dynamo.py` — update or re-verify + bump `verified_sha`. **Note:** `run.py` is
       deliberately *excluded* from this predicate. It is a `code_ref` in four articles (the

@@ -174,3 +174,22 @@ Only demo/fixture configs declare locations at all (see AC8).
   (cycle counts, not seconds) and per-app-vs-global scoping were undefined, now AC4/AC6;
   (6) the migrated real config is now explicitly forbidden from gaining unverifiable vendor
   location ids, and the alias-vocabulary contradiction against the shape proposal is resolved.
+- 2026-07-28: **implemented.** AC7's "SEVEN surviving readers, checked semantically" verified by
+  `git diff --name-only 282be8d..HEAD -- backend/src/composition/run.py
+  backend/src/composition/seed_dynamo.py backend/src/composition/vendor_health.py
+  scripts/seed_topology.py` → EMPTY (none of the four external files changed at all).
+  `grep -n "app.signals\|for sig in self.signals\|for sig in app.signals\|len(app.signals)"`
+  across `config.py`/`run.py`/`seed_dynamo.py`/`vendor_health.py`/`scripts/seed_topology.py`
+  found exactly seven live-code matches: `config.py::Config.__init__` (`for sig in app.signals:`),
+  `config.py::load_config`'s global signal_key uniqueness check (`for sig in app.signals:`),
+  `config.py::AppConfig._validate_uniqueness_and_thresholds`'s surviving duplicate-signal_key
+  check (`for sig in self.signals:` — NOT the deleted referential-integrity loop, which was a
+  separate `for sig in self.signals:` over the same list, removed by AC2), `run.py:136`
+  (`for signal in app.signals:`), `seed_dynamo.py:56` (`for sig in app.signals:`),
+  `vendor_health.py:97` (`for signal in app.signals:`), and `scripts/seed_topology.py:44`
+  (`sum(len(app.signals) for app in config.apps)`). All seven expressions are byte-identical to
+  before the story. Deleted code (AC2): the referential-integrity validator block and its two
+  tests (`test_config.py::TestAppConfigValidationRejects::test_signal_referencing_undeclared_component_raises`,
+  `test_config.py::TestLoadConfigFailFast::test_signal_referencing_undeclared_component_raises_at_load`)
+  — reason: the check is now structurally unenforceable-to-violate, since a monitor's
+  `component_id` is never authored (AC1), only derived from its parent component's `id`.
