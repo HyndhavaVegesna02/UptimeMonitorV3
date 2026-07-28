@@ -100,6 +100,72 @@ the real DOWN/DEGRADED code from this error"*). **So no live-path mapping curren
 Mapping the real failure codes is arguably the first story of the set — everything else here
 reasons about failures we cannot yet ingest.
 
+### D4 — A local Grail-shaped demo engine (PO decision 2026-07-28, option **b**)
+
+**Context.** The PO's Dynatrace trial expired 2026-07-28: no observations arrive at all.
+Nothing data-dependent can be reality-gated, and the multi-monitor / multi-location
+correctness work (D1, D2, F3, freshness) cannot be exercised against realistic scenarios at
+any price.
+
+**Decision.** Build a **local HTTP server that speaks the Dynatrace Grail `execute query`
+API**, driven by scripted scenario files, and point `DYNATRACE_ENV_URL` at it.
+
+Why this shape (option b) over a fake `Executor` callable (option a): it requires **zero
+production-code changes** — one env var — *and* is more faithful, additionally exercising
+`make_grail_executor`, the real HTTP client, auth headers and response parsing. It injects
+at the seam already documented for exactly this purpose:
+
+```python
+# adapters/inbound/dynatrace/query.py:32
+Executor = Callable[[str], list[dict]]
+#: Production wiring (composition root) will inject a real HTTP-backed
+#: implementation; every test in this package injects a fake instead.
+```
+
+It only has to parse queries **we generate ourselves** — `build_dql_query` emits three
+predictable clauses (`query.py:85-97`).
+
+**It is a scenario player, not a random generator.** Random noise will not reliably produce
+the cases that matter. Scenarios are scripted per monitor, e.g. the F3 bug on demand:
+
+```yaml
+api-gateway-health:   [up ×5, "down from 2 of 3 locations" ×4, up ×3]
+api-gateway-graphql:  [up ×20]
+```
+
+**Location:** `tools/` at the repo root, **outside `backend/src/`** — never in the
+production image, so a misconfiguration cannot serve fake data to real users. Keeps
+import-linter contracts untouched.
+
+**It supersedes `sample_mode`.** `SampleModeIngest` decorates `SignalIngestPort` and flips
+**already-normalized** observations to `DOWN` (`composition/sample_mode.py:66-72`), so it
+needs real data to have anything to flip — useless with the trial over. The demo engine sits
+upstream and additionally exercises the normalizer, health mapping, dispatch, dedup and
+watermark logic that sample-mode skips. Sample-mode is already on the removal list
+(`docs/scrum/wiki/sample-mode.md`); this is what removes it.
+
+**Two hard constraints:**
+
+1. **Stub the publisher, or point at a throwaway Statuspage page.** `decide` publishes
+   recoveries with **no human gate**, so fake outages and recoveries fed into the loop
+   **will publish fake statuses to the real public status page.** Non-negotiable.
+2. **It cannot validate the vendor failure codes.** `map_synthetic_status` raises on
+   anything but `"0"`/`"HEALTHY"` (`health_mapping.py:65-70`) because a real failure code
+   has never been observed. Codes the demo engine emits are **assumptions**. The residual
+   risk is one string constant — a one-line fix on trial renewal — but it must stay
+   labeled, not quietly absorbed as "the failure path is tested".
+
+**Consequence for planning.** This becomes the **first story of sprint 62** and reorders what
+follows, because it unblocks both tracks:
+
+- the pipeline correctness work (D1/D2, F3, freshness) becomes verifiable against
+  multi-monitor, multi-location scenarios — impossible today;
+- the UI can be built and judged **at fleet scale** before the real fleet exists, which
+  directly attacks the rejection risk and partly dissolves the "design for n=1 vs the dense
+  design" tension (§3a) — both can now be seen.
+
+Est ~5 points.
+
 ---
 
 ## Future work
