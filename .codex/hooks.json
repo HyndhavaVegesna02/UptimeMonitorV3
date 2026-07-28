@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|PowerShell",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python 'C:\\Hyn\\uptime_monitor_v3\\.codex\\hooks\\yt_git_guard.py'",
+            "timeout": 15
+          }
+        ]
+      }
+    ]
+  }
+}
