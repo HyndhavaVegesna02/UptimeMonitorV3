@@ -23,7 +23,12 @@ from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusErr
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 
 
-def test_assumed_failure_code_produces_a_structurally_valid_row():
+def test_assumed_failure_code_row_echoes_the_status_code_and_message_given():
+    """STORY-180 AC5 (minor 4): renamed from
+    `..._produces_a_structurally_valid_row`, which overstated what this test
+    asserts -- only that the two status values passed in echo back unchanged,
+    not that the row is otherwise "structurally valid" in any broader sense.
+    """
     row = build_row(
         monitor_id="MON-A",
         location="LOC-1",
