@@ -136,18 +136,18 @@ parsed" — there is **no `from:` regex at all** (`query_grammar.py:28-31`) and 
 (`:47-51`) has no window field. The clause is never parsed.
 
 ### Steps
-- [ ] 1. Minor 6 (AC1): correct **`rows.py:26-27`** against `health_mapping.py:65`'s `or` — "the
+- [x] 1. Minor 6 (AC1): correct **`rows.py:26-27`** against `health_mapping.py:65`'s `or` — "the
       ONLY pair accepted" is false; either half alone suffices. Read the operator, don't reword it.
-- [ ] 2. Minor 1 (AC2), **route decided at planning — equality test, not parse**: a test importing
+- [x] 2. Minor 1 (AC2), **route decided at planning — equality test, not parse**: a test importing
       `vendor_health.py:37`'s `_HEALTH_CHECK_WINDOW` fails if it disagrees with `store.py:22`.
-- [ ] 3. Minor 5 (AC4): bound `_DemoHTTPServer.results` (**`server.py:48`**) with a test proving it.
-- [ ] 4. Minor 2 (AC3): route the 0- and 6-digit watermark cases through the real `build_dql_query`
+- [x] 3. Minor 5 (AC4): bound `_DemoHTTPServer.results` (**`server.py:48`**) with a test proving it.
+- [x] 4. Minor 2 (AC3): route the 0- and 6-digit watermark cases through the real `build_dql_query`
       **with `overlap=timedelta(0)`** — at the 5-minute default the bound lands before the row, the
       row is included regardless of precision handling, and the test silently stops discriminating
       the STORY-051 stall while staying green. Keep the 9-digit literal with its reason.
-- [ ] 5. Minors 3, 4, 7 (AC5): fold the stdlib-only test into a docstring; rename the overstated
+- [x] 5. Minors 3, 4, 7 (AC5): fold the stdlib-only test into a docstring; rename the overstated
       test (**`:26-37`**); drop the unused clock read (**`store.py:46-50`**). State the count drop.
-- [ ] 6. Minor 8 (AC6): decide the `sys.path` insertion position explicitly, record the reason.
+- [x] 6. Minor 8 (AC6): decide the `sys.path` insertion position explicitly, record the reason.
 
 ### Reality gate (180) — route-matched, per working agreement A1
 The load-bearing new guarantee is AC2. Because the route is now fixed to the **equality test**, the
