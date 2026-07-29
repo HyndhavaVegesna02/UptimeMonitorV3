@@ -1,8 +1,8 @@
 ---
 title: Frontend zone — the operator-cockpit SPA (shell)
 code_refs: [frontend/package.json, frontend/vite.config.ts, frontend/index.html, frontend/src/AppShell.tsx, frontend/src/nav/tabs.ts, frontend/src/nav/Sidebar.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/nav/sidebarState.ts, frontend/src/features/shell/useApprovalsBadge.ts, frontend/src/api/client.ts, frontend/src/api/types.ts, frontend/src/api/statusMapping.ts, frontend/src/api/actor.ts, frontend/src/theme/resolveTheme.ts, frontend/src/theme/ThemeContext.tsx, frontend/src/styles/tokens.css, frontend/src/components/index.ts, frontend/src/components/Table/Table.tsx, frontend/src/components/UptimeBar/UptimeBar.tsx, frontend/src/components/SummaryCard/SummaryCard.tsx, frontend/src/components/Timeline/Timeline.tsx, frontend/src/components/Icon/Icon.tsx, frontend/src/lib/cx.ts, frontend/src/lib/useFetch.ts, frontend/src/mocks/handlers/index.ts, frontend/src/mocks/handlers/components.ts, frontend/src/mocks/handlers/approvals.ts, frontend/src/mocks/handlers/availability.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/history.ts, frontend/src/mocks/handlers/publications.ts, frontend/src/mocks/handlers/maintenance.ts, frontend/src/features/dashboard/useComponents.ts, frontend/src/features/dashboard/useMaintenanceWindows.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/features/dashboard/summary.ts, frontend/src/features/dashboard/useTopology.ts, frontend/src/features/dashboard/useComponentSignals.ts, frontend/src/features/dashboard/useComponentUptime.ts, frontend/src/features/approvals/useApprovals.ts, frontend/src/features/approvals/severity.ts, frontend/src/features/approvals/decisionState.ts, frontend/src/features/approvals/ApprovalCard.tsx, frontend/src/features/availability/windowRange.ts, frontend/src/features/availability/useAvailability.ts, frontend/src/features/availability/format.ts, frontend/src/features/availability/segments.ts, frontend/src/features/history/observationHealth.ts, frontend/src/features/history/signals.ts, frontend/src/features/history/filterHistory.ts, frontend/src/features/history/mergeObservations.ts, frontend/src/features/history/useAllHistory.ts, frontend/src/features/publications/usePublications.ts, frontend/src/features/maintenance/windowState.ts, frontend/src/features/maintenance/fieldError.ts, frontend/src/features/maintenance/useMaintenance.ts, frontend/src/pages/DashboardPage.tsx, frontend/src/pages/ApprovalsPage.tsx, frontend/src/pages/AvailabilityPage.tsx, frontend/src/pages/CheckHistoryPage.tsx, frontend/src/pages/PublicationsPage.tsx, frontend/src/pages/MaintenancePage.tsx, frontend/src/test/setup.ts, DESIGN-linear.app.md, frontend/eslint.config.js, frontend/src/styles/global.css]
-verified_sha: be2ffcd
-verified_sprint: sprint-51
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -33,8 +33,10 @@ status: verified
   — type-check is part of the build gate), `test` (`vitest run`, run-once), `lint` (`eslint .`).
   Playwright/E2E is DEFERRED to a later integration story.
 - **Dev ↔ API seam:** the Vite dev server proxies `/api/*` → `http://localhost:8000`
-  (`frontend/vite.config.ts`), a locally running uvicorn backend. No backend change and no CORS
-  work was needed — CORS stays deferred to STORY-017 per the 2026-06-23 working agreement.
+  (`frontend/vite.config.ts`), a locally running uvicorn backend. No CORS middleware is needed at
+  all: dev is same-origin via this proxy, production is same-origin behind CloudFront (STORY-089)
+  — `api/v1/_shared/middleware.py`'s docstring states this directly (corrected STORY-181,
+  sprint-63; it used to point at the archived STORY-017).
 - **App shell + routing (rebuilt STORY-056, sprint-38):** `frontend/src/AppShell.tsx` composes a
   collapsible left icon `Sidebar` + a content column (`TopBar` + `SampleModeBanner` + a routed
   `<main>`), replacing the old single top `Nav` bar (`Nav.tsx`/`Nav.css`/`Nav.test.tsx` deleted).
@@ -154,10 +156,11 @@ status: verified
   tab. `PublicationDTO.status` (STORY-015g) IS the `ComponentStatus` vocabulary (same producing
   type as `ComponentDTO.status`), so the Publications tab reuses the EXISTING `toHealthStatus`
   directly — no third mapper.
-- **Actor seam (auth deferred):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
-  placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity when STORY-017
-  auth + scopes land. Every decision POST reads the actor from here; the value is not scattered.
-  (STORY-015c; PO decision 2026-07-02.)
+- **Actor seam (auth unassigned):** `frontend/src/api/actor.ts::getActor()` returns a FIXED
+  placeholder (`"dashboard-operator"`) — the SINGLE swap-point for real identity whenever auth is
+  implemented (no story queued — corrected STORY-181, sprint-63; the docstring used to point at
+  the archived STORY-017). Every decision POST reads the actor from here; the value is not
+  scattered. (STORY-015c; PO decision 2026-07-02.)
 - **Test I/O boundary:** MSW is the ONLY mocked edge. Handlers are modularized per feature
   (`frontend/src/mocks/handlers/<feature>.ts`, e.g. `components.ts` / `availability.ts` exporting
   their handlers + fixtures) composed into the `handlers` array in
@@ -613,4 +616,11 @@ status: verified
   history cites it — but it is now recorded as lineage, not guidance. Both errors are the same
   class as STORY-149's: a claim can rot while the code it describes stands still, and only a
   human reading it notices.
+- sprint-63 (STORY-181): the sweep flagged `actor.ts`, `client.ts`, `windowState.ts`. Two Facts
+  above directly quoted comments this story retired: the CORS Fact now states plainly that no
+  middleware is required (was "deferred to STORY-017", archived and never about CORS); the actor
+  seam Fact now says auth is unassigned (no story queued) rather than naming STORY-017.
+  `client.ts`'s topology comment (Vercel/Railway → same-origin behind CloudFront) and
+  `windowState.ts`'s adapter citation (Postgres → `DynamoMaintenanceRepository`) are not quoted
+  anywhere else in this article. verified_sha -> b272c32.
 
