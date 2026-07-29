@@ -37,3 +37,17 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       fabricated ID that survived cfn-lint AND a quality APPROVE, and 404'd only at live
       stack create; the sibling OriginRequestPolicyId was a real ID whose comment named a
       different policy.)
+
+- [ ] **For a computational deliverable, MUTATE it -- do not infer pinning from reading.** A green,
+      fully AC-traced suite can leave its story's central arithmetic unpinned. Hardcode or perturb
+      the computation, run the story's tests, and report which went RED; zero RED is a finding, and
+      it outranks anything found by reading. Restore and confirm the tree is clean. (2026-07-30,
+      sprint-63 retro amendment A4 -- this is exactly how STORY-176's critical was found, and
+      nothing else in the pipeline would have found it.)
+
+- [ ] **Reject any two-sided proof whose sides came back IDENTICAL.** When a discrimination proof
+      reports the same outcome on both sides, that is inverted evidence, not weak evidence -- the
+      failure is indistinguishable from "the thing under test does not matter", so the proof argues
+      against a correct fix. Check the mechanism (import provenance, attribute names, fixture
+      skips), not just the numbers. (2026-07-30, sprint-63 retro amendment A3 -- three occurrences
+      in one sprint, each via a DIFFERENT mechanism.)

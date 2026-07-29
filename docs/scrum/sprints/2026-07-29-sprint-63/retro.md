@@ -79,3 +79,47 @@ cannot pass silently into review.
   STORY-176's wiki Fact claimed two monitors "share no cycle boundary", which was **false** (they
   share `end_time`) and cited a test that only asserted set inequality. Corrected with a labelled
   correction rather than a silent edit.
+
+---
+
+## Outcome — 2026-07-30
+
+**All three amendments APPROVED by the PO and landed at their rungs.**
+
+| # | Amendment | Rung | Landed in |
+|---|---|---|---|
+| **A3** | A two-sided proof must assert the sides **differ**; identical outcomes = FAILED proof | checklist ×2 | `.scrum/checklists/implementer.md`, `.scrum/checklists/quality-review.md` |
+| **A4** | A computational deliverable is pinned only by a **mutation**; zero tests RED = unpinned | checklist ×2 | same two files |
+| **A5** | **Review debt** is recorded on the story-gate record, not carried in someone's head | board schema | `.scrum/working-agreements.md` (field convention) |
+
+All three are also recorded in full in `.scrum/working-agreements.md` with their dates, motivating
+incidents, and — for A3 and A4 — an explicit note on why a *mechanical* rung was considered and
+rejected. In both cases the reason is the same and worth keeping: the artefact is **bespoke per
+story** (a reality-gate harness; "which computation is this story's centre"), so no script can judge
+it. What *can* be mechanised is narrower — an import-provenance helper — and that belongs in a story,
+not an agreement. **It is still unfiled**; it was proposed at the sprint-62 retro too. If it slips a
+third time, that is itself the finding.
+
+**A5 earned itself inside a day.** The review debt it exists to surface was STORY-176's unread fix
+round. The PO authorised that review post-acceptance, it ran, and it found **one MAJOR the mechanical
+substitutes had missed** — the `interval_seconds` invariant sitting on the loader rather than the
+frozen type, now STORY-184. So the debt was real, the substitution was not equivalent, and recording
+it was what made the follow-up possible.
+
+**Branch decision:** `sprint-63` stays **unmerged** at `05245fd`, per the standing "don't merge with
+main" instruction and consistent with sprints 59–62. Accepted ≠ landed.
+
+### Carried to sprint-64 planning
+
+- **Four 1-point follow-ups now want to land with or before STORY-182** (itself 3 pts): STORY-183
+  (token-cache retention) and STORY-184 (the interval invariant) genuinely gate the run; STORY-185
+  (un-gate the unsafe side) and STORY-186 (doc/test hygiene) do not. Decide explicitly, or a 3-point
+  story quietly becomes a 7-point sprint.
+- **The import-provenance helper script** — the mechanical rung A1/A3 keep declining to take.
+- **STORY-179** (Dynamo fixed-port workaround) is now a standing tax on every gate, third sprint
+  running. **STORY-178** (ANSI in the gate fragment) did not reproduce even with `npm run build` in
+  the full gate — do not close it on one clean run.
+- **Verification effort is invisible in estimates.** STORY-176 was estimated 2/3/2-style on build
+  cost; its verification (one fix round, five separate proofs) took comparable time. Not proposed as
+  an amendment yet — one data point — but worth watching whether 3-pointers with safety-critical AC
+  are systematically under-pointed.

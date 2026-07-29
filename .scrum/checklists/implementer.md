@@ -68,3 +68,27 @@
       (netstat or equivalent) � a wrapper-job kill alone is not evidence (2026-07-17;
       sprint-51 STORY-094 � the bash-job kill left the port-8010 uvicorn worker alive;
       an explicit taskkill /PID /F + netstat confirm was required).
+
+- [ ] **A two-sided / discrimination proof must record BOTH outcomes and assert they DIFFER.** It is
+      not enough that each side matches expectation: identical outcomes on both sides is a FAILED
+      proof, never a passed one, whatever value appeared. The proof's authority comes from the sides
+      diverging, so "green both sides" or "red both sides" means the proof did not discriminate and
+      must be fixed before either number is reported. (2026-07-30, sprint-63 retro amendment A3 --
+      three proofs in ONE sprint came back identical on both sides: STORY-180's discrimination proof
+      (the editable-install/worktree trap, see the A1 refinement above), and the orchestrator's own
+      publish-guard harness, which walked a `delegate` attribute where the layers store `_delegate`
+      and so reported a one-element chain on both sides -- the safe side green for the wrong reason
+      and the unsafe side falsely looking safe. The A1 refinement covers IMPORT PROVENANCE only and
+      would not have caught the second: the mechanisms differ, the symptom does not. Treat the
+      symptom as the trigger.)
+
+- [ ] **If the story's headline deliverable is COMPUTATIONAL -- arithmetic, spacing, ordering,
+      thresholds, windowing -- mutate the computation once and record which tests go RED.** Zero
+      tests RED means the behaviour is UNPINNED, even at full coverage and even with every AC traced
+      to a test. Restore and confirm `git diff` is empty. (2026-07-30, sprint-63 retro amendment A4
+      -- STORY-176 shipped a green, reviewed, fully AC-traced suite in which a mutant
+      `expand_scenario` that ignored `interval_seconds` and hardcoded 30s passed ALL THIRTY new
+      tests. The story's headline claim -- "expands into rows at each monitor's own
+      `interval_seconds`" -- was pinned by nothing. What found it was running the mutant; nothing
+      else in the pipeline could have. Scoped deliberately to computational deliverables so this
+      does not become a tax on every story.)

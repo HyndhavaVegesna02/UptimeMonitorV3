@@ -254,3 +254,53 @@
   2026-01-01 agreement and ad-hoc skill-script edits outside a story are forbidden by the
   2026-07-15 entry. Proposed at the sprint-63 retro, together with whether the reviewer and
   plan-verification checklists need the same line.)
+
+- (2026-07-30, sprint-63 retro) **A3 — a two-sided proof must assert that the two sides DIFFER.**
+  A1 requires every reality gate to carry a discrimination proof or a two-sided note. A3 says what
+  makes one valid: it records both outcomes AND asserts they diverge. Identical outcomes on both
+  sides is a FAILED proof, never a passed one, whatever value appeared — the proof's authority comes
+  entirely from the divergence, so "green both sides" means it did not discriminate. (Motivating
+  incident: THREE proofs came back identical on both sides inside sprint 63, each by a different
+  mechanism — STORY-180's discrimination proof via the editable-install/worktree trap (the A1
+  refinement above); the orchestrator's own publish-guard harness, which walked a `delegate`
+  attribute where `publish_helper.py:51/:96/:169` store `_delegate`, so it reported a one-element
+  chain on both sides with the safe side green for the wrong reason and the unsafe side falsely
+  looking safe; and — the same shape one rung out — STORY-176's Docker-gated guard test, which
+  silently SKIPS where Docker is absent, degrading a two-sided proof to one-sided with no output
+  saying so (now STORY-185). The A1 refinement covers IMPORT PROVENANCE only and would have caught
+  just the first: the mechanisms differ, the symptom does not, so the SYMPTOM is the trigger.)
+  (Rung: checklist — landed in `.scrum/checklists/implementer.md` and
+  `.scrum/checklists/quality-review.md`. A mechanical rung was considered and rejected for the same
+  reason A1's was: the harness is bespoke per story, so no script can judge whether a given pair of
+  assertions could have diverged. What CAN be mechanised is narrower and belongs in a story, not an
+  agreement: an import-provenance helper, proposed at this retro and still unfiled.)
+
+- (2026-07-30, sprint-63 retro) **A4 — a computational deliverable is pinned only by a mutation.**
+  If a story's headline deliverable is computational — arithmetic, spacing, ordering, thresholds,
+  windowing — the implementer mutates the computation once and records which tests go RED, then
+  restores with `git diff` verified empty. The quality reviewer does the same independently. Zero
+  tests RED means the behaviour is UNPINNED and the story is not done, regardless of coverage or of
+  a complete AC-to-test trace. (Motivating incident: STORY-176 shipped a suite that was green, spec
+  reviewed PASS with all 18 in-scope AC lines traced to tests, and in which a mutant
+  `expand_scenario` ignoring `interval_seconds` and hardcoding 30s passed ALL THIRTY new tests. Its
+  headline claim was unpinned. The staggered-intervals test even NAMED the behaviour while asserting
+  on bucket sets built from arguments the test itself supplied. Reading found nothing; the mutation
+  found it in one run.) (Rung: checklist ×2 — deliberately scoped to computational deliverables so it
+  does not become a tax on every story. NOT routed to the gate: `yt_gate.py` runs project commands
+  and cannot know which computation is a given story's centre.)
+
+- (2026-07-30, sprint-63 retro) **A5 — review debt is recorded on the board, not carried in
+  someone's head.** When a story's diff (or part of it) is never read by an independent reviewer —
+  a reviewer died, a review was skipped for ceremony size, a fix round landed after the reviewers
+  had run — the story's gate record carries a `review_debt` field naming exactly what was not
+  reviewed and what was substituted for it. A story may still be accepted with review debt; the PO
+  decides. What it may not do is reach review looking fully reviewed. (Motivating incident: sprint
+  63's STORY-176 fix round — 11 commits — was never read as code, because the re-reviewer died on
+  upstream 529s three times. The orchestrator substituted mechanical verification (a mutation proof,
+  two further mutations, a skip check, a validator probe) and recorded the gap voluntarily; nothing
+  in the process required it. The PO then authorised the review post-acceptance, it ran, and it found
+  one MAJOR that the mechanical checks had not — the `interval_seconds` invariant sitting on the
+  loader rather than the type, now STORY-184. So the debt was real and worth naming.) (Rung: board
+  schema — a `review_debt` field on the story-gate record, which the orchestrator writes and which is
+  visible at review. Lowest rung that holds: it cannot force the review to happen, but it makes the
+  omission impossible to miss.)
