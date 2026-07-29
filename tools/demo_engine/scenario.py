@@ -152,7 +152,6 @@ def expand_scenario(
     scenario: SignalScenario,
     *,
     end_time: datetime,
-    event_id_prefix: str = "",
 ) -> list[dict]:
     """Expand one `SignalScenario` into Grail-shaped rows, PAST-ANCHORED (STORY-176 AC2).
 
@@ -183,7 +182,7 @@ def expand_scenario(
                 build_row(
                     monitor_id=scenario.monitor_id,
                     location=location,
-                    event_id=f"{event_id_prefix}{scenario.signal_key}-{event_seq}",
+                    event_id=f"{scenario.signal_key}-{event_seq}",
                     timestamp=timestamp,
                 )
             )
