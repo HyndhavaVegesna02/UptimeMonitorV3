@@ -1,7 +1,7 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: d004da7
+verified_sha: 81bf71a
 verified_sprint: sprint-62
 status: verified
 ---
@@ -47,6 +47,12 @@ fabricated vendor identifiers into live config. `locations:`/`expected_locations
 are demo/fixture-only for now (STORY-176 opens sprint 63).
 
 ### The derive mechanism (`backend/src/composition/config.py::AppConfig::_derive_signals_from_monitors`)
+Field extraction is INLINE in this validator. Two helpers
+(`_component_id_and_monitors`, `_monitor_fields`) originally wrapped it to
+accept either `ComponentConfig` instances or raw dicts; the dict branches were
+dead across the whole suite — every call site passes constructed instances,
+since `load_config` builds them before constructing `AppConfig` — and were
+deleted in the sprint-62 rework (F1) rather than kept untested.
 A `model_validator(mode="before")` on `AppConfig` synthesizes the flat
 `signals` list from `components[].monitors` at construction time, stamping
 each monitor's parent component id onto the `SignalConfig` it derives. This is
@@ -66,8 +72,11 @@ Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
 - `MonitorConfig{signal_key, native_id, name, interval_seconds, expected_locations: list[str] = []}`
   — a monitor nested under its component (STORY-146 AC1). No `component_id`
   field (structural ownership). `interval_seconds` validated `> 0` (same
-  invariant as `SignalConfig`, kept from `SignalConfig._require_positive_interval`'s
-  precedent). Deliberately NO `kind:` field — `native_kind` is discovered from
+  invariant as `SignalConfig`) via the shared `PositiveIntervalSeconds`
+  annotated type — the sprint-62 rework replaced two byte-identical
+  `_require_positive_interval` model_validator methods with one
+  `Annotated[int, AfterValidator(...)]`; error text is unchanged for both
+  models, and both now carry rejected-shape tests (zero AND negative). Deliberately NO `kind:` field — `native_kind` is discovered from
   the vendor's `event.type` per row (`dispatch.py:44`); a declared field
   nothing reads would let config lie.
 - `ComponentConfig{id, name, statuspage_component_id: str | None, monitors: list[MonitorConfig] = []}`
@@ -117,7 +126,7 @@ Symbol citations:
 
 ### Named config-authoring errors (STORY-146 AC5)
 `backend/src/composition/config.py::ConfigError(ValueError)` is the base for
-three subclasses, all raised by `load_config` **OUTSIDE** its
+four subclasses, all raised by `load_config` **OUTSIDE** its
 `except (TypeError, ValueError)` block (below the try that constructs
 `AppConfig`), so the named subclass survives to the caller:
 
@@ -135,6 +144,13 @@ three subclasses, all raised by `load_config` **OUTSIDE** its
 - `InvalidFreshnessError` — `app.freshness.stale_after_cycles` or
   `.reentry_cycles` is non-positive. Checked after construction (this is why
   `FreshnessConfig` itself carries no validator).
+- `DuplicateAppIdError` — two config files declare the same `app.id`. Added by
+  the sprint-62 quality rework (F4) after a probe showed a duplicate loaded
+  SILENTLY while one file's `locations`/`freshness` were discarded: the second
+  file simply won `freshness_for()`/`locations_for()`. This only became
+  reachable when STORY-146 made `app.id` a lookup key — before that nothing
+  resolved by app id. Checked beside the existing global
+  `signal_key`/`component.id` uniqueness checks, and names BOTH filenames.
 
 **Probed (twice, independently):** a `ValueError` subclass raised inside a
 pydantic `model_validator` — in EITHER `mode="before"` or `mode="after"` — is
@@ -187,6 +203,7 @@ Fail-fast error cases (all raise with a descriptive message at `load_config` tim
   (`UndeclaredLocationAliasError`).
 - A non-positive `freshness.stale_after_cycles`/`reentry_cycles`
   (`InvalidFreshnessError`).
+- The same `app.id` declared in two files (`DuplicateAppIdError`).
 
 ### In-memory resolvers
 Six methods on `Config`:
@@ -318,3 +335,11 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   `ConfigError(ValueError)` hierarchy for authoring errors that must survive
   outside pydantic validators. `config/apps/httpcheck.yaml` migrated
   (nesting only — no `locations:`, per AC8). verified_sha -> d004da7.
+- sprint-62 quality rework (STORY-146 F1-F4 + two also-fixed items): dead dict branches
+  deleted from the derive mechanism and the helpers inlined (F1); `MonitorConfig`'s `> 0`
+  invariant now has rejected-shape tests (F2 — it had none, while THIS ARTICLE already
+  asserted the invariant as verified Fact); a happy-path test added for `expected_locations`
+  alias resolution (F3 — previously the only non-empty `expected_locations` in the suite was
+  the FAILING case, so an implementation rejecting every alias would have stayed green);
+  `DuplicateAppIdError` added (F4); and the duplicated interval validator replaced by the
+  shared `PositiveIntervalSeconds` type. verified_sha -> 81bf71a.

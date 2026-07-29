@@ -149,7 +149,8 @@ stories:
   - id: STORY-146
     title: Config authoring shape — nested monitors, declared locations, freshness block
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
-    status: in_progress   # dispatched 2026-07-28; resume point = plan.md step checkboxes
+    status: done          # spec PASS, quality FIX_REQUIRED -> all 5 majors fixed and re-verified,
+                          # DoD gate 8/8 at 81bf71a, reality gate PASS (byte-identical topology)
     points: 5                # re-estimated from 3 at the 2nd verifier pass: 9 ACs, 4 models,
                              # 3 error classes, 2 accessors, 13-file test migration surface
     ceremony: 3-pointer      # implementer -> spec ∥ quality -> DoD gate -> reality gate
@@ -251,6 +252,55 @@ story_gates:
         output_tail: "> frontend@0.0.0 lint | > eslint ."
         commit: f8ef730
         at: "2026-07-29T07:07:29+00:00"
+  # Post-rework gate at the story's FINAL head, after F1-F4 + the two also-fixed items.
+  # ANSI/C0 controls stripped (STORY-178); content otherwise the runner's own.
+  - story: STORY-146
+    phase: post-rework-final
+    head: 81bf71a
+    env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (STORY-179 workaround). 543 tests now,
+      up from 539: +2 MonitorConfig rejected-shape (F2), +1 expected_locations happy path (F3),
+      +1 duplicate app.id (F4)."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 93%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 543 passed in 21.96s ============================="
+        commit: 81bf71a
+        at: "2026-07-29T07:39:44+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 81bf71a
+        at: "2026-07-29T07:40:07+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 81bf71a
+        at: "2026-07-29T07:40:08+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "205 files already formatted"
+        commit: 81bf71a
+        at: "2026-07-29T07:40:08+00:00"
+      - command: "cfn-lint infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 81bf71a
+        at: "2026-07-29T07:40:08+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  13:10:13 | Duration  69.77s (transform 9.61s, setup 61.67s, import 31.70s, tests 75.74s, environment 244.91s)"
+        commit: 81bf71a
+        at: "2026-07-29T07:40:12+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 740ms"
+        commit: 81bf71a
+        at: "2026-07-29T07:41:23+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 81bf71a
+        at: "2026-07-29T07:41:33+00:00"
 final_gate:
   head: null
   dod_evidence: []
