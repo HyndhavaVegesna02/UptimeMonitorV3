@@ -80,11 +80,16 @@ pytest backend/tests/demo_engine
 ```
 
 `tools/demo_engine/` is importable as the top-level package `demo_engine` via
-`backend/tests/demo_engine/conftest.py`, which inserts the repo-root
-`tools/` directory onto `sys.path` — mirroring the existing `scripts/`
-precedent (`backend/tests/conftest.py:16-19`). The directory name uses an
-underscore (`demo_engine`, not `demo-engine`) because a hyphenated name is
-not importable.
+the SHARED `backend/tests/conftest.py`, which inserts the repo-root `tools/`
+directory onto `sys.path` (`backend/tests/conftest.py:28-30`) alongside the
+existing `scripts/` precedent (`backend/tests/conftest.py:24-26`) — NOT a
+separate `backend/tests/demo_engine/conftest.py` (deleted): pytest resolves a
+bare, `__init__.py`-less `conftest.py`'s module name from its basename alone,
+so two such files both named `conftest.py` collide on the same
+`sys.modules['conftest']` entry (`backend/tests/conftest.py:9-14`; it broke
+`test_dynamo_local.py`'s `from conftest import provide_dynamo_local`). The
+directory name uses an underscore (`demo_engine`, not `demo-engine`) because a
+hyphenated name is not importable.
 
 ## Port safety (do not reuse the STORY-179 ephemeral-port pattern)
 
