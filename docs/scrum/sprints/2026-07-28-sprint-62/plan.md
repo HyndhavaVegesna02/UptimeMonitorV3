@@ -313,10 +313,10 @@ construction instead.
 
 ### Steps
 
-- [ ] 1. Failing test first (fidelity before features): a hand-built demo row is compared
+- [x] 1. Failing test first (fidelity before features): a hand-built demo row is compared
       field-by-field against `grail_synthetic_events.json` — all **seven** required keys present,
       same value types, `response_status_code` a string. Then write the row builder.
-- [ ] 2. Failing test: a row intended as 755 ms assembles to `latency_ms == 755` (i.e. the
+- [x] 2. Failing test: a row intended as 755 ms assembles to `latency_ms == 755` (i.e. the
       builder emits nanoseconds as a string). Then implement. This is the AC2 scale check, kept
       separate from AC1's type check because type-equality cannot catch it.
 - [ ] 3. Failing test: ingest-grammar parsing honours all three clauses — monitor A's query never
