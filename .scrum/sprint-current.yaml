@@ -175,6 +175,58 @@ stories:
                              # (PO decision D-A): it is orchestrate_signal-level over SEEDED
                              # multi-location observations, because no demo scenario can produce
                              # a DOWN at all and a demo gate would have FALSE-PASSED step 1.
+story_gates:
+  # Merged from yt_gate.py's emitted fragment. Content is the runner's, not hand-transcribed;
+  # the ONLY change is stripping ANSI/C0 control characters, which made the fragment invalid
+  # YAML (#x001b from `npm run build`'s coloured output). Filed under STORY-178.
+  # NOTE the pytest number: 539 tests in 22.46s here vs the baseline's 529 in 241.52s. The
+  # baseline was never 'slow' - it was silently absorbing the broken-port timeouts now filed
+  # as STORY-179. Same suite, working port, ~11x faster.
+  - story: STORY-146
+    head: f8ef730
+    env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container) to bypass the
+      dynamo_local ephemeral-port defect (STORY-179). Environment-only; no repo file changed."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 93%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 539 passed in 22.46s ============================="
+        commit: f8ef730
+        at: "2026-07-29T07:06:02+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: f8ef730
+        at: "2026-07-29T07:06:25+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: f8ef730
+        at: "2026-07-29T07:06:26+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "205 files already formatted"
+        commit: f8ef730
+        at: "2026-07-29T07:06:26+00:00"
+      - command: "cfn-lint infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: f8ef730
+        at: "2026-07-29T07:06:26+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  12:36:31 | Duration  50.00s (transform 6.82s, setup 47.27s, import 24.52s, tests 58.54s, environment 172.14s)"
+        commit: f8ef730
+        at: "2026-07-29T07:06:30+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 540ms"
+        commit: f8ef730
+        at: "2026-07-29T07:07:22+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: f8ef730
+        at: "2026-07-29T07:07:29+00:00"
 final_gate:
   head: null
   dod_evidence: []

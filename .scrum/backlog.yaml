@@ -3,7 +3,8 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 179  # 178 CONSUMED 2026-07-28 (yt_gate false-green defect).
+next_story_id: 180  # 179 CONSUMED 2026-07-29 (dynamo_local port defect).
+                    # 178 CONSUMED 2026-07-28 (yt_gate false-green defect).
                     # 177 CONSUMED 2026-07-28 by PO decision D-A (provisional failure mapping).
                     # 176 CONSUMED 2026-07-28 by the post-verifier split of STORY-148 into
                     # 148 (wire contract) + 176 (scenario player, demo fleet, loop run).
@@ -1267,6 +1268,40 @@ stories:
                     # with Dynatrace's real location ids and names.
     type: chore
     sprint: null
+  - id: STORY-179
+    title: dynamo_local picks an ephemeral port Docker maps but Windows won't route; readiness probe can't detect it
+    file: null
+    status: draft   # ~2pts. TWO defects in scripts/dynamo_local.py, root-caused 2026-07-29 while
+                    # running STORY-146's gate. Together they cost ~1h of sprint time and made a
+                    # healthy test suite look hung.
+                    # (1) PORT ALLOCATION IS RACY AND WINDOWS-HOSTILE. _free_tcp_port() (:39-45)
+                    #     binds ("127.0.0.1", 0), reads the OS-assigned ephemeral port, CLOSES the
+                    #     socket, then hands the number to `docker run -p <port>:8000`. The port is
+                    #     unowned between close and bind, and on Windows it lands in the dynamic
+                    #     range (observed: 49177, range 49152-65535) where WinNAT hands out and
+                    #     reserves ports. Docker then creates a mapping `docker ps` DISPLAYS but
+                    #     that never routes: container Up, logs clean, every request hangs forever.
+                    # (2) THE READINESS PROBE CANNOT DETECT (1). wait_for_dynamo() (:77-89) does a
+                    #     bare `GET /` over http.client and returns on ANY response. Docker's port
+                    #     proxy accepts the TCP connect, so the probe goes GREEN and then every
+                    #     real DynamoDB call blocks. A check that proves connectability but not
+                    #     that the service ANSWERS is a check that green-lights a broken container.
+                    # EVIDENCE: boto3 list_tables() against the fixture's container timed out at
+                    #     25s; a standalone container on FIXED port 8021 answered in 0.90s. With
+                    #     DYNAMO_ENDPOINT_URL pointed at the fixed port, pytest ran 539 tests in
+                    #     22.46s - vs a 241.52s "green" baseline that was silently absorbing these
+                    #     timeouts test-by-test. The suite is ~11x faster than we believed.
+                    # FIX (script rung): allocate from a fixed non-ephemeral range with
+                    #     retry-on-bind-failure (or let Docker choose and read the port back from
+                    #     `docker port`), and make wait_for_dynamo do a REAL ListTables call rather
+                    #     than GET /. Consider failing fast with a clear message when a mapped port
+                    #     does not answer.
+                    # RELATED: STORY-173 (killed runs leak containers) - re-confirmed here; two
+                    #     leaked containers needed manual `docker rm -f`. Same fixture, so likely
+                    #     one story's worth of work if taken together.
+    type: defect
+    priority: 11
+    sprint: null
   - id: STORY-178
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
     file: null
@@ -1286,6 +1321,13 @@ stories:
                     # Caught only because the evidence artifact was READ rather than the exit code
                     # trusted; the working agreement to merge yt_gate's fragment verbatim is what
                     # surfaced it.
+                    # SECOND DEFECT, same script, found 2026-07-29 recording STORY-146's gate:
+                    # the emitted dod_evidence fragment is NOT VALID YAML when a command's output
+                    # contains ANSI escapes. `npm run build` colours its output, so output_tail
+                    # carried raw ESC[32m... (an ESC byte, 0x1b), and yaml.safe_load rejected the board file with
+                    # "unacceptable character #x001b". The working agreement says merge the
+                    # fragment VERBATIM - which here produces a corrupt board. yt_gate must strip
+                    # ANSI/C0 control characters from output_tail before emitting.
     type: defect
     priority: 12
     sprint: null
