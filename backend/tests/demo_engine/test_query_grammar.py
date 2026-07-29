@@ -9,6 +9,8 @@ two, and that the watermark bound is PARSED rather than string-compared.
 
 from datetime import datetime, timedelta, timezone
 
+import pytest
+from demo_engine.query_grammar import UnrecognizedDqlQueryError, parse_query
 from demo_engine.rows import build_row, format_ns_timestamp
 from demo_engine.store import DemoRowStore
 from src.adapters.inbound.dynatrace.query import build_dql_query
@@ -92,3 +94,14 @@ def test_ingest_query_with_no_watermark_returns_everything_for_the_monitor():
     results = store.handle_query(query)
 
     assert [row["event.id"] for row in results] == ["1"]
+
+
+def test_parse_query_raises_unrecognized_dql_query_error_when_it_matches_neither_grammar():
+    """The fail-loud contract this module's docstring promises: a query
+    matching neither the ingest grammar (monitor id + event.type) nor the
+    vendor-health grammar (`summarize count()`) must raise, not silently
+    return nothing — the risk STORY-176's third grammar would otherwise hit
+    with zero warning. Asserts the exception TYPE, not a message substring.
+    """
+    with pytest.raises(UnrecognizedDqlQueryError):
+        parse_query("fetch dt.synthetic.events")
