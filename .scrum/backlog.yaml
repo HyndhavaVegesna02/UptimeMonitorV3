@@ -1583,3 +1583,121 @@ stories:
                     # sprint 63 but should not trail STORY-182.
     type: defect
     sprint: null
+  - id: STORY-184
+    title: Move the demo scenario interval invariant onto SignalScenario itself
+    file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
+    status: draft   # Filed 2026-07-30 out of the STORY-176 fix-round quality re-review, which the
+                    # PO authorised AFTER accepting sprint 63 ("if any reviews are to be done, you
+                    # can go ahead"). Verdict FIX_REQUIRED with one MAJOR; because the story was
+                    # already accepted, it becomes this follow-up rather than a re-opening.
+                    # THE DEFECT, verified at source by the orchestrator: STORY-176's fix round put
+                    # the interval_seconds type/sign validation in load_scenario_file ONLY, so a
+                    # SignalScenario built DIRECTLY with interval_seconds=-30 still expands into the
+                    # future -- reproduced: a row at 2026-07-30T12:00:30Z for end_time 12:00:00Z.
+                    # Meanwhile expand_scenario's own docstring (tools/demo_engine/scenario.py:
+                    # 158-160) still claims the ladder "sits at or before end_time, never after
+                    # (AC2f: never in the future)" with NO precondition -- CLAUDE.md and
+                    # demo-engine.md both gained the precondition in the fix round, so of the three
+                    # sites making the claim the round corrected two and left the function's own
+                    # contract unqualified.
+                    # WHY IT IS NOT AN ACCEPTABLE BOUNDARY (the reviewer's recommendation, and the
+                    # orchestrator agrees): STORY-182's live loop run is next, and a scenario player
+                    # whose only guard is the file loader WILL be constructed directly the first
+                    # time someone scripts a scenario in code -- landing rows in the silent
+                    # FUTURE_TOLERANCE quarantine (ingest_service.py:37, :119-125) whose rejected
+                    # count run.py discards.
+                    # SHAPE: put the sign/type invariant on the frozen type (__post_init__, or the
+                    # pydantic frozen=True shape the domain already uses) and have
+                    # load_scenario_file catch and re-raise as InvalidScenarioError so the
+                    # path/signal-key-prefixed messages survive. Then the docstring's unconditional
+                    # claim becomes TRUE.
+                    # PRECEDENT for this exact field, both in-repo: composition/config.py:34-51
+                    # (_require_positive_interval, shared by MonitorConfig and SignalConfig) and
+                    # core/domain/topology.py:50-55 (Signal._require_positive_interval_when_set).
+                    # Also the standing checklist item at .scrum/checklists/implementer.md:32 --
+                    # frozen types enforce their own invariants, with tests for both the rejected
+                    # and the valid shape.
+    points: 1
+    priority: 57    # between STORY-183 (56) and STORY-181 (58). Like STORY-183 this should land
+                    # WITH or BEFORE STORY-182, for the same reason: the long-running run is when
+                    # it bites.
+    type: defect
+    sprint: null
+  - id: STORY-185
+    title: Un-gate the unsafe side of the publish-safety proof from Docker
+    file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
+    status: draft   # Filed 2026-07-30 from the same re-review. STORY-176's S2 fix un-gated only the
+                    # SAFE side of the publish-guard proof: the demo-side create_app test now runs
+                    # with DYNAMO_ENDPOINT_URL unset (verified: 1 passed in 0.88s, and that runtime
+                    # is itself proof no I/O happens) because it takes no dynamo_local fixture and
+                    # uses a literal unreachable endpoint. Its UNSAFE counterpart
+                    # (test_demo_fleet_config.py:179-181) still takes dynamo_local, so on a machine
+                    # without Docker the IN-TEST two-sided proof silently degrades to ONE-SIDED --
+                    # which sprint 63's retro (proposed A3) identifies as INVERTED rather than weak
+                    # evidence.
+                    # It did NOT affect sprint 63's evidence: the orchestrator's out-of-test harness
+                    # proved the unsafe side with no Docker at all (recorded on the sprint-63 board
+                    # under story_gates/STORY-176 reality_gate.discrimination_proof).
+                    # SHAPE: apply the same unreachable-endpoint trick to the unsafe-side test.
+    points: 1
+    priority: 59
+    type: chore
+    sprint: null
+  - id: STORY-186
+    title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
+    file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
+    status: draft   # Filed 2026-07-30, batching the re-review's remaining minors plus the round-1
+                    # minors deliberately deferred during sprint 63. None is a defect; all are
+                    # accuracy or shape. Grouped into ONE story because they are the same kind of
+                    # work in the same files, and four 1-pointers would be pure ceremony overhead.
+                    # FROM THE RE-REVIEW:
+                    # (a) demo-engine.md:224-234 -- the bolded M1 Correction block is wedged into
+                    #     the middle of the five-case enumeration, the closing paren at "could not
+                    #     have caught the false claim)," balances only by accident, and the list
+                    #     reads as broken.
+                    # (b) demo-engine.md:231 + test_scenario_coverage.py:235 -- "built from the
+                    #     since/interval the test itself supplied rather than the rows"
+                    #     MISDESCRIBES the mechanism: the rows DID enter bucket_into_cycles, their
+                    #     timestamps were washed out by bucketing. The conclusion is right.
+                    # (c) test_scenario_coverage.py:73-76 -- "a port signature change would be
+                    #     caught here too" over-claims: an ABC catches an ADDED or RENAMED abstract
+                    #     method at instantiation; a changed SIGNATURE is caught by nothing (there
+                    #     is no mypy in the 8-command gate).
+                    # (d) the fake names its list `saved` while both peer fakes it cites name it
+                    #     `rejected`.
+                    # (e) test_scenario_coverage.py:94 says "Every _ingest_scenario call above"
+                    #     when the calls are below it.
+                    # (f) the new coherence test is not driven through the ingest chain,
+                    #     contradicting the module docstring's "Every case is driven through the
+                    #     REAL production ingest chain", and it loops instead of parametrising so
+                    #     the first failing file hides the rest.
+                    # (g) test_scenario.py:295-405 -- seven near-identical rejection tests, all
+                    #     matching only on the signal key, so none pins the rejection REASON.
+                    #     Table-ify them and add the currently unpinned bool case
+                    #     (interval_seconds: true).
+                    # (h) scenario.py:84-87 uses {path!r} (printing WindowsPath('...')) while every
+                    #     new message uses {path}; and the docstring's "matching
+                    #     composition/config.py's convention" is inaccurate in detail -- config.py
+                    #     prints yaml_path.name, not the full path.
+                    # (i) load_scenario_file is now ~90 lines: lift the per-block checks into a
+                    #     _validated_block(path, signal_key, block) helper. NOTE the reviewer
+                    #     explicitly advised AGAINST table-ifying the checks themselves -- each
+                    #     carries a distinct tested message, so a table would need a per-field
+                    #     message column and predicate, i.e. the same volume plus indirection.
+                    # (j) CLAUDE.md:142's "the one input that would otherwise make expansion land
+                    #     in the future" is true only for "after end_time" -- a caller passing a
+                    #     future end_time also lands rows in the wall-clock future.
+                    # (k) dev-setup-and-dod.md:237's re-verification entry enumerates CLAUDE.md and
+                    #     conftest.py but omits .scrum/definition-of-done.md, which also changed in
+                    #     the range. The omitted change CONFIRMS the article's Fact, so nothing
+                    #     stale was stamped -- but the entry cannot be audited as complete.
+                    # FROM ROUND 1, deferred then, confirmed not-worse now: the
+                    # `rejected_repo_result` name; hardcoded timedelta(seconds=30) / 30*7 instead
+                    # of reading the config; test_scenario.py:180 recomputing orchestrate.py:98's
+                    # formula (a change there leaves the test green while its claim goes stale);
+                    # `import yaml` mid-body at test_scenario.py:283; and the identical 4-entry
+                    # expected_locations repeated on all 41 monitors (YAML anchors).
+    points: 1
+    priority: 60
+    type: chore
+    sprint: null
