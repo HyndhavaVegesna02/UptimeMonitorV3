@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 19c9c1a
-verified_sprint: sprint-62
+verified_sha: c07831b
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -231,3 +231,11 @@ status: verified
   its code is untouched, which is exactly what the git-arithmetic sweep cannot see.
   `CLAUDE.md` (a `code_ref`) was rewritten in the same pass; re-verified against it.
   verified_sha -> 19c9c1a.
+- sprint-63 (STORY-176, story + fix round; STORY-180): the sweep flagged `CLAUDE.md` and
+  `backend/tests/conftest.py`. `CLAUDE.md` grew a "Two things to know before you touch anything"
+  section and a Part-2a scenario-player paragraph (both about the demo engine, not dev setup or the
+  DoD gate — see [[demo-engine]]); `conftest.py` gained a reasoning COMMENT above the pre-existing
+  `tools/` `sys.path` front-insertion (STORY-180 AC6/minor 8) with no behavioural change. Neither
+  touches a Fact this article states: still five backend + three frontend DoD commands, still eight
+  import-linter contracts, same `dynamo_local`/`clean_dynamo_tables` fixture mechanics. No Fact text
+  changed; re-verified only. verified_sha -> c07831b.
