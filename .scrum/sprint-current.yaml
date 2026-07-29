@@ -198,13 +198,92 @@ stories:
            of which touches a Fact this article asserts) and the Facts spot-checked are current
            (eight import contracts, five backend + three frontend commands). The quarantine's
            actual purpose — that its claims never enter a subagent brief — was never violated."
-      blocked_on: "ENVIRONMENTAL, not the story: the shell safety classifier
-        (claude-sonnet-5[1m]) went unavailable mid-verification, so no NEW command can be run —
-        previously-seen commands still pass, anything unseen is refused. The scoped DoD gate and
-        the two-sided reality gate are therefore NOT YET RUN. STORY-176 stays in_progress and is
-        NOT Done. The reality-gate harness is written and waiting at
-        <scratchpad>/reality_gate_176.py (provenance print + safe side + unsafe discrimination
-        side + planted-collision side; no network call, no loop, no server)."
+      dod_evidence:
+        # Merged VERBATIM from yt_gate.py's emitted fragment (two runs: pytest alone, then the
+        # other four). No ANSI stripping needed — STORY-178's ESC bytes come from `npm run build`,
+        # which a scoped backend run never executes.
+        - command: "pytest"
+          exit_code: 0
+          output_tail: "============================ 614 passed in 35.82s ============================="
+          commit: 8bdd057
+          at: "2026-07-29T20:47:39+00:00"
+        - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+          exit_code: 0
+          output_tail: "Analyzed 150 files, 427 dependencies. | core-independence KEPT |
+            core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence
+            KEPT | api-outward-independence KEPT | adapters-edge-only KEPT |
+            api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+          commit: 8bdd057
+          at: "2026-07-29T20:48:25+00:00"
+        - command: "ruff check ."
+          exit_code: 0
+          output_tail: "All checks passed!"
+          commit: 8bdd057
+          at: "2026-07-29T20:48:26+00:00"
+        - command: "ruff format --check ."
+          exit_code: 0
+          output_tail: "222 files already formatted"
+          commit: 8bdd057
+          at: "2026-07-29T20:48:26+00:00"
+        - command: "cfn-lint infra/stack.yaml"
+          exit_code: 0
+          output_tail: ""
+          commit: 8bdd057
+          at: "2026-07-29T20:48:26+00:00"
+      scope_note: "SCOPED gate (5 backend commands), per the sprint-45 token-economy amendment:
+        `git diff --name-only 1aadf95..e514c1d -- frontend/` is EMPTY, so the three frontend
+        commands cannot be affected. The FULL 8-command gate is the evidence of record and runs at
+        sprint close on the final HEAD. Test count 574 -> 604 (implementer round) -> 614 (fix
+        round: +10, all new assertions; NO test deleted)."
+      env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container
+        uptime_dynamo_8021) to bypass the dynamo_local ephemeral-port defect (STORY-179).
+        Environment only; no repo file changed for it."
+      reality_gate:
+        verdict: PASS
+        shape: "TWO-SIDED on the publish guard, per plan.md. The run itself is NOT in this story
+          (STORY-182), so the guard IS the gate. Harness kept at
+          <scratchpad>/reality_gate_176.py. NO network call, NO loop, NO server: it loads configs
+          and constructs publisher objects, asserting TYPES."
+        provenance: "Per the A1 refinement (2026-07-29), the proof states WHICH code it ran:
+          config module C:\\Hyn\\uptime_monitor_v3\\backend\\src\\composition\\config.py,
+          publish_helper C:\\Hyn\\uptime_monitor_v3\\backend\\src\\composition\\publish_helper.py,
+          cwd C:\\Hyn\\uptime_monitor_v3 — main tree, no worktree involved."
+        safe_side: "config/demo WITH real-looking credentials present: statuspage_mapping() == {}
+          and the chain is StatusWritebackPublisher -> LoggingPublisher. The guard holds DESPITE
+          credentials, which is the actual claim."
+        discrimination_proof: "UNSAFE side: a throwaway config declaring
+          statuspage_component_id: FAKE-VENDOR-COMPONENT-ID yields mapping
+          {'rg-unsafe-component': 'FAKE-VENDOR-COMPONENT-ID'} and the chain
+          StatusWritebackPublisher -> BestEffortPublisher -> RecordingPublisher ->
+          StatuspagePublisher. TYPE asserted only; no network call made. So the check CAN come
+          back unsafe."
+        collision_case: "Real disjointness holds (13 demo ids & 1 live id -> empty). A PLANTED
+          'http-check' produces intersection {'http-check'} — the AC3(c) check demonstrably
+          catches the bypass the verifier found."
+        c1_discrimination_proof: "SEPARATE proof for the fix round's critical finding, run by the
+          orchestrator: hardcoding `interval = timedelta(seconds=30)` inside expand_scenario (MAIN
+          tree, the A1-approved patch-and-restore route) turned exactly the two NEW tests RED —
+          test_expand_scenario_consecutive_cycles_are_spaced_by_the_scenarios_own_interval[45] and
+          test_staggered_intervals_scenario_observed_at_spacing_matches_each_monitors_own_interval
+          — 2 failed / 28 passed. Restored: `git status --short` and `git diff --stat` both empty,
+          and a value re-check shows 45s spacing (11:59:15 -> 12:00:00). Before the fix round the
+          SAME mutant survived the entire suite, which is what the quality reviewer found."
+        harness_self_catch: "Worth the retro: the FIRST run of this harness reported a
+          ONE-ELEMENT chain on BOTH sides (it walked a `delegate` attribute; the layers actually
+          store `_delegate` — publish_helper.py:51/:96/:169), so both sides read as 'no
+          StatuspagePublisher present' and the safe side would have looked green for the WRONG
+          reason while the unsafe side falsely looked safe too. Same both-sides-agree shape as
+          STORY-180's false pass, in a NEW mechanism (attribute name, not import resolution). Fixed
+          by walking `_delegate` AND asserting the walk got past the outer layer, so a short chain
+          can no longer read as safe."
+      blocked_on_RESOLVED: "ENVIRONMENTAL, not the story, and now CLEARED. Mid-verification the
+        shell safety classifier (claude-sonnet-5[1m]) went unavailable: previously-seen commands
+        still ran, every NEW command was refused, so neither gate could execute and the story was
+        held at NOT Done rather than passed on reading alone. The window was spent on read-only
+        verification and on writing the reality-gate harness. The classifier recovered and both
+        gates then ran — see dod_evidence and reality_gate above. Retro candidate: an upstream
+        outage that permits only cached commands is indistinguishable from a working shell until
+        a command is refused; the gate runner could say so explicitly."
       dispatched_fix_round: "2026-07-30, fix implementer on the critical + 4 majors + 2 quality
         minors that bear on the SAFETY proof (the port-fake subclass and the Docker gating that
         lets the CONFIG_DIR half of the guard proof silently SKIP). Story stays in_progress; no
