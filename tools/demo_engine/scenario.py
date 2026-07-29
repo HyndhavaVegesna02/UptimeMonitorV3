@@ -1,0 +1,145 @@
+"""The scenario player — expands a per-signal, per-cycle, per-location
+outcome declaration into Grail-shaped demo rows (STORY-176 AC1/AC2).
+
+A scenario file is NOT a random generator (dossier context, STORY-176): it
+declares, per signal, an ordered sequence of CYCLES, and each cycle names
+exactly which locations report `UP` that cycle. A location omitted from a
+cycle's list is simply ABSENT for that cycle — this engine emits `UP` and
+absence only (`assumed_failure_codes.py`; a real vendor failure code has
+never been observed), so "absent" is the only non-`UP` outcome a scenario can
+express.
+
+**Past-anchored expansion (STORY-176 AC2, decided at planning).** `end_time`
+(typically `clock.now()`) is where the LAST declared cycle lands; earlier
+cycles are placed successively further back at the monitor's own
+`interval_seconds`. Expanding backwards from "now" rather than forwards from
+a fixed start means the WHOLE declared ladder is inside the ingest window on
+the very first query, regardless of how long ago the scenario file was
+authored — a forward player would need wall-clock time to pass to fill in
+cycles beyond `end_time`, and (STORY-176 AC2f) every cycle beyond
+`end_time + 5min` would be silently quarantined by
+`ingest_service.py::FUTURE_TOLERANCE` in the meantime.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+from demo_engine.rows import build_row, format_ns_timestamp
+
+
+class InvalidScenarioError(ValueError):
+    """Raised when a scenario file/block is missing a required field (STORY-176 AC1)."""
+
+
+@dataclass(frozen=True)
+class SignalScenario:
+    """One signal's scripted, per-cycle, per-location outcome sequence (STORY-176 AC1).
+
+    `cycles` is ordered OLDEST to NEWEST — `cycles[-1]` is the cycle that
+    lands at `expand_scenario`'s `end_time`. Each entry is the list of
+    location native ids reporting `UP` that cycle; a location's absence from
+    the list means it did not report at all that cycle (this engine has no
+    other outcome to express — see the module docstring).
+    """
+
+    signal_key: str
+    monitor_id: str
+    interval_seconds: int
+    cycles: list[list[str]]
+
+
+def load_scenario_file(path: str | Path) -> list[SignalScenario]:
+    """Parse a scenario YAML file into a list of `SignalScenario`s (STORY-176 AC1).
+
+    Shape (top-level mapping, one entry per signal)::
+
+        api-gateway-health:
+          monitor_id: HTTP_CHECK-DEMO-APIGW-HEALTH
+          interval_seconds: 30
+          cycles:
+            - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+            - []               # a fully dark cycle
+            - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+
+    Raises `InvalidScenarioError` when a signal block is missing
+    `monitor_id`, `interval_seconds`, or `cycles` — a malformed scenario file
+    must surface loudly rather than silently expand to zero rows.
+    """
+    raw: Any = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(raw, dict):
+        raise InvalidScenarioError(
+            f"Expected a YAML mapping at the top level of {path!r}, "
+            f"got {type(raw).__name__!r}."
+        )
+
+    scenarios: list[SignalScenario] = []
+    for signal_key, block in raw.items():
+        if not isinstance(block, dict):
+            raise InvalidScenarioError(
+                f"Scenario block for {signal_key!r} must be a mapping, "
+                f"got {type(block).__name__!r}."
+            )
+        for field in ("monitor_id", "interval_seconds", "cycles"):
+            if field not in block:
+                raise InvalidScenarioError(
+                    f"Scenario block for {signal_key!r} is missing required "
+                    f"field {field!r}."
+                )
+        scenarios.append(
+            SignalScenario(
+                signal_key=signal_key,
+                monitor_id=block["monitor_id"],
+                interval_seconds=block["interval_seconds"],
+                cycles=[list(cycle) for cycle in block["cycles"]],
+            )
+        )
+    return scenarios
+
+
+def expand_scenario(
+    scenario: SignalScenario,
+    *,
+    end_time: datetime,
+    event_id_prefix: str = "",
+) -> list[dict]:
+    """Expand one `SignalScenario` into Grail-shaped rows, PAST-ANCHORED (STORY-176 AC2).
+
+    `scenario.cycles[-1]` lands at `end_time`; `scenario.cycles[-2]` lands one
+    `interval_seconds` earlier, and so on — the whole ladder sits at or
+    before `end_time`, never after (AC2f: never in the future). Rows are
+    built via `demo_engine.rows.build_row`, so they carry exactly the seven
+    Grail fields the real ingest path reads, formatted via
+    `format_ns_timestamp` (AC2b: the 9-digit-fraction `Z`-suffixed shape).
+
+    An empty `cycles` list (a signal declared but never expanded) or an empty
+    per-cycle location list (a fully dark cycle) both produce zero rows for
+    that cycle — never an error; "no data that cycle" is a valid, common
+    scenario outcome (AC5b/c/e).
+    """
+    interval = timedelta(seconds=scenario.interval_seconds)
+    n_cycles = len(scenario.cycles)
+    rows: list[dict] = []
+    event_seq = 0
+
+    for cycle_index, locations in enumerate(scenario.cycles):
+        cycles_before_end = (n_cycles - 1) - cycle_index
+        cycle_time = end_time - cycles_before_end * interval
+        timestamp = format_ns_timestamp(cycle_time)
+        for location in locations:
+            event_seq += 1
+            rows.append(
+                build_row(
+                    monitor_id=scenario.monitor_id,
+                    location=location,
+                    event_id=f"{event_id_prefix}{scenario.signal_key}-{event_seq}",
+                    timestamp=timestamp,
+                )
+            )
+
+    return rows
