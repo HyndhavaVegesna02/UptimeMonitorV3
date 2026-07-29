@@ -20,6 +20,9 @@ from demo_engine.scenario import expand_scenario, load_scenario_file
 from src.adapters.inbound.dynatrace.dispatch import normalize_rows
 from src.composition.config import load_config
 from src.composition.orchestrate import orchestrate_signal
+from src.core.ports.rejected_observation_repository import (
+    RejectedObservationRepository,
+)
 from src.core.queries.availability import AvailabilityCalculator, bucket_into_cycles
 from src.core.services.decide import DecideAction, DecideService
 from src.core.services.ingest_service import IngestService
@@ -63,10 +66,14 @@ def _ingest_scenario(scenario_file: str, signal_key: str, *, end_time: datetime 
     return rejected_repo_result, observation_repo, watermark_repo
 
 
-class _FakeRejectedRepo:
+class _FakeRejectedRepo(RejectedObservationRepository):
     """A minimal `RejectedObservationRepository` fake — no scenario here is
     expected to be rejected (all timestamps are at or before `end_time`,
-    AC2f), so this only needs to exist, not do anything interesting."""
+    AC2f), so this only needs to exist, not do anything interesting. Subclasses
+    the real port (sprint-63 fix round, quality finding S1) so a port
+    signature change would be caught here too, matching the peer fakes at
+    `test_ingest_service.py::FakeRejectedObservationRepository` and
+    `test_sample_mode_end_to_end.py::_FakeRejectedObservationRepository`."""
 
     def __init__(self) -> None:
         self.saved: list[dict] = []
