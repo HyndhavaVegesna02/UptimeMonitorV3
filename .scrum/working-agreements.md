@@ -230,3 +230,27 @@
   per story, so no script can judge whether a given assertion could have failed. The required
   field is the lowest rung that holds: it makes the omission visible even though it cannot
   make it impossible.)
+
+- (2026-07-29, mid-sprint-63) **A1 refinement — a worktree proof must prove WHICH code it ran.**
+  A1 above mandates re-running a gate at the pre-fix commit "a worktree is enough". In THIS repo a
+  worktree is NOT automatically enough: the package is installed editable
+  (`package-dir = {"" = "backend"}` in `pyproject.toml`), so setuptools' editable finder resolves
+  `src.*` to `<repo>/backend/src` — the MAIN tree — from inside any worktree, whatever pytest's cwd
+  is. A worktree proof of a change under `backend/src/` therefore runs the SAME code on both sides
+  and comes back identical. Before reporting either score, print the imported module's `__file__`
+  and the value under test and confirm the path lies inside the worktree; force
+  `PYTHONPATH=<worktree>/backend` (it precedes the editable finder), or patch the main tree in place
+  and restore it with `git diff` verified empty. (Motivating incident: sprint-63 STORY-180's AC2
+  discrimination proof reported 4/4 on BOTH sides on its first run; verified by importing the module
+  inside the worktree and finding the main tree's path and the unpatched value. The failure mode is
+  worse than a plain false PASS — "green both sides" reads as "this constant does not matter", so
+  the proof would have argued against a correct fix. Re-run PYTHONPATH-forced: 3/4 patched, 4/4
+  restored. Sprint-62's STORY-149 proof is NOT retroactively in doubt — it scored 7/12 pre-fix vs
+  12/12 at HEAD, and a redirected run would have scored 12/12, so it demonstrably executed the
+  pre-fix code.) (Rung: checklist — landed the same day as a line in
+  `.scrum/checklists/implementer.md`, which is what agents actually read; this entry is the record
+  and the reason. A SCRIPT rung is available and better — a helper that asserts import provenance
+  before a proof runs — and is deliberately NOT taken mid-sprint: tooling is frozen by the
+  2026-01-01 agreement and ad-hoc skill-script edits outside a story are forbidden by the
+  2026-07-15 entry. Proposed at the sprint-63 retro, together with whether the reviewer and
+  plan-verification checklists need the same line.)

@@ -51,8 +51,20 @@
       docstring. It survived from sprint-8 to sprint-62 because article and code AGREED: git
       arithmetic detects divergence, never shared error).
 
+- [ ] A check run in a git WORKTREE must FIRST prove it is executing the worktree's code, not the
+      main tree's: print the imported module's `__file__` (and the value under test) and confirm the
+      path is inside the worktree, BEFORE reporting either score. This repo is installed EDITABLE
+      (`package-dir = {"" = "backend"}`), so setuptools' finder resolves `src.*` to
+      `<repo>/backend/src` from inside ANY worktree; force `PYTHONPATH=<worktree>/backend`, which
+      precedes the editable finder. Patching the MAIN tree in place and restoring it (verifying
+      `git diff` is empty afterwards) is the other acceptable route. (2026-07-29; sprint-63
+      STORY-180 -- the first run of AC2's discrimination proof reported GREEN ON BOTH SIDES because
+      both sides were the same main-tree code; "green both sides" would have been read as "the
+      constant does not matter", i.e. the proof would have argued AGAINST a correct fix. Applies to
+      any worktree check, not just discrimination proofs.)
+
 - [ ] Any server/container/process you spawn for a reality check ends with an OS-level
-      teardown VERIFICATION — process gone by PID (taskkill/kill + re-check) and port freed
-      (netstat or equivalent) — a wrapper-job kill alone is not evidence (2026-07-17;
-      sprint-51 STORY-094 — the bash-job kill left the port-8010 uvicorn worker alive;
+      teardown VERIFICATION ï¿½ process gone by PID (taskkill/kill + re-check) and port freed
+      (netstat or equivalent) ï¿½ a wrapper-job kill alone is not evidence (2026-07-17;
+      sprint-51 STORY-094 ï¿½ the bash-job kill left the port-8010 uvicorn worker alive;
       an explicit taskkill /PID /F + netstat confirm was required).
