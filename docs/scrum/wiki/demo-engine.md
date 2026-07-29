@@ -1,8 +1,8 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
-code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json]
-verified_sha: 64f680b
-verified_sprint: sprint-62
+code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py]
+verified_sha: 701bfab
+verified_sprint: sprint-63
 status: verified          # verified | stale | archived
 ---
 
@@ -21,11 +21,16 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   `__init__.py:12-14`): it can never enter the production image, and every module here is free to
   import `src.*` while nothing under `backend/src/` ever imports this package. That direction is
   what keeps it a test double rather than a second production path.
-- Importability is a `sys.path` insertion in the ONE shared `backend/tests/conftest.py:28-30`
-  (repo-root `tools/`, alongside the pre-existing `scripts/` insertion at `:24-26`). A
-  package-local `backend/tests/demo_engine/conftest.py` was tried and **deleted**: a bare
-  `__init__.py`-less `conftest.py` collides on `sys.modules['conftest']` and silently broke
-  `test_dynamo_local.py`. See [[dev-setup-and-dod]] and [[persistence-adapters]].
+- Importability is a `sys.path` insertion in the ONE shared `backend/tests/conftest.py`
+  (repo-root `tools/`, alongside the pre-existing `scripts/` insertion). A package-local
+  `backend/tests/demo_engine/conftest.py` was tried and **deleted**: a bare `__init__.py`-less
+  `conftest.py` collides on `sys.modules['conftest']` and silently broke `test_dynamo_local.py`.
+  See [[dev-setup-and-dod]] and [[persistence-adapters]]. **STORY-180 AC6/minor 8** reviewed the
+  insertion position explicitly and kept it at the FRONT (`insert(0, ...)`, matching the
+  `scripts/` precedent), with the reason recorded in `conftest.py` itself: `tools/` today holds
+  only `demo_engine/` (importable) and the hyphenated, unimportable `ui-sweep/`, so there is zero
+  real collision risk. Append is the fallback if `tools/` ever gains a second, generically-named
+  importable package.
 - STORY-148 changed **no** file under `backend/src/` (its AC9). The engine adapts to production, not
   the reverse.
 
@@ -51,6 +56,11 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   `backend/tests/fixtures/dynatrace/grail_synthetic_events.json` — read off disk, not restated
   inline (`backend/tests/demo_engine/test_rows.py`). The fixture predates this story (committed
   `fc65483` under STORY-016b), so the test cannot be circular.
+- `STATUS_CODE_HEALTHY`/`STATUS_MESSAGE_HEALTHY` (`rows.py:26-27`) previously documented themselves
+  as "the ONLY (code, message) pair `map_synthetic_status` accepts" — false, and corrected by
+  STORY-180 AC1/minor 6: `health_mapping.py:65` tests `code == "0" or message == "HEALTHY"`, an
+  `or`, so either half alone is sufficient; the two constants are still emitted together by default
+  only because that mirrors the real captured sample's own shape.
 
 ### The two query grammars (`query_grammar.py`, `store.py`)
 - `parse_query` (`query_grammar.py:69`) recognizes exactly the two DQL shapes production emits: the
@@ -73,8 +83,18 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   `request_instant - VENDOR_HEALTH_WINDOW` (`store.py:73-79`). `VENDOR_HEALTH_WINDOW` is a
   2-hour literal (`store.py:22`) that mirrors `_HEALTH_CHECK_WINDOW` (`vendor_health.py:37`) but is
   deliberately NOT imported — the window is part of the wire contract the engine answers, not an
-  implementation detail borrowed from composition. `request_instant` defaults to the wall clock read
-  **fresh per call** (`store.py:46-50`), so the window tracks the request, not the engine's uptime.
+  implementation detail borrowed from composition. **STORY-180 AC2** closed the divergence risk
+  this created: `test_vendor_health_window_matches_the_composition_health_check_window`
+  (`test_vendor_health_query.py`) asserts the two are numerically equal (parsing
+  `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape in the TEST only) and fails if a future change to the
+  composition constant is not mirrored here — the route decided at planning was this equality
+  test, not teaching the engine to parse the DQL `from:` clause (`parse_query` never reads it at
+  all: no `from:` regex exists, `query_grammar.py:28-31`, and `VendorHealthQuery` has no window
+  field). `request_instant` defaults to the wall clock, but ONLY the vendor-health branch reads it
+  — an ingest query never touches it at all (`store.py::handle_query`; pinned by
+  `test_ingest_query_never_reads_the_wall_clock`, `test_query_grammar.py`, STORY-180 AC5/minor 7,
+  which made the clock read fresh-per-vendor-health-call-only rather than unconditional on every
+  call).
 
 ### The wire protocol (`server.py`)
 - Serves the **async** branch of what `make_grail_executor` speaks
@@ -103,6 +123,13 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   `base_url` → `self._httpd.server_address` (`server.py:140-143`) — never a port computed and handed
   off around the bind, which is precisely the defect class STORY-179 hit in this repo's own
   DynamoDB-Local fixture (`server.py:128-131`).
+- `_DemoHTTPServer.results` (`server.py:48`) is a per-token result cache that is now bounded:
+  `do_GET` **pops** (not merely reads) a token's entry on its first poll (`server.py::do_GET`),
+  since every query here resolves synchronously server-side and there is no "still RUNNING, poll
+  again" state to preserve an entry for. Before STORY-180 AC4/minor 5 it only grew, one entry per
+  query, for the process lifetime — harmless for a test-scoped engine, a slow leak once STORY-176
+  makes it long-running. Pinned by `test_results_cache_is_evicted_after_being_polled`
+  (`test_server.py`).
 
 ### Scope honesty: this engine emits UP and absence, nothing else
 - `map_synthetic_status` (`health_mapping.py:54-70`) maps ONLY `code == "0"` /
@@ -124,11 +151,15 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   [[core-pipeline-and-availability]].
 
 ### Test surface
-- 23 tests in `backend/tests/demo_engine/` across seven files: `test_rows.py` (fixture fidelity),
-  `test_query_grammar.py` (both grammars + the fail-loud error), `test_watermark_precision.py`
-  (the 0/6/9-digit bound), `test_vendor_health_query.py` (the count probe + its window),
-  `test_server.py` (the HTTP protocol, auth, and the 400s), `test_via_grail_executor.py` (the real
-  executor end-to-end), `test_assumed_failure_codes.py` (the assumption is labeled and rejected).
+- 29 tests in `backend/tests/demo_engine/` across seven files (STORY-180 net +2 over STORY-148's
+  27: AC2 and AC4 each added one test, AC5/minor 3 folded a stdlib-only test into a docstring
+  (-1), and AC5/minor 7 added one — a rename, AC5/minor 4, does not change the count):
+  `test_rows.py` (fixture fidelity), `test_query_grammar.py` (both grammars + the fail-loud error
+  + the wall-clock-not-read-for-ingest guard), `test_watermark_precision.py` (the 0/6/9-digit
+  bound, the 0- and 6-digit cases now routed through the real `build_dql_query`), the vendor-health
+  window equality guard (`test_vendor_health_query.py`), `test_server.py` (the HTTP protocol, auth,
+  the 400s, and the token-cache eviction), `test_via_grail_executor.py` (the real executor
+  end-to-end), `test_assumed_failure_codes.py` (the assumption is labeled and rejected).
 - None of them needs Dynamo: neither `dynamo_local` (session-scoped) nor `clean_dynamo_tables` is
   `autouse`, so this subset runs standalone.
 
@@ -137,12 +168,31 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
 - The engine's fidelity claim is bounded by what the captured sample contains. It proves the fields
   the ingest path READS are right in shape, type and scale; it cannot prove Grail never sends
   something else, and it says nothing about failure-row shape (see the scope-honesty section).
-- The two items STORY-180 tracks that will bite once STORY-176 makes the engine long-running:
-  `server.results` is never evicted (a token cache that grows per query) and the vendor-health
-  window is a hardcoded 2h literal. Both are harmless for the current test-scoped lifetime.
+- STORY-180 closed the two items this section used to flag as future risk for STORY-176's
+  long-running engine: `server.results` is now evicted per poll (Facts, above) and the
+  vendor-health window has an equality guard against silent divergence (Facts, above). Neither was
+  ever a correctness bug in the STORY-148 test-scoped lifetime; STORY-180 made both hold under a
+  long-running process too.
 
 ## History
 
+- sprint-63 (STORY-180): all eight deferred STORY-148 quality-review minors closed. AC1/minor 6:
+  `rows.py:26-27`'s docstring corrected — `map_synthetic_status` accepts either half of the pair,
+  not only the pair together. AC2/minor 1: an equality test now fails if `store.py`'s
+  `VENDOR_HEALTH_WINDOW` diverges from `vendor_health.py`'s `_HEALTH_CHECK_WINDOW` (the route
+  decided at planning; parsing the DQL `from:` clause remains unimplemented and is a legitimate
+  future improvement, not a defect). AC3/minor 2: the watermark-precision test's 0- and 6-digit
+  cases now build their query through the real `build_dql_query` (with `overlap=timedelta(0)`,
+  load-bearing — the STORY-051 discrimination the test exists to prove would silently stop
+  working at the 5-minute default); the 9-digit case keeps its literal (the real builder cannot
+  emit one). AC4/minor 5: `server.results` is popped, not merely read, on first poll, bounding a
+  cache that previously grew one entry per query for the process lifetime. AC5/minors 3,4,7: the
+  stdlib-only string-ordering test folded into a docstring (test count -1), the overstated test
+  name corrected, and `store.py::handle_query` stopped reading the wall clock on the ingest path
+  (it is never used there). AC6/minor 8: the `tools/` `sys.path` front-insertion in
+  `backend/tests/conftest.py` is now an explicit, reasoned decision, not a silent default. Net
+  test count: 27 -> 29. Zero files under `backend/src/` changed (AC8). DoD gate 8/8. verified_sha
+  -> 701bfab.
 - sprint-62 (STORY-148): created at the sprint-end compile pass, after the story shipped and was
   reality-gated. Deliberately deferred out of the story itself: the engine's Facts are only worth
   writing down once its wire shape survived a live probe, and the probe changed what was worth
