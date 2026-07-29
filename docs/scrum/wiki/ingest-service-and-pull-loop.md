@@ -1,8 +1,8 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: d004da7
-verified_sprint: sprint-62
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -26,9 +26,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
      the injected `clock.now()`) is written to `rejected_repo.save(signal_key, reason, payload,
      rejected_at)` and EXCLUDED from the persist set; the rest proceeds (no poison pill). Validation
      happens BEFORE dedupe, so a bad row becomes a recorded rejection rather than being deduped away.
-  2. **Dedupe + persist** (`ingest_service.py::IngestService.ingest_observations`): `observation_repo.save_new(valid)` â€” DB-level
-     `ON CONFLICT (source_event_id) DO NOTHING`; its return is the TRUE newly-inserted count, which
-     becomes `IngestResult.accepted` (NOT `len(valid)`, so a duplicate is a no-op â€” AC3).
+  2. **Dedupe + persist** (`ingest_service.py::IngestService.ingest_observations`): `observation_repo.save_new(valid)` â€” an
+     idempotent insert, never a duplicate on replay (the DynamoDB adapter's `EVT#.../DEDUPE` marker
+     item, `dynamo_observation_repository.py:58-62` â€” corrected STORY-181, sprint-63; the comment had
+     said "ON CONFLICT DO NOTHING" SQL that never ran here); its return is the TRUE newly-inserted
+     count, which becomes `IngestResult.accepted` (NOT `len(valid)`, so a duplicate is a no-op â€” AC3).
   3. **Advance watermark accepted-only, after persist** (`ingest_service.py::IngestService.ingest_observations`): to
      `max(observed_at)` over the VALIDATED observations only, and only AFTER `save_new` returns â€” if
      it raises, the exception propagates and the watermark is left untouched (commit-before-advance,
@@ -106,13 +108,14 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   **STORY-043 (`.env` loading, defect fix):** the VERY FIRST line of `main()` is now
   `load_dotenv()` (`run.py::main`), BEFORE `load_settings()`/`load_live_secrets()` run â€” it loads a
   gitignored repo-root `.env` into `os.environ` so the documented local recipe (CLAUDE.md "Run the
-  app locally") can supply `DYNATRACE_*`/`STATUSPAGE_*`/`DATABASE_URL` from that file instead of
+  app locally") can supply `DYNATRACE_*`/`STATUSPAGE_*` secrets from that file instead of
   requiring them to be exported into the shell first (before this story, NOTHING loaded `.env` â€”
   `load_settings`/`load_live_secrets` only ever read `os.environ` directly, so the documented recipe
   crashed with `MissingLiveSecretError`). `composition/asgi.py` gets the same treatment at module
   scope, before `create_app()`. `load_dotenv()`'s default `override=False` semantics mean an
-  already-exported env var always wins over `.env` â€” production (Railway, which sets real env vars
-  and ships no `.env` file) is unaffected â€” and the call lives ONLY at these two process
+  already-exported env var always wins over `.env` â€” production (AWS ECS Fargate, which sets real
+  env vars and ships no `.env` file, is unaffected; corrected STORY-181 sprint-63 â€” the comment
+  used to say "Railway") â€” and the call lives ONLY at these two process
   entrypoints, never inside `load_settings`/`load_live_secrets` themselves, so DB-gated/unit tests
   that call those functions directly with explicit `monkeypatch` env are untouched (AC4; STORY-050's
   fail-fast-before-any-loop test stays green with `load_dotenv` patched in
@@ -277,3 +280,9 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `run.py`, `pull_loop.py`, `ingest_service.py`, and `sample_mode.py` are all UNCHANGED. No Fact
   changed. verified_sha -> a8700f5.
 - sprint-62 (STORY-146): RE-VERIFIED, no content change. `test_pull_loop.py`, `test_run_live_loop.py` and `test_vendor_health.py` changed only in how they construct `AppConfig`. The source files this article is about — `pull_loop.py`, `run.py`, `vendor_health.py`, `ingest_service.py` — are untouched by the story (AC7 requires it; verified by an empty `git diff` over those paths). verified_sha -> d004da7.
+- sprint-63 (STORY-181): the sweep flagged `run.py`, `ingest_service.py`. Two Facts above directly
+  quoted comments this story retired: the dedupe-and-persist step now describes the real
+  `EVT#.../DEDUPE` marker-item mechanism instead of "ON CONFLICT DO NOTHING" SQL that never ran
+  here, and the STORY-043 `.env`-loading Fact drops `DATABASE_URL` (retired) and corrects
+  "production (Railway...)" to "production (AWS ECS Fargate...)" (STORY-089). No ordering, DoD
+  command, or test behaviour changed. verified_sha -> b272c32.
