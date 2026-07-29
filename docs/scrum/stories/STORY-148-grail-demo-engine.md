@@ -180,3 +180,17 @@ None.
   still unread made Windows send a TCP RST instead of a clean close, surfacing as an intermittent
   `httpx.ReadError` only under full-suite load. Fixed by always draining the body before any
   early return. Full suite verified green 3x in a row after both fixes (566/566 each run).
+- 2026-07-29: **quality-review fixes (spec review PASS 10/10; review findings only, no
+  redesign).** F1 (MAJOR): `README.md`'s "Running the tests" recipe still cited the
+  `backend/tests/demo_engine/conftest.py` that the prior History entry's collision fix deleted,
+  plus a stale `backend/tests/conftest.py:16-19` line range — rewritten to point at the shared
+  `backend/tests/conftest.py:24-26`/`28-30` and state the collision reason in-line so the recipe
+  carries its own warning. F2 (MAJOR): the advertised fail-loud contract
+  (`UnrecognizedDqlQueryError` / HTTP 400) had zero test coverage; added a unit test pinning the
+  exception type from `parse_query`, plus an HTTP-level test and a real-`make_grail_executor`
+  test proving the 400 surfaces as `GrailQueryError`, not `[]`. F3 (minor, same function as F2's
+  fix): `do_POST`'s unguarded `json.loads` let a malformed body escape as a raw `JSONDecodeError`
+  traceback instead of the 400 every other bad input gets; wrapped and tested. Eight other minors
+  from the same review were deliberately left alone and routed to a follow-up story
+  (`STORY-180` per `.scrum/backlog.yaml`). `backend/src/` untouched throughout (AC9); full suite
+  570/570 green, all five DoD gate commands exit 0.
