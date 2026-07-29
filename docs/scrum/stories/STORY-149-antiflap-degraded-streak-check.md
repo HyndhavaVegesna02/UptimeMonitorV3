@@ -68,7 +68,8 @@ degraded" (`AntiFlapThresholds`, `pipeline.py:146-147`), so no new config is nee
       `non_maintenance[-1].health` to itself, so any non-`None` return has `length >= 1`; and
       `collapse` emits `health=None` only with `under_maintenance=True`, which `:112` filters out.
       So this AC keeps the ladder symmetric at the unit boundary and nothing more. Nobody should
-      hunt for a scenario that produces it. It is a deliberate change to a
+      hunt for a scenario that produces it. It is a deliberate change to an unreachable unit
+      boundary, with no field impact. Note that
       `backend/tests/test_anti_flap.py:240-248`
       (`test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded`) asserts today's
       outcome and is **intentionally rewritten**, not deleted — its replacement asserts the new

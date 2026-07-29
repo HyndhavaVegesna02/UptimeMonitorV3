@@ -172,7 +172,7 @@ stories:
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
-    status: ready
+    status: in_progress   # dispatched 2026-07-29; resume point = plan.md step checkboxes (7 steps)
     points: 1
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
     order: 3                 # fully independent, 4 lines. Reality gate is NOT a demo-engine run
