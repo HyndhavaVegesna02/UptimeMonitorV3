@@ -133,19 +133,34 @@ components:
 
 # --- AC3(b): in-process, exactly what the API boots (no config_dir arg) ----
 
+# sprint-63 fix round, quality finding S2: this is the CONFIG_DIR-governs-
+# create_app half of the publish-safety proof -- the one test in this story
+# that must never silently vanish. It was previously Docker-gated via the
+# `dynamo_local` fixture (session-scoped, SKIPS the whole test when Docker is
+# unavailable and no DYNAMO_ENDPOINT_URL is set), even though `create_app()`
+# makes no actual DynamoDB I/O before any assertion here runs: `make_dynamo_
+# resource` (`composition/dynamo.py`) is a bare `boto3.resource(...)` call,
+# and `.Table(name)` (used by the Dynamo*Repository constructors) is lazy --
+# neither opens a connection. A literal, deliberately-unreachable endpoint
+# URL is therefore sufficient and lets this test run with NO Docker
+# dependency at all.
+_NO_IO_DYNAMO_ENDPOINT_URL = "http://127.0.0.1:1"
+
 
 def test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate(
-    dynamo_local, monkeypatch
+    monkeypatch,
 ):
     """AC3(b): `CONFIG_DIR=config/demo` governs `create_app()` with NO
     `config_dir` argument — precisely how `composition/asgi.py` boots the
     real API process (`asgi.py` calls `create_app()` bare). No v1 route
     exposes the runtime mapping/publisher/config (14 routes enumerated at
-    planning), so this is asserted in-process, never over HTTP."""
+    planning), so this is asserted in-process, never over HTTP. Un-gated from
+    Docker (S2 above): `DYNAMO_ENDPOINT_URL` is a literal, unreachable URL --
+    no I/O occurs before the assertions below run."""
     from src.composition.app import create_app
     from src.composition.publish_helper import StatusWritebackPublisher
 
-    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", dynamo_local.endpoint_url)
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", _NO_IO_DYNAMO_ENDPOINT_URL)
     monkeypatch.setenv("CONFIG_DIR", str(DEMO_CONFIG_DIR))
     # Fake-but-present credentials — proves the guard holds even WITH
     # credentials, matching the real repo-root `.env` exposure this AC exists
