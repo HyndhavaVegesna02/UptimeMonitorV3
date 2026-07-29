@@ -31,6 +31,41 @@
   project examples in skill text are labeled as examples. (PO directive at the sprint-44 review:
   "keep it generic so it can be used on other projects also.")
 
+- 2026-07-29 — **The "Window Check" — read the session window at every agent boundary, and park
+  rather than die mid-agent.** Invocable by name: "run a window check", or "window check before
+  you dispatch".
+  **When:** immediately after EVERY subagent completes (implementer, spec reviewer, quality
+  reviewer, plan verifier, scout — the reviewer pair counts as one boundary since they run
+  concurrently) and before dispatching the next one. Not per story — per agent. Every such
+  boundary has a commit behind it, so parking there costs nothing and dying there costs one step.
+  **How (mechanical — the number is read, never estimated):** the PO's statusline command writes
+  its full payload to `~/.claude/statusline-latest.json` on every render. Read it:
+  ```
+  python -c "import json,time,os;d=json.load(open(os.path.expanduser('~/.claude/statusline-latest.json')));r=d['rate_limits']['five_hour'];print('5h used %s%%, resets %s'%(r['used_percentage'],time.strftime('%H:%M',time.localtime(r['resets_at']))));print('7d used %s%%'%d['rate_limits']['seven_day']['used_percentage'])"
+  ```
+  **Thresholds:** `five_hour.used_percentage` **< 85** → dispatch freely. **85–94** → finish work
+  already in flight on the CURRENT story (a re-work implementer, a gate, a reality gate) but do NOT
+  start a new story's implementer. **>= 95** → park until `resets_at`, then resume from the board.
+  Separately, `seven_day >= 90` → tell the PO instead of parking; a 7-day reset cannot be waited
+  out inside a session.
+  **Recording:** every park updates `.scrum/session.lock`'s `NEXT:` line with the head commit, the
+  percentage, the reset time and the exact next step, so a session that dies anyway resumes at the
+  same place; parks are summarised in the sprint's `review.md` as process data for the retro.
+  **Caveat, stated because it bounds the rule:** the file is only rewritten when the statusline
+  renders, so it can lag during a long agent run. It is accurate at an agent boundary, which is
+  the only moment this rule reads it.
+  (PO directive 2026-07-29, mid-sprint-63: "just check after each agents work is done if the
+  session limit is near end; if it is near end then pause until the reset time and continue",
+  refined to per-agent granularity: "what I meant is you can pause after any agent." Motivating
+  history: sprint 46 was pushed to an external agent by a session limit; sprint 45 consumed two
+  full 5-hour windows; STORY-149's first implementer died mid-story on a session limit. In all
+  three the limit arrived unseen — this rule exists because it no longer has to.)
+  (Rung: prose + an inlined mechanical command. The script rung WAS considered and is where this
+  belongs long-term — the check is pure arithmetic over a JSON file and would be project-generic,
+  since `statusline-latest.json` is a Claude Code artifact, not a project one. It is not taken now
+  for two reasons: tooling is frozen mid-sprint by the 2026-01-01 agreement, and the 2026-07-15
+  entry forbids ad-hoc skill-script edits outside a story. File it at the sprint-63 retro.)
+
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
   section of `uptime-monitor-v3-design.html`. Implementers build to the dossier + the
@@ -171,8 +206,8 @@
 - (2026-07-17, sprint-51 retro) Before any multi-step live-cloud CLI sequence (image
   push + service updates, stack operations), verify credential freshness first
   (`aws sts get-caller-identity`); temporary/SSO tokens expire mid-sequence. On expiry
-  mid-sequence, resume from the FAILED step, never restart the sequence � completed
-  steps (e.g. an ECR push) survive. Motivating incident: sprint-51 redeploy � push
+  mid-sequence, resume from the FAILED step, never restart the sequence � completed
+  steps (e.g. an ECR push) survive. Motivating incident: sprint-51 redeploy � push
   succeeded, both update-service calls died on ExpiredTokenException, handoff blocked.
 - (2026-07-29, sprint-62 retro) **A reality gate must be shown able to fail.** No reality gate
   may be reported PASS without a recorded answer to "how could this have failed?", in one of
