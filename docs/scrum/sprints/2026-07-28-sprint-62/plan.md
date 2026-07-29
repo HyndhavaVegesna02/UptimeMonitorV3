@@ -329,7 +329,7 @@ construction instead.
 - [x] 6. Wrap it in an HTTP server implementing the pinned protocol (POST `query:execute` → 202
       + `requestToken`, GET `query:poll` → `SUCCEEDED` + `records`), with the `Api-Token` header
       honoured.
-- [ ] 7. Test through the **real** `make_grail_executor` against the local server, asserting
+- [x] 7. Test through the **real** `make_grail_executor` against the local server, asserting
       assembled `SignalObservation`s (AC7 — this is what option (b) buys over option (a)).
 - [ ] 8. AC8: collect every invented vendor code into ONE named constant with the
       unverified-assumption comment; README states plainly what "failure path tested" means.
