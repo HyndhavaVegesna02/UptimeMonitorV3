@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
-code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py]
-verified_sha: 701bfab
+code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml]
+verified_sha: d530238
 verified_sprint: sprint-63
 status: verified          # verified | stale | archived
 ---
@@ -13,8 +13,10 @@ A local HTTP server that speaks the Dynatrace Grail `query:execute` API faithful
 `SignalObservation`s from its rows (`tools/demo_engine/__init__.py:1-15`). It exists because the
 Dynatrace trial expired before a live failure signal could ever be captured (memory:
 `dynatrace-trial-expired`); the PO approved it as the substitute for live metrics. Built by
-STORY-148 as **part 1 of 2 — the wire contract only**. Part 2 (the scenario player, the demo fleet
-config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO decision D-B.
+STORY-148 as **part 1 of 2 — the wire contract only**. **Part 2a (the scenario player, the demo
+fleet config, and the publish guard) landed in STORY-176 (sprint 63) — see the dedicated section
+below.** The end-to-end loop run itself, and its own two-sided reality gate, is **part 2b,
+STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
 
 ### Where it lives, and why that is not `backend/src/`
 - The package is `tools/demo_engine/`, outside `backend/src/` **on purpose** (dossier §4,
@@ -150,6 +152,69 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   nothing was ingested, not because anti-flap damped it. See
   [[core-pipeline-and-availability]].
 
+### The scenario player, the demo fleet, and the publish guard (STORY-176, part 2a)
+- **The player is a scripted expander, not a random generator.** `SignalScenario`
+  (`scenario.py::SignalScenario`) declares an ORDERED list of cycles per signal; each cycle names
+  which locations report `UP` that cycle — a location's absence from a cycle's list is the only
+  other outcome this `UP`-and-absence-only engine can express (see "Scope honesty" above).
+  `load_scenario_file` (`scenario.py::load_scenario_file`) parses a scenario YAML into a list of
+  these, raising `InvalidScenarioError` on a non-mapping top level or a signal block missing
+  `monitor_id`/`interval_seconds`/`cycles` (pinned by
+  `backend/tests/demo_engine/test_scenario.py::test_load_scenario_file_rejects_non_mapping_top_level`
+  and `::test_load_scenario_file_missing_required_field_raises`).
+- **Expansion is PAST-ANCHORED, decided at sprint-63 planning** (`scenario.py::expand_scenario`):
+  the scenario's LAST cycle lands at the caller's `end_time` (typically `clock.now()`); each earlier
+  cycle lands successively further back at the monitor's own `interval_seconds`. This is what keeps
+  the whole declared ladder inside `orchestrate.py:94-98`'s rolling 7-cycle window on the very first
+  query and every row at or before `end_time` — a forward player (t0 → now) would instead have every
+  cycle beyond `end_time + 5min` silently quarantined by `ingest_service.py`'s `FUTURE_TOLERANCE`
+  until wall-clock time caught up. Pinned by
+  `test_scenario.py::test_expand_scenario_ladder_fits_inside_orchestrates_rolling_window`,
+  `::test_expand_scenario_no_row_lands_after_end_time`, and
+  `::test_expand_scenario_last_row_is_within_the_vendor_health_window` (the last one ties past-anchoring
+  directly to `store.py`'s `VENDOR_HEALTH_WINDOW`).
+- **The demo fleet** (`config/demo/`, repo root — never `config/apps/`) is three files in STORY-146's
+  nested shape (`fleet-core.yaml`, `fleet-platform.yaml`, `fleet-edge.yaml`), each a DISTINCT `app.id`:
+  13 components, 41 signals, 4 declared locations (`loc-a`..`loc-d`), a `freshness:` block per file,
+  every monitor at `interval_seconds <= 60`. Pinned by
+  `backend/tests/test_demo_fleet_config.py::test_demo_fleet_scale_meets_ac4_minimums`,
+  `::test_demo_fleet_every_files_locations_and_freshness_survive_loading`, and
+  `::test_demo_fleet_monitors_use_short_intervals`. STORY-146's own F4 fix (`config.py:715-721`)
+  already turns a duplicate `app.id` into a raised `DuplicateAppIdError` rather than the silent
+  `locations`/`freshness` discard STORY-176's citation describes — the three files simply declare
+  distinct ids, so this test proves the POSITIVE (survival) case, not a trap.
+- **The publish guard is config-only and needs `CONFIG_DIR` on BOTH composition roots that could
+  build a live publisher — not just the loop.** `config/demo/` declares NO
+  `statuspage_component_id` on any component, so `Config.statuspage_mapping()` is `{}` and
+  `build_publisher` (`publish_helper.py:211`) falls through to a `LoggingPublisher` delegate **even
+  with real Statuspage credentials present** (the repo-root `.env`, loaded by `run.py:178`'s
+  `load_dotenv()`, which walks up from the source file, not CWD). The two roots — the loop
+  (`run.py::main` → `build_live_loop`) and the API's approve trigger (`app.py::create_app`, which
+  takes no `config_dir` argument in the documented recipe, so `CONFIG_DIR` alone governs it) — are
+  BOTH asserted in-process (`create_app()` called directly, no HTTP: no v1 route exposes the
+  mapping/publisher/config, verified by enumerating all 14 routes at sprint-63 planning), pinned by
+  `test_demo_fleet_config.py::test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`.
+  The SAME assertion pointed at `config/apps` (which DOES declare a `statuspage_component_id`,
+  `config/apps/httpcheck.yaml:8`) selects a real `StatuspagePublisher` TYPE with no network call —
+  the two-sided proof that the guard is a property of the config, not a promise about wiring
+  (`::test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_publisher_type`).
+  Demo component ids are additionally DISJOINT from `config/apps`'s ids (a real set intersection,
+  `::test_demo_component_ids_are_disjoint_from_config_apps_component_ids`) because
+  `StatuspagePublisher` keys on the canonical component id (`statuspage/__init__.py:41-46`), so a
+  collision would PATCH the real page even with `CONFIG_DIR` set correctly everywhere — proven
+  catchable, not just asserted absent, by
+  `::test_disjointness_check_actually_catches_a_collision`.
+- **Scenario coverage is `UP` and absence only** (`config/demo/scenarios/`): a clean fleet
+  (`clean-fleet.yaml`), a fully dark location (`dark-location.yaml` — lowers `distinct_locations`,
+  does NOT touch a freshness/completeness path, since `expected_locations` has zero consumers
+  outside `config.py`), a fully dark monitor (`dark-monitor.yaml` — empty window → `streak` returns
+  `None` → `orchestrate_signal` NOOPs, `orchestrate.py:113-121`), staggered intervals on one
+  component (`staggered-intervals.yaml` — two monitors' `bucket_into_cycles` results share no cycle
+  boundary), and a late-returning monitor (`late-return.yaml` — ingest simply resumes after a gap;
+  `reentry_cycles` has no consumer, so no re-entry POLICY is asserted). All five are driven through
+  the real `normalize_rows` → `IngestService` chain with in-memory fakes, pinned by
+  `backend/tests/demo_engine/test_scenario_coverage.py`.
+
 ### Test surface
 - 29 tests in `backend/tests/demo_engine/` across seven files (STORY-180 net +2 over STORY-148's
   27: AC2 and AC4 each added one test, AC5/minor 3 folded a stdlib-only test into a docstring
@@ -162,6 +227,18 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
   end-to-end), `test_assumed_failure_codes.py` (the assumption is labeled and rejected).
 - None of them needs Dynamo: neither `dynamo_local` (session-scoped) nor `clean_dynamo_tables` is
   `autouse`, so this subset runs standalone.
+- STORY-176 part 2a adds **20 more** tests in `backend/tests/demo_engine/` (now nine files, 49
+  total): `test_scenario.py` (15 — AC1 row-count-per-cycle, AC2's format/monotonicity/window/
+  backfill/not-in-future, and the scenario-file load path, including its own malformed-input
+  behaviour) and `test_scenario_coverage.py` (5 — one per AC5 case, each driven through the real
+  ingest chain). A further **10 tests** in `backend/tests/test_demo_fleet_config.py` (composition
+  zone, not `demo_engine/` proper — it tests `Config`/`create_app` against `config/demo/`, not the
+  engine package) pin the publish guard and the fleet's scale/multi-file survival; TWO of those
+  (`test_create_app_with_demo_config_dir_...`, `test_create_app_with_live_config_dir_...`) need
+  `dynamo_local` (a real `create_app()` call wires real Dynamo-backed repos, though no I/O actually
+  occurs before assertion — `boto3.resource(...).Table(...)` is lazy). Grand total: 604 tests
+  repo-wide (572 at the sprint-63 branch point `e107811`; STORY-180 brought it to 574 first; this
+  story's +30 brings it to 604).
 
 ## Inference (not verified — reasoning, not fact)
 
@@ -176,6 +253,16 @@ config, and the end-to-end loop run) is STORY-176, deferred to sprint 63 by PO d
 
 ## History
 
+- sprint-63 (STORY-176, part 2a): the scenario player (`scenario.py`), the demo fleet
+  (`config/demo/`, 13 components / 41 signals / 4 locations across three distinct-`app.id` files),
+  the five UP-and-absence scenarios (`config/demo/scenarios/`), and the config-only publish guard
+  (proven in-process, both sides — an empty demo mapping selecting `LoggingPublisher` AND the live
+  `config/apps` mapping selecting a real `StatuspagePublisher` TYPE, plus a proven-catchable
+  component-id disjointness check) all land. AC6/AC7 (the actual loop run) are explicitly OUT of
+  this story — split to STORY-182 (sprint 64) at sprint-63 planning after a re-estimate put the
+  combined story at 6 points. Zero files under `backend/src/` changed (AC8, mechanically verified:
+  `git diff --name-only 1aadf95..HEAD -- backend/src/` is empty). Net test count: 574 → 604 (+30).
+  DoD gate 5/5 backend (no frontend files touched). verified_sha -> d530238.
 - sprint-63 (STORY-180): all eight deferred STORY-148 quality-review minors closed. AC1/minor 6:
   `rows.py:26-27`'s docstring corrected — `map_synthetic_status` accepts either half of the pair,
   not only the pair together. AC2/minor 1: an equality test now fails if `store.py`'s
