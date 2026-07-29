@@ -90,6 +90,22 @@ below for the recipe that gets a real backend listening there (live as of
 STORY-042); CORS stays deferred to STORY-017 per the 2026-06-23 working
 agreement, so no backend change was needed to wire the proxy itself.
 
+### The Grail demo engine (`tools/demo_engine/`, STORY-148)
+
+A local HTTP server that speaks the Dynatrace Grail `query:execute` wire protocol
+faithfully enough that the **real, unmodified** `make_grail_executor` can talk to
+it — the stand-in for the expired Dynatrace trial. It lives at the repo root under
+`tools/`, deliberately outside `backend/src/`: it can never enter the production
+image, it may import `src.*`, and nothing under `backend/src/` ever imports it.
+Importable from tests via a `sys.path` insertion in the one shared
+`backend/tests/conftest.py`; tests live in `backend/tests/demo_engine/`.
+
+It emits **`HEALTHY` rows and absence, nothing else** — `map_synthetic_status`
+raises on every vendor code that has never been observed live, so any failure code
+here is an explicitly-labelled assumption (`tools/demo_engine/assumed_failure_codes.py`),
+not a contract. There is no scenario player or CLI yet; that is STORY-176.
+Full detail: `docs/scrum/wiki/demo-engine.md`.
+
 ## Stack (dossier §3)
 
 | Surface        | Choice                                                              |
@@ -128,8 +144,11 @@ directly on Windows: `.venv/Scripts/python.exe`, `.venv/Scripts/lint-imports.exe
 `package-dir = {"" = "backend"}` in `pyproject.toml`).
 
 The five DoD gate commands are `pytest`, `lint-imports`, `ruff check`, `ruff format`, and `cfn-lint`. All five are
-live as of STORY-088. `lint-imports` enforces the five contracts
-(core-independence, core-internal-layering, adapters-independence, api-feature-independence, src-no-tests);
+live as of STORY-088. `lint-imports` enforces **eight** contracts — core-independence,
+core-internal-layering, adapters-independence, api-feature-independence, api-outward-independence,
+adapters-edge-only, api-shared-no-feature-imports, src-no-tests (the count read off the runner's own
+`Contracts: 8 kept, 0 broken.` line; this file said "five" until sprint-62, having never been
+updated when contracts 5–7 landed);
 `ruff check` and `ruff format` enforce the code style, import sorting, and formatting; `cfn-lint` validates the CloudFormation stack.
 
 ## Database & DynamoDB Local (dossier §3, §4, §17)
