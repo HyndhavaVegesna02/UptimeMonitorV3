@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
 code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: d004da7
-verified_sprint: sprint-62
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -465,3 +465,13 @@ produced ordinary data flowing through it.
   executor talks to). Sample mode is untouched by it and stays in place until STORY-176 gives the
   engine a scenario player and STORY-155 removes this. Nothing in this article's Facts changed;
   no `verified_sha` bump (no `code_ref` of this article was touched).
+- sprint-63 (STORY-181): the sweep flagged `run.py`, `ports/__init__.py`, `client.ts`,
+  `pyproject.toml`. None of this story's 16 corrected sites is quoted in this article's Facts —
+  the changes to those four files (Railway/Vercel wording, a vendor-blindness example swap,
+  a `DATABASE_URL` comment, a pyproject vendor-subpackage comment) are all outside what this
+  article cites them for. Re-verified only; no Fact changed. **Flagging, not fixing, as
+  out-of-scope**: this article's OWN Facts still describe `PostgresSampleModeRepository` (lines
+  ~52-241) even though `code_refs` already lists the real
+  `adapters/persistence/dynamo_sample_mode_repository.py` — that rot predates this story and is
+  not one of its 16(+2) enumerated sites; noted as a candidate for STORY-155 (sample-mode
+  removal) or a follow-up wiki-accuracy story. verified_sha -> b272c32.
