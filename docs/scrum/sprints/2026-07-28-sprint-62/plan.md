@@ -333,9 +333,14 @@ construction instead.
       assembled `SignalObservation`s (AC7 — this is what option (b) buys over option (a)).
 - [x] 8. AC8: collect every invented vendor code into ONE named constant with the
       unverified-assumption comment; README states plainly what "failure path tested" means.
-- [ ] 9. AC9: `tools/demo_engine/` (underscore), tests under `backend/tests/`, verify the story
+- [x] 9. AC9: `tools/demo_engine/` (underscore), tests under `backend/tests/`, verify the story
       diff touches no file under `backend/src/` (mechanical check over the commit range), and
       confirm `ruff check`/`ruff format` cover the new `tools/` code.
+      Verified: `git diff --name-only e74ac6b..HEAD -- backend/src/` is EMPTY. Full diff (16
+      files) is entirely `tools/demo_engine/**`, `backend/tests/demo_engine/**`,
+      `backend/tests/conftest.py` (see History — sys.path insertion folded in to fix a
+      conftest.py module-name collision), and `docs/scrum/sprints/.../plan.md`. `ruff check .` /
+      `ruff format --check .` both exit 0 over the whole repo including `tools/`.
 
 ### Reality gate (148)
 

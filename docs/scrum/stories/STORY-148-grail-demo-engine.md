@@ -168,3 +168,15 @@ None.
   entirely unaccounted for; (6) the HTTP envelope, endpoints, auth header and async protocol
   were never specified, and getting them wrong returns `[]` silently; (7) `tools/demo-engine/`
   is not importable and tests placed there would never run under `testpaths`.
+- 2026-07-29: **implementation, two defects found and fixed running the full suite** (not
+  visible from the demo-engine tests alone). (1) A second bare `conftest.py` added under
+  `backend/tests/demo_engine/` collided with the existing `backend/tests/conftest.py` on the
+  same top-level module name `conftest` (neither directory has `__init__.py`), silently breaking
+  `test_dynamo_local.py`'s `from conftest import provide_dynamo_local`. Fixed by folding the
+  `tools/` `sys.path` insertion into the one shared `backend/tests/conftest.py` (same pattern as
+  its existing `scripts/` precedent) and deleting the second file. (2) `DemoEngineServer.do_POST`
+  returned its `401` early, without ever reading the request body, when `Authorization` was
+  missing — leaving unread bytes in the socket receive buffer; closing the connection with data
+  still unread made Windows send a TCP RST instead of a clean close, surfacing as an intermittent
+  `httpx.ReadError` only under full-suite load. Fixed by always draining the body before any
+  early return. Full suite verified green 3x in a row after both fixes (566/566 each run).
