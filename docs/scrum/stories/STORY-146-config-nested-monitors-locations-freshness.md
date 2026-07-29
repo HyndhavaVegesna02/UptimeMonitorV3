@@ -193,3 +193,13 @@ Only demo/fixture configs declare locations at all (see AC8).
   `test_config.py::TestLoadConfigFailFast::test_signal_referencing_undeclared_component_raises_at_load`)
   — reason: the check is now structurally unenforceable-to-violate, since a monitor's
   `component_id` is never authored (AC1), only derived from its parent component's `id`.
+- 2026-07-29: **quality rework (sprint-62), F1 — dead code deleted.** `config.py`'s
+  `_component_id_and_monitors`/`_monitor_fields` helpers each carried a defensive
+  `isinstance(x, dict)` fallback branch (plus a `raise TypeError`) for a raw-dict-shaped
+  component/monitor entry. A line-level trace of the full 539-test suite showed neither
+  dict branch ever executes — all 17 `AppConfig(` call sites in the codebase pass
+  already-constructed `ComponentConfig`/`MonitorConfig` instances, which the docstrings
+  already conceded. Removed both dict branches and inlined the two now-single-purpose
+  helpers directly into `_derive_signals_from_monitors` (no behaviour change; AC2b's
+  raise-on-explicit-`signals=` path is untouched). No AC is affected — this is speculative
+  generality the story shipped with, not an AC requirement.

@@ -265,44 +265,6 @@ class FreshnessConfig(BaseModel):
     """Consecutive fresh cycles required before a stale signal re-enters."""
 
 
-def _component_id_and_monitors(comp: Any) -> tuple[str, list[Any]]:
-    """Extract ``(id, monitors)`` from a component entry (STORY-146 AC7).
-
-    Handles both an already-constructed ``ComponentConfig`` (the shape every
-    call site in this codebase actually passes — ``load_config`` builds these
-    explicitly before constructing ``AppConfig``, and every test constructs
-    ``ComponentConfig(...)`` instances directly) and a raw dict, defensively.
-    """
-    if isinstance(comp, ComponentConfig):
-        return comp.id, list(comp.monitors)
-    if isinstance(comp, dict):
-        return comp["id"], list(comp.get("monitors") or [])
-    raise TypeError(f"Unexpected component entry type: {type(comp)!r}")
-
-
-def _monitor_fields(mon: Any) -> dict[str, Any]:
-    """Extract the ``SignalConfig``-shaped fields from a monitor entry.
-
-    Deliberately excludes ``expected_locations`` — that field lives on
-    ``MonitorConfig`` only (STORY-146 AC3); ``SignalConfig`` has no such field.
-    """
-    if isinstance(mon, MonitorConfig):
-        return {
-            "signal_key": mon.signal_key,
-            "native_id": mon.native_id,
-            "name": mon.name,
-            "interval_seconds": mon.interval_seconds,
-        }
-    if isinstance(mon, dict):
-        return {
-            "signal_key": mon["signal_key"],
-            "native_id": mon["native_id"],
-            "name": mon["name"],
-            "interval_seconds": mon["interval_seconds"],
-        }
-    raise TypeError(f"Unexpected monitor entry type: {type(mon)!r}")
-
-
 class AppConfig(BaseModel):
     """Per-app config: components, signals, and anti-flap thresholds (dossier §7/§10).
 
@@ -365,6 +327,15 @@ class AppConfig(BaseModel):
         silently discard a caller's explicit ``signals=[…]``, which is worse
         than the referential-integrity check this mechanism replaces — a
         bogus ``component_id`` would vanish instead of raising.
+
+        Every call site in this codebase passes already-constructed
+        ``ComponentConfig``/``MonitorConfig`` instances (``load_config``
+        builds these explicitly before constructing ``AppConfig``, and every
+        test constructs them directly) — there is no dict-shaped component or
+        monitor entry to handle (2026-07-29, STORY-146 quality rework F1: the
+        two defensive dict branches this helper used to fall back to were
+        dead across the full 539-test suite; removed rather than kept
+        untested — see the story History).
         """
         if not isinstance(data, dict):
             return data
@@ -380,9 +351,16 @@ class AppConfig(BaseModel):
 
         derived: list[dict[str, Any]] = []
         for comp in data.get("components") or []:
-            comp_id, monitors = _component_id_and_monitors(comp)
-            for mon in monitors:
-                derived.append({**_monitor_fields(mon), "component_id": comp_id})
+            for mon in comp.monitors:
+                derived.append(
+                    {
+                        "signal_key": mon.signal_key,
+                        "native_id": mon.native_id,
+                        "name": mon.name,
+                        "interval_seconds": mon.interval_seconds,
+                        "component_id": comp.id,
+                    }
+                )
 
         data = dict(data)
         data["signals"] = derived
