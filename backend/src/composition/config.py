@@ -17,10 +17,10 @@ Public surface:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
 from src.core.services.pipeline import AntiFlapThresholds
 
@@ -29,6 +29,26 @@ from src.core.services.pipeline import AntiFlapThresholds
 # ---------------------------------------------------------------------------
 
 _SECTION_10_DEFAULTS = AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)
+
+
+def _require_positive_interval(value: int) -> int:
+    """Enforce the ``interval_seconds > 0`` frozen-type invariant (2026-06-26).
+
+    Shared by ``MonitorConfig.interval_seconds`` and
+    ``SignalConfig.interval_seconds`` (quality rework, 2026-07-29 — the two
+    were previously byte-identical `model_validator(mode="after")` methods,
+    one per model) via the ``PositiveIntervalSeconds`` annotated type below.
+    """
+    if value <= 0:
+        raise ValueError(
+            f"interval_seconds must be a positive integer (got {value!r}). "
+            "See dossier §8 and the 2026-06-26 frozen-type invariant agreement."
+        )
+    return value
+
+
+PositiveIntervalSeconds = Annotated[int, AfterValidator(_require_positive_interval)]
+"""Shared field type for ``interval_seconds`` on ``MonitorConfig``/``SignalConfig``."""
 
 
 class UnknownSignalError(ValueError):
@@ -148,23 +168,13 @@ class MonitorConfig(BaseModel):
     name: str
     """Human-readable display name."""
 
-    interval_seconds: int
+    interval_seconds: PositiveIntervalSeconds
     """Expected cadence in seconds (positive int, > 0; dossier §8 / §10 window math)."""
 
     expected_locations: list[str] = Field(default_factory=list)
     """Aliases (declared in the app's ``locations:`` block, STORY-146 AC3) this
     monitor is expected to report from.  Declaration only in this story —
     *consuming* it in the completeness denominator is a separate story."""
-
-    @model_validator(mode="after")
-    def _require_positive_interval(self) -> "MonitorConfig":
-        """Enforce the interval_seconds > 0 frozen-type invariant (2026-06-26)."""
-        if self.interval_seconds <= 0:
-            raise ValueError(
-                f"interval_seconds must be a positive integer (got {self.interval_seconds!r}). "
-                "See dossier §8 and the 2026-06-26 frozen-type invariant agreement."
-            )
-        return self
 
 
 class ComponentConfig(BaseModel):
@@ -218,18 +228,8 @@ class SignalConfig(BaseModel):
     component_id: str
     """The component this signal feeds; must be a declared component id."""
 
-    interval_seconds: int
+    interval_seconds: PositiveIntervalSeconds
     """Expected cadence in seconds (positive int, > 0; dossier §8 / §10 window math)."""
-
-    @model_validator(mode="after")
-    def _require_positive_interval(self) -> "SignalConfig":
-        """Enforce the interval_seconds > 0 frozen-type invariant (2026-06-26)."""
-        if self.interval_seconds <= 0:
-            raise ValueError(
-                f"interval_seconds must be a positive integer (got {self.interval_seconds!r}). "
-                "See dossier §8 and the 2026-06-26 frozen-type invariant agreement."
-            )
-        return self
 
 
 class LocationConfig(BaseModel):
@@ -262,8 +262,9 @@ class FreshnessConfig(BaseModel):
     exposes the counts).
 
     Carries plain ``int`` fields with NO pydantic validator, deliberately —
-    do NOT follow the ``SignalConfig._require_positive_interval`` /
-    ``MonitorConfig._require_positive_interval`` precedent here. Positivity is
+    do NOT follow the ``PositiveIntervalSeconds`` (module-level
+    ``_require_positive_interval``, shared by ``SignalConfig.interval_seconds``
+    / ``MonitorConfig.interval_seconds``) precedent here. Positivity is
     checked in ``load_config`` (``InvalidFreshnessError``, AC5) instead,
     because a validator cannot raise a named error that survives to the
     caller (probed twice, independently — see the AC5 module comment above).
