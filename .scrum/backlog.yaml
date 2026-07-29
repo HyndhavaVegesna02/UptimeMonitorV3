@@ -955,7 +955,11 @@ stories:
   - id: STORY-146
     title: Config authoring shape — nested monitors, declared locations, freshness block
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
-    status: ready   # AC approved + estimated; no open questions
+    status: done    # sprint-62: spec PASS, quality FIX_REQUIRED -> all 5 majors fixed and
+                    # independently re-verified; gate 8/8 at 81bf71a; reality gate PASS
+                    # (seeded topology byte-identical, md5 461c9e42... both sides, after TWO
+                    # self-caught false passes on empty dumps). PO accepted 2026-07-29,
+                    # deliberately NOT merged to main (standing 'dont merge with main').
     points: 5   # RE-ESTIMATED from 3 (2nd verifier pass): 9 ACs, 4 models, 3 error classes,
                 # 2 accessors, and a 13-FILE test migration surface (17 AppConfig( sites +
                 # 10 flat `signals:` YAML blocks) that the plan had understated as one file.
@@ -975,7 +979,11 @@ stories:
   - id: STORY-148
     title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
-    status: ready
+    status: done    # sprint-62: spec PASS 10/10, quality FIX_REQUIRED -> 2 majors fixed,
+                    # 8 minors routed to STORY-180; gate 8/8 at 29430ff; reality gate PASS
+                    # 19/19 through the two composition-level callers over real HTTP.
+                    # PO accepted 2026-07-29, kept unmerged. NOTE the scope limit that
+                    # survives acceptance: the engine emits HEALTHY rows + absence ONLY.
     points: 3   # WAS 5 as a single story; split post-verifier (assessed 7-8 pts of real work)
     priority: 54
     type: chore
@@ -1008,7 +1016,11 @@ stories:
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
-    status: ready
+    status: done    # sprint-62: 1-pointer (no reviewer pair); scoped gate 5/5 at 1e025a8,
+                    # full gate 8/8 at final HEAD; reality gate PASS 12/12 -- and 7/12 when
+                    # run unchanged at the pre-fix commit, failing on exactly the 5 checks
+                    # the fix owns, so the gate is proven able to fail. PO accepted
+                    # 2026-07-29, kept unmerged.
     points: 1
     priority: 56
     type: defect

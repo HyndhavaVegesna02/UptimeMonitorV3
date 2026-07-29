@@ -205,3 +205,24 @@ nothing was discarded.
 3. **Sprint 63 opening scope:** STORY-176 is queued first by D-B. The frontend work
    (design system + shell, with a look-and-feel checkpoint **before** six pages get built
    on the language) is the other candidate. Which opens 63?
+
+---
+
+## PO verdicts (2026-07-29)
+
+1. **All three stories ACCEPTED** — STORY-146, STORY-148, STORY-149. Velocity recorded:
+   sprint 62, committed 9, accepted 9.
+2. **Kept UNMERGED.** The standing "don't merge with main" instruction stands; `main`
+   (`debug/ingest-stall-sample-mode`, tip `517fc38`) is untouched and the accepted work
+   stays on the `sprint-62` branch. Recorded in the backlog against each story so a future
+   session cannot mistake "accepted" for "on main".
+3. **Sprint 63 opens with STORY-176** — demo engine part 2: the scenario player, the demo
+   fleet config, and the real loop run (4 pts, `story-176-carried-to-sprint-63.md`). The
+   frontend design-system + shell work, with the look-and-feel checkpoint before any pages
+   are built, is not opening 63 and stays queued.
+
+**Consequence to carry into sprint-63 planning:** because nothing merges, sprint 63
+branches from `sprint-62` rather than from main, and the safety precondition in this
+sprint's board still applies to STORY-176 — `decide` publishes recoveries with **no human
+gate**, so the demo loop run needs its config-only publish guard *plus* `CONFIG_DIR` on the
+API process, which is a separate process reading its own config.
