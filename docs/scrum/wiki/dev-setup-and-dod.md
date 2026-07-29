@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 7c53685
-verified_sprint: sprint-50
+verified_sha: ba00bd5
+verified_sprint: sprint-62
 status: verified
 ---
 
@@ -195,3 +195,9 @@ status: verified
   fixture and clean_dynamo_tables for DynamoDB Local container lifecycle integration. verified_sha -> abd8609.
 - sprint-47 (STORY-080): Hardened container connection readiness verification to retry and recover from transient connection drops under load, and collision-proofed the CLI tests (`test_dev_db_cli.py`) by dynamically allocating unique container names and ports. verified_sha -> 50a7bd9.
 - sprint-50 (STORY-089): CLAUDE.md gained the append-only deployed-topology section (live stack facts, no dev-setup or DoD content touched). Facts unchanged; re-verified. verified_sha -> 235fc37.
+- sprint-62 (STORY-148): the mechanical sweep flagged `backend/tests/conftest.py` in this
+  article's `code_refs`. The only change there is a second `sys.path` insertion (repo-root
+  `tools/`, alongside the existing `scripts/` one) so the new `tools/demo_engine/` package
+  (STORY-148's Grail-shaped demo HTTP server) is importable from `backend/tests/demo_engine/`.
+  The `dynamo_local`/`clean_dynamo_tables` fixture behaviour this article's Facts describe is
+  byte-identical; re-verified, no Fact text changed. verified_sha -> ba00bd5.
