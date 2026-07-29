@@ -167,39 +167,39 @@ and a satisfiable observation mechanism; AC5(b)(c)(e) were reworded to their rea
 moved to STORY-182; AC8 names the config dir and the `app.id` trap.
 
 ### Steps
-- [ ] 1. **AC3 first — the guard, before anything else exists.** Author `config/demo/` declaring
+- [x] 1. **AC3 first — the guard, before anything else exists.** Author `config/demo/` declaring
       **no** `statuspage_component_id`; assert `statuspage_mapping() == {}`; assert `build_publisher`
       with an empty mapping and non-empty credentials yields a `LoggingPublisher` delegate.
-- [ ] 2. **AC3(c) — the bypass the verifier found.** Assert
+- [x] 2. **AC3(c) — the bypass the verifier found.** Assert
       `set(demo ids) & set(load_config("config/apps") ids) == set()`. `StatuspagePublisher` keys on
       the canonical component id (`statuspage/__init__.py:41-46`), so a demo id colliding with
       `http-check` on an API running the DEFAULT `CONFIG_DIR` — which is what CLAUDE.md's own recipe
       step 4 does — PATCHes the **real** page. The only automatic layer is `UnmappedComponentIdError`
       (`:43`) swallowed by `BestEffortPublisher` (`publish_helper.py:59-66`), and it saves a
       NON-colliding id only.
-- [ ] 3. **AC3(b) — in-process, not over HTTP.** `CONFIG_DIR=config/demo python -c "...create_app()..."`
+- [x] 3. **AC3(b) — in-process, not over HTTP.** `CONFIG_DIR=config/demo python -c "...create_app()..."`
       asserting `app.state.seed_config.statuspage_mapping() == {}` and the delegate's type. All 14
       v1 routes were enumerated: **none** exposes the mapping, the publisher or the loaded config, so
       the original "assert against the live process over HTTP" needed a `backend/src` change that
       AC8 forbids — the same unsatisfiable-AC shape this story already hit once before lock.
-- [ ] 4. Scenario file format + player (AC1), **past-anchored** (decided at planning): expand
+- [x] 4. Scenario file format + player (AC1), **past-anchored** (decided at planning): expand
       **backwards from `clock.now()`**, not forwards from t0.
-- [ ] 5. Time base (AC2 a-f), all six asserted — including the new **(f)**: `FUTURE_TOLERANCE = 5min`
+- [x] 5. Time base (AC2 a-f), all six asserted — including the new **(f)**: `FUTURE_TOLERANCE = 5min`
       (`ingest_service.py:37`) quarantines future-dated rows at `:119-125`, and `run.py` passes no
       `on_cycle`, so the rejected count is **discarded — nothing logs it**. Forward playback would
       have hit this on every cycle beyond t0+5min; past-anchored expansion avoids it entirely.
-- [ ] 6. The fleet (AC4/AC8): `config/demo/`, >=12 components, >=40 signals, >=4 locations, nested
+- [x] 6. The fleet (AC4/AC8): `config/demo/`, >=12 components, >=40 signals, >=4 locations, nested
       shape, declared `locations:` + `freshness:`, and **a distinct `app.id` per file** —
       `config.py:585-587` silently discards a duplicate `app.id`'s `locations`/`freshness`, so a test
       asserts every declared block survives loading.
-- [ ] 7. Scenarios (AC5 a-e) with the **reworded** claims: clean fleet; dark location → lower
+- [x] 7. Scenarios (AC5 a-e) with the **reworded** claims: clean fleet; dark location → lower
       `distinct_locations` on `/availability` (NOT a completeness swing — the denominator uses
       OBSERVED locations, `availability.py:265`/`:74`); dark monitor → empty window → `streak None`
       → NOOP (`orchestrate.py:113-121`); staggered intervals; late return → ingest resumes.
       **None of `expected_locations`/`freshness_for`/`stale_after_cycles`/`reentry_cycles` has any
       consumer under `backend/src`** (verified by grep; `config.py:261` says so itself), so these
       scenarios are fixtures for STORY-151/152, not tests of freshness logic.
-- [ ] 8. AC8: verify mechanically that no file under `backend/src/` changed.
+- [x] 8. AC8: verify mechanically that no file under `backend/src/` changed.
 
 ### Reality gate (176) — two-sided on the guard, which is the whole point
 The run is **not** in this story, so the gate is the guard itself:
@@ -228,18 +228,18 @@ constraint that no longer exists), and two "INSERT ... ON CONFLICT DO NOTHING" d
 DynamoDB transaction (`ports/observation_repository.py:5`, `ingest_service.py:101`).
 
 ### Steps
-- [ ] 1. (A) Dead platforms: `run.py:177`, `client.ts:18-19`.
-- [ ] 2. (B) Phantom classes: `component.py:17`, `publication.py:35`,
+- [x] 1. (A) Dead platforms: `run.py:177`, `client.ts:18-19`.
+- [x] 2. (B) Phantom classes: `component.py:17`, `publication.py:35`,
       `component_repository.py:53` — preserve each claim, fix the citation.
-- [ ] 3. (B) Remaining retired-persistence prose: `persistence/__init__.py:1`,
+- [x] 3. (B) Remaining retired-persistence prose: `persistence/__init__.py:1`,
       `ports/__init__.py:7`, `run.py:4`, `windowState.ts:8` (keep the invariant),
       `pyproject.toml:49-51` — correct the **whole** sentence: `inbound.dynatrace` and
       `outbound.statuspage` both exist now, so "do not exist yet" is wrong about all three, not just
       `persistence.neon`.
-- [ ] 4. (C) Dead story pointers: `middleware.py:4`, `actor.ts:3-5`.
-- [ ] 5. (D) The four SQL-prose sites above — keep each claim (idempotent insert, no duplicate on
+- [x] 4. (C) Dead story pointers: `middleware.py:4`, `actor.ts:3-5`.
+- [x] 5. (D) The four SQL-prose sites above — keep each claim (idempotent insert, no duplicate on
       replay), drop the SQL mechanism that never ran here.
-- [ ] 6. AC7: re-scan `CLAUDE.md` + `docs/scrum/wiki/`. Expected no-op after `e9a8ad3`, but verified
+- [x] 6. AC7: re-scan `CLAUDE.md` + `docs/scrum/wiki/`. Expected no-op after `e9a8ad3`, but verified
       is not the same state as assumed. `.scrum/definition-of-done.md` is **out of scope** — it had
       the same rot ("the five contracts", three lines under a line already saying "same 8
       contracts") and the orchestrator fixed it at planning, because implementers may never write
@@ -320,3 +320,39 @@ lines *decide* and `:171-172` publishes; and I wrote "`main` (`debug/ingest-stal
 3-point delivery as the yardstick; the PO chose to split into 176 (part 2a, this sprint) and
 STORY-182 (part 2b, sprint 64) rather than run a 10-point sprint whose verification would be the
 tail of a 6-pointer.
+
+## Corrections to THIS PLAN, found during execution (appended at close, 2026-07-30)
+
+The plan was locked, so these were recorded and applied rather than edited in mid-sprint. They are
+appended here so a future reader does not inherit the errors from a plan that otherwise reads as
+verified.
+
+1. **`config.py:585-587`'s "silent discard" trap does not exist any more.** Both this plan (Story 2,
+   step 6) and STORY-176 AC8 describe a duplicate `app.id` as *silently* discarding that app's
+   `locations`/`freshness`. STORY-146 quality rework F4 — commit **`7648d74`, landed in sprint 62**,
+   an ancestor of this sprint's own branch point — replaced that with a raised
+   `DuplicateAppIdError` (**`config.py:716`**; `585-587` is now only the docstring describing it).
+   Verified at source, and `git merge-base --is-ancestor 7648d74 1aadf95` confirms it predates the
+   story. The delivered AC8 test therefore proves the positive case (every distinct `app.id`'s
+   blocks survive loading), which is the right thing to prove. Found by the implementer, confirmed
+   by the orchestrator.
+
+2. **AC6's scan definition (STORY-181) had three defects, not the one the verifier found.** The
+   verifier caught the `__pycache__` inflation pre-lock. Execution found three more ways the same
+   scan could mislead:
+   - `asgi.py:12` legitimately said "reads NO `DATABASE_URL`" — a correct, useful sentence, but
+     `DATABASE_URL` is on AC6's forbidden list and only the two `MaintenancePage.tsx` placeholders
+     were allowlisted, so **AC6's scan could not come back empty as written**. Resolved by
+     rewording the sentence (the information is kept; the bare variable name is gone).
+   - `windowState.ts:8` said "the **Postgres** adapter's" — bare `Postgres`, matching neither
+     `class Postgres` nor `Postgres*Repository`, so the phrase list **would have missed a site the
+     story itself lists as in-scope**.
+   - `adapters/persistence/__init__.py:1` said **lowercase** `"(e.g. neon)"`, which the
+     case-sensitive `Neon` never matched. AC6's literal scan therefore found **15 of the 16 real
+     sites** at the parent commit.
+   All three sites were fixed because families A–D name them explicitly; the grep was never the
+   scope. That is the point: **a grep is a check, not a scope definition** — three independent
+   demonstrations in one story.
+
+3. **Points arithmetic.** The commit message that drafted this plan said 8 points; the scope table
+   sums to **7** (2 + 3 + 2). Seven is what was locked and what velocity should record.
