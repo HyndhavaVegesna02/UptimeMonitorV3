@@ -1302,6 +1302,50 @@ stories:
     type: defect
     priority: 11
     sprint: null
+  - id: STORY-180
+    title: Demo-engine polish - the eight non-blocking minors from STORY-148's quality review
+    file: null
+    status: draft   # ~2pts. Raised by yt-quality-reviewer on STORY-148 (2026-07-29) and
+                    # deliberately NOT fixed there: none blocks the wire contract, and widening
+                    # a story to absorb its own review nits is how a 3-pointer becomes a 6.
+                    # STORY-148's two MAJORs (stale README recipe, untested fail-loud path) plus
+                    # the malformed-JSON 400 WERE fixed in-story. These eight are the remainder.
+                    # Several are best done WITH STORY-176, which turns the engine into a
+                    # long-running demo and makes two of them (6, 1) actually matter.
+                    # (1) tools/demo_engine/store.py:22 hardcodes VENDOR_HEALTH_WINDOW = 2h while
+                    #     parse_query DISCARDS the query's own `from:now()-2h` clause. If
+                    #     composition/vendor_health.py:37's _HEALTH_CHECK_WINDOW ever changes, the
+                    #     demo diverges silently in the one dimension it hardcodes. Parse the
+                    #     window out of the query string, or assert it equals the constant. The
+                    #     existing comment defends the literal but not the discarded clause.
+                    # (2) backend/tests/demo_engine/test_watermark_precision.py:19-26 hand-builds
+                    #     the ingest query string. Only the 9-digit case NEEDS a literal (real
+                    #     build_dql_query cannot emit one); the 0- and 6-digit cases are reachable
+                    #     through the real builder via microsecond=0 / microsecond=746000, and
+                    #     should use it - a fidelity test that bypasses the producer is weaker.
+                    # (3) test_watermark_precision.py:63-70 asserts only a stdlib string-ordering
+                    #     fact and exercises no product code. Honestly named, but it is a comment
+                    #     wearing a test's clothes; fold it into the docstring it belongs in.
+                    # (4) test_assumed_failure_codes.py:29-40 is named
+                    #     `..._produces_a_structurally_valid_row` but asserts only that the two
+                    #     status values echo their inputs. Rename to match what it checks.
+                    # (5) tools/demo_engine/server.py:47 _DemoHTTPServer.results is never evicted -
+                    #     one entry per query for the process lifetime. Irrelevant to tests;
+                    #     a slow leak in STORY-176's long-running demo.
+                    # (6) tools/demo_engine/rows.py:36-37 calls ("0","HEALTHY") "The ONLY (code,
+                    #     message) pair map_synthetic_status accepts"; health_mapping.py:65 is an
+                    #     `or`, so EITHER half alone suffices. The docstring claims more than the
+                    #     code does - the exact drift the wiki protocol exists to prevent.
+                    # (7) store.py:57-61 computes datetime.now(timezone.utc) on every call
+                    #     including ingest queries, where `instant` is then unused.
+                    # (8) backend/tests/conftest.py:30 inserts tools/ at sys.path[0], ahead of
+                    #     stdlib, for all 566 backend tests. Zero collision risk today (tools/
+                    #     holds only demo_engine/ plus hyphenated ui-sweep/) and it matches the
+                    #     scripts/ precedent, so this is a "safer default" note, not a bug:
+                    #     append would be preferable if tools/ ever gains a generic module name.
+    type: chore
+    priority: 13
+    sprint: null
   - id: STORY-178
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
     file: null
