@@ -126,7 +126,9 @@ stories:
   - id: STORY-176
     title: "Grail demo engine part 2a — scenario player, demo fleet, time base, publish guard"
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
-    status: todo
+    status: in_progress      # implementer dispatched 2026-07-30 from HEAD 44f49c5 (clean tree),
+                             # after a Window Check: 5h window 4% used (reset 00:20 rolled over),
+                             # 7d 43% — full band, no park needed.
     points: 3                # was 4 combined; the run moved to STORY-182's 3
     ceremony: 3-pointer      # implementer -> spec | quality -> DoD gate -> reality gate
     order: 2                 # the risk peak: everything that must be true BEFORE a loop may start
