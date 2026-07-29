@@ -25,6 +25,15 @@ _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
 
+# STORY-180 minor 8 (AC6) -- deliberately left at the FRONT (`insert(0, ...)`),
+# same as `_SCRIPTS` above, rather than moved to `append`. Reviewed and kept:
+# `tools/` today holds only `demo_engine/` (importable) and the hyphenated
+# `ui-sweep/` (not a valid Python identifier, so it can never be imported and
+# can never collide with anything on `sys.path`), so there is zero real
+# collision risk right now, and front-insertion matches the pre-existing
+# `_SCRIPTS` precedent immediately above. Re-open this decision (append
+# instead) if `tools/` ever gains a second, generically-named importable
+# package that could plausibly shadow a stdlib or third-party module.
 _TOOLS = _REPO_ROOT / "tools"
 if str(_TOOLS) not in sys.path:
     sys.path.insert(0, str(_TOOLS))
