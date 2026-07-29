@@ -1,7 +1,7 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/queries/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: d004da7
+verified_sha: 40e2a2c
 verified_sprint: sprint-62
 status: verified          # verified | stale | archived
 ---
@@ -58,14 +58,26 @@ boundary CI floors are catalogued in [[architecture-boundary]].
     defensive negative length) -> nothing. Checking most-severe-first means a streak that also
     clears a lower rung (e.g. a pathological config where `partial == degraded`) still resolves to
     the highest rung it clears, never a weaker one.
-  - `Health.DEGRADED` (sustained degraded-performance): always `degraded`, regardless of length —
-    there is only one failing-adjacent bucket for this health, so no length comparison applies.
+  - `Health.DEGRADED` (sustained degraded-performance) — STORY-149: SYMMETRIC with the `DOWN`
+    ladder's damping, not unconditional — `length >= degraded` -> `degraded`; else `length == 1`
+    -> the internal-warning outcome; else (e.g. `length == 0`) -> nothing. Only one
+    failing-adjacent bucket exists for this health (no `major`/`partial` escalation), but reaching
+    it still requires the same streak length as the `DOWN` ladder's `degraded` rung. The two length
+    checks are ordered `>= degraded` BEFORE `== 1` (mirroring the `DOWN` ladder), so a config with
+    `degraded == 1` proposes rather than warns — identical to what `DOWN` does at that threshold.
+    Before STORY-149 this branch proposed `degraded` unconditionally for ANY length — a damping gap,
+    since `_collapse_health` (`pipeline.py::_collapse_health`) returns `DEGRADED` for any
+    single-cycle location disagreement, so a lone one-cycle blip across locations proposed a
+    public status change with zero anti-flap protection.
   - `Health.UP` (passing): `length >= recovery` -> `operational`; else -> nothing (not yet confirmed
     recovered).
   - Degenerate/boundary inputs (AC4) all have defined, no-crash behavior: length exactly at each
     threshold and just below it (tested for major/partial/degraded/recovery), length 0 for every
     health value, and a defensive negative length for `Health.DOWN` — none of these raise or
-    mis-bucket; they fall through to the documented branch.
+    mis-bucket; they fall through to the documented branch. `Streak(DEGRADED, length=0)` is
+    unreachable from `streak()` in practice (any non-`None` streak has `length >= 1`); the length-0
+    `DEGRADED` outcome documented above keeps the ladder symmetric at that unit boundary only,
+    with no field impact (STORY-149 AC5).
   - Pure: no I/O, no config/DB read, imports only `src.core.domain` types + `pydantic`/stdlib (AC3).
 
 ### The availability query engine (`core/queries/availability.py`, STORY-011, dossier §11, proposal §8)
@@ -229,3 +241,23 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   113→168, `bucket_into_cycles` 127→133, `rollup_group` 232→285. No behavior/Fact changed.
   verified_sha → 10a2d73.
 - sprint-62 (STORY-146): RE-VERIFIED, no content change. The nested-config migration rewrote `AppConfig(...)` construction in `test_orchestrate.py` and `test_orchestration_integration.py` — authoring syntax only. This article's claims are about the CONSUMPTION shape (`orchestrate_signal` resolving `component_id`, `thresholds` and `interval` per signal), which STORY-146 AC7/AC8 pin byte-identical: `app.signals` survives as a derived attribute and `component_for_signal`/`thresholds_for` are asserted unchanged against pre-migration literals. Claims re-checked against code, not bulk-stamped. verified_sha -> d004da7.
+- sprint-62 (STORY-149): **a Fact this article previously stated was the defect, written down.** The
+  anti-flap subsection said `Health.DEGRADED` is "always `degraded`, regardless of length — there is
+  only one failing-adjacent bucket for this health, so no length comparison applies" — faithfully
+  mirroring `pipeline.py`'s own docstring, which is how a damping hole survived every verification
+  pass since sprint-8: article and code agreed, so the staleness machinery had nothing to catch. The
+  premise ("only one bucket") is true; the conclusion ("so no length check") never followed from it.
+  `anti_flap`'s `DEGRADED` branch now requires `length >= thresholds.degraded`, warns internally at
+  `length == 1`, and proposes nothing otherwise — the Facts above are rewritten to the new rule and
+  to the check ORDER (`>= degraded` before `== 1`, so `degraded == 1` behaves like `DOWN` at the same
+  threshold). Two existing tests asserted the old rule and were rewritten, not deleted
+  (`test_degraded_streak_of_length_one_yields_internal_warning`,
+  `test_degenerate_degraded_streak_of_length_zero_yields_nothing_not_a_crash`); two were added for
+  the below-threshold band and the unchanged sustained case. The `DOWN` and `UP` ladders are
+  byte-identical in the diff (AC8). No `decide`/`orchestrate` change was needed —
+  `orchestrate.py`'s NOOP-on-`proposed_status is None` path already absorbs the two new
+  nothing-proposed outcomes; verified at plan time and re-confirmed by a reality gate that drove
+  `orchestrate_signal` over seeded multi-location observations and, run again at the pre-fix commit
+  in a worktree, failed on exactly the five checks the fix is responsible for. Phase 2 (breadth as a
+  severity ceiling, and the `degraded` semantic conflation) is NOT here — see D1/D2 in
+  `docs/scrum/sprints/2026-07-28-sprint-62/decisions-and-future-work.md`. verified_sha -> 40e2a2c.
