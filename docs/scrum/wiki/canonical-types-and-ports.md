@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
-verified_sha: 40e2a2c
-verified_sprint: sprint-62
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -59,7 +59,7 @@ status: verified
 - STORY-045: `ComponentNotFoundError` (`component.py::ComponentNotFoundError`, a `ValueError` subclass)
   mirrors `proposal.py::ProposalNotFoundError`'s pattern. Raised by `ComponentRepository.set_status`
   when the conditional write affects zero rows (2026-06-28 check-then-act agreement: never a bare
-  `ValueError`) — both `PostgresComponentRepository` and `FakeComponentRepository` raise it identically
+  `ValueError`) — both `DynamoComponentRepository` and `FakeComponentRepository` raise it identically
   (2026-06-26 fake/adapter parity agreement). See [[persistence-adapters]] for the adapter Facts.
 - STORY-044: `Signal` (`topology.py::Signal`, frozen) is the seeded-topology read model — distinct
   from `signal.py::SignalObservation` (a runtime observation). Fields: `signal_key:str`, `name:str`,
@@ -109,13 +109,15 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
 - `StatusPublisherPort.publish(change: StatusChange) -> None` — outbound
   (`status_publisher.py::StatusPublisherPort.publish`).
 - `ObservationRepository.save_new(batch: Sequence[SignalObservation]) -> int` — outbound
-  persistence; returns insert count (ON CONFLICT DO NOTHING semantics) (`observation_repository.py::ObservationRepository.save_new`).
+  persistence; idempotent insert, never a duplicate on replay (the DynamoDB adapter implements
+  this via an `EVT#<event_id>`/`DEDUPE` marker item, `dynamo_observation_repository.py:58-62`)
+  (`observation_repository.py::ObservationRepository.save_new`).
   STORY-011 adds `ObservationRepository.in_window(signal_key: str, since: datetime, until:
   datetime) -> Sequence[SignalObservation]` (`observation_repository.py::ObservationRepository.in_window`) — the READ
   side: returns `signal_key`'s observations with `observed_at` in the half-open range
   `[since, until)`, so adjacent windows never double-count the boundary instant. This is the
-  only read path the availability engine uses; ALL SQL for it stays behind the Postgres
-  adapter (see [[persistence-adapters]]).
+  only read path the availability engine uses; the adapter's persistence mechanism stays
+  entirely behind the port (see [[persistence-adapters]]).
 - `WatermarkRepository.get(signal_key: str) -> datetime | None` + `advance(signal_key: str,
   to: datetime) -> None` — core-owned per-signal ingestion cursor (`watermark.py::WatermarkRepository.get` / `watermark.py::WatermarkRepository.advance`).
 - `ClockPort.now() -> datetime` — injected, returns tz-aware UTC, so time is controllable
@@ -267,3 +269,10 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   "already only ever builds the two coherent shapes" of `Verdict` (line 49) — STORY-149's diff is
   confined to `anti_flap`'s `DEGRADED` branch and its docstring; `collapse` is byte-identical, so the
   claim was re-read against the code rather than bulk-stamped. verified_sha -> 40e2a2c.
+- sprint-63 (STORY-181): the sweep flagged `component.py`, `publication.py`, `ports/__init__.py`,
+  `ports/component_repository.py`, `ports/observation_repository.py`. Two Facts above directly
+  paraphrased the phantom-class/SQL prose this story retired: `ComponentNotFoundError`'s note now
+  names `DynamoComponentRepository` (was `PostgresComponentRepository`, a class that does not
+  exist), and `ObservationRepository.save_new`'s note now describes the idempotent-insert
+  guarantee via the real `EVT#.../DEDUPE` marker item instead of "ON CONFLICT DO NOTHING" SQL that
+  never ran here. No port signature, contract, or test changed. verified_sha -> b272c32.
