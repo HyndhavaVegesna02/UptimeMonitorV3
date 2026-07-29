@@ -994,7 +994,18 @@ stories:
   - id: STORY-176
     title: Grail demo engine part 2a - scenario player, demo fleet, time base, publish guard
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
-    status: ready   # SPLIT 2026-07-29 at sprint-63 planning (PO). yt-plan-verifier re-estimated
+    status: done    # DONE sprint 63 at e514c1d, PO-ACCEPTED 2026-07-30. Spec PASS; quality
+                    # FIX_REQUIRED (1 critical + 4 major) -> 11-commit fix round; scoped gate 5/5
+                    # (614 tests); two-sided reality gate PASS + a C1 mutation proof. Accepted WITH
+                    # review debt on the record: three upstream 529s killed the fix-round
+                    # re-reviewer, so the PO authorised completing that review after acceptance.
+                    # HISTORICAL NOTE ON THIS ENTRY'S OWN CITATIONS: they were written pre-lock and
+                    # the plan's corrected addresses supersede them (config.py:554-564 not 292-299;
+                    # httpcheck.yaml:8 not :6; app.py:160-183 not :160-182; decide.py:122-126
+                    # DECIDES and :171-172 publishes). Also: the duplicate-app.id "silent discard"
+                    # trap this story's AC8 describes no longer exists -- sprint 62's 7648d74 made
+                    # it a raised DuplicateAppIdError (config.py:716).
+                    # SPLIT 2026-07-29 at sprint-63 planning (PO). yt-plan-verifier re-estimated
                     # the combined story at 6 pts (STORY-148 delivered the whole wire contract
                     # for 3), so the run moved to STORY-182 and this keeps the build. AC6/AC7
                     # moved there. Four AC defects fixed pre-lock: a publish-guard BYPASS via
@@ -1403,7 +1414,20 @@ stories:
   - id: STORY-181
     title: Retire stale references in code comments and docstrings (dead platforms, dead classes, dead story pointers)
     file: docs/scrum/stories/STORY-181-retire-stale-code-references.md
-    status: ready   # AC approved + estimated at refinement 2026-07-29; no open questions.
+    status: done    # DONE sprint 63 at 05245fd, PO-ACCEPTED 2026-07-30. All 16 sites (families
+                    # A-D) plus one defect-driven rewording; comment-only, test count UNCHANGED at
+                    # 614 per AC8. Reality gate PASS: AC6 scan 15 hits at the parent 16143d1, 0 at
+                    # the story head. AC5 proven by AST (all 11 changed .py files have identical
+                    # docstring-stripped ASTs), which is stronger than the AC's own line-by-line
+                    # read. AC7 was NOT the expected no-op: CLAUDE.md's own History bullets claimed
+                    # two comments "still name" Railway/Vercel/STORY-017, made false by this story.
+                    # THREE defects found in AC6's own scan definition (see plan.md's appended
+                    # corrections): it could not come back empty (asgi.py:12's legitimate
+                    # DATABASE_URL mention), it would have missed windowState.ts:8's bare
+                    # "Postgres", and it saw 15 of 16 real sites because persistence/__init__.py
+                    # said lowercase "neon". Two pre-existing wiki rot sites were flagged, not
+                    # fixed (api-five-file-convention.md, sample-mode.md).
+                    # AC approved + estimated at refinement 2026-07-29; no open questions.
                     # Pulled into sprint 63 with STORY-176 on PO instruction. Filing notes: ~2pts. Found by the PO-directed docs accuracy pass (2026-07-29, commit
                     # e9a8ad3) that corrected the same class of rot in CLAUDE.md and two wiki
                     # articles. 12 references across 10 files, NONE of which any gate can catch:

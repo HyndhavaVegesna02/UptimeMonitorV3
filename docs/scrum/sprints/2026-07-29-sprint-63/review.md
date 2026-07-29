@@ -124,3 +124,30 @@ Follow-ups already filed or ready to file:
   Docker); the two pre-existing wiki rot sites STORY-181 flagged but did not fix
   (`api-five-file-convention.md` and `sample-mode.md` still describe `Postgres*Repository` as the
   live wiring — the latter probably dies with STORY-155).
+
+---
+
+## PO verdict — 2026-07-30
+
+**All three stories ACCEPTED** (STORY-180, STORY-176, STORY-181). 7 committed / **7 accepted**,
+recorded in `.scrum/velocity.json` as sprint 63.
+
+**On the two items raised for decision:**
+
+1. **STORY-176's review debt — accepted, and the review authorised to run after acceptance.** The PO
+   said: *"i accept, and if any reviews are to be done, you can go ahead and do them."* So the
+   fix-round quality re-review was dispatched post-acceptance. Because the story is already accepted,
+   anything it finds becomes a **follow-up story**, never a re-opening of STORY-176 — and it matters
+   anyway, since STORY-182's live loop run next sprint depends on exactly this code.
+2. **The mid-sprint checklist amendment stands.** The PO did not ask for the revert that was offered,
+   so the worktree/editable-install guard stays at the checklist rung in
+   `.scrum/checklists/implementer.md` plus its dated A1 refinement in `working-agreements.md`.
+
+**`main` is NOT touched.** The standing PO instruction is "don't merge with main", so `sprint-63`
+stays unmerged at `05245fd` (plus `.scrum/`/docs commits) exactly as sprints 59–62 did. Acceptance
+here means the work is approved, not that it lands on the default branch — say the word if you want
+the merge.
+
+**Retro amendments A3/A4/A5 are still awaiting approval** — the retro is its own ceremony and the
+acceptance above was of the stories. They are written up in `retro.md` and not yet landed at any
+rung.
