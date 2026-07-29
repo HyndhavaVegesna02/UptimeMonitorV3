@@ -523,7 +523,72 @@ story_gates:
       commit: 1e025a8
       at: '2026-07-29T13:59:16+00:00'
 final_gate:
-  head: null
-  dod_evidence: []
+  head: 2b0bf86
+  note: The FULL 8-command gate on the sprint's final HEAD -- the evidence of record for sprint-62, as
+    the sprint-45 token-economy amendment requires (per-story gates may be scoped; this one may not).
+    572 backend tests + 363 frontend tests, 8 import contracts kept, 218 files formatted. Ran with DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021
+    (fixed-port container) to bypass the dynamo_local ephemeral-port defect, STORY-179 -- environment
+    only, no repo file changed. Two untracked files (package.json/package-lock.json, an artifact of an
+    earlier UI exploration outside this sprint's scope) are reported by the runner as not gating; neither
+    is read by any gate command.
+  ansi_note: Exactly 2 ESC bytes, both from `npm run build`'s coloured output, stripped before merge --
+    they make the emitted fragment invalid YAML (#x001b). Third occurrence this sprint; tracked as STORY-178,
+    whose sharpness is that the skill says merge the fragment VERBATIM and the fragment is not always
+    mergeable. Content is otherwise the runner's own.
+  dod_evidence:
+  - command: pytest
+    exit_code: 0
+    output_tail: tor.py ...                       [ 92%] | backend\tests\test_streak.py .........                                   [
+      94%] | backend\tests\test_topology_domain.py ........                           [ 95%] | backend\tests\test_topology_endpoint.py
+      ......                           [ 96%] | backend\tests\test_vendor_health.py ........                             [
+      97%] | backend\tests\test_verdict.py ........                                   [ 99%] | backend\tests\test_zone_layout.py
+      ....                                   [100%] | ============================ 572 passed in 40.21s
+      =============================
+    commit: 2b0bf86
+    at: '2026-07-29T14:07:39+00:00'
+  - command: python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"
+    exit_code: 0
+    output_tail: '--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | -------------------------------------
+      | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence
+      KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT
+      | src-no-tests KEPT | Contracts: 8 kept, 0 broken.'
+    commit: 2b0bf86
+    at: '2026-07-29T14:08:21+00:00'
+  - command: ruff check .
+    exit_code: 0
+    output_tail: All checks passed!
+    commit: 2b0bf86
+    at: '2026-07-29T14:08:22+00:00'
+  - command: ruff format --check .
+    exit_code: 0
+    output_tail: 218 files already formatted
+    commit: 2b0bf86
+    at: '2026-07-29T14:08:23+00:00'
+  - command: cfn-lint infra/stack.yaml
+    exit_code: 0
+    output_tail: ''
+    commit: 2b0bf86
+    at: '2026-07-29T14:08:23+00:00'
+  - command: npm test
+    exit_code: 0
+    output_tail: '> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend
+      | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  19:38:39 | Duration  102.30s
+      (transform 13.43s, setup 105.88s, import 56.66s, tests 116.66s, environment 354.97s)'
+    commit: 2b0bf86
+    at: '2026-07-29T14:08:35+00:00'
+  - command: npm run build
+    exit_code: 0
+    output_tail: 'in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37
+      kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48
+      kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56
+      kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14
+      kB │ gzip: 85.39 kB | ✓ built in 1.12s'
+    commit: 2b0bf86
+    at: '2026-07-29T14:10:22+00:00'
+  - command: npm run lint
+    exit_code: 0
+    output_tail: '> frontend@0.0.0 lint | > eslint .'
+    commit: 2b0bf86
+    at: '2026-07-29T14:10:33+00:00'
 hotfixes: []
 interrupts: []
