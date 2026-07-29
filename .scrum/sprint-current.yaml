@@ -160,6 +160,51 @@ stories:
            locations/freshness' TRAP WAS ALREADY CLOSED IN SPRINT 62. The AC8 test therefore
            proves the positive survival case, which is the right thing to prove. This is a
            PLAN-ACCURACY defect, not a story defect — correction note at sprint close."
+    fix_round:
+      head: e514c1d           # range 31787b6..e514c1d, 11 commits, tree clean
+      agent_outcome: "The fix implementer DIED on an upstream `API Error: 529 Overloaded` after
+        its last commit but BEFORE running the gate or reporting. All 11 commits had landed and
+        the tree was clean, so nothing was half-applied — verified by the orchestrator, which then
+        did the verification itself rather than resuming the agent (a self-reported gate was never
+        going to be the evidence of record anyway)."
+      sm_verified_read_only:
+        - "C1 fixed and the replacement DISCRIMINATES by construction:
+           test_scenario.py::test_expand_scenario_consecutive_cycles_are_spaced_by_the_scenarios_own_interval
+           asserts `gaps == {timedelta(seconds=interval_seconds)}` parametrized over 30 AND 45,
+           driven from the real expand_scenario — the reviewer's mutant (hardcode one interval)
+           necessarily fails the other case. Staggered test reworked to assert per-monitor
+           observed_at spacing from the rows."
+        - "M2 fixed properly: load_scenario_file raises a NAMED InvalidScenarioError naming BOTH
+           the file and the signal key for non-mapping top level, non-mapping block, missing
+           field, non-str monitor_id, non-int (and non-bool) interval_seconds, interval <= 0, and
+           malformed cycles — with the AC2f reason stated AT the literal. Matches the peer
+           filename-prefixed convention of composition/config.py::load_config."
+        - "M1 fixed HONESTLY: the wiki now states the true fact (both monitors' LAST cycle lands
+           at the same end_time, so they share exactly that one boundary) AND carries a labelled
+           Correction explaining that the old test asserted only set inequality over buckets built
+           from arguments the test itself supplied, so it could never have caught the false claim.
+           CLAUDE.md's unconditional never-future claim became a stated, ENFORCED precondition."
+        - "M3 fixed: test_scenario_files_agree_with_the_fleet_config_on_monitor_id_and_interval
+           loops every config/demo/scenarios/*.yaml against load_config('config/demo'), resolving
+           the signal (raises UnknownSignalError on a bogus key) and asserting native_id and
+           interval_seconds agree — closing the blind spot where a typo'd monitor_id left 604
+           tests green while the real run emitted rows no query matches."
+        - "M4/S1/S2 fixed: dead event_id_prefix deleted; the scenario-coverage fake now subclasses
+           RejectedObservationRepository; the CONFIG_DIR-governs-create_app half of the publish
+           safety proof was un-gated from Docker so it can no longer SILENTLY SKIP."
+        - "e514c1d additionally REHABILITATED the quarantined dev-setup-and-dod.md. Checked, not
+           accepted on faith: it is a reasoned re-verification (the History entry argues the three
+           changed code_refs are CLAUDE.md's demo paragraphs, the DoD file and conftest.py, none
+           of which touches a Fact this article asserts) and the Facts spot-checked are current
+           (eight import contracts, five backend + three frontend commands). The quarantine's
+           actual purpose — that its claims never enter a subagent brief — was never violated."
+      blocked_on: "ENVIRONMENTAL, not the story: the shell safety classifier
+        (claude-sonnet-5[1m]) went unavailable mid-verification, so no NEW command can be run —
+        previously-seen commands still pass, anything unseen is refused. The scoped DoD gate and
+        the two-sided reality gate are therefore NOT YET RUN. STORY-176 stays in_progress and is
+        NOT Done. The reality-gate harness is written and waiting at
+        <scratchpad>/reality_gate_176.py (provenance print + safe side + unsafe discrimination
+        side + planted-collision side; no network call, no loop, no server)."
       dispatched_fix_round: "2026-07-30, fix implementer on the critical + 4 majors + 2 quality
         minors that bear on the SAFETY proof (the port-fake subclass and the Docker gating that
         lets the CONFIG_DIR half of the guard proof silently SKIP). Story stays in_progress; no
