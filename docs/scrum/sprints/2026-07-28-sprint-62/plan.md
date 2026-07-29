@@ -326,7 +326,7 @@ construction instead.
       `…746000000Z` against a bound of `…746000Z` is **included**. Then implement.
 - [x] 5. Failing test: the second grammar (`summarize count()`) returns `[{"count()": N}]` for a
       known monitor and a 0-count for an unknown one. Then implement.
-- [ ] 6. Wrap it in an HTTP server implementing the pinned protocol (POST `query:execute` → 202
+- [x] 6. Wrap it in an HTTP server implementing the pinned protocol (POST `query:execute` → 202
       + `requestToken`, GET `query:poll` → `SUCCEEDED` + `records`), with the `Api-Token` header
       honoured.
 - [ ] 7. Test through the **real** `make_grail_executor` against the local server, asserting
