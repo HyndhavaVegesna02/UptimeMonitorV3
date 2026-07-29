@@ -207,8 +207,11 @@ def anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcom
       `major_outage`; else `length >= partial` -> `partial_outage`; else `length >= degraded` ->
       `degraded`; else a streak of exactly 1 -> an internal warning (logged, never published);
       else (e.g. length 0) -> nothing.
-    - `Health.DEGRADED` (sustained degraded-performance): always `degraded` — there is only one
-      failing-adjacent bucket for this health, so no length comparison is needed.
+    - `Health.DEGRADED` (sustained degraded-performance): symmetric with the `DOWN` ladder's
+      damping — `length >= degraded` -> `degraded`; else a streak of exactly 1 -> an internal
+      warning (logged, never published); else (e.g. length 0) -> nothing. There is only one
+      failing-adjacent bucket for this health (no `major`/`partial` escalation), but reaching it
+      still requires the same streak length as the `DOWN` ladder's `degraded` rung.
     - `Health.UP` (passing): `length >= recovery` -> `operational`; else -> nothing (not yet
       confirmed recovered).
     """
@@ -224,7 +227,11 @@ def anti_flap(streak_: Streak, thresholds: AntiFlapThresholds) -> AntiFlapOutcom
         return _NOTHING
 
     if streak_.health is Health.DEGRADED:
-        return _propose(ComponentStatus.DEGRADED)
+        if streak_.length >= thresholds.degraded:
+            return _propose(ComponentStatus.DEGRADED)
+        if streak_.length == 1:
+            return _INTERNAL_WARNING
+        return _NOTHING
 
     # Health.UP
     if streak_.length >= thresholds.recovery:
