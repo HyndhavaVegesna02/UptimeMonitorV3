@@ -209,10 +209,18 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   does NOT touch a freshness/completeness path, since `expected_locations` has zero consumers
   outside `config.py`), a fully dark monitor (`dark-monitor.yaml` — empty window → `streak` returns
   `None` → `orchestrate_signal` NOOPs, `orchestrate.py:113-121`), staggered intervals on one
-  component (`staggered-intervals.yaml` — two monitors' `bucket_into_cycles` results share no cycle
-  boundary), and a late-returning monitor (`late-return.yaml` — ingest simply resumes after a gap;
-  `reentry_cycles` has no consumer, so no re-entry POLICY is asserted). All five are driven through
-  the real `normalize_rows` → `IngestService` chain with in-memory fakes, pinned by
+  component (`staggered-intervals.yaml` — two monitors at different `interval_seconds` (30/45); their
+  ingested `observed_at` spacing matches each monitor's OWN interval, pinned by
+  `test_scenario_coverage.py::test_staggered_intervals_scenario_observed_at_spacing_matches_each_monitors_own_interval`.
+  **Correction (sprint-63 fix round, quality finding M1):** an earlier version of this bullet and its
+  cited test claimed the two monitors' `bucket_into_cycles` results "share no cycle boundary" — false:
+  because expansion is past-anchored, both monitors' LAST cycle lands at the same `end_time`, so they
+  share exactly that one boundary; the prior test only asserted set INEQUALITY of bucket keys, built
+  from the `since`/`interval` the test itself supplied rather than the rows, so it never actually
+  pinned per-monitor spacing and could not have caught the false claim), and a late-returning monitor
+  (`late-return.yaml` — ingest simply resumes after a gap; `reentry_cycles` has no consumer, so no
+  re-entry POLICY is asserted). All five are driven through the real `normalize_rows` →
+  `IngestService` chain with in-memory fakes, pinned by
   `backend/tests/demo_engine/test_scenario_coverage.py`.
 
 ### Test surface
