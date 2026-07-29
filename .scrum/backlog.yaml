@@ -1358,6 +1358,60 @@ stories:
     type: chore
     priority: 13
     sprint: null
+  - id: STORY-181
+    title: Retire stale references in code comments and docstrings (dead platforms, dead classes, dead story pointers)
+    file: null
+    status: draft   # ~2pts. Found by the PO-directed docs accuracy pass (2026-07-29, commit
+                    # e9a8ad3) that corrected the same class of rot in CLAUDE.md and two wiki
+                    # articles. 12 references across 10 files, NONE of which any gate can catch:
+                    # they are comments and docstrings, so pytest/ruff/lint-imports are all green
+                    # while they mislead every reader. Deliberately NOT fixed in that pass -
+                    # editing production files is a story's job, not a docs pass's.
+                    #
+                    # (A) DEAD DEPLOY PLATFORMS - the system moved to AWS ECS + CloudFront in
+                    #     STORY-089; Railway/Vercel were never used:
+                    #       backend/src/composition/run.py:177  "production (Railway, no .env ...)"
+                    #       frontend/src/api/client.ts:18-19    "production (Vercel rewrites to the
+                    #                                            Railway backend)"
+                    # (B) RETIRED PERSISTENCE - Neon Postgres + Alembic were retired by STORY-087.
+                    #     The first three name SYMBOLS THAT DO NOT EXIST (verified: `grep -rn
+                    #     "class Postgres" backend/src` returns nothing; every repo is `Dynamo*`),
+                    #     which is worse than vague - a reader searches for a class that was deleted:
+                    #       backend/src/core/domain/component.py:17         PostgresComponentRepository
+                    #       backend/src/core/domain/publication.py:35       PostgresPublicationRepository
+                    #       backend/src/core/ports/component_repository.py:53 PostgresComponentRepository
+                    #       backend/src/adapters/persistence/__init__.py:1  "repositories (e.g. neon)"
+                    #         <- the SAME wrong words CLAUDE.md carried until e9a8ad3
+                    #       backend/src/core/ports/__init__.py:7            "or Neon must understand it"
+                    #       backend/src/composition/run.py:4                "Postgres repository adapters"
+                    #       frontend/src/features/maintenance/windowState.ts:8 "the Postgres adapter's
+                    #         starts_at <= at AND ends_at > at"  (the RULE is still correct - only the
+                    #         adapter name is wrong; keep the invariant, repoint the citation)
+                    #       pyproject.toml:50                               "persistence.neon"
+                    # (C) DEAD STORY POINTERS - STORY-017 is `archived` and was titled "Deployment
+                    #     topology"; it was never about CORS or auth, so both these comments point a
+                    #     reader at a story that cannot deliver what they promise:
+                    #       backend/src/api/v1/_shared/middleware.py:4  "Intended occupant: STORY-017
+                    #         (CORS and authentication middleware)" - and NO CORS is needed at all:
+                    #         dev is same-origin via the Vite proxy, prod via CloudFront. The seam
+                    #         should say that, or the file should go.
+                    #       frontend/src/api/actor.ts:3-5  "Auth is deferred to STORY-017" - auth has
+                    #         NO queued story. Either file one or say "unassigned" honestly.
+                    #
+                    # EXPLICITLY NOT IN SCOPE: MaintenancePage.tsx:104,118 placeholder text
+                    #   ("e.g. Postgres upgrade"). That is user-facing copy and a Postgres upgrade is
+                    #   a perfectly good example of a maintenance window - it is not stale.
+                    #
+                    # AC shape: each reference either corrected to current truth or deleted; no
+                    # behaviour change (docstrings/comments only, so the diff must be comment-only
+                    # and the full gate must stay green with no test edits); and a grep-based check in
+                    # the story evidence proving zero remaining hits for `Railway|Vercel|class
+                    # Postgres|Neon|STORY-017` under backend/src + frontend/src, so the story cannot
+                    # be reported done while a straggler survives.
+    points: 2
+    priority: 58
+    type: chore
+    sprint: null
   - id: STORY-178
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
     file: null
