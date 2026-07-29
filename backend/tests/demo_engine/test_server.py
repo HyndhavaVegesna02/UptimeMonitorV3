@@ -88,6 +88,33 @@ def test_missing_authorization_header_is_rejected():
         assert resp.status_code == 401
 
 
+def test_results_cache_is_evicted_after_being_polled():
+    """STORY-180 AC4 (minor 5): `_DemoHTTPServer.results` must not grow one
+    entry per query for the process lifetime -- a poll consumes its token's
+    entry, so a long-running demo (STORY-176) never accumulates unbounded
+    memory for tokens nobody polls again.
+    """
+    store = DemoRowStore()
+    with DemoEngineServer(store) as server:
+        query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+        execute_resp = httpx.post(
+            f"{server.base_url}/platform/storage/query/v1/query:execute",
+            headers=_headers(),
+            json={"query": query},
+        )
+        token = execute_resp.json()["requestToken"]
+        assert token in server._httpd.results
+
+        poll_resp = httpx.get(
+            f"{server.base_url}/platform/storage/query/v1/query:poll",
+            headers=_headers(),
+            params={"request-token": token},
+        )
+
+        assert poll_resp.status_code == 200
+        assert token not in server._httpd.results
+
+
 def test_two_server_instances_never_collide_on_a_hardcoded_port():
     """Each server binds port 0 and reads back the ACTUALLY bound port
     (never an ephemeral port picked and handed off separately) — the exact

@@ -114,7 +114,14 @@ class _DemoRequestHandler(BaseHTTPRequestHandler):
 
         params = parse_qs(split.query)
         token = params.get("request-token", [None])[0]
-        records = self.server.results.get(token) if token else None
+        # Popped, not merely read: every query here resolves synchronously
+        # server-side (there is no "poll again later, still RUNNING" state
+        # to preserve the entry for), so a token is consumed by its first
+        # poll. Left as a plain `get`, `results` grows one entry per query
+        # for the process lifetime -- harmless for a test-scoped engine, a
+        # slow leak once STORY-176 makes it a long-running process
+        # (STORY-180 AC4/minor 5).
+        records = self.server.results.pop(token, None) if token else None
         if records is None:
             self._write_json(404, {"error": "unknown request token"})
             return
