@@ -41,15 +41,18 @@ class DemoRowStore:
         window (STORY-148 AC5) is computed relative to. It defaults to the
         REAL wall clock, read fresh on every call — never a value fixed at
         store-construction time — so the window tracks the REQUEST instant,
-        not "how long this engine has been running".
+        not "how long this engine has been running". The clock is read only
+        for a vendor-health query: an ingest query never uses it, so reading
+        it unconditionally on every call (STORY-180 minor 7) was a wasted
+        read on the far more common path.
         """
-        instant = (
-            request_instant
-            if request_instant is not None
-            else datetime.now(timezone.utc)
-        )
         parsed = parse_query(query)
         if isinstance(parsed, VendorHealthQuery):
+            instant = (
+                request_instant
+                if request_instant is not None
+                else datetime.now(timezone.utc)
+            )
             return self._answer_vendor_health(parsed, request_instant=instant)
         return self._answer_ingest(parsed)
 

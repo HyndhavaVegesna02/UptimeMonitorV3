@@ -8,6 +8,7 @@ two, and that the watermark bound is PARSED rather than string-compared.
 """
 
 from datetime import datetime, timedelta, timezone
+from unittest import mock
 
 import pytest
 from demo_engine.query_grammar import UnrecognizedDqlQueryError, parse_query
@@ -92,6 +93,36 @@ def test_ingest_query_with_no_watermark_returns_everything_for_the_monitor():
 
     query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
     results = store.handle_query(query)
+
+    assert [row["event.id"] for row in results] == ["1"]
+
+
+def test_ingest_query_never_reads_the_wall_clock():
+    """STORY-180 AC5 (minor 7): only the vendor-health grammar's
+    `from:now()-2h` window uses `request_instant`/the wall clock
+    (`store.py::_answer_vendor_health`) -- an ingest query must never read
+    it at all. Pinned by making `datetime.now` explode if `handle_query`
+    calls it while answering an ingest query.
+    """
+
+    class _ExplodingDatetime:
+        @staticmethod
+        def now(*args, **kwargs):
+            raise AssertionError("wall clock must not be read for an ingest query")
+
+    store = DemoRowStore()
+    store.add_row(
+        build_row(
+            monitor_id="MON-A",
+            location="LOC-1",
+            event_id="1",
+            timestamp=format_ns_timestamp(_T0),
+        )
+    )
+    query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+
+    with mock.patch("demo_engine.store.datetime", _ExplodingDatetime):
+        results = store.handle_query(query)
 
     assert [row["event.id"] for row in results] == ["1"]
 
