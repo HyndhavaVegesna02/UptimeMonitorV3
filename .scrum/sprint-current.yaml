@@ -126,9 +126,12 @@ stories:
   - id: STORY-176
     title: "Grail demo engine part 2a — scenario player, demo fleet, time base, publish guard"
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
-    status: in_progress      # implementer dispatched 2026-07-30 from HEAD 44f49c5 (clean tree),
-                             # after a Window Check: 5h window 4% used (reset 00:20 rolled over),
-                             # 7d 43% — full band, no park needed.
+    status: done             # DONE at e514c1d (board evidence through 788391e). Round 1: spec PASS,
+                             # quality FIX_REQUIRED; fix round landed 11 commits; scoped gate 5/5
+                             # (614 tests), two-sided reality gate PASS, C1 discrimination proof
+                             # PASS. Carries ONE piece of review debt — see fix_round.re_review:
+                             # three 529s killed the re-reviewer, so no independent reviewer read
+                             # the fix diff as code. Verified mechanically instead.
     points: 3                # was 4 combined; the run moved to STORY-182's 3
     ceremony: 3-pointer      # implementer -> spec | quality -> DoD gate -> reality gate
     order: 2                 # the risk peak: everything that must be true BEFORE a loop may start
@@ -162,6 +165,31 @@ stories:
            PLAN-ACCURACY defect, not a story defect — correction note at sprint close."
     fix_round:
       head: e514c1d           # range 31787b6..e514c1d, 11 commits, tree clean
+      re_review: "ATTEMPTED AND ABANDONED, then replaced with mechanical verification. The quality
+        reviewer was re-dispatched on the 11 fix commits and died on an upstream 529 THREE times
+        (once fresh, twice on resume), returning no findings at all. Rather than keep feeding it, the
+        orchestrator ran the two probes the re-review brief had specifically asked for, plus a third:
+        (a) M3 MUTATION — typo'd `HTTP_CHECK-DEMO-APIGW-HEALTH` -> `...HEALT` in
+        config/demo/scenarios/clean-fleet.yaml and
+        test_scenario_files_agree_with_the_fleet_config_on_monitor_id_and_interval went RED
+        (1 failed); restored, `git status --short` and `git diff --stat` empty. So the coherence
+        check discriminates. (b) S2 — the DEMO-side guard test
+        test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate PASSES with
+        DYNAMO_ENDPOINT_URL UNSET (1 passed, not skipped): it takes no `dynamo_local` fixture and
+        uses a literal unreachable endpoint (127.0.0.1:1), so the half of the safety proof that must
+        never silently skip no longer can. (c) M2 — all six malformed shapes (cycles null, cycles
+        int, interval str, interval -30, interval 0, monitor_id int) raise the named
+        InvalidScenarioError naming the offending signal; none leaks a stdlib error.
+        WHAT THIS DOES NOT COVER, stated rather than hidden: no independent reviewer has read the
+        11 fix commits as CODE. C1/M1/M2/M3/M4/S1/S2 are each verified mechanically or by reading,
+        and the gate + both reality gates are green, but 'a second pair of eyes on the fix diff' is
+        review debt this story carries into review. Raise it with the PO."
+      s2_partial: "Honest limit on the S2 fix: only the SAFE side was un-gated. The UNSAFE
+        counterpart (test_create_app_with_live_config_dir_..., the discrimination half) still takes
+        `dynamo_local`, so on a Docker-less machine the in-test two-sided proof silently degrades to
+        one-sided. It does not matter for THIS sprint's evidence — the orchestrator's reality-gate
+        harness proves the unsafe side without Docker at all — but it is a real residual. Follow-up
+        candidate, not a blocker."
       agent_outcome: "The fix implementer DIED on an upstream `API Error: 529 Overloaded` after
         its last commit but BEFORE running the gate or reporting. All 11 commits had landed and
         the tree was clean, so nothing was half-applied — verified by the orchestrator, which then
@@ -294,6 +322,18 @@ stories:
     status: todo
     points: 2                # expanded pre-lock from 12 sites to 16 (verifier family (D))
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate
+    status_note: "in_progress from 2026-07-30; implementer dispatched after STORY-176 closed."
+    ac6_scan_defects_found_pre_dispatch: "The orchestrator ran the baseline scan itself before
+      dispatching and found TWO defects in AC6's own scan definition — the story's own lesson
+      landing on the story. (1) asgi.py:12 legitimately states 'It builds NO SQLAlchemy engine and
+      reads NO DATABASE_URL' — a CORRECT sentence, but AC6 lists DATABASE_URL as forbidden and
+      allowlists only the two MaintenancePage.tsx placeholders, so AC6's scan CANNOT come back
+      empty as written. (2) windowState.ts:8 says 'the Postgres adapter's' — bare `Postgres`,
+      matching neither `class Postgres` nor `Postgres*Repository`, so AC6's phrase list would MISS
+      a site the story itself lists as in-scope. Baseline at HEAD: 16 filtered hits across 13 files
+      with --include=*.py/*.ts/*.tsx; the __pycache__ inflation reproduces (15 unfiltered vs 3
+      filtered). Both corrections carried in the dispatch brief; the reality-gate scan uses bare
+      case-insensitive Postgres|Neon plus an explicit three-entry allowlist."
     order: 3                 # fully independent, comment-only, cannot block anything. Last on
                              # purpose. NOTE: .scrum/definition-of-done.md had the same rot and
                              # the orchestrator fixed it at planning — implementers may never
