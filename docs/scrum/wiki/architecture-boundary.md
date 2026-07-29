@@ -1,8 +1,8 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -41,9 +41,11 @@ status: verified
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.
-- The dossier §4 example names vendor subpackages (`inbound.dynatrace`, etc.) that do not
-  exist yet; the contracts use the real `inbound/outbound/persistence` packages so they run
-  against real modules, not phantoms (comment at `pyproject.toml` ("adapters-independence")).
+- The dossier §4 example names vendor subpackages (`inbound.dynatrace`, `outbound.statuspage`,
+  `persistence`) that all exist today (STORY-181, sprint-63: corrected a comment that had said
+  "do not exist yet" long after they were created); the contracts use these real
+  `inbound/outbound/persistence` packages so they run against real modules, not phantoms
+  (comment at `pyproject.toml` ("adapters-independence")).
 - **Schema boundary (dossier §9), RETIRED sprint-49 (STORY-087).** Until the DynamoDB
   cutover this was a second mechanical CI floor — `scripts/check_fk_direction.py` read real
   FKs from `information_schema` over `DATABASE_URL` and failed if any spine table referenced
@@ -153,4 +155,8 @@ status: verified
   cutover; `code_refs` dropped `scripts/check_fk_direction.py`, the Schema-boundary Facts and the
   Inference were rewritten to reflect the retirement, and the import boundary (`lint-imports`, 8
   contracts kept) is now the sole standing CI floor. verified_sha → 5b4ee36.
+- sprint-63 (STORY-181): the sweep flagged `pyproject.toml`. Its "vendor subpackages... do not
+  exist yet" comment was corrected — `inbound.dynatrace`, `outbound.statuspage` and `persistence`
+  all exist today. The Fact above paraphrasing that comment is corrected to match; no contract
+  count or boundary behaviour changed. verified_sha -> b272c32.
 
