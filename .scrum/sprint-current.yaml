@@ -132,6 +132,38 @@ stories:
     points: 3                # was 4 combined; the run moved to STORY-182's 3
     ceremony: 3-pointer      # implementer -> spec | quality -> DoD gate -> reality gate
     order: 2                 # the risk peak: everything that must be true BEFORE a loop may start
+    review_round_1:
+      implementer_head: 64b8706   # range 1aadf95..64b8706, 6 commits, tree clean
+      spec: PASS               # 18 in-scope AC lines MET, full AC-to-test trace, no gaps, no scope
+                               # additions. AC6/AC7 correctly absent (moved to STORY-182).
+      quality: FIX_REQUIRED    # 1 critical + 4 major, ALL inside the story's own new files; no
+                               # backend/src change needed for any fix (so AC8 is not threatened).
+      sm_independent_checks:
+        - "AC8 mechanical: `git diff --name-only 1aadf95..64b8706 -- backend/src/ frontend/` is
+           EMPTY. Verified by the orchestrator, not taken from the implementer's report."
+        - "The CRITICAL is REAL and I reproduced its substance without re-running the mutant:
+           expand_scenario at interval_seconds=45 emits 11:58:30/11:59:15/12:00:00 (correct 45s
+           spacing) but NO test asserts row-timestamp spacing at all — test_scenario.py:220-222
+           asserts the PARSED interval field, and the staggered test compares bucket sets built
+           from `since`/`interval` arguments THE TEST ITSELF passes, so the row timestamps never
+           enter the comparison. Correct-but-unpinned: the story's headline behaviour."
+        - "MAJOR 2 is REAL: `interval_seconds: -30` emits 12:01:00 and 12:00:30 for end_time
+           12:00:00 — rows in the FUTURE. That falsifies the UNCONDITIONAL claim now written into
+           CLAUDE.md and demo-engine.md ('no row is ever timestamped in the future') and lands
+           exactly in ingest_service.py's silent FUTURE_TOLERANCE quarantine (:37, :119-125) that
+           past-anchoring exists to avoid."
+        - "The implementer's flagged plan/story defect is CORRECT and I verified it at source:
+           DuplicateAppIdError is raised at config.py:716 (585-587 is now only the DOCSTRING
+           describing it), added by 7648d74 'fix(sprint-62): STORY-146 F4 - reject duplicate
+           app.id across config files'; `git merge-base --is-ancestor 7648d74 1aadf95` = YES.
+           So the plan's and story AC8's 'silently discards a duplicate app.id's
+           locations/freshness' TRAP WAS ALREADY CLOSED IN SPRINT 62. The AC8 test therefore
+           proves the positive survival case, which is the right thing to prove. This is a
+           PLAN-ACCURACY defect, not a story defect — correction note at sprint close."
+      dispatched_fix_round: "2026-07-30, fix implementer on the critical + 4 majors + 2 quality
+        minors that bear on the SAFETY proof (the port-fake subclass and the Docker gating that
+        lets the CONFIG_DIR half of the guard proof silently SKIP). Story stays in_progress; no
+        gate is run and nothing is called Done until the fix round is re-reviewed."
   - id: STORY-181
     title: Retire stale references in code comments and docstrings (16 sites)
     file: docs/scrum/stories/STORY-181-retire-stale-code-references.md
