@@ -182,18 +182,40 @@ def test_internal_warning_still_applies_when_degraded_threshold_is_one():
 # --- Step 4: sustained degraded / passing-recovered / below-all-thresholds (AC2) --
 
 
-def test_sustained_degraded_streak_of_length_one_proposes_degraded():
+def test_degraded_streak_of_length_one_yields_internal_warning():
+    # STORY-149: DEGRADED is now damped symmetrically with the DOWN ladder —
+    # a streak of exactly 1 is BELOW thresholds.degraded (2), so it yields the
+    # internal-warning outcome, never a proposed status.
     streak = Streak(health=Health.DEGRADED, length=1)
+    outcome = anti_flap(streak, _THRESHOLDS)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=True)
+
+
+def test_degraded_streak_above_one_but_below_threshold_yields_nothing():
+    # STORY-149 AC3: a length above 1 but still below thresholds.degraded
+    # proposes nothing (not reachable with the default thresholds.degraded=2,
+    # so a higher threshold is used to make the band reachable).
+    thresholds = AntiFlapThresholds(major=5, partial=3, degraded=4, recovery=2)
+    streak = Streak(health=Health.DEGRADED, length=2)
+    outcome = anti_flap(streak, thresholds)
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
+
+
+def test_sustained_degraded_streak_of_longer_length_still_proposes_degraded():
+    # Health.DEGRADED has only one bucket regardless of streak length — it
+    # never escalates to partial/major the way a DOWN streak does — but it
+    # must still clear thresholds.degraded first (STORY-149).
+    streak = Streak(health=Health.DEGRADED, length=10)
     outcome = anti_flap(streak, _THRESHOLDS)
     assert outcome == AntiFlapOutcome(
         proposed_status=ComponentStatus.DEGRADED, internal_warning=False
     )
 
 
-def test_sustained_degraded_streak_of_longer_length_still_proposes_degraded():
-    # Health.DEGRADED has only one bucket regardless of streak length — it
-    # never escalates to partial/major the way a DOWN streak does.
-    streak = Streak(health=Health.DEGRADED, length=10)
+def test_degraded_streak_at_threshold_proposes_degraded():
+    # STORY-149 AC1: length == thresholds.degraded proposes degraded — the
+    # unchanged sustained-case outcome.
+    streak = Streak(health=Health.DEGRADED, length=_THRESHOLDS.degraded)
     outcome = anti_flap(streak, _THRESHOLDS)
     assert outcome == AntiFlapOutcome(
         proposed_status=ComponentStatus.DEGRADED, internal_warning=False
@@ -237,15 +259,15 @@ def test_degenerate_down_streak_of_length_zero_yields_nothing_not_a_crash():
     assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
 
 
-def test_degenerate_degraded_streak_of_length_zero_still_proposes_degraded():
-    # Health.DEGRADED's single bucket does not consult length at all, so even
-    # a degenerate length-0 DEGRADED streak proposes degraded rather than
-    # silently mis-bucketing into nothing.
+def test_degenerate_degraded_streak_of_length_zero_yields_nothing_not_a_crash():
+    # STORY-149 AC5: symmetric with the DOWN ladder's length-0 case (:224) —
+    # 0 is below thresholds.degraded AND not exactly 1, so it falls through to
+    # nothing. `Streak(DEGRADED, 0)` is unreachable from `streak()` in
+    # practice; this only keeps the ladder symmetric at the unit boundary and
+    # does not crash or silently mis-bucket.
     streak = Streak(health=Health.DEGRADED, length=0)
     outcome = anti_flap(streak, _THRESHOLDS)
-    assert outcome == AntiFlapOutcome(
-        proposed_status=ComponentStatus.DEGRADED, internal_warning=False
-    )
+    assert outcome == AntiFlapOutcome(proposed_status=None, internal_warning=False)
 
 
 def test_degenerate_up_streak_of_length_zero_yields_nothing_not_a_crash():
