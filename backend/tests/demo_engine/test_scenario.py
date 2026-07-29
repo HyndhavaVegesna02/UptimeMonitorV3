@@ -287,3 +287,119 @@ def test_load_scenario_file_missing_required_field_raises(tmp_path, missing_fiel
 
     with pytest.raises(InvalidScenarioError, match=missing_field):
         load_scenario_file(path)
+
+
+# --- Type/sign validation (sprint-63 fix round, quality finding M2) ---------
+#
+# `load_scenario_file` previously validated only FIELD PRESENCE, not type or
+# sign, so a malformed value leaked a bare stdlib exception (`TypeError`) with
+# no filename and no signal name -- and a negative `interval_seconds` was not
+# rejected at all, which would make `expand_scenario` emit rows in the
+# FUTURE (falsifying AC2f). Each case below must raise the NAMED
+# `InvalidScenarioError`, carrying both the file path and the signal key.
+
+
+def test_load_scenario_file_null_cycles_rejected_with_named_error(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: 30\n"
+        "  cycles:\n",  # parses to None, not a list
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal") as exc_info:
+        load_scenario_file(path)
+    assert str(path) in str(exc_info.value)
+
+
+def test_load_scenario_file_cycles_wrong_type_rejected_with_named_error(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: 30\n"
+        "  cycles: 5\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal") as exc_info:
+        load_scenario_file(path)
+    assert str(path) in str(exc_info.value)
+
+
+def test_load_scenario_file_cycle_entry_wrong_type_rejected(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: 30\n"
+        "  cycles:\n"
+        "    - L1\n",  # a bare string, not a list of locations
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal"):
+        load_scenario_file(path)
+
+
+def test_load_scenario_file_interval_seconds_string_rejected_with_named_error(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: '30'\n"  # a string, not an int
+        "  cycles:\n"
+        "    - [L1]\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal") as exc_info:
+        load_scenario_file(path)
+    assert str(path) in str(exc_info.value)
+
+
+def test_load_scenario_file_interval_seconds_negative_rejected_with_named_error(
+    tmp_path,
+):
+    """The reproduced defect: a negative `interval_seconds` was previously
+    accepted and made `expand_scenario` emit rows in the FUTURE relative to
+    `end_time` -- falsifying AC2f. Must be rejected at load time instead."""
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: -30\n"
+        "  cycles:\n"
+        "    - [L1]\n"
+        "    - [L1]\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal") as exc_info:
+        load_scenario_file(path)
+    assert str(path) in str(exc_info.value)
+
+
+def test_load_scenario_file_interval_seconds_zero_rejected(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: HTTP_CHECK-DEMO-X\n"
+        "  interval_seconds: 0\n"
+        "  cycles:\n"
+        "    - [L1]\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal"):
+        load_scenario_file(path)
+
+
+def test_load_scenario_file_monitor_id_wrong_type_rejected(tmp_path):
+    path = tmp_path / "bad.yaml"
+    path.write_text(
+        "demo-signal:\n"
+        "  monitor_id: 12345\n"  # not a string
+        "  interval_seconds: 30\n"
+        "  cycles:\n"
+        "    - [L1]\n",
+        encoding="utf-8",
+    )
+    with pytest.raises(InvalidScenarioError, match="demo-signal"):
+        load_scenario_file(path)

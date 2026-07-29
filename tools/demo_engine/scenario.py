@@ -69,7 +69,15 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
 
     Raises `InvalidScenarioError` when a signal block is missing
     `monitor_id`, `interval_seconds`, or `cycles` — a malformed scenario file
-    must surface loudly rather than silently expand to zero rows.
+    must surface loudly rather than silently expand to zero rows. Also
+    raises `InvalidScenarioError` (never a bare stdlib `TypeError`) when a
+    present field has the wrong TYPE, or when `interval_seconds` is not
+    strictly positive — `expand_scenario` is past-anchored (module
+    docstring), so a non-positive interval would emit rows in the FUTURE
+    relative to `end_time` (STORY-176 AC2f). Every raised message names both
+    the file (`path`) and the offending signal key, matching the
+    filename-prefixed convention `composition/config.py::load_config` uses
+    for its own per-file/per-entry errors.
     """
     raw: Any = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
@@ -82,21 +90,59 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
     for signal_key, block in raw.items():
         if not isinstance(block, dict):
             raise InvalidScenarioError(
-                f"Scenario block for {signal_key!r} must be a mapping, "
-                f"got {type(block).__name__!r}."
+                f"{path}: scenario block for {signal_key!r} must be a "
+                f"mapping, got {type(block).__name__!r}."
             )
         for field in ("monitor_id", "interval_seconds", "cycles"):
             if field not in block:
                 raise InvalidScenarioError(
-                    f"Scenario block for {signal_key!r} is missing required "
-                    f"field {field!r}."
+                    f"{path}: scenario block for {signal_key!r} is missing "
+                    f"required field {field!r}."
                 )
+
+        monitor_id = block["monitor_id"]
+        if not isinstance(monitor_id, str):
+            raise InvalidScenarioError(
+                f"{path}: scenario {signal_key!r}: monitor_id must be a "
+                f"string, got {type(monitor_id).__name__!r}."
+            )
+
+        interval_seconds = block["interval_seconds"]
+        if not isinstance(interval_seconds, int) or isinstance(interval_seconds, bool):
+            raise InvalidScenarioError(
+                f"{path}: scenario {signal_key!r}: interval_seconds must be "
+                f"an int, got {type(interval_seconds).__name__!r} "
+                f"({interval_seconds!r})."
+            )
+        if interval_seconds <= 0:
+            raise InvalidScenarioError(
+                f"{path}: scenario {signal_key!r}: interval_seconds must be "
+                f"positive, got {interval_seconds!r} — expand_scenario is "
+                "past-anchored, so a non-positive interval would emit rows "
+                "in the future (STORY-176 AC2f)."
+            )
+
+        cycles = block["cycles"]
+        if not isinstance(cycles, list):
+            raise InvalidScenarioError(
+                f"{path}: scenario {signal_key!r}: cycles must be a list of "
+                f"per-cycle location lists, got {type(cycles).__name__!r}."
+            )
+        for cycle_index, cycle in enumerate(cycles):
+            if not isinstance(cycle, list) or not all(
+                isinstance(location, str) for location in cycle
+            ):
+                raise InvalidScenarioError(
+                    f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
+                    f"must be a list of location id strings, got {cycle!r}."
+                )
+
         scenarios.append(
             SignalScenario(
                 signal_key=signal_key,
-                monitor_id=block["monitor_id"],
-                interval_seconds=block["interval_seconds"],
-                cycles=[list(cycle) for cycle in block["cycles"]],
+                monitor_id=monitor_id,
+                interval_seconds=interval_seconds,
+                cycles=[list(cycle) for cycle in cycles],
             )
         )
     return scenarios
