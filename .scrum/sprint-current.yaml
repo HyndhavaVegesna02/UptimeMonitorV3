@@ -319,10 +319,11 @@ stories:
   - id: STORY-181
     title: Retire stale references in code comments and docstrings (16 sites)
     file: docs/scrum/stories/STORY-181-retire-stale-code-references.md
-    status: todo
     points: 2                # expanded pre-lock from 12 sites to 16 (verifier family (D))
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate
-    status_note: "in_progress from 2026-07-30; implementer dispatched after STORY-176 closed."
+    status: done             # DONE at 05245fd. 18 commits (6 code-comment + 1 AC6-defect + 10 wiki
+                             # + 1 CLAUDE.md). Full 8-command gate green at this HEAD — it is the
+                             # sprint's EVIDENCE OF RECORD, see final_gate below.
     ac6_scan_defects_found_pre_dispatch: "The orchestrator ran the baseline scan itself before
       dispatching and found TWO defects in AC6's own scan definition — the story's own lesson
       landing on the story. (1) asgi.py:12 legitimately states 'It builds NO SQLAlchemy engine and
@@ -446,5 +447,82 @@ story_gates:
       a checklist line in `.scrum/checklists/*` requiring any worktree proof to first print the
       imported module's `__file__` and prove it resolves INSIDE the worktree. Raise at the
       sprint-63 retro."
+  - story: STORY-181
+    head: 05245fd
+    scope_note: "FULL 8-command gate, not scoped: this story's diff touches frontend/src/, so the
+      three npm commands genuinely apply. This run is also the SPRINT's evidence of record (see
+      final_gate) because 05245fd is the final HEAD."
+    env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container uptime_dynamo_8021,
+      STORY-179 workaround). Test count 614 — UNCHANGED from the story's start, which AC8 requires:
+      a comment-only story that moves the test count did something else too."
+    story178_note: "No ANSI stripping was needed this time even though `npm run build` ran — the
+      emitted fragment was valid YAML as printed. STORY-178 has now gone one sprint without
+      reproducing; do not close it on that basis, but record it."
+    reality_gate:
+      verdict: PASS
+      shape: "Per plan.md: the AC6 scan must come back EMPTY at the story head and must have been
+        NON-EMPTY at the parent. Run by the orchestrator with `git grep` at both revisions, so
+        neither side depends on the working tree."
+      before: "15 hits at the parent 16143d1 (AC6's literal phrase list, pathspec-limited to
+        *.py/*.ts/*.tsx so __pycache__ cannot inflate it)."
+      after: "0 hits at the story head 05245fd. Same command, same pathspec, both revisions."
+      case_insensitive_cross_check: "Bare case-insensitive `neon|postgres`: 9 hits at the parent,
+        3 at the head — and the 3 are exactly the permitted ones (MaintenancePage.tsx:104 and :118,
+        the out-of-scope user-facing placeholders, plus asgi.py:12's reworded historical sentence).
+        So nothing was missed by hiding behind AC6's case-sensitive list."
+      third_ac6_defect_found_by_the_gate: "The gate itself surfaced a THIRD defect in AC6's scan
+        definition, beyond the two found pre-dispatch: `adapters/persistence/__init__.py:1` said
+        LOWERCASE '(e.g. neon)', which AC6's case-sensitive `Neon` never matched. So AC6's literal
+        scan found 15 of the 16 real sites at the parent — my own baseline said 16 only because I
+        had added lowercase `neon` to my regex. The site was fixed anyway (it is named explicitly in
+        family B, so the implementer never relied on the grep to find it), but a story whose scope
+        WAS the grep would have shipped 15/16 and reported Done — which is precisely the failure
+        mode AC6 exists to prevent. Three defects in one scan definition, all the same lesson: a
+        grep is a check, not a scope definition."
+      ac5_proof: "AC5 ('comment-only diff, proven mechanically') was proven by AST, not by reading:
+        for each of the 11 changed .py files, parse the file at 16143d1 and at HEAD, DELETE every
+        docstring from both trees, and compare `ast.dump`. Comments never enter the AST and
+        docstrings are the only comment-shaped thing that does, so identical stripped ASTs prove no
+        executable construct changed. All 11: IDENTICAL. The 4 non-Python files (3 TS + pyproject)
+        were checked line-by-line mechanically: every changed line is comment-shaped. Harness kept
+        at <scratchpad>/ac5_proof.py. This is stronger than the story's own AC5 evidence
+        ('the full git diff reviewed line by line'), which is a human read."
+    wiki:
+      swept: "yt_wiki.py sweep == CLEAN at 05245fd (verified by the orchestrator, not taken from the
+        implementer's report). yt_selftest 28/28 OK."
+      updated_by_the_story: ["api-five-file-convention.md", "architecture-boundary.md",
+        "canonical-types-and-ports.md", "dev-setup-and-dod.md", "dynatrace-adapter.md",
+        "frontend-zone.md", "ingest-service-and-pull-loop.md"]
+      re_verified_only: ["config-layer.md", "sample-mode.md", "statuspage-publish.md"]
+      note: "AC7 was NOT the expected no-op. CLAUDE.md's own 'History — superseded' bullets asserted
+        that two code comments 'still name' Railway/Vercel/STORY-017 — true when written, made FALSE
+        by this very story, and corrected in it. That is the exact class of rot the story exists to
+        retire, appearing in the document that describes the rot."
+    candidates_filed_not_fixed:
+      - "api-five-file-convention.md:24,36,46,52 still describe create_app's wiring defaults as
+         PostgresObservationRepository / PostgresSignalRepository / PostgresSampleModeRepository /
+         PostgresPublicationRepository. PRE-EXISTING rot, outside this story's 16 sites."
+      - "sample-mode.md Facts still describe PostgresSampleModeRepository as the real adapter even
+         though its own code_refs already list dynamo_sample_mode_repository.py. Same pre-existing
+         rot; likely resolved naturally by STORY-155's sample_mode removal."
+final_gate:
+  head: 05245fd
+  verdict: "8/8 GREEN — the sprint's evidence of record, run by the orchestrator on the final HEAD
+    with a clean tree (yt_gate.py enforces clean-tree by construction)."
+  commands:
+    - {command: "pytest", exit_code: 0, tail: "614 passed in 37.39s"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
+       exit_code: 0,
+       tail: "Analyzed 150 files, 427 dependencies. core-independence KEPT | core-internal-layering
+         KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence
+         KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT |
+         Contracts: 8 kept, 0 broken."}
+    - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
+    - {command: "ruff format --check .", exit_code: 0, tail: "222 files already formatted"}
+    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, tail: ""}
+    - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+    - {command: "npm run build", exit_code: 0, tail: "built in 413ms"}
+    - {command: "npm run lint", exit_code: 0, tail: "eslint . (no output)"}
+  at: "2026-07-29T21:24:52+00:00 .. 21:26:53+00:00"
 hotfixes: []
 interrupts: []
