@@ -42,6 +42,14 @@
 - [ ] Blast radius is the MECHANICAL sweep over all articles (`python .claude/skills/yourteam/scripts/yt_wiki.py sweep`) — never hand-picked; shared `code_refs` files drift multiple articles (2026-06-28).
 - [ ] Facts cite SYMBOLS (`file.py::ClassName`, `file.py::function`) — bare line numbers only where no symbol applies (2026-06-27).
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 ×2).
+- [ ] A Fact asserting BEHAVIOUR (a branch, a threshold, a decision ladder, an error condition)
+      cites the TEST that pins it alongside the implementation symbol. A Fact whose only support
+      is a paraphrase of the code's own docstring is marked as such or dropped -- it is a
+      restatement, not a verification (2026-07-29; sprint-62 STORY-149 -- the anti-flap article
+      said `Health.DEGRADED` is "always degraded, regardless of length ... so no length
+      comparison applies", which WAS the defect, faithfully mirroring `pipeline.py`'s own
+      docstring. It survived from sprint-8 to sprint-62 because article and code AGREED: git
+      arithmetic detects divergence, never shared error).
 
 - [ ] Any server/container/process you spawn for a reality check ends with an OS-level
       teardown VERIFICATION � process gone by PID (taskkill/kill + re-check) and port freed

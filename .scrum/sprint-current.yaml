@@ -1,6 +1,13 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 62
-status: review     # none | planning | active | review | closed | aborted
+status: closed     # CLOSED 2026-07-29. PO accepted all 3 stories (9/9 pts); branch kept
+                   # UNMERGED per the standing "dont merge with main" instruction, so main
+                   # (debug/ingest-stall-sample-mode, 517fc38) is untouched. Retro amendments
+                   # A1 (a reality gate must be shown able to fail -> working-agreements.md)
+                   # and A2 (behavioural wiki Facts cite the pinning test ->
+                   # checklists/implementer.md) both approved and landed. Sprint 63 opens with
+                   # STORY-176. Review: review.md; retro: retro.md.
+                   # none | planning | active | review | closed | aborted
                    # LOCKED 2026-07-28 on PO approval ("i am ok with your recomendation").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    #

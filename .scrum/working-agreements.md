@@ -174,3 +174,24 @@
   mid-sequence, resume from the FAILED step, never restart the sequence — completed
   steps (e.g. an ECR push) survive. Motivating incident: sprint-51 redeploy — push
   succeeded, both update-service calls died on ExpiredTokenException, handoff blocked.
+- (2026-07-29, sprint-62 retro) **A reality gate must be shown able to fail.** No reality gate
+  may be reported PASS without a recorded answer to "how could this have failed?", in one of
+  two forms:
+  - **Defect / fix stories:** run the SAME, unmodified gate at the pre-fix commit (a worktree
+    is enough) and record BOTH scores in the board's `reality_gate.discrimination_proof`. A
+    gate that also passes at the pre-fix commit is not a gate.
+  - **Every other story:** for each assertion that could pass one-sidedly, name the second
+    side that was asserted in `reality_gate.two_sided_note` -- or state explicitly that the
+    assertion is one-sided and why that is acceptable.
+  One of the two fields is REQUIRED on every `reality_gate` board record; its absence is
+  grep-visible. Motivating incidents (all sprint-62): STORY-146's gate reported "IDENTICAL" on
+  two EMPTY dumps twice over (DynamoDB Local partitions by access key without `-sharedDb`;
+  then uppercase `PK/SK` against a lowercase schema); one of STORY-148's 19 checks passed as a
+  tautology because httpx/h11 refuses to transmit a header value with a trailing space, so the
+  request never left the client; and STORY-149's 12/12 means something ONLY because the same
+  gate scored 7/12 at the pre-fix commit. The rule generalises all three: a PASS whose failure
+  mode is indistinguishable from "nothing happened" is not evidence. (Rung: prose + a required
+  state-file field. A mechanical rung was considered and rejected -- a reality gate is bespoke
+  per story, so no script can judge whether a given assertion could have failed. The required
+  field is the lowest rung that holds: it makes the omission visible even though it cannot
+  make it impossible.)
