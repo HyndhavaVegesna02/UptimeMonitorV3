@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: c07831b
+verified_sha: b272c32
 verified_sprint: sprint-63
 status: verified
 ---
@@ -65,9 +65,10 @@ status: verified
   (populates proposals/observations/publications) â†’ `npm run dev`. Two processes share one DynamoDB Local;
   no CORS anywhere: locally the Vite proxy makes it same-origin, and in production CloudFront
   does (STORY-089), so no CORS work is queued. `api/v1/_shared/middleware.py` is an empty
-  seam whose docstring still names STORY-017 as its intended occupant; STORY-017 is `archived`
-  and was about deployment topology, not CORS. Before STORY-042 the API had only ever
-  run in-process via `TestClient` (no ASGI server, no module-level app).
+  seam whose docstring (corrected STORY-181, sprint-63) now states this directly — no CORS
+  required, dev via the Vite proxy, prod same-origin behind CloudFront — and no longer names the
+  archived STORY-017. Before STORY-042 the API had only ever run in-process via `TestClient` (no
+  ASGI server, no module-level app).
 - **Standard way to obtain a throwaway DynamoDB Local (STORY-082):**
   Docker container running `amazon/dynamodb-local`. Start command:
   `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
@@ -108,7 +109,8 @@ status: verified
   tests calling those directly with explicit env are unaffected (still NOT part of the six-command
   DoD gate; every test uses recorded fixtures or explicit `monkeypatch` env). `load_dotenv()`'s
   default `override=False` semantics mean an already-exported env var always wins over `.env`
-  (production/Railway, which sets real env vars and ships no `.env` file, is unaffected).
+  (production/AWS ECS Fargate, which sets real env vars and ships no `.env` file, is unaffected —
+  `run.py`'s comment corrected STORY-181, sprint-63; it had said "Railway").
 - **Line endings are normalized to LF in the repo** via `.gitattributes` (`* text=auto eol=lf`
   + `binary` rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). Gotcha: the index
   blobs were already LF, so `git add --renormalize .` stages nothing â€” the CRLF a Windows
@@ -239,3 +241,10 @@ status: verified
   touches a Fact this article states: still five backend + three frontend DoD commands, still eight
   import-linter contracts, same `dynamo_local`/`clean_dynamo_tables` fixture mechanics. No Fact text
   changed; re-verified only. verified_sha -> c07831b.
+- sprint-63 (STORY-181): the sweep flagged `asgi.py`, `run.py`, `pyproject.toml`. Two Facts above
+  directly quoted comments this story retired: `middleware.py`'s docstring no longer names the
+  archived STORY-017 (it now states plainly that no CORS is required), and `run.py`'s
+  `load_dotenv()` comment no longer says "Railway" (production is AWS ECS Fargate, STORY-089).
+  `asgi.py`'s reworded `DATABASE_URL` note and the `pyproject.toml` vendor-subpackage comment are
+  unrelated to any DoD command, contract count, or fixture mechanics this article states. Both
+  Facts above corrected; verified_sha -> b272c32.
