@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml]
-verified_sha: d530238
+verified_sha: c2c3345
 verified_sprint: sprint-63
 status: verified          # verified | stale | archived
 ---
@@ -247,18 +247,24 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   end-to-end), `test_assumed_failure_codes.py` (the assumption is labeled and rejected).
 - None of them needs Dynamo: neither `dynamo_local` (session-scoped) nor `clean_dynamo_tables` is
   `autouse`, so this subset runs standalone.
-- STORY-176 part 2a adds **20 more** tests in `backend/tests/demo_engine/` (now nine files, 49
-  total): `test_scenario.py` (15 — AC1 row-count-per-cycle, AC2's format/monotonicity/window/
-  backfill/not-in-future, and the scenario-file load path, including its own malformed-input
-  behaviour) and `test_scenario_coverage.py` (5 — one per AC5 case, each driven through the real
-  ingest chain). A further **10 tests** in `backend/tests/test_demo_fleet_config.py` (composition
-  zone, not `demo_engine/` proper — it tests `Config`/`create_app` against `config/demo/`, not the
-  engine package) pin the publish guard and the fleet's scale/multi-file survival; TWO of those
-  (`test_create_app_with_demo_config_dir_...`, `test_create_app_with_live_config_dir_...`) need
-  `dynamo_local` (a real `create_app()` call wires real Dynamo-backed repos, though no I/O actually
-  occurs before assertion — `boto3.resource(...).Table(...)` is lazy). Grand total: 604 tests
-  repo-wide (572 at the sprint-63 branch point `e107811`; STORY-180 brought it to 574 first; this
-  story's +30 brings it to 604).
+- STORY-176 part 2a adds tests in `backend/tests/demo_engine/` (now nine files, **59 total** after
+  the sprint-63 fix round below): `test_scenario.py` (**24** — AC1 row-count-per-cycle, AC2's
+  format/monotonicity/interval-spacing/window/backfill/not-in-future, the scenario-file load path
+  including its malformed-input AND type/sign-validation behaviour) and `test_scenario_coverage.py`
+  (**6** — one per AC5 case plus the scenario<->fleet coherence check). A further **10 tests** in
+  `backend/tests/test_demo_fleet_config.py` (composition zone, not `demo_engine/` proper — it tests
+  `Config`/`create_app` against `config/demo/`, not the engine package) pin the publish guard and the
+  fleet's scale/multi-file survival; ONE of those (`test_create_app_with_live_config_dir_...`) still
+  needs `dynamo_local` (a real `create_app()` call wires real Dynamo-backed repos, though no I/O
+  actually occurs before assertion — `boto3.resource(...).Table(...)` is lazy); the OTHER
+  (`test_create_app_with_demo_config_dir_...`, the CONFIG_DIR-governs-`create_app` half of the
+  publish-safety proof) was un-gated from Docker in the sprint-63 fix round (quality finding S2) —
+  it now sets a literal, deliberately-unreachable `DYNAMO_ENDPOINT_URL` instead of requesting
+  `dynamo_local`, so it can never silently SKIP on a Docker-less machine; proven by running it with
+  `docker` removed from `PATH` and no `DYNAMO_ENDPOINT_URL` set. Grand total: **614 tests**
+  repo-wide (572 at the sprint-63 branch point `e107811`; STORY-180 brought it to 574 first; the
+  story's initial +30 brought it to 604; the sprint-63 fix round's +10 — 9 in `test_scenario.py`, 1
+  in `test_scenario_coverage.py` — brings it to 614).
 
 ## Inference (not verified — reasoning, not fact)
 
@@ -283,6 +289,33 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   combined story at 6 points. Zero files under `backend/src/` changed (AC8, mechanically verified:
   `git diff --name-only 1aadf95..HEAD -- backend/src/` is empty). Net test count: 574 → 604 (+30).
   DoD gate 5/5 backend (no frontend files touched). verified_sha -> d530238.
+- sprint-63 (STORY-176, fix round after quality FIX_REQUIRED): C1 (critical) — the per-monitor
+  interval math in `expand_scenario` was pinned by nothing (a mutant hardcoding 30s passed all 30
+  original tests); added a parametrized (30s/45s) test asserting consecutive expanded cycles are
+  spaced by exactly `scenario.interval_seconds`, and reworked the staggered-intervals test to assert
+  each monitor's own `observed_at` spacing from the ingested rows, not a `bucket_into_cycles` set
+  built from the test's own `since`/`interval` args. Both discrimination-proofed against the same
+  hardcoded-interval mutant (RED confirmed, then reverted with an empty `git diff`). M1 — corrected
+  the false "share no cycle boundary" claim (both Facts, above, and the test docstring): the two
+  staggered monitors' LAST cycles land on the same instant (`end_time`), so they share exactly one
+  boundary. M2 — `load_scenario_file` now validates field TYPES and `interval_seconds`'s SIGN (a
+  null/wrong-type `cycles`, a non-int or non-positive `interval_seconds`), raising a named
+  `InvalidScenarioError` with the file and signal key instead of leaking a bare stdlib `TypeError`;
+  closes the (previously silently-accepted) negative-`interval_seconds` case that would have emitted
+  rows in the future, falsifying AC2f — CLAUDE.md and this file's own "never in the future" claims
+  now state that precondition explicitly. M3 — added a test looping every
+  `config/demo/scenarios/*.yaml` against `load_config(config/demo)`, asserting each scenario's
+  `monitor_id`/`interval_seconds` agree with the fleet's `native_id`/`interval_seconds` for that
+  `signal_key` (previously unpinned: `_ingest_scenario` passes `signal_key=` explicitly, so a row's
+  own `dt.synthetic.monitor.id` was never read by any test). M4 — deleted the dead
+  `event_id_prefix` parameter (no caller, no test). S1 — `_FakeRejectedRepo` now subclasses
+  `RejectedObservationRepository`, matching the peer fakes. S2 —
+  `test_create_app_with_demo_config_dir_...` (the CONFIG_DIR-governs-`create_app` safety proof) no
+  longer needs `dynamo_local`/Docker: it sets a literal, deliberately-unreachable
+  `DYNAMO_ENDPOINT_URL` (no I/O occurs before its assertions), proven by running it with `docker`
+  removed from `PATH`. Zero files under `backend/src/` changed throughout (mechanically verified per
+  finding). Net test count: 604 → 614 (+10: +9 `test_scenario.py`, +1
+  `test_scenario_coverage.py`). DoD gate 5/5 backend. verified_sha -> c2c3345.
 - sprint-63 (STORY-180): all eight deferred STORY-148 quality-review minors closed. AC1/minor 6:
   `rows.py:26-27`'s docstring corrected — `map_synthetic_status` accepts either half of the pair,
   not only the pair together. AC2/minor 1: an equality test now fails if `store.py`'s
