@@ -158,21 +158,33 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   which locations report `UP` that cycle — a location's absence from a cycle's list is the only
   other outcome this `UP`-and-absence-only engine can express (see "Scope honesty" above).
   `load_scenario_file` (`scenario.py::load_scenario_file`) parses a scenario YAML into a list of
-  these, raising `InvalidScenarioError` on a non-mapping top level or a signal block missing
-  `monitor_id`/`interval_seconds`/`cycles` (pinned by
-  `backend/tests/demo_engine/test_scenario.py::test_load_scenario_file_rejects_non_mapping_top_level`
-  and `::test_load_scenario_file_missing_required_field_raises`).
+  these, raising `InvalidScenarioError` on a non-mapping top level, a signal block missing
+  `monitor_id`/`interval_seconds`/`cycles`, a field of the wrong TYPE (`cycles` null/non-list, a
+  non-list cycle entry, a non-int `interval_seconds`, a non-string `monitor_id`), or a non-positive
+  `interval_seconds` — every message names both the file and the signal key, never a bare stdlib
+  exception (sprint-63 fix round, quality finding M2: this guard did not exist at first ship, so
+  `cycles:` with no value leaked a bare `TypeError`, and `interval_seconds: -30` was silently
+  accepted and emitted rows in the future). Pinned by
+  `backend/tests/demo_engine/test_scenario.py::test_load_scenario_file_rejects_non_mapping_top_level`,
+  `::test_load_scenario_file_missing_required_field_raises`, and the
+  `test_load_scenario_file_*_rejected*` family (one test per rejected shape).
 - **Expansion is PAST-ANCHORED, decided at sprint-63 planning** (`scenario.py::expand_scenario`):
   the scenario's LAST cycle lands at the caller's `end_time` (typically `clock.now()`); each earlier
   cycle lands successively further back at the monitor's own `interval_seconds`. This is what keeps
   the whole declared ladder inside `orchestrate.py:94-98`'s rolling 7-cycle window on the very first
   query and every row at or before `end_time` — a forward player (t0 → now) would instead have every
   cycle beyond `end_time + 5min` silently quarantined by `ingest_service.py`'s `FUTURE_TOLERANCE`
-  until wall-clock time caught up. Pinned by
+  until wall-clock time caught up. **This "at or before `end_time`" guarantee holds provided
+  `interval_seconds` is positive** — a negative value would walk the ladder FORWARD, not back
+  (reproduced live pre-fix: `interval_seconds: -30` emitted `12:01:00, 12:00:30` for
+  `end_time=12:00:00`); `load_scenario_file` now rejects a non-positive `interval_seconds` at load
+  time (`InvalidScenarioError`, sprint-63 fix round, quality finding M2), so every scenario that
+  survives loading satisfies it. Pinned by
   `test_scenario.py::test_expand_scenario_ladder_fits_inside_orchestrates_rolling_window`,
-  `::test_expand_scenario_no_row_lands_after_end_time`, and
+  `::test_expand_scenario_no_row_lands_after_end_time`,
   `::test_expand_scenario_last_row_is_within_the_vendor_health_window` (the last one ties past-anchoring
-  directly to `store.py`'s `VENDOR_HEALTH_WINDOW`).
+  directly to `store.py`'s `VENDOR_HEALTH_WINDOW`), and
+  `::test_load_scenario_file_interval_seconds_negative_rejected_with_named_error`.
 - **The demo fleet** (`config/demo/`, repo root — never `config/apps/`) is three files in STORY-146's
   nested shape (`fleet-core.yaml`, `fleet-platform.yaml`, `fleet-edge.yaml`), each a DISTINCT `app.id`:
   13 components, 41 signals, 4 declared locations (`loc-a`..`loc-d`), a `freshness:` block per file,

@@ -139,7 +139,10 @@ can express) into Grail-shaped rows, **past-anchored** to `end_time` (the
 scenario's last cycle lands there; earlier cycles land successively further
 back at the monitor's own `interval_seconds`) so the whole declared ladder is
 inside `orchestrate.py`'s rolling window on the very first query, and no row
-is ever timestamped in the future. `config/demo/` is a fictional fleet (13
+is ever timestamped in the future **provided `interval_seconds` is positive —
+`load_scenario_file` now rejects a non-positive value at load time
+(`InvalidScenarioError`), since that is the one input that would otherwise
+make expansion land in the future**. `config/demo/` is a fictional fleet (13
 components, 41 signals, 4 declared locations) authored in STORY-146's nested
 shape — **never `config/apps/`**; `config/demo/scenarios/` covers the cases
 reachable without a failure-code mapping (a clean fleet, a dark location, a
