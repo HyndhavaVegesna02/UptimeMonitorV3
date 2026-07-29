@@ -70,8 +70,7 @@ def test_expand_scenario_produces_exact_row_count_per_location_per_cycle():
     for row in rows:
         by_timestamp.setdefault(row["timestamp"], []).append(row)
     counts_in_cycle_order = [
-        len(group)
-        for _, group in sorted(by_timestamp.items(), key=lambda kv: kv[0])
+        len(group) for _, group in sorted(by_timestamp.items(), key=lambda kv: kv[0])
     ]
     # Oldest to newest: cycle 0 (3 locations), cycle 1 (3 locations), cycle 2
     # (empty — contributes no timestamp group at all), cycle 3 (2 locations).
@@ -116,7 +115,9 @@ def test_expand_scenario_timestamps_advance_across_successive_cycles():
 
     timestamps = [parse_ns_timestamp(row["timestamp"]) for row in rows]
     assert timestamps == sorted(timestamps)
-    assert len(set(timestamps)) == len(timestamps), "each cycle must land at a distinct instant"
+    assert len(set(timestamps)) == len(timestamps), (
+        "each cycle must land at a distinct instant"
+    )
 
 
 # --- AC2(f): never in the future --------------------------------------------

@@ -40,9 +40,7 @@ _SCENARIOS_DIR = _DEMO_CONFIG_DIR / "scenarios"
 _END = datetime(2026, 7, 30, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def _ingest_scenario(
-    scenario_file: str, signal_key: str, *, end_time: datetime = _END
-):
+def _ingest_scenario(scenario_file: str, signal_key: str, *, end_time: datetime = _END):
     """Load one scenario file's named signal, expand + normalize + ingest it
     via the REAL production chain, and return (IngestResult, observation_repo,
     watermark_repo)."""
