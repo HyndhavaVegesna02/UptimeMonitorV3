@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: d004da7
-verified_sprint: sprint-62
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -95,6 +95,10 @@ status: verified
   through both outcomes). Both are defining pinning tests for this article's central publisher-chain
   claims; added to `code_refs`. No Fact text changed. verified_sha â†’ 678ff0d.
 - sprint-45 (STORY-065/STORY-066): re-verified, no changes to Statuspage publishing. verified_sha -> f6f589fd4dcb6e3a2a565453c43b0fb95d7e5787.
+- sprint-63 (STORY-181): the sweep flagged `run.py`. Its three comment fixes (module docstring's
+  "Postgres" -> "DynamoDB" repository adapters, a dropped `DATABASE_URL` mention, "Railway" ->
+  "AWS ECS Fargate") are all outside `build_live_loop`/`build_publisher` and the publisher chain
+  this article documents. No Fact changed; re-verified only. verified_sha -> b272c32.
 
 - 2026-07-13 (sprint-45 gate closure): re-stale was ruff-format-only (48fba51 line-wrapped a delete stmt + trimmed trailing blank lines in maintenance_repository.py / fakes.py / test_persistence_adapters.py) â€” behavior and Facts unchanged. Re-verified; verified_sha -> 010a21b.
 - sprint-50 (STORY-093, test hygiene): `test_run_live_loop.py::test_main_resource_lifecycle_success`
