@@ -186,6 +186,30 @@ story_gates:
     head: f8ef730
     env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container) to bypass the
       dynamo_local ephemeral-port defect (STORY-179). Environment-only; no repo file changed."
+    reality_gate:
+      verdict: PASS
+      method: "Byte-level before/after of the seeded topology. A git worktree at 5fbdaae (PRE-
+        implementation code + the old FLAT config) seeded uptime-control-before via
+        scripts/seed_topology.py; the migrated code + nested config seeded uptime-control-after.
+        Both control tables dumped (pk=TOPOLOGY, sk APP#/COMPONENT#/SIGNAL#), canonicalised and
+        diffed. Two code versions were needed because the new loader REJECTS the old flat config
+        by design (AC2), so the old shape cannot be replayed through the new code."
+      result: "3 topology items each side, byte-identical, md5 461c9e42e872eacffb1bad6eaaa94adc on
+        both. SIGNAL#http-check still carries component_id=http-check -- derived from the parent
+        component, matching what the flat config used to author explicitly."
+      false_pass_caught: "The FIRST attempt reported IDENTICAL on two EMPTY dumps (md5
+        d41d8cd9... = empty file). Cause: the container runs without -sharedDb, so DynamoDB Local
+        partitions tables by access key, and the dump used aws_access_key_id='x' while
+        make_dynamo_resource uses 'test' -- different key, different database, zero rows. A second
+        false pass followed from filtering on uppercase PK/SK when the real schema uses lowercase
+        pk/sk. The dump script now REFUSES to emit an empty dump (exit 2) and the harness refuses
+        to diff when either dump fails. Recorded because 'both sides empty' is the archetypal
+        reality-gate lie."
+      statuspage_note: "Not applicable in the end: the byte-comparison runs through
+        scripts/seed_topology.py, which calls seed_topology_dynamo directly and needs no
+        Dynatrace/Statuspage secrets at all. The plan's STATUSPAGE_API_KEY-unset precaution was
+        written for a `python -m src.composition.run` gate; using the seed CLI removes the live
+        publisher from the picture entirely, which is strictly safer."
     dod_evidence:
       - command: "pytest"
         exit_code: 0

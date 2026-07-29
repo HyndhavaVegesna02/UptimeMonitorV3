@@ -61,7 +61,7 @@ silently discard the caller's value, turning a bogus reference into a silent
 empty list instead of a loud failure.
 
 ### Config models (`backend/src/composition/config.py`)
-Five frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
+Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
 
 - `MonitorConfig{signal_key, native_id, name, interval_seconds, expected_locations: list[str] = []}`
   — a monitor nested under its component (STORY-146 AC1). No `component_id`
@@ -254,7 +254,7 @@ it is one of these seven readers.
 `AntiFlapThresholds` from `src.core.services.pipeline` (composition → core is
 allowed).  Core never imports from `src.composition` (enforced by the
 `core-independence` import-linter contract).  No new contract was added; the
-five existing contracts all stay KEPT.
+eight existing contracts all stay KEPT.
 
 ### Dependency
 `pyyaml` was added to `[project.dependencies]` in `pyproject.toml` (sprint-16,
@@ -317,5 +317,4 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   two new models (`LocationConfig`, `FreshnessConfig`), and a
   `ConfigError(ValueError)` hierarchy for authoring errors that must survive
   outside pydantic validators. `config/apps/httpcheck.yaml` migrated
-  (nesting only — no `locations:`, per AC8). verified_sha = PLACEHOLDER.
-</content>
+  (nesting only — no `locations:`, per AC8). verified_sha -> d004da7.
