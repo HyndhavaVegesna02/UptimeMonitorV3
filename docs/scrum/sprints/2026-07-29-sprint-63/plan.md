@@ -1,6 +1,11 @@
 # Sprint 63 plan — the demo fleet runs, and the engine stops lying about itself
 
-**Status: DRAFT, not locked.** Awaiting PO approval.
+**Status: LOCKED 2026-07-29** on PO approval ("start implementing sprint 63"). Scope is frozen —
+new PO requests go to the backlog, not this sprint. Branch `sprint-63`, tag `sprint-63-start`,
+branch point `e107811` (sprint-62 tip). Baseline re-run at the branch point before story 1 was
+dispatched: the backend five GREEN at `e107811` (pytest 572, eight import contracts kept, `ruff`
+×2, `cfn-lint`); the three frontend commands were green at sprint 62's `final_gate` (`2b0bf86`)
+and `git diff --name-only 2b0bf86..e107811 -- frontend/` is `frontend/README.md` alone.
 
 ## Goal
 
