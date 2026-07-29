@@ -1328,6 +1328,11 @@ stories:
                     # "unacceptable character #x001b". The working agreement says merge the
                     # fragment VERBATIM - which here produces a corrupt board. yt_gate must strip
                     # ANSI/C0 control characters from output_tail before emitting.
+                    # REPRODUCED AGAIN 2026-07-29 at STORY-148's gate (commit 6015b12): exactly 2
+                    # ESC bytes in the emitted fragment, both from `npm run build`. So it is
+                    # deterministic per gate run, not a one-off - every full gate that includes a
+                    # colourising frontend command emits an unparseable fragment, and the board
+                    # survives only because the orchestrator strips the bytes by hand each time.
     type: defect
     priority: 12
     sprint: null
