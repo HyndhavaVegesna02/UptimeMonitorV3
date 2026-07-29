@@ -331,7 +331,7 @@ construction instead.
       honoured.
 - [x] 7. Test through the **real** `make_grail_executor` against the local server, asserting
       assembled `SignalObservation`s (AC7 — this is what option (b) buys over option (a)).
-- [ ] 8. AC8: collect every invented vendor code into ONE named constant with the
+- [x] 8. AC8: collect every invented vendor code into ONE named constant with the
       unverified-assumption comment; README states plainly what "failure path tested" means.
 - [ ] 9. AC9: `tools/demo_engine/` (underscore), tests under `backend/tests/`, verify the story
       diff touches no file under `backend/src/` (mechanical check over the commit range), and
