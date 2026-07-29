@@ -1,1 +1,1 @@
-"""adapters.persistence — repositories (e.g. neon)."""
+"""adapters.persistence — repositories (e.g. dynamo)."""

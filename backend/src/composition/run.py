@@ -1,7 +1,7 @@
 """Live composition driver and entrypoint (dossier §17, spec §8).
 
 Seeds the topology read model from configuration files, constructs all live
-Postgres repository adapters, HTTP executors, publishers, and services,
+DynamoDB repository adapters, HTTP executors, publishers, and services,
 and gathers the per-signal asyncio periodic pull loops.
 """
 

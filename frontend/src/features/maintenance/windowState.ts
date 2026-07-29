@@ -5,7 +5,8 @@ export type WindowState = 'upcoming' | 'active' | 'past'
  * STORY-015f AC1) — there is NO `state` field on the
  * `GET /api/v1/maintenance` wire shape. Mirrors the backend's HALF-OPEN
  * rule exactly (`core/ports/maintenance_repository.py::is_under_maintenance`;
- * the Postgres adapter's `starts_at <= at AND ends_at > at` agrees): a
+ * the `DynamoMaintenanceRepository` adapter's `starts_at <= at AND ends_at > at`
+ * agrees): a
  * window is active iff `starts_at <= now < ends_at`. At exactly `starts_at`
  * the window IS active; at exactly `ends_at` it is no longer active (past) —
  * both boundary instants are pinned by tests per the sprint-34 plan's
