@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: 81bf71a
-verified_sprint: sprint-62
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -343,3 +343,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   the FAILING case, so an implementation rejecting every alias would have stayed green);
   `DuplicateAppIdError` added (F4); and the duplicated interval validator replaced by the
   shared `PositiveIntervalSeconds` type. verified_sha -> 81bf71a.
+- sprint-63 (STORY-181): the sweep flagged `pyproject.toml`. The only change there was a
+  comment-only fix to an unrelated vendor-subpackage note (`adapters-independence` contract
+  comment) — this article cites `pyproject.toml` for dependency/config concerns, not that
+  comment. No Fact changed; re-verified only. verified_sha -> b272c32.
