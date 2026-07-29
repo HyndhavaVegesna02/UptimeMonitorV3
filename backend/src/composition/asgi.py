@@ -9,7 +9,8 @@ persistence adapters from settings (``AWS_REGION`` /
 ``DYNAMO_OBSERVATIONS_TABLE`` / ``DYNAMO_CONTROL_TABLE`` / optional
 ``DYNAMO_ENDPOINT_URL`` for DynamoDB Local — see
 `src.composition.settings.load_settings` and `src.composition.dynamo`).
-It builds NO SQLAlchemy engine and reads NO ``DATABASE_URL``. The topology
+It builds NO SQLAlchemy engine and reads no Postgres connection setting — that
+environment variable was retired by STORY-087. The topology
 config is read from `config/apps` (the `settings.config_dir` default) so the
 boot-time lifespan seed populates the control table before the first request.
 
