@@ -32,7 +32,7 @@ class PublicationOutcome(str, Enum):
 class Publication(BaseModel):
     """A recorded Statuspage publish ATTEMPT (dossier §9, §12/T1.1, §17, STORY-072).
 
-    Frozen read model: written once by `PostgresPublicationRepository.record`,
+    Frozen read model: written once by `DynamoPublicationRepository.record`,
     read back by `list_recent` to back the Publications tab (§17).
 
     Fields:

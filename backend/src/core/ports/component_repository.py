@@ -50,7 +50,7 @@ class ComponentRepository(ABC):
         `component_id` does not exist — never a bare `ValueError`
         (2026-06-28 check-then-act agreement) and never a silent no-op: an
         unknown component id here means the topology seed and the change
-        disagree, which must be loud. The fake and `PostgresComponentRepository`
+        disagree, which must be loud. The fake and `DynamoComponentRepository`
         raise this identically (2026-06-26 fake/adapter parity agreement).
         """
         raise NotImplementedError

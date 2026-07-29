@@ -14,7 +14,7 @@ class ComponentNotFoundError(ValueError):
     Mirrors `core/domain/proposal.py::ProposalNotFoundError`. Raised by
     `ComponentRepository.set_status` when the conditional write affects zero
     rows (2026-06-28 check-then-act agreement: never a bare `ValueError`) —
-    both the fake and `PostgresComponentRepository` raise this identically
+    both the fake and `DynamoComponentRepository` raise this identically
     (2026-06-26 fake/adapter parity agreement).
     """
 
