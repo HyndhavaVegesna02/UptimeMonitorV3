@@ -973,9 +973,12 @@ stories:
     points: 2
     priority: 53
     type: feature
-    sprint: 63   # DEFERRED out of 62 post-verifier (2026-07-28): purely decorative, no
-                 # consumer until the frontend lands in 63, and it now depends on the
-                 # ConfigError hierarchy STORY-146 introduces. Keeps 62 at 10 pts.
+    sprint: null # RE-DEFERRED 2026-07-29 (PO): its sprint-63 tag rested on "the frontend lands
+                 # in 63", and it does not -- 63 opens with STORY-176 (PO decision at the
+                 # sprint-62 review). Unchanged reasoning, corrected destination: purely
+                 # decorative with nothing rendering it, so it lands WITH its consuming frontend
+                 # sprint, whenever that is. Its STORY-146 ConfigError dependency is already
+                 # satisfied on the sprint-62 branch, so nothing blocks it but the consumer.
   - id: STORY-148
     title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
@@ -1316,8 +1319,11 @@ stories:
     sprint: null
   - id: STORY-180
     title: Demo-engine polish - the eight non-blocking minors from STORY-148's quality review
-    file: null
-    status: draft   # ~2pts. Raised by yt-quality-reviewer on STORY-148 (2026-07-29) and
+    file: docs/scrum/stories/STORY-180-demo-engine-polish.md
+    status: ready   # AC approved + estimated at refinement 2026-07-29 (9 ACs); no open
+                    # questions. Pulled into sprint 63 WITH STORY-176 on PO instruction --
+                    # 176's long-running engine is what makes minors 1 and 5 matter.
+                    # Filing notes: Raised by yt-quality-reviewer on STORY-148 (2026-07-29) and
                     # deliberately NOT fixed there: none blocks the wire contract, and widening
                     # a story to absorb its own review nits is how a 3-pointer becomes a 6.
                     # STORY-148's two MAJORs (stale README recipe, untested fail-loud path) plus
@@ -1355,13 +1361,15 @@ stories:
                     #     holds only demo_engine/ plus hyphenated ui-sweep/) and it matches the
                     #     scripts/ precedent, so this is a "safer default" note, not a bug:
                     #     append would be preferable if tools/ ever gains a generic module name.
+    points: 2
     type: chore
     priority: 13
-    sprint: null
+    sprint: 63
   - id: STORY-181
     title: Retire stale references in code comments and docstrings (dead platforms, dead classes, dead story pointers)
-    file: null
-    status: draft   # ~2pts. Found by the PO-directed docs accuracy pass (2026-07-29, commit
+    file: docs/scrum/stories/STORY-181-retire-stale-code-references.md
+    status: ready   # AC approved + estimated at refinement 2026-07-29; no open questions.
+                    # Pulled into sprint 63 with STORY-176 on PO instruction. Filing notes: ~2pts. Found by the PO-directed docs accuracy pass (2026-07-29, commit
                     # e9a8ad3) that corrected the same class of rot in CLAUDE.md and two wiki
                     # articles. 12 references across 10 files, NONE of which any gate can catch:
                     # they are comments and docstrings, so pytest/ruff/lint-imports are all green
@@ -1411,7 +1419,7 @@ stories:
     points: 2
     priority: 58
     type: chore
-    sprint: null
+    sprint: 63
   - id: STORY-178
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
     file: null
