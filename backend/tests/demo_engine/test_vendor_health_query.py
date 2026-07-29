@@ -15,11 +15,12 @@ not "how long the engine has been running" — proven below by varying the
 request instant against a single, never-reconstructed store.
 """
 
+import re
 from datetime import datetime, timedelta, timezone
 
 from demo_engine.rows import build_row, format_ns_timestamp
-from demo_engine.store import DemoRowStore
-from src.composition.vendor_health import build_vendor_health_query
+from demo_engine.store import VENDOR_HEALTH_WINDOW, DemoRowStore
+from src.composition.vendor_health import _HEALTH_CHECK_WINDOW, build_vendor_health_query
 
 
 def test_vendor_health_query_returns_live_count_for_known_monitor_and_zero_for_unknown():
@@ -66,6 +67,26 @@ def test_vendor_health_window_tracks_the_request_instant_not_engine_construction
 
     outside_window = row_timestamp + timedelta(hours=5)
     assert store.handle_query(query, request_instant=outside_window) == [{"count()": 0}]
+
+
+def test_vendor_health_window_matches_the_composition_health_check_window():
+    """STORY-180 AC2 (minor 1): `store.py`'s hardcoded `VENDOR_HEALTH_WINDOW`
+    must equal `vendor_health.py`'s `_HEALTH_CHECK_WINDOW` -- the composition
+    constant this engine's literal is deliberately NOT imported from (it is
+    part of the wire contract the engine answers, not borrowed from
+    composition; see `store.py:18-22`). Without this test, a future change to
+    `_HEALTH_CHECK_WINDOW` would make the demo diverge SILENTLY in the one
+    dimension it hardcodes -- this test turns that into a build failure.
+
+    Parses `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape here, in the TEST only
+    (the route decided at planning is the equality test, not teaching the
+    engine to parse a DQL `from:` clause -- see STORY-180 AC2).
+    """
+    match = re.fullmatch(r"(\d+)h", _HEALTH_CHECK_WINDOW)
+    assert match is not None, (
+        f"unexpected _HEALTH_CHECK_WINDOW format: {_HEALTH_CHECK_WINDOW!r}"
+    )
+    assert VENDOR_HEALTH_WINDOW == timedelta(hours=int(match.group(1)))
 
 
 def test_vendor_health_query_defaults_request_instant_to_the_real_wall_clock():
