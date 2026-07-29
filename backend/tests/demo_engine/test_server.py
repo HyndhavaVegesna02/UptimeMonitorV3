@@ -15,9 +15,14 @@ the AC calls out are each asserted directly:
 from datetime import timedelta
 
 import httpx
+import pytest
 from demo_engine.rows import build_row
 from demo_engine.server import DemoEngineServer
 from demo_engine.store import DemoRowStore
+from src.adapters.inbound.dynatrace.grail_executor import (
+    GrailQueryError,
+    make_grail_executor,
+)
 from src.adapters.inbound.dynatrace.query import build_dql_query
 from src.composition.vendor_health import build_vendor_health_query
 
@@ -109,3 +114,34 @@ def test_two_server_instances_never_collide_on_a_hardcoded_port():
         )
         assert resp_one.status_code == 202
         assert resp_two.status_code == 202
+
+
+def test_unrecognized_query_returns_400():
+    """A query matching neither DQL grammar must surface as an HTTP 400, not
+    a 202 carrying an empty/garbage result — the loud-not-silent contract
+    `query_grammar.py` promises, exercised over the real wire protocol.
+    """
+    store = DemoRowStore()
+    with DemoEngineServer(store) as server:
+        resp = httpx.post(
+            f"{server.base_url}/platform/storage/query/v1/query:execute",
+            headers=_headers(),
+            json={"query": "fetch dt.synthetic.events"},
+        )
+        assert resp.status_code == 400
+
+
+def test_unrecognized_query_makes_the_real_grail_executor_raise_not_return_empty():
+    """The client-side consequence that pins "loud, not silent": driven
+    through the REAL, unmodified `make_grail_executor`, a 400 from an
+    unrecognized query must raise `GrailQueryError` — never come back as `[]`
+    (`grail_executor.py:97`'s silent-empty branch, which is exactly what a
+    wrong query would look like as "no data" if this ever regressed).
+    """
+    store = DemoRowStore()
+    with DemoEngineServer(store) as server:
+        executor = make_grail_executor(
+            env_url=server.base_url, api_token="dt0c01.demo-token"
+        )
+        with pytest.raises(GrailQueryError):
+            executor("fetch dt.synthetic.events")
