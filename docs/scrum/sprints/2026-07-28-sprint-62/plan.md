@@ -382,20 +382,20 @@ sample; the *failure codes* are assumed (AC8), because none has ever been observ
 
 ### Steps
 
-- [ ] 1. Failing test: `DEGRADED` streak of 1 → internal warning (`proposed_status is None`,
+- [x] 1. Failing test: `DEGRADED` streak of 1 → internal warning (`proposed_status is None`,
       `internal_warning is True`), NOT a `degraded` proposal. Rewrites
       `test_anti_flap.py:185-190` (keeping its intent, renamed to state the new rule).
-- [ ] 2. Failing test: `DEGRADED` streak above 1 but below `thresholds.degraded` → nothing
+- [x] 2. Failing test: `DEGRADED` streak above 1 but below `thresholds.degraded` → nothing
       proposed, no warning (use `thresholds.degraded > 2` to make the band reachable).
-- [ ] 3. Failing test: `DEGRADED` streak of 0 → nothing, symmetric with `DOWN` at `:224`.
+- [x] 3. Failing test: `DEGRADED` streak of 0 → nothing, symmetric with `DOWN` at `:224`.
       Rewrites `test_anti_flap.py:240-248`.
-- [ ] 4. Failing test: `DEGRADED` streak `>= thresholds.degraded` → proposes `degraded`
+- [x] 4. Failing test: `DEGRADED` streak `>= thresholds.degraded` → proposes `degraded`
       (unchanged sustained behaviour).
-- [ ] 5. Implement the symmetry in the `DEGRADED` branch **and update the `:210-211` docstring**
+- [x] 5. Implement the symmetry in the `DEGRADED` branch **and update the `:210-211` docstring**
       in the same diff (AC7).
-- [ ] 6. AC8: confirm every existing `DOWN`/`UP` anti-flap assertion passes **untouched** — both
+- [x] 6. AC8: confirm every existing `DOWN`/`UP` anti-flap assertion passes **untouched** — both
       ladders byte-identical in the diff, nothing weakened or deleted.
-- [ ] 7. Revert-check (AC4): revert the fix, confirm the streak-of-1 test fails, restore.
+- [x] 7. Revert-check (AC4): revert the fix, confirm the streak-of-1 test fails, restore.
       Recorded as evidence that the test is load-bearing.
 
 ### Reality gate (149)
