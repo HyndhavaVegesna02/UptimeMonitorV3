@@ -82,6 +82,42 @@ class _FakeRejectedRepo:
         )
 
 
+# --- Scenario<->fleet coherence (sprint-63 fix round, quality finding M3) ---
+#
+# Every `_ingest_scenario` call above passes `signal_key=` explicitly to
+# `normalize_rows`, so a row's OWN `dt.synthetic.monitor.id` is never read by
+# any test in this file -- a typo'd `monitor_id` in a scenario file would
+# leave every test here green while a real demo run (which builds its DQL
+# query from the fleet config's `native_id`, `run.py:139`, `vendor_health.py:
+# 51`) would emit rows no query matches, and vendor-health would report the
+# id dead. This test closes that blind spot: for every `config/demo/
+# scenarios/*.yaml` file, every declared signal key must be a REAL
+# `signal_key` in `config/demo` (`Config.signal` raises `UnknownSignalError`
+# otherwise), and the scenario's own `monitor_id`/`interval_seconds` must
+# agree with the fleet's `native_id`/`interval_seconds` for that signal.
+
+
+def test_scenario_files_agree_with_the_fleet_config_on_monitor_id_and_interval():
+    cfg = load_config(_DEMO_CONFIG_DIR)
+
+    scenario_paths = sorted(_SCENARIOS_DIR.glob("*.yaml"))
+    assert scenario_paths, "expected at least one scenario file to check"
+
+    for scenario_path in scenario_paths:
+        for scenario in load_scenario_file(scenario_path):
+            signal = cfg.signal(scenario.signal_key)  # raises if not a real signal_key
+            assert scenario.monitor_id == signal.native_id, (
+                f"{scenario_path.name}: signal {scenario.signal_key!r} declares "
+                f"monitor_id={scenario.monitor_id!r}, but config/demo's native_id "
+                f"for that signal is {signal.native_id!r}."
+            )
+            assert scenario.interval_seconds == signal.interval_seconds, (
+                f"{scenario_path.name}: signal {scenario.signal_key!r} declares "
+                f"interval_seconds={scenario.interval_seconds!r}, but config/demo's "
+                f"is {signal.interval_seconds!r}."
+            )
+
+
 # --- AC5(a): a clean fleet across all locations -----------------------------
 
 
