@@ -1,8 +1,8 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: 7c53685
-verified_sprint: sprint-50
+verified_sha: d004da7
+verified_sprint: sprint-62
 status: verified
 ---
 
@@ -276,3 +276,4 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   called with the expected shape) â€” the test previously ended at `asyncio.run(main())` with none.
   `run.py`, `pull_loop.py`, `ingest_service.py`, and `sample_mode.py` are all UNCHANGED. No Fact
   changed. verified_sha -> a8700f5.
+- sprint-62 (STORY-146): RE-VERIFIED, no content change. `test_pull_loop.py`, `test_run_live_loop.py` and `test_vendor_health.py` changed only in how they construct `AppConfig`. The source files this article is about — `pull_loop.py`, `run.py`, `vendor_health.py`, `ingest_service.py` — are untouched by the story (AC7 requires it; verified by an empty `git diff` over those paths). verified_sha -> d004da7.

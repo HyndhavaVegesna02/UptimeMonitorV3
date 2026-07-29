@@ -234,11 +234,22 @@ Dynamo). Its gate now runs with `STATUSPAGE_API_KEY` unset, recorded in the evid
       `config.py`-internal expressions (`Config.__init__`, `load_config`'s global uniqueness
       check, the surviving duplicate-signal_key check) are unchanged context lines. Seven
       surviving readers total, all byte-identical expressions — recorded in the story History.
-- [ ] 11. Wiki blast radius: articles whose `code_refs` include `composition/config.py` or
+- [x] 11. Wiki blast radius: articles whose `code_refs` include `composition/config.py` or
       `seed_dynamo.py` — update or re-verify + bump `verified_sha`. **Note:** `run.py` is
       deliberately *excluded* from this predicate. It is a `code_ref` in four articles (the
       sweep flags it as an amplifier) and AC7 requires it untouched, so including it would
       over-quarantine four articles for a file this story does not change.
+
+      **Outcome note (2026-07-28): this predicate was TOO NARROW.** The mechanical sweep flagged
+      **six** articles, not one: five more carry migrated *test* files in their `code_refs`
+      (`test_orchestrate.py`, `test_orchestration_integration.py`, `test_pull_loop.py`,
+      `test_run_live_loop.py`, `test_vendor_health.py`, `test_dynamo_seed.py`). `config-layer.md`
+      was rewritten (its Facts described the old four-key shape); the other five were
+      **re-verified with a per-article stated reason** — their claims are about the *consumption*
+      shape, which AC7/AC8 pin byte-identical, so only the tests' `AppConfig(...)` construction
+      syntax moved. Retro material: test files as `code_refs` amplify staleness across unrelated
+      articles, the same class of problem as the `run.py`/`pyproject.toml` amplifier notes the
+      sweep already emits.
 
 ### Reality gate (146)
 

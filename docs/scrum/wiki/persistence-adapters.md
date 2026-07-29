@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: d004da7
+verified_sprint: sprint-62
 status: verified
 ---
 
@@ -43,3 +43,4 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - sprint-46 (STORY-082/083): Added DynamoDB topology adapters and serde logic with contract parity tests. verified_sha -> 5ddf3ab.
 - sprint-48 (STORY-086): Added DynamoDB publication, maintenance, and rejected observation repositories, and seed_topology_dynamo, with full contract parity tests. verified_sha -> d710c8c.
 - sprint-49 (STORY-087): Fully retired Neon Postgres database, Alembic migrations, and the nine Postgres repository adapters. Rewired composition and endpoints to DynamoDB Local.
+- sprint-62 (STORY-146): RE-VERIFIED, no content change. Only `test_dynamo_seed.py`'s `AppConfig` construction changed; `seed_dynamo.py` itself is untouched (AC7) and its `for sig in app.signals:` loop reads the same derived list it always did. verified_sha -> d004da7.

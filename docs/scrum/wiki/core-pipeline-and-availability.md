@@ -1,8 +1,8 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/queries/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: d8173d3
-verified_sprint: sprint-49
+verified_sha: d004da7
+verified_sprint: sprint-62
 status: verified          # verified | stale | archived
 ---
 
@@ -228,3 +228,4 @@ boundary CI floors are catalogued in [[architecture-boundary]].
   line-anchored citations were corrected: `AvailabilityResult` 37→40, `AvailabilityCalculator`
   113→168, `bucket_into_cycles` 127→133, `rollup_group` 232→285. No behavior/Fact changed.
   verified_sha → 10a2d73.
+- sprint-62 (STORY-146): RE-VERIFIED, no content change. The nested-config migration rewrote `AppConfig(...)` construction in `test_orchestrate.py` and `test_orchestration_integration.py` — authoring syntax only. This article's claims are about the CONSUMPTION shape (`orchestrate_signal` resolving `component_id`, `thresholds` and `interval` per signal), which STORY-146 AC7/AC8 pin byte-identical: `app.signals` survives as a derived attribute and `component_for_signal`/`thresholds_for` are asserted unchanged against pre-migration literals. Claims re-checked against code, not bulk-stamped. verified_sha -> d004da7.

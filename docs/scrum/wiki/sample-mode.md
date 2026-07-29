@@ -1,8 +1,8 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
 code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: be2ffcd
-verified_sprint: sprint-51
+verified_sha: d004da7
+verified_sprint: sprint-62
 status: verified
 ---
 
@@ -459,3 +459,4 @@ produced ordinary data flowing through it.
   (a comment noting the server's new optional `limit` cap, see [[frontend-zone]] and
   [[api-five-file-convention]]) - `getSampleMode`/`putSampleMode` and every Sample Mode Fact
   in this article are untouched. No Fact changed. verified_sha -> d0f6573.
+- sprint-62 (STORY-146): RE-VERIFIED, no content change. `test_pull_loop.py` and `test_run_live_loop.py` changed only in `AppConfig` construction; no sample_mode code path was touched. (Removal remains STORY-155. Supersession by the demo engine now spans STORY-148 + STORY-176, the latter deferred to sprint 63.) verified_sha -> d004da7.
