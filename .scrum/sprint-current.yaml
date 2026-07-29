@@ -1,9 +1,20 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 63
-status: review     # none | planning | active | review | closed | aborted
-                   # 3/3 stories done, 7/7 points, full 8-command gate green at 05245fd, wiki sweep
-                   # CLEAN, yt_selftest 28/28. Awaiting the PO verdict per story. velocity.json is
-                   # NOT written until acceptance — accepted points, not delivered points.
+status: closed     # none | planning | active | review | closed | aborted
+                   # CLOSED 2026-07-30. Review: PO ACCEPTED all three stories (velocity 7/7).
+                   # Post-acceptance, the PO authorised the outstanding STORY-176 fix-round review;
+                   # it ran, confirmed all seven findings fixed, and produced one MAJOR + twelve
+                   # minors -> STORY-184/185/186. Retro: amendments A3, A4, A5 PO-APPROVED and
+                   # landed at their rungs (implementer.md + quality-review.md checklists;
+                   # working-agreements.md carries all three with motivating incidents). STORY-187
+                   # filed for the import-provenance helper the retro noted had slipped twice.
+                   # BRANCH: sprint-63 stays UNMERGED at 05245fd per the standing "don't merge with
+                   # main" instruction — accepted is not landed. Full 8-command gate green at that
+                   # HEAD, wiki sweep CLEAN, yt_selftest 28/28.
+                   # NEXT: sprint-64 planning. Ready/queued: STORY-182 (the demo loop run, 3 pts) +
+                   # four 1-pointers, only TWO of which actually gate it (183 token-cache retention,
+                   # 184 the interval invariant); 185/186 do not. Decide that explicitly at planning
+                   # or a 3-point story becomes a 7-point sprint.
                    # Review: docs/scrum/sprints/2026-07-29-sprint-63/review.md
                    # Retro:  docs/scrum/sprints/2026-07-29-sprint-63/retro.md (3 amendments proposed)
                    # LOCKED 2026-07-29 on PO approval ("start implementing sprint 63").

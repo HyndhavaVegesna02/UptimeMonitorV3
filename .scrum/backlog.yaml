@@ -1701,3 +1701,32 @@ stories:
     priority: 60
     type: chore
     sprint: null
+  - id: STORY-187
+    title: An import-provenance helper so a proof can prove WHICH code it ran
+    file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
+    status: draft   # Filed 2026-07-30 AT the sprint-63 retro. This is the MECHANICAL RUNG that
+                    # working agreement A1, its 2026-07-29 refinement, and the new A3 have each
+                    # declined to take -- proposed at the sprint-62 AND sprint-63 retros. The
+                    # sprint-63 retro entry records that a third slip would itself be the finding,
+                    # so it is filed instead of proposed a third time.
+                    # THE FAILURE IT MECHANISES AWAY: the repo is installed EDITABLE
+                    # (package-dir = {"" = "backend"}), so setuptools' finder resolves src.* to
+                    # <repo>/backend/src -- the MAIN tree -- from inside ANY worktree, whatever
+                    # pytest's cwd is. STORY-180's discrimination proof therefore reported 4/4 on
+                    # BOTH sides, and "green both sides" reads as "this constant does not matter",
+                    # i.e. the proof would have argued AGAINST a correct fix.
+                    # WHY A SCRIPT CAN HOLD THIS EVEN THOUGH A1/A3 CONCLUDED IT CANNOT: those
+                    # conclusions are about the WHOLE proof -- a reality-gate harness is bespoke per
+                    # story, so nothing can judge whether a given pair of assertions could have
+                    # diverged. But import provenance is NOT bespoke: "which file did this module
+                    # come from, and is it the tree I think I am testing?" is the same question every
+                    # time, and it is exactly the part that silently failed.
+                    # PLACEMENT: tools/ (dev-only, may import src.*, never in the production image).
+                    # NOT .claude/skills/yourteam/scripts/ -- that is shared skill tooling, frozen
+                    # outside a story by the 2026-07-15 agreement, and this helper is project-specific.
+                    # AC5 keeps the PROSE rung: the checklist lines gain a tool, they are not deleted.
+                    # A script that exists but is never called is worse than a rule.
+    points: 1
+    priority: 61
+    type: chore
+    sprint: null
