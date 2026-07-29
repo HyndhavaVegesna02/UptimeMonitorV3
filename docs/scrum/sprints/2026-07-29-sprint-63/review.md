@@ -151,3 +151,43 @@ the merge.
 **Retro amendments A3/A4/A5 are still awaiting approval** — the retro is its own ceremony and the
 acceptance above was of the stories. They are written up in `retro.md` and not yet landed at any
 rung.
+
+## Post-acceptance review — the STORY-176 review debt is CLOSED (2026-07-30)
+
+The re-review the PO authorised after acceptance ran successfully on `31787b6..e514c1d` and returned
+**FIX_REQUIRED: no critical, one major, twelve minors.** Because STORY-176 was already accepted,
+everything became a follow-up rather than a re-opening. It read the fix diff as code, probed the
+validator in-process, and mutated no repo file.
+
+**All seven round-1 findings confirmed fixed.** Two independent confirmations worth recording: it
+agreed with the orchestrator's C1 mutation and added that no *weaker* mutant survives either; and it
+hand-verified M1's correction — the two staggered monitors' bucket keys would be `{END-30, END}` vs
+`{END-45, END}`, unequal sets sharing exactly one boundary, so the old set-inequality assertion
+provably could not have caught the false claim.
+
+**The one major, reproduced by me before filing:** the `interval_seconds` invariant lives on
+`load_scenario_file` only, so a `SignalScenario` constructed **directly** with `-30` still expands
+into the future (a row at `end_time + 30s`) while `expand_scenario`'s own docstring claims "never in
+the future" **unconditionally**. `CLAUDE.md` and the wiki gained the precondition during the fix
+round; the function's own contract did not. The repo enforces this exact field on the type in two
+other places. → **STORY-184**, to land with or before STORY-182.
+
+### Follow-ups filed
+
+| Story | Type | Pts | What |
+|---|---|---|---|
+| **STORY-184** | defect | 1 | Move the interval invariant onto `SignalScenario`; make the docstring's claim true. **Land with or before STORY-182.** |
+| **STORY-185** | chore | 1 | Un-gate the *unsafe* side of the publish proof from Docker, so the pair stays a pair |
+| **STORY-186** | chore | 1 | The 12 new minors + the 5 deferred from round 1, batched — including four claims that are simply **wrong** in docs meant to be trusted |
+
+Plus **STORY-183** (filed mid-sprint, 1 pt) — bound the demo-engine token cache by retention.
+
+**Four 1-pointers now want to land with or before STORY-182**, which is itself 3 points. Sprint 64
+planning should decide explicitly whether STORY-182 runs behind all four or only behind the two that
+actually gate it (183 and 184); the other two do not block the run.
+
+It also answered the two questions I put to it: **do not** restructure the `isinstance` block (each
+check carries a distinct tested message, so a table needs a per-field message column *and* predicate
+— same volume plus indirection), and `e514c1d`'s re-verification of the quarantined
+`dev-setup-and-dod.md` is genuinely reasoned, not a rubber stamp (it independently diffed
+`conftest.py` and spot-checked all three Facts). One audit gap went to STORY-186.

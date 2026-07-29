@@ -170,7 +170,35 @@ stories:
            PLAN-ACCURACY defect, not a story defect — correction note at sprint close."
     fix_round:
       head: e514c1d           # range 31787b6..e514c1d, 11 commits, tree clean
-      re_review: "ATTEMPTED AND ABANDONED, then replaced with mechanical verification. The quality
+      re_review_COMPLETED: "The review debt is CLOSED. After the PO accepted the sprint they
+        authorised completing the outstanding review ('if any reviews are to be done, you can go
+        ahead and do them'), so the quality reviewer was re-dispatched on 31787b6..e514c1d and this
+        time returned. Verdict FIX_REQUIRED: no critical, ONE major, twelve minors — and because
+        STORY-176 was already accepted, all of it became follow-ups (STORY-184/185/186) rather than
+        re-opening a closed story. It read the fix diff as code, probed the validator in-process,
+        and mutated nothing (tree confirmed clean).
+        ALL SEVEN round-1 findings CONFIRMED FIXED: C1 (it agreed with the orchestrator's mutation
+        and added that no weaker mutant survives either), M1 (fixed in substance; it hand-verified
+        that the bucket keys would be {END-30, END} vs {END-45, END} — unequal sets sharing exactly
+        one boundary, so the old inequality assert provably could not have caught the false claim),
+        M2 (all six shapes plus three more it invented itself: bool, float, and a non-str inside
+        cycles), M3 (agreed with the orchestrator's mutation), M4, S1, S2.
+        THE MAJOR, reproduced by the orchestrator before filing: the interval invariant sits on
+        load_scenario_file only, so SignalScenario(interval_seconds=-30) built DIRECTLY still
+        expands into the future (a row at end_time+30s) while expand_scenario's own docstring
+        (scenario.py:158-160) claims 'never after (AC2f: never in the future)' with NO precondition
+        — CLAUDE.md and the wiki both gained the precondition, the function's own contract did not.
+        The repo enforces this exact field on the TYPE in two places (config.py:34-51,
+        topology.py:50-55). -> STORY-184, to land with or before STORY-182.
+        IT ALSO ANSWERED THE TWO QUESTIONS PUT TO IT: (1) do NOT restructure the isinstance block —
+        each check carries a distinct tested message, so a table needs a per-field message column
+        AND predicate, i.e. the same volume plus indirection; it does not duplicate config.py, which
+        validates through pydantic. (2) e514c1d's re-verification of the quarantined
+        dev-setup-and-dod.md is REASONED, not a rubber stamp — it independently diffed conftest.py
+        (nine comment lines above an unchanged insert) and spot-checked all three Facts. One audit
+        gap: the entry omits .scrum/definition-of-done.md, which also changed in range; the omitted
+        change CONFIRMS the Fact, so nothing stale was stamped. -> STORY-186."
+      re_review_FIRST_ATTEMPT: "ATTEMPTED AND ABANDONED, then replaced with mechanical verification. The quality
         reviewer was re-dispatched on the 11 fix commits and died on an upstream 529 THREE times
         (once fresh, twice on resume), returning no findings at all. Rather than keep feeding it, the
         orchestrator ran the two probes the re-review brief had specifically asked for, plus a third:
