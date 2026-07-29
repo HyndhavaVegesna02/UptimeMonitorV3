@@ -44,10 +44,69 @@ empty, and nothing data-dependent can be reality-gated. See
 
 ## What this part deliberately does NOT cover
 
-No scenario player, no demo fleet config, no end-to-end loop run — that is
+No scenario player, no demo fleet config, no end-to-end loop run — that was
 **STORY-176** (sprint 63). This story ships only the wire contract: rows,
 both query grammars, and the HTTP protocol, proven directly rather than
 through a running demo.
+
+## Part 2a (STORY-176, sprint 63): the scenario player, the demo fleet, and the publish guard
+
+**Still no end-to-end loop run — that is STORY-182 (sprint 64).** This part
+ships everything that must be true BEFORE a loop may safely be started:
+
+- **The scenario player** (`scenario.py`) — a scenario YAML declares, per
+  signal, an ordered list of CYCLES; each cycle names which locations report
+  `UP` that cycle (a location's absence from the list is the only other
+  outcome this engine can express — see "Scope honesty" above).
+  `expand_scenario` is **past-anchored**: the scenario's LAST cycle lands at
+  `end_time` (typically `clock.now()`), and earlier cycles land successively
+  further back at the monitor's own `interval_seconds`. This is deliberate,
+  not incidental — a forward player (t0 -> now) would have every cycle beyond
+  `end_time + 5min` silently quarantined by `ingest_service.py`'s
+  `FUTURE_TOLERANCE`, and the whole declared ladder would only become visible
+  once wall-clock time caught up to it. Past-anchoring means the whole ladder
+  is inside `orchestrate.py`'s rolling 7-cycle window on the very first
+  query.
+- **The demo fleet** (`config/demo/`, repo root — **never** `config/apps/`) —
+  a fictional fleet in STORY-146's nested config shape: 13 components, 41
+  signals, 4 declared locations, freshness blocks, every monitor at
+  `interval_seconds <= 60`. `config/demo/scenarios/` covers every case
+  reachable without a failure-code mapping: a clean fleet, a fully dark
+  location, a fully dark monitor, staggered intervals, and a
+  late-returning monitor.
+- **The publish guard — config-only, and it needs `CONFIG_DIR` set on BOTH
+  processes that could build a live publisher, not just the loop.**
+  `config/demo/` declares **no** `statuspage_component_id` on any component,
+  so `Config.statuspage_mapping()` is `{}` and `build_publisher`
+  (`backend/src/composition/publish_helper.py:211`) falls through to a
+  `LoggingPublisher` delegate **even with real Statuspage credentials
+  present** in the repo-root `.env` (`composition/run.py:178`'s
+  `load_dotenv()` walks up from the source file, not CWD, so it supplies
+  those credentials regardless of the launch directory). TWO composition
+  roots build a live publisher from them, and both read `CONFIG_DIR`:
+  - the loop (`composition/run.py::main` -> `build_live_loop`);
+  - the API's **approve trigger** (`composition/app.py::create_app` — no
+    `config_dir` argument in the documented local-run recipe, so `CONFIG_DIR`
+    alone governs which config it seeds and maps).
+
+  Setting `CONFIG_DIR=config/demo` on only ONE of the two still leaves the
+  other resolving the default `config/apps` (`settings.py:32`), which
+  declares a real `statuspage_component_id`
+  (`config/apps/httpcheck.yaml:8`) — so both processes must point at the
+  demo directory together, or the guard does not hold end-to-end. Demo
+  component ids are additionally kept **disjoint** from `config/apps`'s:
+  `StatuspagePublisher` keys on the canonical component id
+  (`adapters/outbound/statuspage/__init__.py:41-46`), so a colliding id would
+  PATCH the real page even with `CONFIG_DIR` set correctly everywhere else.
+
+  All four checks are asserted **in-process** (`backend/tests/
+  test_demo_fleet_config.py`) — no v1 route exposes the runtime
+  mapping/publisher/config, so this cannot be asserted over HTTP without a
+  `backend/src/` change this story does not make.
+
+**No demo loop is started by this story.** `decide` publishes recoveries with
+no human gate (`core/services/decide.py:122-126` decides, `:171-172`
+publishes) — the run, and its own two-sided gate, are STORY-182.
 
 ## Honest limit: the failure path is tested only with ASSUMED codes
 

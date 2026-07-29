@@ -128,9 +128,48 @@ live in `backend/tests/demo_engine/`.
 
 It emits **`HEALTHY` rows and absence, nothing else** (see "Two things to know"
 above), so any failure code here is an explicitly-labelled assumption
-(`tools/demo_engine/assumed_failure_codes.py`), not a contract. There is no
-scenario player or CLI yet; that is STORY-176. Full detail:
+(`tools/demo_engine/assumed_failure_codes.py`), not a contract. Full detail:
 `docs/scrum/wiki/demo-engine.md`.
+
+**Part 2a (STORY-176): a scenario player, a demo fleet, and a publish guard —
+the run itself is still not wired up (that's STORY-182).** `tools/demo_engine/
+scenario.py` expands a scenario YAML (per-signal, per-cycle, per-location `UP`
+outcomes — absence is the only other outcome this `UP`-and-absence-only engine
+can express) into Grail-shaped rows, **past-anchored** to `end_time` (the
+scenario's last cycle lands there; earlier cycles land successively further
+back at the monitor's own `interval_seconds`) so the whole declared ladder is
+inside `orchestrate.py`'s rolling window on the very first query, and no row
+is ever timestamped in the future. `config/demo/` is a fictional fleet (13
+components, 41 signals, 4 declared locations) authored in STORY-146's nested
+shape — **never `config/apps/`**; `config/demo/scenarios/` covers the cases
+reachable without a failure-code mapping (a clean fleet, a dark location, a
+dark monitor, staggered intervals, a late-returning monitor).
+
+**The publish guard is config-only, and needs `CONFIG_DIR` set on BOTH
+processes it could reach — not just the loop.** `config/demo/` declares
+**no** `statuspage_component_id` on any component, so `Config.
+statuspage_mapping()` is `{}` and `build_publisher` (`publish_helper.py:211`)
+falls through to a `LoggingPublisher` delegate **even with real Statuspage
+credentials present** (the repo-root `.env` supplies them from any launch
+directory — `run.py:178`'s `load_dotenv()` walks up from the source file, not
+CWD). Two composition roots build a live publisher from those credentials and
+BOTH must point at `config/demo/`, or neither does:
+- the loop, via `composition/run.py::main` -> `build_live_loop` (reads
+  `settings.config_dir`, i.e. `CONFIG_DIR`, defaulting to `config/apps`,
+  `settings.py:32`);
+- the API's **approve trigger**, via `composition/app.py::create_app` (no
+  `config_dir` argument in the documented recipe below -> `CONFIG_DIR`
+  governs it exactly the same way).
+
+Setting `CONFIG_DIR` on only one of the two still leaves the OTHER process
+resolving `config/apps` by default — which declares a real
+`statuspage_component_id` (`config/apps/httpcheck.yaml:8`). Demo component ids
+are also kept **disjoint** from `config/apps`'s (`StatuspagePublisher` keys on
+the canonical component id, `adapters/outbound/statuspage/__init__.py:41-46`,
+so a collision would PATCH the real page even with the guard above in place).
+**No demo loop is started yet** (STORY-182, sprint 64) — `decide` publishes
+recoveries with no human gate (`core/services/decide.py:122-126` decides,
+`:171-172` publishes).
 
 ## Stack (dossier §3)
 
