@@ -486,6 +486,32 @@ components:
 """
 
 
+class TestMonitorConfigIntervalSeconds:
+    """AC1: MonitorConfig.interval_seconds (frozen-type invariant > 0) — mirrors
+    TestSignalConfigIntervalSeconds's zero/negative pair for its twin validator
+    (quality rework F2, 2026-07-29)."""
+
+    def test_monitor_config_zero_interval_raises(self):
+        """interval_seconds=0 is non-positive and must be rejected (frozen-type invariant)."""
+        with pytest.raises(ValueError, match="interval_seconds"):
+            MonitorConfig(
+                signal_key="checkout-http",
+                native_id="SYNTHETIC_TEST-ABC",
+                name="Checkout HTTP",
+                interval_seconds=0,
+            )
+
+    def test_monitor_config_negative_interval_raises(self):
+        """interval_seconds=-1 must be rejected (frozen-type invariant > 0)."""
+        with pytest.raises(ValueError, match="interval_seconds"):
+            MonitorConfig(
+                signal_key="checkout-http",
+                native_id="SYNTHETIC_TEST-ABC",
+                name="Checkout HTTP",
+                interval_seconds=-1,
+            )
+
+
 class TestNestedMonitors:
     """AC1: monitors nest under their component; ownership is structural."""
 
