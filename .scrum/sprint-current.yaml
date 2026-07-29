@@ -161,7 +161,10 @@ stories:
   - id: STORY-148
     title: Grail demo engine — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
-    status: in_progress   # dispatched 2026-07-29; resume point = plan.md step checkboxes
+    status: done   # 2026-07-29. Spec PASS 10/10; quality FIX_REQUIRED (0c/2M/9m) -> both majors
+                   # fixed and re-verified; DoD gate 8/8 at 29430ff (570 tests); reality gate
+                   # PASS 19/19 (live probe through adapter.py + vendor_health.py over real HTTP).
+                   # 8 minors routed to STORY-180. See story_gates below for the full record.
     points: 3                # was 5 as one story; split post-verifier (176 took the other half)
     ceremony: 3-pointer
     order: 2                 # highest RISK (new component, vendor wire-shape fidelity), and
@@ -301,6 +304,131 @@ story_gates:
         output_tail: "> frontend@0.0.0 lint | > eslint ."
         commit: 81bf71a
         at: "2026-07-29T07:41:33+00:00"
+  # STORY-148's gate ran TWICE: at the implementer's head (6015b12, 566 tests, 8/8) and
+  # again at the post-review-fix head below. Only this second run is the evidence of record.
+  # ANSI/C0 controls stripped from output_tail -- STORY-178, which REPRODUCED here: exactly
+  # 2 ESC bytes, both from `npm run build`. Content is otherwise the runner's own, never
+  # hand-transcribed.
+  - story: STORY-148
+    head: 29430ff
+    env_note: 'DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container) to bypass the dynamo_local
+      ephemeral-port defect (STORY-179). Environment-only; no repo file changed. 570 tests, up from 566
+      at the implementer''s head: +4 from the review-fix coverage (UnrecognizedDqlQueryError, the HTTP
+      400, the real-executor GrailQueryError, and the malformed-JSON 400).'
+    reviews:
+      spec: PASS, 10/10 AC met, no gaps, no scope additions. Traced every AC to a named test and cross-checked
+        each against the production code it claims to exercise; independently re-derived the fixture's
+        field types with its own script rather than trusting the test's assertion.
+      quality: 'FIX_REQUIRED -> fixed. 0 critical, 2 major, 9 minor. Tests-that-lie sweep CLEAN: the reference
+        fixture is real and pre-existing (committed fc65483 under STORY-016b, read off disk, not restated
+        inline); every fidelity test drives real production code (parse_ns_timestamp is imported, not
+        reimplemented); and the ba00bd5 flake fix is a root-cause fix (body drained above the early returns),
+        not a sleep/retry band-aid. Both majors independently re-verified by the SM before dispatching
+        the fix.'
+      majors_fixed: F1 README.md:82-87 documented backend/tests/demo_engine/conftest.py -- a file ba00bd5
+        DELETED because a bare __init__.py-less conftest collides on sys.modules['conftest'] and silently
+        broke test_dynamo_local.py; following the documented recipe re-created the bug. Its 'conftest.py:16-19'
+        cite was stale too (now 24-26 scripts / 28-30 tools, both re-verified against the file after the
+        fix). F2 the advertised fail-loud contract (UnrecognizedDqlQueryError + the 400 branch) had ZERO
+        test coverage -- worse than an ordinary gap because grail_executor.py:97 returns [] on an unexpected
+        envelope, so a regression from loud to silent is indistinguishable from 'no data', and STORY-176
+        adds the third grammar this guard exists for. F3 (minor, fixed only because it lands in the same
+        function as F2's 400 branch) malformed JSON escaped as a stdlib traceback.
+      minors_deferred: 8 of 9 minors deliberately NOT fixed in-story -> STORY-180. None blocks the wire
+        contract, and letting a story absorb its own review nits is how a 3-pointer becomes a 6. Two of
+        them (unevicted server.results, the hardcoded 2h vendor-health window) only start to matter once
+        STORY-176 makes the engine long-running, so they likely belong there.
+    reality_gate:
+      verdict: PASS
+      method: 'A LIVE vendor-path probe, deliberately one level ABOVE the story''s own tests. AC7 stops
+        at make_grail_executor; this drove the two COMPOSITION-level callers the real loop actually uses
+        -- adapters/inbound/dynatrace/adapter.py::fetch_observations (the pull loop''s entry: build_dql_query
+        -> executor -> normalize_rows) and composition/vendor_health.py::check_vendor_id_health (the startup
+        probe) -- over real HTTP against a running DemoEngineServer, using the REAL unmodified make_grail_executor
+        with its own default httpx. 19 assertions, every one two-sided where a one-sided version could
+        pass on a broken engine.'
+      result: '19/19. Nanosecond scale survives end-to-end: latencies returned [755, 755, 755, 1234] ms
+        through the real assembler, so the units trap is closed in reality and not only in a unit test.
+        The watermark bound genuinely discriminates: 4 observations at watermark == t1 vs 1 at t1+1s,
+        with the timestamp on a WHOLE SECOND -- the shape where isoformat() drops the fraction entirely
+        and a string comparison reproduces the STORY-051 stall. Unknown monitor id -> 0 observations,
+        so the filter clause really filters. Three locations at one instant stayed three observations
+        (no aggregation). AC8 held under execution: the assumed code=''1''/''UNHEALTHY'' row reached the
+        real, unmodified map_synthetic_status and raised UnknownVendorStatusError -- and took the whole
+        batch with it (dispatch.py:80''s bare comprehension), which is the blast radius STORY-177 must
+        address.'
+      two_sided_note: 'check_vendor_id_health SWALLOWS every exception and only logs (vendor_health.py:99-110),
+        so a probe that merely called it would report success on a totally broken engine. The gate captures
+        the log stream instead: SILENT for a configured id present in the store, loud VENDOR-ID DRIFT
+        SUSPECTED for an absent one. Only the pair discriminates.'
+      own_error_corrected: 'One of the 19 checks initially passed for a BOGUS reason. It asserted that
+        an empty api_token is rejected -- but api_token='''' yields the header value ''Api-Token '', and
+        httpx/h11 REFUSES to transmit a header value with a trailing space (LocalProtocolError: Illegal
+        header value). The request never reached the server, so the engine did nothing and the assertion
+        was a tautology dressed as an auth test. Replaced with what was then verified by probe: the engine
+        checks the ''Api-Token '' SCHEME PREFIX only -- wrong scheme and absent header both 401, an arbitrary
+        junk token returns 202. That is a sound demo simplification (it has no notion of a valid Dynatrace
+        token) and satisfies AC6, which pins the header''s PRESENCE -- but it is NOT token validation,
+        and must not be reported as such.'
+      scope_honesty: Per PO decision D-A this engine emits UP + absence only. Nothing here may be reported
+        as 'the failure path is tested' -- the failure path is proven REJECTED, which is the opposite
+        claim.
+    dod_evidence:
+    - command: pytest
+      exit_code: 0
+      output_tail: tor.py ...                       [ 92%] | backend\tests\test_streak.py .........                                   [
+        94%] | backend\tests\test_topology_domain.py ........                           [ 95%] | backend\tests\test_topology_endpoint.py
+        ......                           [ 96%] | backend\tests\test_vendor_health.py ........                             [
+        97%] | backend\tests\test_verdict.py ........                                   [ 99%] | backend\tests\test_zone_layout.py
+        ....                                   [100%] | ============================ 570 passed in 48.12s
+        =============================
+      commit: 29430ff
+      at: '2026-07-29T08:40:41+00:00'
+    - command: python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"
+      exit_code: 0
+      output_tail: '--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | -------------------------------------
+        | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence
+        KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports
+        KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken.'
+      commit: 29430ff
+      at: '2026-07-29T08:41:31+00:00'
+    - command: ruff check .
+      exit_code: 0
+      output_tail: All checks passed!
+      commit: 29430ff
+      at: '2026-07-29T08:41:32+00:00'
+    - command: ruff format --check .
+      exit_code: 0
+      output_tail: 218 files already formatted
+      commit: 29430ff
+      at: '2026-07-29T08:41:32+00:00'
+    - command: cfn-lint infra/stack.yaml
+      exit_code: 0
+      output_tail: ''
+      commit: 29430ff
+      at: '2026-07-29T08:41:32+00:00'
+    - command: npm test
+      exit_code: 0
+      output_tail: '> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend
+        | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  14:11:42 | Duration  98.72s
+        (transform 12.14s, setup 91.28s, import 51.77s, tests 105.77s, environment 326.90s)'
+      commit: 29430ff
+      at: '2026-07-29T08:41:40+00:00'
+    - command: npm run build
+      exit_code: 0
+      output_tail: 'in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37
+        kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48
+        kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56
+        kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB |
+        dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | [32m✓
+        built in 1.03s[39m'
+      commit: 29430ff
+      at: '2026-07-29T08:43:21+00:00'
+    - command: npm run lint
+      exit_code: 0
+      output_tail: '> frontend@0.0.0 lint | > eslint .'
+      commit: 29430ff
+      at: '2026-07-29T08:43:36+00:00'
 final_gate:
   head: null
   dod_evidence: []
