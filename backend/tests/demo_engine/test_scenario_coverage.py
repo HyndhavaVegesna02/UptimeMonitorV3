@@ -184,10 +184,22 @@ def test_dark_monitor_scenario_yields_empty_window_and_orchestrate_noops():
 # --- AC5(d): staggered intervals ---------------------------------------------
 
 
-def test_staggered_intervals_scenario_produces_misaligned_cycle_boundaries():
-    """AC5(d): two monitors on ONE component (`catalog-service`) at different
-    `interval_seconds` (30 vs 45) -- their cycle-start boundaries, bucketed
-    each at its OWN interval, do not line up."""
+def test_staggered_intervals_scenario_observed_at_spacing_matches_each_monitors_own_interval():
+    """AC5(d) (sprint-63 fix round, quality finding C1 -- reworked): two
+    monitors on ONE component (`catalog-service`) at different
+    `interval_seconds` (30 vs 45). The prior version of this test compared
+    `bucket_into_cycles` sets built from the `since`/`interval` the test
+    itself passed in -- the row timestamps never entered the comparison, so
+    it passed even against a player that ignored `interval_seconds`
+    entirely. This version reads each monitor's own ingested `observed_at`
+    values directly and asserts the spacing between them equals that
+    monitor's OWN configured interval -- 30s for `catalog-service-list`,
+    45s for `catalog-service-detail`.
+
+    Note (M1 correction): the two monitors' FINAL cycle lands on the same
+    instant, `end_time`, because expansion is past-anchored -- so a claim
+    that their cycle boundaries "share no boundary" would be false (they
+    share exactly one, at `end_time`); this test makes no such claim."""
     cfg = load_config(_DEMO_CONFIG_DIR)
     list_interval = timedelta(
         seconds=cfg.signal("catalog-service-list").interval_seconds
@@ -206,24 +218,15 @@ def test_staggered_intervals_scenario_produces_misaligned_cycle_boundaries():
     assert list_result.accepted == 2 * 2
     assert detail_result.accepted == 2 * 2
 
-    list_since = _END - 7 * list_interval
-    detail_since = _END - 7 * detail_interval
+    list_observed_at = sorted({obs.observed_at for obs in list_repo.saved})
+    detail_observed_at = sorted({obs.observed_at for obs in detail_repo.saved})
 
-    list_buckets = bucket_into_cycles(
-        list(list_repo.in_window("catalog-service-list", list_since, _END)),
-        since=list_since,
-        interval=list_interval,
-    )
-    detail_buckets = bucket_into_cycles(
-        list(detail_repo.in_window("catalog-service-detail", detail_since, _END)),
-        since=detail_since,
-        interval=detail_interval,
-    )
-
-    # Cycle boundaries are keyed by their own start instant; the two
-    # monitors' bucket keys must NOT be the same set -- the different
-    # interval means they do not share cycle boundaries.
-    assert set(list_buckets) != set(detail_buckets)
+    assert len(list_observed_at) == 2  # two distinct cycles, one per location pair
+    assert len(detail_observed_at) == 2
+    assert list_observed_at[1] - list_observed_at[0] == list_interval
+    assert detail_observed_at[1] - detail_observed_at[0] == detail_interval
+    # And they DO share the final instant, since expansion is past-anchored:
+    assert list_observed_at[-1] == detail_observed_at[-1] == _END
 
 
 # --- AC5(e): a late-returning monitor -----------------------------------------
