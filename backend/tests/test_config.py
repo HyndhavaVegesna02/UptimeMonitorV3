@@ -18,6 +18,7 @@ from src.composition.config import (
     AppConfig,
     ComponentConfig,
     Config,
+    DuplicateAppIdError,
     FlatSignalsRejectedError,
     InvalidFreshnessError,
     MonitorConfig,
@@ -299,6 +300,43 @@ components:
         _write_yaml(tmp_config_dir, "another.yaml", dup_yaml)
         with pytest.raises(ValueError, match="component.*id"):
             load_config(tmp_config_dir)
+
+    def test_duplicate_app_id_across_files_raises(self, tmp_config_dir: Path):
+        """Quality rework F4 (2026-07-29): two files both declaring
+        `app: {id: same-app}` (with distinct component ids and signal keys,
+        so every OTHER global check passes) must be rejected — before this
+        check, `load_config` would load both silently and `freshness_for`/
+        `locations_for` would return only the SECOND file's values, with the
+        first file's discarded with no error."""
+        first_yaml = """\
+app:
+  id: same-app
+  name: First File
+  monitor_provider: dynatrace
+components:
+  - id: comp-first
+    name: Comp First
+    monitors:
+      - { signal_key: sig-first, native_id: NATIVE-FIRST, name: First, interval_seconds: 60 }
+"""
+        second_yaml = """\
+app:
+  id: same-app
+  name: Second File
+  monitor_provider: dynatrace
+components:
+  - id: comp-second
+    name: Comp Second
+    monitors:
+      - { signal_key: sig-second, native_id: NATIVE-SECOND, name: Second, interval_seconds: 60 }
+"""
+        _write_yaml(tmp_config_dir, "first.yaml", first_yaml)
+        _write_yaml(tmp_config_dir, "second.yaml", second_yaml)
+        with pytest.raises(DuplicateAppIdError) as exc_info:
+            load_config(tmp_config_dir)
+        message = str(exc_info.value)
+        assert "first.yaml" in message
+        assert "second.yaml" in message
 
 
 # ---------------------------------------------------------------------------

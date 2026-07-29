@@ -100,6 +100,19 @@ class InvalidFreshnessError(ConfigError):
     """
 
 
+class DuplicateAppIdError(ConfigError):
+    """Raised when two config files declare the same ``app.id`` (STORY-146
+    quality rework F4, 2026-07-29).
+
+    ``app.id`` is a ``Config``-level lookup key (``locations_for``/
+    ``freshness_for``) as of this story, so a second file silently
+    overwriting the first's index entries is a real data-loss hole, not
+    just an author typo — the same class of bug the pre-existing
+    ``signal_key``/``component.id`` global-uniqueness checks in
+    ``load_config`` guard against.
+    """
+
+
 # ---------------------------------------------------------------------------
 # Config models (frozen pydantic; model_validator enforces invariants)
 # ---------------------------------------------------------------------------
@@ -565,9 +578,14 @@ def load_config(config_dir: str | Path) -> Config:
     - a monitor's ``expected_locations`` naming an undeclared alias
       (``UndeclaredLocationAliasError``, STORY-146 AC3/AC5);
     - a non-positive ``freshness.stale_after_cycles``/``reentry_cycles``
-      (``InvalidFreshnessError``, STORY-146 AC4/AC5).
+      (``InvalidFreshnessError``, STORY-146 AC4/AC5);
+    - a duplicate ``app.id`` ACROSS files (``DuplicateAppIdError``, STORY-146
+      quality rework F4, 2026-07-29) — ``app.id`` is a ``Config``-level lookup
+      key (``locations_for``/``freshness_for``), so a second file silently
+      overwriting the first's index entries would otherwise discard the
+      first file's ``locations``/``freshness`` with no error.
 
-    The last three checks run OUTSIDE the ``except (TypeError, ValueError)``
+    The last four checks run OUTSIDE the ``except (TypeError, ValueError)``
     block below, so their named subclasses (all ``ConfigError``) survive to
     the caller — a pydantic ``model_validator`` cannot do this (probed twice,
     independently: it converts a raised ``ValueError`` subclass to
@@ -584,6 +602,7 @@ def load_config(config_dir: str | Path) -> Config:
     apps: list[AppConfig] = []
     global_signal_keys: dict[str, str] = {}  # signal_key → filename
     global_component_ids: dict[str, str] = {}  # component_id → filename
+    global_app_ids: dict[str, str] = {}  # app.id → filename
 
     for yaml_path in yaml_files:
         raw: Any
@@ -688,6 +707,17 @@ def load_config(config_dir: str | Path) -> Config:
                     "component.id must be globally unique across all apps."
                 )
             global_component_ids[comp.id] = yaml_path.name
+
+        # Quality rework F4 (2026-07-29): a duplicate app.id across files
+        # silently discards the first file's locations_for/freshness_for
+        # values (app.id is now a Config-level lookup key) — reject it.
+        if app.id in global_app_ids:
+            raise DuplicateAppIdError(
+                f"Duplicate app id {app.id!r} found in {yaml_path.name!r} — "
+                f"already declared in {global_app_ids[app.id]!r}. "
+                "app.id must be globally unique across all config files."
+            )
+        global_app_ids[app.id] = yaml_path.name
 
         apps.append(app)
 
