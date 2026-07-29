@@ -319,12 +319,12 @@ construction instead.
 - [x] 2. Failing test: a row intended as 755 ms assembles to `latency_ms == 755` (i.e. the
       builder emits nanoseconds as a string). Then implement. This is the AC2 scale check, kept
       separate from AC1's type check because type-equality cannot catch it.
-- [ ] 3. Failing test: ingest-grammar parsing honours all three clauses — monitor A's query never
+- [x] 3. Failing test: ingest-grammar parsing honours all three clauses — monitor A's query never
       returns B's rows, a non-matching `event.type` returns nothing, the watermark bound excludes
       older rows; output sorted `timestamp asc`. Then implement.
-- [ ] 4. Failing test: the watermark bound is **parsed**, not string-compared — a row at
+- [x] 4. Failing test: the watermark bound is **parsed**, not string-compared — a row at
       `…746000000Z` against a bound of `…746000Z` is **included**. Then implement.
-- [ ] 5. Failing test: the second grammar (`summarize count()`) returns `[{"count()": N}]` for a
+- [x] 5. Failing test: the second grammar (`summarize count()`) returns `[{"count()": N}]` for a
       known monitor and a 0-count for an unknown one. Then implement.
 - [ ] 6. Wrap it in an HTTP server implementing the pinned protocol (POST `query:execute` → 202
       + `requestToken`, GET `query:poll` → `SUCCEEDED` + `records`), with the `Api-Token` header
