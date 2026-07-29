@@ -992,17 +992,43 @@ stories:
     type: chore
     sprint: 62
   - id: STORY-176
-    title: Grail demo engine part 2 — scenario player, demo fleet, and the real loop run
+    title: Grail demo engine part 2a - scenario player, demo fleet, time base, publish guard
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
-    status: ready
-    points: 4   # re-estimated from 3; rescoped to UP+absence scenarios by PO decision D-A
+    status: ready   # SPLIT 2026-07-29 at sprint-63 planning (PO). yt-plan-verifier re-estimated
+                    # the combined story at 6 pts (STORY-148 delivered the whole wire contract
+                    # for 3), so the run moved to STORY-182 and this keeps the build. AC6/AC7
+                    # moved there. Four AC defects fixed pre-lock: a publish-guard BYPASS via
+                    # component-id collision (AC3c added), an unsatisfiable AC3b (no v1 route
+                    # exposes the runtime mapping -> in-process create_app assertion), a silent
+                    # sixth time constraint (FUTURE_TOLERANCE=5min quarantines future rows and
+                    # the rejected count is discarded), and AC5(b)(c)(e) claiming to exercise
+                    # expected_locations/freshness/reentry_cycles, which have ZERO consumers.
+    points: 3   # was 4; the run is STORY-182's 3
     priority: 55
     type: chore
-    sprint: 63  # DEFERRED out of 62 by PO decision D-B (2026-07-28): honest sprint re-estimate
-                # was 12-13 pts vs the ~9-11 baseline. Opens 63, where its fleet-scale data also
-                # feeds the frontend rebuild. Plan section carried forward verbatim in
-                # docs/scrum/sprints/2026-07-28-sprint-62/story-176-carried-to-sprint-63.md
+    sprint: 63
     depends_on: [STORY-146, STORY-148]
+  - id: STORY-182
+    title: Grail demo engine part 2b - the real loop run against the demo fleet, and its two-sided gate
+    file: docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md
+    status: ready   # AC approved + estimated at the 2026-07-29 split; no open questions.
+                    # Sprint 64: STORY-176 must ship the publish guard FIRST -- decide publishes
+                    # recoveries with no human gate (decide.py:122-126, publish at :171-172), so
+                    # the ordering is structural, not a step order someone can reshuffle.
+                    # Four verifier findings are ACs here, not steps: seed-derived endpoints
+                    # (/components + /topology pass with ZERO ingest -> an observation-derived
+                    # probe is required); the permanent EVT#/DEDUPE marker (a repeat run on a
+                    # reused table ingests nothing while passing a naive row count -> fresh
+                    # table); DYNAMO_ENDPOINT_URL absent from .env (unset -> boto3 targets REAL
+                    # AWS with real creds); and a leftover sample-mode flag forcing every
+                    # observation DOWN. AC5 also records that 'no POST attempted' is VACUOUS
+                    # under UP-only scope: publish is never called, so silence proves nothing.
+    points: 3
+    priority: 57
+    type: chore
+    sprint: 64
+    depends_on: [STORY-176, STORY-148, STORY-146]
+
   - id: STORY-177
     title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
     file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md

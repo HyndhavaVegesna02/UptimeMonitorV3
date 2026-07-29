@@ -1,6 +1,6 @@
 ---
 id: STORY-176
-title: Grail-shaped demo engine, part 2 — scenario player, demo fleet, and the real loop run
+title: Grail-shaped demo engine, part 2a — scenario player, demo fleet, time base, and the publish guard
 type: chore
 ---
 
@@ -84,6 +84,21 @@ guard: a property of the config, not a promise about wiring.
       moment, failing AC6's "no dead monitor ids" — which is the observable proof STORY-148 AC5
       exists to produce.
 
+      (f) **NOT in the future by more than 5 minutes.** `ingest_service.py:37` sets
+      `FUTURE_TOLERANCE = timedelta(minutes=5)` and `:119-125` **quarantines** any observation with
+      `observed_at > now + 5min` into the rejected repository. `run.py` passes no `on_cycle`, so the
+      `IngestResult`'s rejected count is **discarded — nothing logs it.** This is the failure a
+      scenario player is most likely to hit and it is entirely silent. Added 2026-07-29 by
+      `yt-plan-verifier`; it also means the note below ("only three" silent failures) undercounts —
+      there are **four**.
+
+      **The timeline direction is PAST-ANCHORED (decided at planning, 2026-07-29).** The player
+      expands a scenario **backwards from `clock.now()`**, not forwards from t₀. Both readings
+      satisfied AC1 + AC2(a) as originally written, and they are different implementations with
+      different costs: forward playback quarantines every cycle beyond t₀+5min under (f) until
+      wall-clock catches up, and the run would have to last `cycles × interval`. Past-anchored means
+      the whole ladder is present in the first query.
+
       Note on diagnosing (a)–(d) during implementation: violations of (b) in particular are
       **logged, not silent** — `pull_loop.py:200-207` catches and `logger.exception`s at ERROR
       with a full traceback. The loop's ERROR log is the fastest route to a timestamp, mapping, or
@@ -115,10 +130,30 @@ guard: a property of the config, not a promise about wiring.
       the real `http-check` component into the demo table. Guard (a) alone does not close this,
       because (a) is a property of the *demo* config and the API never reads it.
 
-      **Three tests / checks:** `statuspage_mapping() == {}` for the loaded demo config;
+      **(c) Demo component ids MUST be disjoint from `config/apps` component ids.** Added
+      2026-07-29 after `yt-plan-verifier` found a bypass that (a) and (b) together do not close:
+      `StatuspagePublisher.publish` keys on the **canonical component id**
+      (`adapters/outbound/statuspage/__init__.py:41-46`). A demo component reusing a live id (e.g.
+      `http-check`, `config/apps/httpcheck.yaml:8`) on an API process running the DEFAULT
+      `CONFIG_DIR` — which is exactly what CLAUDE.md "Run the app locally" step 4 does, passing no
+      `CONFIG_DIR` — resolves to `{http-check: xdnywbx77npw}` and PATCHes the **real** page on
+      approve. Guard (b) is a human-set env var; this check is mechanical and cannot be forgotten.
+      The one **automatic** layer, which neither the original AC nor the plan named, is
+      `UnmappedComponentIdError` (`statuspage/__init__.py:43`) swallowed by `BestEffortPublisher`
+      (`publish_helper.py:59-66`) — it saves a NON-colliding id and nothing else. That is why (c)
+      exists.
+
+      **Four tests / checks:** `statuspage_mapping() == {}` for the loaded demo config;
       `build_publisher` with an empty mapping and non-empty credentials returns a chain whose
-      delegate is a `LoggingPublisher`; and the running API's **runtime** mapping is `{}`
-      (asserted against the live process, not only the loaded config). The demo README and the
+      delegate is a `LoggingPublisher`; `set(demo component ids) & set(load_config("config/apps")
+      component ids) == set()`; and the API's runtime mapping is `{}` — asserted **in-process**
+      (`CONFIG_DIR=<demo> python -c "from src.composition.app import create_app; ..."` then
+      `app.state.seed_config.statuspage_mapping() == {}` and the delegate's type), because
+      `yt-plan-verifier` enumerated all 14 v1 routes and **none** exposes the mapping, the
+      publisher, or the loaded config — so "asserted against the live process over HTTP" was
+      unsatisfiable without a `backend/src` change that AC8 forbids. `asgi.py` calls `create_app()`
+      with no `config_dir`, so `CONFIG_DIR` governs it (`settings.py:32`) and the in-process
+      assertion exercises the same resolution path the server does. The demo README and the
       recipe state `CONFIG_DIR` as required on **both** processes and name both routes.
       **No demo loop is started before this AC passes** — `decide` publishes recoveries with no
       human gate (`core/services/decide.py:122-126`), so fake recoveries would otherwise reach
@@ -131,36 +166,46 @@ guard: a property of the config, not a promise about wiring.
 - [ ] **AC5 (scenario coverage — `UP` and absence only; see the scope note)** — Scenarios cover
       every case reachable without a failure-code mapping:
       (a) a clean fleet across all locations;
-      (b) a **fully dark location** — a declared location that stops reporting entirely, which
-      exercises the `expected_locations` gap and the completeness denominator;
-      (c) a **fully dark monitor** — every location silent, which exercises the freshness
-      (`stale_after_cycles`) path;
+      (b) a **fully dark location** — a declared location that stops reporting entirely.
+      **Reworded 2026-07-29 (PO decision).** It does NOT exercise "the `expected_locations` gap and
+      the completeness denominator": `expected_locations`, `locations_for`, `freshness_for`,
+      `stale_after_cycles` and `reentry_cycles` have **zero consumers** anywhere under
+      `backend/src` outside `composition/config.py` (verified by grep; `config.py:261` says so
+      itself — "STORY-151/152 consume this"), and `availability.py:265` computes
+      `completeness_denominator = expected_cycles * distinct_locations` where `distinct_locations`
+      is the count of locations **observed** (`:74`) — so a dark location shrinks numerator and
+      denominator together and completeness barely moves. What it DOES produce, and what the test
+      asserts: a lower `distinct_locations` on `/availability`, and `collapse` seeing `{UP}` from
+      the surviving locations (`pipeline.py:40-97` has no location-count awareness at all). The
+      scenario's real value is as a **fixture the consumer stories will need**;
+      (c) a **fully dark monitor** — every location silent. Likewise reworded: no freshness path is
+      consulted because none is wired. What it produces is an empty window → `streak` returns
+      `None` → `orchestrate_signal` NOOPs (`orchestrate.py:113-121`), asserted as such;
       (d) **staggered intervals** — monitors at different `interval_seconds` on one component, so
       cycle boundaries do not line up;
-      (e) a **late-returning monitor** — dark, then reporting again, exercising `reentry_cycles`.
+      (e) a **late-returning monitor** — dark, then reporting again. Reworded: `reentry_cycles`
+      has no consumer, so what this asserts is that **ingest resumes** after a gap (rows land, the
+      watermark advances) — not that any re-entry policy ran.
       **Deliberately NOT in this story:** any scenario requiring a `DOWN` or `DEGRADED`
       observation (a ladder-crossing degradation, a minority-location failure, two monitors
       disagreeing). Those are unreachable through the real ingest path — see the scope note below
       — and arrive with STORY-177.
-- [ ] **AC6 (real loop, real fleet)** — Running the **unmodified**
-      `python -m src.composition.run` with `DYNATRACE_ENV_URL` → the demo engine and
-      `CONFIG_DIR` → the demo config ingests observations into DynamoDB for ≥12 components,
-      ≥40 signals, ≥4 locations. Verified by querying the observations table and by
-      `GET /api/v1/components` and `/api/v1/topology` returning that fleet over live HTTP.
-      The startup `check_vendor_id_health` probe reports **no** dead monitor ids (this is the
-      observable proof that STORY-148 AC5's second grammar works end to end).
-- [ ] **AC7 (no proposal evidence is claimed, and the absence is stated)** — This story makes
-      **no claim** about proposals appearing on `GET /api/v1/approvals`, because none can: with
-      only `UP` observations and gaps, `anti_flap` reaches `_propose(OPERATIONAL)` at most, which
-      `decide.py:122-126` publishes as a recovery or resolves at `:157-169` — it never calls
-      `_open_proposal`. The endpoint is verified to return a well-formed **empty** result, and the
-      demo README states plainly that the proposal/approval path is **not** exercised by the demo
-      until STORY-177 lands. This is recorded as an AC rather than omitted so that a future reader
-      cannot mistake "the demo ran clean" for "the approval path works".
-- [ ] **AC8 (production untouched)** — `git diff` touches only `tools/`, the demo config
-      directory, `docs/`, `CLAUDE.md`, and tests under `backend/tests/`. No file under
-      `backend/src/` is modified, verified mechanically from the commit range.
-- [ ] **AC9** — All five backend DoD gate commands exit 0.
+- [ ] ~~**AC6 (real loop, real fleet)**~~ — **MOVED to STORY-182** (part 2b) at sprint-63
+      planning. The run, its evidence, and the `check_vendor_id_health` dead-id check are that
+      story's AC3/AC4. This story ships the player, the fleet and the guard that make the run
+      *safe to attempt*; it deliberately does not run it.
+- [ ] ~~**AC7 (no proposal evidence is claimed)**~~ — **MOVED to STORY-182** (its AC5), together
+      with the sharper reason: `publish` is never called at all under UP-only scope, so a quiet
+      publish log is vacuous evidence.
+- [ ] **AC8 (production untouched)** — `git diff` touches only `tools/`, **`config/demo/`** (the
+      demo config directory — named here so the check is a concrete allowlist, not a description),
+      `docs/`, `CLAUDE.md`, and tests under `backend/tests/`. No file under `backend/src/` is
+      modified, verified mechanically from the commit range.
+      **Multi-file trap:** a ≥12-component fleet will span several YAML files, and
+      `config.py:585-587` silently discards a duplicate `app.id`'s `locations`/`freshness`. Each
+      demo YAML declares a DISTINCT `app.id`, with a test asserting every declared location and
+      freshness block survives loading.
+- [ ] **AC9** — All **eight** DoD gate commands exit 0 (five backend + three frontend).
 
 ## Scope note — why there are no failure scenarios (PO decision, 2026-07-28)
 
@@ -210,3 +255,24 @@ None.
   Deferred to sprint 63 per the PO's pacing directive: the honest re-estimate put sprint 62 at
   12–13 pts against a ~9–11 baseline, and this story opens 63 where its fleet-scale data also
   feeds the frontend work.
+- 2026-07-29: **SPLIT at sprint-63 planning, and four AC defects fixed pre-lock.** `yt-plan-verifier`
+  re-estimated the combined story at 6 pts (STORY-148 delivered the whole wire contract for 3), and
+  the PO chose to split: this is now **part 2a** (player, fleet, time base, publish guard) at 3 pts;
+  **STORY-182** takes the run and its two-sided gate (AC6/AC7 moved there). The four fixes matter
+  more than the split:
+  (1) **The publish guard had a bypass.** `StatuspagePublisher` keys on the canonical component id,
+  so a demo id colliding with a live one, on an API running the DEFAULT `CONFIG_DIR` (what the
+  documented recipe does), PATCHes the real page. AC3 gained a mechanical id-disjointness check and
+  now names `UnmappedComponentIdError`/`BestEffortPublisher` as the only automatic layer.
+  (2) **AC3(b) was unsatisfiable** — the same shape as the original publish AC recorded above. No
+  v1 route exposes the runtime mapping, so "asserted against the live process" needed a forbidden
+  `backend/src` change; it is now an in-process `create_app()` assertion.
+  (3) **AC2 was missing a sixth, silent constraint** — `FUTURE_TOLERANCE = 5min` quarantines
+  future-dated rows and `run.py` discards the rejected count, so AC2's own "only three silent
+  failures" note undercounted. The timeline direction (past-anchored) is now decided rather than
+  left to the implementer.
+  (4) **AC5(b)(c)(e) claimed to exercise code with zero consumers.** `expected_locations`,
+  `freshness_for`, `stale_after_cycles` and `reentry_cycles` have none outside `config.py`, and the
+  completeness denominator uses OBSERVED locations, so a dark location barely moves it. The PO chose
+  to reword to the real observable effects rather than defer the scenarios, keeping them as fixtures
+  the consumer stories (STORY-151/152) will need.

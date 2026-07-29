@@ -32,9 +32,13 @@
 - [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
       (2026-07-12: invocation changed from the `lint-imports` exe shim, which a Windows
        Application Control policy now blocks; same check, same 8 contracts, module path)
-      (import-linter; the five contracts from dossier §4, §13, and Sprint 14:
+      (import-linter; EIGHT contracts, from dossier §4, §13, Sprint 14 and later:
        core-independence, core-internal-layering [domain<-ports<-services],
-       adapter-independence, api-feature-independence, src-no-tests)
+       adapters-independence, api-feature-independence, api-outward-independence,
+       adapters-edge-only, api-shared-no-feature-imports, src-no-tests.
+       2026-07-29: this list said "five" and named five while the line above it
+       already said "same 8 contracts" — the runner's own `Contracts: 8 kept, 0
+       broken.` is the count of record, and `pyproject.toml` declares all eight.)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
 - [ ] CloudFormation template lint: `cfn-lint infra/stack.yaml` -> exit 0

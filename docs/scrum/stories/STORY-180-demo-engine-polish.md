@@ -27,32 +27,35 @@ is already open, and in the two that are real correctness-of-documentation defec
 
 ### The eight
 
-1. **The vendor-health window is hardcoded AND the query's own clause is discarded.**
+1. **The vendor-health window is hardcoded, and the query's own clause is never read.**
    `tools/demo_engine/store.py:22` pins `VENDOR_HEALTH_WINDOW = timedelta(hours=2)` while
-   `query_grammar.parse_query` throws away the `from:now()-2h` clause it parsed. If
+   `query_grammar.parse_query` never looks at the `from:now()-2h` clause **at all** — there is no
+   `from:` regex (`query_grammar.py:28-31`), and `VendorHealthQuery` (`:47-51`) has no window field.
+   (The backlog note said the clause was "parsed then discarded"; corrected 2026-07-29 by
+   `yt-plan-verifier` — it is never parsed.) If
    `composition/vendor_health.py`'s `_HEALTH_CHECK_WINDOW` ever changes, the demo diverges
-   **silently** in the one dimension it hardcodes. Either parse the window out of the query
-   string, or assert it equals the constant. The existing comment defends the literal but says
-   nothing about the discarded clause.
+   **silently** in the one dimension it hardcodes. AC2 fixes the route: assert the literal equals
+   the composition constant (parsing the clause is a future improvement, not this story). The
+   existing comment defends the literal but says nothing about the unread clause.
 2. **A fidelity test that bypasses the producer.**
-   `backend/tests/demo_engine/test_watermark_precision.py:19-26` hand-builds the ingest query
+   `backend/tests/demo_engine/test_watermark_precision.py:20-27` hand-builds the ingest query
    string. Only the 9-digit case *needs* a literal (the real `build_dql_query` cannot emit one);
    the 0- and 6-digit cases are reachable through the real builder (`microsecond=0` /
    `microsecond=746000`) and should use it.
 3. **A test that exercises no product code.** `test_watermark_precision.py:63-70` asserts only a
    stdlib string-ordering fact. Honestly named, but it is a comment wearing a test's clothes —
    fold it into the docstring it belongs in.
-4. **A test name that overstates.** `test_assumed_failure_codes.py:29-40` is named
+4. **A test name that overstates.** `test_assumed_failure_codes.py:26-37` is named
    `..._produces_a_structurally_valid_row` but asserts only that the two status values echo their
    inputs. Rename to what it checks (or check what it is named).
-5. **An unevicted token cache.** `tools/demo_engine/server.py:47` — `_DemoHTTPServer.results`
+5. **An unevicted token cache.** `tools/demo_engine/server.py:48` — `_DemoHTTPServer.results`
    grows one entry per query for the process lifetime. Irrelevant to tests; a slow leak in
    STORY-176's long-running demo.
-6. **A docstring claiming more than the code.** `tools/demo_engine/rows.py:36-37` calls
+6. **A docstring claiming more than the code.** `tools/demo_engine/rows.py:26-27` calls
    `("0", "HEALTHY")` "The ONLY (code, message) pair `map_synthetic_status` accepts".
    `health_mapping.py:65` is an `or`, so **either half alone suffices**. Correct the docstring to
    the code's actual contract.
-7. **Wasted clock read.** `store.py:57-61` computes `datetime.now(timezone.utc)` on every call
+7. **Wasted clock read.** `store.py:46-50` computes `datetime.now(timezone.utc)` on every call
    including ingest queries, where `instant` is then unused.
 8. **`sys.path[0]` insertion for `tools/`.** `backend/tests/conftest.py:30` inserts `tools/` at
    the FRONT of `sys.path`, ahead of stdlib, for every backend test. Zero collision risk today
@@ -66,13 +69,27 @@ is already open, and in the two that are real correctness-of-documentation defec
       `rows.py`'s claim about `map_synthetic_status` matches what `health_mapping.py` actually
       does. The AC is satisfied by reading the `or` and stating its real semantics, not by
       rewording the sentence to sound softer.
-- [ ] **AC2 (minor 1 — the window can no longer diverge silently)** — Either the engine parses
-      the window from the query, or a test fails if `store.py`'s constant and
-      `vendor_health.py`'s `_HEALTH_CHECK_WINDOW` disagree. A comment alone does not satisfy this
-      AC: the point is that a future change to the composition constant cannot pass green.
-- [ ] **AC3 (minor 2 — the real producer drives the reachable cases)** — The 0- and 6-digit
-      watermark cases go through the real `build_dql_query`. The 9-digit case keeps its literal,
-      with the reason (the real builder cannot emit 9 digits) stated at the literal.
+- [ ] **AC2 (minor 1 — the window can no longer diverge silently). ROUTE DECIDED AT PLANNING
+      2026-07-29: the equality-test route, NOT the parse route.** A test imports
+      `vendor_health.py`'s `_HEALTH_CHECK_WINDOW` (the string `"2h"`, `:37`) and fails if it does
+      not equal `store.py:22`'s `timedelta(hours=2)`. A comment alone does not satisfy this AC: the
+      point is that a future change to the composition constant cannot pass green.
+      **Why the route is fixed rather than left open:** `yt-plan-verifier` showed the two routes need
+      OPPOSITE reality gates. Under the parse route, changing `_HEALTH_CHECK_WINDOW` to `"3h"`
+      correctly changes nothing (the engine would follow the query), so the natural
+      "change-it-and-see-red" proof scores FAIL against a correct implementation. The equality route
+      has an unambiguous discrimination proof and needs no DQL duration parser, no new
+      `VendorHealthQuery` field, and no decision about unparseable-clause behaviour. Parsing the
+      window from the query is a legitimate future improvement — filed as a note, not this AC.
+- [ ] **AC3 (minor 2 — the real producer drives the reachable cases, WITHOUT neutering the test)**
+      — The 0- and 6-digit watermark cases go through the real `build_dql_query`, called with
+      **`overlap=timedelta(0)`**. The 9-digit case keeps its literal, with the reason (the real
+      builder cannot emit 9 digits) stated at the literal.
+      **The `overlap` argument is not optional.** `build_dql_query` emits
+      `since = watermark - overlap` (`query.py:90`) and `DEFAULT_OVERLAP` is 5 minutes. Left at the
+      default, the bound lands five minutes before the row, the row is included **regardless of how
+      precision is handled**, and the test silently stops discriminating the STORY-051 lexicographic
+      stall it exists to catch — while staying green. Found by `yt-plan-verifier`, 2026-07-29.
 - [ ] **AC4 (minor 5 — bounded token cache)** — `_DemoHTTPServer.results` no longer grows without
       bound, with a test proving the bound (e.g. an entry is evicted after being polled, or the
       cache is capped). "It doesn't matter in tests" is the reason it was deferred, not a reason
@@ -92,7 +109,7 @@ is already open, and in the two that are real correctness-of-documentation defec
 - [ ] **AC8 (still zero production code)** — `git diff` for this story touches no file under
       `backend/src/`. STORY-148's AC9 rule holds: the demo engine adapts to production, never the
       reverse.
-- [ ] **AC9** — All eight DoD gate commands exit 0.
+- [ ] **AC9** — All eight DoD gate commands exit 0 (five backend + three frontend).
 
 ## Open Questions
 
