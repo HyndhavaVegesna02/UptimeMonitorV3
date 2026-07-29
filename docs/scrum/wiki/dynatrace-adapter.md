@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: 0da9568
-verified_sprint: sprint-44
+verified_sha: b272c32
+verified_sprint: sprint-63
 status: verified
 ---
 
@@ -26,8 +26,11 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   tenant; the earlier `dt.synthetic.executions` was an invalid placeholder) and scopes to
   `dt.synthetic.monitor.id == "<native_id>" AND event.type == "http_monitor_execution"`
   (STORY-016c — the canonical per-run verdict row; the `http_step_execution` companion that shares
-  the same `event.id` and `timestamp` is excluded at the source so `UNIQUE(observations.source_event_id)`
-  can never collide; parameterizing `event.type` per monitor type is out of scope). When `watermark` is
+  the same `event.id` and `timestamp` is excluded at the source so the two rows never collide on the
+  same idempotency key (the `EVT#<event_id>`/`DEDUPE` marker item,
+  `dynamo_observation_repository.py:58-62` — corrected STORY-181, sprint-63; the comment had cited a
+  SQL `UNIQUE` constraint that never existed here); parameterizing `event.type` per monitor type is
+  out of scope). When `watermark` is
   set it adds a lower bound at `watermark - overlap` on `timestamp` (never the bare watermark, so
   late-landing rows are not missed — dossier §8), emitted as
   `timestamp >= toTimestamp("<ISO Z>")` — **the `toTimestamp()` wrapper is load-bearing**: DQL
@@ -215,3 +218,8 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   `verified_sha` deliberately stays `0da9568`: the new claim's own evidence lives in
   [[demo-engine]], verified at `64f680b`. Bumping this article's SHA would have implied a
   re-verification of the adapter that did not happen.
+- sprint-63 (STORY-181): `query.py`'s dedupe comment corrected — it had cited a SQL
+  `UNIQUE(observations.source_event_id)` constraint that never existed in this DynamoDB-backed
+  system; the Fact above now names the real mechanism, the `EVT#.../DEDUPE` marker item. The
+  claim itself (the two rows sharing `event.id` never collide) is unchanged. verified_sha ->
+  b272c32.
