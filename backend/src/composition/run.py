@@ -167,7 +167,7 @@ async def main() -> None:
     # STORY-043: load a repo-root `.env` BEFORE reading settings/secrets, so
     # the documented local recipe ("Run the app locally", CLAUDE.md) — which
     # runs this entrypoint from the repo root — can supply
-    # DYNATRACE_*/STATUSPAGE_*/DATABASE_URL from a gitignored `.env` file
+    # DYNATRACE_*/STATUSPAGE_* secrets from a gitignored `.env` file
     # instead of requiring them to be exported into the shell first. No
     # explicit path is passed: `load_dotenv()`'s default discovery walks
     # upward from THIS file's own location (not the process CWD) to find the

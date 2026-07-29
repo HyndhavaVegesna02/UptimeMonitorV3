@@ -1,10 +1,12 @@
 """The observation repository port (dossier §6, §8) — durable, deduplicated store.
 
 `save_new` persists a batch of canonical observations, skipping any whose
-idempotency key (`source_event_id`) was already stored — the dossier specifies an
-INSERT … ON CONFLICT DO NOTHING semantics — and returns how many rows were newly
+idempotency key (`source_event_id`) was already stored — an idempotent insert
+that never duplicates on replay (the DynamoDB adapter implements this via an
+`EVT#<event_id>`/`DEDUPE` marker item, `adapters/persistence/
+dynamo_observation_repository.py:58-62`) — and returns how many rows were newly
 inserted. That count is what lets the core report accepted-vs-deduped without the
-adapter leaking SQL into the core.
+adapter leaking its persistence mechanism into the core.
 
 `in_window` (STORY-011, dossier §11) is the READ side: it returns the raw
 observations for one signal in `[since, until)` so the availability engine

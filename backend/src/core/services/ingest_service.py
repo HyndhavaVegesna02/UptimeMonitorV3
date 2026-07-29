@@ -98,8 +98,9 @@ class IngestService(SignalIngestPort):
            quarantining failures to the rejected repo (reason + payload) —
            the rest of the batch proceeds (no poison pill).
         2. **Dedupe + persist** only the observations that passed validation,
-           via `observation_repo.save_new` (DB-level `ON CONFLICT DO
-           NOTHING`; the returned count is the TRUE newly-inserted count).
+           via `observation_repo.save_new` (idempotent insert — never a
+           duplicate on replay; the returned count is the TRUE newly-inserted
+           count).
         3. **Advance the watermark** to `max(observed_at)` over the
            VALIDATED observations only, and only after `save_new` has
            returned successfully — if it raises, the exception propagates

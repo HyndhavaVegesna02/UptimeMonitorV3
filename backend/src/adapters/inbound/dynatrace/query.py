@@ -12,7 +12,9 @@ monitor-id scope filter. This is the single live HTTP monitor event type: each
 execution emits one canonical `http_monitor_execution` row (the per-run
 overall verdict) plus one `http_step_execution` companion that shares the same
 `event.id`; the step row is excluded at the source so no two observations ever
-collide on `UNIQUE(observations.source_event_id)`. Parameterizing the fetched
+collide on the same idempotency key (the `EVT#<event_id>`/`DEDUPE` marker
+item, `adapters/persistence/dynamo_observation_repository.py:58-62`).
+Parameterizing the fetched
 `event.type` per monitor type is explicitly out of scope (STORY-016c) — only
 the HTTP monitor is live; clickpath/browser remain future work.
 
