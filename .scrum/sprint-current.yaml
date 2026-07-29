@@ -1,6 +1,11 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 63
-status: active     # none | planning | active | review | closed | aborted
+status: review     # none | planning | active | review | closed | aborted
+                   # 3/3 stories done, 7/7 points, full 8-command gate green at 05245fd, wiki sweep
+                   # CLEAN, yt_selftest 28/28. Awaiting the PO verdict per story. velocity.json is
+                   # NOT written until acceptance — accepted points, not delivered points.
+                   # Review: docs/scrum/sprints/2026-07-29-sprint-63/review.md
+                   # Retro:  docs/scrum/sprints/2026-07-29-sprint-63/retro.md (3 amendments proposed)
                    # LOCKED 2026-07-29 on PO approval ("start implementing sprint 63").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    #
