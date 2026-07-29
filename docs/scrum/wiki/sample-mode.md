@@ -460,3 +460,8 @@ produced ordinary data flowing through it.
   [[api-five-file-convention]]) - `getSampleMode`/`putSampleMode` and every Sample Mode Fact
   in this article are untouched. No Fact changed. verified_sha -> d0f6573.
 - sprint-62 (STORY-146): RE-VERIFIED, no content change. `test_pull_loop.py` and `test_run_live_loop.py` changed only in `AppConfig` construction; no sample_mode code path was touched. (Removal remains STORY-155. Supersession by the demo engine now spans STORY-148 + STORY-176, the latter deferred to sprint 63.) verified_sha -> d004da7.
+- sprint-62 (compile pass): the superseding component now has its own article, [[demo-engine]] —
+  STORY-148 landed the wire contract (`tools/demo_engine/`, a real HTTP server the unmodified Grail
+  executor talks to). Sample mode is untouched by it and stays in place until STORY-176 gives the
+  engine a scenario player and STORY-155 removes this. Nothing in this article's Facts changed;
+  no `verified_sha` bump (no `code_ref` of this article was touched).

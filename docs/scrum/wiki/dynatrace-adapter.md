@@ -68,6 +68,11 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   `composition/run.py::build_live_loop` (see [[ingest-service-and-pull-loop]]). Tested in
   `backend/tests/test_grail_executor.py` driving execute→202→poll→SUCCEEDED, FAILED-state,
   poll-exhaustion, sync-fallback, and empty-records, all against fakes.
+- As of sprint-62 it is also exercised **unmodified against a real socket**: the Grail demo engine
+  (`tools/demo_engine/`, STORY-148) implements the async execute→poll wire protocol well enough that
+  this exact factory, with its own default `httpx`, drives it end-to-end — see [[demo-engine]] for
+  the wire contract, and for the hard limit that engine carries (it can emit `HEALTHY` rows and
+  absence, nothing else, because `map_synthetic_status` raises on every unverified code).
 
 ### Normalizer dispatch (`dispatch.py`) — the additive seam
 - `_NORMALIZERS` (`dispatch.py::_NORMALIZERS`) maps a vendor **`event.type`** string (STORY-016b — the
@@ -202,3 +207,11 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   [[canonical-types-and-ports]] for the paired `SignalObservation` domain field,
   [[persistence-adapters]]/[[migrations-and-db]] for persistence/migration, and
   [[api-five-file-convention]] for the DTO/service side. verified_sha -> 0da9568.
+- sprint-62 (compile pass, STORY-148): added one Fact to the `grail_executor.py` subsection and a
+  cross-link to the new [[demo-engine]] article — `make_grail_executor` is now driven UNMODIFIED
+  against a real socket by `tools/demo_engine/`, which is a materially stronger statement than
+  "tested against fakes" and belongs where a reader of this article will look for it. **No file in
+  this article's `code_refs` changed** (STORY-148's AC9 forbade touching `backend/src/`), so
+  `verified_sha` deliberately stays `0da9568`: the new claim's own evidence lives in
+  [[demo-engine]], verified at `64f680b`. Bumping this article's SHA would have implied a
+  re-verification of the adapter that did not happen.
