@@ -1,0 +1,15 @@
+# STORY-176 AC5(b) — a fully dark location: a declared location
+# (SYNTHETIC_LOCATION-DEMOD / loc-d, expected by
+# config/demo/fleet-core.yaml's search-service-query monitor) stops
+# reporting entirely across every cycle, while the other three keep
+# reporting UP. This does NOT exercise a freshness/completeness path
+# (expected_locations has zero consumers outside config.py) -- what it
+# produces is a lower `distinct_locations` on /availability and `collapse`
+# seeing {UP} from the surviving locations (STORY-176 AC5 reworded scope).
+search-service-query:
+  monitor_id: HTTP_CHECK-DEMO-SEARCH-QUERY
+  interval_seconds: 30
+  cycles:
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB, SYNTHETIC_LOCATION-DEMOC]
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB, SYNTHETIC_LOCATION-DEMOC]
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB, SYNTHETIC_LOCATION-DEMOC]

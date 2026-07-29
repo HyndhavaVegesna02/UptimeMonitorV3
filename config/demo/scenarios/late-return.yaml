@@ -1,0 +1,13 @@
+# STORY-176 AC5(e) — a late-returning monitor: dark, then reporting again
+# (config/demo/fleet-platform.yaml's notifications-service-email monitor).
+# reentry_cycles has zero consumers outside config.py, so this does NOT
+# assert any re-entry POLICY; it asserts that ingest simply RESUMES after
+# the gap -- rows land, the watermark advances.
+notifications-service-email:
+  monitor_id: HTTP_CHECK-DEMO-NOTIF-EMAIL
+  interval_seconds: 30
+  cycles:
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+    - []
+    - []
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]

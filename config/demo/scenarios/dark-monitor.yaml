@@ -1,0 +1,12 @@
+# STORY-176 AC5(c) — a fully dark monitor: every location silent, every
+# cycle (config/demo/fleet-platform.yaml's billing-service-invoice monitor).
+# No freshness path is consulted (nothing wired consumes it); what this
+# produces is an empty observation window -> streak() returns None ->
+# orchestrate_signal NOOPs (orchestrate.py:113-121).
+billing-service-invoice:
+  monitor_id: HTTP_CHECK-DEMO-BILLING-INVOICE
+  interval_seconds: 30
+  cycles:
+    - []
+    - []
+    - []

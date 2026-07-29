@@ -1,0 +1,15 @@
+# STORY-176 AC5(d) — staggered intervals: two monitors on ONE component
+# (config/demo/fleet-platform.yaml's catalog-service) at different
+# interval_seconds, so their cycle boundaries do not line up.
+catalog-service-list:
+  monitor_id: HTTP_CHECK-DEMO-CATALOG-LIST
+  interval_seconds: 30
+  cycles:
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+catalog-service-detail:
+  monitor_id: HTTP_CHECK-DEMO-CATALOG-DETAIL
+  interval_seconds: 45
+  cycles:
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
+    - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
