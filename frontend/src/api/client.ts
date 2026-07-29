@@ -15,9 +15,8 @@ import type {
 /**
  * Fetch-based typed API client (STORY-015a AC3). Single base-URL seam: every
  * call goes through `API_BASE_URL`, which is `/api` in both dev (proxied by
- * Vite to the local backend — vite.config.ts) and production (Vercel
- * rewrites to the Railway backend — dossier §17; wired in a later
- * deployment story).
+ * Vite to the local backend — vite.config.ts) and production (same-origin
+ * behind CloudFront — dossier §17, STORY-089).
  */
 export const API_BASE_URL = '/api'
 

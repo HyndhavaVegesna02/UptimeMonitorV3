@@ -174,7 +174,8 @@ async def main() -> None:
     # repo-root `.env` — the assumption is that the repo layout on disk is
     # intact (not that CWD is any particular directory). Default
     # `override=False` semantics mean an already-exported var always wins
-    # (AC3), so production (Railway, no `.env` file present) is unaffected.
+    # (AC3), so production (AWS ECS Fargate, no `.env` file present) is
+    # unaffected.
     load_dotenv()
 
     settings = load_settings()
