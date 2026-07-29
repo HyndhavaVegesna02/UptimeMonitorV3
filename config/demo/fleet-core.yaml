@@ -1,0 +1,38 @@
+app:
+  id: demo-core
+  name: Demo Core Services
+  monitor_provider: dynatrace
+components:
+  - id: api-gateway
+    name: API Gateway
+    monitors:
+      - { signal_key: api-gateway-health, native_id: HTTP_CHECK-DEMO-APIGW-HEALTH, name: API Gateway Health, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: api-gateway-graphql, native_id: HTTP_CHECK-DEMO-APIGW-GRAPHQL, name: API Gateway GraphQL, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: api-gateway-rest, native_id: HTTP_CHECK-DEMO-APIGW-REST, name: API Gateway REST, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: api-gateway-websocket, native_id: HTTP_CHECK-DEMO-APIGW-WS, name: API Gateway WebSocket, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: auth-service
+    name: Auth Service
+    monitors:
+      - { signal_key: auth-service-login, native_id: HTTP_CHECK-DEMO-AUTH-LOGIN, name: Auth Login, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: auth-service-token-refresh, native_id: HTTP_CHECK-DEMO-AUTH-REFRESH, name: Auth Token Refresh, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: auth-service-mfa, native_id: HTTP_CHECK-DEMO-AUTH-MFA, name: Auth MFA, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: payments-service
+    name: Payments Service
+    monitors:
+      - { signal_key: payments-service-charge, native_id: HTTP_CHECK-DEMO-PAY-CHARGE, name: Payments Charge, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: payments-service-refund, native_id: HTTP_CHECK-DEMO-PAY-REFUND, name: Payments Refund, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: payments-service-webhook, native_id: HTTP_CHECK-DEMO-PAY-WEBHOOK, name: Payments Webhook, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: payments-service-ledger, native_id: HTTP_CHECK-DEMO-PAY-LEDGER, name: Payments Ledger, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: search-service
+    name: Search Service
+    monitors:
+      - { signal_key: search-service-query, native_id: HTTP_CHECK-DEMO-SEARCH-QUERY, name: Search Query, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: search-service-index, native_id: HTTP_CHECK-DEMO-SEARCH-INDEX, name: Search Index, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: search-service-suggest, native_id: HTTP_CHECK-DEMO-SEARCH-SUGGEST, name: Search Suggest, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-DEMOA, label: "Location A" }
+  loc-b: { native_id: SYNTHETIC_LOCATION-DEMOB, label: "Location B" }
+  loc-c: { native_id: SYNTHETIC_LOCATION-DEMOC, label: "Location C" }
+  loc-d: { native_id: SYNTHETIC_LOCATION-DEMOD, label: "Location D" }
+freshness: { stale_after_cycles: 3, reentry_cycles: 2 }
+thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }

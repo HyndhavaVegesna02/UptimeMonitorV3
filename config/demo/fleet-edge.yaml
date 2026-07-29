@@ -1,0 +1,39 @@
+app:
+  id: demo-edge
+  name: Demo Edge Services
+  monitor_provider: dynatrace
+components:
+  - id: cdn-edge
+    name: CDN Edge
+    monitors:
+      - { signal_key: cdn-edge-static, native_id: HTTP_CHECK-DEMO-CDN-STATIC, name: CDN Static, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: cdn-edge-media, native_id: HTTP_CHECK-DEMO-CDN-MEDIA, name: CDN Media, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: cdn-edge-purge, native_id: HTTP_CHECK-DEMO-CDN-PURGE, name: CDN Purge, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: mobile-gateway
+    name: Mobile Gateway
+    monitors:
+      - { signal_key: mobile-gateway-ios, native_id: HTTP_CHECK-DEMO-MOBILE-IOS, name: Mobile Gateway iOS, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: mobile-gateway-android, native_id: HTTP_CHECK-DEMO-MOBILE-ANDROID, name: Mobile Gateway Android, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: mobile-gateway-push-relay, native_id: HTTP_CHECK-DEMO-MOBILE-PUSHRELAY, name: Mobile Gateway Push Relay, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: websocket-gateway
+    name: WebSocket Gateway
+    monitors:
+      - { signal_key: websocket-gateway-connect, native_id: HTTP_CHECK-DEMO-WS-CONNECT, name: WebSocket Connect, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: websocket-gateway-broadcast, native_id: HTTP_CHECK-DEMO-WS-BROADCAST, name: WebSocket Broadcast, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: admin-portal
+    name: Admin Portal
+    monitors:
+      - { signal_key: admin-portal-dashboard, native_id: HTTP_CHECK-DEMO-ADMIN-DASHBOARD, name: Admin Dashboard, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: admin-portal-reports, native_id: HTTP_CHECK-DEMO-ADMIN-REPORTS, name: Admin Reports, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: status-page-proxy
+    name: Status Page Proxy
+    monitors:
+      - { signal_key: status-page-proxy-fetch, native_id: HTTP_CHECK-DEMO-STATUSPROXY-FETCH, name: Status Page Proxy Fetch, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: status-page-proxy-publish, native_id: HTTP_CHECK-DEMO-STATUSPROXY-PUBLISH, name: Status Page Proxy Publish, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-DEMOA, label: "Location A" }
+  loc-b: { native_id: SYNTHETIC_LOCATION-DEMOB, label: "Location B" }
+  loc-c: { native_id: SYNTHETIC_LOCATION-DEMOC, label: "Location C" }
+  loc-d: { native_id: SYNTHETIC_LOCATION-DEMOD, label: "Location D" }
+freshness: { stale_after_cycles: 3, reentry_cycles: 3 }
+thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }

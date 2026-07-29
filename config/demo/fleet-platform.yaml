@@ -1,0 +1,39 @@
+app:
+  id: demo-platform
+  name: Demo Platform Services
+  monitor_provider: dynatrace
+components:
+  - id: notifications-service
+    name: Notifications Service
+    monitors:
+      - { signal_key: notifications-service-email, native_id: HTTP_CHECK-DEMO-NOTIF-EMAIL, name: Notifications Email, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: notifications-service-sms, native_id: HTTP_CHECK-DEMO-NOTIF-SMS, name: Notifications SMS, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: notifications-service-push, native_id: HTTP_CHECK-DEMO-NOTIF-PUSH, name: Notifications Push, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: notifications-service-webhook-relay, native_id: HTTP_CHECK-DEMO-NOTIF-RELAY, name: Notifications Webhook Relay, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: billing-service
+    name: Billing Service
+    monitors:
+      - { signal_key: billing-service-invoice, native_id: HTTP_CHECK-DEMO-BILLING-INVOICE, name: Billing Invoice, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: billing-service-subscription, native_id: HTTP_CHECK-DEMO-BILLING-SUB, name: Billing Subscription, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: billing-service-tax, native_id: HTTP_CHECK-DEMO-BILLING-TAX, name: Billing Tax, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: user-profile-service
+    name: User Profile Service
+    monitors:
+      - { signal_key: user-profile-service-read, native_id: HTTP_CHECK-DEMO-PROFILE-READ, name: User Profile Read, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: user-profile-service-write, native_id: HTTP_CHECK-DEMO-PROFILE-WRITE, name: User Profile Write, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: user-profile-service-avatar, native_id: HTTP_CHECK-DEMO-PROFILE-AVATAR, name: User Profile Avatar, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: user-profile-service-audit, native_id: HTTP_CHECK-DEMO-PROFILE-AUDIT, name: User Profile Audit, interval_seconds: 60, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+  - id: catalog-service
+    name: Catalog Service
+    monitors:
+      - { signal_key: catalog-service-list, native_id: HTTP_CHECK-DEMO-CATALOG-LIST, name: Catalog List, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: catalog-service-detail, native_id: HTTP_CHECK-DEMO-CATALOG-DETAIL, name: Catalog Detail, interval_seconds: 45, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: catalog-service-search, native_id: HTTP_CHECK-DEMO-CATALOG-SEARCH, name: Catalog Search, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+      - { signal_key: catalog-service-price, native_id: HTTP_CHECK-DEMO-CATALOG-PRICE, name: Catalog Price, interval_seconds: 30, expected_locations: [loc-a, loc-b, loc-c, loc-d] }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-DEMOA, label: "Location A" }
+  loc-b: { native_id: SYNTHETIC_LOCATION-DEMOB, label: "Location B" }
+  loc-c: { native_id: SYNTHETIC_LOCATION-DEMOC, label: "Location C" }
+  loc-d: { native_id: SYNTHETIC_LOCATION-DEMOD, label: "Location D" }
+freshness: { stale_after_cycles: 4, reentry_cycles: 2 }
+thresholds: { major: 5, partial: 3, degraded: 2, recovery: 2 }
