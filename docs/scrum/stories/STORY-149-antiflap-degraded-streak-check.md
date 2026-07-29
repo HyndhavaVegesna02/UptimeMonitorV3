@@ -129,3 +129,22 @@ drives a `DEGRADED` collapse — `Health.DEGRADED` appears only in `test_anti_fl
   the verifier confirmed the fix has no effect in `decide` or in any e2e test, and the reality
   gate is pinned to a **single-monitor** component so the known STORY-151 sibling-OBSOLETE path
   cannot spoof the evidence in either direction.
+- 2026-07-29: **implemented and Done.** Commits: `c332f91` (steps 1–4, the four DEGRADED-branch
+  tests, confirmed red first — two of them REWRITE the tests that encoded the old rule, per AC6),
+  `40e2a2c` (step 5, the fix + the AC7 docstring in the same diff), `8794d7d` (plan ticks after
+  steps 6–7), `1e025a8` (the wiki blast-radius pass). Scoped DoD gate 5/5 at `1e025a8`, 572 tests.
+  AC8 verified at the diff level, not merely asserted: `git diff 7d3b682..HEAD -- pipeline.py`
+  touches only the `DEGRADED` branch and its docstring — `collapse`, `streak`, the whole `DOWN`
+  ladder and the `UP` recovery check are byte-identical. The check ORDER is `>= degraded` before
+  `== 1`, mirroring `DOWN`, so a config with `degraded == 1` proposes rather than warns exactly as
+  `DOWN` does at the same threshold. Reality gate PASS 12/12 (`orchestrate_signal` over seeded
+  multi-location observations, real DynamoDB-Local tables, real `/api/v1/approvals` over live HTTP):
+  one disagreeing cycle → NOOP, no proposal, empty endpoint; sustained disagreement → exactly one
+  open proposal, which the endpoint serves. The same gate, run unchanged at the pre-fix commit
+  `7d3b682` in a worktree, scored 7/12 — failing on exactly the five checks this fix owns, and
+  nothing else. Pre-fix, a single blip wrote a proposal and served it over HTTP: the defect made
+  visible end-to-end rather than argued from a unit test. Honest limit, unchanged from the pre-lock
+  note above: both phases are SEEDED, because no vendor mapping produces `DOWN`/`DEGRADED` on the
+  live path today (STORY-177). The first implementer died mid-story on an API session limit after
+  step 7; the commit-per-green-step cadence meant nothing was lost but the wiki pass, which the SM
+  then completed — no code re-derived, no work discarded.

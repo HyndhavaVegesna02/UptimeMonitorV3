@@ -172,7 +172,12 @@ stories:
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
-    status: in_progress   # dispatched 2026-07-29; resume point = plan.md step checkboxes (7 steps)
+    status: done   # 2026-07-29. All 7 plan steps + 9 ACs; scoped DoD gate 5/5 at 1e025a8 (572
+                   # tests); reality gate PASS 12/12 at orchestrate_signal level over seeded
+                   # multi-location observations -- and 7/12 when the SAME gate ran at the pre-fix
+                   # commit in a worktree, failing on exactly the 5 checks the fix owns, so the
+                   # gate is proven able to fail. First implementer died mid-story on a session
+                   # limit; crash recovery lost only the wiki pass. See story_gates below.
     points: 1
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
     order: 3                 # fully independent, 4 lines. Reality gate is NOT a demo-engine run
@@ -429,6 +434,94 @@ story_gates:
       output_tail: '> frontend@0.0.0 lint | > eslint .'
       commit: 29430ff
       at: '2026-07-29T08:43:36+00:00'
+  # STORY-149's gate is SCOPED (see scope_note) -- the story's diff is backend Python + docs
+  # only. Content is the runner's own, never hand-transcribed; no ANSI stripping was needed
+  # this time because the two ESC bytes STORY-178 tracks come from `npm run build`, which
+  # this scoped run does not execute.
+  - story: STORY-149
+    head: 1e025a8
+    scope_note: 'SCOPED gate (5 backend commands), per the sprint-45 retro''s token-economy amendment:
+      the story''s whole diff is backend Python (pipeline.py, test_anti_flap.py) plus docs, so the three
+      frontend commands cannot be affected by it. cfn-lint was run anyway (it costs nothing). The FULL
+      8-command gate is the evidence of record for the sprint and runs at sprint close on the final HEAD
+      -- see final_gate.'
+    env_note: 'DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container) to bypass the dynamo_local
+      ephemeral-port defect (STORY-179). Environment-only; no repo file changed. 572 tests, +2 net over
+      STORY-148''s 570: four DEGRADED-branch tests where two of them REPLACE the two that asserted the
+      old unguarded rule (AC6).'
+    ceremony_note: '1-pointer: implementer -> DoD gate -> reality gate, NO reviewer pair (board ceremony
+      field, set at lock). The SM independently re-read the whole pipeline.py diff instead: AC8''s byte-identical
+      DOWN/UP ladders and AC7''s docstring change are both verifiable by eye at the diff level, and the
+      AC4 revert-check is recorded below.'
+    implementer_note: 'The first implementer DIED mid-story on an API session limit, with its last words
+      ''let me run the mechanical sweep first''. Crash recovery worked exactly as the commit-per-green-step
+      cadence intends: steps 1-7 were already committed (c332f91 tests, 40e2a2c fix, 8794d7d plan ticks)
+      and the ONLY thing lost was the wiki blast-radius pass, which the SM then did -- no code was re-derived
+      and nothing was discarded. Recorded for the retro as the first real (not drilled) mid-story crash
+      of this sprint series.'
+    reality_gate:
+      verdict: PASS
+      method: 'An orchestrate_signal-level test over SEEDED multi-location observations, against real
+        DynamoDB-Local tables and the live HTTP surface -- NOT a demo-engine run (PO decision D-A: a demo
+        gate would have FALSE-PASSED phase 1, because no demo scenario can produce a DOWN observation
+        at all, so ''no proposal appeared'' would have held for the wrong reason). Seeding enters the
+        pipeline BELOW the vendor mapping, so the real collapse -> streak -> anti_flap -> decide chain,
+        real persistence, and the real /api/v1/approvals endpoint all run with no invented vendor codes.
+        Pinned to a single-monitor component so the known STORY-151 sibling-OBSOLETE path cannot spoof
+        the evidence in either direction. 12 assertions, isolated tables per run.'
+      result: '12/12 at HEAD. Phase 1 (ONE disagreeing cycle, the blip): orchestrate_signal returns NOOP,
+        NO row in the proposals table, and GET /api/v1/approvals returns 200 with an EMPTY list for the
+        component over live HTTP. Phase 2 (sustained disagreement): PROPOSED, exactly one open proposal
+        (rg149-checkout -> ComponentStatus.DEGRADED), the endpoint returns it, and nothing was published.
+        The two phases are asserted to DISCRIMINATE -- empty then one -- so neither can pass by the pipeline
+        being inert.'
+      discrimination_proof: 'The gate was then run UNCHANGED at the pre-fix commit (7d3b682) in a git
+        worktree: 7/12, failing on exactly the five checks the fix is responsible for and no others. Pre-fix,
+        the single disagreeing cycle returned PROPOSED, wrote a proposal, and /api/v1/approvals served
+        1 item for the component over live HTTP -- one blip moving a public status page, which is the
+        defect made visible end-to-end rather than argued from a unit test. This is the check that a 4-line
+        fix most needs and most often skips: proof the gate could have failed.'
+      ac4_revert_check: 'Separately, at the unit level (plan step 7): reverting the fix makes test_degraded_streak_of_length_one_yields_internal_warning
+        fail. The regression test is load-bearing, not decorative.'
+      honest_limits: Both phases were driven by SEEDED observations, because on the live HTTP path today
+        no vendor mapping produces DOWN or DEGRADED at all (health_mapping.py:65-70) -- the Dynatrace
+        trial is expired and the demo engine emits UP + absence only. So this proves the CORE chain damps
+        a location disagreement; it does NOT prove a real vendor failure reaches that chain. That gap
+        is STORY-177 (provisional mapping), and Phase 2 of the anti-flap model is D1/D2, out of this sprint.
+    dod_evidence:
+    - command: pytest
+      exit_code: 0
+      output_tail: tor.py ...                       [ 92%] | backend\tests\test_streak.py .........                                   [
+        94%] | backend\tests\test_topology_domain.py ........                           [ 95%] | backend\tests\test_topology_endpoint.py
+        ......                           [ 96%] | backend\tests\test_vendor_health.py ........                             [
+        97%] | backend\tests\test_verdict.py ........                                   [ 99%] | backend\tests\test_zone_layout.py
+        ....                                   [100%] | ======================= 572 passed in 73.64s (0:01:13)
+        ========================
+      commit: 1e025a8
+      at: '2026-07-29T13:57:49+00:00'
+    - command: python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"
+      exit_code: 0
+      output_tail: '--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | -------------------------------------
+        | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence
+        KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports
+        KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken.'
+      commit: 1e025a8
+      at: '2026-07-29T13:59:07+00:00'
+    - command: ruff check .
+      exit_code: 0
+      output_tail: All checks passed!
+      commit: 1e025a8
+      at: '2026-07-29T13:59:09+00:00'
+    - command: ruff format --check .
+      exit_code: 0
+      output_tail: 218 files already formatted
+      commit: 1e025a8
+      at: '2026-07-29T13:59:16+00:00'
+    - command: cfn-lint infra/stack.yaml
+      exit_code: 0
+      output_tail: ''
+      commit: 1e025a8
+      at: '2026-07-29T13:59:16+00:00'
 final_gate:
   head: null
   dod_evidence: []
