@@ -590,6 +590,37 @@ locations:
         assert app.locations["loc-a"].native_id == "SYNTHETIC_LOCATION-AAA"
         assert app.locations["loc-a"].label == "Location A"
 
+    def test_declared_expected_locations_alias_loads_successfully(
+        self, tmp_config_dir: Path
+    ):
+        """AC3 happy path: a monitor's expected_locations naming a DECLARED
+        alias loads successfully and resolves to the alias list unchanged.
+
+        Quality rework F3 (2026-07-29): before this test, the only non-empty
+        `expected_locations` anywhere in the suite was the failing `ghost-loc`
+        case, so an implementation that rejected every alias (e.g. comparing
+        against `set(loc.native_id for loc in app.locations.values())` instead
+        of `set(app.locations.keys())`) would have passed all existing tests.
+        """
+        yaml_content = """\
+app:
+  id: loc-app
+  name: Loc App
+  monitor_provider: dynatrace
+components:
+  - id: web
+    name: Web
+    monitors:
+      - { signal_key: web-http, native_id: N-WEB, name: Web HTTP, interval_seconds: 60, expected_locations: [loc-a] }
+locations:
+  loc-a: { native_id: SYNTHETIC_LOCATION-AAA, label: "Location A" }
+"""
+        _write_yaml(tmp_config_dir, "loc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        app = cfg.apps[0]
+        mon = app.components[0].monitors[0]
+        assert mon.expected_locations == ["loc-a"]
+
     def test_undeclared_expected_locations_alias_raises(self, tmp_config_dir: Path):
         yaml_content = """\
 app:
