@@ -1,10 +1,17 @@
-"""Test config: make the repo-root `scripts/` dir importable, and provide the
-shared throwaway-DB session fixture (STORY-019).
+"""Test config: make the repo-root `scripts/` and `tools/` dirs importable,
+and provide the shared throwaway-DB session fixture (STORY-019).
 
 `scripts/` holds standalone CI scripts (e.g. check_fk_direction.py, dev_db.py)
 that are not part of the `src` package but whose pure logic is unit-tested.
-This repo-root is two levels up from this file (backend/tests/conftest.py ->
-repo root).
+`tools/` holds `demo_engine/` (STORY-148) similarly. This repo-root is two
+levels up from this file (backend/tests/conftest.py -> repo root).
+
+Both are inserted here, in the ONE shared conftest, rather than an extra
+conftest.py in a test subdirectory: pytest resolves a bare, `__init__.py`-less
+conftest.py's module name from its basename alone, so two such files both
+named `conftest.py` collide on the same `sys.modules['conftest']` entry
+(discovered live: it broke `test_dynamo_local.py`'s
+`from conftest import provide_dynamo_local`).
 """
 
 import os
@@ -17,6 +24,10 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPTS = _REPO_ROOT / "scripts"
 if str(_SCRIPTS) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS))
+
+_TOOLS = _REPO_ROOT / "tools"
+if str(_TOOLS) not in sys.path:
+    sys.path.insert(0, str(_TOOLS))
 
 import dynamo_local as dynamo_local_module  # noqa: E402
 

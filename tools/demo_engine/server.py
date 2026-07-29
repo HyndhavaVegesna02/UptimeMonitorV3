@@ -72,14 +72,21 @@ class _DemoRequestHandler(BaseHTTPRequestHandler):
         return True
 
     def do_POST(self) -> None:  # noqa: N802 - stdlib method name
+        # Drain the request body BEFORE any early return (404/401): closing
+        # the connection with unread bytes still sitting in the socket's
+        # receive buffer can make the OS send a TCP RST instead of a clean
+        # close, which shows up to the client as an intermittent
+        # `ConnectionResetError`/`httpx.ReadError` (reproduced live on
+        # Windows against the 401 branch when the body went unread).
+        length = int(self.headers.get("Content-Length", 0))
+        raw_body = self.rfile.read(length) if length else b"{}"
+
         if urlsplit(self.path).path != _EXECUTE_PATH:
             self._write_json(404, {"error": "not found"})
             return
         if not self._require_auth():
             return
 
-        length = int(self.headers.get("Content-Length", 0))
-        raw_body = self.rfile.read(length) if length else b"{}"
         body = json.loads(raw_body)
         query = body.get("query", "")
 
