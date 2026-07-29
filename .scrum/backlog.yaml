@@ -1518,3 +1518,44 @@ stories:
                     # multi-location monitors are live — an observation to make, not predict.
     type: feature
     sprint: null
+  - id: STORY-183
+    title: Demo engine — bound the token cache by RETENTION, not by consume-on-first-poll
+    file: docs/scrum/stories/STORY-183-demo-engine-token-cache-retention.md
+    status: draft   # FILED 2026-07-29 by the orchestrator while verifying STORY-180's AC4
+                    # against its AC7 (no wire-contract change). NEEDS PO APPROVAL to reach
+                    # `ready`; AC + estimate are drafted, no open questions.
+                    # STORY-180 AC4 bounded _DemoHTTPServer.results by changing the poll
+                    # handler from results.get(token) to results.pop(token, None)
+                    # (server.py:124). Gated and correct as far as its own AC goes, but:
+                    # (1) THE BOUND IS PARTIAL. A token is written at server.py:104 and
+                    #     removed only by a SUCCESSFUL poll, so an executed-but-never-polled
+                    #     query leaks its entry for the process lifetime -- the exact failure
+                    #     mode AC4 exists to prevent. Reachable, not hypothetical:
+                    #     grail_executor.py:110-111 raises if the poll request fails, leaving
+                    #     the token orphaned; pull_loop.py:200-207 logs the cycle's traceback
+                    #     and the loop CONTINUES, keeping the orphan alive; and this server has
+                    #     a demonstrated history of transient Windows socket faults (the
+                    #     body-drain comment at server.py:75-80 documents an intermittent
+                    #     ConnectionResetError reproduced live). One orphan per faulted cycle,
+                    #     unbounded in time.
+                    # (2) IT NARROWED THE WIRE PROTOCOL. Real Grail serves a repeat poll of the
+                    #     same request-token within a retention window; this engine now answers
+                    #     404 (server.py:125-127). Nothing in this repo re-polls today --
+                    #     grail_executor.py:127-128 returns at the first SUCCEEDED and the
+                    #     engine resolves synchronously -- so STORY-180's AC7 genuinely holds.
+                    #     But wire fidelity IS this component's purpose, and a manual curl
+                    #     while debugging STORY-182's run would meet a puzzling 404.
+                    # ONE change fixes both: a RETENTION bound (evict after N minutes whether
+                    # or not polled) is what the vendor does, so it bounds the orphan path AND
+                    # restores repeat-poll fidelity -- strictly better than consume-on-read.
+                    # NOT fixed in STORY-180: it was already Done and gated, sprint-63 scope
+                    # was frozen, and its AC4 test pins CONSUME semantics, so the replacement
+                    # needs its own AC (AC2) rather than a quiet test edit. Recorded at the
+                    # time on the sprint-63 board: story_gates[STORY-180].ac4_risk_check.
+                    # SEQUENCING: land with or before STORY-182 (sprint 64) -- its long-running
+                    # loop run is the first time either problem can actually bite.
+    points: 1
+    priority: 56    # just after STORY-176 (55), ahead of STORY-181 (58): it gates nothing in
+                    # sprint 63 but should not trail STORY-182.
+    type: defect
+    sprint: null
