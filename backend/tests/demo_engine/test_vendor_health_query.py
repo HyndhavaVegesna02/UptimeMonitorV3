@@ -20,7 +20,10 @@ from datetime import datetime, timedelta, timezone
 
 from demo_engine.rows import build_row, format_ns_timestamp
 from demo_engine.store import VENDOR_HEALTH_WINDOW, DemoRowStore
-from src.composition.vendor_health import _HEALTH_CHECK_WINDOW, build_vendor_health_query
+from src.composition.vendor_health import (
+    _HEALTH_CHECK_WINDOW,
+    build_vendor_health_query,
+)
 
 
 def test_vendor_health_query_returns_live_count_for_known_monitor_and_zero_for_unknown():
