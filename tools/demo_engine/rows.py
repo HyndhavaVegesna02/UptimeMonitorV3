@@ -23,8 +23,13 @@ from datetime import datetime, timedelta
 #: engine's ingest grammar ever scopes to.
 EVENT_TYPE_HTTP_MONITOR_EXECUTION = "http_monitor_execution"
 
-#: The ONLY (code, message) pair `map_synthetic_status` accepts
-#: (`health_mapping.py:65`) — real, verified vendor values.
+#: The real, verified healthy (code, message) pair. `map_synthetic_status`
+#: (`health_mapping.py:65`) tests `code == "0" or message == "HEALTHY"` — an
+#: `or`, so EITHER half alone is sufficient to map to `Health.UP`; it is not
+#: a pair the caller must supply together. This module still emits both
+#: together by default because that is the shape of a real captured healthy
+#: row (STORY-180 minor 6: corrected from "the ONLY pair accepted", which
+#: overstated the code's actual `or` semantics).
 STATUS_CODE_HEALTHY = "0"
 STATUS_MESSAGE_HEALTHY = "HEALTHY"
 
