@@ -10,10 +10,20 @@ status: verified
 - `frontend/` is a standalone Vite + React + TypeScript (strict) SPA — the operator-cockpit
   "internal dashboard" surface (dossier §17, the two-surface model; the other surface is the
   public Statuspage). It is ISOLATED from the Python backend: no import of backend source, no
-  shared build step. The six backend DoD commands never touch it; its three frontend DoD
+  shared build step. The FIVE backend DoD commands never touch it; its three frontend DoD
   commands (`npm test` / `npm run build` / `npm run lint`, from `frontend/`) never touch the
-  backend. Design direction: `DESIGN-linear.app.md` (repo root) as a GUIDE, not a copy target
-  (see the sprint-25 plan for the binding design brief). Established STORY-015a, sprint-25.
+  backend — eight in total, per `.scrum/definition-of-done.md` and `yt_gate.py --list`.
+  Established STORY-015a, sprint-25.
+- **Design direction (current, sprint-62): the PO-built UI at `C:\Hyn\new ui\ops-pulse-react`**,
+  a *visual* reference with no data layer (measured: 0 `.map()` calls across all six of its
+  pages). The in-repo capture is the authoritative artifact —
+  `docs/scrum/sprints/2026-07-28-sprint-62/newui-01..08-*.png` (six routes at 1440 light+dark
+  and 390) plus `ui-backend-gap-analysis.md`, which maps every screen to the `api/v1` surface
+  with `file:line` citations. `DESIGN-linear.app.md` is NO LONGER the design direction: it
+  guided the sprint-25 shell, sprint 38 retuned the palette/type-scale VALUES to an imported
+  *Operator Dashboard* mock while keeping that shape, and sprint-62 planning replaced it
+  outright. Nothing under `frontend/src` references it (verified: zero hits). It remains in
+  `code_refs` only because the shell's layout DNA traces to it and sprint history cites it.
 - **This is the SECOND frontend attempt.** The first (sprints 23–24, built to a since-removed
   `DESIGN-airtable.md`) was fully reverted in commit `521764c`; its code lives only on the
   `sprint-23`/`sprint-24` branches. Nothing here descends from it.
@@ -590,4 +600,17 @@ status: verified
   `CheckHistoryPage.tsx` render-cap comment (Facts updated above) now note the server accepts it
   but this client deliberately does not send it — no code path, DTO, or contract changed.
   verified_sha -> 2859b95.
+- 2026-07-29 (sprint-62 close, PO-directed docs pass — **no code change, no `verified_sha` bump**):
+  corrected two Facts that had gone wrong without any code moving, which is why the staleness
+  sweep never flagged them. (1) "The six backend DoD commands" — there are **five** backend and
+  three frontend, eight in total; the count was wrong here, in `CLAUDE.md` (in two places, which
+  contradicted each other), and nowhere checked. (2) **`DESIGN-linear.app.md` was still stated as
+  the design direction**, two generations after it stopped being one: sprint 38 retuned the values
+  to an imported *Operator Dashboard* mock, and sprint-62 planning replaced the reference outright
+  with the PO-built UI at `C:\Hyn\new ui\ops-pulse-react` (captured in-repo as
+  `docs/scrum/sprints/2026-07-28-sprint-62/newui-*.png` + `ui-backend-gap-analysis.md`). The
+  Linear file stays on disk and in `code_refs` — the shell's layout DNA traces to it and sprint
+  history cites it — but it is now recorded as lineage, not guidance. Both errors are the same
+  class as STORY-149's: a claim can rot while the code it describes stands still, and only a
+  human reading it notices.
 

@@ -5,10 +5,18 @@ internal dashboard; the public Statuspage is the other surface). Vite + React
 + TypeScript (strict), talking to the backend at `/api` (proxied to the local
 FastAPI dev server; see `vite.config.ts`).
 
-Design reference: `../DESIGN-linear.app.md` (a guide, not a copy target — see
-`docs/scrum/sprints/2026-07-02-sprint-25/plan.md` for the binding design brief).
-Sprint 38 re-skins the design system to the imported *Operator Dashboard* mock —
-see `docs/scrum/sprints/2026-07-07-sprint-38/plan.md`.
+**Design reference (current):** the PO-built UI at `C:\Hyn\new ui\ops-pulse-react`
+— a *visual* reference only (no data layer). The in-repo capture is authoritative:
+`docs/scrum/sprints/2026-07-28-sprint-62/` holds `newui-01..08-*.png` (all six
+routes at 1440 light+dark and 390) plus `ui-backend-gap-analysis.md`, which maps
+every screen to the `api/v1` surface. The design system gets ported from it
+(tokens, glass surfaces, dark inset sidebar), ending with a PO look-and-feel
+checkpoint on the styleguide + shell *before* pages are built on the language.
+
+*Design lineage (history, not guidance):* `../DESIGN-linear.app.md` guided the
+sprint-25 shell; sprint 38 retuned the palette/type-scale values to an imported
+*Operator Dashboard* mock while keeping that shape. Both are superseded by the
+reference above.
 
 Fonts are self-hosted via `@fontsource/geist` + `@fontsource/geist-mono`
 (imported in `src/styles/global.css`, loaded from `main.tsx`) — no runtime

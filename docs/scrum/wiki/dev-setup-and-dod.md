@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: ba00bd5
+verified_sha: 19c9c1a
 verified_sprint: sprint-62
 status: verified
 ---
@@ -19,16 +19,25 @@ status: verified
 - Setup: `python -m venv .venv` then `.venv/Scripts/python.exe -m pip install -e ".[dev]"`
   (Windows; call `.venv` binaries directly). Documented in `CLAUDE.md` "Key commands".
 - pytest is configured with `testpaths = ["backend/tests"]` (`pyproject.toml:27-28`).
-- **The DoD gate is four bare commands**, each must exit 0 (`.scrum/definition-of-done.md`):
+- **The backend DoD gate is FIVE bare commands**, each must exit 0
+  (`.scrum/definition-of-done.md`; enumerate them with
+  `python .claude/skills/yourteam/scripts/yt_gate.py --list`, which is the count of record):
   1. `pytest`
   2. `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
      (2026-07-12, sprint-44: invocation moved OFF the `lint-imports` exe shim â€” a Windows
-     Application Control policy now blocks it on this machine; same 5 import-linter contracts,
-     same check, module-path invocation instead; the 4th contract, `api-feature-independence`,
-     added STORY-014; the 5th, `src-no-tests`, added STORY-038 to forbid `src` importing `tests`)
+     Application Control policy now blocks it on this machine; same check, module-path
+     invocation instead. It enforces **EIGHT** contracts, not the five this article claimed
+     until sprint-62: core-independence, core-internal-layering, adapters-independence,
+     api-feature-independence, api-outward-independence, adapters-edge-only,
+     api-shared-no-feature-imports, src-no-tests — the count read off the runner's own
+     `Contracts: 8 kept, 0 broken.` line, which is the only reliable source for it)
   3. `ruff check .`
   4. `ruff format --check .`
-  All four are live as of STORY-087. Command 2 became real during Sprint 0 (bootstrap); commands 3 and 4 were added in Sprint 11.
+  5. `cfn-lint infra/stack.yaml` (added STORY-088, sprint-49, in the same DoD amendment that
+     RETIRED `alembic upgrade head` and `python scripts/check_fk_direction.py` — that is why the
+     backend count went 6 → 5 and why "six backend commands" appears throughout this article's
+     History; it was true then, and stopped being true at sprint-49)
+  Command 2 became real during Sprint 0 (bootstrap); 3 and 4 were added in Sprint 11.
   - `[tool.ruff]` carries `exclude = [".agents", ".venv", "frontend"]` (`pyproject.toml`; `.agents`
     STORY-016c, `frontend` STORY-015a): `.agents/` is untracked third-party skills tooling that otherwise
     makes `ruff check .` / `ruff format --check .` exit non-zero; `frontend/` is the JS/TS SPA (no Python)
@@ -39,9 +48,9 @@ status: verified
   1. `npm test` â€” Vitest run-once (`"test": "vitest run"`)
   2. `npm run build` â€” `tsc -b && vite build` (the type-check is part of the build gate)
   3. `npm run lint` â€” ESLint flat config (`eslint .`)
-  These are INDEPENDENT of the six backend commands: the frontend is isolated (no backend import, no
+  These are INDEPENDENT of the five backend commands: the frontend is isolated (no backend import, no
   shared build step), so a backend-only story never runs the npm gates and a frontend-only story never
-  runs the six backend commands. The `.scrum/definition-of-done.md` frontend section stopped being a
+  runs the backend five. **Eight commands in total.** The `.scrum/definition-of-done.md` frontend section stopped being a
   "placeholder until then" note and became live in the same commit (`08d91e7`) that documented the
   commands + `frontend/` layout in CLAUDE.md (command-sync agreement). Toolchain: Vite + React +
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
@@ -54,12 +63,17 @@ status: verified
   it in a repo-root `.env` â€” see the STORY-043 correction above) â†’ create tables via `python scripts/create_tables.py`
   â†’ the uvicorn command â†’ a 2nd terminal running the live loop `python -m src.composition.run`
   (populates proposals/observations/publications) â†’ `npm run dev`. Two processes share one DynamoDB Local;
-  no CORS locally (same-origin via the proxy â€” real CORS is STORY-017). Before STORY-042 the API had only ever
+  no CORS anywhere: locally the Vite proxy makes it same-origin, and in production CloudFront
+  does (STORY-089), so no CORS work is queued. `api/v1/_shared/middleware.py` is an empty
+  seam whose docstring still names STORY-017 as its intended occupant; STORY-017 is `archived`
+  and was about deployment topology, not CORS. Before STORY-042 the API had only ever
   run in-process via `TestClient` (no ASGI server, no module-level app).
 - **Standard way to obtain a throwaway DynamoDB Local (STORY-082):**
   Docker container running `amazon/dynamodb-local`. Start command:
-  `docker run -d --name uptime_dynamo -p 8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
-  Tables are created by `python scripts/create_tables.py`.
+  `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory`
+  Tables are created by `python scripts/create_tables.py`. **Host port 8001, not 8000** — the API
+  owns 8000 in the local-stack recipe, and this line said `8000:8000` until sprint-62, which
+  collides with it (corrected against `CLAUDE.md` "Key commands", the recipe actually run).
 - Under `pytest`, the session-scoped `dynamo_local` fixture (`backend/tests/conftest.py`, via
   `dynamo_local.resolve_dynamo()`): reuses `DYNAMO_ENDPOINT_URL` if already set externally; else spawns a
   throwaway `amazon/dynamodb-local` on a free port if Docker is available (PID+UUID-unique container name,
@@ -78,7 +92,8 @@ status: verified
   corrupted-launcher flake), so `CLAUDE.md` and `.scrum/definition-of-done.md` were updated to
   invoke `lint_imports_command()` (not the lower-level `lint_imports()` this gotcha note used)
   directly rather than treating the module path as a fallback.
-- No `psql` client installed. Neon/Dynatrace/Statuspage credentials were not needed through the
+- No `psql` client installed and no SQL database in use (Neon Postgres + Alembic were retired
+  by STORY-087, sprint-49). Dynatrace/Statuspage credentials were not needed through the
   pure-backend sprints; the live loop (`python -m src.composition.run`, STORY-016) reads four secrets
   from the environment via `composition/settings.py::load_live_secrets()` (`DYNATRACE_ENV_URL`,
   `DYNATRACE_API_TOKEN`, `STATUSPAGE_PAGE_ID`, `STATUSPAGE_API_KEY` â€” see CLAUDE.md "Live-loop
@@ -201,3 +216,18 @@ status: verified
   (STORY-148's Grail-shaped demo HTTP server) is importable from `backend/tests/demo_engine/`.
   The `dynamo_local`/`clean_dynamo_tables` fixture behaviour this article's Facts describe is
   byte-identical; re-verified, no Fact text changed. verified_sha -> ba00bd5.
+- 2026-07-29 (sprint-62 close, PO-directed docs pass): **three stale COUNTS corrected in the
+  Facts, all of which had been wrong for sprints while the code stood still.** (1) "The DoD gate
+  is four bare commands" listed four and omitted `cfn-lint infra/stack.yaml` — added STORY-088 in
+  sprint-49, in the same amendment that retired `alembic upgrade head` and
+  `check_fk_direction.py`. It is FIVE. (2) "same 5 import-linter contracts" — the runner prints
+  `Contracts: 8 kept`; contracts 5-7 (api-outward-independence, adapters-edge-only,
+  api-shared-no-feature-imports) landed without this article, `CLAUDE.md`, or the DoD file being
+  updated. (3) "the six backend commands" (twice) — a pre-sprint-49 count that this article
+  contradicted three lines above its own "four". The History entries below keep "six" where they
+  describe sprints in which six was correct; only the Facts are corrected. The article now points
+  at `yt_gate.py --list` as the count of record, so the next reader does not have to trust a
+  number typed by hand. Same failure mode as STORY-149's anti-flap Fact: a claim can rot while
+  its code is untouched, which is exactly what the git-arithmetic sweep cannot see.
+  `CLAUDE.md` (a `code_ref`) was rewritten in the same pass; re-verified against it.
+  verified_sha -> 19c9c1a.
