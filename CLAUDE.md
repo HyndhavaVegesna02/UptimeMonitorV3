@@ -344,8 +344,8 @@ These were true once and are documented here only because the code still carries
 their shape. None is current guidance.
 
 - **Railway + Vercel** were the original deploy targets (dossier §3). STORY-089
-  moved everything to AWS ECS + CloudFront. Two stale code comments still name them
-  (`composition/run.py`, `frontend/src/api/client.ts`) — comments only, no behaviour.
+  moved everything to AWS ECS + CloudFront. Two stale code comments named them
+  (`composition/run.py`, `frontend/src/api/client.ts`); STORY-181 corrected both.
 - **Neon Postgres + Alembic** were the persistence layer until STORY-087 migrated
   everything to DynamoDB. Both are retired; `sqlalchemy`/`psycopg` now appear only
   as *forbidden* modules in the import-linter config.
@@ -360,8 +360,11 @@ their shape. None is current guidance.
   first, and why the reference is a UI the PO built themselves.
 - **`sample_mode`** was the pre-demo-engine way to fake vendor data. Inert since the
   trial expired; removal is STORY-155.
-- **`api/v1/_shared/middleware.py`** names STORY-017 as its intended CORS occupant.
-  STORY-017 is archived and was about deployment topology; no CORS work is queued.
+- **`api/v1/_shared/middleware.py`** used to name STORY-017 as its intended CORS occupant.
+  STORY-017 is archived and was about deployment topology, not CORS. STORY-181 corrected the
+  docstring to state directly that no CORS is required (dev: Vite proxy; prod: same-origin
+  behind CloudFront) and left the file as a documented seam for future middleware (e.g.
+  authentication, still unassigned).
 - **The first frontend attempt** (sprints 23–24, built to a since-removed
   `DESIGN-airtable.md`) was fully reverted in `521764c`. Nothing in `frontend/`
   descends from it. See `docs/scrum/wiki/frontend-zone.md`.
