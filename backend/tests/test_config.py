@@ -599,7 +599,7 @@ signals:
             component_id="does-not-exist",
             interval_seconds=60,
         )
-        with pytest.raises(ValueError):
+        with pytest.raises(ValueError, match="derived from components"):
             _valid_app(signals=[bad_signal])
 
 
