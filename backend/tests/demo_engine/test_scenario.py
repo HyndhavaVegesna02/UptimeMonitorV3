@@ -10,8 +10,12 @@ finding) constraints, each asserted independently:
   (a) window — the rolling 7-cycle window `orchestrate.py:94-98` computes;
   (b) format — 9-digit-fraction, `Z`-suffixed UTC, matching the real fixture;
   (c) monotonicity — timestamps advance across successive cycles;
-  (d) interval — covered in `test_demo_fleet_config.py` (fleet-authoring, not
-      player behaviour);
+  (d) interval — `test_demo_fleet_config.py` covers fleet-authoring (every
+      demo signal's declared `interval_seconds`); THIS file covers player
+      BEHAVIOUR directly (sprint-63 fix round, quality finding C1): consecutive
+      expanded cycles must be spaced by exactly `scenario.interval_seconds`,
+      parametrized over more than one interval, so a mutant that ignores the
+      field and hardcodes one interval cannot pass both parametrizations;
   (e) backfill — the last row lands at (or before) `end_time`, trivially
       inside the vendor-health engine's 2h window;
   (f) not in the future — no row's timestamp exceeds `end_time`.
@@ -118,6 +122,30 @@ def test_expand_scenario_timestamps_advance_across_successive_cycles():
     assert len(set(timestamps)) == len(timestamps), (
         "each cycle must land at a distinct instant"
     )
+
+
+# --- AC2(d): interval spacing, from the rows themselves ----------------------
+
+
+@pytest.mark.parametrize("interval_seconds", [30, 45])
+def test_expand_scenario_consecutive_cycles_are_spaced_by_the_scenarios_own_interval(
+    interval_seconds,
+):
+    """AC2(d) (sprint-63 fix round, quality finding C1): the gap between
+    consecutive expanded cycles must be EXACTLY `scenario.interval_seconds`
+    -- driven from the real `expand_scenario`, not a value the test computes
+    independently. Parametrized over two distinct intervals so a mutant that
+    hardcodes one interval (e.g. always 30s) fails at least one case."""
+    scenario = _scenario(
+        cycles=[["L1"], ["L1"], ["L1"], ["L1"]], interval_seconds=interval_seconds
+    )
+    rows = expand_scenario(scenario, end_time=_END)
+
+    timestamps = sorted(parse_ns_timestamp(row["timestamp"]) for row in rows)
+    assert len(timestamps) == 4  # one per cycle -- one location, four cycles
+
+    gaps = {b - a for a, b in zip(timestamps, timestamps[1:])}
+    assert gaps == {timedelta(seconds=interval_seconds)}
 
 
 # --- AC2(f): never in the future --------------------------------------------
