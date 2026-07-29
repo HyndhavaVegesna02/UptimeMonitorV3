@@ -109,7 +109,11 @@ stories:
   - id: STORY-180
     title: Demo-engine polish — the eight non-blocking minors from STORY-148's quality review
     file: docs/scrum/stories/STORY-180-demo-engine-polish.md
-    status: todo
+    status: done   # 2026-07-29. All 9 ACs; scoped DoD gate 5/5 at 2ed3b57 (574 tests, +2 net);
+                   # reality gate PASS with a discrimination proof that itself FALSE-PASSED on
+                   # the first attempt (see story_gates -> false_pass_caught). 1-pointer ceremony,
+                   # so no reviewer pair — the SM re-verified the two traps and the AC4 change by
+                   # reading the diff and the real executor's poll loop.
     points: 2
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
     order: 1                 # NOT high-risk-first, and the tradeoff is stated rather than hidden:
@@ -136,6 +140,113 @@ stories:
                              # purpose. NOTE: .scrum/definition-of-done.md had the same rot and
                              # the orchestrator fixed it at planning — implementers may never
                              # write .scrum/ state.
-story_gates: []
+story_gates:
+  # Merged from yt_gate.py's emitted fragment. No ANSI stripping was needed: the two ESC bytes
+  # STORY-178 tracks come from `npm run build`, which this scoped run does not execute.
+  - story: STORY-180
+    head: 2ed3b57
+    scope_note: "SCOPED gate (5 backend commands), per the sprint-45 retro's token-economy
+      amendment: the story's whole diff is tools/ + backend/tests/ + docs/ — `git diff --name-only
+      a2d5e78..HEAD` lists NO file under frontend/, so the three frontend commands cannot be
+      affected. The FULL 8-command gate is the evidence of record for the sprint and runs at
+      sprint close on the final HEAD. The implementer separately self-ran all 8 green; that is a
+      to-verify list, not evidence — this run is the record."
+    env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (fixed-port container uptime_dynamo_8021)
+      to bypass the dynamo_local ephemeral-port defect (STORY-179). Environment-only; no repo file
+      changed. 574 tests, +2 net over the 572 baseline: +1 AC2 window-equality, +1 AC4 cache
+      eviction, +1 minor-7 wall-clock, −1 from folding the stdlib-only test into a docstring
+      (AC5/minor 3). The drop is real and is NOT a lost test."
+    ceremony_note: "1-2 pointer: implementer -> DoD gate -> reality gate, NO reviewer pair (board
+      ceremony field, set at lock). The SM independently verified instead: (a) AC8 mechanically
+      (`git diff --name-only a2d5e78..HEAD -- backend/src/` is empty); (b) both traps the verifier
+      flagged pre-lock — AC2 took the DECIDED equality route (the test imports
+      `_HEALTH_CHECK_WINDOW` from composition, it does not restate '2h') and AC3 passes
+      `overlap=timedelta(0)` explicitly, with the reason stated at the call; (c) the AC4 change,
+      which was the one real AC7 risk and is NOT visible from the story text — see ac4_risk_check."
+    ac4_risk_check: "AC4 changed `self.server.results.get(token)` to `.pop(token, None)`
+      (`server.py:117-124`), i.e. a token is now CONSUMED by its first poll. That is a
+      wire-protocol behaviour change, so it was checked against the real client rather than
+      accepted from the story text: `grail_executor.py:100-137` polls in a loop but RETURNS at the
+      first `state == \"SUCCEEDED\"` (`:127-128`), and the demo engine resolves every query
+      synchronously server-side, so it always answers SUCCEEDED on poll 1. A second poll of the
+      same token therefore never happens on the real path and AC7 holds. Residual, recorded
+      because STORY-176 makes the engine long-running: a client that re-polls a token after a
+      transient read timeout would now get 404 -> GrailQueryError instead of its rows. The real
+      executor has no such retry (`:110-111` raises), so this is unreachable today — but it is a
+      real narrowing of the protocol, not a pure leak fix."
+    reality_gate:
+      verdict: PASS
+      method: "Route-matched to the story's one load-bearing NEW guarantee, AC2 (per working
+        agreement A1). The proof is the direct one the decided route makes possible: change
+        `composition/vendor_health.py:37`'s `_HEALTH_CHECK_WINDOW` from \"2h\" to \"3h\" and the
+        new equality test must go RED, because the whole point of AC2 is that a future change to
+        the composition constant cannot pass green. Run in a git worktree so the sprint tree was
+        never dirtied, then restored."
+      discrimination_proof: "3/4 with the constant at \"3h\" — exactly
+        `test_vendor_health_window_matches_the_composition_health_check_window` failing
+        (`timedelta(seconds=7200) == timedelta(seconds=10800)`) and the other three untouched —
+        and 4/4 with it restored to \"2h\", same command. So the test discriminates on precisely
+        the divergence it exists to catch, and nothing else."
+      false_pass_caught: "THE FIRST RUN OF THIS PROOF FALSE-PASSED, and the mechanism generalises
+        to every worktree-based proof in this repo. A worktree at HEAD with `vendor_health.py`
+        patched to \"3h\" still reported 4 passed: the repo is installed EDITABLE
+        (`package-dir = {\"\" = \"backend\"}`), so setuptools' editable finder resolves `src.*` to
+        `C:/Hyn/uptime_monitor_v3/backend/src` — the MAIN tree — no matter which worktree pytest
+        runs in. Verified directly: `import src.composition.vendor_health` inside the worktree
+        printed the main tree's path and the value \"2h\" while the worktree's own file on disk
+        said \"3h\". BOTH of my scores were therefore the same code, and 'green both sides' would
+        have been read as 'the constant does not matter'. Fixed by forcing
+        `PYTHONPATH=<worktree>/backend`, which precedes the editable finder — re-verified by
+        printing `__file__` and the value (worktree path, \"3h\") BEFORE re-running. Both scores
+        above are from PYTHONPATH-forced runs. Note the implementer's own proof patched the MAIN
+        tree in place (and restored it, `git diff` empty), which is why it did not hit this."
+      worktree_hygiene: "Worktree removed; the main tree was clean at every point (`git status`
+        empty before the gate). The worktree's residual `M vendor_health.py` after restore was
+        CRLF-normalisation only — `git diff` content was empty."
+      honest_limits: "AC1, AC5's rename/fold and AC6 are documentation-and-naming changes with no
+        runtime behaviour to gate; they are verified by reading, not by execution, and are not
+        claimed as gated. AC3's value is that the test now discriminates the STORY-051 stall — the
+        `overlap=timedelta(0)` argument was verified present at the call site, but the STORY-051
+        stall itself is not re-demonstrated here (STORY-148's live probe did that). AC4's bound is
+        proven by its own test, not by a long-running memory measurement."
+    dod_evidence:
+      - command: "pytest"
+        exit_code: 0
+        output_tail: "tor.py ...                       [ 92%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 574 passed in 30.05s ============================="
+        commit: 2ed3b57
+        at: "2026-07-29T16:33:34+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 2ed3b57
+        at: "2026-07-29T16:34:05+00:00"
+      - command: "ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 2ed3b57
+        at: "2026-07-29T16:34:05+00:00"
+      - command: "ruff format --check ."
+        exit_code: 0
+        output_tail: "218 files already formatted"
+        commit: 2ed3b57
+        at: "2026-07-29T16:34:05+00:00"
+      - command: "cfn-lint infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 2ed3b57
+        at: "2026-07-29T16:34:05+00:00"
+    wiki:
+      updated: "demo-engine.md (Facts for all four behavioural changes, each citing its pinning
+        test per retro amendment A2; code_refs gained backend/tests/conftest.py; verified_sha ->
+        701bfab). persistence-adapters.md re-verified with no content change."
+      quarantined: "dev-setup-and-dod.md remains STALE (now 3 changed paths: .scrum/
+        definition-of-done.md, CLAUDE.md, backend/tests/conftest.py). Correctly left untouched —
+        rehabilitating it is the sprint-end compile pass's job, and its claims entered no brief."
+    retro_candidate: "A worktree cannot discriminate a change under `backend/src/` in this repo
+      (editable install; see false_pass_caught). Sprint 62's A1 amendment mandates worktree proofs
+      without saying that, so the amendment as written can produce a false PASS. Proposed rung:
+      a checklist line in `.scrum/checklists/*` requiring any worktree proof to first print the
+      imported module's `__file__` and prove it resolves INSIDE the worktree. Raise at the
+      sprint-63 retro."
 hotfixes: []
 interrupts: []

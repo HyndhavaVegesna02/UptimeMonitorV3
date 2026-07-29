@@ -1346,7 +1346,16 @@ stories:
   - id: STORY-180
     title: Demo-engine polish - the eight non-blocking minors from STORY-148's quality review
     file: docs/scrum/stories/STORY-180-demo-engine-polish.md
-    status: ready   # AC approved + estimated at refinement 2026-07-29 (9 ACs); no open
+    status: done    # sprint-63, 2026-07-29: all 9 ACs; scoped DoD gate 5/5 at 2ed3b57 (574
+                    # tests, +2 net); reality gate PASS on AC2 with a discrimination proof
+                    # (3/4 at "3h", 4/4 restored) that FALSE-PASSED on its first attempt because
+                    # the editable install resolves src.* to the main tree from inside any
+                    # worktree -- see sprint-current.yaml story_gates.
+                    # Filing notes below are the original refinement record.
+                    # NOTE: the citations in these notes are the ORIGINAL, DRIFTED ones (five of
+                    # eight had moved); the corrected addresses are in the story file and in
+                    # sprint-63 plan.md. Kept as filed, not retro-edited.
+                    # AC approved + estimated at refinement 2026-07-29 (9 ACs); no open
                     # questions. Pulled into sprint 63 WITH STORY-176 on PO instruction --
                     # 176's long-running engine is what makes minors 1 and 5 matter.
                     # Filing notes: Raised by yt-quality-reviewer on STORY-148 (2026-07-29) and
