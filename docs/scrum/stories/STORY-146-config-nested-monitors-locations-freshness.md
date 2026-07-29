@@ -203,3 +203,40 @@ Only demo/fixture configs declare locations at all (see AC8).
   helpers directly into `_derive_signals_from_monitors` (no behaviour change; AC2b's
   raise-on-explicit-`signals=` path is untouched). No AC is affected — this is speculative
   generality the story shipped with, not an AC requirement.
+- 2026-07-29: **quality rework (sprint-62), F2 — rejected-shape tests added.**
+  `MonitorConfig._require_positive_interval` worked (probed) but had no test pinning it,
+  unlike its `SignalConfig` twin (`test_signal_config_zero_interval_raises`/`..._negative_interval_raises`).
+  Added `test_monitor_config_zero_interval_raises`/`test_monitor_config_negative_interval_raises`
+  (`test_config.py::TestMonitorConfigIntervalSeconds`) to close the implementer.md:32 gap
+  (both rejected and valid shapes tested in the same story). No behaviour change.
+- 2026-07-29: **quality rework (sprint-62), F3 — happy-path `expected_locations` test added.**
+  Before this, the only non-empty `expected_locations` in the suite was the failing `ghost-loc`
+  case, and the real `httpcheck.yaml` asserts empty — so an implementation comparing against
+  `set(loc.native_id ...)` instead of `set(app.locations.keys())` would have passed all 539
+  tests. Added `test_config.py::TestDeclaredLocations::test_declared_expected_locations_alias_loads_successfully`
+  (a monitor's `expected_locations` naming a *declared* alias loads successfully and resolves
+  unchanged). Sanity-checked by temporarily breaking the comparison to
+  `{loc.native_id for loc in app.locations.values()}` — the new test failed for the right
+  reason (`UndeclaredLocationAliasError`) — then restored. No behaviour change.
+- 2026-07-29: **quality rework (sprint-62), F4 — duplicate `app.id` across files rejected.**
+  Probed: two files both declaring `app: {id: same-app}` (distinct component ids/signal keys, so
+  every other global check passed) loaded silently, with `freshness_for`/`locations_for`
+  returning only the second file's values and the first file's discarded with no error —
+  opened by this story making `app.id` a `Config`-level lookup key. Added `DuplicateAppIdError`
+  (`ConfigError` subclass) and a `global_app_ids` uniqueness check in `load_config`, raised
+  OUTSIDE the `try/except (TypeError, ValueError)` block alongside the existing
+  `signal_key`/`component.id` global checks, same message style (names both filenames).
+  Docstring updated to enumerate the new rule. One test:
+  `test_config.py::TestLoadConfigFailFast::test_duplicate_app_id_across_files_raises`.
+- 2026-07-29: **quality rework (sprint-62), also-fixed while in here.** (a)
+  `test_config.py::TestFlatSignalsRejected::test_explicit_nonempty_signals_on_direct_construction_raises`
+  used a bare `pytest.raises(ValueError)` for AC2b — too broad, since pydantic's
+  `ValidationError` *is* a `ValueError` and satisfies it for any validation failure; added
+  `match="derived from components"` so it fails for the right reason. (b) Deleted code:
+  `MonitorConfig._require_positive_interval`/`SignalConfig._require_positive_interval` were
+  byte-identical `model_validator(mode="after")` methods — extracted to a shared
+  module-level `_require_positive_interval(value)` wired via
+  `Annotated[int, AfterValidator(...)]` (`PositiveIntervalSeconds`), used as the field type
+  on both models' `interval_seconds` — reason: pure duplication with no per-model logic;
+  verified byte-identical error-message text and full 543-test suite pass before removing
+  the per-model methods.
