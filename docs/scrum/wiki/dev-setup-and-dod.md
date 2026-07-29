@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: b272c32
+verified_sha: c6d7657
 verified_sprint: sprint-63
 status: verified
 ---
@@ -248,3 +248,7 @@ status: verified
   `asgi.py`'s reworded `DATABASE_URL` note and the `pyproject.toml` vendor-subpackage comment are
   unrelated to any DoD command, contract count, or fixture mechanics this article states. Both
   Facts above corrected; verified_sha -> b272c32.
+- sprint-63 (STORY-181, AC7 pass): the sweep re-flagged `CLAUDE.md` after its own "History —
+  superseded" bullets were corrected to say STORY-181 fixed the Railway/Vercel and STORY-017
+  comments (rather than claiming they "still" name them). No Fact in THIS article quotes that
+  History section's wording. Re-verified only; no further Fact change. verified_sha -> c6d7657.
