@@ -87,7 +87,11 @@ class _DemoRequestHandler(BaseHTTPRequestHandler):
         if not self._require_auth():
             return
 
-        body = json.loads(raw_body)
+        try:
+            body = json.loads(raw_body)
+        except json.JSONDecodeError as exc:
+            self._write_json(400, {"error": f"malformed JSON body: {exc}"})
+            return
         query = body.get("query", "")
 
         try:

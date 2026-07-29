@@ -145,3 +145,20 @@ def test_unrecognized_query_makes_the_real_grail_executor_raise_not_return_empty
         )
         with pytest.raises(GrailQueryError):
             executor("fetch dt.synthetic.events")
+
+
+def test_malformed_json_body_returns_400():
+    """A malformed request body must not escape `do_POST` as an unhandled
+    `JSONDecodeError` (a stdlib traceback + a connectionless disconnect) —
+    it gets the same 400-with-JSON-error-body treatment as every other bad
+    input this server rejects.
+    """
+    store = DemoRowStore()
+    with DemoEngineServer(store) as server:
+        resp = httpx.post(
+            f"{server.base_url}/platform/storage/query/v1/query:execute",
+            headers=_headers(),
+            content=b"{not valid json",
+        )
+        assert resp.status_code == 400
+        assert "error" in resp.json()
