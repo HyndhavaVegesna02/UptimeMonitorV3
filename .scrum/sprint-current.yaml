@@ -161,7 +161,7 @@ stories:
   - id: STORY-148
     title: Grail demo engine — wire contract (rows, both query grammars, HTTP protocol)
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
-    status: ready
+    status: in_progress   # dispatched 2026-07-29; resume point = plan.md step checkboxes
     points: 3                # was 5 as one story; split post-verifier (176 took the other half)
     ceremony: 3-pointer
     order: 2                 # highest RISK (new component, vendor wire-shape fidelity), and
