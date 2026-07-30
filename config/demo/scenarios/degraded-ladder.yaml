@@ -1,0 +1,8 @@
+# STORY-191 — degraded case (all locations degraded across cycles)
+payments-service-charge:
+  monitor_id: HTTP_CHECK-DEMO-PAY-CHARGE
+  interval_seconds: 30
+  cycles:
+    - { SYNTHETIC_LOCATION-DEMOA: degraded, SYNTHETIC_LOCATION-DEMOB: degraded, SYNTHETIC_LOCATION-DEMOC: degraded, SYNTHETIC_LOCATION-DEMOD: degraded }
+    - { SYNTHETIC_LOCATION-DEMOA: degraded, SYNTHETIC_LOCATION-DEMOB: degraded, SYNTHETIC_LOCATION-DEMOC: degraded, SYNTHETIC_LOCATION-DEMOD: degraded }
+    - { SYNTHETIC_LOCATION-DEMOA: degraded, SYNTHETIC_LOCATION-DEMOB: degraded, SYNTHETIC_LOCATION-DEMOC: degraded, SYNTHETIC_LOCATION-DEMOD: degraded }

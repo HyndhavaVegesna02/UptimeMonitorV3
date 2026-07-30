@@ -1,0 +1,7 @@
+# STORY-191 — poison-row case (extra unmapped row alongside four good locations)
+search-service-query:
+  monitor_id: HTTP_CHECK-DEMO-SEARCH-QUERY
+  interval_seconds: 30
+  cycles:
+    - { SYNTHETIC_LOCATION-DEMOA: up, SYNTHETIC_LOCATION-DEMOB: up, SYNTHETIC_LOCATION-DEMOC: up, SYNTHETIC_LOCATION-DEMOD: up, SYNTHETIC_LOCATION-DEMOEXTRA: poison }
+    - { SYNTHETIC_LOCATION-DEMOA: up, SYNTHETIC_LOCATION-DEMOB: up, SYNTHETIC_LOCATION-DEMOC: up, SYNTHETIC_LOCATION-DEMOD: up, SYNTHETIC_LOCATION-DEMOEXTRA: poison }

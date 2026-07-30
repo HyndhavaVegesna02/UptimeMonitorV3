@@ -53,7 +53,7 @@ for _p in (str(TOOLS_ROOT),):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-import httpx  # noqa: E402
+from demo_engine.scenario import SignalScenario, expand_scenario
 from demo_engine.server import DemoEngineServer  # noqa: E402
 from import_provenance import assert_import_root  # noqa: E402
 from src.composition.config import load_config  # noqa: E402
@@ -336,44 +336,14 @@ def run_positive_side(
     *,
     api_port: int = API_PORT,
     loop_wait_seconds: float = 90.0,
+    extra_scenarios: list[SignalScenario] | None = None,
 ) -> dict:
-    """Run the full positive-side reality gate and return the evidence dict.
-
-    Steps (STORY-182 AC1-AC6, sprint-64 plan "Steps" for story 4):
-      1. Provenance (STORY-187).
-      2. Build the fleet-wide coverage row store (B1) and start the embedded
-         demo engine seeded with it.
-      3. Create FRESH observations+control tables (AC2, B4).
-      4. Launch the API as a real `uvicorn` subprocess with CONFIG_DIR=
-         config/demo (AC1a) and the fresh table names (AC1b).
-      5. Assert AC1(a)-(e) against the running API.
-      6. Launch `python -m src.composition.run`, UNMODIFIED, with the SAME
-         env matrix (AC1a/AC1b), against the demo engine.
-      7. Wait long enough for every signal's first cycle (the loop's first
-         cycle fires before its first sleep, `pull_loop.py:160` -- so this
-         harness only needs to span STARTUP, not an interval), then
-         terminate it externally (AC6 forbids a `stop_event` in
-         `backend/src/`).
-      8. Collect AC3 (ingest), AC4 (vendor-health), AC5 (empty approvals)
-         evidence from the still-running API.
-      9. Tear everything down with OS-level verification.
-    """
+    """Run the full positive-side reality gate and return the evidence dict."""
     _print_provenance()
 
     _assert_api_port_free(api_port)
 
     cfg = load_config(DEMO_CONFIG_DIR)
-    # `run.py:135-151` builds one `run_periodic` coroutine per signal in THIS
-    # exact per-app/per-signal order, and `asyncio.gather` starts them in
-    # that same order; since each `run_cycle` runs synchronously to
-    # completion before its coroutine reaches its own first
-    # `await asyncio.sleep`, the LAST entry in this list is the last signal
-    # to complete its first cycle. Kept separate from the alphabetically
-    # SORTED `all_signal_keys` used for reporting -- sorting here would
-    # silently break the "wait for the last one" polling strategy below
-    # (discovered live on this story's own second run: 6 trailing signals,
-    # exactly config/demo's last app/component in file-glob order, had not
-    # ingested yet under a fixed post-startup sleep).
     iteration_order_signal_keys = [
         sig.signal_key for app in cfg.apps for sig in app.signals
     ]
@@ -415,6 +385,12 @@ def run_positive_side(
     print(f"Run start (UTC): {run_start.isoformat()}")
 
     store = build_fleet_row_store(cfg, end_time=run_start)
+    if extra_scenarios:
+        for sc in extra_scenarios:
+            for row in expand_scenario(sc, end_time=run_start, event_id_prefix=f"fail-{sc.signal_key}"):
+                store.add_row(row)
+        print(f"Merged {len(extra_scenarios)} extra scenario(s) into row store.")
+
     print(
         f"Coverage row store built: {len(store._rows)} rows "
         f"({len(all_signal_keys)} signals x 5 cycles x 4 locations)"

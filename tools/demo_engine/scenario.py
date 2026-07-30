@@ -30,7 +30,14 @@ from typing import Any
 
 import yaml
 
-from demo_engine.rows import build_row, format_ns_timestamp
+from src.adapters.inbound.dynatrace.health_mapping import PROVISIONAL_STATUS_MAPPING
+from demo_engine.assumed_failure_codes import ASSUMED_DOWN_CODE, ASSUMED_DOWN_MESSAGE
+from demo_engine.rows import (
+    STATUS_CODE_HEALTHY,
+    STATUS_MESSAGE_HEALTHY,
+    build_row,
+    format_ns_timestamp,
+)
 
 
 class InvalidScenarioError(ValueError):
@@ -39,31 +46,22 @@ class InvalidScenarioError(ValueError):
 
 @dataclass(frozen=True)
 class SignalScenario:
-    """One signal's scripted, per-cycle, per-location outcome sequence (STORY-176 AC1).
+    """One signal's scripted, per-cycle, per-location outcome sequence (STORY-176 AC1, STORY-191).
 
     `cycles` is ordered OLDEST to NEWEST — `cycles[-1]` is the cycle that
-    lands at `expand_scenario`'s `end_time`. Each entry is the list of
-    location native ids reporting `UP` that cycle; a location's absence from
-    the list means it did not report at all that cycle (this engine has no
-    other outcome to express — see the module docstring).
+    lands at `expand_scenario`'s `end_time`. Each entry is either a list of
+    location native ids reporting `UP` or a dict of location native id -> status
+    string ("up", "down", "degraded", or custom).
     """
 
     signal_key: str
     monitor_id: str
     interval_seconds: int
-    cycles: list[list[str]]
+    cycles: list[list[str] | dict[str, str]]
 
     def __post_init__(self) -> None:
         """Enforce `interval_seconds` is a positive `int` on the TYPE itself
-        (STORY-184 AC1/AC2), so no construction path -- direct or via
-        `load_scenario_file` -- can produce a player whose past-anchored
-        `expand_scenario` would emit a row after `end_time`. `type(...) is
-        not int` (not `isinstance`) is deliberate: `bool` is an `int`
-        subclass in Python, so `isinstance(True, int)` is `True` and would
-        silently accept it; `type(True) is int` is `False`. In-repo
-        precedent for this exact field: `composition/config.py
-        ::_require_positive_interval` and
-        `core/domain/topology.py::Signal._require_positive_interval_when_set`.
+        (STORY-184 AC1/AC2).
         """
         if type(self.interval_seconds) is not int:
             raise ValueError(
@@ -81,36 +79,7 @@ class SignalScenario:
 
 
 def load_scenario_file(path: str | Path) -> list[SignalScenario]:
-    """Parse a scenario YAML file into a list of `SignalScenario`s (STORY-176 AC1).
-
-    Shape (top-level mapping, one entry per signal)::
-
-        api-gateway-health:
-          monitor_id: HTTP_CHECK-DEMO-APIGW-HEALTH
-          interval_seconds: 30
-          cycles:
-            - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
-            - []               # a fully dark cycle
-            - [SYNTHETIC_LOCATION-DEMOA, SYNTHETIC_LOCATION-DEMOB]
-
-    Raises `InvalidScenarioError` when a signal block is missing
-    `monitor_id`, `interval_seconds`, or `cycles` — a malformed scenario file
-    must surface loudly rather than silently expand to zero rows. Also
-    raises `InvalidScenarioError` (never a bare stdlib `TypeError`) when a
-    present field has the wrong TYPE, or when `interval_seconds` is not
-    strictly positive — `expand_scenario` is past-anchored (module
-    docstring), so a non-positive interval would emit rows in the FUTURE
-    relative to `end_time` (STORY-176 AC2f). Every raised message names both
-    the file (`path`) and the offending signal key, matching the
-    filename-prefixed convention `composition/config.py::load_config` uses
-    for its own per-file/per-entry errors.
-
-    `interval_seconds`'s type/sign check itself lives on `SignalScenario.
-    __post_init__` (STORY-184), not here — this function catches the bare
-    `ValueError` it raises and re-raises it as an `InvalidScenarioError`
-    prefixed with the file path and signal key, which the type itself has no
-    way to know.
-    """
+    """Parse a scenario YAML file into a list of `SignalScenario`s (STORY-176 AC1, STORY-191)."""
     raw: Any = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
         raise InvalidScenarioError(
@@ -145,15 +114,25 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
         if not isinstance(cycles, list):
             raise InvalidScenarioError(
                 f"{path}: scenario {signal_key!r}: cycles must be a list of "
-                f"per-cycle location lists, got {type(cycles).__name__!r}."
+                f"per-cycle location lists or dicts, got {type(cycles).__name__!r}."
             )
         for cycle_index, cycle in enumerate(cycles):
-            if not isinstance(cycle, list) or not all(
-                isinstance(location, str) for location in cycle
-            ):
+            if isinstance(cycle, list):
+                if not all(isinstance(location, str) for location in cycle):
+                    raise InvalidScenarioError(
+                        f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
+                        f"must be a list of location id strings or dict, got {cycle!r}."
+                    )
+            elif isinstance(cycle, dict):
+                if not all(isinstance(k, str) and isinstance(v, str) for k, v in cycle.items()):
+                    raise InvalidScenarioError(
+                        f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
+                        f"must be a dict mapping location id string to status string, got {cycle!r}."
+                    )
+            else:
                 raise InvalidScenarioError(
                     f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
-                    f"must be a list of location id strings, got {cycle!r}."
+                    f"must be a list of location id strings or dict, got {cycle!r}."
                 )
 
         try:
@@ -161,13 +140,9 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
                 signal_key=signal_key,
                 monitor_id=monitor_id,
                 interval_seconds=interval_seconds,
-                cycles=[list(cycle) for cycle in cycles],
+                cycles=[list(c) if isinstance(c, list) else dict(c) for c in cycles],
             )
         except ValueError as exc:
-            # `SignalScenario.__post_init__` (STORY-184) already validated
-            # everything else above; the only invariant it can still raise
-            # here is interval_seconds's type/sign, since it has no
-            # knowledge of `path`. Re-raise with that context attached.
             raise InvalidScenarioError(
                 f"{path}: scenario {signal_key!r}: {exc}"
             ) from exc
@@ -175,50 +150,67 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
     return scenarios
 
 
+_STATUS_MAP: dict[str, tuple[str, str]] = {
+    "up": (STATUS_CODE_HEALTHY, STATUS_MESSAGE_HEALTHY),
+    "down": (ASSUMED_DOWN_CODE, ASSUMED_DOWN_MESSAGE),
+    "degraded": ("2", "DEGRADED"),
+    "poison": ("999", "UNMAPPED_POISON"),
+    "unmapped": ("999", "UNMAPPED_POISON"),
+}
+
+
+def _resolve_status(status_str: str) -> tuple[str, str]:
+    status_lower = status_str.lower()
+    if status_lower in _STATUS_MAP:
+        return _STATUS_MAP[status_lower]
+    if ":" in status_str:
+        parts = status_str.split(":", 1)
+        return parts[0], parts[1]
+    raise ValueError(f"Unknown status string in scenario: {status_str!r}")
+
+
 def expand_scenario(
     scenario: SignalScenario,
     *,
     end_time: datetime,
+    event_id_prefix: str | None = None,
 ) -> list[dict]:
-    """Expand one `SignalScenario` into Grail-shaped rows, PAST-ANCHORED (STORY-176 AC2).
-
-    `scenario.cycles[-1]` lands at `end_time`; `scenario.cycles[-2]` lands one
-    `interval_seconds` earlier, and so on — the whole ladder sits AT OR
-    BEFORE `end_time`, never after. That is now enforced at construction
-    (STORY-184): `SignalScenario.__post_init__` rejects any non-positive or
-    non-`int` `interval_seconds`, so no `scenario` this function can ever
-    receive could push a cycle past `end_time`. The guarantee is "at or
-    before `end_time`", not "at or before now" (AC2f's "never in the
-    future"): a caller that passes a future `end_time` still gets a ladder
-    anchored to it — the production caller passes `clock.now()` (module
-    docstring), which is what makes "never in the future" hold in practice.
-    Rows are built via `demo_engine.rows.build_row`, so they carry exactly
-    the seven Grail fields the real ingest path reads, formatted via
-    `format_ns_timestamp` (AC2b: the 9-digit-fraction `Z`-suffixed shape).
-
-    An empty `cycles` list (a signal declared but never expanded) or an empty
-    per-cycle location list (a fully dark cycle) both produce zero rows for
-    that cycle — never an error; "no data that cycle" is a valid, common
-    scenario outcome (AC5b/c/e).
-    """
+    """Expand one `SignalScenario` into Grail-shaped rows, PAST-ANCHORED (STORY-176 AC2, STORY-191)."""
     interval = timedelta(seconds=scenario.interval_seconds)
     n_cycles = len(scenario.cycles)
     rows: list[dict] = []
     event_seq = 0
+    prefix = event_id_prefix if event_id_prefix is not None else scenario.signal_key
 
-    for cycle_index, locations in enumerate(scenario.cycles):
+    for cycle_index, cycle in enumerate(scenario.cycles):
         cycles_before_end = (n_cycles - 1) - cycle_index
         cycle_time = end_time - cycles_before_end * interval
         timestamp = format_ns_timestamp(cycle_time)
-        for location in locations:
-            event_seq += 1
-            rows.append(
-                build_row(
-                    monitor_id=scenario.monitor_id,
-                    location=location,
-                    event_id=f"{scenario.signal_key}-{event_seq}",
-                    timestamp=timestamp,
+        if isinstance(cycle, list):
+            for location in cycle:
+                event_seq += 1
+                rows.append(
+                    build_row(
+                        monitor_id=scenario.monitor_id,
+                        location=location,
+                        event_id=f"{prefix}-{event_seq}",
+                        timestamp=timestamp,
+                    )
                 )
-            )
+        elif isinstance(cycle, dict):
+            for location, status_str in cycle.items():
+                event_seq += 1
+                code, msg = _resolve_status(status_str)
+                rows.append(
+                    build_row(
+                        monitor_id=scenario.monitor_id,
+                        location=location,
+                        event_id=f"{prefix}-{event_seq}",
+                        timestamp=timestamp,
+                        status_code=code,
+                        status_message=msg,
+                    )
+                )
 
     return rows
+
