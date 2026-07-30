@@ -1022,7 +1022,15 @@ stories:
   - id: STORY-182
     title: Grail demo engine part 2b - the real loop run against the demo fleet, and its two-sided gate
     file: docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md
-    status: ready   # AC approved + estimated at the 2026-07-29 split; no open questions.
+    status: done    # sprint-64, PO-ACCEPTED 2026-07-30, AFTER ONE FIX ROUND. Round 1: spec FAIL +
+                    # quality FIX_REQUIRED (4 majors) -- the harness REPORTED rather than ENFORCED
+                    # (asserts only for AC1, __main__ exit 0 regardless, a polling timeout continued).
+                    # All 4 majors + 3 minors fixed; the orchestrator then proved the new assertions
+                    # BITE (13/13 discrimination cases) rather than trusting them. THE LOOP RAN: the
+                    # real unmodified `python -m src.composition.run` ingested 13 components / 41
+                    # signals / 4 locations, 0 drift, approvals empty, nothing reached Statuspage.
+                    # Full 8-command gate 8/8 at bbf3c72 (666 passed, 0 skipped).
+                    # AC approved + estimated at the 2026-07-29 split; no open questions.
                     # Sprint 64: STORY-176 must ship the publish guard FIRST -- decide publishes
                     # recoveries with no human gate (decide.py:122-126, publish at :171-172), so
                     # the ordering is structural, not a step order someone can reshuffle.
@@ -1559,8 +1567,10 @@ stories:
   - id: STORY-183
     title: Demo engine — bound the token cache by RETENTION, not by consume-on-first-poll
     file: docs/scrum/stories/STORY-183-demo-engine-token-cache-retention.md
-    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
-                    # Ready met: approved AC + 1-point estimate + no open questions.
+    status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (621 passed,
+                    # 0 skipped, net +4). Reality gate PASS two-sided over REAL HTTP with the real
+                    # unmodified make_grail_executor on both sides: tiny vs large retention gave
+                    # 404 vs 200 and cache length 1 vs 6 -- two independent axes of difference.
                     # FILED 2026-07-29 by the orchestrator while verifying STORY-180's AC4
                     # against its AC7 (no wire-contract change).
                     # STORY-180 AC4 bounded _DemoHTTPServer.results by changing the poll
@@ -1602,8 +1612,10 @@ stories:
   - id: STORY-184
     title: Move the demo scenario interval invariant onto SignalScenario itself
     file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
-    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
-                    # Ready met: approved AC + 1-point estimate + no open questions.
+    status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (628 passed,
+                    # 0 skipped, +7). Reality gate PASS: the future row REPRODUCED at the parent
+                    # commit (12:00:30Z for end_time 12:00:00Z), pinning test RED there and GREEN at
+                    # head, restore verified empty. AC3's seven loader tests byte-identical.
                     # Filed 2026-07-30 out of the STORY-176 fix-round quality re-review, which the
                     # PO authorised AFTER accepting sprint 63 ("if any reviews are to be done, you
                     # can go ahead"). Verdict FIX_REQUIRED with one MAJOR; because the story was
@@ -1700,6 +1712,14 @@ stories:
                     #     matching only on the signal key, so none pins the rejection REASON.
                     #     Table-ify them and add the currently unpinned bool case
                     #     (interval_seconds: true).
+                    #     *** REINFORCED by sprint-64 STORY-184: because those tests pin the key and
+                    #     nothing else, they passed BYTE-IDENTICAL across two real behavioural
+                    #     changes that no test caught -- (i) the rejection message lost its
+                    #     "(STORY-176 AC2f)" citation when the text moved onto the type, and (ii)
+                    #     error PRECEDENCE flipped, so a file with BOTH a bad interval AND bad cycles
+                    #     now reports the CYCLES error (interval validation moved to construction,
+                    #     which runs after the loader's cycles checks). Both benign, both invisible.
+                    #     Pin the reason AND add a precedence case. ***
                     # (h) scenario.py:84-87 uses {path!r} (printing WindowsPath('...')) while every
                     #     new message uses {path}; and the docstring's "matching
                     #     composition/config.py's convention" is inaccurate in detail -- config.py
@@ -1726,11 +1746,62 @@ stories:
     priority: 60
     type: chore
     sprint: null
+  - id: STORY-188
+    title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
+    file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
+    status: draft   # Filed 2026-07-30 at the sprint-64 review. Surfaced by STORY-187, NOT caused by
+                    # it. MEASURED at both the parent and the story head:
+                    #   .scrum/checklists/quality-review.md  INVALID-UTF8, 3 raw cp1252 0x97 bytes
+                    #   .scrum/checklists/implementer.md     valid UTF-8 but carries 3 real U+FFFD
+                    # THE RISK IS NOT THEORETICAL AND IT ALREADY FIRED ONCE: during STORY-187 the
+                    # edit pipeline round-tripped quality-review.md through UTF-8 and lossily turned
+                    # those 3 raw bytes into U+FFFD -- in an unrelated bullet the story never touched.
+                    # The implementer caught it only by reading `git diff` before committing and
+                    # restored the bytes with a targeted byte-level patch (verified identical at both
+                    # revisions by the orchestrator). The next editor may not look.
+                    # These two files are read by EVERY implementer and reviewer dispatch, so silent
+                    # corruption here degrades the instructions the whole team works from.
+                    # SHAPE: one deliberate normalization pass to UTF-8, byte-diffed and reviewed, so
+                    # no future tool can corrupt them by accident. Consider a repo-level guard (a
+                    # .gitattributes entry or a tiny test asserting both files decode as UTF-8) so a
+                    # regression is caught mechanically rather than by eye.
+    points: 1
+    priority: 62
+    type: chore
+    sprint: null
+  - id: STORY-189
+    title: Close the two doc/wiki gaps sprint 64 found but deliberately left
+    file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
+    status: draft   # Filed 2026-07-30 at the sprint-64 review. Three items, all noted-not-fixed
+                    # during the sprint because each was outside the story that found it.
+                    # (a) demo-engine.md's code_refs do NOT include tools/demo_loop_gate/*, so its
+                    #     "the run itself is not wired up" prose is stale in CONTENT while the
+                    #     MECHANICAL sweep stays CLEAN. This is the wiki protocol's blind spot made
+                    #     concrete: the sweep detects STALENESS (a code_ref moved), never WRONGNESS.
+                    #     Either add the new package to code_refs or state plainly why it is out of
+                    #     that article's scope.
+                    # (b) vendor_health.py:86 claims a healthy id "logs nothing" while :126-133 logs
+                    #     INFO per healthy signal. Sprint 64 had to write BOTH gate side 3 and the
+                    #     AC4 assertion against the CODE and explicitly against the docstring -- the
+                    #     first draft of that gate asserted silence and would have failed a correct
+                    #     run.
+                    # (c) api/v1/availability/models.py describes `rollup` as "MIN of non-None
+                    #     percentages, SUM of counts", which misdescribes distinct_locations -- it is
+                    #     neither, it is hardcoded 0 (availability.py:334, documented :306-311).
+                    # (b) and (c) are the same defect class the sprint hunted all day: prose that
+                    # claims more (or other) than the code does. Both were verified at source.
+    points: 1
+    priority: 63
+    type: chore
+    sprint: null
   - id: STORY-187
     title: An import-provenance helper so a proof can prove WHICH code it ran
     file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
-    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
-                    # Ready met: approved AC + 1-point estimate + no open questions.
+    status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (617 passed,
+                    # 0 skipped, +3). Reality gate PASS on the REAL mechanism -- run inside an actual
+                    # git worktree where src.* still resolved to the MAIN tree, so the helper would
+                    # have caught sprint-63's STORY-180 false pass. Verification corrected the story:
+                    # the trap is a plain .pth sys.path append, NOT a setuptools finder.
                     # Filed 2026-07-30 AT the sprint-63 retro. This is the MECHANICAL RUNG that
                     # working agreement A1, its 2026-07-29 refinement, and the new A3 have each
                     # declined to take -- proposed at the sprint-62 AND sprint-63 retros. The
