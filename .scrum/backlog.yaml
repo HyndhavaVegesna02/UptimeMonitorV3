@@ -1545,9 +1545,10 @@ stories:
   - id: STORY-183
     title: Demo engine — bound the token cache by RETENTION, not by consume-on-first-poll
     file: docs/scrum/stories/STORY-183-demo-engine-token-cache-retention.md
-    status: draft   # FILED 2026-07-29 by the orchestrator while verifying STORY-180's AC4
-                    # against its AC7 (no wire-contract change). NEEDS PO APPROVAL to reach
-                    # `ready`; AC + estimate are drafted, no open questions.
+    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
+                    # Ready met: approved AC + 1-point estimate + no open questions.
+                    # FILED 2026-07-29 by the orchestrator while verifying STORY-180's AC4
+                    # against its AC7 (no wire-contract change).
                     # STORY-180 AC4 bounded _DemoHTTPServer.results by changing the poll
                     # handler from results.get(token) to results.pop(token, None)
                     # (server.py:124). Gated and correct as far as its own AC goes, but:
@@ -1586,7 +1587,9 @@ stories:
   - id: STORY-184
     title: Move the demo scenario interval invariant onto SignalScenario itself
     file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
-    status: draft   # Filed 2026-07-30 out of the STORY-176 fix-round quality re-review, which the
+    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
+                    # Ready met: approved AC + 1-point estimate + no open questions.
+                    # Filed 2026-07-30 out of the STORY-176 fix-round quality re-review, which the
                     # PO authorised AFTER accepting sprint 63 ("if any reviews are to be done, you
                     # can go ahead"). Verdict FIX_REQUIRED with one MAJOR; because the story was
                     # already accepted, it becomes this follow-up rather than a re-opening.
@@ -1626,7 +1629,10 @@ stories:
   - id: STORY-185
     title: Un-gate the unsafe side of the publish-safety proof from Docker
     file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
-    status: draft   # Filed 2026-07-30 from the same re-review. STORY-176's S2 fix un-gated only the
+    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
+                    # it gates nothing in STORY-182 (the orchestrator's out-of-test harness already
+                    # proved the unsafe side with no Docker at all). Next candidate for sprint 65.
+                    # Filed 2026-07-30 from the same re-review. STORY-176's S2 fix un-gated only the
                     # SAFE side of the publish-guard proof: the demo-side create_app test now runs
                     # with DYNAMO_ENDPOINT_URL unset (verified: 1 passed in 0.88s, and that runtime
                     # is itself proof no I/O happens) because it takes no dynamo_local fixture and
@@ -1646,7 +1652,9 @@ stories:
   - id: STORY-186
     title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
     file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
-    status: draft   # Filed 2026-07-30, batching the re-review's remaining minors plus the round-1
+    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
+                    # pure accuracy/shape, gates nothing. Next candidate for sprint 65.
+                    # Filed 2026-07-30, batching the re-review's remaining minors plus the round-1
                     # minors deliberately deferred during sprint 63. None is a defect; all are
                     # accuracy or shape. Grouped into ONE story because they are the same kind of
                     # work in the same files, and four 1-pointers would be pure ceremony overhead.
@@ -1704,7 +1712,9 @@ stories:
   - id: STORY-187
     title: An import-provenance helper so a proof can prove WHICH code it ran
     file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
-    status: draft   # Filed 2026-07-30 AT the sprint-63 retro. This is the MECHANICAL RUNG that
+    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). Definition of
+                    # Ready met: approved AC + 1-point estimate + no open questions.
+                    # Filed 2026-07-30 AT the sprint-63 retro. This is the MECHANICAL RUNG that
                     # working agreement A1, its 2026-07-29 refinement, and the new A3 have each
                     # declined to take -- proposed at the sprint-62 AND sprint-63 retros. The
                     # sprint-63 retro entry records that a third slip would itself be the finding,
