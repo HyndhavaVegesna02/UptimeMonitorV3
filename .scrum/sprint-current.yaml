@@ -257,7 +257,12 @@ stories:
   - id: STORY-184
     title: Move the demo scenario interval invariant onto SignalScenario itself
     file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
-    status: todo
+    status: done   # 2026-07-30 at d4f78ec. All 7 ACs; scoped DoD gate 4/4 (628 passed, 0 SKIPPED,
+                   # +7); reality gate PASS — the future row REPRODUCED at the parent commit and the
+                   # pinning test shown RED there / GREEN at head, restore verified empty. Forward
+                   # blast radius RESOLVED: demo-engine.md's past-anchoring Fact rewritten,
+                   # re-verified to d4f78ec. 1-pointer ceremony; the orchestrator read the diff as
+                   # code and additionally probed all five loader rejection messages by hand.
     points: 1
     ceremony: 1-2-pointer
     order: 4                 # MUST precede STORY-182: that story's fleet-wide coverage artifact
@@ -633,6 +638,97 @@ story_gates:
         plan already contains one instance of a wrong citation written while correcting citations —
         the failure mode recurs and the only defence that has worked is mechanically re-reading each
         address."
+  STORY-184:
+    implementer_head: d4f78ec      # range 662f5ba..d4f78ec, 5 commits, tree clean
+    files_changed: ["tools/demo_engine/scenario.py", "backend/tests/demo_engine/test_scenario.py"]
+    shape_chosen: "dataclass `__post_init__`, not the pydantic shape. Reason given and accepted:
+      `tools/` has no pydantic import today and SignalScenario was already a frozen dataclass, so
+      __post_init__ validates-and-raises without needing to set an attribute on a frozen instance.
+      AC2's bool case is handled with `type(x) is not int` rather than isinstance — correct, and the
+      reason is recorded at the check: bool IS an int subclass, so isinstance(True, int) is True."
+    ac4_option_chosen: "The caller-side-caveat option. The docstring now states the guarantee is
+      unconditionally 'at or before end_time' BECAUSE the type enforces it, and separately that this
+      is NOT 'at or before now' — a caller passing a future end_time still gets a ladder anchored to
+      it, and production passes clock.now(). No site claims more than the code enforces (AC4)."
+    sm_independent_checks:
+      - "AC6 mechanical: `git diff --name-only 662f5ba..HEAD` = exactly two files; filtered to
+         `-- backend/src/ frontend/ infra/` it is EMPTY."
+      - "THE AC3 TRIPWIRE HELD, and was checked mechanically rather than trusted: `git diff` over
+         backend/tests/demo_engine/test_scenario.py contains NO removal lines at all — the file is
+         purely additive, so all seven loader rejection tests are byte-identical. AC3 required that any
+         needed edit be called out rather than absorbed; none was needed."
+      - "AC3 verified BEYOND the tests, because the tests are weak evidence here. The orchestrator
+         drove all five interval shapes (-30, 0, '30', 30.5, true) through load_scenario_file by hand
+         and confirmed each still raises InvalidScenarioError naming the FILE, the SIGNAL KEY and a
+         meaningful reason. This mattered: the seven existing tests match on the signal key ONLY (a
+         known weakness already filed as STORY-186 finding (g)), so they would have passed even if the
+         reason text had been mangled — and the reason text DID change (see candidates)."
+      - "The AC2 bool case was verified live, not read: interval_seconds: true raises
+         \"must be an int, got 'bool' (True)\". This is the case the story flagged as unpinned even at
+         the loader, and it is now pinned at the type."
+    dod_gate:
+      scope: "--only pytest --only importlinter --only ruff. cfn-lint + the three frontend commands
+        unaffected. FULL 8 still mandatory at sprint close."
+      env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021. PASS/SKIP: 628 passed, 0 SKIPPED."
+      verdict: "4/4 GREEN at d4f78ec"
+      commands:
+        - {command: "pytest", exit_code: 0, tail: "628 passed in 34.69s"}
+        - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
+           exit_code: 0, tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."}
+        - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
+        - {command: "ruff format --check .", exit_code: 0, tail: "224 files already formatted"}
+      test_count: "621 -> 628 (+7), exactly this story's parametrized cases: 2 (non-positive -30/0)
+        + 3 (non-int '30'/30.5/True) + 1 (valid shape) + 1 (AC5 future-row pinning). No pre-existing
+        test added, removed or modified."
+    reality_gate:
+      verdict: PASS
+      route: "Main-tree patch-and-restore, A1's approved route — which also sidesteps the worktree
+        provenance split-brain entirely. `git checkout 662f5ba -- tools/demo_engine/scenario.py`, run
+        the AC5 pinning test, `git checkout HEAD -- ...`, re-run. NO DoD gate was run while the tree
+        was patched. Provenance printed first for demo_engine.scenario via STORY-187's helper."
+      defect_reproduced_at_parent: "With the parent's scenario.py in place, construction SUCCEEDED and
+        expand_scenario returned ['2026-07-30T12:00:30.000000000Z', '2026-07-30T12:00:00.000000000Z']
+        for end_time=12:00:00Z — a row 30 SECONDS IN THE FUTURE. The story's claim is therefore
+        reproduced live at this sprint's own base commit, not carried from the story text."
+      two_sided_note: "BEFORE (parent scenario.py): the AC5 pinning test FAILED —
+        'test_signal_scenario_negative_interval_can_no_longer_expand_into_the_future ... 1 failed'.
+        AFTER (story head): the same test PASSED — '1 passed'. Restore verified: `git diff` EMPTY."
+      discrimination_proof: "The sides differ, and the mechanism is named: the ONLY thing that changed
+        between them is tools/demo_engine/scenario.py's content — same test file, same test id, same
+        interpreter, same command, and provenance confirmed the module resolved to the main tree on
+        both sides (so this is NOT the sprint-63 worktree trap, where both sides silently ran identical
+        code). The test asserts a RAISE, so at the parent it could only fail, and at head it could only
+        pass, if the invariant is genuinely on the type."
+      ac5_scope_note: "Per the pre-lock correction carried in the brief: interval_seconds=0 does NOT
+        yield a future row — it yields two rows both at 12:00:00Z, i.e. DUPLICATE timestamps. So AC5's
+        future-row pinning is the -30 case only, and AC1 covers 0 at the type level. The implementer
+        respected this and did not write a test claiming 0 produces a future row."
+    wiki:
+      swept: "yt_wiki.py reported demo-engine.md STALE (2 changed code_refs: tools/demo_engine/
+        scenario.py, backend/tests/demo_engine/test_scenario.py). RESOLVED. Re-swept after the update:
+        CLEAN on sweep/facts/links/integrity."
+      updated_by_the_story: ["demo-engine.md"]
+      note: "Second rewrite-not-restamp of this article in two stories. Its past-anchoring Fact said
+        the at-or-before-end_time guarantee 'holds provided interval_seconds is positive' and credited
+        the LOADER with enforcing it — accurate in sprint 63, made obsolete by this story, and a bare
+        verified_sha bump would have left the article understating its own guarantee while passing
+        every mechanical check. Now records the guarantee as UNCONDITIONAL (enforced on the type), the
+        type-vs-isinstance bool reason, the loader's catch-and-re-raise, the caller-side future-end_time
+        caveat, and the superseded loader-only state WITH its live reproduction. Also corrected the
+        load_scenario_file bullet, which still listed the interval checks as the loader's own. Every
+        new behavioural Fact cites its pinning test (A2). verified_sha 638853a -> d4f78ec."
+    candidates_filed_not_fixed:
+      - "TWO UNPINNED BEHAVIOURAL CHANGES this story made, neither caught by any test, both benign but
+         both real — and both invisible to AC3's 'the seven tests pass unmodified' evidence:
+         (1) MESSAGE TEXT: the interval rejection reason lost its '(STORY-176 AC2f)' citation and its
+         em-dash became '--', because the message now originates on the type rather than in the loader.
+         (2) ERROR PRECEDENCE: a file with BOTH a bad interval AND bad cycles now reports the CYCLES
+         error, where before it reported the INTERVAL error — interval validation moved to construction,
+         which happens AFTER the loader's cycles checks. Verified by hand:
+         interval_seconds:-30 + cycles:notalist now yields 'cycles must be a list of per-cycle location
+         lists'. Neither is a defect (both are named rejections naming file and key), but both confirm
+         that the seven rejection tests pin the signal key and nothing else. This strengthens the case
+         for STORY-186 finding (g) — table-ify them and pin the REASON."
 final_gate: {}
 hotfixes: []
 interrupts: []

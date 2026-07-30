@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml]
-verified_sha: 638853a
+verified_sha: d4f78ec
 verified_sprint: sprint-64
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -10,6 +10,12 @@ status: verified          # verified | stale | archived
 # of this article — it is not part of the demo engine). The cache Facts were REWRITTEN, not merely
 # re-stamped: STORY-180's consume-on-first-poll description was made false by STORY-183 and is now
 # carried as an explicit superseded note. Every new behavioural Fact cites its pinning test (A2).
+# Re-verified again 2026-07-30 (STORY-184): tools/demo_engine/scenario.py +
+# backend/tests/demo_engine/test_scenario.py. The past-anchoring Fact was REWRITTEN, not
+# re-stamped: it said the at-or-before-end_time guarantee 'holds provided interval_seconds is
+# positive' and credited the LOADER for enforcing it -- true in sprint 63, made obsolete by
+# STORY-184 moving the invariant onto the type, which makes the guarantee UNCONDITIONAL. The old
+# loader-only state is kept as a superseded note with its live reproduction.
 ---
 
 ## Facts (verified against code)
@@ -200,7 +206,9 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   these, raising `InvalidScenarioError` on a non-mapping top level, a signal block missing
   `monitor_id`/`interval_seconds`/`cycles`, a field of the wrong TYPE (`cycles` null/non-list, a
   non-list cycle entry, a non-int `interval_seconds`, a non-string `monitor_id`), or a non-positive
-  `interval_seconds` — every message names both the file and the signal key, never a bare stdlib
+  `interval_seconds` — the last two now **delegated to `SignalScenario.__post_init__`** and re-raised
+  with the file/key prefix (STORY-184; see the past-anchoring bullet). Every message names both the
+  file and the signal key, never a bare stdlib
   exception (sprint-63 fix round, quality finding M2: this guard did not exist at first ship, so
   `cycles:` with no value leaked a bare `TypeError`, and `interval_seconds: -30` was silently
   accepted and emitted rows in the future). Pinned by
@@ -213,12 +221,30 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   the whole declared ladder inside `orchestrate.py:94-98`'s rolling 7-cycle window on the very first
   query and every row at or before `end_time` — a forward player (t0 → now) would instead have every
   cycle beyond `end_time + 5min` silently quarantined by `ingest_service.py`'s `FUTURE_TOLERANCE`
-  until wall-clock time caught up. **This "at or before `end_time`" guarantee holds provided
-  `interval_seconds` is positive** — a negative value would walk the ladder FORWARD, not back
-  (reproduced live pre-fix: `interval_seconds: -30` emitted `12:01:00, 12:00:30` for
-  `end_time=12:00:00`); `load_scenario_file` now rejects a non-positive `interval_seconds` at load
-  time (`InvalidScenarioError`, sprint-63 fix round, quality finding M2), so every scenario that
-  survives loading satisfies it. Pinned by
+  until wall-clock time caught up. **The "at or before `end_time`" guarantee is now UNCONDITIONAL,
+  because the invariant lives on the TYPE** (STORY-184, sprint 64): `SignalScenario.__post_init__`
+  (`scenario.py:56-80`) rejects any `interval_seconds` that is not a positive `int`, so **no
+  construction path — direct or via the loader — can produce a scenario that walks the ladder
+  forward.** It uses `type(x) is not int`, not `isinstance`, deliberately: `bool` is an `int`
+  subclass, so `isinstance(True, int)` is `True` and would let `interval_seconds: true` through.
+  `load_scenario_file` now catches the type's bare `ValueError` and re-raises it as
+  `InvalidScenarioError` prefixed with the file path and signal key (`scenario.py:159-171`) — context
+  the type itself cannot have.
+  The remaining caveat is caller-side and is stated in the function's own docstring: the guarantee is
+  "at or before `end_time`", **not** "at or before now" — a caller passing a future `end_time` still
+  gets a ladder anchored to it. Production passes `clock.now()`, which is what makes "never in the
+  future" hold in practice.
+  Superseded, kept so it is not re-litigated: sprint-63's fix round (quality finding M2) put this
+  check in `load_scenario_file` ONLY, which left direct construction unguarded — reproduced live at
+  that commit, `SignalScenario(interval_seconds=-30, cycles=[['L1'],['L1']])` expanded to
+  `12:00:30, 12:00:00` for `end_time=12:00:00`, i.e. a row in the future, landing in
+  `ingest_service.py`'s silent `FUTURE_TOLERANCE` quarantine whose rejected count `run.py` discards.
+  That gap is what STORY-184 closed. Pinned by
+  `test_scenario.py::test_signal_scenario_rejects_non_positive_interval_seconds` (`-30` and `0`),
+  `::test_signal_scenario_rejects_non_int_interval_seconds` (`"30"`, `30.5`, `True`),
+  `::test_signal_scenario_accepts_a_valid_positive_interval_seconds` (the valid shape too),
+  `::test_signal_scenario_negative_interval_can_no_longer_expand_into_the_future` (the exact
+  pre-fix construction, now raising), plus
   `test_scenario.py::test_expand_scenario_ladder_fits_inside_orchestrates_rolling_window`,
   `::test_expand_scenario_no_row_lands_after_end_time`,
   `::test_expand_scenario_last_row_is_within_the_vendor_health_window` (the last one ties past-anchoring
