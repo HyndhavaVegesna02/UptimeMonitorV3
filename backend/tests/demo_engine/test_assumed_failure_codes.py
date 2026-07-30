@@ -1,25 +1,19 @@
-"""STORY-148 AC8 — assumptions labelled, not buried.
+"""STORY-148 AC8 & STORY-177 — provisional status code mapping.
 
-`map_synthetic_status` (`health_mapping.py:54-70`) maps ONLY `code == "0"` /
-`message == "HEALTHY"` and RAISES on everything else — its own docstring
-states inventing a failure code "would silently mis-map (or mask) the real
-failure value during that verification, so it is deliberately NOT done".
+`map_synthetic_status` (`health_mapping.py`) maps `code == "0"` / `message == "HEALTHY"` -> `Health.UP`
+and provisional pairs `("1", "UNHEALTHY")` -> `Health.DOWN` and `("2", "DEGRADED")` -> `Health.DEGRADED`.
 
-This test proves the honest state of affairs: the demo engine CAN build a
-failure-shaped row (the wire contract supports emitting one), but the REAL,
-unmodified `map_synthetic_status` still raises on it. The assumed code is
-therefore exactly that — an assumption, never a verified vendor contract —
-and this story does not add a failure mapping to `backend/src/` to make it
-"work" (that is STORY-177's first-class decision, not a demo side effect).
+This test verifies that the provisional failure code `ASSUMED_DOWN_CODE` / `ASSUMED_DOWN_MESSAGE`
+maps to `Health.DOWN` via `normalize_http_row` and emits a loud warning log (STORY-177).
 """
 
-import pytest
+import logging
 from demo_engine.assumed_failure_codes import (
     ASSUMED_DOWN_CODE,
     ASSUMED_DOWN_MESSAGE,
 )
 from demo_engine.rows import build_row
-from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusError
+from src.core.domain import Health
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 
 
@@ -42,7 +36,8 @@ def test_assumed_failure_code_row_echoes_the_status_code_and_message_given():
     assert row["result.status.message"] == ASSUMED_DOWN_MESSAGE
 
 
-def test_assumed_failure_code_is_rejected_by_the_real_unmodified_health_mapping():
+def test_assumed_failure_code_is_mapped_to_health_down_with_warning(caplog):
+    """STORY-177: verifies the assumed failure pair maps to Health.DOWN and logs a warning."""
     row = build_row(
         monitor_id="MON-A",
         location="LOC-1",
@@ -52,5 +47,9 @@ def test_assumed_failure_code_is_rejected_by_the_real_unmodified_health_mapping(
         status_message=ASSUMED_DOWN_MESSAGE,
     )
 
-    with pytest.raises(UnknownVendorStatusError):
-        normalize_http_row(row, signal_key="demo-signal")
+    with caplog.at_level(logging.WARNING, logger="src.adapters.inbound.dynatrace.health_mapping"):
+        obs = normalize_http_row(row, signal_key="demo-signal")
+
+    assert obs.health is Health.DOWN
+    assert any("Provisional status mapping hit" in r.getMessage() for r in caplog.records)
+

@@ -164,29 +164,19 @@ ingest 20 rows / 4 distinct locations each; AC4 zero drift warnings, 41
 `Vendor-id health OK` INFO lines; AC5 `/approvals` == `[]`. Full detail:
 `docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md`.
 
-## Honest limit: the failure path is tested only with ASSUMED codes
+## Honest limit: failure codes are provisional and unverified
 
-`map_synthetic_status` (`backend/src/adapters/inbound/dynatrace/
-health_mapping.py`) maps **only** `code == "0"` / `message == "HEALTHY"` to
-`Health.UP` and **raises** `UnknownVendorStatusError` on everything else —
-deliberately, because a real failure code has never been observed (the
-trial expired before one could be captured), and that module's own
-docstring states inventing one would risk silently masking the real value
-once verification becomes possible again.
+`map_synthetic_status` (`backend/src/adapters/inbound/dynatrace/health_mapping.py`)
+maps healthy rows to `Health.UP` and maps `("1", "UNHEALTHY")` -> `Health.DOWN` and
+`("2", "DEGRADED")` -> `Health.DEGRADED` via `PROVISIONAL_STATUS_MAPPING` (STORY-177).
 
-`assumed_failure_codes.py` collects the ONE (unverified, clearly labelled)
-non-healthy `(code, message)` pair this engine can build into a row —
-`ASSUMED_DOWN_CODE` / `ASSUMED_DOWN_MESSAGE`. Building a row with it proves
-only that the **row shape** is still valid; running it through the real,
-unmodified `normalize_http_row` still raises `UnknownVendorStatusError`,
-exactly as it does for any other unrecognized code
-(`backend/tests/demo_engine/test_assumed_failure_codes.py`).
+`assumed_failure_codes.py` imports these provisional codes directly from
+`health_mapping.py`.
 
 **Wherever this repo says "the failure path is tested," for the demo
-engine, that means "tested against an assumed code" — never against
-anything Dynatrace has confirmed.** Adding a real failure mapping to
-`backend/src/` is a separate, first-class, reviewed decision (STORY-177),
-not a side effect of a demo fixture.
+engine, that means "tested against provisional assumed codes" — unverified
+pending live Dynatrace trial renewal (STORY-154).**
+
 
 ## Running the tests
 
