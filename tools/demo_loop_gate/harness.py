@@ -155,8 +155,6 @@ def _wait_for_last_signal_ingested(
     count closes that race for the evidence-gathering purpose this harness
     exists for.
     """
-    from demo_loop_gate.evidence import distinct_locations_from_history_dtos
-
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         try:
