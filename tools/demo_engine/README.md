@@ -108,6 +108,56 @@ ships everything that must be true BEFORE a loop may safely be started:
 no human gate (`core/services/decide.py:122-126` decides, `:171-172`
 publishes) — the run, and its own two-sided gate, are STORY-182.
 
+## Part 2b (STORY-182, sprint 64): the loop HAS now been run, and its three-sided gate
+
+The harness lives alongside this engine, in the sibling `tools/demo_loop_gate/`
+package (not inside `demo_engine/` itself, since it composes the engine, the
+config layer, and two real subprocesses rather than extending the wire
+contract):
+
+- **The fleet-wide coverage artifact** (`tools/demo_loop_gate/
+  fleet_coverage.py`) — `config/demo/scenarios/*.yaml` (this file's own
+  "Part 2a" section, above) covers only 6 of the fleet's 41 signals by
+  design; an unseeded monitor id returns `[]` (`store.py`'s ingest-query
+  filter), which both starves `/history` and makes
+  `check_vendor_id_health` warn. `build_fleet_row_store` builds one
+  `SignalScenario` **in code** from the loaded `Config` — monitor
+  id/interval from the signal, cycle locations from that signal's own app's
+  declared `locations:` block — and expands it with the real
+  `expand_scenario`: 820 rows (41 signals x 5 cycles x 4 locations), all at
+  or before `end_time`, all inside the vendor-health probe's trailing 2h
+  window. The builder route (over a second checked-in YAML) was chosen so
+  the 4 locations and each signal's own interval are derived from config,
+  never duplicated — and constructing `SignalScenario` in code is exactly
+  the path STORY-184's `interval_seconds` type/sign invariant guards, which
+  is why that story had to land first.
+- **The positive-side harness** (`tools/demo_loop_gate/harness.py::
+  run_positive_side`) — re-runnable via `python tools/demo_loop_gate/
+  harness.py`. Creates fresh throwaway observations+control tables, starts
+  an embedded local demo engine seeded with the coverage artifact above,
+  launches the API as a real `uvicorn` subprocess and the loop as the real,
+  unmodified `python -m src.composition.run` subprocess — both with
+  `CONFIG_DIR=config/demo` and the same fresh table names (never a human
+  setting the pair on only one terminal) — asserts every AC1 precondition,
+  waits adaptively (polling, never a blind fixed sleep) for the last signal
+  in build order to finish ingesting, terminates the loop externally, and
+  collects the ingest/vendor-health/approvals evidence before tearing both
+  processes down with OS-level PID/port verification.
+- **The two discrimination sides, independently callable** —
+  `tools/demo_loop_gate/guard_reality_gate.py` (no pytest, no DynamoDB, no
+  network: builds the real `build_publisher` chain twice and asserts the
+  full `_delegate` chain of type names differs between a `{}` mapping and a
+  throwaway non-empty one) and `tools/demo_loop_gate/
+  backfill_reality_gate.py` (drives the real `check_vendor_id_health`
+  against an empty `DemoRowStore` vs. the coverage store above and asserts
+  the drift/healthy-INFO counts differ).
+
+Verified green: AC1(a)-(e) all recorded (including STORY-176's
+publish-guard regression re-run); AC2 fresh tables; AC3 all 41 signals
+ingest 20 rows / 4 distinct locations each; AC4 zero drift warnings, 41
+`Vendor-id health OK` INFO lines; AC5 `/approvals` == `[]`. Full detail:
+`docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md`.
+
 ## Honest limit: the failure path is tested only with ASSUMED codes
 
 `map_synthetic_status` (`backend/src/adapters/inbound/dynatrace/
