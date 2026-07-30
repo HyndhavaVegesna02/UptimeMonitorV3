@@ -743,7 +743,103 @@ story_gates:
          lists'. Neither is a defect (both are named rejections naming file and key), but both confirm
          that the seven rejection tests pin the signal key and nothing else. This strengthens the case
          for STORY-186 finding (g) — table-ify them and pin the REASON."
-final_gate: {}
+  STORY-182:
+    implementer_head: dba6b96      # range 5aee584..dba6b96, 11 commits, tree clean
+    status_note: "NOT DONE. Reviewer pair returned FAIL (spec) and FIX_REQUIRED (quality). Fix round
+      dispatched. The implementation runs and the run itself is real — but the proof artifact does not
+      enforce what it reports, which is the exact failure class this sprint exists to close."
+    review_round_1:
+      dispatch_note: "The FIRST attempt at both reviewers died mid-read on a session limit with no
+        verdict produced. Recorded rather than quietly retried (A5: review debt goes on the board).
+        Both were relaunched concurrently and completed."
+      spec: FAIL
+      quality: FIX_REQUIRED
+      spec_findings:
+        - "AC1 MET (8 real asserts, harness.py:456-516). AC2 MET. AC6 MET. AC7 MET."
+        - "AC3 PARTIAL, AC4 PARTIAL, AC5 NOT_MET — harness.py COMPUTES the right values and PRINTS
+           them, but never asserts them, and __main__ (:648-656) dumps JSON and exits 0
+           unconditionally. AC5's own wording is explicit: 'the endpoint is ASSERTED to return a
+           well-formed empty result'. Verified independently by the orchestrator: `grep assert`
+           over harness.py returns asserts ONLY inside _assert_ac1_preconditions."
+        - "The reviewer independently confirmed 76232e3 (where the full gate ran) differs from
+           dba6b96 by only .scrum/sprint-current.yaml — no code delta — so the DoD evidence validly
+           covers this diff. Good check; it is the one that makes the gate evidence admissible."
+      quality_findings:
+        - "MAJOR 1 — the API subprocess inherits the REAL repo-root .env Statuspage credentials, and
+           the documented reason why that is fine is FALSE. env_matrix.py:46-49 justifies omitting the
+           fakes with 'create_app() never calls load_live_secrets()' — true only of the function NAME.
+           Verified at source by the orchestrator: composition/app.py:169-183 calls
+           load_statuspage_secrets() and passes page_id/api_token straight into build_publisher, and
+           asgi.py:37 calls load_dotenv(). CLAUDE.md's new text asserting the harness uses fakes
+           'never the real repo-root .env values' is therefore untrue of the API process. NO LIVE GAP
+           TODAY — config/demo's empty mapping still forces the LoggingPublisher fallback, and the
+           reviewer could construct no path to a live publisher at this HEAD — but it is a
+           single-point-of-failure on the only live-publish-capable process, the defence in depth is
+           free (build_child_env already accepts the fakes), and shipping FALSE prose about the
+           safety of the publish path is not acceptable in the story that first starts a loop."
+        - "MAJOR 2 — same defect the spec review found, from the other side: a startup-marker (180s)
+           or ingest (90s) timeout sets a flag and execution CONTINUES, producing a full-looking
+           evidence dict and exit 0. Contradicts harness.py's own docstring (:14-15, 'raises loudly
+           (never a silent partial pass)') and RealityGateError's docstring (:70), and is inconsistent
+           with sides 2 and 3, which both end `sys.exit(0 if main() else 1)`."
+        - "MAJOR 3 — loop_proc teardown is NOT exception-safe. It is launched at :354 with no
+           try/finally; the outer finally at :434 terminates only api_proc. A KeyboardInterrupt during
+           the up-to-270s of polling — the obvious operator action on a long run — leaks a live
+           `python -m src.composition.run` that outlives the demo engine and the API and keeps hitting
+           DynamoDB. api_proc's teardown IS exception-safe; loop_proc's is not."
+        - "MAJOR 4 — `gone_by_pid` is TAUTOLOGICAL and was presented as OS-level evidence.
+           harness.py:188 computes `proc.poll() is not None` AFTER `proc.wait()` returned, so it reads
+           Popen's cached returncode and can never be False. Verified at source by the orchestrator.
+           The docstring at :177-178 claims 'confirm it is gone BY PID (not a wrapper-job kill)' and
+           tools/demo_engine/README.md claims 'OS-level PID/port verification'. The PORT half is real
+           (_port_is_free does a real connect_ex); the PID half is not. Note the harness labels its
+           OTHER vacuous datum honestly (rollup_distinct_locations_HARDCODED_ZERO_NOT_PROOF, :610) —
+           this one deserves the same treatment. THE ORCHESTRATOR REPEATED THIS VACUOUS DATUM TO THE
+           PO as evidence ('both processes gone by PID'); corrected."
+      quality_confirmations:
+        - "A4 mutation probe, run by the reviewer via a runtime pytest plugin touching no repo file:
+           FIVE independent mutations of build_fleet_coverage_scenarios (drop-last-signal,
+           interval->3600, mangled monitor_id, one-location-per-cycle, one-cycle) EVERY ONE went RED,
+           2-6 failures each. The computational deliverable is genuinely pinned, not shape-asserted.
+           This is A4 satisfied by evidence rather than by assertion."
+        - "A3 satisfied on both discrimination proofs: guard_reality_gate.py:100-111 DISCARDS a
+           length-<=1 chain as a harness defect (returns False, exit 1) rather than reporting it
+           unmatched, and test_publisher_chain.py:50-56 asserts len(chain) > 1 on both sides plus
+           inequality plus the full expected chains. The sprint-63 _delegate trap is closed by
+           construction."
+        - "No over-mocking found: the publisher tests build the REAL build_publisher; the backfill
+           sides drive the REAL check_vendor_id_health through the real DemoRowStore seam."
+    orchestrator_reality_gate_round_1:
+      note: "All three sides were run by the orchestrator BEFORE the reviews returned, and all three
+        reported PASS. Sides 2 and 3 are genuine gates (explicit verdict + non-zero exit). SIDE 1 IS
+        NOT — it passed because the ORCHESTRATOR READ the printed values, not because the harness
+        enforced them (quality MAJOR 2 / spec AC5). The VALUES were real and correct — 13 components,
+        41 signals, signals_with_zero_rows [], signals_with_under_4_locations [], per-signal 20 history
+        rows and 4 distinct locations, availability_pct 1.0, completeness_pct exact fractions
+        (0.4166.., 0.2173..), approvals 200 [] — so the run genuinely demonstrated the fleet ingests.
+        But an artifact that reports rather than enforces is not a gate, and side 1 must be re-run
+        after the fix round before STORY-182 can be Done."
+      side_2: "PASS — safe [StatusWritebackPublisher, LoggingPublisher] vs unsafe
+        [StatusWritebackPublisher, BestEffortPublisher, RecordingPublisher, StatuspagePublisher];
+        chains DIFFER; demo statuspage_mapping() == {}."
+      side_3: "PASS — empty store 41 drift / 0 healthy; coverage store 0 drift / 41 healthy; DIFFER."
+final_gate:
+  head: 76232e3
+  verdict: "8/8 GREEN — run by the orchestrator on a clean tree. NOTE this is the gate at the point
+    STORY-182's implementation landed; it is NOT yet the sprint's evidence of record, because the
+    STORY-182 fix round will move HEAD. The full 8 must be re-run on the final HEAD at sprint close.
+    Recorded now because it settles AC7 independently of the implementer's argument that the three
+    frontend commands were out of scope: they were run, and they are green."
+  commands:
+    - {command: "pytest", exit_code: 0, tail: "647 passed in 72.28s", env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021; 0 SKIPPED"}
+    - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
+       exit_code: 0, tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."}
+    - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
+    - {command: "ruff format --check .", exit_code: 0, tail: "237 files already formatted"}
+    - {command: "cfn-lint infra/stack.yaml", exit_code: 0, tail: ""}
+    - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+    - {command: "npm run build", exit_code: 0, tail: "built in 1.19s"}
+    - {command: "npm run lint", exit_code: 0, tail: "eslint . (no output)"}
 hotfixes: []
 interrupts: []
 review_debt: []
