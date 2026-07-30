@@ -1,9 +1,14 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: b272c32
-verified_sprint: sprint-63
+verified_sha: a865f1f
+verified_sprint: sprint-65
 status: verified
+# Re-verified 2026-07-30 (sprint-65) WITH ONE IMPORTANT ADDITION BELOW: STORY-191 fired the
+# recovery publish path for the FIRST TIME in this repo's history, in a real loop run, and the
+# config-only guard held -- component status changed while the publications table stayed EMPTY
+# (RecordingPublisher exists only in the credentialed chain, so an empty table proves the
+# LoggingPublisher fallback was selected). See tools/demo_loop_gate/failure_path_reality_gate.py.
 ---
 
 ## Facts (verified against code)

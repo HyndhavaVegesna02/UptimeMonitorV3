@@ -1,14 +1,18 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: bbf3c72
-verified_sprint: sprint-64
+verified_sha: a865f1f
+verified_sprint: sprint-65
 status: verified
 # Re-verified 2026-07-30 (sprint-64) by the orchestrator. Changed code_ref in range: CLAUDE.md
 # (STORY-182's demo-loop section + STORY-181-era credential prose). Not a bare re-stamp: the
 # sprint measured a real DoD-gate property that belongs here and was missing -- a green pytest
 # with Docker down silently skips the whole persistence floor and still exits 0. Added as a Fact
 # with its reproduction recipe and the operational rule adopted this sprint.
+# Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Its code_refs were touched only
+# incidentally: run.py gained a rejected_repo argument (STORY-190), conftest.py and the DoD were
+# untouched by this sprint's stories beyond STORY-188's encoding repair. Every Fact re-read and
+# still accurate; the DoD command list and env preconditions are unchanged.
 ---
 
 ## Facts (verified against code)

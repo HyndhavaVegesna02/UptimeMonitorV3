@@ -1,9 +1,14 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: b272c32
-verified_sprint: sprint-63
+verified_sha: a865f1f
+verified_sprint: sprint-65
 status: verified
+# Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
+# The key correction: the defect was never 'a lost batch' -- it was a PERMANENTLY STALLED SIGNAL,
+# because the raise happened before the watermark advance and the next cycle re-read the same
+# window. Records where each piece lives (adapter pure, composition decides) and the zone trap the
+# eight contracts cannot catch.
 ---
 
 ## Facts (verified against code)

@@ -1,9 +1,14 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: b272c32
-verified_sprint: sprint-63
+verified_sha: a865f1f
+verified_sprint: sprint-65
 status: verified
+# Re-verified 2026-07-30 (sprint-65, STORY-177/190 fix round). Facts REWRITTEN, not re-stamped:
+# map_synthetic_status is now a THREE-step resolution (healthy OR-rule -> exact provisional tuple
+# -> raise), and dispatch gained a lenient counterpart returning NormalizationOutcome. The old
+# fail-loud-only description and its 'live verification will supply the real codes' reasoning are
+# kept as an explicit SUPERSEDED note, because the trial expired and that verification cannot happen.
 ---
 
 ## Facts (verified against code)

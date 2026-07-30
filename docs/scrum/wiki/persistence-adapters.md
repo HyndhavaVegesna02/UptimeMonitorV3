@@ -1,9 +1,13 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py]
-verified_sha: 701bfab
-verified_sprint: sprint-63
+verified_sha: a865f1f
+verified_sprint: sprint-65
 status: verified
+# Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
+# NOTE for a future story: RejectedObservationRepository is now written by the PULL LOOP as well as
+# by IngestService (STORY-190) -- the port and its Dynamo implementation are unchanged, so no Fact
+# here is wrong, but the set of callers has grown.
 ---
 
 ## Facts (verified against code)

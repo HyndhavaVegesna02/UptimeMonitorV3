@@ -2020,3 +2020,36 @@ stories:
                     # starting real OS subprocesses, the only one where the publish path can fire,
                     # and external mode historically ships ~1 MAJOR per 3-pt story. Sequenced last so
                     # a fix round blocks nothing else.
+  - id: STORY-192
+    title: The same encoding corruption exists in docs/scrum/wiki/ — 246 mojibake sequences across 6 files
+    file: null
+    status: draft   # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's wiki
+                    # update. NOT pulled into sprint 65 -- scope is frozen and this is a THIRD,
+                    # separate surface. Goes to the backlog per the mid-sprint rule.
+                    # THIS IS THE SAME DEFECT CLASS AS STORY-188, one level up. STORY-188 repaired
+                    # .scrum/ (12 sites, 5 files). While editing the wiki for STORY-191 AC10 the
+                    # orchestrator found docs/scrum/wiki/ carries the SAME em-dash corruption:
+                    #   sample-mode.md                    110
+                    #   ingest-service-and-pull-loop.md    55
+                    #   dev-setup-and-dod.md               30
+                    #   statuspage-publish.md              27
+                    #   deployment-and-infra.md            16
+                    #   deployment-topology.md              8
+                    #   TOTAL 246 sequences across 6 files
+                    # DIFFERENT SHAPE FROM STORY-188's, so the fix is NOT identical: these files are
+                    # VALID UTF-8. The bytes are the mojibake sequence 'a-circumflex euro' -- a UTF-8
+                    # em-dash (E2 80 94) decoded as cp1252 and RE-ENCODED as UTF-8. So there is no
+                    # invalid byte and no U+FFFD to detect; STORY-188's guard
+                    # (test_scrum_encoding.py) would pass these files clean.
+                    # CONSEQUENCE: the repair is a targeted mojibake-sequence replacement, and the
+                    # GUARD needs a third check (detect the classic cp1252-through-UTF-8 sequences),
+                    # ideally generalised to cover docs/scrum/ as well as .scrum/.
+                    # WHY IT MATTERS: the wiki is the knowledge base every dispatch reads. Corruption
+                    # there is quieter than in .scrum/ -- it renders as visible garbage rather than
+                    # failing a decode -- but it is equally load-bearing prose.
+                    # Verify before starting; the orchestrator's STORY-191 edits touched 3 of these
+                    # 6 files (lossless -- valid UTF-8 in, valid UTF-8 out -- but re-measure).
+    points: null    # needs refinement + an estimate (Definition of Ready)
+    priority: 64
+    type: defect
+    sprint: null
