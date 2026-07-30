@@ -1034,7 +1034,21 @@ stories:
                     # AWS with real creds); and a leftover sample-mode flag forcing every
                     # observation DOWN. AC5 also records that 'no POST attempted' is VACUOUS
                     # under UP-only scope: publish is never called, so silence proves nothing.
-    points: 3
+    points: 5        # RE-ESTIMATED 3 -> 5 at sprint-64 planning (2026-07-30), on yt-plan-verifier's
+                     # independent estimate, PO-approved at lock. The 3 was assigned at the
+                     # 2026-07-29 split, before two costs were visible: (1) AC3/AC4 are
+                     # UNSATISFIABLE with the existing config/demo/scenarios/ -- the five files
+                     # cover 6 of 41 signals (union: 6 signals / 5 components) and only
+                     # clean-fleet.yaml reaches 4 locations, for ONE signal; an unseeded monitor id
+                     # returns [] (store.py:59-72) so 35 signals ingest nothing AND each raises a
+                     # VENDOR-ID DRIFT warning (vendor_health.py:96-97,113). A fleet-wide coverage
+                     # artifact is in scope and did not exist. (2) A first-in-repo multi-process
+                     # launch/terminate harness: every existing API test uses in-process TestClient,
+                     # and the only subprocess precedent is scripts/dynamo_local.py shelling to
+                     # Docker. Yardstick: STORY-148 = 3 pts for 4 modules + 23 in-process tests and
+                     # no live run; STORY-176 = 3 pts for the player + loader + 13-component fleet
+                     # authoring + 5 scenarios. NOT SPLIT -- splitting would ship the positive run
+                     # without its discrimination proof, which working agreement A1 forbids.
     priority: 57
     type: chore
     sprint: 64
@@ -1583,7 +1597,8 @@ stories:
     priority: 56    # just after STORY-176 (55), ahead of STORY-181 (58): it gates nothing in
                     # sprint 63 but should not trail STORY-182.
     type: defect
-    sprint: null
+    sprint: 64      # story 2 of 4. Verification confirmed the orphan leak is real under the 41
+                    # concurrent signal loops STORY-182 starts.
   - id: STORY-184
     title: Move the demo scenario interval invariant onto SignalScenario itself
     file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
@@ -1625,7 +1640,9 @@ stories:
                     # WITH or BEFORE STORY-182, for the same reason: the long-running run is when
                     # it bites.
     type: defect
-    sprint: null
+    sprint: 64      # story 3 of 4, and it must precede STORY-182: that story's fleet-wide coverage
+                    # artifact constructs SignalScenario IN CODE, which is exactly the path this
+                    # invariant guards (the loader is not on it).
   - id: STORY-185
     title: Un-gate the unsafe side of the publish-safety proof from Docker
     file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
@@ -1739,4 +1756,9 @@ stories:
     points: 1
     priority: 61
     type: chore
-    sprint: null
+    sprint: 64      # story 1 of 4, FIRST: stories 2-4 each owe a discrimination proof and this is
+                    # the tool that keeps one honest. Verification corrected the mechanism -- it is
+                    # a plain .pth sys.path append (__editable__.uptime_monitor_v3-0.1.0.pth holds
+                    # one line: <repo>/backend), NOT a setuptools MetaPathFinder as the story says.
+                    # That makes AC3 EASIER: a sys.path-ordering test reproduces the real mechanism
+                    # exactly rather than approximating it.
