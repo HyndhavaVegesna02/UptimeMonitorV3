@@ -1065,26 +1065,11 @@ stories:
   - id: STORY-177
     title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
     file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md
-    status: ready   # REFINED 2026-07-30 at sprint-65 planning; all 3 open questions RESOLVED.
-                    # Q1 gated-or-unconditional -> UNCONDITIONAL with loud provenance (PO-decided).
-                    #   An env gate buys NOTHING for the property it looks like it protects: a code
-                    #   outside the provisional set raises identically either way, so AC3 holds
-                    #   without it, while a gate adds a second var needing to be set on BOTH the loop
-                    #   and the API process -- the CONFIG_DIR footgun class that cost sprint 64 real
-                    #   effort. Port injection was REJECTED as hexagonally WORSE, not better: ports
-                    #   the core owns must be expressible in domain types (CLAUDE.md S4), and a
-                    #   status-mapping interface would have to name vendor `code`/`message`, dragging
-                    #   Dynatrace vocabulary toward core. Injection buys configurability, not purity.
-                    # Q2 -> PRECEDES STORY-154; both remain. 154 replaces this story's single
-                    #   constant's CONTENTS, never adds a parallel mapping. AC2's one-constant rule
-                    #   is what makes that a one-line change.
-                    # Q3 -> YES, confirmed: unblocks STORY-150 (breadth) and STORY-151 (rollup),
-                    #   neither of which has any end-to-end verification route today.
-                    # AC4's batch-loss item was SPLIT OUT as STORY-190 and sequenced FIRST, after
-                    # refinement found the defect far worse than this story described (see 190).
-                    # AC grew 6 -> 8: zone constraint, the tools/->src/ single-source rule, the two
-                    # docstrings this story makes FALSE, and the WARNING assertion are all explicit
-                    # because sprint 65 runs EXTERNAL, where AC + plan.md are the entire contract.
+    status: done    # sprint-65 story 3. PO ACCEPTED 2026-07-30, after one fix round.
+                    # All ACs traced MET. AC2's single-source rule had to be FIXED (`degraded`
+                    # was a hardcoded literal in scenario.py) and a `code:msg` escape hatch
+                    # removed. AC4's negative half was missing and is now tested.
+                    # NO core/ change at all. STORY-154 still replaces this constant's CONTENTS.
     points: 3
     priority: 56
     type: chore
@@ -1679,22 +1664,8 @@ stories:
   - id: STORY-185
     title: Un-gate the unsafe side of the publish-safety proof from Docker
     file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
-    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
-                    # it gates nothing in STORY-182 (the orchestrator's out-of-test harness already
-                    # proved the unsafe side with no Docker at all). Next candidate for sprint 65.
-                    # Filed 2026-07-30 from the same re-review. STORY-176's S2 fix un-gated only the
-                    # SAFE side of the publish-guard proof: the demo-side create_app test now runs
-                    # with DYNAMO_ENDPOINT_URL unset (verified: 1 passed in 0.88s, and that runtime
-                    # is itself proof no I/O happens) because it takes no dynamo_local fixture and
-                    # uses a literal unreachable endpoint. Its UNSAFE counterpart
-                    # (test_demo_fleet_config.py:179-181) still takes dynamo_local, so on a machine
-                    # without Docker the IN-TEST two-sided proof silently degrades to ONE-SIDED --
-                    # which sprint 63's retro (proposed A3) identifies as INVERTED rather than weak
-                    # evidence.
-                    # It did NOT affect sprint 63's evidence: the orchestrator's out-of-test harness
-                    # proved the unsafe side with no Docker at all (recorded on the sprint-63 board
-                    # under story_gates/STORY-176 reality_gate.discrimination_proof).
-                    # SHAPE: apply the same unreachable-endpoint trick to the unsafe-side test.
+    status: done    # sprint-65 story 5. PO ACCEPTED 2026-07-30. Both sides of the
+                    # publish-safety proof pair now run un-gated without Docker.
     points: 1
     priority: 59
     type: chore
@@ -1779,40 +1750,15 @@ stories:
   - id: STORY-188
     title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
     file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
-    status: ready   # REFINED 2026-07-30 at sprint-65 planning. SCOPE CORRECTED UPWARD -- the
-                    # retro recorded 3 invalid bytes in 1 file + 3 U+FFFD in 1 file; re-measuring
-                    # found ~DOUBLE and a THIRD affected file:
-                    #   implementer.md        0 invalid bytes, 3 U+FFFD
-                    #   plan-verification.md  2 invalid (0x97 @3492,3640), 2 U+FFFD  <-- MISSED
-                    #   quality-review.md     3 invalid (0x97 @2833,2883,3007), 3 U+FFFD
-                    #   spec-review.md        clean
-                    # plan-verification.md is the checklist the PLAN-VERIFIER reads, which sprint
-                    # 65 dispatches. KEPT AT 1 POINT because the whole defect is ONE character:
-                    # 0x97 is cp1252 EM DASH; all 5 invalid bytes are em-dashes written as cp1252
-                    # and all 8 U+FFFD are em-dashes already destroyed by a bad round-trip, every
-                    # one in the same prose shape. So all 13 sites become U+2014 -- reconstruction
-                    # is CERTAIN, not guesswork. TEMPLATES ARE CLEAN (all four under
-                    # .claude/skills/yourteam/templates/checklists/ are valid UTF-8, 0 U+FFFD),
-                    # confirming the corruption happened AFTER generation, in the instances.
-                    # yt_selftest is 28/28 green TODAY WITH the corruption present, so
-                    # template/instance parity is not byte-comparing this content -- AC4 asserts
-                    # that rather than assuming it. AC6 adds the missing MECHANICAL rung: no
-                    # backend gate command reads .scrum/, which is why this rotted unseen.
-                    # it. MEASURED at both the parent and the story head:
-                    #   .scrum/checklists/quality-review.md  INVALID-UTF8, 3 raw cp1252 0x97 bytes
-                    #   .scrum/checklists/implementer.md     valid UTF-8 but carries 3 real U+FFFD
-                    # THE RISK IS NOT THEORETICAL AND IT ALREADY FIRED ONCE: during STORY-187 the
-                    # edit pipeline round-tripped quality-review.md through UTF-8 and lossily turned
-                    # those 3 raw bytes into U+FFFD -- in an unrelated bullet the story never touched.
-                    # The implementer caught it only by reading `git diff` before committing and
-                    # restored the bytes with a targeted byte-level patch (verified identical at both
-                    # revisions by the orchestrator). The next editor may not look.
-                    # These two files are read by EVERY implementer and reviewer dispatch, so silent
-                    # corruption here degrades the instructions the whole team works from.
-                    # SHAPE: one deliberate normalization pass to UTF-8, byte-diffed and reviewed, so
-                    # no future tool can corrupt them by accident. Consider a repo-level guard (a
-                    # .gitattributes entry or a tiny test asserting both files decode as UTF-8) so a
-                    # regression is caught mechanically rather than by eye.
+    status: done    # sprint-65 story 1, orchestrator-executed. PO ACCEPTED 2026-07-30.
+                    # 12 sites / 5 files repaired (the planning figure of 13 was a DOUBLE-COUNT:
+                    # measuring with errors='replace' turns each invalid byte INTO a U+FFFD, so
+                    # the two columns counted the same damage twice). Scope also grew: the defect
+                    # was never confined to .scrum/checklists/ -- backlog.yaml and
+                    # working-agreements.md were corrupt too. Guard landed at
+                    # .claude/skills/yourteam/scripts/tests/test_scrum_encoding.py (yt_selftest
+                    # rung, project-generic), SHOWN FAILING twice independently. See STORY-192:
+                    # docs/scrum/wiki/ has the SAME defect in a shape this guard cannot catch.
     points: 1
     priority: 62
     type: chore
@@ -1914,41 +1860,12 @@ stories:
   - id: STORY-190
     title: One unmappable row stalls a signal forever — quarantine the row, keep the batch
     file: docs/scrum/stories/STORY-190-partial-batch-resilience.md
-    status: ready   # SPLIT OUT of STORY-177 AC4 at sprint-65 refinement, PO-approved. Refinement
-                    # found the defect MATERIALLY WORSE than 177 described it, and that correction is
-                    # the whole reason it earned its own story. Traced 2026-07-30, all verified:
-                    #   normalize_rows (dispatch.py:80) is a bare list comprehension -> the first
-                    #   raising row aborts the list. That runs inside fetch_observations
-                    #   (adapter.py:44), called at pull_loop.py:102 -- BEFORE ingest_observations at
-                    #   pull_loop.py:109. So _watermark_repo.advance (ingest_service.py:139) is NEVER
-                    #   REACHED. run_periodic catches, logs ERROR, continues (pull_loop.py:200-207,
-                    #   per STORY-050 by design). The next cycle reads the SAME unadvanced watermark
-                    #   and re-queries the SAME window -- still holding the same bad row.
-                    # => NOT "one batch lost". THAT SIGNAL NEVER ADVANCES AGAIN. It re-fetches,
-                    # re-fails and re-logs every cycle indefinitely while the loop looks alive.
-                    # Same failure SHAPE as the 30-day silent stall vendor_health.py:1-10 exists to
-                    # catch (hotfix 79bfbb3) -- louder (an ERROR per cycle) but PERMANENT.
-                    # EXISTS TODAY, independent of 177: any UnsupportedMonitorTypeError,
-                    # MalformedDqlRowError or UnknownVendorStatusError triggers it. 177 only raises
-                    # the odds by adding row variety -- which is why this is sequenced FIRST.
-                    # *** ZONE TRAP, AND THE GATE CANNOT CATCH IT (see memory
-                    # code-boundary-discipline): having the INBOUND ADAPTER write quarantine rows via
-                    # RejectedObservationRepository PASSES all eight lint-imports contracts --
-                    # adapters may import core, and the port lives in core/ports/ -- while turning a
-                    # pure translation layer into an orchestrator with a persistence dependency.
-                    # Required shape: the adapter stays PURE (returns values, persists nothing, holds
-                    # no repo reference); COMPOSITION decides what happens to failures; the failure
-                    # value type is ADAPTER-LOCAL (it carries the raw vendor row dict, so it must NOT
-                    # enter core/domain/). NO new port and NO new domain type are needed --
-                    # RejectedObservationRepository.save(signal_key, reason, payload, rejected_at)
-                    # already fits UNCHANGED, and its own docstring already says "Rejection is never
-                    # a poison pill -- the caller persists this and moves on to the rest of the
-                    # batch." Written for validation rejects; fits normalization rejects exactly. The
-                    # raw row goes in as an opaque payload dict, so no vendor shape reaches core.
-                    # Only prose + the quality review guard this. ***
-                    # AC2/AC3 are the teeth: AC2 requires proving the WATERMARK ADVANCED (a test that
-                    # only checks "good rows survived" does NOT satisfy it -- the permanent stall is
-                    # the defect); AC3 requires the stall REPRODUCED failing pre-fix (agreement A7).
+    status: done    # sprint-65 story 2. PO ACCEPTED 2026-07-30, after one fix round.
+                    # spec FAIL (AC3's stall test was TAUTOLOGICAL) + quality FIX_REQUIRED (the
+                    # lenient path still stalled on a PRESENT-but-invalid field value -- verified
+                    # live with an unparsable timestamp and a null location). Both closed; the
+                    # catch is now ValueError, not three named classes, and still not Exception.
+                    # The PO's named zone check PASSED import-by-import.
     points: 3
     priority: 55
     type: defect
@@ -1959,37 +1876,15 @@ stories:
   - id: STORY-191
     title: Drive a real DOWN through the loop — failure scenarios end to end on the demo fleet
     file: docs/scrum/stories/STORY-191-failure-scenario-through-the-loop.md
-    status: ready   # CREATED at sprint-65 refinement per the PO's choice to take sprint 65 "all the
-                    # way through the loop" rather than stopping at the adapter. The PAYOFF story:
-                    # STORY-182 started the loop for the first time in repo history but could only
-                    # prove the HEALTHY half, because the engine emits UP + absence only.
-                    # *** SAFETY ESCALATION -- FIRST STORY IN PROJECT HISTORY WHERE THE PUBLISH PATH
-                    # CAN GENUINELY FIRE. decide publishes recoveries with NO HUMAN GATE
-                    # (decide.py:122-126 decides, :171-172 publishes). Through all of STORY-182 that
-                    # was inert IN PRACTICE: an UP-and-absence-only engine can never produce a
-                    # degradation, so there was never a recovery to publish. This story introduces
-                    # DOWN -> UP transitions == a real recovery decision == a real publish attempt
-                    # inside a demo run. The config-only guard stops being theoretical and becomes
-                    # the only thing between a demo run and the LIVE PUBLIC Statuspage. Guard =
-                    # config/demo declares no statuspage_component_id -> statuspage_mapping() is {}
-                    # -> build_publisher (publish_helper.py:211) falls through to LoggingPublisher
-                    # EVEN WITH REAL CREDENTIALS PRESENT (the repo-root .env supplies them from any
-                    # launch dir; run.py:178 load_dotenv walks up from the SOURCE FILE, not CWD).
-                    # BOTH composition roots must point at config/demo or neither does: the loop
-                    # (run.py::main -> build_live_loop, settings.config_dir) AND the API approve
-                    # trigger (app.py::create_app, which consumes Statuspage secrets at
-                    # app.py:169-183). config/apps/httpcheck.yaml:8 declares a REAL component id.
-                    # AC6 makes proving this BLOCKING, and additionally requires showing a recovery
-                    # WAS decided during the run -- otherwise the guard was never under load and the
-                    # AC proves nothing. ***
-                    # REUSED, NOT REBUILT: harness.py::run_positive_side, guard_reality_gate.py, and
-                    # rows.py::build_row -- which ALREADY takes status_code/status_message (:59-60),
-                    # so the row builder needs NO change. Only the scenario VOCABULARY does:
-                    # SignalScenario.cycles is list[list[str]] (locations UP) with absence the only
-                    # other expressible outcome, so a cycle entry must additionally accept a
-                    # location->outcome mapping (up/down/degraded). BACKWARD COMPAT IS AN AC, NOT A
-                    # NICETY: five checked-in config/demo/scenarios/*.yaml and seven loader rejection
-                    # tests depend on the list form.
+    status: done    # sprint-65 story 4. PO ACCEPTED 2026-07-30, after one LARGE fix round --
+                    # the delivery did not meet AC3 at all (no real loop run; the harness seam it
+                    # added was dead code, and it had deleted `import httpx` leaving the harness
+                    # un-runnable, failing SILENTLY). Closed by
+                    # tools/demo_loop_gate/failure_path_reality_gate.py: PASS, exit 0, twice.
+                    # DOWN + DEGRADED + partial breadth + a quarantined poison row + THE FIRST
+                    # RECOVERY PUBLISH IN THIS REPO'S HISTORY (cdn-edge major_outage ->
+                    # operational) with an EMPTY publications table proving nothing left the
+                    # process. Honest limit filed as STORY-193.
     points: 5       # RE-POINTED 3 -> 5 at plan verification (2026-07-30), PO-approved. The
                     # verifier judged 3 materially under-pointed: scenario vocabulary + validation +
                     # tests, four scenario files, a NEW harness seam, a row-merge strategy, an
