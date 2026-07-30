@@ -119,7 +119,12 @@ stories:
   - id: STORY-188
     title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
     file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
-    status: in_progress   # repair + guard landed; DoD gate pending at the commit
+    status: done   # 2026-07-30 at 19c2d35. All 6 ACs. FULL 8/8 DoD gate (not scoped) --
+                   # 666 passed, 0 SKIPPED with REQUIRE_DYNAMO=1, matching the sprint-64 baseline
+                   # exactly, so no backend behaviour changed. yt_selftest 30/30 (was 28/28).
+                   # AC6's guard SHOWN FAILING twice, independently, exit 1 each time.
+                   # 1-pointer, orchestrator-executed, so no reviewer pair -- but the diff was read
+                   # line by line to satisfy AC3 (only the 12 em-dash sites changed, nothing else).
     points: 1
     ceremony: orchestrator   # NOT the external path: this writes .scrum/ state, which only the
                              # orchestrator may do. DoD gate + a byte-level verification.
@@ -364,7 +369,58 @@ carried_forward:
   - "STORY-179 (dynamo ephemeral port not routable on Windows) remains unscheduled; C4 is its
      standing workaround."
 
-dod_evidence: []   # per-story gate records land here, merged VERBATIM from yt_gate.py's emitted
-                   # fragment. Mid-sprint runs MAY be --only-scoped; the FULL 8-command gate on the
-                   # final HEAD is mandatory and is the evidence of record. Record pass/skip COUNTS
-                   # on every backend record (A6) -- a nonzero skip count is an incomplete gate.
+# per-story gate records, merged VERBATIM from yt_gate.py's emitted fragment. Mid-sprint runs MAY be
+# --only-scoped; the FULL 8-command gate on the final HEAD is mandatory and is the evidence of
+# record. Record pass/skip COUNTS on every backend record (A6) -- a nonzero skip count is an
+# incomplete gate, not a pass.
+#
+# STORY-188 @ 19c2d35 -- FULL 8/8 GATE, NOT SCOPED. Deliberately full rather than --only-scoped:
+# this is story 1, so a full green baseline on the sprint branch is worth having, and STORY-178
+# (yt_gate exits 0 when --only matches nothing) makes a scoped run a standing false-green risk.
+# *** pytest: 666 passed, 0 SKIPPED *** -- run with REQUIRE_DYNAMO=1 and
+# DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 against container uptime_dynamo_8021. The ZERO skip
+# count is the point (A6): it proves the 53 DynamoDB-gated tests actually RAN rather than being
+# silently skipped. 666 matches the sprint-64 close baseline exactly, so STORY-188 changed no
+# backend behaviour -- as intended for a docs/state-only story. yt_selftest separately 30/30
+# (was 28/28: +2 from AC6's new guard).
+dod_evidence:
+  - command: "pytest"
+    exit_code: 0
+    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ======================= 666 passed in 65.75s (0:01:05) ========================"
+    commit: 19c2d35
+    at: "2026-07-30T19:07:17+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: 19c2d35
+    at: "2026-07-30T19:08:25+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: 19c2d35
+    at: "2026-07-30T19:08:26+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "240 files already formatted"
+    commit: 19c2d35
+    at: "2026-07-30T19:08:26+00:00"
+  - command: "cfn-lint infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: 19c2d35
+    at: "2026-07-30T19:08:26+00:00"
+  - command: "npm test"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  00:38:37 | Duration  46.32s (transform 7.43s, setup 42.43s, import 22.81s, tests 53.30s, environment 157.66s)"
+    commit: 19c2d35
+    at: "2026-07-30T19:08:35+00:00"
+  - command: "npm run build"
+    exit_code: 0
+    output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 601ms"
+    commit: 19c2d35
+    at: "2026-07-30T19:09:23+00:00"
+  - command: "npm run lint"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 lint | > eslint ."
+    commit: 19c2d35
+    at: "2026-07-30T19:09:32+00:00"
