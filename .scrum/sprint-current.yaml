@@ -1,551 +1,182 @@
 # YourTeam active sprint board. No active sprint when status: none.
-sprint: 65
-status: closed     # none | planning | active | review | closed | aborted
-                   # CLOSED 2026-07-30. Review: PO ACCEPTED all five stories ("i accept"),
-                   # velocity 13/13. Retro: A9 and A10 PO-APPROVED and landed at their rungs.
-                   #   A9 (CHECKLIST -- implementer.md + spec-review.md): the "shown failing" rule
-                   #     widens from reality-gate ARTIFACTS to any TEST that is a story's primary
-                   #     evidence; it must be demonstrated failing against the pre-fix behaviour or
-                   #     a deliberate mutation. Names two smells (a fixture built but never wired
-                   #     up; "would this go red if I broke the guarded behaviour?") and makes the
-                   #     answer a spec-review VERDICT condition, not a note. Second half: a proof
-                   #     that SETS UP state must do so through the SAME production interface the
-                   #     system under test uses, never a parallel hand-rolled one.
-                   #   A10 (SCRIPT -- yt_gate.py): one_line_tail strips ANSI escapes and C0
-                   #     control chars, so the fragment the skill says to merge VERBATIM is always
-                   #     valid YAML. Two guards added, both SHOWN FAILING with the fix reverted.
-                   # FULL 8/8 GATE GREEN re-run AFTER the amendments landed at 7cf352f:
-                   # 685 passed, 0 SKIPPED. yt_selftest 32/32 (was 28/28 at sprint start).
-                   # yt_wiki CLEAN on sweep/facts/links/integrity.
-                   # BRANCH sprint-65 stays UNMERGED -- the standing "don't merge with main"
-                   # directive, re-confirmed at the sprint-64 review, holds.
-                   # DELIVERED: STORY-188 (encoding + a mechanical guard), STORY-190 (a bad row no
-                   # longer stalls a signal forever), STORY-177 (provisional failure mapping),
-                   # STORY-191 (A REAL DOWN, A REAL DEGRADED, A QUARANTINED POISON ROW AND THE
-                   # FIRST RECOVERY PUBLISH IN THIS REPO'S HISTORY -- cdn-edge major_outage ->
-                   # operational with an EMPTY publications table proving nothing left the
-                   # process), STORY-185 (both sides of the publish proof un-gated from Docker).
-                   # THREE STORIES NEEDED A FIX ROUND; STORY-191's was large (its delivery did not
-                   # meet AC3 at all -- no real loop run, and it had left the harness un-runnable).
-                   # Follow-ups filed: STORY-192 (wiki carries the same encoding defect in a shape
-                   # STORY-188's guard cannot catch), STORY-193 (proposal formation is not reliably
-                   # assertable in a loop run).
-                   # NEXT SESSION: sprint-66 planning. *** RAISE THE BOUNDARY/CODE-DISCIPLINE AUDIT
-                   # SPRINT THE PO ASKED TO BE REMINDED ABOUT (memory:
-                   # wanted-architecture-audit-sprint) -- every planning until scheduled or
-                   # explicitly dropped. *** Other candidates: STORY-186, STORY-189, STORY-192,
-                   # STORY-193, STORY-178, STORY-147.
-                   # Review: docs/scrum/sprints/2026-07-30-sprint-65/review.md
-                   # Retro:  docs/scrum/sprints/2026-07-30-sprint-65/retro.md
-                   # LOCKED 2026-07-30 on PO approval ("approve").
-                   # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
-                   # Tooling is frozen too (2026-01-01 agreement): no new MCP servers, no ad-hoc
-                   # skill-script edits outside a story.
-                   #
-                   # Refinement ran first, in the same session (commit ca5a9c6): STORY-177's three
-                   # open questions resolved, STORY-190 and STORY-191 created, STORY-188 and
-                   # STORY-189 given the story files they never had.
-                   #
-                   # One yt-plan-verifier pass ran pre-lock. Verdict GAPS: 16 blocking, ALL folded
-                   # into plan.md before the PO saw it (commit b76b177). It also drove the scope cut
-                   # (186, 189 out) and the STORY-191 re-point 3 -> 5. See plan.md
-                   # "Plan verification".
-mode: external     # The PO implements via an external AI agent building to plan.md ALONE.
-                   # PO-chosen 2026-07-30. NOT a contradiction of the sprint-60 external rejection,
-                   # which was UI-specific ("you only implement" for look-and-feel work); this
-                   # sprint is backend + tools/, judged by tests and exit codes.
-                   # CONSEQUENCES, both binding:
-                   #  1. plan.md is the ENTIRE contract -- external implementers build literally and
-                   #     infer nothing (execution-modes.md S2). Every story carries method-level
-                   #     detail: exact type names, exact return shapes, exact seams.
-                   #  2. EVERY story gets BOTH reviewers regardless of size (spec + quality), plus an
-                   #     independent yt_gate.py re-run by the orchestrator, before any story goes
-                   #     done. History: external mode ships ~1 MAJOR per 3-point story, and sprint
-                   #     47's delivery self-reported "all nine gates clean" while carrying two
-                   #     quality MAJORs and two gate commands that had never run against a DB.
-                   # DELIVERY CONTRACT (state at handoff, verify on return): commit per story with
-                   # STORY-NNN: messages on sprint-65, never one lump; a self-reported gate result is
-                   # NEVER trusted -- only the orchestrator's own yt_gate.py run on the final HEAD
-                   # counts; reviewers get each story's own commit range; NEVER merge to main; do not
-                   # touch .scrum/ (the orchestrator is its sole writer).
-                   # STORY-188 IS NOT HANDED OUT: it writes .scrum/checklists/, and YourTeam's
-                   # "never" list forbids a subagent writing .scrum/ state -- an external agent sits
-                   # further outside than a subagent. The ORCHESTRATOR executes it.
-goal: "Make the failure half of the system real. Today NO DOWN or DEGRADED observation can reach the pipeline through the real ingest path at all -- map_synthetic_status RAISES on every non-HEALTHY code, so the demo engine emits UP and absence only, and nothing in this repo may be described as 'the failure path is tested'. Sprint 65 closes that in three coupled steps: make a bad row survivable (190), land a provisional failure mapping (177), then drive a real DOWN and a real recovery publish through the live loop on the demo fleet (191). Backend + tools/ only; no frontend work."
-branch: sprint-65
-start_tag: sprint-65-start
-start_commit: b76b177   # the verified-plan commit on sprint-64. Branched from sprint-64, NOT from
-                        # main: the PO accepts each sprint but keeps it UNMERGED (standing, and
-                        # re-confirmed at the sprint-64 review), so main contains none of STORY-146's
-                        # config shape, STORY-148's engine, STORY-176's player and fleet, or
-                        # STORY-182's loop-gate harness -- and this sprint depends on all of them.
-
-# ---------------------------------------------------------------------------
-# VERIFIED BASELINE at lock (plan.md "Verified baseline")
-# ---------------------------------------------------------------------------
+sprint: 66
+status: active     # none | planning | active | review | closed | aborted
+                   # LOCKED 2026-07-31. SCOPE IS FROZEN -- new PO requests go to the backlog.
+                   # Tooling is frozen too: no new MCP servers, no ad-hoc skill-script edits
+                   # outside a story.
+                   # PO DIRECTIVES THIS SESSION (2026-07-31):
+                   #   1. "use your self reasoning ... dont ask my inputs, do your own reasoning"
+                   #      -> full autonomy. Refinement, AC, the lock and every in-sprint judgement
+                   #      call are taken in-process WITHOUT a PO check-in. Subagents ARE used (the
+                   #      PO clarified the directive was about not asking THEM, not about agents).
+                   #      Report decisions at review rather than asking first.
+                   #   2. "the session limit is 44 so keep a look at it and before exhausting full
+                   #      pause" -> watch the session budget and PAUSE WITH A HANDOFF before it is
+                   #      exhausted. Every state edit is committed as it happens so any pause is
+                   #      safe; the drop order in plan.md says what to shed if the session runs
+                   #      short (196 first, then 197's second guard -- never 194, never all of 197).
+                   #   3. Sprint SHAPE and MODE were PO-chosen before the autonomy directive:
+                   #      "Full audit, 11 pts" and "In-process".
+                   # THIS IS THE AUDIT SPRINT the PO asked to be reminded about at EVERY planning
+                   # until scheduled or dropped (memory: wanted-architecture-audit-sprint). It was
+                   # raised at sprint-65 planning and is SCHEDULED HERE -- the reminder obligation
+                   # is discharged for this sprint.
+mode: in-process   # I run implementers and reviewers myself. Chosen over `external` because audit
+                   # work is judgement-heavy reading with no crisp hand-off surface, and sprint 65's
+                   # external delivery self-reported "verified" while ruff was RED with 22 errors
+                   # (incl. F821 undefined `httpx`), after which the PO directed the fix round
+                   # in-process. Ceremony: 3-pointers get implementer -> spec-review || quality
+                   # review -> DoD gate -> reality gate. STORY-196 is 2 points but gets BOTH
+                   # reviewers anyway -- its duplicated-declaration sweep is the sprint's only novel
+                   # mechanical claim.
+goal: >-
+  Find the boundary violations the eight contracts cannot see, and turn as many as possible into
+  contracts that can. Deliverable is FINDINGS PLUS MECHANICAL GUARDS; every non-trivial fix is
+  FILED as its own story, never done inline (PO ruling). Motivating fact: an inbound adapter
+  persisting through a core port passes all eight lint-imports contracts while being
+  architecturally wrong (STORY-190) -- so if one such gap exists, others are probably in the tree.
+branch: sprint-66  # off sprint-65, which STAYS UNMERGED (standing "don't merge with main"
+                   # directive, re-confirmed at the sprint-64 review).
+start_tag: sprint-66-start
+start_commit: d4ad03e
 baseline:
-  tree: clean at b76b177
-  gate: "sprint-64 close recorded the full 8-command gate GREEN: 666 passed, 0 SKIPPED"
-  selftest: "28/28 OK, re-run this session"
-  wiki: "yt_wiki CLEAN on all four checks at sprint-64 close"
-  dynamo: "container uptime_dynamo_8021 up on 127.0.0.1:8021"
-
-# ---------------------------------------------------------------------------
-# BINDING CROSS-STORY CONSTRAINTS (plan.md C1-C5) -- summary; plan.md is authoritative
-# ---------------------------------------------------------------------------
+  tree: clean at d4ad03e
+  gate: >-
+    FULL 8/8 GREEN at d4ad03e (2026-07-31, this session): pytest 685 passed / 0 SKIPPED,
+    frontend npm test 363 passed in 51 files, all eight commands exit 0.
+  selftest: 32/32 OK, re-run this session
+  wiki: yt_wiki CLEAN at sprint-65 close; re-run inside STORY-194 (it adds an article)
+  dynamo: container uptime_dynamo_8021 up on 127.0.0.1:8021, REQUIRE_DYNAMO=1 on every run
+plan_verification:
+  dispatched: false
+  reason: >-
+    Purely internal sprint -- three of four stories are docs-only, the fourth touches
+    pyproject.toml's contract block and a test. No story consumes another component's output, no
+    adapter/vendor path, no units/scale logic, mode is not external. Recorded per the
+    token-economy amendment (2026-07-15). The probe evidence a verifier would have checked was
+    gathered directly at planning (plan.md "Verified facts at planning", V1-V7, each with the
+    command that produced it).
+  self_probe_caught: >-
+    TWO blocking gaps, both folded into the AC BEFORE the lock: (V4) architecture-boundary.md
+    ALREADY owns the eight contracts with citations and narrow code_refs, so the catalogue must
+    LINK to it, not restate it; (V5) yt_wiki has FIVE checks not four, `refs` is advisory unless
+    --strict-refs, AMPLIFIER_THRESHOLD=4, and pyproject.toml is ALREADY a code_ref in 5 articles
+    -- so STORY-194's original AC1 ("passes all four checks" + add pyproject.toml to code_refs)
+    was both imprecise and self-defeating. Also caught: check_integrity REJECTS a 40-char
+    verified_sha (7-12 hex only), and check_facts requires every Facts citation to be covered by
+    code_refs.
 constraints:
-  C1_zone_discipline: >-
-    *** THE MOST IMPORTANT CONSTRAINT THIS SPRINT, AND THE GATE CANNOT HOLD IT. *** An inbound
-    adapter importing src.core.ports.rejected_observation_repository and writing quarantine rows
-    itself PASSES ALL EIGHT lint-imports contracts -- verified against pyproject.toml:38-105:
-    core-independence (:41-42) has src.core as SOURCE (wrong direction), adapters-independence
-    (:53-56) lists only the three adapter subpackages, adapters-edge-only (:83-87) forbids only
-    src.api/src.composition. It is still WRONG: it turns a pure translation layer into an
-    orchestrator holding a persistence dependency. THE GATE CATCHES ONLY HALF THE TRAP: reaching for
-    the CONCRETE src.adapters.persistence.* DOES break adapters-independence. So a red gate means the
-    concrete route was taken -- but A GREEN GATE DOES NOT MEAN THE RIGHT ROUTE WAS TAKEN.
-    Rules beyond the gate: an inbound adapter is a PURE translation function (returns values,
-    persists nothing, holds no repo reference); only composition may see both sides; a core-owned
-    port must be expressible in DOMAIN TYPES; tools/ may import src.*, never the reverse (and that
-    direction is UNGOVERNED by the contracts -- prose only). NO CONTRACT MAY BE EDITED OR RELAXED
-    for any story this sprint; if a change appears to need one, STOP and raise a blocker.
-    Rooted in the PO directive of 2026-07-30 (memory: code-boundary-discipline).
-  C2_evidence: >-
-    Working agreements A6/A7. Any reality-gate artifact ends with an explicit verdict and a NON-ZERO
-    EXIT on failure, and must be SHOWN FAILING on deliberately bad input; a green-only artifact is
-    not evidence. A POLLING TIMEOUT IS A FAILURE, not partial evidence. The board records the EXIT
-    CODE; values read from stdout are not evidence. Run pytest with REQUIRE_DYNAMO=1 and record
-    PASS/SKIP COUNTS -- a nonzero skip count is an incomplete gate. The DoD's (requires-env: ...)
-    annotation is ADVISORY in yt_gate.py:158-160 and NEVER BLOCKS; the FIXTURE is the enforcing rung.
-  C3_cadence: "Strict TDD, a commit after every green step, STORY-NNN: prefix, sprint-65 only."
-  C4_env: >-
-    DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, container uptime_dynamo_8021, Docker Desktop running
-    (STORY-179 workaround). REQUIRE_DYNAMO=1 on every gate run. Python 3.13.9 in the repo .venv.
-    .venv/Scripts/lint-imports.exe is BLOCKED by Windows Application Control -- use the python -c form.
-  C5_publish_safety: >-
-    *** decide publishes recoveries with NO HUMAN GATE (decide.py:115-126 sets publish_change and
-    returns PUBLISHED_RECOVERY; :171-172 calls publish()). STORY-191 DELIBERATELY MAKES THIS FIRE for
-    the first time in project history. CORRECTED MECHANISM (the plan's first draft had it wrong):
-    a DOWN->UP ladder CANNOT publish -- a degradation never publishes (decide.py:128-136 opens a
-    proposal only), a recovery needs severity_rank(proposed) < severity_rank(current)
-    (decide.py:115-117) with STATUS_SEVERITY OPERATIONAL 0 / DEGRADED 1 / PARTIAL_OUTAGE 2 /
-    MAJOR_OUTAGE 3 (core/domain/status.py:63-68), every component seeds OPERATIONAL
-    (seed_dynamo.py:49), and StatusWritebackPublisher.publish (publish_helper.py:179) is the ONLY
-    status writer. So the ladder yields PROPOSED then at most OBSOLETED (decide.py:157-169).
-    THE ROUTE: pre-set one demo component's stored status to MAJOR_OUTAGE, then run an all-UP ladder.
-    THE GUARD IS CONFIG-ONLY: config/demo declares NO statuspage_component_id anywhere (verified:
-    3 fleet files + 5 scenarios, zero occurrences; the only one in config/ is
-    config/apps/httpcheck.yaml:8 -> xdnywbx77npw), so Config.statuspage_mapping()
-    (composition/config.py:554-564) is {} and build_publisher's guard at publish_helper.py:211 falls
-    through to :230-231 -> StatusWritebackPublisher(LoggingPublisher(), component_repo) EVEN WITH
-    REAL CREDENTIALS PRESENT (the repo-root .env supplies them from any launch dir; run.py:179
-    load_dotenv walks up from the SOURCE FILE, not CWD).
-    CONFIG_DIR=config/demo ON BOTH PROCESSES OR NEITHER IS GUARDED: the loop (run.py::main ->
-    build_live_loop, settings.config_dir default config/apps at settings.py:32, used at run.py:183)
-    AND the API approve trigger (app.py:137 cfg_dir = config_dir or settings.config_dir; asgi.py
-    calls create_app() with NO config_dir; it consumes Statuspage secrets at app.py:169-183).
-    Demo component ids are DISJOINT from config/apps's. Fake credentials are DEFENCE IN DEPTH, NEVER
-    THE GUARD. Fail-safe bonus: if config/demo fails to load, app.py:147 sets seed_config = None and
-    :171-175 yields mapping = {} -> LoggingPublisher. Failure to load degrades SAFE. ***
-
-# ---------------------------------------------------------------------------
-# BOARD
-# ---------------------------------------------------------------------------
+  C1_no_inline_fixes: >-
+    STORY-195 and STORY-196 produce findings and FILED stories. Their diffs touch no file under
+    backend/src/, frontend/ or config/. PO ruling, not preference: an audit that fixes as it goes
+    yields one unreviewable mega-diff and no backlog.
+  C2_re_derivable: >-
+    Every count and every citation must be re-derivable by command. Reports record the command AND
+    its output; reviewers re-run them. "I read the zone" is not evidence. This IS the sprint's
+    reality gate (see plan.md) -- an audit has no running surface, so re-derivation replaces
+    "exercise the live path".
+  C3_guards_shown_red: >-
+    A guard that has only ever been green is not a guard (A7 + A9). Every new contract or test is
+    shown RED first -- against the real violation, or a deliberate mutation then reverted -- with
+    command and output recorded. A9 makes this a spec-review VERDICT condition: cannot answer
+    "would this go red if I broke the guarded behaviour?" => NOT_MET, never MET-with-a-note.
+  C4_no_new_gate_command: >-
+    A ninth DoD command changes definition-of-done.md's contract and needs its own PO decision.
+    Guards ride inside the existing eight (a contract runs inside command 2, a test inside
+    command 1). A rule guardable ONLY by a new command is filed, not smuggled in.
+  C5_catalogue_is_normative: >-
+    Findings cite ZR-n ids from the catalogue. A finding with no rule id is either a new rule
+    (amend the catalogue in the same sprint and say so) or an opinion (drop it). Where a rule
+    would contradict working-agreements.md, the PO-stated rule wins.
+  C6_env: >-
+    REQUIRE_DYNAMO=1, DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, Docker up. Record pass/skip
+    COUNTS on every backend gate record; a nonzero skip count is an incomplete gate, not a pass.
 stories:
-  - id: STORY-188
-    title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
-    file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
-    status: done   # 2026-07-30 at 19c2d35. All 6 ACs. FULL 8/8 DoD gate (not scoped) --
-                   # 666 passed, 0 SKIPPED with REQUIRE_DYNAMO=1, matching the sprint-64 baseline
-                   # exactly, so no backend behaviour changed. yt_selftest 30/30 (was 28/28).
-                   # AC6's guard SHOWN FAILING twice, independently, exit 1 each time.
-                   # 1-pointer, orchestrator-executed, so no reviewer pair -- but the diff was read
-                   # line by line to satisfy AC3 (only the 12 em-dash sites changed, nothing else).
-    points: 1
-    ceremony: orchestrator   # NOT the external path: this writes .scrum/ state, which only the
-                             # orchestrator may do. DoD gate + a byte-level verification.
-    result: >-
-      ALL .scrum/ FILES NOW CLEAN (0 invalid bytes, 0 U+FFFD), verified byte-level.
-      TWO CORRECTIONS DURING EXECUTION, both recorded on the story file rather than tidied away:
-      (1) THE PLANNING FIGURE OF 13 SITES WAS WRONG -- IT DOUBLE-COUNTED. It came from decoding each
-          file with errors="replace" and counting U+FFFD, but that decode CONVERTS EVERY INVALID BYTE
-          INTO A U+FFFD, so the "existing FFFD" column silently re-counted the invalid bytes already
-          tallied in the other column. plan-verification.md reported 2 invalid AND 2 FFFD;
-          quality-review.md 3 and 3 -- identical numbers, which was the tell. Only implementer.md's 3
-          were genuine (it had no invalid bytes to manufacture them). The repair script's own != 13
-          assertion CAUGHT THIS and exited non-zero instead of reporting success. NOTE: the
-          plan-verifier "independently reproduced" the bad table, almost certainly by repeating the
-          same errors="replace" method -- reproducing a measurement is not validating its method.
-      (2) THE DEFECT WAS NEVER CONFINED TO .scrum/checklists/. Scanning all of .scrum/ while building
-          AC6's guard found TWO MORE corrupted files nobody had measured: backlog.yaml (2) and --
-          worse -- working-agreements.md (2), the retro-landed PROCESS RULES loaded every session.
-          Losing a character there silently loses part of a RULE. Both repaired under this story:
-          same defect class, same fix; shipping a guard over .scrum/ while knowingly leaving two
-          files inside it corrupt would be theatre.
-      FINAL: 12 sites / 5 files (5 invalid 0x97 + 7 genuine U+FFFD), all -> U+2014.
-      Repair was BYTE-PRECISE: only bytes the UTF-8 validity scanner flagged were replaced, so a 0x97
-      appearing as a legitimate CONTINUATION byte (e.g. U+2017 = E2 80 97) was copied through
-      untouched -- a naive bytes.replace would have corrupted those.
-      AC6 GUARD LANDED at .claude/skills/yourteam/scripts/tests/test_scrum_encoding.py (the
-      yt_selftest rung, project-generic, skips cleanly when there is no .scrum/). yt_selftest now
-      30/30 (was 28/28). SHOWN FAILING TWICE, INDEPENDENTLY: probe A injected a raw 0x97 -> FAIL
-      test_scrum_files_are_valid_utf8, exit 1; probe B injected a U+FFFD into an otherwise perfectly
-      valid UTF-8 file -> FAIL test_scrum_files_contain_no_replacement_characters, exit 1. PROBE B IS
-      THE ONE THAT MATTERS: it proves the two checks are NOT redundant, since a file can be valid
-      UTF-8 and still be full of already-destroyed characters. Both probes removed; 30/30 restored.
-      AC5 RETIRED THE WORKAROUND: the sprint-64 "edit these files byte-safely via latin-1"
-      instruction is obsolete and has been removed from this board and the session lock.
-    order: 1                 # FIRST, and not for size reasons: until it lands, every dispatch that
-                             # reads a checklist carries the corruption risk that ALREADY FIRED ONCE
-                             # during STORY-187 (caught only by a pre-commit git diff read).
-    plan_note: >-
-      FINAL MEASURED DAMAGE -- 12 sites / 5 files (the planning figure of 13 was a double-count; see
-      `result`). All are ONE CHARACTER: 0x97 is cp1252 EM DASH, and every genuine U+FFFD is an
-      em-dash already destroyed by a lossy round-trip, so all 12 become U+2014 -- reconstruction is
-      CERTAIN, not guesswork.
-        .scrum/checklists/implementer.md        0 invalid, 3 genuine U+FFFD
-        .scrum/checklists/plan-verification.md  2 invalid (0x97 @3492,3640), 0   <-- retro MISSED it
-        .scrum/checklists/quality-review.md     3 invalid (0x97 @2833,2883,3007), 0
-        .scrum/checklists/spec-review.md        clean
-        .scrum/backlog.yaml                     0 invalid, 2 genuine U+FFFD      <-- nobody measured
-        .scrum/working-agreements.md            0 invalid, 2 genuine U+FFFD      <-- nobody measured
-      TEMPLATES ARE CLEAN (all four under .claude/skills/yourteam/templates/checklists/ valid UTF-8,
-      zero U+FFFD), so the corruption is POST-GENERATION, in the instances. yt_selftest was 28/28
-      green WITH the corruption present, so parity is not byte-comparing this content -- AC4 asserted
-      that rather than assuming it. No backend DoD command reads .scrum/ (verified), which is exactly
-      why this rotted unseen and why AC6 adds the missing mechanical rung.
-      AC6 PLACEMENT: the guard landed in yt_selftest, NOT backend/tests/ -- a backend test reading
-      .scrum/ would create a new repo-layout coupling, and the skill rung must stay PROJECT-GENERIC
-      (PO directive 2026-07-13).
-      THE SPRINT-64 "EDIT THESE FILES BYTE-SAFELY (latin-1)" WORKAROUND IS RETIRED (AC5) -- the
-      defect it guarded against is fixed and a mechanical guard now prevents its return.
-
-  - id: STORY-190
-    title: One unmappable row stalls a signal forever — quarantine the row, keep the batch
-    file: docs/scrum/stories/STORY-190-partial-batch-resilience.md
-    status: done   # 2026-07-30 at b3e1767, after ONE fix round. External delivery reworked
-                   # IN-PROCESS on PO instruction ("do all rework yourself").
-                   # spec review FAIL -> fixed -> all 8 ACs MET. quality review FIX_REQUIRED ->
-                   # fixed. Full 8/8 gate, 685 passed / 0 SKIPPED.
-                   # SPEC FINDING (serious, and the orchestrator had accepted it too): AC3's
-                   # pre-fix stall test was TAUTOLOGICAL -- it built a watermark_repo, never passed
-                   # it to anything, called normalize_rows directly, then asserted the watermark was
-                   # still None, which holds whether or not anything raises. Rewritten to drive the
-                   # STRICT path through the REAL run_cycle across TWO cycles and assert the actual
-                   # stall (watermarks_seen == [None, None]). DISCRIMINATION-PROBED: with the
-                   # monkeypatch removed so the FIXED path runs, it FAILS.
-                   # QUALITY FINDING (behavioural, not cosmetic): the lenient path caught only three
-                   # NAMED classes, so a PRESENT-but-invalid value still stalled the signal --
-                   # verified live: an unparsable timestamp (ValueError) and a null location
-                   # (pydantic ValidationError) both escaped to run_periodic. Now catches ValueError
-                   # (all four are subclasses) but NOT Exception, so a TypeError still surfaces.
-                   # ALSO: rejected_at now falls back to SystemClock() instead of an inline
-                   # datetime.now() -- it was the only direct wall-clock read in backend/src outside
-                   # SystemClock. The fake now subclasses the port, matching the other three.
-                   # *** THE PO's NAMED ZONE CHECK PASSED, verified import-by-import: the only core
-                   # import anywhere under adapters/inbound/ is src.core.domain. The adapter returns
-                   # values and persists nothing; the failure types are adapter-local; composition
-                   # alone decides what happens to them. 8 contracts KEPT, unedited. ***
+  - id: STORY-194
+    title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
+    file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
+    status: todo
     points: 3
-    ceremony: external + spec + quality + gate    # external mode: BOTH reviewers regardless of size
-    order: 2                 # BEFORE STORY-177: fix the poison before adding row variety. Also the
-                             # widest blast radius (it changes the fetch_observations contract), so
-                             # if it goes sideways the mapping still ships.
+    ceremony: implementer + both reviewers
+    result: null
+    order: 1
     plan_note: >-
-      THE DEFECT IS WORSE THAN STORY-177 DESCRIBED IT, and the plan-verifier could NOT refute the
-      correction after four separate attempts. normalize_rows (dispatch.py:80) is a bare list
-      comprehension; it runs inside fetch_observations (adapter.py:44), called at pull_loop.py:102
-      BEFORE ingest_observations at :109, so _watermark_repo.advance (ingest_service.py:139) is NEVER
-      REACHED. run_periodic catches/logs/continues (:200-207, by design per STORY-050) and the next
-      cycle re-queries the SAME window with the SAME bad row. => NOT "one batch lost": THAT SIGNAL
-      NEVER ADVANCES AGAIN while the loop looks alive.
-      VERIFIER STRENGTHENED IT: advance() at ingest_service.py:139 is the ONLY watermark writer in
-      all of backend/src/ and tools/ (exhaustive grep); build_dql_query (query.py:91-99) adds ONLY a
-      lower bound -- no upper bound, no limit -- so the poison row is in-window forever; the demo
-      store never evicts (store.py:29-30); and `sort timestamp asc` (query.py:102) means the EARLIEST
-      bad row aborts, discarding already-normalized EARLIER rows too.
-      NAMES ARE PRESCRIBED (external mode -- an unnamed type is a coin flip): RowNormalizationFailure
-      (row: dict, reason: str), NormalizationOutcome (observations, failures), and
-      normalize_rows_lenient(rows, *, signal_key) -> NormalizationOutcome. normalize_rows itself stays
-      BYTE-FOR-BYTE UNCHANGED and strict (AC7; 8 test call sites + adapter.py:44, verified complete).
-      *** THE STEP MOST LIKELY TO BE GOT WRONG: build_live_loop calls run_periodic
-      (run.py:137-150), NEVER run_cycle. BOTH run_cycle AND run_periodic must gain
-      rejected_repo, and run_periodic must pass it through at its run_cycle call site
-      (pull_loop.py:186-199). Adding it only to run_cycle wires NOTHING in production while every
-      test passes. ***
-      run_cycle's return type and on_cycle's type (pull_loop.py:82, :147-150) are UNCHANGED -- do not
-      widen them. See C1 for the zone trap; this is the story it targets.
-    reality_gate_spec: >-
-      AC2 and AC3 are the teeth. AC2 requires proving the WATERMARK ADVANCED across two consecutive
-      cycles -- a test that only checks "good rows survived" does NOT satisfy it, because the
-      PERMANENT STALL is the defect. AC3 requires the stall REPRODUCED FAILING on the pre-fix state
-      (C2/A7): shown failing, then shown passing.
-
-  - id: STORY-177
-    title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
-    file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md
-    status: done   # 2026-07-30 at b3e1767, after ONE fix round. All ACs MET (spec review traced
-                   # every one). Full 8/8 gate, 685 passed / 0 SKIPPED.
-                   # AC2 single-sourcing had to be FIXED: `degraded` was hardcoded as
-                   # ("2","DEGRADED") in scenario.py, violating the one-place rule. Now DERIVED,
-                   # with a new ASSUMED_DEGRADED_* pair and a named UNMAPPED_POISON_* pair whose
-                   # not-in-the-mapping invariant is PINNED BY A TEST -- its only value is being
-                   # unmapped, a property of ANOTHER module that could otherwise be destroyed
-                   # silently, leaving STORY-191 AC5 green while testing nothing.
-                   # Also removed a `code:msg` escape hatch the delivery added, which let any
-                   # scenario YAML introduce arbitrary vendor literals -- the single-source rule
-                   # defeated by the back door.
-                   # AC4's negative half ("a HEALTHY row logs NO warning") was missing and is now
-                   # tested; without it an implementation that logged unconditionally would pass
-                   # while making the warning worthless as a signal.
-                   # AC5b's deliberate test inversion was done correctly by the delivery.
-                   # NO core/ CHANGE AT ALL, as designed -- Health.DOWN/DEGRADED already existed.
+      THE YARDSTICK -- everything else depends on it, so it can never be dropped. A planning probe
+      established that the CHEAP violations are absent (V2: no api->adapters import, no outward
+      import from core, no inbound adapter holding a port) and that the SUBTLE shape is everywhere
+      (V3: ~20 vendor mentions inside core/, every one in a docstring). No document in this repo
+      says whether that is compliant, so two auditors could disagree and neither could be shown
+      wrong. AC5 exists to kill ~20 false findings before STORY-195 reports them. AC1 was
+      CORRECTED pre-lock against V4/V5 above.
+  - id: STORY-195
+    title: Audit the core and adapters zones against the rule catalogue
+    file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
+    status: todo
     points: 3
-    ceremony: external + spec + quality + gate
-    order: 3                 # after 190, so the mapping lands on a path that already degrades
-                             # gracefully.
+    ceremony: implementer + both reviewers
+    result: null
+    order: 2
     plan_note: >-
-      UNCONDITIONAL mapping with loud provenance -- no env var, no config surface, no injected policy
-      (PO-decided). An env gate buys NOTHING for AC3: a code outside the provisional set raises
-      either way. Port injection was REJECTED as hexagonally WORSE -- core-owned ports must be
-      expressible in DOMAIN TYPES, and a status-mapping interface would have to name vendor
-      code/message.
-      ONE named constant in health_mapping.py: dict[tuple[str, str], Health] keyed on the EXACT
-      (code, message) tuple, seeded with EXACTLY TWO entries -- ("1","UNHEALTHY") -> Health.DOWN
-      (reusing assumed_failure_codes.py:33-34) and ("2","DEGRADED") -> Health.DEGRADED. *** THE
-      DEGRADED PAIR DOES NOT EXIST ANYWHERE TODAY -- it is a fresh, explicitly-labelled assumption
-      the verifier caught as unnamed. ***
-      MATCHING RULE AND ORDER, BOTH LOAD-BEARING: the existing healthy OR-rule stays FIRST and
-      UNCHANGED (code == "0" or message == "HEALTHY", health_mapping.py:65-66) because
-      test_dynatrace_adapter.py:100 pins map_synthetic_status(code="123", message="HEALTHY") is
-      Health.UP. Only after it fails is the provisional dict consulted, on the EXACT TUPLE --
-      never code-only, which would over-match.
-      NO core/ CHANGE AT ALL: Health.DOWN and Health.DEGRADED already exist and are already mapped
-      by _OUTCOME_TO_HEALTH (health_mapping.py:23-27).
-      *** THIS STORY DELIBERATELY BREAKS AN EXISTING TEST: test_assumed_failure_codes.py:45-56
-      asserts pytest.raises(UnknownVendorStatusError) on the ASSUMED pair and WILL FAIL. INVERT IT
-      deliberately and rewrite its module docstring :1-14. Sanctioned work, NOT a regression to
-      route around and NOT a test to delete. ***
-      Also made false and to be rewritten: assumed_failure_codes.py :11-14, :16-18, :20-22, :31-32;
-      tools/demo_engine/README.md:22; health_mapping.py's module docstring :8-12 and
-      map_synthetic_status's :55-63 (state WHY the old reasoning was superseded).
-
-  - id: STORY-191
-    title: Drive a real DOWN through the loop — failure scenarios end to end on the demo fleet
-    file: docs/scrum/stories/STORY-191-failure-scenario-through-the-loop.md
-    status: done   # 2026-07-30 at b3e1767, after ONE (large) fix round. Full 8/8 gate.
-                   # *** THE DELIVERY DID NOT MEET AC3 AT ALL: there was NO real loop run.
-                   # test_story191_scenarios.py had ZERO references to run_positive_side /
-                   # subprocess / uvicorn -- seven in-process tests. The extra_scenarios seam it
-                   # added to harness.py was DEAD CODE called by nothing, which is precisely why
-                   # nobody noticed it had also DELETED `import httpx` from harness.py while 9 call
-                   # sites remained. The harness could not run. And it failed SILENTLY: NameError is
-                   # an Exception, so _wait_for_last_signal's `except Exception: pass` swallowed it
-                   # and returned False after burning the timeout. ***
-                   # CLOSED by tools/demo_loop_gate/failure_path_reality_gate.py -- a REAL loop run
-                   # (embedded demo engine + real uvicorn API + the unmodified
-                   # `python -m src.composition.run`, all OS subprocesses) asserting SIX properties
-                   # from PERSISTED STATE ONLY, never parsed log text.
-                   # REALITY GATE: PASS, EXIT 0 (re-run and PASSED again after later changes):
-                   #   down-ladder      api-gateway-health       healths=[down, up]     rows=40
-                   #   partial-breadth  auth-service-login       healths=[down, up]     rows=32
-                   #   degraded-ladder  payments-service-charge  healths=[degraded, up] rows=32
-                   #   poison-row       search-service-query     4 locations, rejected_rows=True
-                   #   cdn-edge: major_outage -> operational  == THE RECOVERY PUBLISH FIRED
-                   #   publications rows: 0                   == NOTHING LEFT THE PROCESS
-                   # That two-sided pair is the whole point: StatusWritebackPublisher.publish is the
-                   # ONLY component-status writer (so the change proves it ran), and
-                   # RecordingPublisher writes a row on EVERY attempt and exists ONLY in the
-                   # credentialed chain (so an empty table proves the LoggingPublisher fallback was
-                   # selected). FIRST TIME THE PUBLISH PATH HAS FIRED IN THIS REPO'S HISTORY -- and
-                   # the config-only guard held under genuine load.
-                   # SHOWN FAILING FIRST (A7): --self-test feeds all 6 assertions bad evidence; all
-                   # 8 bad cases rejected, good evidence accepted.
-                   # QUALITY CRITICAL: the backward-compat test asserted NOTHING (len>0 and
-                   # isinstance(list) on a -> list[dict] function). The reviewer DEFEATED IT BY
-                   # MUTATION -- making the legacy branch emit DOWN left it GREEN. Rewritten to
-                   # assert no failures, exact count and Health.UP throughout; the reviewer's exact
-                   # mutation now FAILS it.
-                   # Also: scenario vocabulary now validated at LOAD time with file/signal/index
-                   # context (a typo previously surfaced ~40 min into a live run as a context-free
-                   # ValueError); restored the deleted `type(...) is not int` / bool-is-int
-                   # rationale, run_positive_side's 9-step docstring, and the do-not-sort warning
-                   # earned by a live failure in sprint 64.
-                   # HONEST LIMIT, filed as STORY-193: proposal FORMATION is not reliably assertable
-                   # in a loop run -- two consecutive runs with identical scenarios DISAGREED,
-                   # because orchestrate's window (6*interval = 180s for every 30s failure signal)
-                   # can be outrun by the 41-signal vendor-health sweep. Observations are
-                   # watermark-driven and deterministic; proposals are not. AC5 therefore validates
-                   # whatever proposals ARE present, strictly, and records the count WITHOUT
-                   # asserting presence. A flaky assertion in a proof harness is worse than none.
-    points: 5                # RE-POINTED 3 -> 5 at plan verification, PO-approved.
-    ceremony: external + spec + quality + gate
-    order: 4                 # LAST of the three coupled stories and HIGHEST RISK: the only one
-                             # starting real OS subprocesses, the only one where the publish path
-                             # fires. Sequenced last so a fix round blocks nothing else.
+      58 modules (core 31 + adapters 27, __pycache__ excluded -- V1). Every file listed once with a
+      verdict so coverage is COUNTABLE, not claimed. Report is sprint HISTORY
+      (docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md), NOT the wiki: a findings
+      list describes a moment and must never be re-stamped as still current.
+  - id: STORY-196
+    title: Audit api + composition and the tools/ to src/ one-way boundary
+    file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
+    status: todo
+    points: 2
+    ceremony: implementer + both reviewers
+    result: null
+    order: 3
     plan_note: >-
-      THE PAYOFF, and the reality gate for 190 + 177 at loop scale. See C5 for the corrected publish
-      mechanism -- READ IT BEFORE STARTING.
-      TWO BLOCKING GAPS THE VERIFIER FOUND, BOTH RESOLVED BY THE PO-APPROVED ROUTE: (1) the draft's
-      DOWN->UP recovery was IMPOSSIBLE; (2) a static past-anchored store (harness.py:419) plus one
-      cycle per signal (:352-356) plus a trailing-streak read (pipeline.py:113-124) cannot express a
-      DOWN->UP transition AT ALL -- the repo already documents this at harness.py:828-832. Pre-setting
-      MAJOR_OUTAGE and running an all-UP ladder DISSOLVES both.
-      SCENARIO VOCABULARY: a cycle entry becomes EITHER the current list[str] (unchanged) OR a
-      dict[str, str] of location -> up/down/degraded. BACKWARD COMPAT IS AN AC: the five checked-in
-      scenarios must expand byte-identically and ALL 11 COLLECTED REJECTION CASES across 9 FUNCTIONS
-      (test_scenario.py:334,351,374,388,403,417,438,453,467) must pass UNMODIFIED. *** Earlier drafts
-      and STORY-186 say SEVEN; that number was never counted and is WRONG. ***
-      HARNESS: run_positive_side (harness.py:335-339) takes NO store/scenario parameter and :419
-      hardcodes build_fleet_row_store. Add a keyword-only seam and MERGE rows into the fleet store --
-      NEVER substitute, because _assert_ac3_ingest (:279-295) requires all 41 signals x 4 locations
-      and _assert_ac4_vendor_health (:298-310) requires zero drift.
-      *** EVENT-ID NAMESPACE IS MANDATORY (e.g. a fail- prefix): expand_scenario emits
-      f"{signal_key}-{seq}", so overlapping the fleet store yields IDENTICAL ids and save_new's EVT#
-      dedupe (dynamo_observation_repository.py:57-61) SILENTLY DROPS the second set with no error. ***
-      *** THE POISON ROW MUST BE AN EXTRA ROW alongside four good locations, never a location's only
-      row: a quarantined row is never persisted, so otherwise that signal shows 3 of 4 locations,
-      harness.py:287-290 fails and the >=4 poll at :187 times out -- which C2 calls a FAILURE. ***
-      THRESHOLD UNITS: config/demo fleets declare thresholds {major:5, partial:3, degraded:2,
-      recovery:2} and these are CONSECUTIVE-CYCLE COUNTS (pipeline.py:219-239 vs streak_.length), not
-      seconds or percentages. Name which one the ladder crosses. Keep ladders <= 7 CYCLES:
-      orchestrate.py:98 computes since = until - (max_threshold + 2) x interval.
-      AC4 NOTE: _collapse_health (pipeline.py:85-98) maps BOTH the partial-breadth case and the
-      all-degraded case to Health.DEGRADED, so their Verdicts are IDENTICAL. Assert on per-location
-      SignalObservation.health, not the verdict.
-    reality_gate_spec: >-
-      AC6 IS TWO-SIDED AND FULLY PERSISTED -- no logs, no stdout (C2/A7).
-      (a) IT FIRED: the pre-set component's status in the control table changed MAJOR_OUTAGE ->
-          OPERATIONAL. StatusWritebackPublisher.publish (publish_helper.py:179) is the ONLY
-          component-status writer and IS in the safe chain (:230-231), so that change proves the
-          recovery publish executed.
-      (b) NOTHING LEFT THE PROCESS: the publications table is EMPTY. RecordingPublisher
-          (publish_helper.py:212-227) writes a publications row on EVERY attempt (STORY-072) and
-          exists ONLY in the credentialed+mapping chain -- absent from the LoggingPublisher fallback.
-          An empty publications table WITH a recovery publish having occurred is the discriminator.
-      (c) guard_reality_gate.py run and its EXIT CODE recorded. It reconstructs the chain IN-PROCESS
-          (:83-128) and never observes the subprocess, so it CORROBORATES (a)+(b), never replaces
-          them. It is already correctly shaped: main() -> bool, sys.exit(0 if main() else 1) at :132,
-          with both a safe and a deliberately-unsafe side.
-      The artifact ends with an explicit verdict, exits NON-ZERO on failure, and is SHOWN FAILING on
-      deliberately bad input.
-
-  - id: STORY-185
-    title: Un-gate the unsafe side of the publish-safety proof from Docker
-    file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
-    status: done   # 2026-07-30 at b3e1767. Single-file change: the unsafe side of the
-                   # publish-safety proof pair no longer takes the Docker-gated dynamo_local
-                   # fixture and uses the literal unreachable _NO_IO_DYNAMO_ENDPOINT_URL, so BOTH
-                   # sides now run un-gated. Full 8/8 gate; the 0 SKIPPED count confirms nothing
-                   # silently skipped. Reviewed as part of the sprint-wide quality pass.
-    points: 1
-    ceremony: external + spec + quality + gate
-    order: 5                 # independent; gates nothing. THE SOLE DROP CANDIDATE if the sprint runs
-                             # long -- never break the 190 -> 177 -> 191 chain, because a partial
-                             # chain ships a mapping nothing exercises.
-
-# ---------------------------------------------------------------------------
-# SCOPE CUT AT VERIFICATION (PO-approved) -- recorded so it is not re-litigated
-# ---------------------------------------------------------------------------
-cut_at_verification:
-  - id: STORY-186
-    reason: >-
-      NOT merely sizing. Its AC2 parametrises the very test_scenario.py rejection tests and AC4
-      refactors the load_scenario_file per-block validation that STORY-191 EXTENDS, while STORY-191
-      AC2 requires those same tests to pass UNMODIFIED. A guaranteed conflict in one sprint.
-      Back to backlog (sprint: null), sprint-66 candidate. Corrections recorded on the story file.
-  - id: STORY-189
-    reason: >-
-      Its finding 1 rewrites demo-engine.md frontmatter, which STORY-191 AC10 also rewrites.
-      Deferring removes the collision entirely. Back to backlog (sprint: null), sprint-66 candidate.
-      TWO CORRECTIONS FOUND AT VERIFICATION, folded into the story file: the field is gap_verdicts
-      (availability/models.py:36-37), NOT missing_cycles (no such field exists anywhere); and
-      finding 1 is WORSE than filed -- `grep -c demo_loop_gate demo-engine.md` is ZERO, so the
-      package is absent from the article's FACTS, not just its code_refs, and those Facts still say
-      no demo loop has been started by any story to date. The fix is a FACT REWRITE, not a code_refs
-      addition plus a verified_sha re-stamp -- which AC1 forbids.
-
-# ---------------------------------------------------------------------------
-# SIZING -- recorded honestly
-# ---------------------------------------------------------------------------
+      85 modules (api 55 + composition 13 + tools 17 -- V1). HIGHEST-YIELD SURFACE IN THE SPRINT:
+      lint-imports sets root_package = "src", so the tools/ -> src/ one-way rule and the
+      no-duplicated-constant rule have ZERO mechanical coverage today (V6). AC3's sweep must be
+      DEMONSTRATED CAPABLE against the known-shared failure-code mapping before any empty result
+      is accepted -- a sweep that has only ever returned empty proves nothing, the same failure
+      shape as a green-only guard. FIRST TO DROP if the session runs short.
+  - id: STORY-197
+    title: Land the mechanical guards the audit earned, and adjudicate every rule
+    file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
+    status: todo
+    points: 3
+    ceremony: implementer + both reviewers
+    result: null
+    order: 4
+    plan_note: >-
+      THE SPRINT'S POINT: a report is a document, a contract is a build failure. Scope is
+      DISCOVERY-DEPENDENT so AC5 writes the stopping rule down -- guards for at most the TWO
+      highest-severity guardable findings, everything else filed with a guard sketch. Expect a
+      pytest test rather than a contract for the tools/ boundary (V6). AC7 demands the FULL gate,
+      not --only: STORY-178 means a --only matching nothing exits 0, the one known false-green on
+      the DoD floor. May shrink to ONE guard + every rule adjudicated, never to zero guards.
 sizing_note: >-
-  13 points across 5 stories. This is ABOVE the PO's stated ~9-11 pacing baseline (memory:
-  pacing-multi-sprint-verify) and above recent actuals (sprint 62: 9, 63: 7, 64: 8). The PO chose the
-  full clear-out knowing it was the largest option offered, then approved the 186/189 cut plus the
-  STORY-191 re-point, which held the total at the 13 already approved. SOLE DROP CANDIDATE:
-  STORY-185. NEVER break the 190 -> 177 -> 191 chain.
-
-# ---------------------------------------------------------------------------
-# CARRIED FORWARD -- raise at sprint-66 planning
-# ---------------------------------------------------------------------------
+  11 points across 4 stories -- deliberately at the TOP of the PO's stated ~9-11 baseline rather
+  than above it. Sprint 65 ran 13; its retro's honest read was that the size was absorbable but
+  "bought less margin than it looked" (three of five stories needed a fix round). STORY-186 and
+  STORY-189 (1 point each, carried out of sprint 65, both now unblocked since STORY-191 landed)
+  were therefore LEFT OUT rather than topping this up to 13. They are the first sprint-67
+  candidates.
 carried_forward:
-  - "PO REMINDER (asked for explicitly 2026-07-30, memory: wanted-architecture-audit-sprint): the PO
-     wants a sprint devoted PURELY to AUDITING boundary / code-discipline issues -- the class C1
-     describes, where the import direction is legal but the design is wrong. Raise it at sprint-66
-     planning and EVERY planning after until scheduled or explicitly dropped. Do not silently fold
-     it into a feature sprint."
-  - "STORY-186 and STORY-189 (cut above) are sprint-66 candidates."
-  - "STORY-178 (yt_gate.py exits 0 when --only matches nothing -- a false green on the DoD floor)
-     remains unscheduled and is a standing caveat on every scoped gate run this sprint."
-  - "STORY-179 (dynamo ephemeral port not routable on Windows) remains unscheduled; C4 is its
-     standing workaround."
-
-# GATE RECORDS. Mid-sprint runs MAY be --only-scoped; the FULL 8-command gate on the FINAL HEAD is
-# mandatory and is the evidence of record (A6: record pass/skip COUNTS -- a nonzero skip count is an
-# incomplete gate, not a pass). NOTE: strip ANSI escapes from yt_gate output before pasting -- npm
-# colourises its build log and YAML rejects raw control characters outright.
-#
-# STORY-188 @ 19c2d35 -- full 8/8, 666 passed / 0 SKIPPED. Superseded by the final run below.
-#
-# FINAL, ALL FIVE STORIES @ b3e1767 -- FULL 8/8 GATE, REQUIRE_DYNAMO=1,
-# DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (container uptime_dynamo_8021).
-# *** 685 passed, 0 SKIPPED *** (sprint-64 close baseline was 666, so +19 net new tests).
-# The ZERO skip count is the point: it proves the 53 DynamoDB-gated tests actually RAN.
-# yt_selftest 30/30. yt_wiki CLEAN on sweep/facts/links/integrity.
-# THIS GATE WAS RED TWICE DURING THE SPRINT AND BOTH REDS WERE REAL:
-#   - against the external delivery: ruff check 22 errors (incl. F821 undefined `httpx`) plus
-#     ruff format 12 files, while that delivery self-reported "verified". Exactly why the
-#     delivery contract says a self-reported gate result is NEVER trusted.
-#   - after the first fix round: ruff format on 3 backend/src files.
-dod_evidence:
-  - command: "pytest"
-    exit_code: 0
-    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 35.67s ============================="
-    commit: b3e1767
-    at: "2026-07-30T20:34:58+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: b3e1767
-    at: "2026-07-30T20:35:34+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: b3e1767
-    at: "2026-07-30T20:35:35+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "242 files already formatted"
-    commit: b3e1767
-    at: "2026-07-30T20:35:35+00:00"
-  - command: "cfn-lint infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: b3e1767
-    at: "2026-07-30T20:35:35+00:00"
-  - command: "npm test"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  02:05:40 | Duration  50.15s (transform 11.65s, setup 45.83s, import 31.87s, tests 57.89s, environment 166.47s)"
-    commit: b3e1767
-    at: "2026-07-30T20:35:39+00:00"
-  - command: "npm run build"
-    exit_code: 0
-    output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 389ms"
-    commit: b3e1767
-    at: "2026-07-30T20:36:30+00:00"
-  - command: "npm run lint"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 lint | > eslint ."
-    commit: b3e1767
-    at: "2026-07-30T20:36:36+00:00"
-
+  - >-
+    STORY-186 (1) — demo-engine doc/test hygiene; unblocked now STORY-191 has landed. Re-verify
+    every line citation before starting -- its own notes record that "seven rejection tests" is
+    really 9 functions / 11 cases, and its cited range is stale.
+  - >-
+    STORY-189 (1) — the two doc/wiki gaps sprint 64 left. demo-engine.md still does not mention
+    tools/demo_loop_gate/ ANYWHERE, so the fix is a Fact rewrite, not a code_refs addition.
+  - >-
+    STORY-192 — the wiki carries the same em-dash corruption in a shape STORY-188's guard cannot
+    catch (valid UTF-8 carrying mojibake; 246 sequences, 6 files).
+  - >-
+    STORY-193 — proposal formation is not reliably assertable in a loop run. Do NOT "fix" it by
+    widening the anti-flap window; that is production logic.
+  - >-
+    STORY-178 — yt_gate exits 0 when --only matches nothing; the only known false-green on the
+    DoD floor, and a standing caveat on every scoped run.
+  - >-
+    STORY-147 (2) — component group + description; the cheapest UI-gap item.
+dod_evidence: []   # per-story records appended by yt_gate.py; merged VERBATIM (A10 now makes the
+                   # emitted fragment always valid YAML). The FULL gate on the final HEAD is the
+                   # evidence of record at sprint close.

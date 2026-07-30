@@ -46,11 +46,16 @@ Docs-only. No file under `backend/src/`, `frontend/` or `config/` changes.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `docs/scrum/wiki/zone-rules.md` exists as a conforming wiki article: frontmatter
-      carries `code_refs` (at minimum `pyproject.toml`, `backend/src/core/`, `backend/src/adapters/`,
-      `backend/src/api/`, `backend/src/composition/` representative files) and a `verified_sha` that
-      is a real commit on `sprint-66`. `python .claude/skills/yourteam/scripts/yt_wiki.py` passes all
-      four checks (sweep, Facts coverage, link lint) after the change.
+- [ ] **AC1** — `docs/scrum/wiki/zone-rules.md` exists as a conforming wiki article:
+      `verified_sha` is a **short** sha (7–12 hex — the integrity check rejects a 40-char one) that is
+      a real commit on `sprint-66`, and `code_refs` are **exactly the files the article's Facts cite**
+      — not whole-zone directories. `python .claude/skills/yourteam/scripts/yt_wiki.py` reports
+      **CLEAN** on the four blocking checks (`sweep`, `facts`, `links`, `integrity`) and adds **no new
+      `refs` amplifier note**: `pyproject.toml` is already a `code_ref` in 5 articles against an
+      `AMPLIFIER_THRESHOLD` of 4, so this article must **not** add it — the eight contracts are
+      already owned by `architecture-boundary.md`, which this article links to instead of restating.
+      (Verified at planning: `refs` is advisory unless `--strict-refs`, so it cannot fail the gate —
+      but a catalogue that starts life by widening a known amplifier is the wrong first move.)
 - [ ] **AC2** — Every rule is identified `ZR-n` and carries all four of: a one-sentence normative
       statement; its source (named file/section, PO directive with date, or working agreement);
       at least one **compliant** citation `file:line` from this repo; and a coverage verdict that is
