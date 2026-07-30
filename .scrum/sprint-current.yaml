@@ -198,7 +198,9 @@ stories:
   - id: SPIKE-064
     title: "Feasibility spike for STORY-182 (zero points, timeboxed) — fleet coverage, loop lifecycle, env matrix"
     file: null               # findings land on this board, not in a story file
-    status: todo
+    status: done   # 2026-07-30, run by the orchestrator at 0377737. All three parts answered; no
+                   # loop started against a real publisher, no network call, Statuspage untouched.
+                   # STORY-182 is FEASIBLE as specified. Findings under spike_findings below.
     points: 0
     ceremony: spike          # orchestrator, read-only + short probes; no production code
     order: 2                 # AFTER story 1 (so it can use the provenance helper), BEFORE story 2
@@ -340,6 +342,100 @@ stories:
       3. BACKFILL — zero rows in the trailing 2h -> one VENDOR-ID DRIFT SUSPECTED warning PER SIGNAL
          (41); >=1 row per signal in the window -> ZERO drift warnings plus one 'Vendor-id health
          OK' INFO per signal. Assert both counts on both sides."
+spike_findings:
+  SPIKE-064:
+    run_by: orchestrator
+    at_commit: 0377737
+    harnesses: ["<scratchpad>/spike_064_fleet_coverage.py", "<scratchpad>/spike_064_loop_and_env.py"]
+    safety: "No loop started against a real publisher. No network call to Statuspage or Dynatrace.
+      No DynamoDB write. Part (ii) probed the TERMINATION MECHANICS against a stand-in with run.py's
+      exact shape (asyncio.gather over 41 periodic tasks persisting each cycle), not the real loop."
+    verdict: "STORY-182 IS FEASIBLE AS SPECIFIED. Both blockers the spike existed to de-risk are
+      answered, and it found one NEW trap plus one refinement to B1's count."
+    part_i_fleet_coverage:
+      question: "B1 — is fleet-wide coverage reachable at all, and does it satisfy AC3 and AC4?"
+      answer: "YES, via the BUILDER route, and cheaply."
+      measured:
+        - "load_config('config/demo') -> 3 apps (demo-core, demo-edge, demo-platform),
+           13 components, 41 signals. Every signal declares the SAME 4 locations
+           (SYNTHETIC_LOCATION-DEMOA/B/C/D). Intervals are 30/45/60s. So CLAUDE.md's
+           '13 components, 41 signals, 4 declared locations' is confirmed at source."
+        - "41 SignalScenarios constructed IN CODE from the loaded config, 5 cycles each, expanded via
+           the real expand_scenario -> 820 rows (= 41 x 5 x 4, exact). Oldest row 4 minutes before
+           end_time, newest AT end_time, no row in the future."
+        - "AC4: check_vendor_id_health over the whole fleet against a DemoRowStore of those rows ->
+           **0 VENDOR-ID DRIFT warnings, 0 probe-FAILED warnings, 41 'health OK' INFO lines.**
+           AC4 REACHABLE. The 41 INFO lines also CONFIRM B7 at runtime: the healthy branch is NOT
+           silent, so a gate asserting silence on the positive side would have failed on a correct
+           run."
+        - "AC3: the real build_dql_query with watermark=None (the first pull of a never-ingested
+           signal — exactly AC2's fresh-table case) returns 20 rows for EVERY one of the 41 signals,
+           each with 4 distinct locations. 0 signals with zero rows, 0 signals under 4 locations.
+           With 13 components and 41 signals, AC3's >=12 / >=40 / >=4 thresholds are ALL REACHABLE
+           SIMULTANEOUSLY from a single coverage artifact."
+      cost_correction: "ONLY 5 CYCLES ARE NEEDED, not 2h of ladder. B7 said vendor-health needs >=1
+        row inside the trailing 2h window rather than 2h of coverage; that is now confirmed
+        empirically. The literal '>=2h of coverage' reading would have been 240 cycles x 41 signals
+        x 4 locations = ~39,000 rows for no benefit. 820 rows suffice. This materially shrinks
+        STORY-182's authoring cost — but the 5-point estimate stands: the cost was never the row
+        count, it was the harness."
+      b1_count_refined: "B1 said 35 of 41 signals are uncovered. Re-measured against the five
+        checked-in scenarios: **36 signals emit a DRIFT warning**, not 35. The extra one is
+        dark-monitor.yaml's signal — it IS 'covered' by a scenario file, but the scenario declares a
+        fully dark monitor, so it expands to ZERO rows and drifts exactly like an uncovered signal.
+        B1's conclusion is unchanged and its mechanism is confirmed; the count is 36."
+      new_trap_found: "THE LOCATION FIELD NAME. Rows carry the location under
+        `dt.entity.synthetic_location` (rows.py:85), NOT `dt.synthetic.location.id` — which is the
+        shape of the MONITOR id field (`dt.synthetic.monitor.id`, rows.py:84) and the obvious wrong
+        guess. This spike's own first run made that exact mistake: it reported '41 signals with <4
+        locations' and 'AC3 REACHABLE: False' while the rows were completely correct — a
+        harness-defect FALSE NEGATIVE on the story's headline assertion. Carry this in STORY-182's
+        brief: an AC3 location assertion that reads the wrong key silently sees {None}, i.e. one
+        'location', forever."
+    part_ii_loop_lifecycle:
+      question: "B5 — run.py:218 never returns and takes no stop_event, and AC6 forbids editing
+        backend/src/. Can the loop be terminated externally on Windows, and are writes durable?"
+      answer: "YES to both."
+      measured:
+        - "A stand-in with run.py's shape (asyncio.gather over 41 periodic tasks) was still running
+           after 2s — it does not return on its own, confirming the process must be killed
+           externally."
+        - "All 41 signals fired their FIRST cycle within 2s (41/41 distinct signals persisted, 205
+           cycles total). This confirms pull_loop.py:160's documented behaviour at runtime: the first
+           cycle fires BEFORE the first sleep, so one cycle per signal completes early. STORY-182's
+           run duration therefore does not need to span an interval — it needs to span startup."
+        - "subprocess.terminate() ended it with NO kill escalation needed; process gone by PID
+           afterwards."
+        - "Cycles persisted BEFORE termination (205) == cycles present AFTER (205). No buffered
+           writes lost. Combined with decide.py:108-111's commit-first ordering, external
+           termination is safe."
+      caveat_for_the_brief: "On Windows, terminate() leaves a NONZERO returncode (observed rc=1) —
+        that is TerminateProcess, not a failure. STORY-182's harness must not treat a nonzero exit
+        after a deliberate terminate() as the run having failed."
+    part_iii_env_matrix:
+      question: "AC1(a)/(b) — does CONFIG_DIR really govern the API process, and do the table vars
+        reach both composition roots?"
+      answer: "YES, and the dangerous default is now DEMONSTRATED rather than argued."
+      measured: "load_settings() + load_config() + statuspage_mapping() run in a SUBPROCESS with a
+        clean env, twice:
+        DEFAULT (CONFIG_DIR unset)  -> config_dir='config/apps', apps=['httpcheck'],
+          statuspage_mapping() = a NON-EMPTY map to a REAL Statuspage component id.
+        CONFIG_DIR=config/demo      -> config_dir='config/demo',
+          apps=['demo-core','demo-edge','demo-platform'], statuspage_mapping() = {}.
+        So the publish guard is exactly as CLAUDE.md describes, and a process that does not receive
+        CONFIG_DIR resolves a live mapping. This is AC1(a)'s trap, measured. DYNAMO_OBSERVATIONS_TABLE
+        / DYNAMO_CONTROL_TABLE / DYNAMO_ENDPOINT_URL were read correctly in both runs, confirming the
+        fresh-table wiring (A10) works per-process via the ordinary environment."
+    consequences_for_story_182:
+      - "The coverage artifact should take the BUILDER route (construct SignalScenario from the loaded
+         demo config) — proven to work, and it derives the 4 locations and the per-signal interval
+         from config rather than duplicating them in YAML. It is also why STORY-184 must land first:
+         this is code-construction of SignalScenario, the path the type invariant guards."
+      - "5 cycles is sufficient; do not author 2h of ladder."
+      - "Assert locations off `dt.entity.synthetic_location` (or the API DTO's `location`), never a
+         guessed key — and assert the count is 4, so a {None} read cannot pass."
+      - "Terminate externally; ignore the nonzero Windows returncode; rely on commit-first durability."
+      - "Set CONFIG_DIR on BOTH processes. The default is not merely unsafe in theory."
 story_gates:
   STORY-187:
     implementer_head: 7bc1a8c      # range 3fc1bc2..7bc1a8c, 2 commits (037ea26, 7bc1a8c), tree clean
