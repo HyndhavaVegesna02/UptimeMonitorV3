@@ -63,12 +63,22 @@ def test_build_child_env_sets_config_dir_and_dynamo_vars_and_never_unsets_them()
 
 
 def test_build_child_env_omits_optional_dynatrace_and_statuspage_vars_when_none():
-    """The API-process call site never needs DYNATRACE_*/STATUSPAGE_* set by
-    the harness at all -- create_app() never calls load_live_secrets(), and
-    letting the real repo-root .env supply STATUSPAGE_* is exactly the
-    exposure AC1 exists to guard against via CONFIG_DIR, not by stripping
-    the file. Passing None for a field leaves it OUT of the child env
-    entirely (never sets it to the literal string "None")."""
+    """Passing None for a field leaves it OUT of the child env entirely
+    (never sets it to the literal string "None"). This says nothing about
+    the API-process call site's actual exposure: `base_env={}` here cannot
+    distinguish "omitted" from "stripped" -- see the two tests below, which
+    exercise that with a REAL-LOOKING value already present in base_env.
+
+    (STORY-182 fix round, MAJOR 1: this docstring previously claimed "the
+    API-process call site never needs DYNATRACE_*/STATUSPAGE_* set by the
+    harness at all -- create_app() never calls load_live_secrets()". That
+    was false at the call-site level: `composition/app.py:169-183` DOES call
+    `load_statuspage_secrets()` and wires both Statuspage vars into
+    `build_publisher` whenever a component_repo/publication_repo are wired,
+    which the API's approve trigger does. The harness's API call site must
+    therefore pass explicit fakes too, exactly like the loop call site --
+    the empty `config/demo` mapping is the guard, not the absence of
+    credentials on that process.)"""
     env = build_child_env(
         base_env={},
         config_dir="config/demo",
@@ -81,3 +91,43 @@ def test_build_child_env_omits_optional_dynatrace_and_statuspage_vars_when_none(
     assert "DYNATRACE_API_TOKEN" not in env
     assert "STATUSPAGE_PAGE_ID" not in env
     assert "STATUSPAGE_API_KEY" not in env
+
+
+def test_build_child_env_inherits_a_real_looking_statuspage_key_when_not_overridden():
+    """`base_env={}` (the test above) cannot distinguish "omitted" from
+    "stripped". Here base_env carries a REAL-LOOKING `STATUSPAGE_API_KEY`
+    (standing in for what a child process's own `load_dotenv()` would load
+    from the repo-root `.env` if the caller passes no override) -- and it
+    passes straight through untouched. This is exactly why `harness.py`'s
+    API-process call site must pass an explicit fake `statuspage_api_token`,
+    the same as the loop call site: omitting the argument does not mean
+    "absent" in the child process, it means "whatever is already there"."""
+    base_env = {"STATUSPAGE_API_KEY": "real-looking-secret-do-not-leak"}
+
+    env = build_child_env(
+        base_env=base_env,
+        config_dir="config/demo",
+        dynamo_endpoint_url="http://127.0.0.1:8021",
+        observations_table="story182-obs-abc",
+        control_table="story182-ctrl-abc",
+    )
+
+    assert env["STATUSPAGE_API_KEY"] == "real-looking-secret-do-not-leak"
+
+
+def test_build_child_env_overrides_a_real_looking_statuspage_key_when_given():
+    """The counterpart to the inheritance test above: passing an explicit
+    (fake) `statuspage_api_token` DOES override whatever base_env already
+    carries -- the defence `harness.py`'s API call site now relies on."""
+    base_env = {"STATUSPAGE_API_KEY": "real-looking-secret-do-not-leak"}
+
+    env = build_child_env(
+        base_env=base_env,
+        config_dir="config/demo",
+        dynamo_endpoint_url="http://127.0.0.1:8021",
+        observations_table="story182-obs-abc",
+        control_table="story182-ctrl-abc",
+        statuspage_api_token="story182-fake-token",
+    )
+
+    assert env["STATUSPAGE_API_KEY"] == "story182-fake-token"

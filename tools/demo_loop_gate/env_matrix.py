@@ -43,13 +43,22 @@ def build_child_env(
     Starts from `base_env` (normally `os.environ`) and OVERRIDES
     `CONFIG_DIR`/`AWS_REGION`/`DYNAMO_*` unconditionally -- never leaves a
     stale value in place. The optional Dynatrace/Statuspage fields are
-    included ONLY when given (never set to the literal string `"None"`):
-    the API-process call site does not need them at all
-    (`create_app()` never calls `load_live_secrets()`), while the loop
-    process needs `DYNATRACE_*` to reach the demo engine and gets
-    deliberately fake-but-present `STATUSPAGE_*` values so the guard is
-    demonstrated as config-driven (real-looking credentials present) without
-    ever touching the actual repo-root `.env` secrets.
+    included ONLY when given (never set to the literal string `"None"`).
+
+    Both call sites in `harness.py` now pass deliberately fake-but-present
+    `STATUSPAGE_*` values: the loop process needs `DYNATRACE_*` to reach the
+    demo engine, and -- corrected in the STORY-182 fix round, MAJOR 1 -- the
+    API process is ALSO credential-bearing. `composition/app.py:169-183`
+    calls `load_statuspage_secrets()` and wires both Statuspage vars into
+    `build_publisher()` whenever the API's approve trigger has a
+    component_repo/publication_repo, which it does. Omitting the fakes at
+    that call site does not mean "no credentials" -- the subprocess's own
+    `load_dotenv()` (`composition/asgi.py`) would supply the REAL
+    repo-root `.env` values instead (`load_dotenv()`'s default
+    `override=False` only fills vars not already set). The empty
+    `config/demo` `statuspage_mapping()` is the actual guard (verified by
+    `tools/demo_loop_gate/guard_reality_gate.py`); passing fakes here is
+    defence in depth on top of it, not the guard itself.
     """
     env: dict[str, str] = dict(base_env)
     env["CONFIG_DIR"] = config_dir

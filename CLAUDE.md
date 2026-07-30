@@ -177,8 +177,16 @@ drives the real, unmodified `python -m src.composition.run` as an OS
 subprocess against an embedded local demo-engine instance, with `CONFIG_DIR`
 set to `config/demo` on **both** it and a real `uvicorn` API subprocess, fresh
 throwaway DynamoDB tables (`tools/demo_loop_gate/env_matrix.py::
-fresh_table_names`), and deliberately fake Dynatrace/Statuspage credentials —
-never the real repo-root `.env` values. The five checked-in
+fresh_table_names`), and deliberately fake Dynatrace/Statuspage credentials on
+**both** subprocesses' env — a defence-in-depth on top of the actual guard.
+The API process is genuinely credential-bearing: `composition/app.py:169-183`
+calls `load_statuspage_secrets()` and wires both Statuspage vars into
+`build_publisher()` for the approve trigger, so if the harness omitted the
+fakes there, that subprocess's own `load_dotenv()` (`composition/asgi.py`)
+would supply the REAL repo-root `.env` values instead. The real guard is
+`config/demo`'s empty `statuspage_mapping()` (verified independently, with no
+network call, by `tools/demo_loop_gate/guard_reality_gate.py`), never the
+absence of credentials on either process. The five checked-in
 `config/demo/scenarios/*.yaml` cover only 6 of the fleet's 41 signals by
 design (STORY-176 AC5's specific cases); STORY-182 closed that gap with a
 **fleet-wide coverage artifact built in code**

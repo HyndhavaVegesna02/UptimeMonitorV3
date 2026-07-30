@@ -294,12 +294,24 @@ def run_positive_side(
     with DemoEngineServer(store) as demo_engine:
         print(f"Embedded demo engine listening at {demo_engine.base_url}")
 
+        # MAJOR 1 (STORY-182 fix round): the API process is genuinely
+        # credential-bearing -- `composition/app.py:169-183` calls
+        # `load_statuspage_secrets()` for the approve trigger -- so it gets
+        # the SAME deliberately-fake Statuspage credentials as the loop
+        # call site below, not just CONFIG_DIR/DYNAMO_*. Without this, its
+        # own `load_dotenv()` (`composition/asgi.py`) would fill the gap
+        # with the REAL repo-root `.env` values (`override=False` only
+        # skips vars already set). The actual guard remains `config/demo`'s
+        # empty `statuspage_mapping()` -- this is defence in depth on top
+        # of it, never the guard itself.
         api_env = build_child_env(
             base_env=dict(os.environ),
             config_dir=str(DEMO_CONFIG_DIR),
             dynamo_endpoint_url=DYNAMO_ENDPOINT_URL,
             observations_table=observations_table,
             control_table=control_table,
+            statuspage_page_id=FAKE_STATUSPAGE_PAGE_ID,
+            statuspage_api_token=FAKE_STATUSPAGE_API_TOKEN,
         )
         api_proc = subprocess.Popen(
             [
