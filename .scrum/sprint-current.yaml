@@ -163,7 +163,12 @@ stories:
   - id: STORY-187
     title: An import-provenance helper so a proof can prove WHICH code it ran
     file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
-    status: todo
+    status: done   # 2026-07-30 at 7bc1a8c. All 7 ACs; scoped DoD gate 4/4 (617 passed, 0 SKIPPED —
+                   # 614 baseline + exactly the 3 tests this story adds, so AC7's test-count
+                   # discipline holds); reality gate PASS two-sided ON THE REAL MECHANISM (a genuine
+                   # git worktree, not the test's labelled simulation). 1-pointer ceremony, so no
+                   # reviewer pair — the orchestrator read the helper and all three tests as code and
+                   # re-verified AC6 and the encoding claim independently.
     points: 1
     ceremony: 1-2-pointer    # implementer -> DoD gate -> reality gate (no reviewer pair)
     order: 1                 # FIRST, and not for size reasons: stories 2-4 each owe a
@@ -335,7 +340,102 @@ stories:
       3. BACKFILL — zero rows in the trailing 2h -> one VENDOR-ID DRIFT SUSPECTED warning PER SIGNAL
          (41); >=1 row per signal in the window -> ZERO drift warnings plus one 'Vendor-id health
          OK' INFO per signal. Assert both counts on both sides."
-story_gates: {}
+story_gates:
+  STORY-187:
+    implementer_head: 7bc1a8c      # range 3fc1bc2..7bc1a8c, 2 commits (037ea26, 7bc1a8c), tree clean
+    files_changed: ["tools/import_provenance.py", "backend/tests/test_import_provenance.py",
+      ".scrum/checklists/implementer.md", ".scrum/checklists/quality-review.md"]
+    shape_chosen: "A plain module with one function (assert_import_root) plus two small types
+      (ImportProvenance, WrongImportRootError) — no pytest fixture wrapper. AC4 forces the one-liner
+      path to work standalone and a fixture adds nothing a bare call gives; the story's Open Questions
+      make the fixture optional. Accepted."
+    sm_independent_checks:
+      - "AC6 mechanical, run by the orchestrator NOT taken from the report: `git diff --name-only
+         3fc1bc2..HEAD -- backend/src/ frontend/` is EMPTY, and `grep -rn import_provenance
+         backend/src/` exits 1 (no matches). Only 4 files changed, all inside the story's allowance."
+      - "AC3 read as code, not accepted on the report's word: test_import_provenance.py:141-144 DOES
+         assert the plain `importlib.import_module` resolved to the WRONG root (and not the right one)
+         BEFORE the helper is consulted at :147-148. That is finding B8's requirement met — without
+         those four lines the test would only have proven Path.is_relative_to works."
+      - "AC3's labelling verified: the docstring at :92-103 names it a `.pth` sys.path-entry
+         reproduction and explains why that IS the real mechanism rather than an approximation. AC3
+         permits a labelled simulation and forbids an unlabelled one."
+      - "AC5 verified by reading the diff: BOTH checklists name
+         tools/import_provenance.py::assert_import_root AND keep the manual `__file__` print as an
+         explicitly documented fallback — the prose rung is intact, per AC5's 'a script that exists
+         but is never called is worse than a rule'. The implementer additionally scoped the claim
+         HONESTLY: A3's other mechanisms (attribute names, fixture skips) are called out as NOT
+         covered by the helper, so the checklist does not over-promise."
+      - "The implementer's stale-wording correction inside the A1-refinement bullet ('setuptools'
+         finder' -> the .pth sys.path entry) is IN SCOPE, not a drive-by: it is the same paragraph AC5
+         requires it to edit, and the old wording was factually wrong."
+      - "THE ENCODING CLAIM WAS VERIFIED RATHER THAN TRUSTED. The implementer reported that the edit
+         pipeline lossily converted 3 pre-existing raw cp1252 0x97 bytes in quality-review.md to
+         U+FFFD, and that it restored them. Checked byte-for-byte at BOTH revisions:
+         implementer.md   3fc1bc2 valid-UTF8   raw0x97=1 realFFFD=3
+         implementer.md   HEAD    valid-UTF8   raw0x97=1 realFFFD=3
+         quality-review.md 3fc1bc2 INVALID-UTF8 raw0x97=3 realFFFD=0
+         quality-review.md HEAD    INVALID-UTF8 raw0x97=3 realFFFD=0
+         Identical at parent and head for both files, so the restoration was COMPLETE and this story
+         changed no encoding. NOTE the separate pre-existing fact it surfaced: implementer.md already
+         carries 3 REAL U+FFFD characters at the parent commit, and quality-review.md is not valid
+         UTF-8 at all. Neither is this story's doing; filed as a candidate below."
+    dod_gate:
+      scope: "--only pytest --only importlinter --only ruff. cfn-lint and the three frontend commands
+        are NOT affected by this diff (no infra/ change, no frontend/ change) and were not run — the
+        FULL 8 remain mandatory at sprint close as the evidence of record."
+      env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (container uptime_dynamo_8021, STORY-179
+        workaround). PASS/SKIP COUNTS RECORDED per this sprint's standing rule: 617 passed, 0 SKIPPED.
+        The 0 is the point — a green pytest with skips is an incomplete gate this sprint."
+      verdict: "4/4 GREEN at 7bc1a8c"
+      commands:
+        - {command: "pytest", exit_code: 0, tail: "617 passed in 35.75s"}
+        - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
+           exit_code: 0, tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."}
+        - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
+        - {command: "ruff format --check .", exit_code: 0, tail: "224 files already formatted"}
+      test_count: "614 -> 617, i.e. +3, exactly the three tests this story adds (AC1, AC2, AC3). No
+        pre-existing test changed."
+    reality_gate:
+      verdict: PASS
+      route: "Run by the orchestrator from inside a REAL git worktree (`git worktree add --detach`),
+        NOT the test's labelled simulation — so the gate exercises the actual .pth mechanism against
+        the actual repo. Harness: <scratchpad>/reality_gate_187.py. Worktree removed afterwards;
+        `git worktree list` shows only the main tree; tree clean."
+      trap_proven_live: "Before either side was reported: cwd = the worktree, but
+        `src.composition.vendor_health` resolved to
+        C:\\Hyn\\uptime_monitor_v3\\backend\\src\\composition\\vendor_health.py — under the MAIN tree,
+        NOT under the worktree. This is sprint-63 STORY-180's exact failure, reproduced live rather
+        than described. (It also read _HEALTH_CHECK_WINDOW = '2h' from the main tree, which is the
+        very constant STORY-180's proof got wrong.)"
+      two_sided_note: "SIDE 1 — expect the WORKTREE's backend: RAISED WrongImportRootError, message
+        contains BOTH the expected root and the actual resolved path (both asserted).
+        SIDE 2 — expect the MAIN tree's backend: RETURNED an ImportProvenance.
+        SIDES DIFFER: true."
+      discrimination_proof: "HOW the sides differed, per A3 — same process, same module object, same
+        resolved __file__; ONLY the expected_root argument changed. A helper that ignored
+        expected_root, or that derived provenance from cwd instead of from the module, would have
+        produced the SAME outcome on both sides. That is precisely how STORY-180's proof reported 4/4
+        twice. So this gate could have come back negative, and the mechanism by which it would have is
+        named."
+      significance: "The helper would have CAUGHT sprint-63's false pass. That is the story's whole
+        claim, and it is now demonstrated rather than asserted."
+    wiki:
+      swept: "yt_wiki.py CLEAN on sweep/facts/links/integrity at 7bc1a8c, verified by the
+        orchestrator. Two standing code_ref amplifier notes only (run.py in 4 articles, pyproject.toml
+        in 5) — unchanged, advisory."
+      updated_by_the_story: []
+      note: "No wiki article's code_refs overlap this diff — tools/import_provenance.py is a NEW file
+        and no article claims it. Forward blast radius: empty. demo-engine.md deliberately not
+        touched: it is about tools/demo_engine/, not this helper."
+    candidates_filed_not_fixed:
+      - "ENCODING LANDMINE, pre-existing, surfaced by this story and NOT its doing:
+         .scrum/checklists/quality-review.md is not valid UTF-8 (3 raw cp1252 0x97 bytes) and
+         .scrum/checklists/implementer.md already carries 3 real U+FFFD characters. Any tool that
+         round-trips either file through UTF-8 will corrupt it, silently, in text nobody edited — it
+         happened during THIS story and was caught only by a pre-commit `git diff` read. Worth one
+         deliberate normalisation pass rather than relying on every future editor to notice. Candidate
+         for the sprint-64 retro or a filed story."
 final_gate: {}
 hotfixes: []
 interrupts: []
