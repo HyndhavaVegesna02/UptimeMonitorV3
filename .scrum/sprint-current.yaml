@@ -413,6 +413,20 @@ spike_findings:
            cycles total). This confirms pull_loop.py:160's documented behaviour at runtime: the first
            cycle fires BEFORE the first sleep, so one cycle per signal completes early. STORY-182's
            run duration therefore does not need to span an interval — it needs to span startup."
+        - "*** CORRECTION, 2026-07-30, raised by STORY-182's implementer against this very finding and
+           ACCEPTED. The '~2 seconds' figure above is NOT transferable and my brief should not have
+           carried it as a magnitude. *** It was measured on a synthetic no-I/O stand-in (bare
+           asyncio.sleep loops appending to a file). The REAL first pass does genuine local HTTP +
+           DynamoDB round-trips per signal, and `run_periodic`'s first pass runs all 41 signals'
+           run_cycle SEQUENTIALLY (each blocks until its own first `await asyncio.sleep`), so real
+           completion took roughly 20-90+ SECONDS. STORY-182's harness measured this directly: its
+           first two runs captured 37/41 signals, then a lone partial-batch signal, before being
+           reworked from a fixed sleep to polling for completion. The QUALITATIVE conclusion survives
+           intact and was the load-bearing part ('the run must span STARTUP, not an interval'); the
+           number did not. LESSON for the retro: a stand-in that removes the very I/O the real system
+           spends its time on can validate a control-flow claim while badly mis-measuring a timing
+           claim — and the two were reported in the same sentence, which is what let the bad half
+           travel. A spike finding should separate what was reproduced from what was merely timed."
         - "subprocess.terminate() ended it with NO kill escalation needed; process gone by PID
            afterwards."
         - "Cycles persisted BEFORE termination (205) == cycles present AFTER (205). No buffered
