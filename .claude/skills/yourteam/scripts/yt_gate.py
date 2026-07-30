@@ -126,8 +126,37 @@ def _is_banner(line: str) -> bool:
     return deco / len(solid) > 0.5
 
 
+#: ANSI/VT escape sequences (colour, cursor moves) emitted by tools that detect
+#: — or merely assume — a terminal. `\x1b[32m`, `\x1b[0m`, and friends.
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;?]*[ -/]*[@-~]|\x1b[@-Z\\-_]")
+
+
+def _strip_control_chars(text: str) -> str:
+    """Remove ANSI escapes and C0 control characters from captured output.
+
+    The emitted `dod_evidence` fragment is meant to be merged into the sprint
+    board VERBATIM, and YAML **forbids** raw C0 control characters outright:
+    a single stray `\\x1b` makes the whole board unparseable
+    (`yaml.reader.ReaderError: special characters are not allowed`), which is a
+    far worse failure than a slightly less pretty tail.
+
+    Amendment A10 (retro sprint-65, PO-approved 2026-07-30). Motivating
+    incident: a project's frontend build colourised its output, the tail was
+    pasted verbatim exactly as instructed, and the sprint board became
+    unreadable. Sanitising here fixes it for every project rather than warning
+    each one — any build tool that colourises hits this.
+
+    Tabs and newlines are preserved; `one_line_tail` collapses newlines itself.
+    """
+    return "".join(
+        ch for ch in _ANSI_ESCAPE.sub("", text) if ch >= " " or ch in "\n\t"
+    )
+
+
 def one_line_tail(text: str, limit: int = TAIL_CHARS) -> str:
-    tail = text.strip()[-limit:]
+    # Sanitise BEFORE slicing: escape sequences are multi-byte, so trimming
+    # first can leave a half-sequence whose ESC survives the filter's intent.
+    tail = _strip_control_chars(text).strip()[-limit:]
     tail = " | ".join(
         part.strip()
         for part in tail.splitlines()

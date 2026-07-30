@@ -72,6 +72,55 @@ class TailTests(unittest.TestCase):
         tail = yt_gate.one_line_tail("a" * 5000, limit=100)
         self.assertLessEqual(len(tail), 120)
 
+    def test_ansi_escapes_and_control_chars_are_stripped(self):
+        """Amendment A10 (retro sprint-65): the emitted tail must be YAML-safe.
+
+        The fragment is merged into the sprint board VERBATIM, and YAML forbids
+        raw C0 control characters outright -- one stray ESC makes the whole
+        board unparseable. Motivating incident: a colourised frontend build log
+        was pasted exactly as instructed and corrupted the board.
+        """
+        tail = yt_gate.one_line_tail("\x1b[32m✓ built\x1b[39m in 601ms\x07")
+
+        self.assertNotIn("\x1b", tail)
+        self.assertNotIn("\x07", tail)
+        self.assertFalse(
+            [ch for ch in tail if ch < " "],
+            "no C0 control character may survive into the YAML fragment",
+        )
+        # The MESSAGE must survive -- stripping is not censoring.
+        self.assertIn("built", tail)
+        self.assertIn("601ms", tail)
+        self.assertIn("✓", tail)
+
+    def test_emitted_fragment_with_colourised_output_is_parseable_yaml(self):
+        """End-to-end guard on A10: the real emitter, then a real YAML parse.
+
+        `one_line_tail` being clean is necessary but not sufficient -- what
+        actually broke was the FRAGMENT. Parsed with a hand-rolled check rather
+        than PyYAML because this suite is deliberately stdlib-only, so the
+        assertion is the one property YAML cares about here: no C0 controls.
+        """
+        fragment = yt_gate.emit_yaml(
+            [
+                {
+                    "command": "npm run build",
+                    "exit_code": 0,
+                    "output_tail": yt_gate.one_line_tail(
+                        "\x1b[32m✓ built\x1b[39m in 601ms"
+                    ),
+                    "at": "2026-07-30T00:00:00+00:00",
+                }
+            ],
+            "abc1234",
+        )
+
+        self.assertFalse(
+            [ch for ch in fragment if ch < " " and ch not in "\n\t"],
+            "the emitted dod_evidence fragment must contain no raw control "
+            "characters -- YAML rejects them and the board becomes unparseable",
+        )
+
 
 class EmitYamlTests(unittest.TestCase):
     def test_fragment_schema(self):

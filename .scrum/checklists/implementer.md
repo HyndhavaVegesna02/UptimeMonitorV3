@@ -104,6 +104,37 @@
       confirming 13/13 raise -- that is the expected practice, not an extra. The board records the
       artifact's EXIT CODE; values read out of stdout are not evidence.)
 
+- [ ] **A TEST that is a story's primary evidence for a defect fix must ALSO be demonstrated
+      failing** -- against the pre-fix behaviour, or against a deliberate mutation of the code it
+      guards -- and that demonstration recorded on the board. This is A7's rule widened from
+      artifacts to ordinary tests: a green test proves the code passes it, never that the test could
+      detect the defect at all.
+      Two concrete smells to check your own test against before reporting:
+        (a) does every fixture it constructs actually reach the code under test? A fake that is
+            built, never wired up, and then asserted on is asserting on a value the test itself
+            supplied;
+        (b) if you changed the guarded behaviour to something plainly WRONG, would this test go red?
+            If you cannot say yes, the test is decoration.
+      (2026-07-30, sprint-65 retro amendment A9. TWO defective tests shipped in one sprint and BOTH
+      survived the orchestrator's own review. STORY-190 AC3's "pre-fix stall" test built a
+      `watermark_repo`, never passed it to anything, called `normalize_rows` directly and asserted
+      the watermark was still `None` -- true whether or not anything raised. STORY-191's
+      backward-compat test asserted only `len(scenarios) > 0` and `isinstance(rows, list)` on a
+      function already annotated `-> list[dict]`; the quality reviewer exposed it by MUTATING the
+      legacy branch to emit DOWN -- silently turning every existing scenario DOWN, the worst
+      regression that story could cause -- and the test stayed green. Both cost a full review round
+      to find and minutes to catch this way.)
+
+- [ ] **If a proof SETS UP state, set it up and read it back through the SAME production interface
+      the system under test uses -- never through a parallel hand-rolled implementation.**
+      (2026-07-30, sprint-65 retro amendment A9, second half. A reality gate's precondition wrote a
+      component status to a hand-rolled DynamoDB key and read it back from the SAME hand-rolled key.
+      The key shape was wrong, so the write hit a phantom item nothing reads and the read-back
+      "verified" it against the same wrong key -- the precondition passed VACUOUSLY, the production
+      code correctly did nothing, and the gate reported the feature as broken. Two full runs were
+      spent chasing a defect that did not exist. Going through the repository makes that class of
+      drift impossible by construction.)
+
 - [ ] **If the story's headline deliverable is COMPUTATIONAL -- arithmetic, spacing, ordering,
       thresholds, windowing -- mutate the computation once and record which tests go RED.** Zero
       tests RED means the behaviour is UNPINNED, even at full coverage and even with every AC traced
