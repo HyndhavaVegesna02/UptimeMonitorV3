@@ -1,6 +1,7 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 65
-status: active     # none | planning | active | review | closed | aborted
+status: review     # none | planning | active | review | closed | aborted
+                   # ALL FIVE STORIES DONE, 13/13 POINTS, at b3e1767. AWAITING PO REVIEW.
                    # LOCKED 2026-07-30 on PO approval ("approve").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    # Tooling is frozen too (2026-01-01 agreement): no new MCP servers, no ad-hoc
@@ -187,7 +188,29 @@ stories:
   - id: STORY-190
     title: One unmappable row stalls a signal forever — quarantine the row, keep the batch
     file: docs/scrum/stories/STORY-190-partial-batch-resilience.md
-    status: todo
+    status: done   # 2026-07-30 at b3e1767, after ONE fix round. External delivery reworked
+                   # IN-PROCESS on PO instruction ("do all rework yourself").
+                   # spec review FAIL -> fixed -> all 8 ACs MET. quality review FIX_REQUIRED ->
+                   # fixed. Full 8/8 gate, 685 passed / 0 SKIPPED.
+                   # SPEC FINDING (serious, and the orchestrator had accepted it too): AC3's
+                   # pre-fix stall test was TAUTOLOGICAL -- it built a watermark_repo, never passed
+                   # it to anything, called normalize_rows directly, then asserted the watermark was
+                   # still None, which holds whether or not anything raises. Rewritten to drive the
+                   # STRICT path through the REAL run_cycle across TWO cycles and assert the actual
+                   # stall (watermarks_seen == [None, None]). DISCRIMINATION-PROBED: with the
+                   # monkeypatch removed so the FIXED path runs, it FAILS.
+                   # QUALITY FINDING (behavioural, not cosmetic): the lenient path caught only three
+                   # NAMED classes, so a PRESENT-but-invalid value still stalled the signal --
+                   # verified live: an unparsable timestamp (ValueError) and a null location
+                   # (pydantic ValidationError) both escaped to run_periodic. Now catches ValueError
+                   # (all four are subclasses) but NOT Exception, so a TypeError still surfaces.
+                   # ALSO: rejected_at now falls back to SystemClock() instead of an inline
+                   # datetime.now() -- it was the only direct wall-clock read in backend/src outside
+                   # SystemClock. The fake now subclasses the port, matching the other three.
+                   # *** THE PO's NAMED ZONE CHECK PASSED, verified import-by-import: the only core
+                   # import anywhere under adapters/inbound/ is src.core.domain. The adapter returns
+                   # values and persists nothing; the failure types are adapter-local; composition
+                   # alone decides what happens to them. 8 contracts KEPT, unedited. ***
     points: 3
     ceremony: external + spec + quality + gate    # external mode: BOTH reviewers regardless of size
     order: 2                 # BEFORE STORY-177: fix the poison before adding row variety. Also the
@@ -226,7 +249,22 @@ stories:
   - id: STORY-177
     title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
     file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md
-    status: todo
+    status: done   # 2026-07-30 at b3e1767, after ONE fix round. All ACs MET (spec review traced
+                   # every one). Full 8/8 gate, 685 passed / 0 SKIPPED.
+                   # AC2 single-sourcing had to be FIXED: `degraded` was hardcoded as
+                   # ("2","DEGRADED") in scenario.py, violating the one-place rule. Now DERIVED,
+                   # with a new ASSUMED_DEGRADED_* pair and a named UNMAPPED_POISON_* pair whose
+                   # not-in-the-mapping invariant is PINNED BY A TEST -- its only value is being
+                   # unmapped, a property of ANOTHER module that could otherwise be destroyed
+                   # silently, leaving STORY-191 AC5 green while testing nothing.
+                   # Also removed a `code:msg` escape hatch the delivery added, which let any
+                   # scenario YAML introduce arbitrary vendor literals -- the single-source rule
+                   # defeated by the back door.
+                   # AC4's negative half ("a HEALTHY row logs NO warning") was missing and is now
+                   # tested; without it an implementation that logged unconditionally would pass
+                   # while making the warning worthless as a signal.
+                   # AC5b's deliberate test inversion was done correctly by the delivery.
+                   # NO core/ CHANGE AT ALL, as designed -- Health.DOWN/DEGRADED already existed.
     points: 3
     ceremony: external + spec + quality + gate
     order: 3                 # after 190, so the mapping lands on a path that already degrades
@@ -260,7 +298,51 @@ stories:
   - id: STORY-191
     title: Drive a real DOWN through the loop — failure scenarios end to end on the demo fleet
     file: docs/scrum/stories/STORY-191-failure-scenario-through-the-loop.md
-    status: todo
+    status: done   # 2026-07-30 at b3e1767, after ONE (large) fix round. Full 8/8 gate.
+                   # *** THE DELIVERY DID NOT MEET AC3 AT ALL: there was NO real loop run.
+                   # test_story191_scenarios.py had ZERO references to run_positive_side /
+                   # subprocess / uvicorn -- seven in-process tests. The extra_scenarios seam it
+                   # added to harness.py was DEAD CODE called by nothing, which is precisely why
+                   # nobody noticed it had also DELETED `import httpx` from harness.py while 9 call
+                   # sites remained. The harness could not run. And it failed SILENTLY: NameError is
+                   # an Exception, so _wait_for_last_signal's `except Exception: pass` swallowed it
+                   # and returned False after burning the timeout. ***
+                   # CLOSED by tools/demo_loop_gate/failure_path_reality_gate.py -- a REAL loop run
+                   # (embedded demo engine + real uvicorn API + the unmodified
+                   # `python -m src.composition.run`, all OS subprocesses) asserting SIX properties
+                   # from PERSISTED STATE ONLY, never parsed log text.
+                   # REALITY GATE: PASS, EXIT 0 (re-run and PASSED again after later changes):
+                   #   down-ladder      api-gateway-health       healths=[down, up]     rows=40
+                   #   partial-breadth  auth-service-login       healths=[down, up]     rows=32
+                   #   degraded-ladder  payments-service-charge  healths=[degraded, up] rows=32
+                   #   poison-row       search-service-query     4 locations, rejected_rows=True
+                   #   cdn-edge: major_outage -> operational  == THE RECOVERY PUBLISH FIRED
+                   #   publications rows: 0                   == NOTHING LEFT THE PROCESS
+                   # That two-sided pair is the whole point: StatusWritebackPublisher.publish is the
+                   # ONLY component-status writer (so the change proves it ran), and
+                   # RecordingPublisher writes a row on EVERY attempt and exists ONLY in the
+                   # credentialed chain (so an empty table proves the LoggingPublisher fallback was
+                   # selected). FIRST TIME THE PUBLISH PATH HAS FIRED IN THIS REPO'S HISTORY -- and
+                   # the config-only guard held under genuine load.
+                   # SHOWN FAILING FIRST (A7): --self-test feeds all 6 assertions bad evidence; all
+                   # 8 bad cases rejected, good evidence accepted.
+                   # QUALITY CRITICAL: the backward-compat test asserted NOTHING (len>0 and
+                   # isinstance(list) on a -> list[dict] function). The reviewer DEFEATED IT BY
+                   # MUTATION -- making the legacy branch emit DOWN left it GREEN. Rewritten to
+                   # assert no failures, exact count and Health.UP throughout; the reviewer's exact
+                   # mutation now FAILS it.
+                   # Also: scenario vocabulary now validated at LOAD time with file/signal/index
+                   # context (a typo previously surfaced ~40 min into a live run as a context-free
+                   # ValueError); restored the deleted `type(...) is not int` / bool-is-int
+                   # rationale, run_positive_side's 9-step docstring, and the do-not-sort warning
+                   # earned by a live failure in sprint 64.
+                   # HONEST LIMIT, filed as STORY-193: proposal FORMATION is not reliably assertable
+                   # in a loop run -- two consecutive runs with identical scenarios DISAGREED,
+                   # because orchestrate's window (6*interval = 180s for every 30s failure signal)
+                   # can be outrun by the 41-signal vendor-health sweep. Observations are
+                   # watermark-driven and deterministic; proposals are not. AC5 therefore validates
+                   # whatever proposals ARE present, strictly, and records the count WITHOUT
+                   # asserting presence. A flaky assertion in a proof harness is worse than none.
     points: 5                # RE-POINTED 3 -> 5 at plan verification, PO-approved.
     ceremony: external + spec + quality + gate
     order: 4                 # LAST of the three coupled stories and HIGHEST RISK: the only one
@@ -316,7 +398,11 @@ stories:
   - id: STORY-185
     title: Un-gate the unsafe side of the publish-safety proof from Docker
     file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
-    status: todo
+    status: done   # 2026-07-30 at b3e1767. Single-file change: the unsafe side of the
+                   # publish-safety proof pair no longer takes the Docker-gated dynamo_local
+                   # fixture and uses the literal unreachable _NO_IO_DYNAMO_ENDPOINT_URL, so BOTH
+                   # sides now run un-gated. Full 8/8 gate; the 0 SKIPPED count confirms nothing
+                   # silently skipped. Reviewed as part of the sprint-wide quality pass.
     points: 1
     ceremony: external + spec + quality + gate
     order: 5                 # independent; gates nothing. THE SOLE DROP CANDIDATE if the sprint runs
@@ -369,58 +455,62 @@ carried_forward:
   - "STORY-179 (dynamo ephemeral port not routable on Windows) remains unscheduled; C4 is its
      standing workaround."
 
-# per-story gate records, merged VERBATIM from yt_gate.py's emitted fragment. Mid-sprint runs MAY be
-# --only-scoped; the FULL 8-command gate on the final HEAD is mandatory and is the evidence of
-# record. Record pass/skip COUNTS on every backend record (A6) -- a nonzero skip count is an
-# incomplete gate, not a pass.
+# GATE RECORDS. Mid-sprint runs MAY be --only-scoped; the FULL 8-command gate on the FINAL HEAD is
+# mandatory and is the evidence of record (A6: record pass/skip COUNTS -- a nonzero skip count is an
+# incomplete gate, not a pass). NOTE: strip ANSI escapes from yt_gate output before pasting -- npm
+# colourises its build log and YAML rejects raw control characters outright.
 #
-# STORY-188 @ 19c2d35 -- FULL 8/8 GATE, NOT SCOPED. Deliberately full rather than --only-scoped:
-# this is story 1, so a full green baseline on the sprint branch is worth having, and STORY-178
-# (yt_gate exits 0 when --only matches nothing) makes a scoped run a standing false-green risk.
-# *** pytest: 666 passed, 0 SKIPPED *** -- run with REQUIRE_DYNAMO=1 and
-# DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 against container uptime_dynamo_8021. The ZERO skip
-# count is the point (A6): it proves the 53 DynamoDB-gated tests actually RAN rather than being
-# silently skipped. 666 matches the sprint-64 close baseline exactly, so STORY-188 changed no
-# backend behaviour -- as intended for a docs/state-only story. yt_selftest separately 30/30
-# (was 28/28: +2 from AC6's new guard).
+# STORY-188 @ 19c2d35 -- full 8/8, 666 passed / 0 SKIPPED. Superseded by the final run below.
+#
+# FINAL, ALL FIVE STORIES @ b3e1767 -- FULL 8/8 GATE, REQUIRE_DYNAMO=1,
+# DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (container uptime_dynamo_8021).
+# *** 685 passed, 0 SKIPPED *** (sprint-64 close baseline was 666, so +19 net new tests).
+# The ZERO skip count is the point: it proves the 53 DynamoDB-gated tests actually RAN.
+# yt_selftest 30/30. yt_wiki CLEAN on sweep/facts/links/integrity.
+# THIS GATE WAS RED TWICE DURING THE SPRINT AND BOTH REDS WERE REAL:
+#   - against the external delivery: ruff check 22 errors (incl. F821 undefined `httpx`) plus
+#     ruff format 12 files, while that delivery self-reported "verified". Exactly why the
+#     delivery contract says a self-reported gate result is NEVER trusted.
+#   - after the first fix round: ruff format on 3 backend/src files.
 dod_evidence:
   - command: "pytest"
     exit_code: 0
-    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 94%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ======================= 666 passed in 65.75s (0:01:05) ========================"
-    commit: 19c2d35
-    at: "2026-07-30T19:07:17+00:00"
+    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 35.67s ============================="
+    commit: b3e1767
+    at: "2026-07-30T20:34:58+00:00"
   - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
     exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 427 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: 19c2d35
-    at: "2026-07-30T19:08:25+00:00"
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: b3e1767
+    at: "2026-07-30T20:35:34+00:00"
   - command: "ruff check ."
     exit_code: 0
     output_tail: "All checks passed!"
-    commit: 19c2d35
-    at: "2026-07-30T19:08:26+00:00"
+    commit: b3e1767
+    at: "2026-07-30T20:35:35+00:00"
   - command: "ruff format --check ."
     exit_code: 0
-    output_tail: "240 files already formatted"
-    commit: 19c2d35
-    at: "2026-07-30T19:08:26+00:00"
+    output_tail: "242 files already formatted"
+    commit: b3e1767
+    at: "2026-07-30T20:35:35+00:00"
   - command: "cfn-lint infra/stack.yaml"
     exit_code: 0
     output_tail: ""
-    commit: 19c2d35
-    at: "2026-07-30T19:08:26+00:00"
+    commit: b3e1767
+    at: "2026-07-30T20:35:35+00:00"
   - command: "npm test"
     exit_code: 0
-    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  00:38:37 | Duration  46.32s (transform 7.43s, setup 42.43s, import 22.81s, tests 53.30s, environment 157.66s)"
-    commit: 19c2d35
-    at: "2026-07-30T19:08:35+00:00"
+    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  02:05:40 | Duration  50.15s (transform 11.65s, setup 45.83s, import 31.87s, tests 57.89s, environment 166.47s)"
+    commit: b3e1767
+    at: "2026-07-30T20:35:39+00:00"
   - command: "npm run build"
     exit_code: 0
-    output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 601ms"
-    commit: 19c2d35
-    at: "2026-07-30T19:09:23+00:00"
+    output_tail: "in-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 389ms"
+    commit: b3e1767
+    at: "2026-07-30T20:36:30+00:00"
   - command: "npm run lint"
     exit_code: 0
     output_tail: "> frontend@0.0.0 lint | > eslint ."
-    commit: 19c2d35
-    at: "2026-07-30T19:09:32+00:00"
+    commit: b3e1767
+    at: "2026-07-30T20:36:36+00:00"
+
