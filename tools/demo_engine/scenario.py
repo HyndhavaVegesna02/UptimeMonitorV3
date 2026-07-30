@@ -53,6 +53,32 @@ class SignalScenario:
     interval_seconds: int
     cycles: list[list[str]]
 
+    def __post_init__(self) -> None:
+        """Enforce `interval_seconds` is a positive `int` on the TYPE itself
+        (STORY-184 AC1/AC2), so no construction path -- direct or via
+        `load_scenario_file` -- can produce a player whose past-anchored
+        `expand_scenario` would emit a row after `end_time`. `type(...) is
+        not int` (not `isinstance`) is deliberate: `bool` is an `int`
+        subclass in Python, so `isinstance(True, int)` is `True` and would
+        silently accept it; `type(True) is int` is `False`. In-repo
+        precedent for this exact field: `composition/config.py
+        ::_require_positive_interval` and
+        `core/domain/topology.py::Signal._require_positive_interval_when_set`.
+        """
+        if type(self.interval_seconds) is not int:
+            raise ValueError(
+                "interval_seconds must be an int, got "
+                f"{type(self.interval_seconds).__name__!r} "
+                f"({self.interval_seconds!r})."
+            )
+        if self.interval_seconds <= 0:
+            raise ValueError(
+                "interval_seconds must be positive, got "
+                f"{self.interval_seconds!r} -- expand_scenario is "
+                "past-anchored, so a non-positive interval would emit rows "
+                "in the future."
+            )
+
 
 def load_scenario_file(path: str | Path) -> list[SignalScenario]:
     """Parse a scenario YAML file into a list of `SignalScenario`s (STORY-176 AC1).
