@@ -168,7 +168,9 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
             # everything else above; the only invariant it can still raise
             # here is interval_seconds's type/sign, since it has no
             # knowledge of `path`. Re-raise with that context attached.
-            raise InvalidScenarioError(f"{path}: scenario {signal_key!r}: {exc}") from exc
+            raise InvalidScenarioError(
+                f"{path}: scenario {signal_key!r}: {exc}"
+            ) from exc
         scenarios.append(scenario)
     return scenarios
 
