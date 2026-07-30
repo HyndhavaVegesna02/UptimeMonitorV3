@@ -104,6 +104,12 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
     the file (`path`) and the offending signal key, matching the
     filename-prefixed convention `composition/config.py::load_config` uses
     for its own per-file/per-entry errors.
+
+    `interval_seconds`'s type/sign check itself lives on `SignalScenario.
+    __post_init__` (STORY-184), not here — this function catches the bare
+    `ValueError` it raises and re-raises it as an `InvalidScenarioError`
+    prefixed with the file path and signal key, which the type itself has no
+    way to know.
     """
     raw: Any = yaml.safe_load(Path(path).read_text(encoding="utf-8"))
     if not isinstance(raw, dict):
@@ -134,19 +140,6 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
             )
 
         interval_seconds = block["interval_seconds"]
-        if not isinstance(interval_seconds, int) or isinstance(interval_seconds, bool):
-            raise InvalidScenarioError(
-                f"{path}: scenario {signal_key!r}: interval_seconds must be "
-                f"an int, got {type(interval_seconds).__name__!r} "
-                f"({interval_seconds!r})."
-            )
-        if interval_seconds <= 0:
-            raise InvalidScenarioError(
-                f"{path}: scenario {signal_key!r}: interval_seconds must be "
-                f"positive, got {interval_seconds!r} — expand_scenario is "
-                "past-anchored, so a non-positive interval would emit rows "
-                "in the future (STORY-176 AC2f)."
-            )
 
         cycles = block["cycles"]
         if not isinstance(cycles, list):
@@ -163,14 +156,20 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
                     f"must be a list of location id strings, got {cycle!r}."
                 )
 
-        scenarios.append(
-            SignalScenario(
+        try:
+            scenario = SignalScenario(
                 signal_key=signal_key,
                 monitor_id=monitor_id,
                 interval_seconds=interval_seconds,
                 cycles=[list(cycle) for cycle in cycles],
             )
-        )
+        except ValueError as exc:
+            # `SignalScenario.__post_init__` (STORY-184) already validated
+            # everything else above; the only invariant it can still raise
+            # here is interval_seconds's type/sign, since it has no
+            # knowledge of `path`. Re-raise with that context attached.
+            raise InvalidScenarioError(f"{path}: scenario {signal_key!r}: {exc}") from exc
+        scenarios.append(scenario)
     return scenarios
 
 
