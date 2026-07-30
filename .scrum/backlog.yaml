@@ -1766,7 +1766,16 @@ stories:
     points: 1
     priority: 60
     type: chore
-    sprint: 65      # story 6 of 7. Pure accuracy/shape; gates nothing. Trailing 1-pointer.
+    sprint: null    # CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.
+                    # NOT merely sizing: AC2 parametrises the very test_scenario.py rejection tests
+                    # and AC4 refactors the load_scenario_file per-block validation that STORY-191
+                    # EXTENDS, while STORY-191 AC2 requires those same tests to pass UNMODIFIED.
+                    # Running both in one sprint is a guaranteed conflict. Sprint-66 candidate.
+                    # TWO CORRECTIONS TO FOLD IN WHEN NEXT REFINED: this story says SEVEN loader
+                    # rejection tests -- there are 9 FUNCTIONS / 11 COLLECTED CASES
+                    # (test_scenario.py:334,351,374,388,403,417,438,453,467); and its cited range
+                    # test_scenario.py:295-405 is ALREADY STALE (the block is now 329-467).
+                    # If STORY-191 lands first, re-verify EVERY line citation before starting.
   - id: STORY-188
     title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
     file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
@@ -1850,9 +1859,18 @@ stories:
     points: 1
     priority: 63
     type: chore
-    sprint: 65      # story 7 of 7, LAST. Sequenced AFTER STORY-191 on purpose: both edit
-                    # demo-engine.md frontmatter (191 AC10), so last-lands-reconciles avoids a
-                    # collision over the same code_refs.
+    sprint: null    # CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.
+                    # Finding 1 rewrites demo-engine.md frontmatter, which STORY-191 AC10 also
+                    # rewrites; deferring removes the collision entirely. Sprint-66 candidate.
+                    # TWO CORRECTIONS FOUND AT VERIFICATION, ALREADY FOLDED INTO THE STORY FILE:
+                    #  - the field is gap_verdicts (availability/models.py:36-37), NOT
+                    #    missing_cycles -- no such field exists anywhere in the repo;
+                    #  - finding 1 is WORSE than filed: `grep -c demo_loop_gate demo-engine.md` is
+                    #    ZERO, so the package is absent from the article's FACTS, not just its
+                    #    code_refs, and those Facts still say no demo loop has been started by any
+                    #    story to date. Sprint 64 falsified that. The fix is a FACT REWRITE, not a
+                    #    code_refs addition plus a verified_sha re-stamp -- which AC1 forbids.
+                    # Also: 8 .py modules in tools/demo_loop_gate/, not 9.
   - id: STORY-187
     title: An import-provenance helper so a proof can prove WHICH code it ran
     file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
@@ -1972,10 +1990,33 @@ stories:
                     # location->outcome mapping (up/down/degraded). BACKWARD COMPAT IS AN AC, NOT A
                     # NICETY: five checked-in config/demo/scenarios/*.yaml and seven loader rejection
                     # tests depend on the list form.
-    points: 3
+    points: 5       # RE-POINTED 3 -> 5 at plan verification (2026-07-30), PO-approved. The
+                    # verifier judged 3 materially under-pointed: scenario vocabulary + validation +
+                    # tests, four scenario files, a NEW harness seam, a row-merge strategy, an
+                    # event-id namespace, persisted-state assertions across four stores, a non-zero-
+                    # exit artifact shown failing, AND a resolution to the infeasible recovery.
+                    # *** THE DRAFT'S PUBLISH MECHANISM WAS IMPOSSIBLE AND IS REPLACED. A DOWN->UP
+                    # ladder CANNOT publish: a degradation never publishes (decide.py:128-136 opens a
+                    # proposal only); a recovery needs severity_rank(proposed) < severity_rank(
+                    # current) (decide.py:115-117) with STATUS_SEVERITY OPERATIONAL 0 / DEGRADED 1 /
+                    # PARTIAL_OUTAGE 2 / MAJOR_OUTAGE 3 (core/domain/status.py:63-68); and every
+                    # component seeds OPERATIONAL (seed_dynamo.py:49) with StatusWritebackPublisher.
+                    # publish (publish_helper.py:179) the ONLY status writer. So the ladder yields
+                    # PROPOSED then at most OBSOLETED (decide.py:157-169). PO-APPROVED ROUTE: pre-set
+                    # one demo component's stored status to MAJOR_OUTAGE (a real, reachable state --
+                    # a previously-approved degradation), then run an all-UP ladder so anti_flap
+                    # proposes OPERATIONAL and trips the recovery branch. BONUS: this works with the
+                    # STATIC past-anchored store and one cycle per signal, so the SEPARATE blocking
+                    # gap -- that harness.py:419 + :352-356 + pipeline.py:113-124 cannot express a
+                    # DOWN->UP transition at all -- is DISSOLVED rather than worked around.
+                    # AC6 PROOF IS TWO-SIDED AND FULLY PERSISTED (no logs, no stdout): the component's
+                    # status changed MAJOR_OUTAGE -> OPERATIONAL in the control table (proof it FIRED)
+                    # AND the publications table is EMPTY (proof nothing left the process --
+                    # RecordingPublisher, publish_helper.py:212-227, writes a row on EVERY attempt and
+                    # is absent from the LoggingPublisher fallback at :230-231). ***
     priority: 54
     type: feature
-    sprint: 65      # story 4 of 7, LAST of the three coupled stories and HIGHEST RISK: the only one
+    sprint: 65      # story 4 of 5, LAST of the three coupled stories and HIGHEST RISK: the only one
                     # starting real OS subprocesses, the only one where the publish path can fire,
                     # and external mode historically ships ~1 MAJOR per 3-pt story. Sequenced last so
                     # a fix round blocks nothing else.

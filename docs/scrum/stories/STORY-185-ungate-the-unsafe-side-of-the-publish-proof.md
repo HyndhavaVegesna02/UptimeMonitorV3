@@ -2,6 +2,11 @@
 id: STORY-185
 title: Un-gate the unsafe side of the publish-safety proof from Docker
 type: chore
+points: 1
+status: ready
+refined: 2026-07-30   # PO-approved `ready` at the sprint-64 refinement ("approve all five"); the
+                      # frontmatter was never updated to match, which the sprint-65 plan-verifier
+                      # caught as a Definition-of-Ready failure. Recorded here, not re-approved.
 ---
 
 ## Context

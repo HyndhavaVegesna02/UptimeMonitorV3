@@ -52,10 +52,18 @@ and surfaced**; the rest of the batch normalizes, ingests, and advances the wate
 ### Zone constraint (binding — CLAUDE.md §4, and the reason this is its own story)
 
 **The tempting implementation is wrong and the mechanical gate will not catch it.** Having the
-inbound adapter write quarantine rows itself via `RejectedObservationRepository` **passes all eight
-`lint-imports` contracts** — `adapters` may import `core`, and the port lives in `core/ports/` — while
-turning a pure translation layer into an orchestrator with a persistence dependency. Do not do it.
-There is no contract to stop you; this paragraph and the quality review are the only guards.
+inbound adapter import `src.core.ports.rejected_observation_repository` and write quarantine rows
+itself **passes all eight `lint-imports` contracts** — verified against `pyproject.toml:38-105`:
+`core-independence` (`:41-42`) has `src.core` as *source* (wrong direction), `adapters-independence`
+(`:53-56`) lists only the three adapter subpackages, and `adapters-edge-only` (`:83-87`) forbids only
+`src.api`/`src.composition`. It still turns a pure translation layer into an orchestrator with a
+persistence dependency. Do not do it. This paragraph and the quality review are the only guards.
+
+**The gate catches only half the trap.** Reaching for the *concrete*
+`src.adapters.persistence.dynamo_rejected_observation_repository` instead **does** break
+`adapters-independence` (`pyproject.toml:53-56`). Only the **core-port** route is invisible. So a red
+gate here means you took the concrete route — but a **green gate does not mean you took the right
+one.**
 
 Required shape:
 
@@ -76,24 +84,39 @@ Required shape:
 
 ### Required design (external mode — build this literally, infer nothing)
 
-1. In `dispatch.py`, add a frozen dataclass carrying one failed row: the raw `row` dict and the
-   `reason` (the exception's message, which already names the offending code / event.type / field).
-2. In `dispatch.py`, add a **lenient** counterpart to `normalize_rows` that returns both the
-   successfully-normalized observations (in input order) and the list of failures. **Leave
-   `normalize_rows` itself unchanged and strict** — it is the fail-loud unit and is called directly
-   by existing tests (`backend/tests/test_dynatrace_adapter.py:169,193,247,255,297`) and by the
-   demo-engine tests (`backend/tests/demo_engine/test_via_grail_executor.py:47,87`,
-   `test_scenario_coverage.py:55`). None of those call sites may change behaviour.
-3. `fetch_observations` (`adapter.py:24-44`) uses the lenient path and returns both parts. This
-   changes its return type — the intended contract change, and the reason this story reviews
-   separately from STORY-177.
-4. `run_cycle` (`pull_loop.py:102-109`) ingests the good observations as it does today, and for each
-   failure calls `rejected_repo.save(...)` and logs at **WARNING** naming the signal_key and reason.
-   The watermark advances on the good rows, so the signal moves past the bad one.
-5. `rejected_repo` is already constructed at the composition root (it is passed to `IngestService`);
-   thread it to `run_cycle` from `build_live_loop`. If it is absent, failures must still be **logged
-   loudly** — never silently dropped, which would recreate the "trusted-and-wrong" pipeline this
-   repo has already been burned by twice.
+**Names are prescribed. Do not invent alternatives** — sprint 65 is external, so an unnamed type is a
+coin flip.
+
+1. In `dispatch.py`, a frozen dataclass **`RowNormalizationFailure`** with exactly two fields:
+   `row: dict` (the raw vendor row) and `reason: str` (the caught exception's `str()`, which already
+   names the offending code / `event.type` / field). **Adapter-local — NOT in `core/domain/`.**
+2. In `dispatch.py`, a frozen dataclass **`NormalizationOutcome`** with exactly two fields:
+   `observations: list[SignalObservation]` and `failures: list[RowNormalizationFailure]`.
+3. In `dispatch.py`, a new function **`normalize_rows_lenient(rows, *, signal_key) ->
+   NormalizationOutcome`**, catching exactly `UnknownVendorStatusError`,
+   `UnsupportedMonitorTypeError` and `MalformedDqlRowError` per row; observations keep **input
+   order**. **Leave `normalize_rows` itself byte-for-byte unchanged and strict** — it is the fail-loud
+   unit, called by `backend/tests/test_dynatrace_adapter.py:169,193,247,255,297`,
+   `backend/tests/demo_engine/test_via_grail_executor.py:47,87` and
+   `test_scenario_coverage.py:55`. (Verified exhaustively: those 8 test sites plus the one production
+   caller `adapter.py:44` are the complete set.) None may change behaviour.
+4. `fetch_observations` (`adapter.py:24-44`) uses the lenient path and returns
+   **`NormalizationOutcome`** — the same named type, not a bare tuple. This is the intended contract
+   change and the reason this story reviews separately from STORY-177.
+5. **`run_cycle` AND `run_periodic` both gain a keyword-only `rejected_repo:
+   RejectedObservationRepository | None = None`.** This is the step most likely to be got wrong:
+   **`build_live_loop` calls `run_periodic` (`run.py:137-150`), never `run_cycle`**, and
+   `run_periodic` builds the `run_cycle` call itself at `pull_loop.py:186-199`. Adding the parameter
+   only to `run_cycle` wires nothing and production quarantines nothing.
+6. `run_cycle` ingests `outcome.observations` exactly as today, so **`run_cycle`'s return type and
+   `on_cycle`'s type (`pull_loop.py:82` and `:147-150`) are UNCHANGED — do not widen them.** For each
+   failure it calls `rejected_repo.save(signal_key=..., reason=failure.reason, payload=failure.row,
+   rejected_at=<clock now>)` and logs at **WARNING** naming the signal_key and reason. The watermark
+   advances on the good rows, so the signal moves past the bad one.
+7. `rejected_repo` is already constructed at the composition root (it is passed to `IngestService`);
+   thread it from there through `build_live_loop` → `run_periodic` → `run_cycle`. When it is `None`,
+   failures must still be **logged at WARNING** — never silently dropped, which would recreate the
+   "trusted-and-wrong" pipeline this repo has already been burned by twice.
 
 ## Acceptance Criteria
 

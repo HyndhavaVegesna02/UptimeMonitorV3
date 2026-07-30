@@ -2,7 +2,24 @@
 id: STORY-186
 title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
 type: chore
+points: 1
+status: ready
+refined: 2026-07-30   # PO-approved `ready` at the sprint-64 refinement ("approve all five"); the
+                      # frontmatter was never updated to match, which the sprint-65 plan-verifier
+                      # caught as a Definition-of-Ready failure. Recorded here, not re-approved.
 ---
+
+> **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved — sprint-66 candidate.**
+> Not only for sizing: this story's AC2 parametrises the very `test_scenario.py` rejection tests and
+> AC4 refactors the `load_scenario_file` per-block validation that **STORY-191 extends**, while
+> STORY-191 AC2 requires those same tests to pass **unmodified**. Running both in one sprint is a
+> guaranteed conflict.
+>
+> **Two corrections to fold in when this is next refined:** (1) this story says *seven* loader
+> rejection tests — there are **9 functions / 11 collected cases** at
+> `backend/tests/demo_engine/test_scenario.py:334, 351, 374, 388, 403, 417, 438, 453, 467`;
+> (2) its cited range `test_scenario.py:295-405` is **already stale** — the block is now `329-467`.
+> If STORY-191 lands first, re-verify every line citation in this story before starting it.
 
 ## Context
 

@@ -2,9 +2,10 @@
 id: STORY-191
 title: Drive a real DOWN through the loop — failure scenarios end to end on the demo fleet
 type: feature
-points: 3
+points: 5
 status: ready
 refined: 2026-07-30
+repointed: 2026-07-30   # 3 -> 5 on the plan-verifier's independent judgement, PO-approved
 ---
 
 ## Context
@@ -33,13 +34,28 @@ What already exists and is reused, not rebuilt:
 
 ## ⚠ Safety escalation — read before planning this story
 
-**This is the first story in the project's history in which the publish path can genuinely fire.**
+**This story deliberately makes the publish path fire for the first time in the project's history.**
 
-`decide` publishes recoveries with **no human gate** (`core/services/decide.py:122-126` decides,
-`:171-172` publishes). Throughout STORY-182 that was inert in practice: an `UP`-and-absence-only
-engine can never produce a degradation, so there was never a recovery to publish. This story
-introduces `DOWN` → `UP` transitions, which means a real recovery decision and a real publish
-attempt inside a demo run.
+`decide` publishes recoveries with **no human gate** (`core/services/decide.py:115-126` sets
+`publish_change` and returns `PUBLISHED_RECOVERY`; `:171-172` calls `publish()`).
+
+**Corrected mechanism (this story's first draft had it wrong; verified against code by
+`yt-plan-verifier` 2026-07-30).** A `DOWN`-then-`UP` observation ladder **cannot publish anything**:
+
+- a **degradation never publishes** — `decide` opens a proposal and publishes nothing
+  (`decide.py:128-136`);
+- a **recovery publishes** only when `severity_rank(proposed) < severity_rank(current)`
+  (`decide.py:115-117`), and `STATUS_SEVERITY` is `OPERATIONAL 0, DEGRADED 1, PARTIAL_OUTAGE 2,
+  MAJOR_OUTAGE 3` (`core/domain/status.py:63-68`);
+- every component seeds **`OPERATIONAL`** (`composition/seed_dynamo.py:49`), and the only writer of
+  component status is `StatusWritebackPublisher.publish` (`publish_helper.py:179`).
+
+So from a seeded baseline the ladder yields `PROPOSED` then at most `OBSOLETED`
+(`decide.py:157-169`) — nothing published. **This story reaches the publish path by pre-setting one
+demo component's stored status to `MAJOR_OUTAGE`** (a real, reachable state: a previously-approved
+degradation) and then running an all-`UP` ladder, so `anti_flap` proposes `OPERATIONAL` and trips the
+recovery branch. A useful consequence: this works with the **static, past-anchored store and one
+cycle per signal** the harness already builds — no live row injection is required.
 
 So the config-only publish guard stops being theoretical and becomes the thing standing between a
 demo run and the **live public Statuspage**. The guard is that `config/demo/` declares no
@@ -73,8 +89,10 @@ Extend it so a cycle entry may be **either**:
   checked-in `config/demo/scenarios/*.yaml` and the loader's rejection tests keep working); **or**
 - a mapping of location id → outcome, where outcome is one of `up` / `down` / `degraded`.
 
-Backward compatibility is an AC, not a nicety: five scenario files and seven loader rejection tests
-depend on the list form.
+Backward compatibility is an AC, not a nicety: five scenario files and **9 rejection-test functions /
+11 collected cases** depend on the list form (`backend/tests/demo_engine/test_scenario.py:334, 351,
+374, 388, 403, 417, 438, 453, 467` — `test_load_scenario_file_missing_required_field_raises` is
+parametrized ×3). Earlier drafts said "seven"; that number was never counted and is wrong.
 
 The `down` / `degraded` outcomes emit rows carrying STORY-177's single provisional constant, imported
 from `src.adapters.inbound.dynatrace.health_mapping` — **never a redeclared literal** (STORY-177 AC2
@@ -82,14 +100,37 @@ fixes the direction: `tools/` imports `src.*`, never the reverse).
 
 ### Scenarios to author in `config/demo/scenarios/`
 
-1. **A failure ladder** — a signal reporting `UP`, then `DOWN` from all locations for enough
-   consecutive cycles to cross the anti-flap threshold, then `UP` again (the recovery that makes the
-   publish path fire).
-2. **A partial/breadth case** — `DOWN` from some locations while others stay `UP` in the same cycle,
-   which is the shape STORY-150 and STORY-151 will need and which nothing has ever produced.
+1. **A `DOWN` ladder** — enough consecutive `down` cycles to cross a **named** threshold. The demo
+   fleets declare `thresholds: {major: 5, partial: 3, degraded: 2, recovery: 2}`
+   (`config/demo/fleet-core.yaml:38`, `fleet-edge.yaml:39`, `fleet-platform.yaml:39`) and these are
+   **consecutive-CYCLE counts**, not seconds or percentages — `anti_flap` compares them to
+   `streak_.length` (`core/services/pipeline.py:219-239`). So say which: `MAJOR_OUTAGE` needs 5,
+   while `degraded: 2` also "crosses a threshold". Keep the ladder **≤ 7 cycles**, because
+   `orchestrate.py:98` computes `since = until − (max_threshold + 2) × interval` — a 7-cycle window
+   for these fleets — so a longer ladder loses its head.
+2. **A partial/breadth case** — `down` at some locations while others stay `up` in the same cycle, the
+   shape STORY-150 and STORY-151 will need. **Note:** `_collapse_health` (`pipeline.py:85-98`) maps
+   both this and the all-`degraded` case to `Health.DEGRADED`, so their `Verdict`s are **identical**.
+   The distinguishing evidence is per-location `SignalObservation.health` — assert on that.
 3. **A degraded case** — `degraded` outcomes, so `Health.DEGRADED` travels the real path.
-4. **A poison-row case** — at least one row carrying a status code that is **still** unmapped after
-   STORY-177, to prove STORY-190's quarantine works in a real run and not only in unit tests.
+4. **A poison-row case** — a status code **still** unmapped after STORY-177, proving STORY-190's
+   quarantine in a real run. **The poison row must be an EXTRA row alongside four good locations**,
+   never a location's only row: a quarantined row is never persisted, so otherwise that signal shows
+   3 of 4 locations, `_assert_ac3_ingest`'s `signals_with_under_4_locations` (`harness.py:287-290`)
+   fails and `_wait_for_last_signal`'s `>= 4` poll (`:187`) times out — which working agreement A7
+   calls a FAILURE, not partial evidence.
+5. **A recovery case** — the pre-set-`MAJOR_OUTAGE` component with an all-`UP` ladder (see the safety
+   section), which is what actually fires the publish path.
+
+**Two harness constraints that are not optional.** `run_positive_side`
+(`tools/demo_loop_gate/harness.py:335-339`) takes **no** store or scenario parameter and `:419`
+hardcodes `build_fleet_row_store(cfg, end_time=run_start)`. Add a keyword-only seam, and **MERGE** the
+new rows into that fleet store — **never substitute it**, because `_assert_ac3_ingest` (`:279-295`)
+requires all 41 signals × 4 locations and `_assert_ac4_vendor_health` (`:298-310`) requires zero
+drift. And use a **distinct event-id namespace** (e.g. a `fail-` prefix): `expand_scenario` emits
+`f"{signal_key}-{seq}"`, so overlapping the fleet store yields identical ids and `save_new`'s `EVT#`
+dedupe marker (`backend/src/adapters/persistence/dynamo_observation_repository.py:57-61`) **silently
+drops the second set with no error.**
 
 ## Acceptance Criteria
 
@@ -97,9 +138,10 @@ fixes the direction: `tools/` imports `src.*`, never the reverse).
       `expand_scenario` emits rows whose status code/message come from STORY-177's single constant.
       The literal code strings appear nowhere in `tools/`.
 - [ ] **AC2** — **Backward compatible**: all five existing `config/demo/scenarios/*.yaml` load and
-      expand byte-identically to before, and the seven existing loader rejection tests pass
-      unmodified. A malformed outcome (unknown word, wrong type) raises `InvalidScenarioError` naming
-      the file, signal key and cycle index, matching the existing convention.
+      expand byte-identically to before, and **all 11 collected rejection cases across the 9
+      functions** listed above pass **unmodified**. A malformed outcome (unknown word, wrong type)
+      raises `InvalidScenarioError` naming the file, signal key and cycle index, matching the
+      existing convention.
 - [ ] **AC3** — A **real loop run** through `harness.py::run_positive_side` ingests the failure
       ladder and reaches a `DOWN` decision: asserted from persisted state (the observations, the
       streak/anti-flap outcome and the resulting decision), not from parsed log text.
@@ -108,13 +150,22 @@ fixes the direction: `tools/` imports `src.*`, never the reverse).
 - [ ] **AC5** — The poison row is **quarantined, not fatal**: the run's other rows ingest, the
       watermark advances past it, and the rejected row is retrievable — STORY-190's fix proven at
       loop scale.
-- [ ] **AC6** — **Nothing reached Statuspage, proven not assumed.** `guard_reality_gate.py` is run
-      and its **exit code** recorded (working agreement A7: values read from stdout are not
-      evidence); the publisher resolved for the run is asserted to be the `LoggingPublisher`
-      delegate; and the run is shown to have made **no outbound Statuspage HTTP call**. Because this
-      is the first story in which a recovery can actually be decided, AC6 additionally requires
-      demonstrating that a recovery **was** decided during the run — otherwise the guard was never
-      actually under load and this AC proves nothing.
+- [ ] **AC6** — **The publish path fired AND nothing reached Statuspage — both proven from persisted
+      state, neither from logs or stdout.** The guard must be under genuine load, or this AC proves
+      nothing, so both sides are required:
+      - **It fired:** the pre-set component's status in the control table changed `MAJOR_OUTAGE` →
+        `OPERATIONAL`. `StatusWritebackPublisher.publish` (`publish_helper.py:179`) is the **only**
+        component-status writer and **is** in the safe chain (`:230-231`), so that change is proof the
+        recovery publish executed.
+      - **Nothing left the process:** the **publications table is empty**. `RecordingPublisher`
+        (`publish_helper.py:212-227`) writes a `publications` row on **every** attempt (STORY-072) and
+        exists **only** in the credentialed+mapping chain — it is absent from the `LoggingPublisher`
+        fallback. An empty publications table *with* a recovery publish having occurred is the
+        discriminator.
+      - Additionally, `guard_reality_gate.py` is run and its **exit code** recorded (A7: values read
+        from stdout are not evidence). Note it reconstructs the chain **in-process** (`:83-128`) and
+        never observes the subprocess — it corroborates the two persisted checks, it does not replace
+        them.
 - [ ] **AC7** — The artifact ends with an explicit verdict and a **non-zero exit on failure**, and is
       **shown failing on deliberately bad input** (working agreement A7). A polling timeout is a
       FAILURE, not partial evidence. The board records the exit code.

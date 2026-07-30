@@ -7,6 +7,15 @@ status: ready
 refined: 2026-07-30
 ---
 
+> **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved — sprint-66 candidate.**
+> Not only for sizing: finding 1 rewrites `demo-engine.md` frontmatter, which **STORY-191 AC10** also
+> rewrites. Deferring removes the collision entirely.
+>
+> **Two corrections found at verification, folded in below:** the field is **`gap_verdicts`**, not
+> `missing_cycles` (no such field exists anywhere in the repo), and finding 1 is **worse** than first
+> written — `demo-engine.md` does not mention `tools/demo_loop_gate/` **anywhere**, not merely in its
+> `code_refs`.
+
 ## Context
 
 Three findings from sprint 64 that were real but out of that sprint's scope, filed together because
@@ -18,13 +27,19 @@ delivers** — the "trusted-and-wrong" state the wiki protocol exists to make im
 ### 1. `demo-engine.md`'s `code_refs` omit the whole `tools/demo_loop_gate/` package
 
 `docs/scrum/wiki/demo-engine.md`'s frontmatter lists 27 `code_refs` covering `tools/demo_engine/*`,
-its tests and `config/demo/*` — but **nothing** under `tools/demo_loop_gate/`, which STORY-182 added
-and which the article's own Facts describe. The package is 9 files (`harness.py`, `env_matrix.py`,
-`fleet_coverage.py`, `guard_reality_gate.py`, `backfill_reality_gate.py`, `publisher_chain.py`,
-`evidence.py`, `__init__.py`, plus its tests).
+its tests and `config/demo/*` — but **nothing** under `tools/demo_loop_gate/`, which STORY-182 added.
+The package is **8** `.py` modules (`harness.py`, `env_matrix.py`, `fleet_coverage.py`,
+`guard_reality_gate.py`, `backfill_reality_gate.py`, `publisher_chain.py`, `evidence.py`,
+`__init__.py`) plus `backend/tests/demo_loop_gate/`.
+
+**It is worse than a `code_refs` omission.** `grep -c demo_loop_gate docs/scrum/wiki/demo-engine.md`
+returns **0** — the package is absent from the article's **Facts**, not just its frontmatter, and
+those Facts still read that no demo loop has been started by any story to date and describe STORY-182
+as future work. Sprint 64 falsified that. So the fix is a **Fact rewrite**, not a `code_refs`
+addition plus a `verified_sha` re-stamp — which is exactly what AC1 forbids.
 
 Because staleness is computed as `git diff <verified_sha>..HEAD -- <code_refs>`, a change to any of
-those 9 files **cannot** mark this article stale. The article describes them and the mechanical sweep
+those 8 modules **cannot** mark this article stale. The article describes them and the mechanical sweep
 is blind to them — precisely the gap the wiki protocol's git-arithmetic rule exists to close.
 
 ### 2. `vendor_health.py`'s docstring says a healthy id logs nothing; it logs at INFO
@@ -40,7 +55,7 @@ code does.
 
 ### 3. `availability/models.py` claims expected-but-missing on an observed-locations denominator
 
-`backend/src/api/v1/availability/models.py:37` documents `missing_cycles` as:
+`backend/src/api/v1/availability/models.py:36-37` documents **`gap_verdicts`** as:
 
 > Count of expected-but-missing cycles — excluded from the denominator.
 
@@ -63,7 +78,7 @@ docstring describe the current, narrower truth and cite STORY-152 as the story t
 - [ ] **AC3** — `vendor_health.py`'s docstring states what the code does: a healthy id logs at INFO,
       and the loud WARNING is reserved for drift and probe failure. The preserved intent stays; the
       false absolute goes.
-- [ ] **AC4** — `availability/models.py`'s `missing_cycles` docstring describes the current
+- [ ] **AC4** — `availability/models.py`'s **`gap_verdicts`** (`:36-37`) docstring describes the current
       observed-locations behaviour and its limitation, and names **STORY-152** as the story that
       changes it. No behavioural change, no test change beyond docstring assertions if any exist.
 - [ ] **AC5** — No production behaviour changes anywhere in this story. The diff is docstrings and

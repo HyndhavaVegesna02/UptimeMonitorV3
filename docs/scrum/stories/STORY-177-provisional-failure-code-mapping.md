@@ -94,14 +94,25 @@ The entire change is confined to `backend/src/adapters/inbound/dynatrace/`. In p
       and no test double for the mapping. Asserted by tests that call the real
       `normalize_rows`.
 - [ ] **AC2** — Every provisional code lives in **one** named constant in
-      `adapters/inbound/dynatrace/health_mapping.py`, with a comment stating it is UNVERIFIED and
-      naming STORY-154 as the story that replaces it. The literal code/message strings appear
-      **nowhere else in the repository** — including
-      `tools/demo_engine/assumed_failure_codes.py`, which must **import** them from
+      `adapters/inbound/dynatrace/health_mapping.py`: a `dict[tuple[str, str], Health]` keyed on the
+      exact `(code, message)` tuple, seeded with **exactly two** entries —
+      `("1", "UNHEALTHY") -> Health.DOWN` (reusing the existing assumed pair,
+      `tools/demo_engine/assumed_failure_codes.py:33-34`) and `("2", "DEGRADED") ->
+      Health.DEGRADED` (**new**: no DEGRADED pair exists anywhere in the repo today, so this is a
+      fresh, explicitly-labelled assumption). Commented UNVERIFIED and naming STORY-154 as its
+      replacement. The literal code/message strings appear **nowhere else in the repository** —
+      including `tools/demo_engine/assumed_failure_codes.py`, which must **import** them from
       `src.adapters.inbound.dynatrace.health_mapping` rather than redeclaring them. (Direction is
       fixed by CLAUDE.md: `tools/` may import `src.*`, never the reverse.) Asserted by a test that
-      greps/scans the tree for the literals, or by the demo-engine constant being an import alias
-      with a test asserting identity with the backend constant.
+      scans the tree for the literals, or by the demo-engine constant being an import alias with a
+      test asserting identity with the backend constant.
+- [ ] **AC2b** — **Matching rule and evaluation order**, both load-bearing: the existing healthy
+      OR-rule stays **first and unchanged** (`code == "0" or message == "HEALTHY"` → `Health.UP`,
+      `health_mapping.py:65-66`), because it is pinned by
+      `backend/tests/test_dynatrace_adapter.py:100`, which asserts
+      `map_synthetic_status(code="123", message="HEALTHY") is Health.UP`. Only after that rule fails
+      is the provisional dict consulted, and the lookup is on the **exact `(code, message)` tuple** —
+      **never code-only**, which would over-match.
 - [ ] **AC3** — A `(code, message)` pair **outside** the provisional set still raises
       `UnknownVendorStatusError`, and the message still names the real `code` and `message` so an
       operator can read and map it. This is the property the fail-loud design exists to protect;
@@ -109,12 +120,20 @@ The entire change is confined to `backend/src/adapters/inbound/dynatrace/`. In p
 - [ ] **AC4** — Every provisional hit logs at **WARNING**, naming the code, the message, and that
       it is provisional/unverified pending STORY-154. Asserted with `caplog`, including that a
       genuine `HEALTHY` row logs **no** such warning (so the warning is a real signal, not noise).
-- [ ] **AC5** — `tools/demo_engine/assumed_failure_codes.py`'s docstring is corrected. Its current
-      instruction — *"Do NOT use these to add a failure mapping to `backend/src/`; that is a
-      separate, first-class, reviewed decision (STORY-177)"* (`:16-18`) — becomes **false** the
-      moment this story lands, and its claim that the pair "carries no special acceptance anywhere
-      in `backend/src/`" (`:31-32`) becomes false too. Both are rewritten to describe the new
-      reality and still state that the codes remain UNVERIFIED.
+- [ ] **AC5** — Every claim this story makes **false** is rewritten. Named exhaustively, because an
+      external implementer will not go looking:
+      - `tools/demo_engine/assumed_failure_codes.py` — *"Do NOT use these to add a failure mapping to
+        `backend/src/`"* (`:16-18`); *"carries no special acceptance anywhere in `backend/src/`"*
+        (`:31-32`); plus `:11-14` and `:20-22`. All rewritten, and all must still state that the codes
+        remain UNVERIFIED.
+      - `tools/demo_engine/README.md:22`.
+- [ ] **AC5b** — **`backend/tests/demo_engine/test_assumed_failure_codes.py:45-56`** —
+      `test_assumed_failure_code_is_rejected_by_the_real_unmodified_health_mapping` asserts
+      `pytest.raises(UnknownVendorStatusError)` on the ASSUMED pair and **WILL FAIL** when this story
+      lands. **Invert it deliberately** (assert the pair now maps to `Health.DOWN` and emits the
+      provisional WARNING) and rewrite its module docstring `:1-14`, especially `:12-13`'s "this story
+      does not add a failure mapping to `backend/src/`". This is expected, sanctioned work — **not a
+      regression to route around, and not a test to delete.**
 - [ ] **AC6** — `health_mapping.py`'s module docstring (`:8-12`) and `map_synthetic_status`'s
       docstring (`:55-63`) are rewritten. The superseded argument ("failure codes are added once
       observed live", "deliberately NOT done") is replaced by the current reasoning **and states
