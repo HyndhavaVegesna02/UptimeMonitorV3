@@ -12,9 +12,11 @@ to hand to `SignalIngestPort.ingest_observations` (dossier §6, §8).
 
 from datetime import datetime, timedelta
 
-from src.adapters.inbound.dynatrace.dispatch import normalize_rows
+from src.adapters.inbound.dynatrace.dispatch import (
+    NormalizationOutcome,
+    normalize_rows_lenient,
+)
 from src.adapters.inbound.dynatrace.query import Executor, build_dql_query
-from src.core.domain import SignalObservation
 
 #: Default overlap window (dossier §8): re-read this much before the
 #: watermark on every pull so a slow-to-land row is never missed.
@@ -28,17 +30,15 @@ def fetch_observations(
     watermark: datetime | None,
     executor: Executor,
     overlap: timedelta = DEFAULT_OVERLAP,
-) -> list[SignalObservation]:
+) -> NormalizationOutcome:
     """Run one pull cycle for one monitor and return canonical observations.
 
     `native_id` is the vendor monitor id being polled; `signal_key` is the
     canonical name we assign its observations. `executor` is the injected
     DQL-running seam (dossier §8) — production wiring (composition root)
-    supplies a real one, tests supply a fake. Raises
-    `dispatch.UnsupportedMonitorTypeError` if any returned row's monitor type
-    has no registered normalizer (AC5) — the caller decides how to handle
-    that (e.g. quarantine the cycle) rather than this function guessing.
+    supplies a real one, tests supply a fake.
     """
     query = build_dql_query(native_id=native_id, watermark=watermark, overlap=overlap)
     rows = executor(query)
-    return normalize_rows(rows, signal_key=signal_key)
+    return normalize_rows_lenient(rows, signal_key=signal_key)
+

@@ -26,12 +26,14 @@ raises ``MalformedDqlRowError``.
 
 from collections.abc import Callable, Sequence
 
+from dataclasses import dataclass
 from src.adapters.inbound.dynatrace._assembly import (
     MalformedDqlRowError as MalformedDqlRowError,
 )
 from src.adapters.inbound.dynatrace._assembly import (
     require_field,
 )
+from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusError
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 from src.core.domain import SignalObservation
 
@@ -51,6 +53,22 @@ class UnsupportedMonitorTypeError(ValueError):
 
     Out-of-scope monitor types surface here rather than being silently mis-normalized (AC3).
     """
+
+
+@dataclass(frozen=True)
+class RowNormalizationFailure:
+    """Recorded failure when a DQL row cannot be normalized."""
+
+    row: dict
+    reason: str
+
+
+@dataclass(frozen=True)
+class NormalizationOutcome:
+    """Result of normalizing a sequence of DQL rows leniency-aware."""
+
+    observations: list[SignalObservation]
+    failures: list[RowNormalizationFailure]
 
 
 def normalize_row(row: dict, *, signal_key: str) -> SignalObservation:
@@ -78,3 +96,28 @@ def normalize_rows(rows: Sequence[dict], *, signal_key: str) -> list[SignalObser
     never aggregated together (dossier §5).
     """
     return [normalize_row(row, signal_key=signal_key) for row in rows]
+
+
+def normalize_rows_lenient(
+    rows: Sequence[dict], *, signal_key: str
+) -> NormalizationOutcome:
+    """Normalize DQL rows into observations while capturing row-level failures.
+
+    Catches `UnknownVendorStatusError`, `UnsupportedMonitorTypeError`, and
+    `MalformedDqlRowError` per row, preserving input order of successfully
+    normalized observations.
+    """
+    observations: list[SignalObservation] = []
+    failures: list[RowNormalizationFailure] = []
+    for row in rows:
+        try:
+            obs = normalize_row(row, signal_key=signal_key)
+            observations.append(obs)
+        except (
+            UnknownVendorStatusError,
+            UnsupportedMonitorTypeError,
+            MalformedDqlRowError,
+        ) as exc:
+            failures.append(RowNormalizationFailure(row=dict(row), reason=str(exc)))
+    return NormalizationOutcome(observations=observations, failures=failures)
+

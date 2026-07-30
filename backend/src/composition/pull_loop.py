@@ -40,7 +40,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import timedelta
+from datetime import datetime, timezone, timedelta
 
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
@@ -49,7 +49,7 @@ from src.adapters.inbound.dynatrace.query import Executor
 # (inside run_cycle) to keep the no-orchestration path decoupled.
 from src.composition.config import Config
 from src.core.domain import IngestResult
-from src.core.ports import SignalIngestPort, WatermarkRepository
+from src.core.ports import SignalIngestPort, WatermarkRepository, RejectedObservationRepository
 from src.core.ports.clock import ClockPort
 from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.maintenance_repository import MaintenanceRepository
@@ -67,6 +67,7 @@ def run_cycle(
     ingest_port: SignalIngestPort,
     executor: Executor,
     overlap: timedelta = DEFAULT_OVERLAP,
+    rejected_repo: RejectedObservationRepository | None = None,
     # Orchestration extras (dossier §8 step 5 — optional). The guard below is
     # `all(... is not None)`: supply ALL six to orchestrate after ingest, or
     # none to keep the original ingest-only shape. Supplying SOME-but-not-all
@@ -99,14 +100,30 @@ def run_cycle(
     function contains no business logic of its own, only the wiring.
     """
     watermark = watermark_repo.get(signal_key)
-    batch = fetch_observations(
+    outcome = fetch_observations(
         signal_key=signal_key,
         native_id=native_id,
         watermark=watermark,
         executor=executor,
         overlap=overlap,
     )
-    ingest_result = ingest_port.ingest_observations(batch)
+    if outcome.failures:
+        rejected_at = clock.now() if clock is not None else datetime.now(timezone.utc)
+        for failure in outcome.failures:
+            logger.warning(
+                "Quarantining row for signal_key=%r: %s",
+                signal_key,
+                failure.reason,
+            )
+            if rejected_repo is not None:
+                rejected_repo.save(
+                    signal_key=signal_key,
+                    reason=failure.reason,
+                    payload=failure.row,
+                    rejected_at=rejected_at,
+                )
+
+    ingest_result = ingest_port.ingest_observations(outcome.observations)
 
     # Orchestration step (dossier §8 step 5 — only when all six extras supplied)
     orch_params = (
@@ -148,6 +165,7 @@ async def run_periodic(
         [IngestResult | tuple[IngestResult, DecideAction]], Awaitable[None]
     ]
     | None = None,
+    rejected_repo: RejectedObservationRepository | None = None,
     config: Config | None = None,
     observation_repo: ObservationRepository | None = None,
     maintenance_repo: MaintenanceRepository | None = None,
@@ -190,6 +208,7 @@ async def run_periodic(
                 ingest_port=ingest_port,
                 executor=executor,
                 overlap=overlap,
+                rejected_repo=rejected_repo,
                 config=config,
                 observation_repo=observation_repo,
                 maintenance_repo=maintenance_repo,
@@ -197,6 +216,7 @@ async def run_periodic(
                 decide_service=decide_service,
                 clock=clock,
             )
+
         except Exception as exc:
             consecutive_failures += 1
             logger.exception(

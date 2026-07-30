@@ -297,6 +297,46 @@ def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
         normalize_rows([supported_row, unsupported_row], signal_key="mixed-scope")
 
 
+def test_normalize_rows_lenient_captures_failures_and_keeps_good_observations():
+    from src.adapters.inbound.dynatrace.dispatch import (
+        NormalizationOutcome,
+        normalize_rows_lenient,
+    )
+
+    supported_row_1 = _load("grail_synthetic_events.json")["records"][0]
+    supported_row_2 = _load("grail_synthetic_events.json")["records"][1]
+    unsupported_row = _load("unsupported_monitor_type.json")["records"][0]
+    malformed_row = supported_row_1.copy()
+    del malformed_row["event.type"]
+    unmapped_status_row = supported_row_1.copy()
+    unmapped_status_row["result.status.code"] = "UNKNOWN_CODE"
+    unmapped_status_row["result.status.message"] = "UNKNOWN_MSG"
+
+    rows = [
+        supported_row_1,
+        unsupported_row,
+        malformed_row,
+        unmapped_status_row,
+        supported_row_2,
+    ]
+
+    outcome = normalize_rows_lenient(rows, signal_key="mixed-scope")
+
+    assert isinstance(outcome, NormalizationOutcome)
+    assert len(outcome.observations) == 2
+    assert outcome.observations[0].source_event_id == supported_row_1["event.id"]
+    assert outcome.observations[1].source_event_id == supported_row_2["event.id"]
+
+    assert len(outcome.failures) == 3
+    assert outcome.failures[0].row == unsupported_row
+    assert "unsupported Dynatrace event.type" in outcome.failures[0].reason
+    assert outcome.failures[1].row == malformed_row
+    assert "missing required field: 'event.type'" in outcome.failures[1].reason.lower()
+    assert outcome.failures[2].row == unmapped_status_row
+    assert "unknown Dynatrace synthetic status" in outcome.failures[2].reason
+
+
+
 # --- STORY-020: malformed DQL row -> named error, not bare KeyError -----------
 
 
@@ -367,7 +407,7 @@ def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
         calls.append(query)
         return rows
 
-    observations = fetch_observations(
+    outcome = fetch_observations(
         signal_key="checkout-http",
         native_id="HTTP_CHECK-DB5792CB88D14CF4",
         watermark=None,
@@ -376,28 +416,29 @@ def test_fetch_observations_uses_injected_executor_and_normalizes_rows():
 
     assert len(calls) == 1
     assert "HTTP_CHECK-DB5792CB88D14CF4" in calls[0]
-    assert len(observations) == 2
-    assert all(obs.signal_key == "checkout-http" for obs in observations)
+    assert len(outcome.observations) == 2
+    assert all(obs.signal_key == "checkout-http" for obs in outcome.observations)
 
 
-def test_fetch_observations_raises_unsupported_for_unsupported_monitor_rows():
+def test_fetch_observations_captures_unsupported_monitor_rows_in_failures():
     from src.adapters.inbound.dynatrace.adapter import fetch_observations
-    from src.adapters.inbound.dynatrace.dispatch import (
-        UnsupportedMonitorTypeError,
-    )
 
     rows = _load("unsupported_monitor_type.json")["records"]
 
     def fake_executor(query: str) -> list[dict]:
         return rows
 
-    with pytest.raises(UnsupportedMonitorTypeError):
-        fetch_observations(
-            signal_key="homepage-browser",
-            native_id="BROWSER-4D1E",
-            watermark=None,
-            executor=fake_executor,
-        )
+    outcome = fetch_observations(
+        signal_key="homepage-browser",
+        native_id="BROWSER-4D1E",
+        watermark=None,
+        executor=fake_executor,
+    )
+
+    assert len(outcome.observations) == 0
+    assert len(outcome.failures) == 2
+    assert "unsupported Dynatrace event.type" in outcome.failures[0].reason
+
 
 
 # --- Fix loop 1: shared assembly helper ---

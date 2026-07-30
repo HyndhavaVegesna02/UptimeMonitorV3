@@ -141,6 +141,7 @@ def build_live_loop(
                 ingest_port=ingest_port,
                 executor=dynatrace_executor,
                 interval_seconds=signal.interval_seconds,
+                rejected_repo=rejected_repo,
                 config=config,
                 observation_repo=observation_repo,
                 maintenance_repo=maintenance_repo,

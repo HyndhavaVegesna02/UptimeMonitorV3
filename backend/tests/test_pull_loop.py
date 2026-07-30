@@ -714,3 +714,136 @@ def test_run_periodic_stop_event_honored_after_a_failed_cycle():
 
     asyncio.run(asyncio.wait_for(run_and_measure(), timeout=5))
     assert call_count["n"] == 1
+
+
+# --- STORY-190: partial batch resilience & bad row quarantine -------------------
+
+
+class FakeRejectedObservationRepository:
+    def __init__(self) -> None:
+        self.saved: list[dict] = []
+
+    def save(
+        self,
+        *,
+        signal_key: str | None,
+        reason: str,
+        payload: dict,
+        rejected_at: datetime,
+    ) -> None:
+        self.saved.append(
+            {
+                "signal_key": signal_key,
+                "reason": reason,
+                "payload": payload,
+                "rejected_at": rejected_at,
+            }
+        )
+
+
+def test_quarantine_bad_row_allows_watermark_to_advance_across_consecutive_cycles(
+    caplog,
+):
+    """AC2 (STORY-190): proves that a single unmappable row does NOT stall the signal,
+    quarantines the bad row into rejected_repo (with a WARNING log), and permits the
+    watermark to advance across consecutive cycles.
+    """
+    from src.adapters.system_clock import SystemClock
+    from src.composition.pull_loop import run_cycle
+    from src.core.services.ingest_service import IngestService
+    from fakes import FakeObservationRepository
+
+    watermark_repo = FakeWatermarkRepository({"checkout-http": None})
+    obs_repo = FakeObservationRepository()
+    rejected_repo = FakeRejectedObservationRepository()
+    clock = SystemClock()
+
+    ingest_service = IngestService(
+        observation_repo=obs_repo,
+        watermark_repo=watermark_repo,
+        rejected_repo=rejected_repo,
+        clock=clock,
+    )
+
+    bad_row_1 = {
+        "timestamp": "2026-06-24T10:00:00Z",
+        "event.id": "evt-bad-1",
+        "event.type": "UNSUPPORTED_TYPE",
+    }
+    good_row_1 = _row("evt-good-1", "2026-06-24T10:01:00Z")
+
+    def cycle_1_executor(query: str) -> list[dict]:
+        return [bad_row_1, good_row_1]
+
+    with caplog.at_level(logging.WARNING, logger="src.composition.pull_loop"):
+        result1 = run_cycle(
+            signal_key="checkout-http",
+            native_id="HTTP_CHECK-9F2A",
+            watermark_repo=watermark_repo,
+            ingest_port=ingest_service,
+            executor=cycle_1_executor,
+            rejected_repo=rejected_repo,
+        )
+
+    assert result1.accepted == 1
+    assert len(rejected_repo.saved) == 1
+    assert rejected_repo.saved[0]["signal_key"] == "checkout-http"
+    assert rejected_repo.saved[0]["payload"] == bad_row_1
+    assert "UNSUPPORTED_TYPE" in rejected_repo.saved[0]["reason"]
+    # Watermark advanced to good_row_1 timestamp!
+    wm_after_cycle_1 = watermark_repo.get("checkout-http")
+    assert wm_after_cycle_1 == datetime(2026, 6, 24, 10, 1, 0, tzinfo=timezone.utc)
+    assert any("Quarantining row for signal_key='checkout-http'" in r.getMessage() for r in caplog.records)
+
+    # Cycle 2: watermark advanced further with another bad row present
+    bad_row_2 = {
+        "timestamp": "2026-06-24T10:02:00Z",
+        "event.id": "evt-bad-2",
+        "event.type": "http_monitor_execution",
+        "result.status.code": "999",
+        "result.status.message": "UNKNOWN",
+    }
+    good_row_2 = _row("evt-good-2", "2026-06-24T10:03:00Z")
+
+    def cycle_2_executor(query: str) -> list[dict]:
+        return [good_row_2, bad_row_2]
+
+    result2 = run_cycle(
+        signal_key="checkout-http",
+        native_id="HTTP_CHECK-9F2A",
+        watermark_repo=watermark_repo,
+        ingest_port=ingest_service,
+        executor=cycle_2_executor,
+        rejected_repo=rejected_repo,
+    )
+
+    assert result2.accepted == 1
+    assert len(rejected_repo.saved) == 2
+    wm_after_cycle_2 = watermark_repo.get("checkout-http")
+    assert wm_after_cycle_2 == datetime(2026, 6, 24, 10, 3, 0, tzinfo=timezone.utc)
+    assert wm_after_cycle_2 > wm_after_cycle_1
+
+
+def test_pre_fix_strict_normalization_stalls_watermark_progress():
+    """AC3 (STORY-190): proves that under strict normalization, an unmappable row
+    causes normalize_rows to raise an exception, preventing the watermark from advancing.
+    """
+    from src.adapters.inbound.dynatrace.dispatch import (
+        UnsupportedMonitorTypeError,
+        normalize_rows,
+    )
+
+    watermark_repo = FakeWatermarkRepository({"checkout-http": None})
+    bad_row = {
+        "timestamp": "2026-06-24T10:00:00Z",
+        "event.id": "evt-bad-1",
+        "event.type": "UNSUPPORTED_TYPE",
+    }
+    good_row = _row("evt-good-1", "2026-06-24T10:01:00Z")
+
+    with pytest.raises(UnsupportedMonitorTypeError):
+        normalize_rows([bad_row, good_row], signal_key="checkout-http")
+
+    # Watermark was never advanced because cycle raised before ingest
+    assert watermark_repo.get("checkout-http") is None
+
