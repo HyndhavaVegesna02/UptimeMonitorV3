@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: a865f1f
+verified_sha: b3e1767
 verified_sprint: sprint-65
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-177/190 fix round). Facts REWRITTEN, not re-stamped:
@@ -9,6 +9,9 @@ status: verified
 # -> raise), and dispatch gained a lenient counterpart returning NormalizationOutcome. The old
 # fail-loud-only description and its 'live verification will supply the real codes' reasoning are
 # kept as an explicit SUPERSEDED note, because the trial expired and that verification cannot happen.
+# Re-verified 2026-07-30 (sprint-65 quality-review round). NEW Fact: normalize_rows_lenient now
+# catches ValueError, not three named classes -- a PRESENT-but-invalid field (unparsable timestamp,
+# null location) previously escaped and still stalled the signal.
 ---
 
 ## Facts (verified against code)
@@ -101,11 +104,23 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   STRICT — the first raising row aborts the whole list. Alongside it,
   `normalize_rows_lenient(rows, *, signal_key) -> NormalizationOutcome`
   (`dispatch.py::normalize_rows_lenient`) catches the three per-row failures
-  (`UnknownVendorStatusError`, `UnsupportedMonitorTypeError`, `MalformedDqlRowError`) and returns
+  **`ValueError`** and returns
   both the successfully-normalized `observations` (input order preserved) and a list of
   `RowNormalizationFailure` (`dispatch.py::RowNormalizationFailure`: the raw `row` dict plus a
   `reason` string). `fetch_observations` (`adapter.py::fetch_observations`) now uses the lenient path
   and returns `NormalizationOutcome`, not `list[SignalObservation]`.
+- **The catch is `ValueError`, deliberately broad, and that width was earned.** The first
+  implementation named exactly three classes, which closed the defect only for a MISSING field, an
+  unmapped `event.type` and an unknown status. A field that is PRESENT BUT INVALID still escaped and
+  still killed the whole cycle -- verified live during the sprint-65 quality review against the real
+  captured fixture: an unparsable `timestamp` raises a bare `ValueError`, and a null
+  `dt.entity.synthetic_location` raises pydantic's `ValidationError`. Both propagated out to
+  `run_periodic`, leaving the watermark unadvanced -- precisely the defect this function exists to
+  close, and a vendor shape change emitting a `null` location is a realistic trigger. All three named
+  errors AND pydantic's `ValidationError` are `ValueError` subclasses, so `ValueError` is the exact
+  net. It stays narrower than `Exception`, so a `TypeError`/`AttributeError` still surfaces loudly
+  instead of being silently recorded as a bad vendor row (pinned by
+  `test_normalize_rows_lenient_does_not_swallow_programming_errors`).
 - **Why the strict function was kept rather than replaced:** it is the fail-loud unit, is called
   directly by eight tests, and its behaviour is itself the thing STORY-190's regression test pins.
   Both failure types are ADAPTER-LOCAL — `RowNormalizationFailure` carries a raw vendor row dict, so

@@ -1,7 +1,7 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: a865f1f
+verified_sha: b3e1767
 verified_sprint: sprint-65
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
@@ -9,6 +9,8 @@ status: verified
 # because the raise happened before the watermark advance and the next cycle re-read the same
 # window. Records where each piece lives (adapter pure, composition decides) and the zone trap the
 # eight contracts cannot catch.
+# Re-verified 2026-07-30 (sprint-65 quality-review round). NEW Fact: rejected_at falls back to
+# SystemClock() rather than an inline datetime.now(), keeping the quarantine timestamp injectable.
 ---
 
 ## Facts (verified against code)
@@ -85,6 +87,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
 - **`rejected_repo` is threaded to BOTH `run_cycle` AND `run_periodic`**, because `build_live_loop`
   (`run.py`) calls `run_periodic`, never `run_cycle`. Wiring only `run_cycle` would quarantine
   nothing in production while every test passed.
+- **`rejected_at` is injected, not read from the wall clock.** `clock` is one of the six OPTIONAL
+  orchestration extras, so the ingest-only call shape can arrive without one; `run_cycle` then falls
+  back to `SystemClock()` rather than calling `datetime.now(...)` inline. An inline call would have
+  been the ONLY direct wall-clock read in `backend/src/` outside `adapters/system_clock.py` and would
+  make the quarantine timestamp untestable.
 - **Zone note worth keeping:** having the inbound adapter write quarantine rows itself would pass all
   eight `lint-imports` contracts (adapters may import core, and the port lives in `core/ports/`)
   while turning a translation layer into an orchestrator. Only `composition` decides what happens to

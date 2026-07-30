@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: a865f1f
+verified_sha: b3e1767
 verified_sprint: sprint-65
 status: verified
 # Re-verified 2026-07-30 (sprint-64) by the orchestrator. Changed code_ref in range: CLAUDE.md
@@ -13,6 +13,9 @@ status: verified
 # incidentally: run.py gained a rejected_repo argument (STORY-190), conftest.py and the DoD were
 # untouched by this sprint's stories beyond STORY-188's encoding repair. Every Fact re-read and
 # still accurate; the DoD command list and env preconditions are unchanged.
+# Re-stamped 2026-07-30 (sprint-65 quality-review round): CLAUDE.md's 'Two things to know'
+# bullet was rewritten (it still claimed DOWN/DEGRADED cannot reach the pipeline). No Fact in
+# THIS article was affected -- its commands and env preconditions are unchanged.
 ---
 
 ## Facts (verified against code)
