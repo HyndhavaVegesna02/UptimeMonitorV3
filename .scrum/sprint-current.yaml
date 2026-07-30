@@ -95,7 +95,7 @@ stories:
   - id: STORY-194
     title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
     file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
-    status: todo
+    status: in_progress   # dispatched 2026-07-31
     points: 3
     ceremony: implementer + both reviewers
     result: null
