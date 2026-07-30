@@ -12,7 +12,7 @@ the AC calls out are each asserted directly:
 (c) the Authorization header is required (`Api-Token ...`).
 """
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 
 import httpx
 import pytest
@@ -29,6 +29,40 @@ from src.composition.vendor_health import build_vendor_health_query
 
 def _headers():
     return {"Authorization": "Api-Token dt0c01.demo-token"}
+
+
+class _FakeClock:
+    """A settable/advanceable clock for retention tests (STORY-183 AC1/AC4).
+
+    AC1 forbids sleeping in real time; this lets a test move the server's
+    notion of "now" forward explicitly between requests instead.
+    """
+
+    def __init__(self, start: datetime) -> None:
+        self._instant = start
+
+    def __call__(self) -> datetime:
+        return self._instant
+
+    def advance(self, delta: timedelta) -> None:
+        self._instant += delta
+
+
+def _execute(server: DemoEngineServer, query: str) -> str:
+    resp = httpx.post(
+        f"{server.base_url}/platform/storage/query/v1/query:execute",
+        headers=_headers(),
+        json={"query": query},
+    )
+    return resp.json()["requestToken"]
+
+
+def _poll(server: DemoEngineServer, token: str) -> httpx.Response:
+    return httpx.get(
+        f"{server.base_url}/platform/storage/query/v1/query:poll",
+        headers=_headers(),
+        params={"request-token": token},
+    )
 
 
 def test_execute_returns_202_with_a_json_body_carrying_a_request_token():
@@ -128,6 +162,95 @@ def test_repeat_poll_inside_retention_returns_the_same_records_twice():
         assert second_poll.json()["state"] == "SUCCEEDED"
         assert first_poll.json()["records"] == second_poll.json()["records"]
         assert token in server._httpd.results
+
+
+def test_entry_never_polled_is_evicted_once_past_retention():
+    """STORY-183 AC1: the abandoned-token leak (a query executed and never
+    polled -- e.g. a failed poll leg, `grail_executor.py:110-111`, or a
+    faulted cycle the pull loop swallows, `pull_loop.py:200-207`) must not
+    survive past retention. Uses an injected clock advanced past retention
+    (never real-time sleep); eviction is lazy, so a second request is what
+    triggers the sweep that collects the first, never-polled token.
+    """
+    clock = _FakeClock(datetime(2026, 7, 30, 12, 0, 0, tzinfo=timezone.utc))
+    store = DemoRowStore()
+    with DemoEngineServer(
+        store, retention=timedelta(seconds=30), clock=clock
+    ) as server:
+        query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+        abandoned_token = _execute(server, query)
+        assert abandoned_token in server._httpd.results
+
+        clock.advance(timedelta(seconds=31))
+        _execute(server, query)  # any request sweeps; this one never polls it
+
+        assert abandoned_token not in server._httpd.results
+
+
+def test_poll_after_retention_eviction_still_404s():
+    """STORY-183 AC3: unchanged from today -- a poll of a token evicted by
+    retention returns the same 404 body as an unknown token.
+    """
+    clock = _FakeClock(datetime(2026, 7, 30, 12, 0, 0, tzinfo=timezone.utc))
+    store = DemoRowStore()
+    with DemoEngineServer(
+        store, retention=timedelta(seconds=30), clock=clock
+    ) as server:
+        query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+        token = _execute(server, query)
+
+        clock.advance(timedelta(seconds=31))
+        _execute(server, query)  # sweeps the first token
+
+        resp = _poll(server, token)
+        assert resp.status_code == 404
+        assert resp.json() == {"error": "unknown request token"}
+
+
+def test_cache_length_stays_bounded_when_nothing_is_polled():
+    """STORY-183 AC4: the bound is asserted, not asserted-about. Drives N
+    executes with the injected clock advanced PAST retention between each
+    one and NO polls at all. With a stopped clock (or lazy eviction alone,
+    with nothing ever triggering a sweep past the just-inserted entry) this
+    would pass vacuously at `len <= N`; advancing between every execute means
+    each new execute's sweep must have already collected the previous entry,
+    so the length must stay strictly below N -- here, exactly 1.
+    """
+    clock = _FakeClock(datetime(2026, 7, 30, 12, 0, 0, tzinfo=timezone.utc))
+    store = DemoRowStore()
+    retention = timedelta(seconds=30)
+    with DemoEngineServer(store, retention=retention, clock=clock) as server:
+        query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+        n = 5
+        for _ in range(n):
+            clock.advance(retention + timedelta(seconds=1))
+            _execute(server, query)
+
+        assert len(server._httpd.results) == 1
+        assert len(server._httpd.results) < n
+
+
+def test_unauthenticated_poll_does_not_touch_the_cache():
+    """STORY-183 AC5: auth is checked BEFORE the cache is touched
+    (`server.py:112` before the eviction sweep / lookup at `:124`), so an
+    unauthenticated poll can never affect cache state -- neither evicting an
+    unrelated entry nor (previously) consuming the one it named.
+    """
+    store = DemoRowStore()
+    with DemoEngineServer(store) as server:
+        query = build_dql_query(native_id="MON-A", watermark=None, overlap=timedelta(0))
+        token = _execute(server, query)
+
+        unauthenticated = httpx.get(
+            f"{server.base_url}/platform/storage/query/v1/query:poll",
+            params={"request-token": token},
+        )
+
+        assert unauthenticated.status_code == 401
+        assert token in server._httpd.results
+
+        authenticated = _poll(server, token)
+        assert authenticated.status_code == 200
 
 
 def test_two_server_instances_never_collide_on_a_hardcoded_port():
