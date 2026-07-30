@@ -1,9 +1,15 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml]
-verified_sha: c2c3345
-verified_sprint: sprint-63
+verified_sha: 638853a
+verified_sprint: sprint-64
 status: verified          # verified | stale | archived
+# Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
+# c2c3345..638853a: tools/demo_engine/server.py + backend/tests/demo_engine/test_server.py (both
+# STORY-183's retention bound), and tools/import_provenance.py's arrival (STORY-187, NOT a code_ref
+# of this article — it is not part of the demo engine). The cache Facts were REWRITTEN, not merely
+# re-stamped: STORY-180's consume-on-first-poll description was made false by STORY-183 and is now
+# carried as an explicit superseded note. Every new behavioural Fact cites its pinning test (A2).
 ---
 
 ## Facts (verified against code)
@@ -102,7 +108,8 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
 - Serves the **async** branch of what `make_grail_executor` speaks
   (`grail_executor.py:43-97`): POST `…/query:execute` → `202` + a JSON body carrying
   `requestToken` (`server.py:103-105`), then GET `…/query:poll?request-token=…` →
-  `{"state": "SUCCEEDED", "records": …}` on the first poll (`server.py:122`). The async branch is
+  `{"state": "SUCCEEDED", "records": …}` on **every** poll inside the retention window
+  (`server.py:207`; STORY-183 — it was first-poll-only until then). The async branch is
   chosen deliberately — a sync-only server would exercise only the executor's fallback branch
   (`server.py:4-12`). Every query resolves synchronously server-side; only the protocol is async.
 - Three obligations of `grail_executor.py` are pinned by tests (`server.py:14-20`): the `202` body
@@ -125,13 +132,45 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   `base_url` → `self._httpd.server_address` (`server.py:140-143`) — never a port computed and handed
   off around the bind, which is precisely the defect class STORY-179 hit in this repo's own
   DynamoDB-Local fixture (`server.py:128-131`).
-- `_DemoHTTPServer.results` (`server.py:48`) is a per-token result cache that is now bounded:
-  `do_GET` **pops** (not merely reads) a token's entry on its first poll (`server.py::do_GET`),
-  since every query here resolves synchronously server-side and there is no "still RUNNING, poll
-  again" state to preserve an entry for. Before STORY-180 AC4/minor 5 it only grew, one entry per
-  query, for the process lifetime — harmless for a test-scoped engine, a slow leak once STORY-176
-  makes it long-running. Pinned by `test_results_cache_is_evicted_after_being_polled`
-  (`test_server.py`).
+- `_DemoHTTPServer.results` (`server.py:97`) is a per-token result cache bounded by **RETENTION**:
+  each entry stores its insertion instant alongside the records, and `_evict_expired`
+  (`server.py:100-118`) removes anything older than the instance's `retention` — swept on **both**
+  `do_POST` and `do_GET`, so an entry is collected even if nothing ever polls again. Default
+  `_DEFAULT_RETENTION = 5 minutes`, declared once with its reason at the literal
+  (`server.py:50-60`, the literal at `:60`). Pinned by `test_entry_never_polled_is_evicted_once_past_retention`
+  (`test_server.py:150`) and, for the bound itself,
+  `test_cache_length_stays_bounded_when_nothing_is_polled` (`test_server.py:191`) — which advances an
+  injected clock past retention between executes and asserts the length stays at 1, so the assertion
+  cannot pass while the leak is intact.
+- **A repeat poll of the same `request-token` inside the retention window is SERVED, not 404'd**
+  (`server.py:200-207`) — `do_GET` reads, it does not pop. This is vendor fidelity: real Grail
+  retains a completed result and re-serves it within a window. Pinned by
+  `test_repeat_poll_inside_retention_returns_the_same_records_twice` (`test_server.py:91`).
+  A poll of a token already evicted by retention still returns the unchanged
+  `404 {"error": "unknown request token"}` (`test_poll_after_retention_eviction_still_404s`,
+  `test_server.py:172`).
+- `retention` and `clock` are **genuinely per-instance** constructor arguments, assigned directly and
+  never copied from the module constant at construction (`server.py:88-98`, passed through from
+  `DemoEngineServer`, `server.py:230-239`). A caller reads the EFFECTIVE value back via
+  `server._httpd.retention`. This shape is load-bearing for proofs: a server that copied a module
+  constant would not observe a monkeypatch of it, so a two-sided proof varying retention would run
+  **identically on both sides** — the false-pass class that cost sprint 63 two proofs.
+- The eviction sweep holds `_results_lock` across the whole read-then-delete (`server.py:111-118`).
+  `_DemoHTTPServer` extends `ThreadingHTTPServer` over a bare dict, so an unguarded sweep racing a
+  handler thread's insert would raise `RuntimeError: dictionary changed size during iteration` —
+  reachable once STORY-182 drives 41 concurrent signal loops through this server (measured: all 41
+  fire their first cycle within ~2s).
+- **Auth precedes any cache touch** (`server.py:188` `_require_auth()` returns early, before the
+  clock read and eviction at `:198-199` and the cache read at `:200-201`), so an unauthenticated poll can never affect cache state.
+  Pinned by `test_unauthenticated_poll_does_not_touch_the_cache` (`test_server.py:216`).
+- Superseded, kept so it is not re-litigated: STORY-180 AC4/minor 5 bounded this cache by
+  **consume-on-first-poll** (`results.pop`), pinned by
+  `test_results_cache_is_evicted_after_being_polled`. That bound was **partial** — a token executed
+  but never successfully polled (a failed poll leg, `grail_executor.py:111`; the pull loop swallowing
+  a faulted cycle, `pull_loop.py:200-207`) leaked for the process lifetime — and it narrowed the wire
+  protocol by 404-ing a repeat poll. STORY-183 replaced both with retention, which is strictly better
+  on both axes; that test was removed as a **contract correction, not a weakening** (its own docstring
+  attributed it to STORY-180, not to STORY-148's wire contract).
 
 ### Scope honesty: this engine emits UP and absence, nothing else
 - `map_synthetic_status` (`health_mapping.py:54-70`) maps ONLY `code == "0"` /
@@ -272,10 +311,11 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   the ingest path READS are right in shape, type and scale; it cannot prove Grail never sends
   something else, and it says nothing about failure-row shape (see the scope-honesty section).
 - STORY-180 closed the two items this section used to flag as future risk for STORY-176's
-  long-running engine: `server.results` is now evicted per poll (Facts, above) and the
-  vendor-health window has an equality guard against silent divergence (Facts, above). Neither was
-  ever a correctness bug in the STORY-148 test-scoped lifetime; STORY-180 made both hold under a
-  long-running process too.
+  long-running engine: the token cache gained a bound and the vendor-health window gained an equality
+  guard against silent divergence (Facts, above). Neither was ever a correctness bug in the STORY-148
+  test-scoped lifetime. **STORY-183 (sprint 64) then replaced STORY-180's consume-on-first-poll bound
+  with a RETENTION bound**, because consume-on-read left the abandoned-token path unbounded and cost
+  repeat-poll fidelity — see the cache Facts above for the current behaviour and the superseded note.
 
 ## History
 
@@ -326,7 +366,8 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   load-bearing — the STORY-051 discrimination the test exists to prove would silently stop
   working at the 5-minute default); the 9-digit case keeps its literal (the real builder cannot
   emit one). AC4/minor 5: `server.results` is popped, not merely read, on first poll, bounding a
-  cache that previously grew one entry per query for the process lifetime. AC5/minors 3,4,7: the
+  cache that previously grew one entry per query for the process lifetime — **superseded by
+  STORY-183's retention bound in sprint 64; see the cache Facts**. AC5/minors 3,4,7: the
   stdlib-only string-ordering test folded into a docstring (test count -1), the overstated test
   name corrected, and `store.py::handle_query` stopped reading the wall clock on the ingest path
   (it is never used there). AC6/minor 8: the `tools/` `sys.path` front-insertion in

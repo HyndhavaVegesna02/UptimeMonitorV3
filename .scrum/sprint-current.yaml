@@ -220,7 +220,11 @@ stories:
   - id: STORY-183
     title: Demo engine — bound the token cache by RETENTION, not by consume-on-first-poll
     file: docs/scrum/stories/STORY-183-demo-engine-token-cache-retention.md
-    status: todo
+    status: done   # 2026-07-30 at 638853a. All 7 ACs; scoped DoD gate 4/4 (621 passed, 0 SKIPPED,
+                   # net +4); reality gate PASS two-sided over REAL HTTP with the REAL unmodified
+                   # make_grail_executor exercised on both sides. Forward blast radius RESOLVED:
+                   # demo-engine.md rewritten and re-verified to 638853a. 1-pointer ceremony, so no
+                   # reviewer pair — the orchestrator read the server diff as code.
     points: 1
     ceremony: 1-2-pointer
     order: 3
@@ -532,6 +536,103 @@ story_gates:
          happened during THIS story and was caught only by a pre-commit `git diff` read. Worth one
          deliberate normalisation pass rather than relying on every future editor to notice. Candidate
          for the sprint-64 retro or a filed story."
+  STORY-183:
+    implementer_head: 638853a      # range 8521504..638853a, 2 commits (715074e, 638853a), tree clean
+    files_changed: ["tools/demo_engine/server.py", "backend/tests/demo_engine/test_server.py"]
+    shape_chosen: "RETENTION (not FIFO) — the only choice that satisfies AC2 as well as AC1. Entries
+      store (inserted_at, records); `_evict_expired` (server.py:100-118) removes anything older than
+      the instance's `retention`, swept on BOTH do_POST and do_GET so the abandoned-token path is
+      collected even if nothing ever polls again. `_DEFAULT_RETENTION = 5 minutes`, declared once with
+      its reason at the literal (server.py:50-60)."
+    sm_independent_checks:
+      - "AC6 mechanical, run by the orchestrator: `git diff --name-only 8521504..HEAD` returns exactly
+         two files (tools/demo_engine/server.py, backend/tests/demo_engine/test_server.py); the same
+         command filtered to `-- backend/src/ frontend/ infra/` is EMPTY."
+      - "THE AC2 REPLACEMENT WAS VERIFIED AS A REAL SWAP, not taken on trust: `git diff` on the test
+         file shows exactly one `-def test_` (test_results_cache_is_evicted_after_being_polled) and
+         five `+def test_`, i.e. net +4 — which matches the 617 -> 621 count exactly. The replacement
+         is a CORRECTION, not a weakening, on documented evidence: the removed test's own docstring
+         attributed it to STORY-180 AC4/minor 5, and AC5's enumerated wire contract never included
+         cache-eviction semantics."
+      - "The four pre-lock corrections were all applied. (a) The real attribute path
+         `server._httpd.results` is used, not the story's non-existent `server.results`. (b) AC4's test
+         advances the injected clock past retention BETWEEN executes and asserts length == 1 and < n,
+         so it cannot pass while the leak is intact — the vacuous-bound trap is closed. (c) The sweep
+         holds `_results_lock` across the whole read-then-delete (server.py:111-118), needed because
+         _DemoHTTPServer extends ThreadingHTTPServer over a bare dict. (d) `retention`/`clock` are
+         genuine per-instance constructor args assigned directly (server.py:88-98), never copied from
+         the module constant — so a proof that varies retention cannot silently no-op."
+      - "AC5's auth-before-cache ordering CONFIRMED at source, not from the report: `_require_auth()`
+         returns early at server.py:188, ahead of the clock read and eviction at :198-199 and the cache
+         read at :200-201. The implementer additionally added
+         test_unauthenticated_poll_does_not_touch_the_cache (test_server.py:216) — inside AC5's stated
+         text, correctly flagged by the implementer as not-scope-creep, and accepted."
+      - "The seven original STORY-148 wire-contract tests are byte-identical in the diff, so AC5's
+         'unchanged in behaviour' is mechanically true and not merely asserted."
+    dod_gate:
+      scope: "--only pytest --only importlinter --only ruff. cfn-lint and the three frontend commands
+        are unaffected (no infra/ or frontend/ change). The FULL 8 remain mandatory at sprint close."
+      env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 (uptime_dynamo_8021). PASS/SKIP COUNTS:
+        621 passed, 0 SKIPPED."
+      verdict: "4/4 GREEN at 638853a"
+      commands:
+        - {command: "pytest", exit_code: 0, tail: "621 passed in 57.45s"}
+        - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
+           exit_code: 0, tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."}
+        - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
+        - {command: "ruff format --check .", exit_code: 0, tail: "224 files already formatted"}
+      test_count: "617 -> 621 (net +4): one removed (the STORY-180 consume test), five added
+        (AC2 repeat-poll, AC1 abandoned-token eviction, AC3 404-after-eviction, AC4 bounded length,
+        AC5 unauthenticated-poll-does-not-touch-cache)."
+    reality_gate:
+      verdict: PASS
+      route: "Run by the orchestrator over REAL HTTP against a real DemoEngineServer, and the REAL
+        UNMODIFIED make_grail_executor was exercised on BOTH sides to confirm AC5 end to end. Harness:
+        <scratchpad>/reality_gate_183.py. Provenance printed first for demo_engine.server,
+        demo_engine.store and src.adapters.inbound.dynatrace.grail_executor NAMED INDIVIDUALLY via
+        STORY-187's helper (a generic under-cwd check would lie here: demo_engine.* and src.* resolve
+        under different roots)."
+      two_sided_note: |
+        Identical harness, identical requests, identical clock advances. ONLY the retention passed to
+        the constructor changed.
+                                           TINY (1s)   LARGE (1h)
+          effective retention read back      0:00:01     1:00:00
+          repeat poll inside window served   True        True
+          poll after advancing past window   404         200
+          cache length after 5 executes      1           6
+          real grail executor rows           1           1
+      discrimination_proof: "The sides DIFFER on two independent axes: eviction (404 vs 200) and the
+        bound (1 vs 6). HOW they could have agreed, and did not: (i) if retention were copied from the
+        module constant at construction, both sides would behave identically — so the harness READS
+        BACK the instance's effective `_httpd.retention` and asserts it equals what was passed, before
+        reporting anything; both printed values differ, so the varied input demonstrably took effect.
+        (ii) Under the OLD consume-on-poll bound the 'repeat poll served' row would read False on BOTH
+        sides, and the cache-length row could not have differed at all, because eviction did not depend
+        on retention. So this gate could have come back negative in two distinct ways."
+      ac5_end_to_end: "make_grail_executor(env_url=<demo server>, api_token=...) returned exactly 1
+        row with the correct dt.synthetic.monitor.id on BOTH sides — the wire contract holds under both
+        retention regimes, which is AC5's actual claim rather than an inference from unchanged tests."
+    wiki:
+      swept: "yt_wiki.py reported demo-engine.md STALE after this story (2 changed code_refs:
+        tools/demo_engine/server.py, backend/tests/demo_engine/test_server.py). RESOLVED, not deferred
+        — forward blast radius is a DoD standing rule. Sweep re-run after the update: CLEAN on
+        sweep/facts/links/integrity."
+      updated_by_the_story: ["demo-engine.md"]
+      note: "The article's cache Facts were REWRITTEN, not re-stamped. It previously asserted that
+        `do_GET` **pops** on first poll and cited
+        `test_results_cache_is_evicted_after_being_polled` as the pinning test — a test this story
+        DELETED, so a bare verified_sha bump would have left the article confidently wrong while
+        passing every mechanical check. New Facts added for retention, repeat-poll fidelity, the
+        per-instance retention/clock shape (with WHY it is load-bearing for proofs), the lock-guarded
+        sweep, and auth-before-cache; each cites its pinning test per A2. STORY-180's bound is kept as
+        an explicit SUPERSEDED note with the reason, so it is not re-litigated. verified_sha bumped
+        c2c3345 -> 638853a, verified_sprint -> sprint-64."
+      citation_self_correction: "The orchestrator's FIRST draft of the update carried eight wrong line
+        numbers (e.g. `server.py:78` for `self.results`, actually `:97`). Caught by spot-checking every
+        cited address against the file before committing, and corrected. Recorded because sprint 64's
+        plan already contains one instance of a wrong citation written while correcting citations —
+        the failure mode recurs and the only defence that has worked is mechanically re-reading each
+        address."
 final_gate: {}
 hotfixes: []
 interrupts: []
