@@ -150,13 +150,13 @@ _NO_IO_DYNAMO_ENDPOINT_URL = "http://127.0.0.1:1"
 def test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate(
     monkeypatch,
 ):
-    """AC3(b): `CONFIG_DIR=config/demo` governs `create_app()` with NO
-    `config_dir` argument — precisely how `composition/asgi.py` boots the
-    real API process (`asgi.py` calls `create_app()` bare). No v1 route
-    exposes the runtime mapping/publisher/config (14 routes enumerated at
-    planning), so this is asserted in-process, never over HTTP. Un-gated from
-    Docker (S2 above): `DYNAMO_ENDPOINT_URL` is a literal, unreachable URL --
-    no I/O occurs before the assertions below run."""
+    """SAFE side of the two-sided publish-safety proof pair (STORY-176, STORY-185).
+    
+    Pairs with `test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_publisher_type`.
+    Neither side is meaningful alone: this test proves `CONFIG_DIR=config/demo` yields an empty mapping
+    and selects `LoggingPublisher` fallback, while the unsafe side proves `CONFIG_DIR=config/apps`
+    selects a real `StatuspagePublisher` chain. Both tests run un-gated without Docker using
+    `_NO_IO_DYNAMO_ENDPOINT_URL`."""
     from src.composition.app import create_app
     from src.composition.publish_helper import StatusWritebackPublisher
 
@@ -177,15 +177,17 @@ def test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delega
 
 
 def test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_publisher_type(
-    dynamo_local, monkeypatch
+    monkeypatch,
 ):
-    """The two-sided proof's UNSAFE side (sprint-63 plan, reality gate 176,
-    point 2): `config/apps` DOES declare a `statuspage_component_id`
+    """UNSAFE side of the two-sided publish-safety proof pair (STORY-176, STORY-185).
+
+    Pairs with `test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`.
+    Neither side is meaningful alone: `config/apps` DOES declare a `statuspage_component_id`
     (`httpcheck.yaml:8`), so the SAME in-process assertion, pointed at the
-    live config dir, must select a REAL `StatuspagePublisher` type — proving
+    live config dir, selects a REAL `StatuspagePublisher` type — proving
     the guard is a property of the CONFIG, not something that always no-ops.
-    Asserts the TYPE only; makes no network call (StatuspagePublisher.publish
-    is never invoked)."""
+    Un-gated from Docker (STORY-185 AC1/AC4): uses `_NO_IO_DYNAMO_ENDPOINT_URL` so no Docker
+    is required and no silent skip occurs. Asserts the TYPE only; makes no network call."""
     from src.adapters.outbound.statuspage import StatuspagePublisher
     from src.composition.app import create_app
     from src.composition.publish_helper import (
@@ -194,7 +196,7 @@ def test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_pub
         StatusWritebackPublisher,
     )
 
-    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", dynamo_local.endpoint_url)
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", _NO_IO_DYNAMO_ENDPOINT_URL)
     monkeypatch.setenv("CONFIG_DIR", str(LIVE_CONFIG_DIR))
     monkeypatch.setenv("STATUSPAGE_PAGE_ID", "REAL-LOOKING-PAGE-ID")
     monkeypatch.setenv("STATUSPAGE_API_KEY", "REAL-LOOKING-API-TOKEN")
@@ -208,6 +210,7 @@ def test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_pub
     recording = best_effort._delegate
     assert isinstance(recording, RecordingPublisher)
     assert isinstance(recording._delegate, StatuspagePublisher)
+
 
 
 # --- AC4/AC8: fleet scale + per-app locations/freshness survival -----------
