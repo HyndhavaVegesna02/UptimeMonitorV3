@@ -52,16 +52,22 @@
       arithmetic detects divergence, never shared error).
 
 - [ ] A check run in a git WORKTREE must FIRST prove it is executing the worktree's code, not the
-      main tree's: print the imported module's `__file__` (and the value under test) and confirm the
-      path is inside the worktree, BEFORE reporting either score. This repo is installed EDITABLE
-      (`package-dir = {"" = "backend"}`), so setuptools' finder resolves `src.*` to
-      `<repo>/backend/src` from inside ANY worktree; force `PYTHONPATH=<worktree>/backend`, which
-      precedes the editable finder. Patching the MAIN tree in place and restoring it (verifying
-      `git diff` is empty afterwards) is the other acceptable route. (2026-07-29; sprint-63
-      STORY-180 -- the first run of AC2's discrimination proof reported GREEN ON BOTH SIDES because
-      both sides were the same main-tree code; "green both sides" would have been read as "the
-      constant does not matter", i.e. the proof would have argued AGAINST a correct fix. Applies to
-      any worktree check, not just discrimination proofs.)
+      main tree's: call `tools/import_provenance.py::assert_import_root(module_name, expected_root)`
+      for the module under test and let it print/raise BEFORE reporting either score — it names both
+      the expected root and the actual resolved path when they disagree (STORY-187). The manual
+      fallback stays documented for a module the helper cannot import cleanly: print the imported
+      module's `__file__` (and the value under test) and confirm the path is inside the worktree. This
+      repo is installed EDITABLE (`package-dir = {"" = "backend"}`); the mechanism is a plain absolute
+      `sys.path` entry — the `.pth` file `__editable__.uptime_monitor_v3-0.1.0.pth` contains exactly
+      one line, the absolute path to `backend` — NOT a setuptools `MetaPathFinder` (corrected
+      2026-07-30, STORY-187; the previous wording named "setuptools' finder", which pre-lock
+      verification found wrong). That single `sys.path` entry resolves `src.*` to `<repo>/backend/src`
+      from inside ANY worktree; force `PYTHONPATH=<worktree>/backend`, which precedes it. Patching the
+      MAIN tree in place and restoring it (verifying `git diff` is empty afterwards) is the other
+      acceptable route. (2026-07-29; sprint-63 STORY-180 -- the first run of AC2's discrimination proof
+      reported GREEN ON BOTH SIDES because both sides were the same main-tree code; "green both sides"
+      would have been read as "the constant does not matter", i.e. the proof would have argued AGAINST
+      a correct fix. Applies to any worktree check, not just discrimination proofs.)
 
 - [ ] Any server/container/process you spawn for a reality check ends with an OS-level
       teardown VERIFICATION � process gone by PID (taskkill/kill + re-check) and port freed
@@ -73,14 +79,18 @@
       not enough that each side matches expectation: identical outcomes on both sides is a FAILED
       proof, never a passed one, whatever value appeared. The proof's authority comes from the sides
       diverging, so "green both sides" or "red both sides" means the proof did not discriminate and
-      must be fixed before either number is reported. (2026-07-30, sprint-63 retro amendment A3 --
-      three proofs in ONE sprint came back identical on both sides: STORY-180's discrimination proof
-      (the editable-install/worktree trap, see the A1 refinement above), and the orchestrator's own
-      publish-guard harness, which walked a `delegate` attribute where the layers store `_delegate`
-      and so reported a one-element chain on both sides -- the safe side green for the wrong reason
-      and the unsafe side falsely looking safe. The A1 refinement covers IMPORT PROVENANCE only and
-      would not have caught the second: the mechanisms differ, the symptom does not. Treat the
-      symptom as the trigger.)
+      must be fixed before either number is reported. Where the symptom is import provenance
+      specifically, call `tools/import_provenance.py::assert_import_root` per side (STORY-187) rather
+      than eyeballing it — but the mechanism can differ per proof (attribute names, fixture skips,
+      etc.), so the helper closes only the import-provenance case; the manual check (read the test
+      body, confirm the sides could actually have diverged) remains the fallback for everything else.
+      (2026-07-30, sprint-63 retro amendment A3 -- three proofs in ONE sprint came back identical on
+      both sides: STORY-180's discrimination proof (the editable-install/worktree trap, see the A1
+      refinement above), and the orchestrator's own publish-guard harness, which walked a `delegate`
+      attribute where the layers store `_delegate` and so reported a one-element chain on both sides --
+      the safe side green for the wrong reason and the unsafe side falsely looking safe. The A1
+      refinement covers IMPORT PROVENANCE only and would not have caught the second: the mechanisms
+      differ, the symptom does not. Treat the symptom as the trigger.)
 
 - [ ] **If the story's headline deliverable is COMPUTATIONAL -- arithmetic, spacing, ordering,
       thresholds, windowing -- mutate the computation once and record which tests go RED.** Zero

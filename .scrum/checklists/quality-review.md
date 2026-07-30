@@ -49,5 +49,9 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       reports the same outcome on both sides, that is inverted evidence, not weak evidence -- the
       failure is indistinguishable from "the thing under test does not matter", so the proof argues
       against a correct fix. Check the mechanism (import provenance, attribute names, fixture
-      skips), not just the numbers. (2026-07-30, sprint-63 retro amendment A3 -- three occurrences
-      in one sprint, each via a DIFFERENT mechanism.)
+      skips), not just the numbers. When the mechanism IS import provenance, confirm the proof
+      actually called `tools/import_provenance.py::assert_import_root` (STORY-187) per side rather
+      than asserting divergence without checking which tree ran; for every other mechanism (attribute
+      names, fixture skips, etc.) the helper does not apply -- read the test body and confirm the
+      sides could actually have diverged. (2026-07-30, sprint-63 retro amendment A3 -- three
+      occurrences in one sprint, each via a DIFFERENT mechanism.)
