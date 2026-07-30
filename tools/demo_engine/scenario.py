@@ -181,10 +181,17 @@ def expand_scenario(
     """Expand one `SignalScenario` into Grail-shaped rows, PAST-ANCHORED (STORY-176 AC2).
 
     `scenario.cycles[-1]` lands at `end_time`; `scenario.cycles[-2]` lands one
-    `interval_seconds` earlier, and so on — the whole ladder sits at or
-    before `end_time`, never after (AC2f: never in the future). Rows are
-    built via `demo_engine.rows.build_row`, so they carry exactly the seven
-    Grail fields the real ingest path reads, formatted via
+    `interval_seconds` earlier, and so on — the whole ladder sits AT OR
+    BEFORE `end_time`, never after. That is now enforced at construction
+    (STORY-184): `SignalScenario.__post_init__` rejects any non-positive or
+    non-`int` `interval_seconds`, so no `scenario` this function can ever
+    receive could push a cycle past `end_time`. The guarantee is "at or
+    before `end_time`", not "at or before now" (AC2f's "never in the
+    future"): a caller that passes a future `end_time` still gets a ladder
+    anchored to it — the production caller passes `clock.now()` (module
+    docstring), which is what makes "never in the future" hold in practice.
+    Rows are built via `demo_engine.rows.build_row`, so they carry exactly
+    the seven Grail fields the real ingest path reads, formatted via
     `format_ns_timestamp` (AC2b: the 9-digit-fraction `Z`-suffixed shape).
 
     An empty `cycles` list (a signal declared but never expanded) or an empty
