@@ -19,12 +19,26 @@ history.
    PO-approved substitute is the local demo engine below. `sample_mode` (which
    flips already-normalized rows) still exists but is inert for the same reason;
    its removal is STORY-155.
-2. **No vendor FAILURE code has ever been observed.** `map_synthetic_status`
-   (`adapters/inbound/dynatrace/health_mapping.py`) maps only `code == "0"` /
-   `message == "HEALTHY"` to `Health.UP` and RAISES on everything else — and
-   `dispatch.py` then discards the whole batch. So `DOWN`/`DEGRADED` cannot reach
-   the pipeline through the real ingest path at all today. Nothing in this repo may
-   be described as "the failure path is tested". Closing that is STORY-177.
+2. **No vendor FAILURE code has ever been observed — the two we map are ASSUMPTIONS.**
+   `map_synthetic_status` (`adapters/inbound/dynatrace/health_mapping.py`) resolves in
+   three steps: the healthy OR-rule (`code == "0"` **or** `message == "HEALTHY"` →
+   `Health.UP`) first and unchanged; then an **exact** `(code, message)` tuple lookup in
+   `PROVISIONAL_STATUS_MAPPING` — `("1","UNHEALTHY") → DOWN`, `("2","DEGRADED") →
+   DEGRADED` — logging a WARNING naming the code and its unverified status; then a raise
+   (`UnknownVendorStatusError`) naming the real code, so a genuine vendor failure value
+   still surfaces to be read and mapped. Those two pairs are **provisional and unverified**
+   (STORY-177); the trial expired before a real code could be captured, and STORY-154
+   replaces the contents of that one constant when a tenant exists. They live in exactly
+   one place — `tools/` derives them, never redeclares them.
+   So "the failure path is tested" is now true in a **specific, limited sense**: tested
+   against an ASSUMED code, through the real unmodified ingest path, in a real loop run
+   (STORY-191) — never against anything Dynatrace has confirmed. Say it that way, not flatly.
+   **Superseded, so it is not re-litigated:** this section used to say `map_synthetic_status`
+   RAISES on everything else, that `dispatch.py` then discards the whole batch, and that
+   `DOWN`/`DEGRADED` cannot reach the pipeline at all. All three were true until sprint 65
+   and are now false — STORY-190 also made a bad row cost only itself (it is quarantined via
+   `RejectedObservationRepository`; the rest of the batch ingests and the watermark advances,
+   where previously one unmappable row stalled that signal permanently).
 
 ### Repo layout
 

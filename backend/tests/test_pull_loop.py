@@ -18,6 +18,9 @@ from datetime import datetime, timezone
 import pytest
 from src.core.domain import Health, IngestResult, SignalObservation
 from src.core.ports import SignalIngestPort, WatermarkRepository
+from src.core.ports.rejected_observation_repository import (
+    RejectedObservationRepository,
+)
 
 
 class FakeWatermarkRepository(WatermarkRepository):
@@ -719,7 +722,7 @@ def test_run_periodic_stop_event_honored_after_a_failed_cycle():
 # --- STORY-190: partial batch resilience & bad row quarantine -------------------
 
 
-class FakeRejectedObservationRepository:
+class FakeRejectedObservationRepository(RejectedObservationRepository):
     def __init__(self) -> None:
         self.saved: list[dict] = []
 
@@ -852,6 +855,7 @@ def test_pre_fix_strict_normalization_stalls_the_signal_permanently(monkeypatch)
       3. cycle 2 was handed the SAME watermark value as cycle 1 -- the actual
          stall, not merely "an exception happened".
     """
+    from fakes import FakeObservationRepository
     from src.adapters.inbound.dynatrace.dispatch import (
         UnsupportedMonitorTypeError,
         normalize_rows,
@@ -860,8 +864,6 @@ def test_pre_fix_strict_normalization_stalls_the_signal_permanently(monkeypatch)
     from src.composition import pull_loop as pull_loop_module
     from src.composition.pull_loop import run_cycle
     from src.core.services.ingest_service import IngestService
-
-    from fakes import FakeObservationRepository
 
     watermark_repo = FakeWatermarkRepository({"checkout-http": None})
     ingest_service = IngestService(
@@ -916,11 +918,10 @@ def test_healthy_batch_logs_no_quarantine_warning(caplog):
     implementation that logged on EVERY cycle would satisfy the positive
     assertion while making the warning meaningless as a signal.
     """
+    from fakes import FakeObservationRepository
     from src.adapters.system_clock import SystemClock
     from src.composition.pull_loop import run_cycle
     from src.core.services.ingest_service import IngestService
-
-    from fakes import FakeObservationRepository
 
     watermark_repo = FakeWatermarkRepository({"checkout-http": None})
     rejected_repo = FakeRejectedObservationRepository()

@@ -82,7 +82,21 @@ class SignalScenario:
 
     def __post_init__(self) -> None:
         """Enforce `interval_seconds` is a positive `int` on the TYPE itself
-        (STORY-184 AC1/AC2).
+        (STORY-184 AC1/AC2), so NO construction path -- direct or via
+        `load_scenario_file` -- can produce a player whose past-anchored
+        `expand_scenario` would emit a row after `end_time`.
+
+        `type(...) is not int` (NOT `isinstance`) is deliberate and must not be
+        "simplified": `bool` is an `int` subclass in Python, so
+        `isinstance(True, int)` is `True` and would silently accept
+        `interval_seconds: true` from a YAML file, whereas `type(True) is int`
+        is `False`. In-repo precedent for this exact field:
+        `composition/config.py::_require_positive_interval` and
+        `core/domain/topology.py::Signal._require_positive_interval_when_set`.
+
+        (This rationale was deleted during the sprint-65 external delivery and
+        restored in the quality-review round -- without it the next reader
+        "tidies" the check into `isinstance` and re-opens STORY-184.)
         """
         if type(self.interval_seconds) is not int:
             raise ValueError(
@@ -152,6 +166,24 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
                         f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
                         f"must be a dict mapping location id string to status string, got {cycle!r}."
                     )
+                # Vocabulary is checked HERE, at load time, not left to
+                # `_resolve_status` at expand time. A typo (`dwon`) otherwise
+                # loads clean and surfaces much later as a bare `ValueError`
+                # carrying neither the file nor the signal key -- breaking this
+                # module's filename-prefixed convention and defeating callers
+                # that deliberately pre-load scenarios to fail fast (e.g.
+                # `failure_path_reality_gate.py`, which pre-loads precisely so a
+                # bad file fails in seconds rather than ~40 minutes into a live
+                # loop run). `_resolve_status` keeps its own check as
+                # defence-in-depth for directly-constructed SignalScenarios.
+                for location, status_str in cycle.items():
+                    if status_str.lower() not in _STATUS_MAP:
+                        allowed = ", ".join(sorted(_STATUS_MAP))
+                        raise InvalidScenarioError(
+                            f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
+                            f"location {location!r} declares unknown outcome "
+                            f"{status_str!r}; allowed: {allowed}."
+                        )
             else:
                 raise InvalidScenarioError(
                     f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "

@@ -3,6 +3,10 @@
 from datetime import datetime, timezone
 from pathlib import Path
 
+from demo_engine.assumed_failure_codes import (
+    UNMAPPED_POISON_CODE,
+    UNMAPPED_POISON_MESSAGE,
+)
 from demo_engine.scenario import (
     expand_scenario,
     load_scenario_file,
@@ -28,8 +32,24 @@ _SCENARIOS_DIR = _DEMO_CONFIG_DIR / "scenarios"
 _END = datetime(2026, 7, 30, 12, 0, 0, tzinfo=timezone.utc)
 
 
-def test_existing_scenarios_load_and_expand_backward_compatibly():
-    """AC: The five checked-in config/demo/scenarios/*.yaml load and expand byte-identically."""
+def test_existing_scenarios_still_expand_to_exactly_healthy_observations():
+    """STORY-191 AC2: the five legacy scenarios must be UNAFFECTED by the widening.
+
+    REWRITTEN in the sprint-65 quality-review round. The first version asserted
+    only `len(scenarios) > 0` and `isinstance(rows, list)` on a function already
+    annotated `-> list[dict]`. The reviewer defeated it by MUTATION: making the
+    legacy list-shaped branch of `expand_scenario` emit `ASSUMED_DOWN_CODE` /
+    `ASSUMED_DOWN_MESSAGE` instead of healthy -- silently turning every
+    pre-existing scenario DOWN, the single worst regression this widening could
+    cause -- left the test GREEN.
+
+    So it now asserts what backward compatibility actually MEANS, through the
+    real ingest path rather than on the row dicts:
+      - every row normalizes (no failures at all), and
+      - the count is exactly one observation per declared location per cycle, and
+      - EVERY observation is `Health.UP`.
+    The health assertion is the one that kills the mutation.
+    """
     existing_files = [
         "clean-fleet.yaml",
         "dark-location.yaml",
@@ -39,10 +59,31 @@ def test_existing_scenarios_load_and_expand_backward_compatibly():
     ]
     for filename in existing_files:
         scenarios = load_scenario_file(_SCENARIOS_DIR / filename)
-        assert len(scenarios) > 0
+        assert scenarios, f"{filename} declared no scenarios"
         for scenario in scenarios:
             rows = expand_scenario(scenario, end_time=_END)
-            assert isinstance(rows, list)
+            expected = sum(len(cycle) for cycle in scenario.cycles)
+            assert len(rows) == expected, (
+                f"{filename}:{scenario.signal_key} expanded to {len(rows)} rows, "
+                f"expected {expected} (one per declared location per cycle)"
+            )
+
+            outcome = fetch_observations(
+                signal_key=scenario.signal_key,
+                native_id=scenario.monitor_id,
+                watermark=None,
+                executor=lambda _query, _rows=rows: _rows,
+            )
+            assert outcome.failures == [], (
+                f"{filename}:{scenario.signal_key} produced normalization "
+                f"failures: {[f.reason for f in outcome.failures]}"
+            )
+            assert len(outcome.observations) == expected
+            assert all(obs.health is Health.UP for obs in outcome.observations), (
+                f"{filename}:{scenario.signal_key} produced a non-UP observation "
+                f"-- the legacy list-shaped cycle form must remain UP-only: "
+                f"{sorted({o.health for o in outcome.observations})}"
+            )
 
 
 def test_down_ladder_scenario_expands_to_down_observations():
@@ -117,10 +158,14 @@ def test_poison_row_scenario_preserves_4_good_locations_and_captures_poison_fail
 
     # 1 extra poison row x 2 cycles = 2 failures
     assert len(outcome.failures) == 2
-    assert (
-        "UNMAPPED_POISON" in outcome.failures[0].reason
-        or "unknown Dynatrace synthetic status" in outcome.failures[0].reason
-    )
+    # Assert the WHOLE reason, not an `or` of two substrings that are BOTH
+    # always present -- an `or` of two always-true operands is a check that
+    # cannot fail (quality review, sprint 65).
+    for failure in outcome.failures:
+        assert failure.reason == (
+            "unknown Dynatrace synthetic status: "
+            f"code={UNMAPPED_POISON_CODE!r}, message={UNMAPPED_POISON_MESSAGE!r}"
+        )
 
 
 def test_recovery_publish_proof_two_sided_persisted_evidence():

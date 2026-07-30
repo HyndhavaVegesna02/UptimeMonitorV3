@@ -40,10 +40,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
+from src.adapters.system_clock import SystemClock
 
 # Optional orchestration types. `orchestrate_signal` itself is imported lazily
 # (inside run_cycle) to keep the no-orchestration path decoupled.
@@ -112,7 +113,16 @@ def run_cycle(
         overlap=overlap,
     )
     if outcome.failures:
-        rejected_at = clock.now() if clock is not None else datetime.now(timezone.utc)
+        # `clock` is one of the six OPTIONAL orchestration extras, so the
+        # ingest-only call shape can arrive without one. Fall back to the
+        # injectable `SystemClock` adapter rather than reading the wall clock
+        # directly here: `datetime.now(...)` inline would make `rejected_at`
+        # untestable and would be the ONLY direct wall-clock read anywhere in
+        # `backend/src/` outside `adapters/system_clock.py` — the project
+        # injects `ClockPort` everywhere precisely so time is deterministic.
+        # composition is allowed to import adapters (dossier §4).
+        quarantine_clock = clock if clock is not None else SystemClock()
+        rejected_at = quarantine_clock.now()
         for failure in outcome.failures:
             logger.warning(
                 "Quarantining row for signal_key=%r: %s",

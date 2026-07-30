@@ -33,7 +33,6 @@ from src.adapters.inbound.dynatrace._assembly import (
 from src.adapters.inbound.dynatrace._assembly import (
     require_field,
 )
-from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusError
 from src.adapters.inbound.dynatrace.http_normalizer import normalize_http_row
 from src.core.domain import SignalObservation
 
@@ -65,7 +64,12 @@ class RowNormalizationFailure:
 
 @dataclass(frozen=True)
 class NormalizationOutcome:
-    """Result of normalizing a sequence of DQL rows leniency-aware."""
+    """The result of a lenient normalization pass over a batch of DQL rows.
+
+    Carries the rows that normalized (in input order) alongside the ones that
+    did not, so the caller can ingest the good and quarantine the bad rather
+    than losing the batch to the first failure.
+    """
 
     observations: list[SignalObservation]
     failures: list[RowNormalizationFailure]
@@ -103,9 +107,36 @@ def normalize_rows_lenient(
 ) -> NormalizationOutcome:
     """Normalize DQL rows into observations while capturing row-level failures.
 
-    Catches `UnknownVendorStatusError`, `UnsupportedMonitorTypeError`, and
-    `MalformedDqlRowError` per row, preserving input order of successfully
-    normalized observations.
+    Preserves the input order of successfully normalized observations. A row
+    that cannot be normalized costs ONLY ITSELF -- the rest of the batch still
+    ingests, so the watermark advances past the bad row instead of the signal
+    stalling on it forever (STORY-190).
+
+    **Catches `ValueError`, deliberately broadly.** The first version named
+    exactly three classes -- `UnknownVendorStatusError`,
+    `UnsupportedMonitorTypeError`, `MalformedDqlRowError` -- which closed the
+    defect only for a MISSING field, an unmapped `event.type`, and an unknown
+    status. A row with a field that is PRESENT BUT INVALID still escaped and
+    still killed the whole cycle. Verified live against the real captured
+    fixture during the sprint-65 quality review:
+
+        row["timestamp"] = "not-a-timestamp"          -> ValueError
+        row["dt.entity.synthetic_location"] = None    -> pydantic ValidationError
+
+    Both propagated out of `fetch_observations`, out of `run_cycle`, and into
+    `run_periodic`'s `except Exception` -- the watermark never advanced and the
+    signal stalled on the same window every cycle. That is precisely the defect
+    this function exists to close, and a vendor shape change emitting a `null`
+    location is a realistic trigger.
+
+    `ValueError` is the right net rather than a lucky one: all three named
+    errors are `ValueError` subclasses (`UnknownVendorStatusError` and
+    `UnknownVendorOutcomeError` in `health_mapping.py`,
+    `UnsupportedMonitorTypeError` here, `MalformedDqlRowError` in `_assembly`),
+    and pydantic's `ValidationError` is one too. It stays narrower than
+    `Exception`, so a programming error (`TypeError`, `AttributeError`) or a
+    `KeyboardInterrupt` still surfaces loudly instead of being silently
+    recorded as a bad vendor row.
     """
     observations: list[SignalObservation] = []
     failures: list[RowNormalizationFailure] = []
@@ -113,10 +144,6 @@ def normalize_rows_lenient(
         try:
             obs = normalize_row(row, signal_key=signal_key)
             observations.append(obs)
-        except (
-            UnknownVendorStatusError,
-            UnsupportedMonitorTypeError,
-            MalformedDqlRowError,
-        ) as exc:
+        except ValueError as exc:
             failures.append(RowNormalizationFailure(row=dict(row), reason=str(exc)))
     return NormalizationOutcome(observations=observations, failures=failures)

@@ -362,6 +362,81 @@ def test_normalize_rows_raises_unsupported_rather_than_mis_normalizing():
         normalize_rows([supported_row, unsupported_row], signal_key="mixed-scope")
 
 
+def test_normalize_rows_lenient_quarantines_present_but_invalid_field_values():
+    """STORY-190: a PRESENT-but-invalid field must be quarantined, not fatal.
+
+    Added in the sprint-65 quality-review round. The first implementation caught
+    exactly three named error classes, which closed the defect only for a
+    MISSING field, an unmapped event.type and an unknown status. A row whose
+    field is present but UNPARSABLE still escaped and killed the whole cycle --
+    the watermark never advanced and the signal stalled on the same window
+    every cycle, which is the exact defect STORY-190 exists to close.
+
+    Both escape routes proved live during review are pinned here:
+      - an unparsable `timestamp`               -> bare ValueError
+      - a null `dt.entity.synthetic_location`   -> pydantic ValidationError
+    """
+    from src.adapters.inbound.dynatrace.dispatch import normalize_rows_lenient
+
+    good = _load("grail_synthetic_events.json")["records"][0]
+    bad_timestamp = good.copy()
+    bad_timestamp["event.id"] = "evt-bad-ts"
+    bad_timestamp["timestamp"] = "not-a-timestamp"
+    bad_location = good.copy()
+    bad_location["event.id"] = "evt-bad-loc"
+    bad_location["dt.entity.synthetic_location"] = None
+
+    outcome = normalize_rows_lenient(
+        [bad_timestamp, good, bad_location], signal_key="checkout-http"
+    )
+
+    assert len(outcome.observations) == 1
+    assert outcome.observations[0].source_event_id == good["event.id"]
+    assert len(outcome.failures) == 2
+    assert {f.row["event.id"] for f in outcome.failures} == {
+        "evt-bad-ts",
+        "evt-bad-loc",
+    }
+    assert all(f.reason for f in outcome.failures)
+
+
+def test_normalize_rows_lenient_on_empty_input_returns_empty_outcome():
+    """Empty-input boundary (implementer checklist)."""
+    from src.adapters.inbound.dynatrace.dispatch import normalize_rows_lenient
+
+    outcome = normalize_rows_lenient([], signal_key="checkout-http")
+
+    assert outcome.observations == []
+    assert outcome.failures == []
+
+
+def test_normalize_rows_lenient_does_not_swallow_programming_errors():
+    """`ValueError` is the net, NOT `Exception` -- a bug must still surface.
+
+    Without this, widening the catch to fix the present-but-invalid case could
+    have quietly turned every TypeError/AttributeError in the normalizer into a
+    "bad vendor row", which is how a real defect gets recorded as data quality
+    and never investigated.
+    """
+    import pytest as _pytest
+    from src.adapters.inbound.dynatrace import dispatch as dispatch_module
+
+    def exploding_normalizer(row, *, signal_key):
+        raise TypeError("programming error, not a bad row")
+
+    original = dict(dispatch_module._NORMALIZERS)
+    dispatch_module._NORMALIZERS["http_monitor_execution"] = exploding_normalizer
+    try:
+        with _pytest.raises(TypeError):
+            dispatch_module.normalize_rows_lenient(
+                [_load("grail_synthetic_events.json")["records"][0]],
+                signal_key="checkout-http",
+            )
+    finally:
+        dispatch_module._NORMALIZERS.clear()
+        dispatch_module._NORMALIZERS.update(original)
+
+
 def test_normalize_rows_lenient_captures_failures_and_keeps_good_observations():
     from src.adapters.inbound.dynatrace.dispatch import (
         NormalizationOutcome,
