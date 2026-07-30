@@ -696,7 +696,7 @@ stories:
     type: chore
     sprint: 10
   - id: STORY-031
-    title: Sprint 9 review cleanups � test/fixture/style nits
+    title: Sprint 9 review cleanups — test/fixture/style nits
     file: docs/scrum/stories/STORY-031-sprint9-review-cleanups.md
     status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1
@@ -704,7 +704,7 @@ stories:
     type: chore
     sprint: 11
   - id: STORY-032
-    title: decide.py quality minors � DRY, import style, opened.id guard, trailing blanks
+    title: decide.py quality minors — DRY, import style, opened.id guard, trailing blanks
     file: docs/scrum/stories/STORY-032-decide-quality-minors.md
     status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1

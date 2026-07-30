@@ -70,9 +70,9 @@
       a correct fix. Applies to any worktree check, not just discrimination proofs.)
 
 - [ ] Any server/container/process you spawn for a reality check ends with an OS-level
-      teardown VERIFICATION � process gone by PID (taskkill/kill + re-check) and port freed
-      (netstat or equivalent) � a wrapper-job kill alone is not evidence (2026-07-17;
-      sprint-51 STORY-094 � the bash-job kill left the port-8010 uvicorn worker alive;
+      teardown VERIFICATION — process gone by PID (taskkill/kill + re-check) and port freed
+      (netstat or equivalent) — a wrapper-job kill alone is not evidence (2026-07-17;
+      sprint-51 STORY-094 — the bash-job kill left the port-8010 uvicorn worker alive;
       an explicit taskkill /PID /F + netstat confirm was required).
 
 - [ ] **A two-sided / discrimination proof must record BOTH outcomes and assert they DIFFER.** It is

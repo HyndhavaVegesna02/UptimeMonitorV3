@@ -206,8 +206,8 @@
 - (2026-07-17, sprint-51 retro) Before any multi-step live-cloud CLI sequence (image
   push + service updates, stack operations), verify credential freshness first
   (`aws sts get-caller-identity`); temporary/SSO tokens expire mid-sequence. On expiry
-  mid-sequence, resume from the FAILED step, never restart the sequence � completed
-  steps (e.g. an ECR push) survive. Motivating incident: sprint-51 redeploy � push
+  mid-sequence, resume from the FAILED step, never restart the sequence — completed
+  steps (e.g. an ECR push) survive. Motivating incident: sprint-51 redeploy — push
   succeeded, both update-service calls died on ExpiredTokenException, handoff blocked.
 - (2026-07-29, sprint-62 retro) **A reality gate must be shown able to fail.** No reality gate
   may be reported PASS without a recorded answer to "how could this have failed?", in one of

@@ -119,32 +119,65 @@ stories:
   - id: STORY-188
     title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
     file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
-    status: todo
+    status: in_progress   # repair + guard landed; DoD gate pending at the commit
     points: 1
     ceremony: orchestrator   # NOT the external path: this writes .scrum/ state, which only the
                              # orchestrator may do. DoD gate + a byte-level verification.
+    result: >-
+      ALL .scrum/ FILES NOW CLEAN (0 invalid bytes, 0 U+FFFD), verified byte-level.
+      TWO CORRECTIONS DURING EXECUTION, both recorded on the story file rather than tidied away:
+      (1) THE PLANNING FIGURE OF 13 SITES WAS WRONG -- IT DOUBLE-COUNTED. It came from decoding each
+          file with errors="replace" and counting U+FFFD, but that decode CONVERTS EVERY INVALID BYTE
+          INTO A U+FFFD, so the "existing FFFD" column silently re-counted the invalid bytes already
+          tallied in the other column. plan-verification.md reported 2 invalid AND 2 FFFD;
+          quality-review.md 3 and 3 -- identical numbers, which was the tell. Only implementer.md's 3
+          were genuine (it had no invalid bytes to manufacture them). The repair script's own != 13
+          assertion CAUGHT THIS and exited non-zero instead of reporting success. NOTE: the
+          plan-verifier "independently reproduced" the bad table, almost certainly by repeating the
+          same errors="replace" method -- reproducing a measurement is not validating its method.
+      (2) THE DEFECT WAS NEVER CONFINED TO .scrum/checklists/. Scanning all of .scrum/ while building
+          AC6's guard found TWO MORE corrupted files nobody had measured: backlog.yaml (2) and --
+          worse -- working-agreements.md (2), the retro-landed PROCESS RULES loaded every session.
+          Losing a character there silently loses part of a RULE. Both repaired under this story:
+          same defect class, same fix; shipping a guard over .scrum/ while knowingly leaving two
+          files inside it corrupt would be theatre.
+      FINAL: 12 sites / 5 files (5 invalid 0x97 + 7 genuine U+FFFD), all -> U+2014.
+      Repair was BYTE-PRECISE: only bytes the UTF-8 validity scanner flagged were replaced, so a 0x97
+      appearing as a legitimate CONTINUATION byte (e.g. U+2017 = E2 80 97) was copied through
+      untouched -- a naive bytes.replace would have corrupted those.
+      AC6 GUARD LANDED at .claude/skills/yourteam/scripts/tests/test_scrum_encoding.py (the
+      yt_selftest rung, project-generic, skips cleanly when there is no .scrum/). yt_selftest now
+      30/30 (was 28/28). SHOWN FAILING TWICE, INDEPENDENTLY: probe A injected a raw 0x97 -> FAIL
+      test_scrum_files_are_valid_utf8, exit 1; probe B injected a U+FFFD into an otherwise perfectly
+      valid UTF-8 file -> FAIL test_scrum_files_contain_no_replacement_characters, exit 1. PROBE B IS
+      THE ONE THAT MATTERS: it proves the two checks are NOT redundant, since a file can be valid
+      UTF-8 and still be full of already-destroyed characters. Both probes removed; 30/30 restored.
+      AC5 RETIRED THE WORKAROUND: the sprint-64 "edit these files byte-safely via latin-1"
+      instruction is obsolete and has been removed from this board and the session lock.
     order: 1                 # FIRST, and not for size reasons: until it lands, every dispatch that
                              # reads a checklist carries the corruption risk that ALREADY FIRED ONCE
                              # during STORY-187 (caught only by a pre-commit git diff read).
     plan_note: >-
-      Measured at ca5a9c6 and INDEPENDENTLY REPRODUCED by the plan-verifier. Scope is ~DOUBLE the
-      sprint-64 retro's record, and there is a THIRD affected file the retro MISSED:
-        implementer.md        0 invalid bytes, 3 U+FFFD
-        plan-verification.md  2 invalid (0x97 @3492,3640), 2 U+FFFD   <-- MISSED by the retro
-        quality-review.md     3 invalid (0x97 @2833,2883,3007), 3 U+FFFD
-        spec-review.md        clean
-      plan-verification.md is the checklist the PLAN-VERIFIER reads. ALL 13 SITES ARE ONE CHARACTER:
-      0x97 is cp1252 EM DASH, and every U+FFFD is an em-dash already destroyed by a bad round-trip
-      (contexts confirm). So all 13 become U+2014 -- reconstruction is CERTAIN, not guesswork.
+      FINAL MEASURED DAMAGE -- 12 sites / 5 files (the planning figure of 13 was a double-count; see
+      `result`). All are ONE CHARACTER: 0x97 is cp1252 EM DASH, and every genuine U+FFFD is an
+      em-dash already destroyed by a lossy round-trip, so all 12 become U+2014 -- reconstruction is
+      CERTAIN, not guesswork.
+        .scrum/checklists/implementer.md        0 invalid, 3 genuine U+FFFD
+        .scrum/checklists/plan-verification.md  2 invalid (0x97 @3492,3640), 0   <-- retro MISSED it
+        .scrum/checklists/quality-review.md     3 invalid (0x97 @2833,2883,3007), 0
+        .scrum/checklists/spec-review.md        clean
+        .scrum/backlog.yaml                     0 invalid, 2 genuine U+FFFD      <-- nobody measured
+        .scrum/working-agreements.md            0 invalid, 2 genuine U+FFFD      <-- nobody measured
       TEMPLATES ARE CLEAN (all four under .claude/skills/yourteam/templates/checklists/ valid UTF-8,
-      zero U+FFFD), so the corruption is POST-GENERATION, in the instances. yt_selftest is 28/28
-      green TODAY WITH the corruption present, so parity is not byte-comparing this content -- AC4
-      asserts that rather than assuming it. No backend DoD command reads .scrum/ (verified), which is
-      why AC6 adds the missing mechanical rung.
-      AC6 PLACEMENT: land the guard in yt_selftest, NOT backend/tests/ -- a backend test reading
+      zero U+FFFD), so the corruption is POST-GENERATION, in the instances. yt_selftest was 28/28
+      green WITH the corruption present, so parity is not byte-comparing this content -- AC4 asserted
+      that rather than assuming it. No backend DoD command reads .scrum/ (verified), which is exactly
+      why this rotted unseen and why AC6 adds the missing mechanical rung.
+      AC6 PLACEMENT: the guard landed in yt_selftest, NOT backend/tests/ -- a backend test reading
       .scrum/ would create a new repo-layout coupling, and the skill rung must stay PROJECT-GENERIC
       (PO directive 2026-07-13).
-      UNTIL THIS LANDS, EDIT THOSE FILES BYTE-SAFELY (latin-1 read/write).
+      THE SPRINT-64 "EDIT THESE FILES BYTE-SAFELY (latin-1)" WORKAROUND IS RETIRED (AC5) -- the
+      defect it guarded against is fixed and a mechanical guard now prevents its return.
 
   - id: STORY-190
     title: One unmappable row stalls a signal forever — quarantine the row, keep the batch

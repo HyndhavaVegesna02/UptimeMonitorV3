@@ -31,9 +31,9 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
 
 - [ ] Any hardcoded external-service identifier in the diff (cloud managed-policy IDs,
       prefix-list IDs, ARNs, account/region-specific values, vendor entity IDs) carries
-      live-derivation evidence — the CLI/API command and output that produced it — never
+      live-derivation evidence â€” the CLI/API command and output that produced it â€” never
       accepted from memory or generation. Plausible-looking is not verified. (2026-07-17;
-      sprint-50 STORY-089 — the CloudFront `CachePolicyId` labeled "CachingOptimized" was a
+      sprint-50 STORY-089 â€” the CloudFront `CachePolicyId` labeled "CachingOptimized" was a
       fabricated ID that survived cfn-lint AND a quality APPROVE, and 404'd only at live
       stack create; the sibling OriginRequestPolicyId was a real ID whose comment named a
       different policy.)

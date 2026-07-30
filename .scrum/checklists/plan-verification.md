@@ -41,7 +41,7 @@
 
 - [ ] Every hardcoded external-service identifier the plan or its target code carries
       (managed-policy IDs, prefix lists, ARNs, vendor entity IDs) is re-derived live from
-      the account/vendor (one CLI call) rather than trusted from generation — a fabricated
+      the account/vendor (one CLI call) rather than trusted from generation â€” a fabricated
       ID is invisible to linters and reviews and only fails at deploy time (2026-07-17;
-      sprint-50 CloudFront CachePolicyId 404 — two failed stack creates, ~1h lost, checkable
+      sprint-50 CloudFront CachePolicyId 404 â€” two failed stack creates, ~1h lost, checkable
       pre-lock with `aws cloudfront list-cache-policies`).
