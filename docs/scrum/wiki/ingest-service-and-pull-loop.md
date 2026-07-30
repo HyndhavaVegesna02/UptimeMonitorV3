@@ -53,6 +53,39 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   everything newer" path) now fails loud instead of silently over-advancing one signal's watermark
   using another signal's timestamps.
  
+### Partial-batch resilience (STORY-190, sprint 65) — one bad row costs only itself
+
+- **The defect this closed was NOT "a lost batch" — it was a PERMANENTLY STALLED SIGNAL.**
+  `normalize_rows` (`dispatch.py::normalize_rows`) is a bare list comprehension, so one unnormalizable
+  row aborted the whole list. That runs inside `fetch_observations`, which `run_cycle` calls BEFORE
+  `ingest_port.ingest_observations` — so `IngestService`'s watermark advance was never reached.
+  `run_periodic` caught the exception, logged at ERROR and continued (by design, STORY-050), and the
+  next cycle re-read the SAME unadvanced watermark and re-queried the SAME window, still containing
+  the same bad row. The signal therefore never advanced again while the loop looked alive.
+- Three properties made it unrecoverable rather than self-healing, all verified: the advance in
+  `IngestService.ingest_observations` is the ONLY watermark writer in `backend/src/` and `tools/`;
+  `build_dql_query` (`query.py::build_dql_query`) adds only a LOWER time bound, no upper bound and no
+  limit, so the poison row stays in-window indefinitely; and `sort timestamp asc` means the EARLIEST
+  bad row aborts, discarding already-normalized earlier rows too.
+- **The fix, and where each piece lives.** The adapter stays a PURE translation function — it returns
+  `NormalizationOutcome` (observations + failures) and persists nothing (see [[dynatrace-adapter]]).
+  `run_cycle` ingests `outcome.observations` as before, and for each failure logs at WARNING and
+  calls `rejected_repo.save(signal_key=..., reason=..., payload=<raw row>, rejected_at=...)`. The
+  watermark then advances on the good rows, so the signal moves past the bad one.
+- **No new port and no new domain type were needed.** `RejectedObservationRepository.save` already
+  took `signal_key` / `reason` / `payload: dict` / `rejected_at`, and its docstring already said
+  "Rejection is never a poison pill — the caller persists this and moves on to the rest of the
+  batch." It was written for validation rejects and fits normalization rejects unchanged; the raw row
+  goes in as an opaque `dict`, so no vendor shape reaches `core`.
+- **`rejected_repo` is threaded to BOTH `run_cycle` AND `run_periodic`**, because `build_live_loop`
+  (`run.py`) calls `run_periodic`, never `run_cycle`. Wiring only `run_cycle` would quarantine
+  nothing in production while every test passed.
+- **Zone note worth keeping:** having the inbound adapter write quarantine rows itself would pass all
+  eight `lint-imports` contracts (adapters may import core, and the port lives in `core/ports/`)
+  while turning a translation layer into an orchestrator. Only `composition` decides what happens to
+  an adapter's output. The gate does catch the CONCRETE `adapters.persistence.*` variant — only the
+  core-port route is invisible to it.
+
 ### The pull loop â€” `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone â€” the one zone allowed to import BOTH `src.core` and
   `src.adapters` (dossier Â§4). It holds NO domain logic; it only wires three calls per cycle.

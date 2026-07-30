@@ -1,15 +1,16 @@
 """STORY-191: tests for failure scenarios, scenario vocabulary, and recovery publish proof."""
 
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 
-import pytest
-from demo_engine.scenario import expand_scenario, load_scenario_file, InvalidScenarioError
+from demo_engine.scenario import (
+    expand_scenario,
+    load_scenario_file,
+)
 from src.adapters.inbound.dynatrace.adapter import fetch_observations
-from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusError
 from src.composition.config import load_config
-from src.composition.publish_helper import build_publisher
 from src.composition.orchestrate import orchestrate_signal
+from src.composition.publish_helper import build_publisher
 from src.core.domain import Component, ComponentStatus, Health
 from src.core.services.decide import DecideAction, DecideService
 from tests.fakes import (
@@ -73,7 +74,7 @@ def test_partial_breadth_scenario_expands_per_location_health():
     )
     assert len(outcome.failures) == 0
     assert len(outcome.observations) == 3 * 4  # 3 cycles x 4 locations
-    
+
     # Check per-location health in one cycle
     cycle_obs = outcome.observations[:4]
     by_loc = {obs.location: obs.health for obs in cycle_obs}
@@ -113,10 +114,13 @@ def test_poison_row_scenario_preserves_4_good_locations_and_captures_poison_fail
     # 4 good locations x 2 cycles = 8 observations
     assert len(outcome.observations) == 2 * 4
     assert all(obs.health is Health.UP for obs in outcome.observations)
-    
+
     # 1 extra poison row x 2 cycles = 2 failures
     assert len(outcome.failures) == 2
-    assert "UNMAPPED_POISON" in outcome.failures[0].reason or "unknown Dynatrace synthetic status" in outcome.failures[0].reason
+    assert (
+        "UNMAPPED_POISON" in outcome.failures[0].reason
+        or "unknown Dynatrace synthetic status" in outcome.failures[0].reason
+    )
 
 
 def test_recovery_publish_proof_two_sided_persisted_evidence():

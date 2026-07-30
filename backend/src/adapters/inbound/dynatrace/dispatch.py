@@ -25,8 +25,8 @@ raises ``MalformedDqlRowError``.
 """
 
 from collections.abc import Callable, Sequence
-
 from dataclasses import dataclass
+
 from src.adapters.inbound.dynatrace._assembly import (
     MalformedDqlRowError as MalformedDqlRowError,
 )

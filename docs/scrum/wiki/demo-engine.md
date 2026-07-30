@@ -1,8 +1,8 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
-code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml]
+code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
 verified_sha: d4f78ec
-verified_sprint: sprint-64
+verified_sprint: sprint-65
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
 # c2c3345..638853a: tools/demo_engine/server.py + backend/tests/demo_engine/test_server.py (both
@@ -16,6 +16,19 @@ status: verified          # verified | stale | archived
 # positive' and credited the LOADER for enforcing it -- true in sprint 63, made obsolete by
 # STORY-184 moving the invariant onto the type, which makes the guarantee UNCONDITIONAL. The old
 # loader-only state is kept as a superseded note with its live reproduction.
+#
+# Re-verified 2026-07-30 (sprint-65, STORY-191 fix round) by the orchestrator, and the Facts were
+# REWRITTEN rather than re-stamped -- three of them had become FALSE:
+#   1. "no demo loop has been started by any story to date" -- falsified by STORY-182 in sprint 64
+#      and never corrected (the sprint-64 follow-up STORY-189 filed it; this closes it).
+#   2. "this engine emits UP and absence, nothing else" -- falsified by STORY-177's provisional
+#      mapping. The old state is kept as an explicit SUPERSEDED note because its reasoning still
+#      governs how far these codes may be trusted (they remain ASSUMPTIONS).
+#   3. "the five UP-and-absence scenarios" -- there are now nine.
+# code_refs GAINED the whole tools/demo_loop_gate/ package (8 modules). Its absence was a real
+# blind spot, not a formality: staleness is `git diff verified_sha..HEAD -- <code_refs>`, so
+# changes to the very harness this article describes could NEVER mark it stale. Also added the
+# four new scenario files and the two backend modules the failure path now depends on.
 ---
 
 ## Facts (verified against code)
@@ -28,7 +41,11 @@ Dynatrace trial expired before a live failure signal could ever be captured (mem
 STORY-148 as **part 1 of 2 — the wire contract only**. **Part 2a (the scenario player, the demo
 fleet config, and the publish guard) landed in STORY-176 (sprint 63) — see the dedicated section
 below.** The end-to-end loop run itself, and its own two-sided reality gate, is **part 2b,
-STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
+STORY-182 (sprint 64)**, which RAN IT: 13 components / 41 signals / 4 locations ingested by the
+real unmodified `python -m src.composition.run`. **Sprint 65 then closed the failure half** —
+STORY-190 (a bad row is quarantined instead of stalling its signal), STORY-177 (a provisional
+failure mapping) and STORY-191 (a real `DOWN`, a real `DEGRADED`, a quarantined poison row and a
+real recovery PUBLISH, all driven through the same harness and asserted from persisted state).
 
 ### Where it lives, and why that is not `backend/src/`
 - The package is `tools/demo_engine/`, outside `backend/src/` **on purpose** (dossier §4,
@@ -178,19 +195,37 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   on both axes; that test was removed as a **contract correction, not a weakening** (its own docstring
   attributed it to STORY-180, not to STORY-148's wire contract).
 
-### Scope honesty: this engine emits UP and absence, nothing else
-- `map_synthetic_status` (`health_mapping.py:54-70`) maps ONLY `code == "0"` /
-  `message == "HEALTHY"` to `Health.UP` and RAISES on every other value. A real failure code has
-  never been observed, and that module's own docstring says inventing one "would silently mis-map
-  (or mask) the real failure value".
-- So every non-healthy pair this engine can build is an **assumption**, collected in one named place
-  (`assumed_failure_codes.py:33-34`: `"1"`/`"UNHEALTHY"`, marked UNVERIFIED pending trial renewal,
-  STORY-154) so nobody mistakes a demo failure row for a confirmed vendor contract.
-- STORY-148's reality gate **executed** this: the assumed row reached the real, unmodified
-  `map_synthetic_status`, raised `UnknownVendorStatusError`, and took the whole batch with it
-  (`dispatch.py:80`'s bare comprehension). The failure path is proven **rejected** — the opposite of
-  "tested". Adding a real failure mapping to `backend/src/` is STORY-177, a first-class reviewed
-  decision, never a side effect of a demo fixture (`assumed_failure_codes.py:16-22`).
+### Scope honesty: what this engine can emit (REWRITTEN — sprint 65)
+
+**This section previously read "this engine emits UP and absence, nothing else". That is no longer
+true.** STORY-177 (sprint 65) landed a provisional failure mapping in `backend/src/`, and STORY-191
+drove it through a real loop run. The superseded state is kept below because the *reasoning* still
+governs how much these codes may be trusted.
+
+- `map_synthetic_status` (`health_mapping.py`) now resolves in three steps: the healthy OR-rule
+  (`code == "0"` or `message == "HEALTHY"` → `Health.UP`) **first and unchanged**; then an exact
+  `(code, message)` tuple lookup in `PROVISIONAL_STATUS_MAPPING`; then a raise. Every provisional hit
+  logs at WARNING naming the code, the message and its unverified status.
+- The mapping holds exactly two entries — `("1", "UNHEALTHY") → Health.DOWN` and
+  `("2", "DEGRADED") → Health.DEGRADED`. **Both remain ASSUMPTIONS.** A real Dynatrace failure code
+  has still never been observed; the trial expired 2026-07-28 before one could be captured. STORY-154
+  replaces the *contents* of that one constant when a tenant exists.
+- The codes live in `health_mapping.py` and are **derived** in
+  `tools/demo_engine/assumed_failure_codes.py`, never redeclared — `tools/` may import `src.*`, never
+  the reverse. `scenario.py`'s outcome vocabulary is likewise derived, and is deliberately **closed**
+  (`up` / `down` / `degraded` / `poison`) with no free-form `"code:message"` escape hatch, so a
+  fixture can never introduce a vendor literal that reads as a contract.
+- **SUPERSEDED, kept for its reasoning (STORY-148, sprint 62–63):** the engine could emit `UP` and
+  absence only, because `map_synthetic_status` raised on every non-healthy value and
+  `dispatch.py:80`'s bare comprehension then discarded the whole batch. STORY-148's reality gate
+  executed exactly that: the assumed row raised `UnknownVendorStatusError` and took the batch with
+  it — the failure path proven **rejected**, the opposite of "tested". Consequently no demo scenario
+  could drive a `DOWN` or `DEGRADED` proposal, which is why PO decision D-A re-pointed STORY-149's
+  reality gate away from the demo engine. Both halves of that are now closed: STORY-190 made a bad
+  row survivable (quarantined, batch preserved, watermark advances) and STORY-177 added the mapping.
+- **What "the failure path is tested" means here, precisely:** tested against an ASSUMED code,
+  through the real unmodified ingest path, in a real loop run — never against anything Dynatrace has
+  confirmed.
 - Consequence for anything downstream: **no demo scenario can drive a `DOWN` or `DEGRADED`
   proposal.** PO decision D-A re-pointed STORY-149's reality gate away from the demo engine for
   exactly this reason — a demo-based gate would have false-passed "no proposal appeared" because
@@ -281,7 +316,8 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
   collision would PATCH the real page even with `CONFIG_DIR` set correctly everywhere — proven
   catchable, not just asserted absent, by
   `::test_disjointness_check_actually_catches_a_collision`.
-- **Scenario coverage is `UP` and absence only** (`config/demo/scenarios/`): a clean fleet
+- **Scenario coverage (updated sprint 65).** `config/demo/scenarios/` now holds NINE files. The
+  original five are `UP`-and-absence only: a clean fleet
   (`clean-fleet.yaml`), a fully dark location (`dark-location.yaml` — lowers `distinct_locations`,
   does NOT touch a freshness/completeness path, since `expected_locations` has zero consumers
   outside `config.py`), a fully dark monitor (`dark-monitor.yaml` — empty window → `streak` returns
@@ -347,7 +383,7 @@ STORY-182 (sprint 64)** — no demo loop has been started by any story to date.
 
 - sprint-63 (STORY-176, part 2a): the scenario player (`scenario.py`), the demo fleet
   (`config/demo/`, 13 components / 41 signals / 4 locations across three distinct-`app.id` files),
-  the five UP-and-absence scenarios (`config/demo/scenarios/`), and the config-only publish guard
+  the scenarios (`config/demo/scenarios/`), and the config-only publish guard
   (proven in-process, both sides — an empty demo mapping selecting `LoggingPublisher` AND the live
   `config/apps` mapping selecting a real `StatuspagePublisher` TYPE, plus a proven-catchable
   component-id disjointness check) all land. AC6/AC7 (the actual loop run) are explicitly OUT of

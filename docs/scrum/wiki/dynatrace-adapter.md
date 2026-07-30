@@ -92,6 +92,21 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `normalize_row` raises `UnsupportedMonitorTypeError` (`dispatch.py::UnsupportedMonitorTypeError` and `dispatch.py::normalize_row`) for any unmapped
   `event.type` rather than mis-normalizing. `normalize_rows` (`dispatch.py::normalize_rows`) maps it over a sequence,
   one observation per row, in input order, mixed monitor types/locations normalized independently.
+- **Two dispatch entry points since STORY-190 (sprint 65).** `normalize_rows` is UNCHANGED and still
+  STRICT — the first raising row aborts the whole list. Alongside it,
+  `normalize_rows_lenient(rows, *, signal_key) -> NormalizationOutcome`
+  (`dispatch.py::normalize_rows_lenient`) catches the three per-row failures
+  (`UnknownVendorStatusError`, `UnsupportedMonitorTypeError`, `MalformedDqlRowError`) and returns
+  both the successfully-normalized `observations` (input order preserved) and a list of
+  `RowNormalizationFailure` (`dispatch.py::RowNormalizationFailure`: the raw `row` dict plus a
+  `reason` string). `fetch_observations` (`adapter.py::fetch_observations`) now uses the lenient path
+  and returns `NormalizationOutcome`, not `list[SignalObservation]`.
+- **Why the strict function was kept rather than replaced:** it is the fail-loud unit, is called
+  directly by eight tests, and its behaviour is itself the thing STORY-190's regression test pins.
+  Both failure types are ADAPTER-LOCAL — `RowNormalizationFailure` carries a raw vendor row dict, so
+  it deliberately does NOT live in `core/domain/`, and this adapter persists nothing: it returns
+  values, and `composition` decides what to do with the failures (see
+  [[ingest-service-and-pull-loop]]).
 
 ### Per-type normalizers + shared assembly
 - `normalize_http_row` (`http_normalizer.py::normalize_http_row`, `NATIVE_KIND="http"`) and
@@ -127,13 +142,31 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   (read via `.get`) — its absence is NOT malformed.
 
 ### Health mapping (`health_mapping.py`) — the only place vendor status words are read
-- **Live HTTP path (STORY-016b):** `map_synthetic_status(*, code, message)`
-  (`health_mapping.py::map_synthetic_status`) maps the real `result.status` fields: `code == "0"` (or
-  `message == "HEALTHY"`) → `Health.UP`. Any other value raises the named `UnknownVendorStatusError`
-  (`health_mapping.py::UnknownVendorStatusError`) — it is **fail-loud, NOT guessed**: only the healthy
-  value is known today; the real DOWN/DEGRADED code(s) are captured during the live verification
-  (STORY-016b plan T6/AC6) and the mapping is extended THEN. Inventing failure codes was explicitly
-  rejected at review (it would silently mask the real failure value the live run is meant to observe).
+- **Live HTTP path (STORY-016b, REWRITTEN by STORY-177 sprint 65):**
+  `map_synthetic_status(*, code, message)` (`health_mapping.py::map_synthetic_status`) resolves in
+  THREE steps, in this order:
+  1. the healthy OR-rule, first and unchanged — `code == "0"` **or** `message == "HEALTHY"` →
+     `Health.UP` (an `or`, so either half alone suffices; pinned by
+     `test_dynatrace_adapter.py::test_map_synthetic_status_message_only`, which asserts
+     `code="123", message="HEALTHY"` is still `UP`);
+  2. an EXACT `(code, message)` tuple lookup in `PROVISIONAL_STATUS_MAPPING` — two entries,
+     `("1","UNHEALTHY") → Health.DOWN` and `("2","DEGRADED") → Health.DEGRADED` — logging a WARNING
+     naming the code, the message and its unverified status;
+  3. otherwise raise the named `UnknownVendorStatusError`
+     (`health_mapping.py::UnknownVendorStatusError`).
+  The tuple match is deliberately exact, never code-only, so a provisional entry cannot over-match a
+  real vendor value. **The fail-loud property the original design existed to protect is intact:** any
+  pair outside both rules still raises, naming the real code and message, so a genuine vendor failure
+  code still surfaces to be read and mapped.
+- **SUPERSEDED, kept so the change does not read as a regression:** this section previously said only
+  the healthy value is mapped and "the real DOWN/DEGRADED code(s) are captured during the live
+  verification (STORY-016b plan T6/AC6) and the mapping is extended THEN", with inventing failure
+  codes "explicitly rejected at review". That reasoning was sound while a tenant existed. **The
+  Dynatrace trial expired 2026-07-28, so the live verification it defers to CANNOT happen**, and the
+  entire failure half of the business logic was unexercisable end to end. STORY-177 was the
+  first-class reviewed decision to add a PROVISIONAL, explicitly-labelled mapping; STORY-154 replaces
+  its contents with real codes once a tenant exists. The two provisional pairs remain **UNVERIFIED
+  ASSUMPTIONS** — no Dynatrace failure code has ever been observed.
 - **Legacy clickpath path:** `map_execution_outcome(outcome)` (`health_mapping.py::map_execution_outcome`,
   `success→UP`/`failure→DOWN`/`partial→DEGRADED`, raises `UnknownVendorOutcomeError`) is still used by
   `clickpath_normalizer` against the old `execution.outcome` field. Browser clickpath is out of the

@@ -2,12 +2,25 @@
 outcome declaration into Grail-shaped demo rows (STORY-176 AC1/AC2).
 
 A scenario file is NOT a random generator (dossier context, STORY-176): it
-declares, per signal, an ordered sequence of CYCLES, and each cycle names
-exactly which locations report `UP` that cycle. A location omitted from a
-cycle's list is simply ABSENT for that cycle — this engine emits `UP` and
-absence only (`assumed_failure_codes.py`; a real vendor failure code has
-never been observed), so "absent" is the only non-`UP` outcome a scenario can
-express.
+declares, per signal, an ordered sequence of CYCLES, and each cycle names what
+each location reported that cycle. A location omitted from a cycle is simply
+ABSENT for that cycle.
+
+**A cycle entry takes one of two shapes** (STORY-191 widened this):
+
+- a LIST of location ids — every one reported `UP`. This is the original
+  STORY-176 shape and is unchanged, so every scenario authored against it
+  keeps working;
+- a MAPPING of location id -> outcome, drawn from the CLOSED vocabulary in
+  `_STATUS_MAP` below (`up` / `down` / `degraded` / `poison`).
+
+**Until STORY-177 this engine could emit `UP` and absence ONLY**, because
+`map_synthetic_status` raised on every non-healthy code, so "absent" was the
+only non-`UP` outcome expressible. STORY-177 landed a provisional mapping and
+that is no longer true — `down` and `degraded` now travel the real ingest path.
+They remain UNVERIFIED ASSUMPTIONS about vendor codes, never confirmed
+contracts (`assumed_failure_codes.py`): a real Dynatrace failure code has still
+never been observed.
 
 **Past-anchored expansion (STORY-176 AC2, decided at planning).** `end_time`
 (typically `clock.now()`) is where the LAST declared cycle lands; earlier
@@ -30,7 +43,14 @@ from typing import Any
 
 import yaml
 
-from demo_engine.assumed_failure_codes import ASSUMED_DOWN_CODE, ASSUMED_DOWN_MESSAGE
+from demo_engine.assumed_failure_codes import (
+    ASSUMED_DEGRADED_CODE,
+    ASSUMED_DEGRADED_MESSAGE,
+    ASSUMED_DOWN_CODE,
+    ASSUMED_DOWN_MESSAGE,
+    UNMAPPED_POISON_CODE,
+    UNMAPPED_POISON_MESSAGE,
+)
 from demo_engine.rows import (
     STATUS_CODE_HEALTHY,
     STATUS_MESSAGE_HEALTHY,
@@ -49,8 +69,10 @@ class SignalScenario:
 
     `cycles` is ordered OLDEST to NEWEST — `cycles[-1]` is the cycle that
     lands at `expand_scenario`'s `end_time`. Each entry is either a list of
-    location native ids reporting `UP` or a dict of location native id -> status
-    string ("up", "down", "degraded", or custom).
+    location native ids reporting `UP` (the original STORY-176 shape), or a
+    mapping of location native id -> outcome drawn from the CLOSED vocabulary
+    in `_STATUS_MAP`. There is deliberately no free-form "custom" form; see
+    that constant for why.
     """
 
     signal_key: str
@@ -123,7 +145,9 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
                         f"must be a list of location id strings or dict, got {cycle!r}."
                     )
             elif isinstance(cycle, dict):
-                if not all(isinstance(k, str) and isinstance(v, str) for k, v in cycle.items()):
+                if not all(
+                    isinstance(k, str) and isinstance(v, str) for k, v in cycle.items()
+                ):
                     raise InvalidScenarioError(
                         f"{path}: scenario {signal_key!r}: cycles[{cycle_index}] "
                         f"must be a dict mapping location id string to status string, got {cycle!r}."
@@ -149,23 +173,44 @@ def load_scenario_file(path: str | Path) -> list[SignalScenario]:
     return scenarios
 
 
+#: The CLOSED per-location outcome vocabulary a scenario cycle may declare.
+#:
+#: Every pair is DERIVED from `assumed_failure_codes`, never written literally
+#: here — STORY-177 AC2 requires the provisional code literals to exist in
+#: exactly ONE place (`health_mapping.PROVISIONAL_STATUS_MAPPING`), so that
+#: STORY-154 can replace them without hunting. A hardcoded `("2", "DEGRADED")`
+#: in this file would silently break that guarantee.
+#:
+#: Deliberately CLOSED: there is no free-form `"code:message"` escape hatch.
+#: One was briefly present and is removed on purpose — it let any scenario YAML
+#: introduce arbitrary vendor literals, which is exactly the single-source rule
+#: above defeated by the back door, and it would have let a scenario invent a
+#: vendor code that reads as a contract. A genuinely new outcome is a change to
+#: the provisional mapping (a reviewed decision), not a string in a fixture.
 _STATUS_MAP: dict[str, tuple[str, str]] = {
     "up": (STATUS_CODE_HEALTHY, STATUS_MESSAGE_HEALTHY),
     "down": (ASSUMED_DOWN_CODE, ASSUMED_DOWN_MESSAGE),
-    "degraded": ("2", "DEGRADED"),
-    "poison": ("999", "UNMAPPED_POISON"),
-    "unmapped": ("999", "UNMAPPED_POISON"),
+    "degraded": (ASSUMED_DEGRADED_CODE, ASSUMED_DEGRADED_MESSAGE),
+    # Deliberately UNMAPPED -- `map_synthetic_status` RAISES on it. Used to
+    # prove STORY-190's quarantine on a real run (STORY-191 AC5).
+    "poison": (UNMAPPED_POISON_CODE, UNMAPPED_POISON_MESSAGE),
 }
 
 
 def _resolve_status(status_str: str) -> tuple[str, str]:
-    status_lower = status_str.lower()
-    if status_lower in _STATUS_MAP:
-        return _STATUS_MAP[status_lower]
-    if ":" in status_str:
-        parts = status_str.split(":", 1)
-        return parts[0], parts[1]
-    raise ValueError(f"Unknown status string in scenario: {status_str!r}")
+    """Resolve a declared outcome word to its `(code, message)` pair.
+
+    Raises on anything outside the closed vocabulary, naming what IS allowed --
+    a scenario typo must fail loudly at load time rather than silently
+    expanding to rows nobody asked for.
+    """
+    try:
+        return _STATUS_MAP[status_str.lower()]
+    except KeyError:
+        allowed = ", ".join(sorted(_STATUS_MAP))
+        raise ValueError(
+            f"unknown per-location outcome {status_str!r}; allowed: {allowed}"
+        ) from None
 
 
 def expand_scenario(
@@ -212,4 +257,3 @@ def expand_scenario(
                 )
 
     return rows
-

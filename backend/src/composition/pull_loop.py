@@ -40,7 +40,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from collections.abc import Awaitable, Callable
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.adapters.inbound.dynatrace.adapter import DEFAULT_OVERLAP, fetch_observations
 from src.adapters.inbound.dynatrace.query import Executor
@@ -49,7 +49,11 @@ from src.adapters.inbound.dynatrace.query import Executor
 # (inside run_cycle) to keep the no-orchestration path decoupled.
 from src.composition.config import Config
 from src.core.domain import IngestResult
-from src.core.ports import SignalIngestPort, WatermarkRepository, RejectedObservationRepository
+from src.core.ports import (
+    RejectedObservationRepository,
+    SignalIngestPort,
+    WatermarkRepository,
+)
 from src.core.ports.clock import ClockPort
 from src.core.ports.component_repository import ComponentRepository
 from src.core.ports.maintenance_repository import MaintenanceRepository

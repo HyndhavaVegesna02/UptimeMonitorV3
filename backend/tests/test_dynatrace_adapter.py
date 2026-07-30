@@ -102,15 +102,22 @@ def test_health_mapping_synthetic_status_success():
 
 def test_health_mapping_synthetic_status_provisional_down_and_degraded(caplog):
     import logging
+
     from src.adapters.inbound.dynatrace.health_mapping import (
         map_synthetic_status,
     )
 
-    with caplog.at_level(logging.WARNING, logger="src.adapters.inbound.dynatrace.health_mapping"):
+    with caplog.at_level(
+        logging.WARNING, logger="src.adapters.inbound.dynatrace.health_mapping"
+    ):
         assert map_synthetic_status(code="1", message="UNHEALTHY") is Health.DOWN
         assert map_synthetic_status(code="2", message="DEGRADED") is Health.DEGRADED
 
-    records = [r for r in caplog.records if r.name == "src.adapters.inbound.dynatrace.health_mapping"]
+    records = [
+        r
+        for r in caplog.records
+        if r.name == "src.adapters.inbound.dynatrace.health_mapping"
+    ]
     assert len(records) == 2
     assert "Provisional status mapping hit" in records[0].getMessage()
     assert "DOWN" in records[0].getMessage()
@@ -138,7 +145,6 @@ def test_health_mapping_synthetic_status_rejects_unknown():
         map_synthetic_status(code="-1", message="UNRECOGNIZED_OUTCOME")
     assert "code='-1'" in str(exc_info.value)
     assert "message='UNRECOGNIZED_OUTCOME'" in str(exc_info.value)
-
 
 
 # --- clickpath normalizer collapses multi-step to ONE verdict ---------
@@ -365,7 +371,6 @@ def test_normalize_rows_lenient_captures_failures_and_keeps_good_observations():
     assert "unknown Dynatrace synthetic status" in outcome.failures[2].reason
 
 
-
 # --- STORY-020: malformed DQL row -> named error, not bare KeyError -----------
 
 
@@ -467,7 +472,6 @@ def test_fetch_observations_captures_unsupported_monitor_rows_in_failures():
     assert len(outcome.observations) == 0
     assert len(outcome.failures) == 2
     assert "unsupported Dynatrace event.type" in outcome.failures[0].reason
-
 
 
 # --- Fix loop 1: shared assembly helper ---

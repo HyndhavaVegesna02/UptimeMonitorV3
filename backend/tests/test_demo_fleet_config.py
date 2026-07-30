@@ -151,7 +151,7 @@ def test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delega
     monkeypatch,
 ):
     """SAFE side of the two-sided publish-safety proof pair (STORY-176, STORY-185).
-    
+
     Pairs with `test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_publisher_type`.
     Neither side is meaningful alone: this test proves `CONFIG_DIR=config/demo` yields an empty mapping
     and selects `LoggingPublisher` fallback, while the unsafe side proves `CONFIG_DIR=config/apps`
@@ -210,7 +210,6 @@ def test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_pub
     recording = best_effort._delegate
     assert isinstance(recording, RecordingPublisher)
     assert isinstance(recording._delegate, StatuspagePublisher)
-
 
 
 # --- AC4/AC8: fleet scale + per-app locations/freshness survival -----------

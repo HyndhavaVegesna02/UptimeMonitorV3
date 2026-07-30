@@ -748,10 +748,10 @@ def test_quarantine_bad_row_allows_watermark_to_advance_across_consecutive_cycle
     quarantines the bad row into rejected_repo (with a WARNING log), and permits the
     watermark to advance across consecutive cycles.
     """
+    from fakes import FakeObservationRepository
     from src.adapters.system_clock import SystemClock
     from src.composition.pull_loop import run_cycle
     from src.core.services.ingest_service import IngestService
-    from fakes import FakeObservationRepository
 
     watermark_repo = FakeWatermarkRepository({"checkout-http": None})
     obs_repo = FakeObservationRepository()
@@ -793,7 +793,10 @@ def test_quarantine_bad_row_allows_watermark_to_advance_across_consecutive_cycle
     # Watermark advanced to good_row_1 timestamp!
     wm_after_cycle_1 = watermark_repo.get("checkout-http")
     assert wm_after_cycle_1 == datetime(2026, 6, 24, 10, 1, 0, tzinfo=timezone.utc)
-    assert any("Quarantining row for signal_key='checkout-http'" in r.getMessage() for r in caplog.records)
+    assert any(
+        "Quarantining row for signal_key='checkout-http'" in r.getMessage()
+        for r in caplog.records
+    )
 
     # Cycle 2: watermark advanced further with another bad row present
     bad_row_2 = {
@@ -846,4 +849,3 @@ def test_pre_fix_strict_normalization_stalls_watermark_progress():
 
     # Watermark was never advanced because cycle raised before ingest
     assert watermark_repo.get("checkout-http") is None
-

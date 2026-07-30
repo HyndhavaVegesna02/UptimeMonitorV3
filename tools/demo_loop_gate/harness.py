@@ -42,6 +42,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -53,6 +54,7 @@ for _p in (str(TOOLS_ROOT),):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
+import httpx  # noqa: E402
 from demo_engine.scenario import SignalScenario, expand_scenario  # noqa: E402
 from demo_engine.server import DemoEngineServer  # noqa: E402
 from import_provenance import assert_import_root  # noqa: E402
@@ -337,13 +339,50 @@ def run_positive_side(
     api_port: int = API_PORT,
     loop_wait_seconds: float = 90.0,
     extra_scenarios: list[SignalScenario] | None = None,
+    pre_loop_hook: Callable[..., dict] | None = None,
 ) -> dict:
-    """Run the full positive-side reality gate and return the evidence dict."""
+    """Run the full positive-side reality gate and return the evidence dict.
+
+    Steps (STORY-182 AC1-AC6, sprint-64 plan "Steps" for story 4):
+      1. Provenance (STORY-187).
+      2. Build the fleet-wide coverage row store (B1) and start the embedded
+         demo engine seeded with it.
+      3. Create FRESH observations+control tables (AC2, B4).
+      4. Launch the API as a real `uvicorn` subprocess with CONFIG_DIR=
+         config/demo (AC1a) and the fresh table names (AC1b).
+      5. Assert AC1(a)-(e) against the running API.
+      6. Launch `python -m src.composition.run`, UNMODIFIED, with the SAME
+         env matrix (AC1a/AC1b), against the demo engine.
+      7. Wait long enough for every signal's first cycle (the loop's first
+         cycle fires before its first sleep, `pull_loop.py:160` -- so this
+         harness only needs to span STARTUP, not an interval), then
+         terminate it externally (AC6 forbids a `stop_event` in
+         `backend/src/`).
+      8. Collect AC3 (ingest), AC4 (vendor-health), AC5 (empty approvals)
+         evidence from the still-running API.
+      9. Tear everything down with OS-level verification.
+
+    `extra_scenarios` (STORY-191) MERGES additional scenario rows into the
+    fleet-wide store rather than replacing it -- the fleet store must
+    survive, because `_assert_ac3_ingest` requires every one of the 41
+    signals to have ingested from all 4 locations.
+    """
     _print_provenance()
 
     _assert_api_port_free(api_port)
 
     cfg = load_config(DEMO_CONFIG_DIR)
+    # `run.py:135-151` builds one `run_periodic` coroutine per signal in THIS
+    # exact per-app/per-signal order, and `asyncio.gather` starts them in
+    # that same order; since each `run_cycle` runs synchronously to
+    # completion before its coroutine reaches its own first
+    # `await asyncio.sleep`, the LAST entry in this list is the last signal
+    # to complete its first cycle. Kept separate from the alphabetically
+    # SORTED `all_signal_keys` used for reporting -- sorting here would
+    # silently break the "wait for the last one" polling strategy below
+    # (discovered live on STORY-182's second run: 6 trailing signals,
+    # exactly config/demo's last app/component in file-glob order, had not
+    # ingested yet under a fixed post-startup sleep).
     iteration_order_signal_keys = [
         sig.signal_key for app in cfg.apps for sig in app.signals
     ]
@@ -387,7 +426,9 @@ def run_positive_side(
     store = build_fleet_row_store(cfg, end_time=run_start)
     if extra_scenarios:
         for sc in extra_scenarios:
-            for row in expand_scenario(sc, end_time=run_start, event_id_prefix=f"fail-{sc.signal_key}"):
+            for row in expand_scenario(
+                sc, end_time=run_start, event_id_prefix=f"fail-{sc.signal_key}"
+            ):
                 store.add_row(row)
         print(f"Merged {len(extra_scenarios)} extra scenario(s) into row store.")
 
@@ -456,6 +497,29 @@ def run_positive_side(
                 expected_component_ids=all_component_ids,
             )
             evidence["ac1_preconditions"] = preconditions
+
+            # STORY-191 AC6 seam. Runs AFTER the fresh tables exist and the API
+            # has seeded components, and BEFORE the loop subprocess starts --
+            # the only window in which a caller can establish a pre-loop
+            # control-table state that the loop will then react to.
+            #
+            # It exists because a recovery publish is UNREACHABLE from a seeded
+            # baseline: `decide` publishes only when
+            # severity_rank(proposed) < severity_rank(current)
+            # (`decide.py:115-117`), every component seeds OPERATIONAL
+            # (`seed_dynamo.py:49`), and a degradation never changes stored
+            # status (`decide.py:128-136` opens a proposal and publishes
+            # nothing). So a DOWN-then-UP observation ladder can NEVER trip the
+            # recovery branch -- the caller must pre-set a worse-than-
+            # OPERATIONAL status, which is a real reachable state (a
+            # previously-approved degradation).
+            if pre_loop_hook is not None:
+                print("Running pre_loop_hook (STORY-191 AC6 precondition)...")
+                evidence["pre_loop_hook"] = pre_loop_hook(
+                    control_table=control_table,
+                    api_base=api_base,
+                )
+                print(f"pre_loop_hook result: {evidence['pre_loop_hook']}")
 
             loop_env = build_child_env(
                 base_env=dict(os.environ),
