@@ -7,8 +7,6 @@ import pytest
 from demo_engine.scenario import expand_scenario, load_scenario_file, InvalidScenarioError
 from src.adapters.inbound.dynatrace.adapter import fetch_observations
 from src.adapters.inbound.dynatrace.health_mapping import UnknownVendorStatusError
-from src.adapters.persistence.dynamo_component_repository import DynamoComponentRepository
-from src.adapters.persistence.dynamo_publication_repository import DynamoPublicationRepository
 from src.composition.config import load_config
 from src.composition.publish_helper import build_publisher
 from src.composition.orchestrate import orchestrate_signal

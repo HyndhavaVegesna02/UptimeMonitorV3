@@ -53,7 +53,7 @@ for _p in (str(TOOLS_ROOT),):
     if _p not in sys.path:
         sys.path.insert(0, _p)
 
-from demo_engine.scenario import SignalScenario, expand_scenario
+from demo_engine.scenario import SignalScenario, expand_scenario  # noqa: E402
 from demo_engine.server import DemoEngineServer  # noqa: E402
 from import_provenance import assert_import_root  # noqa: E402
 from src.composition.config import load_config  # noqa: E402

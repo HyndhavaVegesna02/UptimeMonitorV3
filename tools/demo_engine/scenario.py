@@ -30,7 +30,6 @@ from typing import Any
 
 import yaml
 
-from src.adapters.inbound.dynatrace.health_mapping import PROVISIONAL_STATUS_MAPPING
 from demo_engine.assumed_failure_codes import ASSUMED_DOWN_CODE, ASSUMED_DOWN_MESSAGE
 from demo_engine.rows import (
     STATUS_CODE_HEALTHY,
