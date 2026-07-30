@@ -33,7 +33,6 @@ from datetime import datetime
 
 from demo_engine.scenario import SignalScenario, expand_scenario
 from demo_engine.store import DemoRowStore
-
 from src.composition.config import Config
 
 #: 5 cycles is sufficient (SPIKE-064): the vendor-health probe only needs

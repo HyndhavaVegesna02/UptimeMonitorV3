@@ -23,7 +23,6 @@ from pathlib import Path
 
 from demo_engine.store import DemoRowStore
 from demo_loop_gate.fleet_coverage import build_fleet_row_store
-
 from src.composition.config import load_config
 from src.composition.vendor_health import check_vendor_id_health
 

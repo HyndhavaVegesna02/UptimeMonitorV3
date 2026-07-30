@@ -26,7 +26,6 @@ from demo_loop_gate.fleet_coverage import (
     build_fleet_coverage_scenarios,
     build_fleet_row_store,
 )
-
 from src.composition.config import load_config
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]

@@ -17,7 +17,6 @@ from __future__ import annotations
 from datetime import datetime, timezone
 
 from demo_loop_gate.publisher_chain import describe_publisher_chain
-
 from src.composition.publish_helper import build_publisher
 from tests.fakes import FakeComponentRepository, FakePublicationRepository
 
@@ -48,8 +47,12 @@ def test_safe_and_unsafe_chains_differ_and_neither_is_length_one():
     safe_chain = describe_publisher_chain(_build({}))
     unsafe_chain = describe_publisher_chain(_build({"comp-1": "sp-1"}))
 
-    assert len(safe_chain) > 1, "a length-1 chain is a harness defect (wrong attribute walked)"
-    assert len(unsafe_chain) > 1, "a length-1 chain is a harness defect (wrong attribute walked)"
+    assert len(safe_chain) > 1, (
+        "a length-1 chain is a harness defect (wrong attribute walked)"
+    )
+    assert len(unsafe_chain) > 1, (
+        "a length-1 chain is a harness defect (wrong attribute walked)"
+    )
     assert safe_chain != unsafe_chain
 
     assert safe_chain == ["StatusWritebackPublisher", "LoggingPublisher"]
