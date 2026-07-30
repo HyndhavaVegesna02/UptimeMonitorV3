@@ -51,6 +51,69 @@ def _scenario(cycles: list[list[str]], interval_seconds: int = 30) -> SignalScen
     )
 
 
+# --- STORY-184: the interval invariant lives on SignalScenario itself ------
+#
+# STORY-176's fix round (sprint 63) validated interval_seconds only in
+# `load_scenario_file` -- direct construction bypassed it entirely, and
+# `expand_scenario` (past-anchored) would emit a row AFTER `end_time` for a
+# non-positive interval. These tests pin the invariant on the frozen type
+# itself, so no construction path -- direct or via the loader -- can produce
+# a player that expands into the future.
+
+
+@pytest.mark.parametrize("interval_seconds", [-30, 0])
+def test_signal_scenario_rejects_non_positive_interval_seconds(interval_seconds):
+    with pytest.raises(ValueError, match="positive"):
+        SignalScenario(
+            signal_key="demo-signal",
+            monitor_id="HTTP_CHECK-DEMO-TEST",
+            interval_seconds=interval_seconds,
+            cycles=[["L1"], ["L1"]],
+        )
+
+
+def test_signal_scenario_accepts_a_valid_positive_interval_seconds():
+    scenario = SignalScenario(
+        signal_key="demo-signal",
+        monitor_id="HTTP_CHECK-DEMO-TEST",
+        interval_seconds=30,
+        cycles=[["L1"]],
+    )
+    assert scenario.interval_seconds == 30
+
+
+@pytest.mark.parametrize("bad_value", ["30", 30.5, True])
+def test_signal_scenario_rejects_non_int_interval_seconds(bad_value):
+    """`bool` is an `int` subclass in Python, so a naive `isinstance(x, int)`
+    check would silently accept `True` -- this parametrization is the one
+    that pins that case, currently unpinned even at the loader (AC2)."""
+    with pytest.raises(ValueError, match="int"):
+        SignalScenario(
+            signal_key="demo-signal",
+            monitor_id="HTTP_CHECK-DEMO-TEST",
+            interval_seconds=bad_value,
+            cycles=[["L1"]],
+        )
+
+
+def test_signal_scenario_negative_interval_can_no_longer_expand_into_the_future():
+    """AC5 -- the previously-reachable future-row outcome. Before this story,
+    `SignalScenario(interval_seconds=-30, cycles=[["L1"], ["L1"]])` followed
+    by `expand_scenario(scenario, end_time=...)` produced a row at
+    `end_time + 30s` -- 30 seconds INTO THE FUTURE relative to `end_time`
+    (the exact reproduction the story's Context section verified at HEAD).
+    The type invariant now makes the CONSTRUCTION itself raise, so that
+    future row is unreachable regardless of whether `expand_scenario` is
+    ever called. This is the assertion that failed before this story."""
+    with pytest.raises(ValueError):
+        SignalScenario(
+            signal_key="demo-signal",
+            monitor_id="HTTP_CHECK-DEMO-TEST",
+            interval_seconds=-30,
+            cycles=[["L1"], ["L1"]],
+        )
+
+
 # --- AC1: row count per location per cycle ---------------------------------
 
 
