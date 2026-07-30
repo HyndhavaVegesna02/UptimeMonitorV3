@@ -10,9 +10,13 @@ exists for).
 
 Re-runnable: ``python tools/demo_loop_gate/harness.py`` (needs Docker's
 `uptime_dynamo_8021` container up, i.e. `DYNAMO_ENDPOINT_URL=
-http://127.0.0.1:8021` reachable). Prints every AC1-AC5 value it asserts,
-inspectable in the console output; raises loudly (never a silent partial
-pass) if any precondition fails.
+http://127.0.0.1:8021` reachable). Prints every AC1-AC5 value it collects
+AND asserts it holds (`_assert_ac1_preconditions`, `_assert_ac3_ingest`,
+`_assert_ac4_vendor_health`, `_assert_ac5_approvals`,
+`_assert_loop_startup_and_ingestion`) -- raises loudly (`AssertionError` or
+`RealityGateError`, never a silent partial pass) if any of them fails, and
+`main()`/`__main__` report an explicit PASS/FAIL verdict with a non-zero
+exit code on failure.
 
 **Safety, read before running:** every credential handed to either
 subprocess is a deliberately fake, obviously-fake-looking placeholder (never
@@ -30,7 +34,9 @@ merely unlikely.
 
 from __future__ import annotations
 
+import json
 import os
+import re
 import socket
 import subprocess
 import sys
@@ -104,6 +110,19 @@ def _port_is_free(port: int, *, host: str = "127.0.0.1") -> bool:
     return result != 0  # nonzero = connection refused = nothing listening
 
 
+def _assert_api_port_free(port: int) -> None:
+    """Minor (STORY-182 fix round): `API_PORT` was hardcoded and never
+    pre-flight-checked, though `_port_is_free` already existed and was only
+    used AFTER teardown. A busy port previously cost a silent, opaque 30s
+    `_wait_for_http_ok` timeout instead of a clear message up front."""
+    if not _port_is_free(port):
+        raise RealityGateError(
+            f"API port {port} is already in use -- free it before running "
+            "this harness (a busy port otherwise costs a silent 30s "
+            "health-check timeout instead of a clear error)."
+        )
+
+
 def _wait_for_marker_or_exit(
     proc: subprocess.Popen,
     *paths: Path,
@@ -174,8 +193,22 @@ def _wait_for_last_signal_ingested(
 
 
 def _terminate_and_verify(proc: subprocess.Popen, *, name: str) -> dict:
-    """Terminate `proc`, confirm it is gone BY PID (not a wrapper-job kill),
-    and record the (expected-nonzero-on-Windows) returncode."""
+    """Terminate `proc` (escalating to `.kill()` if it does not exit within
+    15s) and record the (expected-nonzero-on-Windows) returncode.
+
+    MAJOR 4 (STORY-182 fix round): `reaped_returncode_observed` -- NOT
+    "gone_by_pid"/"OS-level PID verification" as this field and the
+    docstring here (and `tools/demo_engine/README.md`'s Part 2b section)
+    previously claimed. `proc.poll()` immediately after `proc.wait()` has
+    already returned reads Popen's OWN CACHED `returncode` -- it never asks
+    the OS again -- so it can never observe False here; it is not
+    independent OS-level evidence of anything. Renamed to describe exactly
+    what IS true (a returncode was observed via `wait`/`poll`), matching the
+    honesty standard this harness already applies to
+    `rollup_distinct_locations_HARDCODED_ZERO_NOT_PROOF` (:610). The genuine
+    OS-level check in this harness is the PORT probe, `_port_is_free`
+    (a real `connect_ex`), asserted separately after teardown.
+    """
     proc.terminate()
     try:
         returncode = proc.wait(timeout=15)
@@ -185,14 +218,118 @@ def _terminate_and_verify(proc: subprocess.Popen, *, name: str) -> dict:
         returncode = proc.wait(timeout=15)
         escalated_to_kill = True
 
-    gone_by_pid = proc.poll() is not None
+    reaped_returncode_observed = proc.poll() is not None
     return {
         "name": name,
         "pid": proc.pid,
         "returncode": returncode,
         "escalated_to_kill": escalated_to_kill,
-        "gone_by_pid": gone_by_pid,
+        "reaped_returncode_observed": reaped_returncode_observed,
     }
+
+
+def _terminate_loop_after(loop_proc: subprocess.Popen, body) -> dict:
+    """Run `body()` (the loop's startup/ingest polling) and ALWAYS
+    terminate+verify `loop_proc` in a `finally`, even if `body` raises.
+
+    MAJOR 3 (STORY-182 fix round): before this helper existed, the loop
+    subprocess was launched with no `try/finally` around its wait/poll
+    logic -- only the outer `finally` (around `api_proc`) existed. Any
+    exception raised while waiting on the loop (a `KeyboardInterrupt` during
+    the up-to-270s of polling -- the obvious operator action on a long run;
+    a `UnicodeDecodeError` from `_wait_for_marker_or_exit`'s `read_text`; an
+    `IndexError` on `iteration_order_signal_keys[-1]`) leaked a live
+    `python -m src.composition.run` that outlived the demo engine and the
+    API and kept hitting DynamoDB. Pinned by
+    `test_harness_teardown.py::test_terminate_loop_after_terminates_the_process_even_when_body_raises`
+    against a REAL subprocess (no mock).
+    """
+    try:
+        body()
+    finally:
+        loop_teardown = _terminate_and_verify(loop_proc, name="loop")
+    return loop_teardown
+
+
+def _assert_loop_startup_and_ingestion(
+    *,
+    startup_seen: bool,
+    last_signal_ingested: bool,
+    last_signal_key: str,
+    loop_wait_seconds: float,
+) -> None:
+    """MAJOR 2 (STORY-182 fix round): a startup-marker or ingest-poll
+    TIMEOUT is a FAILURE, never partial evidence -- previously these two
+    flags were recorded and execution simply continued, contradicting this
+    module's own docstring ("raises loudly ... if any precondition fails")."""
+    if not startup_seen:
+        raise RealityGateError(
+            "AC3/AC4 FAILED: the loop never reported the 'periodic "
+            "monitoring loop' startup marker within 180s -- see the loop "
+            "subprocess's stdout/stderr logs."
+        )
+    if not last_signal_ingested:
+        raise RealityGateError(
+            f"AC3 FAILED: the last signal in build order ({last_signal_key!r}) "
+            f"did not finish ingesting all 4 declared locations within "
+            f"{loop_wait_seconds}s."
+        )
+
+
+def _assert_ac3_ingest(evidence: dict) -> None:
+    """MAJOR 2: enforce every AC3 threshold the story requires, not merely
+    print it."""
+    assert evidence["signals_with_zero_rows"] == [], (
+        "AC3 FAILED: signal(s) with zero ingested rows: "
+        f"{evidence['signals_with_zero_rows']}"
+    )
+    assert evidence["signals_with_under_4_locations"] == [], (
+        "AC3 FAILED: signal(s) with fewer than 4 distinct locations: "
+        f"{evidence['signals_with_under_4_locations']}"
+    )
+    assert evidence["components_count"] >= 12, (
+        f"AC3 FAILED: components_count={evidence['components_count']} < 12"
+    )
+    assert evidence["signals_count"] >= 40, (
+        f"AC3 FAILED: signals_count={evidence['signals_count']} < 40"
+    )
+
+
+def _assert_ac4_vendor_health(evidence: dict) -> None:
+    """MAJOR 2: enforce AC4 -- zero drift warnings, one healthy-INFO line
+    per signal."""
+    assert evidence["drift_warning_count"] == 0, (
+        "AC4 FAILED: "
+        f"{evidence['drift_warning_count']} 'VENDOR-ID DRIFT SUSPECTED' "
+        "warning(s) logged"
+    )
+    assert evidence["healthy_info_count"] == evidence["expected_signal_count"], (
+        "AC4 FAILED: healthy_info_count="
+        f"{evidence['healthy_info_count']} != expected_signal_count="
+        f"{evidence['expected_signal_count']}"
+    )
+
+
+def _parse_pytest_skip_count(pytest_stdout: str) -> int:
+    """Parse `pytest -q`'s own summary line ("N passed[, M skipped] in Ts")
+    for the skip count -- 0 if no "skipped" fragment is present.
+
+    Minor (STORY-182 fix round): AC1(d)'s `guard_result.returncode == 0`
+    cannot by itself distinguish "passed" from "skipped" -- 2 of
+    `backend/tests/test_demo_fleet_config.py`'s 10 tests are
+    `dynamo_local`-gated, and this sprint's standing rule is that a nonzero
+    skip count is an incomplete gate, not a pass."""
+    match = re.search(r"(\d+) skipped", pytest_stdout)
+    return int(match.group(1)) if match else 0
+
+
+def _assert_ac5_approvals(evidence: dict) -> None:
+    """MAJOR 2: AC5's wording is explicit -- "the endpoint is ASSERTED to
+    return a well-formed empty result"."""
+    assert evidence["is_empty_list"], (
+        f"AC5 FAILED: GET /api/v1/approvals returned a non-empty result: "
+        f"{evidence['body']!r}"
+    )
 
 
 def run_positive_side(
@@ -222,6 +359,8 @@ def run_positive_side(
       9. Tear everything down with OS-level verification.
     """
     _print_provenance()
+
+    _assert_api_port_free(api_port)
 
     cfg = load_config(DEMO_CONFIG_DIR)
     # `run.py:135-151` builds one `run_periodic` coroutine per signal in THIS
@@ -376,50 +515,66 @@ def run_positive_side(
                     f"CONFIG_DIR={loop_env['CONFIG_DIR']!r}"
                 )
 
-                print(
-                    "Waiting for the loop to report 'Starting N periodic "
-                    "monitoring loop(s)' (startup + the sequential 41-signal "
-                    "vendor-health probe come first) -- polled, not a blind "
-                    "fixed sleep, since the probe's real per-signal HTTP "
-                    "round-trip cost is what this story's first run measured "
-                    "directly."
-                )
-                startup_seen = _wait_for_marker_or_exit(
-                    loop_proc,
-                    loop_stdout_path,
-                    loop_stderr_path,
-                    marker="periodic monitoring loop",
-                    timeout_seconds=180.0,
-                )
-                print(f"Startup marker observed: {startup_seen}")
+                # MAJOR 3 (STORY-182 fix round): everything from the launch
+                # above through the wait/poll logic below is wrapped in
+                # `_terminate_loop_after`'s own `try/finally` -- an exception
+                # raised anywhere in `_wait_for_loop_evidence` (a
+                # `KeyboardInterrupt` mid-poll, a `UnicodeDecodeError` from
+                # `read_text`, an `IndexError`) must still reap this
+                # subprocess, not leak it. `startup_seen`/`last_signal_ingested`
+                # are seeded False so the `finally` inside
+                # `_terminate_loop_after` can run even if the body raises
+                # before either is assigned.
+                startup_seen = False
                 last_signal_ingested = False
-                if startup_seen:
-                    last_signal_key = iteration_order_signal_keys[-1]
-                    print(
-                        f"Polling for the LAST signal in build order "
-                        f"({last_signal_key!r}) to ingest its first row -- "
-                        "run_periodic's first pass runs every signal's "
-                        "run_cycle sequentially before any coroutine reaches "
-                        "its own first `await asyncio.sleep`, so this is the "
-                        "adaptive replacement for a padded fixed sleep "
-                        f"(up to {loop_wait_seconds}s)."
-                    )
-                    last_signal_ingested = _wait_for_last_signal_ingested(
-                        api_base=api_base,
-                        last_signal_key=last_signal_key,
-                        since=(run_start - timedelta(minutes=5)).isoformat(),
-                        timeout_seconds=loop_wait_seconds,
-                    )
-                    print(f"Last signal ingested: {last_signal_ingested}")
-                    if last_signal_ingested:
-                        # Small settle buffer: orchestrate_signal/decide still
-                        # run (control-table reads/writes) after the LAST
-                        # signal's observation batch is fully readable, before
-                        # its coroutine reaches its own first
-                        # `await asyncio.sleep`.
-                        time.sleep(2.0)
 
-                loop_teardown = _terminate_and_verify(loop_proc, name="loop")
+                def _wait_for_loop_evidence() -> None:
+                    nonlocal startup_seen, last_signal_ingested
+                    print(
+                        "Waiting for the loop to report 'Starting N periodic "
+                        "monitoring loop(s)' (startup + the sequential "
+                        "41-signal vendor-health probe come first) -- polled, "
+                        "not a blind fixed sleep, since the probe's real "
+                        "per-signal HTTP round-trip cost is what this story's "
+                        "first run measured directly."
+                    )
+                    startup_seen = _wait_for_marker_or_exit(
+                        loop_proc,
+                        loop_stdout_path,
+                        loop_stderr_path,
+                        marker="periodic monitoring loop",
+                        timeout_seconds=180.0,
+                    )
+                    print(f"Startup marker observed: {startup_seen}")
+                    if startup_seen:
+                        last_signal_key = iteration_order_signal_keys[-1]
+                        print(
+                            f"Polling for the LAST signal in build order "
+                            f"({last_signal_key!r}) to ingest its first row -- "
+                            "run_periodic's first pass runs every signal's "
+                            "run_cycle sequentially before any coroutine "
+                            "reaches its own first `await asyncio.sleep`, so "
+                            "this is the adaptive replacement for a padded "
+                            f"fixed sleep (up to {loop_wait_seconds}s)."
+                        )
+                        last_signal_ingested = _wait_for_last_signal_ingested(
+                            api_base=api_base,
+                            last_signal_key=last_signal_key,
+                            since=(run_start - timedelta(minutes=5)).isoformat(),
+                            timeout_seconds=loop_wait_seconds,
+                        )
+                        print(f"Last signal ingested: {last_signal_ingested}")
+                        if last_signal_ingested:
+                            # Small settle buffer: orchestrate_signal/decide
+                            # still run (control-table reads/writes) after the
+                            # LAST signal's observation batch is fully
+                            # readable, before its coroutine reaches its own
+                            # first `await asyncio.sleep`.
+                            time.sleep(2.0)
+
+                loop_teardown = _terminate_loop_after(
+                    loop_proc, _wait_for_loop_evidence
+                )
                 loop_teardown["startup_marker_observed"] = startup_seen
                 loop_teardown["last_signal_ingested_before_terminate"] = (
                     last_signal_ingested
@@ -427,11 +582,23 @@ def run_positive_side(
             evidence["loop_teardown"] = loop_teardown
             print(f"Loop terminated: {loop_teardown}")
 
+            last_signal_key = iteration_order_signal_keys[-1]
+            # MAJOR 2 (STORY-182 fix round): a startup or ingest-poll
+            # TIMEOUT is a FAILURE, never partial evidence -- previously
+            # these two flags were recorded and execution simply continued.
+            _assert_loop_startup_and_ingestion(
+                startup_seen=startup_seen,
+                last_signal_ingested=last_signal_ingested,
+                last_signal_key=last_signal_key,
+                loop_wait_seconds=loop_wait_seconds,
+            )
+
             loop_stdout_text = loop_stdout_path.read_text(encoding="utf-8")
             loop_stderr_text = loop_stderr_path.read_text(encoding="utf-8")
             evidence["ac4_vendor_health"] = _collect_ac4_evidence(
                 loop_stdout_text + loop_stderr_text, all_signal_keys
             )
+            _assert_ac4_vendor_health(evidence["ac4_vendor_health"])
 
             run_end = datetime.now(timezone.utc)
             evidence["ac3_ingest"] = _collect_ac3_evidence(
@@ -441,7 +608,10 @@ def run_positive_side(
                 run_start=run_start,
                 run_end=run_end,
             )
+            _assert_ac3_ingest(evidence["ac3_ingest"])
+
             evidence["ac5_approvals"] = _collect_ac5_evidence(api_base=api_base)
+            _assert_ac5_approvals(evidence["ac5_approvals"])
 
         finally:
             api_teardown = _terminate_and_verify(api_proc, name="api")
@@ -508,6 +678,11 @@ def _assert_ac1_preconditions(
     )
 
     # AC1(d): STORY-176's publish-guard checks re-run green at this HEAD.
+    # Minor (STORY-182 fix round): this was previously the ONE child
+    # process launched WITHOUT `env=api_env` (every other subprocess in
+    # this harness gets an explicit env matrix), and `returncode == 0`
+    # cannot distinguish "passed" from "skipped" -- 2 of these 10 tests are
+    # `dynamo_local`-gated, and a nonzero skip count is an incomplete gate.
     guard_result = subprocess.run(
         [
             sys.executable,
@@ -517,6 +692,7 @@ def _assert_ac1_preconditions(
             "-q",
         ],
         cwd=str(REPO_ROOT),
+        env=api_env,
         capture_output=True,
         text=True,
         timeout=120,
@@ -528,6 +704,15 @@ def _assert_ac1_preconditions(
     assert guard_result.returncode == 0, (
         f"AC1(d) FAILED: publish-guard regression tests did not pass:\n"
         f"{guard_result.stdout}\n{guard_result.stderr}"
+    )
+    result["publish_guard_regression_skipped_count"] = _parse_pytest_skip_count(
+        guard_result.stdout
+    )
+    assert result["publish_guard_regression_skipped_count"] == 0, (
+        "AC1(d) FAILED: publish-guard regression tests had "
+        f"{result['publish_guard_regression_skipped_count']} skip(s) -- a "
+        "nonzero skip count is an incomplete gate:\n"
+        f"{guard_result.stdout}"
     )
 
     print("AC1 preconditions (a)-(e), all asserted and recorded:")
@@ -657,12 +842,31 @@ def _collect_ac5_evidence(*, api_base: str) -> dict:
     return result
 
 
-if __name__ == "__main__":
-    evidence = run_positive_side()
+def main() -> bool:
+    """MAJOR 2 (STORY-182 fix round): give this side an explicit PASS/FAIL
+    verdict, mirroring `guard_reality_gate.py`/`backfill_reality_gate.py`
+    (sides 2 and 3) -- previously `__main__` dumped the evidence dict as
+    JSON and exited 0 UNCONDITIONALLY, regardless of whether any AC1-AC5
+    assertion inside `run_positive_side` had failed."""
+    try:
+        evidence = run_positive_side()
+    except (RealityGateError, AssertionError) as exc:
+        print()
+        print("=" * 78)
+        print("REALITY GATE 182 SIDE 1 (positive) -- FAIL")
+        print("=" * 78)
+        print(f"  {exc}")
+        return False
+
     print()
     print("=" * 78)
     print("REALITY GATE 182 SIDE 1 (positive) -- EVIDENCE SUMMARY")
     print("=" * 78)
-    import json
-
     print(json.dumps(evidence, indent=2, default=str))
+    print()
+    print("REALITY GATE 182 SIDE 1: PASS")
+    return True
+
+
+if __name__ == "__main__":
+    sys.exit(0 if main() else 1)

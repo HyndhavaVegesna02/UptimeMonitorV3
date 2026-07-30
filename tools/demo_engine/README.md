@@ -140,9 +140,15 @@ contract):
   `CONFIG_DIR=config/demo` and the same fresh table names (never a human
   setting the pair on only one terminal) — asserts every AC1 precondition,
   waits adaptively (polling, never a blind fixed sleep) for the last signal
-  in build order to finish ingesting, terminates the loop externally, and
-  collects the ingest/vendor-health/approvals evidence before tearing both
-  processes down with OS-level PID/port verification.
+  in build order to finish ingesting, terminates the loop (exception-safely:
+  `_terminate_loop_after` reaps it in a `finally` even if the wait itself
+  raises) before asserting AC3 ingest / AC4 vendor-health / AC5 empty
+  approvals, then tears both processes down with a genuine OS-level PORT
+  check (`_port_is_free`, a real `connect_ex`) plus the process's own
+  reaped returncode — **not** "OS-level PID verification": `Popen.poll()`
+  read immediately after `Popen.wait()` returns only re-reads the already-
+  cached returncode, it never asks the OS again, so it is recorded as
+  `reaped_returncode_observed`, not treated as independent proof.
 - **The two discrimination sides, independently callable** —
   `tools/demo_loop_gate/guard_reality_gate.py` (no pytest, no DynamoDB, no
   network: builds the real `build_publisher` chain twice and asserts the
