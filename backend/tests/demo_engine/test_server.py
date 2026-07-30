@@ -88,11 +88,17 @@ def test_missing_authorization_header_is_rejected():
         assert resp.status_code == 401
 
 
-def test_results_cache_is_evicted_after_being_polled():
-    """STORY-180 AC4 (minor 5): `_DemoHTTPServer.results` must not grow one
-    entry per query for the process lifetime -- a poll consumes its token's
-    entry, so a long-running demo (STORY-176) never accumulates unbounded
-    memory for tokens nobody polls again.
+def test_repeat_poll_inside_retention_returns_the_same_records_twice():
+    """STORY-183 AC2: replaces STORY-180's
+    `test_results_cache_is_evicted_after_being_polled`, whose contract
+    (consume-on-first-poll) is the opposite of this one. That test's own
+    docstring attributed the consume semantics to "STORY-180 AC4 (minor 5)",
+    not to STORY-148's wire contract (AC5) -- so restoring repeat-poll
+    fidelity here is the correction STORY-183 AC2 mandates, not a
+    wire-contract change AC5 forbids. Real Grail serves a completed result to
+    a repeat poll of the same `request-token` within its retention window;
+    this asserts exactly that, with the default (5-minute) retention, well
+    inside which a same-process test always completes.
     """
     store = DemoRowStore()
     with DemoEngineServer(store) as server:
@@ -105,14 +111,23 @@ def test_results_cache_is_evicted_after_being_polled():
         token = execute_resp.json()["requestToken"]
         assert token in server._httpd.results
 
-        poll_resp = httpx.get(
+        first_poll = httpx.get(
+            f"{server.base_url}/platform/storage/query/v1/query:poll",
+            headers=_headers(),
+            params={"request-token": token},
+        )
+        second_poll = httpx.get(
             f"{server.base_url}/platform/storage/query/v1/query:poll",
             headers=_headers(),
             params={"request-token": token},
         )
 
-        assert poll_resp.status_code == 200
-        assert token not in server._httpd.results
+        assert first_poll.status_code == 200
+        assert second_poll.status_code == 200
+        assert first_poll.json()["state"] == "SUCCEEDED"
+        assert second_poll.json()["state"] == "SUCCEEDED"
+        assert first_poll.json()["records"] == second_poll.json()["records"]
+        assert token in server._httpd.results
 
 
 def test_two_server_instances_never_collide_on_a_hardcoded_port():
