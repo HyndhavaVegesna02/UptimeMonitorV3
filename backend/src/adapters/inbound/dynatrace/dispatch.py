@@ -120,4 +120,3 @@ def normalize_rows_lenient(
         ) as exc:
             failures.append(RowNormalizationFailure(row=dict(row), reason=str(exc)))
     return NormalizationOutcome(observations=observations, failures=failures)
-

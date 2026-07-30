@@ -41,4 +41,3 @@ def fetch_observations(
     query = build_dql_query(native_id=native_id, watermark=watermark, overlap=overlap)
     rows = executor(query)
     return normalize_rows_lenient(rows, signal_key=signal_key)
-

@@ -86,4 +86,3 @@ def map_synthetic_status(*, code: str, message: str) -> Health:
     raise UnknownVendorStatusError(
         f"unknown Dynatrace synthetic status: code={code!r}, message={message!r}"
     )
-
