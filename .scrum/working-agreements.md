@@ -304,3 +304,68 @@
   schema — a `review_debt` field on the story-gate record, which the orchestrator writes and which is
   visible at review. Lowest rung that holds: it cannot force the review to happen, but it makes the
   omission impossible to miss.)
+
+
+## A6 — a green `pytest` may not hide a skipped persistence floor (2026-07-30, sprint-64 retro)
+
+**Rung: PROJECT CODE.** `backend/tests/conftest.py`'s `dynamo_local` fixture FAILS instead of
+skipping when `REQUIRE_DYNAMO` is set to anything other than empty/`0`/`false`/`no`. The default
+remains SKIP, so a contributor without Docker can still run the suite; CI and the DoD gate set the
+var. `.scrum/definition-of-done.md` annotates the `pytest` line with `(requires-env: REQUIRE_DYNAMO)`.
+
+**Read this carefully, because the obvious reading is wrong:** the `(requires-env: ...)` annotation
+is **ADVISORY in `yt_gate.py` and never blocks** (`yt_gate.py:158-160` - "it never blocks; the
+command still runs and reds honestly"). It only surfaces the var when unset. **The fixture is the
+enforcing rung**; the annotation is the signpost. Do not cite the annotation as the control.
+
+**Motivating incident.** Establishing sprint 64's baseline, `pytest` exited **0** at
+`561 passed, 53 skipped` and the gate recorded PASS, because Docker was down. The same commit and the
+same command with the container up gave `614 passed, 0 skipped`. 53 tests - the entire persistence
+floor - vanished with no red signal and an identical exit code. The whole sprint then worked around
+it by hand, recording pass/skip counts on every gate record. That is prose applied from memory, and
+it held only because someone happened to read the count.
+
+**Verified on landing, three-sided:** `REQUIRE_DYNAMO=1` + no endpoint + Docker unreachable -> 4
+errors, non-zero exit. `REQUIRE_DYNAMO` unset, same conditions -> 4 skipped (contributor path intact).
+`REQUIRE_DYNAMO=1` + a working endpoint -> 4 passed.
+
+**Standing practice retained:** record the pass/skip COUNTS on every backend gate record. A nonzero
+skip count is an incomplete gate, not a pass.
+
+## A7 - a reality gate is an exit code, not a paragraph (2026-07-30, sprint-64 retro)
+
+**Rung: role checklists + board schema.** `.scrum/checklists/implementer.md` and
+`.scrum/checklists/quality-review.md` each gained a line: any reality-gate, discrimination or proof
+artifact must terminate with an explicit verdict and a **non-zero exit on failure**, must be shown
+failing on deliberately bad input before it is reported, and must treat a polling timeout as a
+FAILURE rather than partial evidence. The board records the artifact's **exit code**; values read out
+of stdout are not evidence and may not be recorded as a pass.
+
+**Motivating incident.** STORY-182's positive-side harness computed every AC3/AC4/AC5 value
+correctly and printed them, asserted only AC1, and exited 0 regardless; a polling timeout set a flag
+and continued. The orchestrator ran it, read correct numbers, and reported "reality gate side 1
+PASS". The numbers were right - but the artifact could not have said otherwise, and on a rerun with a
+dead monitor id the report would have been identical. Its two sibling gates in the same story both
+ended `sys.exit(0 if main() else 1)`, which is what made the inconsistency reviewable at all.
+
+**Relationship to A1 and A3.** A1 asks "how could this have failed?" and A3 asks "did the sides
+differ?" - both about the SUBJECT of the proof. Neither asks whether the HARNESS can return failure
+at all. A7 is that missing question. The move that closed the defect - feeding all four new
+assertions bad evidence and confirming 13/13 raise - is the expected practice, not an extra.
+
+## A8 - a spike states what it REPRODUCED separately from what it TIMED (2026-07-30, sprint-64 retro)
+
+**Rung: prose (this agreement).** Deliberately not a checklist line: spikes are orchestrator work and
+there is no orchestrator checklist to hold it. A spike finding must state, per claim, whether it was
+**reproduced against the real system** or **measured on a stand-in**, and must never combine the two
+in one sentence.
+
+**Motivating incident.** Sprint 64's SPIKE-064 reported: *"all 41 signals fired their FIRST cycle
+within 2s ... so the run must span startup, not an interval."* The control-flow half was reproduced
+and correct. The timing half was measured on a synthetic stand-in with **no I/O**; the real first
+pass, doing sequential HTTP and DynamoDB work, takes 20-90+ seconds. STORY-182's implementer found
+this the hard way - its first two harness runs captured 37 of 41 signals before replacing a fixed
+sleep with polling - and raised it against the spike, which is how it was corrected. A stand-in that
+removes the very I/O the real system spends its time on can validate control flow while
+mis-measuring cost by an order of magnitude. The two claims travelled in one sentence, which is what
+let the bad half be trusted.

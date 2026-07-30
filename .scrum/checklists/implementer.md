@@ -92,6 +92,18 @@
       refinement covers IMPORT PROVENANCE only and would not have caught the second: the mechanisms
       differ, the symptom does not. Treat the symptom as the trigger.)
 
+- [ ] **If you build a reality-gate, discrimination or proof artifact, it MUST terminate with an
+      explicit verdict and a non-zero exit on failure -- and you must show it failing.** Printing the
+      right numbers is a report; a gate is an exit code. Before you report, feed the artifact
+      deliberately bad input (a value that should trip each assertion) and record that it fails. If a
+      polling/waiting step can time out, the timeout is a FAILURE, never partial evidence.
+      (2026-07-30, sprint-64 retro amendment A7 -- STORY-182's positive-side harness asserted only
+      AC1, printed AC3/AC4/AC5 and exited 0 unconditionally, while its two sibling gates in the same
+      story both ended `sys.exit(0 if main() else 1)`. The values were correct, so it was reported as
+      a PASS by someone reading its stdout. Closed by feeding all four new assertions bad evidence and
+      confirming 13/13 raise -- that is the expected practice, not an extra. The board records the
+      artifact's EXIT CODE; values read out of stdout are not evidence.)
+
 - [ ] **If the story's headline deliverable is COMPUTATIONAL -- arithmetic, spacing, ordering,
       thresholds, windowing -- mutate the computation once and record which tests go RED.** Zero
       tests RED means the behaviour is UNPINNED, even at full coverage and even with every AC traced

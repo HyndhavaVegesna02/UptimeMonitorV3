@@ -28,7 +28,17 @@
 # `alembic upgrade head` and `python scripts/check_fk_direction.py` are retired.
 
 ## Commands (backend)
-- [ ] Tests pass: `pytest` -> exit 0
+- [ ] Tests pass: `pytest` -> exit 0 (requires-env: REQUIRE_DYNAMO)
+      (2026-07-30, sprint-64 retro amendment A6: a green `pytest` does NOT by itself
+       mean the persistence floor ran. With Docker down and DYNAMO_ENDPOINT_URL unset,
+       `backend/tests/conftest.py`'s `dynamo_local` fixture skips every DynamoDB-gated
+       test and pytest STILL EXITS 0, so this gate records PASS. Measured at 805287f,
+       same commit, same command: `561 passed, 53 skipped` vs `614 passed, 0 skipped`.
+       `REQUIRE_DYNAMO=1` makes that fixture FAIL instead of skip -- that fixture is
+       the ENFORCING rung. This `(requires-env: ...)` annotation only makes the runner
+       SURFACE the var when unset; it is advisory in yt_gate.py and never blocks.
+       Record the pass/skip COUNTS on every backend gate record; a nonzero skip count
+       is an incomplete gate, not a pass.)
 - [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
       (2026-07-12: invocation changed from the `lint-imports` exe shim, which a Windows
        Application Control policy now blocks; same check, same 8 contracts, module path)

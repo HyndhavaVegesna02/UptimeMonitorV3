@@ -50,6 +50,36 @@ def provide_dynamo_local():
     plan = dynamo_local_module.resolve_dynamo()
 
     if plan.source == "skip":
+        # Sprint-64 retro amendment A6 (PO-approved 2026-07-30). The default is
+        # still SKIP -- a contributor without Docker must be able to run the
+        # suite. But that skip is SILENT and indistinguishable from a pass at
+        # the exit-code level, which is how a green gate came to hide the whole
+        # persistence floor: measured at 805287f, the SAME commit and command
+        # gave `561 passed, 53 skipped` (Docker down, exit 0, gate PASS) and
+        # `614 passed, 0 skipped` (Docker up, exit 0). 53 tests vanished with no
+        # red signal.
+        #
+        # `REQUIRE_DYNAMO=1` turns that silence into a failure, for any context
+        # where a DynamoDB-blind run must NOT be reported as green -- CI, and
+        # the DoD gate. The DoD annotates `pytest` with
+        # `(requires-env: REQUIRE_DYNAMO)`, which makes yt_gate.py surface the
+        # var when unset -- but note that annotation is ADVISORY in the runner
+        # and never blocks, so THIS is the enforcing rung, not the annotation.
+        if os.environ.get("REQUIRE_DYNAMO", "").strip().lower() not in (
+            "",
+            "0",
+            "false",
+            "no",
+        ):
+            pytest.fail(
+                "REQUIRE_DYNAMO is set, but no DYNAMO_ENDPOINT_URL is set and "
+                "Docker is unavailable -- so every DynamoDB-gated test would "
+                "SKIP while pytest still exited 0. Refusing to report a green "
+                "run over a skipped persistence floor (sprint-64 retro A6). "
+                "Start DynamoDB Local and export DYNAMO_ENDPOINT_URL, or unset "
+                "REQUIRE_DYNAMO to allow the skip.",
+                pytrace=False,
+            )
         pytest.skip(
             "no DYNAMO_ENDPOINT_URL set and Docker is unavailable; "
             "skipping DynamoDB-gated tests"

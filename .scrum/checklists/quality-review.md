@@ -49,7 +49,19 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       reports the same outcome on both sides, that is inverted evidence, not weak evidence -- the
       failure is indistinguishable from "the thing under test does not matter", so the proof argues
       against a correct fix. Check the mechanism (import provenance, attribute names, fixture
-      skips), not just the numbers. When the mechanism IS import provenance, confirm the proof
+      skips), not just the numbers.
+
+- [ ] **A reality-gate / discrimination artifact must be able to FAIL. Check its exit path, not its
+      output.** An artifact that computes the right values and PRINTS them, while asserting nothing
+      and exiting 0 regardless, is a REPORT, not a gate -- and a reviewer reading correct numbers out
+      of its stdout cannot tell the difference. Confirm: an explicit verdict, a non-zero exit on
+      failure, and evidence that it was fed deliberately bad input and failed. (2026-07-30, sprint-64
+      retro amendment A7 -- STORY-182's positive-side harness asserted only AC1, printed AC3/AC4/AC5,
+      and exited 0 unconditionally; a polling timeout set a flag and CONTINUED. The values happened to
+      be correct, so it was reported as PASS. Its two sibling gates in the same story got this right
+      (`sys.exit(0 if main() else 1)`), which is what made the inconsistency reviewable at all. The
+      fix was closed by feeding all four new assertions bad evidence and confirming 13/13 raise --
+      that is the expected practice, not an extra.) When the mechanism IS import provenance, confirm the proof
       actually called `tools/import_provenance.py::assert_import_root` (STORY-187) per side rather
       than asserting divergence without checking which tree ran; for every other mechanism (attribute
       names, fixture skips, etc.) the helper does not apply -- read the test body and confirm the
