@@ -148,9 +148,7 @@ def _strip_control_chars(text: str) -> str:
 
     Tabs and newlines are preserved; `one_line_tail` collapses newlines itself.
     """
-    return "".join(
-        ch for ch in _ANSI_ESCAPE.sub("", text) if ch >= " " or ch in "\n\t"
-    )
+    return "".join(ch for ch in _ANSI_ESCAPE.sub("", text) if ch >= " " or ch in "\n\t")
 
 
 def one_line_tail(text: str, limit: int = TAIL_CHARS) -> str:
