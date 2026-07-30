@@ -2053,3 +2053,39 @@ stories:
     priority: 64
     type: defect
     sprint: null
+  - id: STORY-193
+    title: Proposal formation is not reliably assertable in a loop run — the orchestrate window outruns past-anchored rows
+    file: null
+    status: draft   # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's
+                    # fix round. NOT pulled into the sprint -- scope is frozen.
+                    # MEASURED, not theorised: two CONSECUTIVE real runs of
+                    # failure_path_reality_gate.py with IDENTICAL scenarios disagreed --
+                    # run 1 opened a DEGRADED proposal for auth-service, run 2 opened none.
+                    # ROOT CAUSE (arithmetic, verified): observations are WATERMARK-driven and
+                    # therefore deterministic -- which is why every observation-level assertion
+                    # passed in BOTH runs. A PROPOSAL additionally needs anti_flap to still SEE a
+                    # streak, and orchestrate_signal looks back only
+                    #   since = until - (max_threshold + 2) * interval
+                    # from clock.now() AT ORCHESTRATE TIME, while the demo rows are PAST-ANCHORED
+                    # to run_start. Keeping the >=2 cycles a `degraded: 2` threshold needs requires
+                    #   orchestrate_time - run_start <= 6 * interval
+                    # = just 180s for EVERY failure signal in config/demo (all 30s). The loop
+                    # probes vendor health across all 41 signals before its first cycle, so that
+                    # budget can already be spent by the time the signal is reached.
+                    # EVIDENCE THIS IS THE MECHANISM: the RECOVERY assertion, which needs the same
+                    # kind of streak, was made reliable purely by moving it to a 60s-interval
+                    # signal (cdn-edge-purge, 360s tolerance) and has now passed twice running.
+                    # CURRENT STATE: harness.py::_assert_ac5_approvals validates whatever proposals
+                    # ARE present but deliberately does NOT assert their PRESENCE, and prints the
+                    # count. That is honest but weaker than it should be -- the degradation path is
+                    # currently proven only at the OBSERVATION level in a live run, plus in-process
+                    # unit tests.
+                    # FIX DIRECTION (pick one at refinement): author the failure scenarios against
+                    # 60s-interval signals the way the recovery component was; or give the harness a
+                    # deterministic clock/anchor so rows sit at a known offset from orchestrate time;
+                    # or run a second cycle so the streak is re-established close to orchestrate time.
+                    # Do NOT 'fix' it by widening the anti-flap window -- that is production logic.
+    points: null    # needs refinement + an estimate (Definition of Ready)
+    priority: 57
+    type: defect
+    sprint: null
