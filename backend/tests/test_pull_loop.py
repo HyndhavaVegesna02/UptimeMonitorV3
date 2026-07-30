@@ -827,16 +827,50 @@ def test_quarantine_bad_row_allows_watermark_to_advance_across_consecutive_cycle
     assert wm_after_cycle_2 > wm_after_cycle_1
 
 
-def test_pre_fix_strict_normalization_stalls_watermark_progress():
-    """AC3 (STORY-190): proves that under strict normalization, an unmappable row
-    causes normalize_rows to raise an exception, preventing the watermark from advancing.
+def test_pre_fix_strict_normalization_stalls_the_signal_permanently(monkeypatch):
+    """AC3 (STORY-190): REPRODUCE the pre-fix defect through the real pipeline.
+
+    REWRITTEN in the sprint-65 fix round. The first version of this test was
+    TAUTOLOGICAL and proved nothing: it built a `watermark_repo`, never passed
+    it to anything, called `normalize_rows` directly, and then asserted the
+    watermark was still `None` -- an assertion that holds whether or not
+    `normalize_rows` raises, because nothing in the test could ever have
+    advanced it. Caught by `yt-spec-reviewer`.
+
+    What the defect actually is, and therefore what this must show: the raise
+    happens inside `fetch_observations`, which `run_cycle` calls BEFORE
+    `ingest_port.ingest_observations`, so `IngestService`'s watermark advance is
+    never reached; the next cycle then re-reads the SAME unadvanced watermark
+    and re-queries the SAME window, still containing the same bad row. The cost
+    is not one lost batch -- the signal never advances again.
+
+    So this drives the STRICT (pre-fix) path through the REAL `run_cycle` by
+    substituting the old strict `fetch_observations`, runs TWO cycles against
+    ONE `watermark_repo`, and asserts:
+      1. each cycle raises,
+      2. the watermark is STILL unadvanced after both, and
+      3. cycle 2 was handed the SAME watermark value as cycle 1 -- the actual
+         stall, not merely "an exception happened".
     """
     from src.adapters.inbound.dynatrace.dispatch import (
         UnsupportedMonitorTypeError,
         normalize_rows,
     )
+    from src.adapters.system_clock import SystemClock
+    from src.composition import pull_loop as pull_loop_module
+    from src.composition.pull_loop import run_cycle
+    from src.core.services.ingest_service import IngestService
+
+    from fakes import FakeObservationRepository
 
     watermark_repo = FakeWatermarkRepository({"checkout-http": None})
+    ingest_service = IngestService(
+        observation_repo=FakeObservationRepository(),
+        watermark_repo=watermark_repo,
+        rejected_repo=FakeRejectedObservationRepository(),
+        clock=SystemClock(),
+    )
+
     bad_row = {
         "timestamp": "2026-06-24T10:00:00Z",
         "event.id": "evt-bad-1",
@@ -844,8 +878,72 @@ def test_pre_fix_strict_normalization_stalls_watermark_progress():
     }
     good_row = _row("evt-good-1", "2026-06-24T10:01:00Z")
 
-    with pytest.raises(UnsupportedMonitorTypeError):
-        normalize_rows([bad_row, good_row], signal_key="checkout-http")
+    # The PRE-FIX `fetch_observations`: strict `normalize_rows`, so the first
+    # bad row aborts the whole batch before ingest ever runs.
+    def strict_fetch_observations(*, signal_key, native_id, watermark, executor, **_):
+        return normalize_rows(executor("<query>"), signal_key=signal_key)
 
-    # Watermark was never advanced because cycle raised before ingest
+    monkeypatch.setattr(
+        pull_loop_module, "fetch_observations", strict_fetch_observations
+    )
+
+    watermarks_seen: list[datetime | None] = []
+
+    def executor(query: str) -> list[dict]:
+        watermarks_seen.append(watermark_repo.get("checkout-http"))
+        return [bad_row, good_row]
+
+    for _ in range(2):
+        with pytest.raises(UnsupportedMonitorTypeError):
+            run_cycle(
+                signal_key="checkout-http",
+                native_id="HTTP_CHECK-9F2A",
+                watermark_repo=watermark_repo,
+                ingest_port=ingest_service,
+                executor=executor,
+            )
+
+    # (2) never advanced, despite a perfectly good row sitting behind the bad one
     assert watermark_repo.get("checkout-http") is None
+    # (3) THE STALL: cycle 2 started from exactly where cycle 1 did
+    assert watermarks_seen == [None, None]
+
+
+def test_healthy_batch_logs_no_quarantine_warning(caplog):
+    """AC5 (STORY-190), negative half: a clean batch must log NO quarantine WARNING.
+
+    Without this, "quarantining logs a WARNING" is only half a claim -- a
+    implementation that logged on EVERY cycle would satisfy the positive
+    assertion while making the warning meaningless as a signal.
+    """
+    from src.adapters.system_clock import SystemClock
+    from src.composition.pull_loop import run_cycle
+    from src.core.services.ingest_service import IngestService
+
+    from fakes import FakeObservationRepository
+
+    watermark_repo = FakeWatermarkRepository({"checkout-http": None})
+    rejected_repo = FakeRejectedObservationRepository()
+    ingest_service = IngestService(
+        observation_repo=FakeObservationRepository(),
+        watermark_repo=watermark_repo,
+        rejected_repo=rejected_repo,
+        clock=SystemClock(),
+    )
+
+    with caplog.at_level(logging.WARNING, logger="src.composition.pull_loop"):
+        result = run_cycle(
+            signal_key="checkout-http",
+            native_id="HTTP_CHECK-9F2A",
+            watermark_repo=watermark_repo,
+            ingest_port=ingest_service,
+            executor=lambda q: [
+                _row("evt-good-1", "2026-06-24T10:00:00Z"),
+                _row("evt-good-2", "2026-06-24T10:01:00Z"),
+            ],
+            rejected_repo=rejected_repo,
+        )
+
+    assert result.accepted == 2
+    assert rejected_repo.saved == []
+    assert not [r for r in caplog.records if "Quarantining row" in r.getMessage()]

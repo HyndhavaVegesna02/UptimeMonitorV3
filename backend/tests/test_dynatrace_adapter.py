@@ -100,6 +100,36 @@ def test_health_mapping_synthetic_status_success():
     assert map_synthetic_status(code="123", message="HEALTHY") is Health.UP
 
 
+def test_healthy_status_logs_no_provisional_warning(caplog):
+    """STORY-177 AC4, negative half: a genuine HEALTHY row must log NO warning.
+
+    The positive half ("every provisional hit logs a WARNING") is not worth much
+    on its own -- an implementation that logged unconditionally would satisfy it
+    while making the warning useless as a signal. The WARNING exists so a real
+    vendor code arriving under a provisional label is VISIBLE in the logs; that
+    only works if the healthy path is silent.
+
+    Both spellings of healthy are checked, because the rule is an OR: `code=="0"`
+    alone and `message=="HEALTHY"` alone each suffice.
+    """
+    import logging
+
+    from src.adapters.inbound.dynatrace.health_mapping import map_synthetic_status
+
+    with caplog.at_level(
+        logging.WARNING, logger="src.adapters.inbound.dynatrace.health_mapping"
+    ):
+        assert map_synthetic_status(code="0", message="HEALTHY") is Health.UP
+        assert map_synthetic_status(code="0", message="ANYTHING") is Health.UP
+        assert map_synthetic_status(code="123", message="HEALTHY") is Health.UP
+
+    assert [
+        r
+        for r in caplog.records
+        if r.name == "src.adapters.inbound.dynatrace.health_mapping"
+    ] == []
+
+
 def test_health_mapping_synthetic_status_provisional_down_and_degraded(caplog):
     import logging
 
