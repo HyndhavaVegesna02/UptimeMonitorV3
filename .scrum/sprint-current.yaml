@@ -1,7 +1,42 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 65
-status: review     # none | planning | active | review | closed | aborted
-                   # ALL FIVE STORIES DONE, 13/13 POINTS, at b3e1767. AWAITING PO REVIEW.
+status: closed     # none | planning | active | review | closed | aborted
+                   # CLOSED 2026-07-30. Review: PO ACCEPTED all five stories ("i accept"),
+                   # velocity 13/13. Retro: A9 and A10 PO-APPROVED and landed at their rungs.
+                   #   A9 (CHECKLIST -- implementer.md + spec-review.md): the "shown failing" rule
+                   #     widens from reality-gate ARTIFACTS to any TEST that is a story's primary
+                   #     evidence; it must be demonstrated failing against the pre-fix behaviour or
+                   #     a deliberate mutation. Names two smells (a fixture built but never wired
+                   #     up; "would this go red if I broke the guarded behaviour?") and makes the
+                   #     answer a spec-review VERDICT condition, not a note. Second half: a proof
+                   #     that SETS UP state must do so through the SAME production interface the
+                   #     system under test uses, never a parallel hand-rolled one.
+                   #   A10 (SCRIPT -- yt_gate.py): one_line_tail strips ANSI escapes and C0
+                   #     control chars, so the fragment the skill says to merge VERBATIM is always
+                   #     valid YAML. Two guards added, both SHOWN FAILING with the fix reverted.
+                   # FULL 8/8 GATE GREEN re-run AFTER the amendments landed at 7cf352f:
+                   # 685 passed, 0 SKIPPED. yt_selftest 32/32 (was 28/28 at sprint start).
+                   # yt_wiki CLEAN on sweep/facts/links/integrity.
+                   # BRANCH sprint-65 stays UNMERGED -- the standing "don't merge with main"
+                   # directive, re-confirmed at the sprint-64 review, holds.
+                   # DELIVERED: STORY-188 (encoding + a mechanical guard), STORY-190 (a bad row no
+                   # longer stalls a signal forever), STORY-177 (provisional failure mapping),
+                   # STORY-191 (A REAL DOWN, A REAL DEGRADED, A QUARANTINED POISON ROW AND THE
+                   # FIRST RECOVERY PUBLISH IN THIS REPO'S HISTORY -- cdn-edge major_outage ->
+                   # operational with an EMPTY publications table proving nothing left the
+                   # process), STORY-185 (both sides of the publish proof un-gated from Docker).
+                   # THREE STORIES NEEDED A FIX ROUND; STORY-191's was large (its delivery did not
+                   # meet AC3 at all -- no real loop run, and it had left the harness un-runnable).
+                   # Follow-ups filed: STORY-192 (wiki carries the same encoding defect in a shape
+                   # STORY-188's guard cannot catch), STORY-193 (proposal formation is not reliably
+                   # assertable in a loop run).
+                   # NEXT SESSION: sprint-66 planning. *** RAISE THE BOUNDARY/CODE-DISCIPLINE AUDIT
+                   # SPRINT THE PO ASKED TO BE REMINDED ABOUT (memory:
+                   # wanted-architecture-audit-sprint) -- every planning until scheduled or
+                   # explicitly dropped. *** Other candidates: STORY-186, STORY-189, STORY-192,
+                   # STORY-193, STORY-178, STORY-147.
+                   # Review: docs/scrum/sprints/2026-07-30-sprint-65/review.md
+                   # Retro:  docs/scrum/sprints/2026-07-30-sprint-65/retro.md
                    # LOCKED 2026-07-30 on PO approval ("approve").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    # Tooling is frozen too (2026-01-01 agreement): no new MCP servers, no ad-hoc
