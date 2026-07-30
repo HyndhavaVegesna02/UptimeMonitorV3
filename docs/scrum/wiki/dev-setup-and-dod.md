@@ -1,9 +1,14 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: c6d7657
-verified_sprint: sprint-63
+verified_sha: bbf3c72
+verified_sprint: sprint-64
 status: verified
+# Re-verified 2026-07-30 (sprint-64) by the orchestrator. Changed code_ref in range: CLAUDE.md
+# (STORY-182's demo-loop section + STORY-181-era credential prose). Not a bare re-stamp: the
+# sprint measured a real DoD-gate property that belongs here and was missing -- a green pytest
+# with Docker down silently skips the whole persistence floor and still exits 0. Added as a Fact
+# with its reproduction recipe and the operational rule adopted this sprint.
 ---
 
 ## Facts (verified against code)
@@ -81,6 +86,23 @@ status: verified
   to avoid collisions between concurrent runs), tearing it down in a finalizer; else skips DynamoDB-gated tests.
   A function-scoped `clean_dynamo_tables` fixture deletes and recreates tables before each test to ensure
   complete, order-independent test isolation on a shared Local instance.
+- **A GREEN `pytest` DOES NOT BY ITSELF MEAN THE PERSISTENCE FLOOR RAN — and the gate cannot tell you.**
+  That last "else" above is silent: with Docker down and `DYNAMO_ENDPOINT_URL` unset, every
+  DynamoDB-gated test SKIPS and `pytest` still **exits 0**, so `yt_gate.py` records a PASS.
+  Measured at sprint-64's branch point (`805287f`), same commit, same command, minutes apart:
+  * Docker down, no `DYNAMO_ENDPOINT_URL` → **`561 passed, 53 skipped`**, exit 0, gate PASS
+  * Docker up + `DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021` → **`614 passed, 0 skipped`**, exit 0
+  53 tests — the entire persistence floor — vanished without a single red signal. The exit code is
+  identical in both cases, which is why this is a Fact and not a footnote: the DoD's own mechanical
+  floor has a hole exactly the shape of "Docker wasn't running".
+  **Operational rule adopted for sprint 64 and recommended as standing practice:** record the
+  pass/skip COUNTS on every backend gate record, and treat a nonzero skip count as an INCOMPLETE
+  gate, not a pass. See `.scrum/sprint-current.yaml`'s per-story `dod_gate.env_note` entries for the
+  worked form.
+  (Sprint 64, discovered by the orchestrator while establishing the sprint baseline. Pinned by no
+  test — this is a property of the fixture's skip path plus `pytest`'s exit-code contract, so per
+  working agreement A2 it is labelled here as an observation with its reproduction recipe, not as a
+  test-pinned behavioural Fact.)
 - The console script is `lint-imports` (`.venv/Scripts/lint-imports.exe`); `python -m importlinter`
   does NOT work (it is a package with no `__main__`). **Gotcha (operational, superseded
   2026-07-12):** the `.exe` launcher used to occasionally fail with `Permission denied` /

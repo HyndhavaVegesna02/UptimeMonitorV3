@@ -1,6 +1,6 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 64
-status: active     # none | planning | active | review | closed | aborted
+status: review     # none | planning | active | review | closed | aborted
                    # LOCKED 2026-07-30 on PO approval ("Approve 8 pts as planned").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    # Tooling is frozen too (2026-01-01 agreement): no new MCP servers, no ad-hoc
@@ -288,7 +288,10 @@ stories:
   - id: STORY-182
     title: "Grail demo engine part 2b — the real loop run against the demo fleet, and its two-sided gate"
     file: docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md
-    status: todo
+    status: done   # 2026-07-30 at bbf3c72, after ONE fix round. Round 1: spec FAIL + quality
+                   # FIX_REQUIRED (4 majors); all fixed, and the orchestrator PROVED the new
+                   # assertions bite (13/13) rather than trusting them. Full 8-command gate 8/8
+                   # GREEN (666 passed, 0 SKIPPED). Three-sided reality gate PASS with exit codes.
     points: 5                # RE-ESTIMATED 3 -> 5 at planning on the verifier's independent
                              # estimate, PO-approved at lock. See backlog.yaml for the full
                              # yardstick. NOT SPLIT — A1 forbids shipping the run without its proof.
@@ -745,9 +748,87 @@ story_gates:
          for STORY-186 finding (g) — table-ify them and pin the REASON."
   STORY-182:
     implementer_head: dba6b96      # range 5aee584..dba6b96, 11 commits, tree clean
-    status_note: "NOT DONE. Reviewer pair returned FAIL (spec) and FIX_REQUIRED (quality). Fix round
-      dispatched. The implementation runs and the run itself is real — but the proof artifact does not
-      enforce what it reports, which is the exact failure class this sprint exists to close."
+    status_note: "DONE at bbf3c72 after ONE fix round. Round 1: spec FAIL, quality FIX_REQUIRED (4
+      majors). All four majors plus three minors fixed; the orchestrator then PROVED the new
+      assertions bite (13/13 discrimination cases), re-ran all three reality-gate sides with exit
+      codes, and re-ran the full 8-command gate. No review debt outstanding."
+    fix_round:
+      head: bbf3c72        # range 50533c4..bbf3c72, 3 commits, tree clean
+      files_changed: ["CLAUDE.md", "tools/demo_engine/README.md", "tools/demo_loop_gate/harness.py",
+        "tools/demo_loop_gate/env_matrix.py", "tools/demo_loop_gate/evidence.py",
+        "backend/tests/demo_loop_gate/{test_env_matrix,test_evidence,test_harness_assertions,test_harness_teardown}.py"]
+      major_1_fixed: "The API subprocess now receives FAKE_STATUSPAGE_PAGE_ID / FAKE_STATUSPAGE_API_TOKEN
+        (harness.py:452-453), verified at source by the orchestrator. All three false prose claims
+        corrected; CLAUDE.md:180-186 now states the ACCURATE reason — that without the fakes the API
+        subprocess's own load_dotenv() would supply the REAL .env values, and that the empty mapping is
+        the guard. New tests distinguish 'omitted' from 'stripped' by putting a real-looking
+        STATUSPAGE_API_KEY in base_env, which the previous base_env={} test could not do."
+      major_2_fixed: "harness.py now ENFORCES rather than reports: _assert_ac3_ingest (:279),
+        _assert_ac4_vendor_health (:298), _assert_ac5_approvals (:326), and
+        _assert_loop_startup_and_ingestion (:254) which RAISES on either timeout instead of continuing.
+        main()/__main__ end in `sys.exit(0 if main() else 1)` (:872), matching sides 2 and 3. The
+        overstated module docstring was corrected."
+      major_3_fixed: "_terminate_loop_after(loop_proc, body) wraps the polling body in its own
+        try/finally so loop_proc is always reaped even if body raises — pinned against a REAL
+        subprocess (no mock) by test_harness_teardown.py."
+      major_4_fixed: "RENAME chosen over a real OS PID query, with the reason stated: no psutil
+        dependency exists in this repo and adding one plus Windows tasklist parsing for a demo-tool
+        teardown field is disproportionate. `gone_by_pid` -> `reaped_returncode_observed`; the 'BY PID'
+        and 'OS-level PID' claims are dropped from both the docstring and README.md. The genuinely
+        OS-level check (_port_is_free's connect_ex) remains and is still asserted. Pinned by
+        test_terminate_and_verify_field_is_reaped_returncode_not_gone_by_pid, which asserts
+        'gone_by_pid' not in result. ACCEPTED: the standard this story already applied to
+        rollup_distinct_locations_HARDCODED_ZERO_NOT_PROOF is now applied to its own teardown field."
+      minors_fixed: ["AC1(d)'s pytest subprocess now runs with env=api_env AND asserts a zero skip
+        count (this sprint's standing rule)", "_assert_api_port_free pre-flight, replacing a silent
+        30s opaque timeout on a busy port", "removed the dead distinct_locations_from_raw_rows and its
+        3 orphaned tests"]
+      implementer_deviation_accepted: "The finding said to pass `env=child_env_base`; the implementer
+        passed `env=api_env` instead, because child_env_base is not in _assert_ac1_preconditions's
+        scope and api_env is a superset carrying the same CONFIG_DIR/DYNAMO_* plus the new fakes.
+        Reported rather than complied-with silently, which is the behaviour the brief asked for.
+        Accepted — functionally equivalent to the finding's intent."
+    sm_verification_of_the_fix_round:
+      assertions_actually_bite: "THE KEY CHECK, run by the orchestrator rather than trusted: each new
+        pure assertion function was fed good AND bad evidence directly. 13/13 discrimination cases
+        correct — AC3 raises on a zero-row signal, on an under-4-location signal, on 11 components and
+        on 39 signals; AC4 raises on 1 drift warning and on 40 healthy lines; AC5 raises when a
+        proposal appears; the timeout path raises on a missed startup marker and on a missed ingest
+        poll; and every good-evidence case still passes. Round 1's defect was assertions that could
+        not fail, so proving the new ones CAN fail is the only evidence that closes it."
+      ac6_mechanical: "`git diff --name-only 50533c4..HEAD -- backend/src/ frontend/ infra/` EMPTY."
+      rename_verified: "`grep -rn gone_by_pid` over tools/ and backend/tests/ returns only a docstring
+        explaining the rename and a test asserting the field's ABSENCE."
+    reality_gate:
+      verdict: PASS
+      round: 2       # re-run in full after the fix round; round 1's side 1 did not enforce
+      note: "All three sides re-run by the orchestrator at bbf3c72, this time checking EXIT CODES, not
+        just printed output — round 1's central defect was that side 1 exited 0 regardless."
+      side_1_positive: "EXIT 0, explicit 'REALITY GATE 182 SIDE 1: PASS'. Enforced evidence:
+        components_count 13, signals_count 41, signals_with_zero_rows [], signals_with_under_4_locations
+        [], drift_warning_count 0, healthy_info_count 41, approvals status_code 200 + is_empty_list
+        true, loop and api both reaped (reaped_returncode_observed true, escalated_to_kill false,
+        returncode 1 = TerminateProcess on Windows, expected), api_port_free_after_teardown true.
+        THE REAL, UNMODIFIED `python -m src.composition.run` ingested the whole demo fleet."
+      side_2_guard: "EXIT 0, PASS. demo statuspage_mapping() {}; SAFE chain
+        [StatusWritebackPublisher, LoggingPublisher] vs UNSAFE
+        [StatusWritebackPublisher, BestEffortPublisher, RecordingPublisher, StatuspagePublisher];
+        chains DIFFER. No network call."
+      side_3_backfill: "EXIT 0, PASS. Empty store 41 drift / 0 healthy; coverage store 0 drift / 41
+        healthy; sides DIFFER."
+      discrimination_proof: "Each side's two arms differ for the reason under test, and — new this
+        round — the harness itself was shown able to FAIL (13/13 above). Round 1's side 1 'passed'
+        only because the orchestrator READ correct numbers; that is now impossible to repeat."
+    wiki:
+      swept: "yt_wiki.py CLEAN on all four checks at bbf3c72 after the compile pass."
+      updated_by_the_story: ["dev-setup-and-dod.md"]
+      note: "dev-setup-and-dod.md went STALE via CLAUDE.md. NOT a bare re-stamp: the sprint measured a
+        real DoD-gate property that was missing from the article — a green pytest with Docker down
+        silently skips the entire persistence floor and still exits 0 (561 passed/53 skipped vs 614
+        passed/0 skipped at the SAME commit). Added as a Fact with its reproduction recipe and the
+        operational rule adopted this sprint, and labelled per A2 as an observation rather than a
+        test-pinned behavioural Fact, because it is a property of the fixture's skip path plus
+        pytest's exit-code contract and no test pins it."
     review_round_1:
       dispatch_note: "The FIRST attempt at both reviewers died mid-read on a session limit with no
         verdict produced. Recorded rather than quietly retried (A5: review debt goes on the board).
@@ -824,21 +905,20 @@ story_gates:
         chains DIFFER; demo statuspage_mapping() == {}."
       side_3: "PASS — empty store 41 drift / 0 healthy; coverage store 0 drift / 41 healthy; DIFFER."
 final_gate:
-  head: 76232e3
-  verdict: "8/8 GREEN — run by the orchestrator on a clean tree. NOTE this is the gate at the point
-    STORY-182's implementation landed; it is NOT yet the sprint's evidence of record, because the
-    STORY-182 fix round will move HEAD. The full 8 must be re-run on the final HEAD at sprint close.
-    Recorded now because it settles AC7 independently of the implementer's argument that the three
-    frontend commands were out of scope: they were run, and they are green."
+  head: bbf3c72
+  verdict: "8/8 GREEN — THE SPRINT'S EVIDENCE OF RECORD, run by the orchestrator on the final HEAD
+    with a clean tree (yt_gate.py enforces clean-tree by construction). An earlier 8/8 was recorded at
+    76232e3, before STORY-182's fix round moved HEAD; that run settled AC7 but is superseded by this
+    one. pytest: 666 passed, 0 SKIPPED — the zero is load-bearing this sprint, see the skip finding."
   commands:
-    - {command: "pytest", exit_code: 0, tail: "647 passed in 72.28s", env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021; 0 SKIPPED"}
+    - {command: "pytest", exit_code: 0, tail: "666 passed in 32.94s", env_note: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021; 0 SKIPPED"}
     - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"",
        exit_code: 0, tail: "Analyzed 150 files, 427 dependencies. Contracts: 8 kept, 0 broken."}
     - {command: "ruff check .", exit_code: 0, tail: "All checks passed!"}
-    - {command: "ruff format --check .", exit_code: 0, tail: "237 files already formatted"}
+    - {command: "ruff format --check .", exit_code: 0, tail: "239 files already formatted"}
     - {command: "cfn-lint infra/stack.yaml", exit_code: 0, tail: ""}
     - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
-    - {command: "npm run build", exit_code: 0, tail: "built in 1.19s"}
+    - {command: "npm run build", exit_code: 0, tail: "built in 502ms"}
     - {command: "npm run lint", exit_code: 0, tail: "eslint . (no output)"}
 hotfixes: []
 interrupts: []
