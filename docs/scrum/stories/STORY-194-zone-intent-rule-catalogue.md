@@ -93,3 +93,40 @@ autonomy directive and reported at review.
 - 2026-07-31: drafted and refined in sprint-66 planning. 3 points: the reading is broad (four zones,
   two design documents, the working agreements) and the output is normative text that three later
   stories depend on being right.
+- 2026-07-31: implemented. `docs/scrum/wiki/zone-rules.md` created (commit `b147676`), catalogued
+  three GAP rules (`ZR-1` inbound-adapter-must-not-persist, `ZR-2` vendor vocabulary confined to
+  its adapter, `ZR-3` `tools/`->`backend/src/` no-duplicate-constant) plus an "already mechanical"
+  section naming `core-independence`, `api-feature-independence`, `api-outward-independence`,
+  `adapters-edge-only` for areas (b)/(c) and the PO's "only composition sees both sides" rule,
+  linking to `architecture-boundary.md` rather than restating the eight contracts (AC1, AC4).
+  `verified_sha: 227d5bf` is the commit immediately preceding `b147676`; `git diff 227d5bf..HEAD --
+  <code_refs>` is empty (verified).
+  AC3 citation-resolution sweep (ad hoc script, 8 citations checked against the article's file:line
+  claims): all 8 `OK` (path exists, line index within file length, and line content matches the
+  cited symbol/text), 0 failures. Command: a fixed-manifest Python script reading each
+  `(path, line, expected_substring)` triple from the article and asserting
+  `path.exists()` and `len(lines) >= line` and `expected_substring in lines[line-1]`; ran from repo
+  root at commit `b147676`. Sample output:
+  ```
+  OK backend/src/adapters/inbound/dynatrace/adapter.py:26 -- 'def fetch_observations('
+  OK backend/src/core/services/ingest_service.py:121 -- 'self._rejected_repo.save('
+  OK backend/src/core/domain/signal.py:6 -- 'heard of Dynatrace (vocabulary rule P3, dossier §6).'
+  OK backend/src/core/ports/status_publisher.py:14 -- 'class StatusPublisherPort(ABC):'
+  OK backend/src/core/ports/status_publisher.py:18 -- 'def publish(self, change: StatusChange) -> None:'
+  OK backend/src/adapters/outbound/statuspage/__init__.py:23 -- 'class StatuspagePublisher(StatusPublisherPort):'
+  OK backend/src/adapters/inbound/dynatrace/health_mapping.py:35 -- 'PROVISIONAL_STATUS_MAPPING: dict[tuple[str, str], Health] = {'
+  OK tools/demo_engine/assumed_failure_codes.py:31 -- 'from src.adapters.inbound.dynatrace.health_mapping import PROVISIONAL_STATUS_MAPPING'
+  Checked 8 citations, 0 failure(s).
+  ```
+  `python .claude/skills/yourteam/scripts/yt_wiki.py` (run at HEAD `b147676`): `sweep: CLEAN`,
+  `facts: CLEAN`, `links: CLEAN`, `integrity: CLEAN`; `refs: 2 note(s)` (pre-existing amplifier
+  notes for `backend/src/composition/run.py` and `pyproject.toml` — neither is a `code_ref` of
+  `zone-rules.md`, so this article adds no new amplifier note, per AC1).
+  AC5: rule `ZR-2` names `core/domain/signal.py:6` as the compliant (prose) side and
+  `adapters/outbound/statuspage/__init__.py:23` (`StatuspagePublisher`) as the illustrative
+  forbidden-form side, verified by an AST walk of every `core/` module's function/class/arg/Name
+  nodes for vendor substrings returning zero hits (only grep hits inside docstring/comment text),
+  so STORY-195 cannot report the ~20 `core/` prose mentions as findings.
+  AC6: `git diff --name-only 227d5bf..HEAD` (this story's only commit, `b147676`) touches exactly
+  one path, `docs/scrum/wiki/zone-rules.md` — nothing under `backend/src/`, `frontend/`, or
+  `config/`.

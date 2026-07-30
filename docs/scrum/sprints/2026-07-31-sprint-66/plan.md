@@ -129,18 +129,18 @@ An audit has no running surface, so the usual "exercise the live path" gate is r
 
 `docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md`
 
-- [ ] Read the sources in priority order: `.scrum/working-agreements.md` (PO-stated rules first),
+- [x] Read the sources in priority order: `.scrum/working-agreements.md` (PO-stated rules first),
       memory `code-boundary-discipline`, `CLAUDE.md` "The four backend zones", dossier §4/§6 in
       `uptime-monitor-v3-design.html`, `pyproject.toml` `[tool.importlinter]`, and
       `docs/scrum/wiki/architecture-boundary.md` (V4 — do not restate its eight contracts).
-- [ ] Draft rules `ZR-1..ZR-n` covering at minimum the PO's five areas (AC4), each with statement,
+- [x] Draft rules `ZR-1..ZR-n` covering at minimum the PO's five areas (AC4), each with statement,
       source, a compliant `file:line`, and a coverage verdict from the three-value set.
-- [ ] Draw the vendor-vocabulary line explicitly (AC5) using V3's citations as the compliant side.
-- [ ] Write `docs/scrum/wiki/zone-rules.md` with narrow `code_refs` = exactly the files its Facts
+- [x] Draw the vendor-vocabulary line explicitly (AC5) using V3's citations as the compliant side.
+- [x] Write `docs/scrum/wiki/zone-rules.md` with narrow `code_refs` = exactly the files its Facts
       cite, a short `verified_sha`, and a link to `architecture-boundary.md` for the mechanical set.
-- [ ] Run the citation-resolution sweep; record command + output in the story History (AC3).
-- [ ] `yt_wiki.py` CLEAN on the four blocking checks, no new `refs` note (AC1).
-- [ ] Scoped DoD gate, then commit.
+- [x] Run the citation-resolution sweep; record command + output in the story History (AC3).
+- [x] `yt_wiki.py` CLEAN on the four blocking checks, no new `refs` note (AC1).
+- [x] Scoped DoD gate, then commit.
 
 ### 2 · STORY-195 — Audit `core` + `adapters` (3 pts)
 
