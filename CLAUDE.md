@@ -170,9 +170,30 @@ resolving `config/apps` by default — which declares a real
 are also kept **disjoint** from `config/apps`'s (`StatuspagePublisher` keys on
 the canonical component id, `adapters/outbound/statuspage/__init__.py:41-46`,
 so a collision would PATCH the real page even with the guard above in place).
-**No demo loop is started yet** (STORY-182, sprint 64) — `decide` publishes
-recoveries with no human gate (`core/services/decide.py:122-126` decides,
-`:171-172` publishes).
+
+**The loop HAS now been run against the demo fleet (STORY-182, sprint 64) —
+proven, not merely guarded.** `tools/demo_loop_gate/harness.py::run_positive_side`
+drives the real, unmodified `python -m src.composition.run` as an OS
+subprocess against an embedded local demo-engine instance, with `CONFIG_DIR`
+set to `config/demo` on **both** it and a real `uvicorn` API subprocess, fresh
+throwaway DynamoDB tables (`tools/demo_loop_gate/env_matrix.py::
+fresh_table_names`), and deliberately fake Dynatrace/Statuspage credentials —
+never the real repo-root `.env` values. The five checked-in
+`config/demo/scenarios/*.yaml` cover only 6 of the fleet's 41 signals by
+design (STORY-176 AC5's specific cases); STORY-182 closed that gap with a
+**fleet-wide coverage artifact built in code**
+(`tools/demo_loop_gate/fleet_coverage.py::build_fleet_row_store`), one
+`SignalScenario` per configured signal, 5 cycles across all 4 declared
+locations — verified to make `check_vendor_id_health` (`composition/
+vendor_health.py`) report zero dead ids and every signal ingest at least
+one observation from each of its 4 locations. This is a **repeatable proof
+harness**, not a standing/scheduled service: nothing in this repo starts the
+loop automatically, and every run still needs the guard above (`CONFIG_DIR`
+on both processes) — `decide` still publishes recoveries with no human gate
+(`core/services/decide.py:122-126` decides, `:171-172` publishes), so the
+guard is the reason a proof run never reached the real Statuspage (verified
+independently, with no network call, by `tools/demo_loop_gate/
+guard_reality_gate.py`).
 
 ## Stack (dossier §3)
 
