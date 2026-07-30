@@ -1,6 +1,33 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 64
-status: review     # none | planning | active | review | closed | aborted
+status: closed     # none | planning | active | review | closed | aborted
+                   # CLOSED 2026-07-30. Review: PO ACCEPTED all four stories (velocity 8/8).
+                   # Retro: A6, A7, A8 PO-APPROVED and landed at their rungs.
+                   #   A6 (PROJECT CODE) backend/tests/conftest.py -- REQUIRE_DYNAMO makes the
+                   #     dynamo_local fixture FAIL instead of skip; DoD annotated
+                   #     (requires-env: REQUIRE_DYNAMO). NOTE the annotation is ADVISORY in
+                   #     yt_gate.py and never blocks -- the FIXTURE is the enforcing rung.
+                   #     Verified three-sided on landing (error / skip / pass).
+                   #   A7 (CHECKLISTS + BOARD) implementer.md + quality-review.md -- a reality-gate
+                   #     artifact must exit non-zero on failure and be SHOWN failing; the board
+                   #     records its EXIT CODE, not values read from stdout.
+                   #   A8 (PROSE) working-agreements.md -- a spike separates what it REPRODUCED
+                   #     from what it TIMED.
+                   # Full 8-command gate 8/8 GREEN re-run AFTER the amendments landed (666 passed,
+                   # 0 skipped). yt_selftest 28/28. yt_wiki CLEAN on all four checks.
+                   # BRANCH sprint-64 stays UNMERGED at the retro commit -- the standing
+                   # "don't merge with main" instruction was re-confirmed by the PO at this review.
+                   # Follow-ups filed: STORY-188 (checklist encoding landmine -- it FIRED once this
+                   # sprint), STORY-189 (demo-engine.md code_refs omit tools/demo_loop_gate/*, plus
+                   # two docstrings that claim more than their code). STORY-186 REINFORCED with
+                   # sprint-64's evidence rather than re-filed.
+                   # NEXT SESSION: sprint-65 planning, built around STORY-177 (the provisional
+                   # Dynatrace failure-code mapping) per the PO's decision at this retro. STORY-177
+                   # is still `draft` with THREE OPEN QUESTIONS -- it needs a REFINEMENT pass and an
+                   # estimate before it can enter a sprint (Definition of Ready). Do that first.
+                   # Also ready and unscheduled: STORY-185, STORY-186, STORY-188, STORY-189.
+                   # Review: docs/scrum/sprints/2026-07-30-sprint-64/review.md
+                   # Retro:  docs/scrum/sprints/2026-07-30-sprint-64/retro.md
                    # LOCKED 2026-07-30 on PO approval ("Approve 8 pts as planned").
                    # SCOPE IS NOW FROZEN. New PO requests go to the backlog, not this sprint.
                    # Tooling is frozen too (2026-01-01 agreement): no new MCP servers, no ad-hoc
