@@ -7,38 +7,15 @@ The B6 trap: raw demo rows carry the location under
 `{None}` set, i.e. one "location", and makes AC3 look unreachable while the
 data is entirely correct (SPIKE-064's own first run made exactly this
 mistake). The API-facing DTOs use a plain `"location"` key
-(`api/v1/history/models.py:30`), a THIRD shape again -- so a helper reading
-raw Grail rows and a helper reading API JSON responses are deliberately two
-different functions, never one guessing across both shapes.
+(`api/v1/history/models.py:30`) -- the shape actually exercised here, since
+`harness.py` only ever reads the API's `/history` JSON, never raw Grail rows
+directly (STORY-182 fix round minor: `distinct_locations_from_raw_rows`,
+which read the raw-row shape, had no caller anywhere and was removed).
 """
 
 from __future__ import annotations
 
-from demo_loop_gate.evidence import (
-    distinct_locations_from_history_dtos,
-    distinct_locations_from_raw_rows,
-)
-
-
-def test_distinct_locations_from_raw_rows_reads_the_entity_synthetic_location_field():
-    rows = [
-        {"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-DEMOA"},
-        {"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-DEMOB"},
-        {"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-DEMOA"},
-    ]
-    assert distinct_locations_from_raw_rows(rows) == 2
-
-
-def test_distinct_locations_from_raw_rows_wrong_key_would_have_silently_collapsed_to_one():
-    """Documents the B6 trap directly: reading the MONITOR id shape key
-    instead would see every row as the same (missing) value."""
-    rows = [
-        {"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-DEMOA"},
-        {"dt.entity.synthetic_location": "SYNTHETIC_LOCATION-DEMOB"},
-    ]
-    wrong_key_reading = len({row.get("dt.synthetic.location.id") for row in rows})
-    assert wrong_key_reading == 1  # {None} -- looks like exactly one location
-    assert distinct_locations_from_raw_rows(rows) == 2  # the real answer
+from demo_loop_gate.evidence import distinct_locations_from_history_dtos
 
 
 def test_distinct_locations_from_history_dtos_reads_the_location_field():
@@ -53,7 +30,3 @@ def test_distinct_locations_from_history_dtos_reads_the_location_field():
 
 def test_distinct_locations_from_history_dtos_empty_list_is_zero():
     assert distinct_locations_from_history_dtos([]) == 0
-
-
-def test_distinct_locations_from_raw_rows_empty_list_is_zero():
-    assert distinct_locations_from_raw_rows([]) == 0
