@@ -49,3 +49,12 @@
       those failures quoted three of them by bare filename, which the sweep's own regex then matched
       as three NEW citations. The true figure was 11. Caught at spec review, under exactly the
       re-derivability rule the same sprint had been enforcing on everyone else.)
+
+
+- [ ] **Recorded command output must be CURRENT, not merely real.** For every command the story
+      records, re-run it and compare against the pasted output. A stale record -- true when captured,
+      false at the final commit -- is the single most common defect class in this repo's recent
+      history, and it reads as verified evidence, which is what makes it dangerous. Where a story's
+      own edits changed the thing it measured, the count must have been re-derived AFTER that edit.
+      (2026-07-31, sprint-66 retro amendment A13, PO-directed -- the author-side rule is in
+      `implementer.md`; this is the check that it happened.)

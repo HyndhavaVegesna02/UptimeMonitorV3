@@ -145,3 +145,22 @@
       `interval_seconds`" -- was pinned by nothing. What found it was running the mutant; nothing
       else in the pipeline could have. Scoped deliberately to computational deliverables so this
       does not become a tax on every story.)
+
+
+- [ ] **LAST STEP BEFORE YOU REPORT: re-run every command your story records, and paste the FRESH
+      output.** Not the output you captured while working -- the output as of the final commit. This
+      applies to every recorded command without exception: greps, counts, sweeps, gates, diff-scope
+      checks. If a number changes, say so and explain why rather than substituting it quietly; if a
+      command no longer runs at all, that is a finding about your own story.
+      Do this AFTER your last edit, because the thing being measured is often the text you just
+      edited. (2026-07-31, sprint-66 retro amendment A13, PO-directed. Evidence: EVERY story in
+      sprint 66 shipped at least one recorded command whose output no longer reproduced --
+      STORY-195's grep recorded "28 lines" that yields 22; STORY-196's citation sweep record was
+      real but stale against its own final prose; STORY-197's "8 citation failures" was 11, because
+      the very paragraph explaining those failures quoted three of them by bare filename and the
+      sweep's regex matched them as three NEW citations; STORY-194 said "four lines above" where it
+      is 13. NOT ONE was a wrong conclusion -- every measurement was true when taken and stale by
+      the time it was read. That is the point: this class of defect is invisible to the author
+      precisely because it was correct when written, and it consumed roughly a third of this
+      sprint's review findings. Re-running costs about ninety seconds and would have caught all
+      four.)

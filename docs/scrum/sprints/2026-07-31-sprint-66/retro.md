@@ -1,7 +1,7 @@
 # Sprint 66 — Retro
 
 **Date:** 2026-07-31 · PO accepted the sprint ("i accept"), velocity **11/11**.
-Amendments **A11** and **A12** landed at their rungs under the PO's standing autonomy directive.
+Amendments **A11**, **A12** and **A13** landed at their rungs; A13 was PO-directed after the retro.
 
 Process, not product. The product verdict is in `review.md`.
 
@@ -131,6 +131,30 @@ Landed in `.scrum/checklists/quality-review.md` and `.scrum/checklists/spec-revi
 *Why a checklist and not a script:* no tool can tell whether a message's advice is sound — that needs
 someone who knows what the check is a proxy *for*. Both defects took minutes to see once the question
 was asked, and neither was visible from a green test run.
+
+### A13 — re-run every recorded command as the last step before reporting · rung: **CHECKLIST**
+
+**PO-directed after the retro**, on reading the finding-rate analysis. Landed author-side in
+`.scrum/checklists/implementer.md` and as a verification item in both review checklists.
+
+The author re-runs every command the story records — greps, counts, sweeps, gates, diff-scope checks
+— **after the final edit**, and pastes the fresh output. A changed number is reported and explained,
+never quietly substituted.
+
+*Why this, and why now:* **every story in this sprint shipped at least one recorded command whose
+output no longer reproduced**, and not one of them was a wrong conclusion. Each measurement was true
+when taken and stale by the time it was read — which is exactly what makes the class invisible to its
+author. It accounted for roughly a third of the sprint's review findings, and re-running costs about
+ninety seconds.
+
+*Why a checklist and not a script, for now:* "did this recorded output come from the current text" is
+in principle mechanically checkable, and if the finding rate does not drop this should be promoted to
+a script rung. Recorded here so that decision is deliberate rather than forgotten.
+
+*The diagnosis behind it:* verification had drifted to the wrong end of the pipeline. Re-derivation
+was being treated as the reviewer's job when it belongs to the author's last step. That is a
+placement error, not a competence one — which is why the fix is a step in the author's flow rather
+than another thing for reviewers to catch.
 
 ## Deliberately NOT amended
 
