@@ -1,13 +1,45 @@
 # STORY-196 — Audit findings: `api` + `composition` + the `tools/` -> `backend/src/` one-way boundary
 
 Point-in-time findings report. Sprint history, **not** the wiki — this describes the codebase at
-`sprint-66` HEAD `10ee45aee4ceb44a11597a2ec6d481724f922ab7` (short `10ee45a`) and must never be
-re-stamped later as if still current. Yardstick: `docs/scrum/wiki/zone-rules.md` (`ZR-1..ZR-7` as
-landed by STORY-194/195) plus the eight `lint-imports` contracts it links to
-(`docs/scrum/wiki/architecture-boundary.md`). Same report contract as
-`docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md` (STORY-195), reused per this
-story's own instruction — this report does not edit that file or `zone-rules.md`'s `ZR-1..ZR-5` text
-(a concurrent re-review of STORY-195 was in flight while this story ran).
+`sprint-66` HEAD `10ee45aee4ceb44a11597a2ec6d481724f922ab7` for the ORIGINAL pass, re-verified and
+extended at HEAD `6ece7f8` for the FIX ROUND below (see History). Must never be re-stamped later as
+if still current. Yardstick: `docs/scrum/wiki/zone-rules.md` (`ZR-1..ZR-8` as of this fix round —
+`ZR-1..ZR-7` landed by STORY-194/195, `ZR-8` landed by this story's own quality-review fix round)
+plus the eight `lint-imports` contracts it links to (`docs/scrum/wiki/architecture-boundary.md`).
+Same report contract as `docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md` (STORY-195).
+
+## FIX ROUND (2026-07-31) — what changed and why
+
+Spec verdict: PASS on all six AC (independently re-implemented the `ZR-3` sweep from this report's
+own prose description and got byte-identical output — the sweep and the enumeration are sound).
+Quality verdict: `FIX_REQUIRED`, 4 MAJOR + 7 minor, from an independent re-audit of all 13
+`composition/` modules, `api/dependencies.py`, the six `service.py` files, and the `tools/` boundary
+crossers (it corroborated that `api/` is genuinely clean and that the directional half of the
+one-way rule holds).
+
+- **F1 — the biggest miss:** `composition/seed_dynamo.py` is adapter-shaped (raw DynamoDB
+  persistence, a hand-built key schema) and was verdicted `CLEAN`. See §1/§4/§5; landed as `ZR-8`
+  finding 1 in `zone-rules.md`; filed `STORY-205`.
+- **F2 — two silent holes on the `tools/` boundary itself:** the `_assembly` private-module import
+  (`query_grammar.py`/`store.py`) was never adjudicated; the directional half of the "one-way
+  boundary" this report is titled for was never verified with a recorded command. See new §3e.
+- **F3 — §3c's ledger did not balance** (15 collisions, 6 `MUST-IMPORT-FROM-SRC`, only 8 `CLEARED`
+  line-entries — `tools/demo_engine/store.py:22`'s own numeral hit unadjudicated) **and misread `tools/demo_loop_gate/harness.py:964`**
+  (real content is `print(json.dumps(evidence, indent=2, default=str))`, not
+  `print("=" * 78)`). Both corrected in §3c; §7 reconciled.
+- **F4 — the `MAJOR` rating for the credential pair was argued against the wrong comparison:** five
+  more `env_matrix.py` env-var key-name literals sit five lines above the credential pair with the
+  identical rename-drift mechanism, never listed. Added to §3c; `STORY-202` widened (§6).
+- **F5 — the minors:** the sweep's real blind-spot class stated honestly (12 of 20 module-level
+  UPPER_CASE constants under `backend/src/` are non-`ast.Constant`-valued and invisible to it,
+  including `ZR-3`'s OWN compliant reference `PROVISIONAL_STATUS_MAPPING`); the shape-(ii) count
+  corrected (6 tree-wide, not 5, with the 6th correctly out of scope by definition, not miscounted);
+  the sweep scripts committed under `tools/`; §5's "five" keyword arguments corrected to six; §11's
+  diff-scope base stated against both commit ranges; `backend/src/composition/orchestrate.py:95-98` excluded from the
+  "routes and returns unchanged" generalisation.
+
+Every item below marked "(F1)"/"(F2)"/etc. is this fix round's correction; everything else is the
+original pass, unchanged where it was already correct.
 
 ## 1. Enumeration (AC1)
 
@@ -25,8 +57,9 @@ $ find tools -name "*.py" -not -path "*__pycache__*" | wc -l
 `api` **55**, `composition` **13**, `tools` **17** — total **85**, matches planning's V1 exactly. No
 mismatch to report.
 
-Verdict legend: `CLEAN` — no finding. `ZR-n` — violates that catalogue rule (§2). `GAP-2` — an
-unscored catalogue-gap observation (no `ZR-n` fits it), see §4.
+Verdict legend: `CLEAN` — no finding. `ZR-n` — violates that catalogue rule (§2). `GAP-2` — the
+historical/working name for `ZR-8` finding 2 (§4), landed as a scored `MAJOR` this fix round, not an
+unscored observation any longer.
 
 ### Evidence basis per module group (F5 discipline, carried over from STORY-195's review) —
 what question was actually asked of each group, and how
@@ -132,17 +165,19 @@ this file's own table.
 | 2 | `composition/app.py` | CLEAN (ZR-5 side B — see §5) |
 | 3 | `composition/asgi.py` | CLEAN |
 | 4 | `composition/config.py` | CLEAN |
-| 5 | `composition/dynamo.py` | CLEAN |
-| 6 | `composition/orchestrate.py` | CLEAN |
+| 5 | `composition/dynamo.py` | CLEAN (constructs the ONE boto3 DynamoDB resource; adapters receive it, never build their own — see §5's correction) |
+| 6 | `composition/orchestrate.py` | CLEAN (pure wiring, with one narrowing — see §5) |
 | 7 | `composition/publish_helper.py` | CLEAN (the shared `build_publisher` both roots use) |
 | 8 | `composition/pull_loop.py` | CLEAN |
 | 9 | `composition/run.py` | CLEAN (ZR-5 side A — see §5) |
 | 10 | `composition/sample_mode.py` | CLEAN (see §4 CLEARED — temporary, documented, out-of-core by design) |
-| 11 | `composition/seed_dynamo.py` | CLEAN |
+| 11 | `composition/seed_dynamo.py` | **ZR-8** (duplicates a DynamoDB key schema two persistence adapters own) — MAJOR, see §4 |
 | 12 | `composition/settings.py` | CLEAN (the ZR-3 compliant declaration source — see §3) |
-| 13 | `composition/vendor_health.py` | CLEAN against `ZR-1..ZR-7`; `GAP-2` catalogue-gap observation, unscored — see §4 |
+| 13 | `composition/vendor_health.py` | **ZR-8** (`GAP-2`: duplicates the DQL query builder without its validation) — MAJOR, see §4 |
 
-13 files listed, 13 read in full, 0 `ZR-n` findings; one unscored catalogue-gap observation.
+13 files listed, 13 read in full, 2 `ZR-8` findings (both MAJOR). **F1 correction (STORY-196
+quality-review fix round, 2026-07-31):** the original pass verdicted `seed_dynamo.py` `CLEAN` —
+the biggest miss in this report, corrected below.
 
 ### `tools/` (17 files)
 
@@ -156,7 +191,7 @@ this file's own table.
 | 6 | `tools/demo_engine/server.py` | CLEAN |
 | 7 | `tools/demo_engine/store.py` | **ZR-3** (`VENDOR_HEALTH_WINDOW`) — MINOR |
 | 8 | `tools/demo_loop_gate/__init__.py` | CLEAN |
-| 9 | `tools/demo_loop_gate/env_matrix.py` | **ZR-3** ×3 (2 MAJOR, 1 MINOR) |
+| 9 | `tools/demo_loop_gate/env_matrix.py` | **ZR-3** ×8 (3 MAJOR, 5 MINOR — widened from ×3 this fix round, F4) |
 | 10 | `tools/demo_loop_gate/evidence.py` | CLEAN |
 | 11 | `tools/demo_loop_gate/publisher_chain.py` | CLEAN |
 | 12 | `tools/demo_loop_gate/backfill_reality_gate.py` | CLEAN |
@@ -166,18 +201,24 @@ this file's own table.
 | 16 | `tools/demo_loop_gate/harness.py` | **ZR-3** (the AC3 reference/demonstration case) — MINOR |
 | 17 | `tools/import_provenance.py` | CLEAN |
 
-17 files listed, 17 read in full, 6 `ZR-3` findings across 4 files (2 MAJOR, 4 MINOR), 13 files
+17 files listed, 17 read in full, **11** `ZR-3` findings across 4 files (**3 MAJOR, 8 MINOR** —
+widened this fix round from 6/2/4 by F4's five additional `env_matrix.py` findings), 13 files
 with no finding.
 
-## 2. `ZR-1..ZR-7` findings against `api/` and `composition/` (AC2)
+## 2. `ZR-1..ZR-8` findings against `api/` and `composition/` (AC2)
 
-**Zero** violations of any `ZR-n` rule were found in `api/` or `composition/`. This is not a bulk
-assertion: `api/`'s zero rests on the per-file-type evidence in §1 (every `service.py`/`validation.py`
-read in full and judged translation-only; every import edge grepped and confirmed to stay inside
-{own feature, `core`, `_shared`, `api/dependencies.py`}). `composition/`'s zero rests on a full read
-of all 13 files against the specific ZR-5 parity question (§5) plus the three harder questions the
-brief poses (decide-vs-wire, root-vs-root duplication, config-path divergence) — all three answered
-"no" with citations in §5.
+**Zero** `ZR-n` violations were found in `api/`. This is not a bulk assertion: `api/`'s zero rests on
+the per-file-type evidence in §1 (every `service.py`/`validation.py` read in full and judged
+translation-only; every import edge grepped and confirmed to stay inside {own feature, `core`,
+`_shared`, `api/dependencies.py`}).
+
+**`composition/` carries TWO `ZR-8` findings (both `MAJOR`), corrected in this fix round — see §4.**
+The original pass's "zero" here was wrong: it rested on a full read of all 13 files against the ZR-5
+parity question and the three harder questions the brief poses, but the harder-questions answer
+itself contained a false generalisation (`orchestrate.py`, `pull_loop.py`, `seed_dynamo.py`,
+`dynamo.py` called "pure wiring... every branch routes to a named core service/query/domain type",
+which is untrue of `seed_dynamo.py` — routes to `boto3`'s Table API — and of `dynamo.py` — routes to
+`boto3.resource`) that hid `seed_dynamo.py`'s real finding. Corrected explicitly in §5.
 
 ## 3. `ZR-3` findings — the duplicated-declaration sweep (AC3)
 
@@ -194,16 +235,54 @@ ANYWHERE, including inside function bodies. A small, explicitly-stated noise set
 kind of value the `ZR-3` measurement note already names as unusably noisy at the wide reading; every
 other collision is reported and adjudicated by hand.
 
-Script: `zr3_sweep.py` (repo-relative AST walk, no dependency beyond the stdlib; full text in this
-story's session, reproducible from the description above). Command and full output:
+**Stated blind-spot class (F5, STORY-196 quality-review fix round, 2026-07-31).** The `backend/src/`
+side collects only `ast.Constant`-valued declarations. Verified this fix round: **20 module-level
+UPPER_CASE constants exist under `backend/src/`; only 8 are `ast.Constant`-valued (visible to this
+sweep); the other 12 are `dict`/`tuple`/function-call-valued and invisible to it** — including
+`PROVISIONAL_STATUS_MAPPING` (`backend/src/adapters/inbound/dynatrace/health_mapping.py:35`), which is `ZR-3`'s OWN compliant reference
+example, plus `_DQL_BREAKING_CHARS` (`backend/src/adapters/inbound/dynatrace/query.py:38`), `_STATUS_MAP` (`backend/src/adapters/outbound/statuspage/status_mapping.py:5`),
+`STATUS_SEVERITY` (`backend/src/core/domain/status.py:63`), `DEFAULT_OVERLAP` (`backend/src/adapters/inbound/dynatrace/adapter.py:23`), `FUTURE_TOLERANCE`
+(`backend/src/core/services/ingest_service.py:37`), `_SECTION_10_DEFAULTS` (`backend/src/composition/config.py:31`), `_NORMALIZERS` (`backend/src/adapters/inbound/dynatrace/dispatch.py:45`),
+`_OUTCOME_TO_HEALTH` (`backend/src/adapters/inbound/dynatrace/health_mapping.py:27`), `_STATUS_BY_EXCEPTION` (`backend/src/api/v1/_shared/errors.py:24`), `_NOTHING`
+and `_INTERNAL_WARNING` (`backend/src/core/services/pipeline.py:190-191`). Unpacking every nested literal inside these 12 to
+compare them would reintroduce ZR-3's own rejected "wide reading" (101 mostly-noise collisions) —
+so this is a genuine, accepted scope limit, not an oversight to silently fix. **Verified no live
+violation hides in it**, by targeted reasoning rather than an exhaustive nested sweep: `tools/`'s own
+compliant reference (`assumed_failure_codes.py`) already imports `PROVISIONAL_STATUS_MAPPING` rather
+than redeclaring it; the remaining 11 are either error-message dicts, HTTP-status maps, or
+timing/threshold values with no semantic counterpart anywhere under `tools/`. A future reader of a
+`0` collision count against one of these 12 should read it as "not this sweep's job," never as
+"checked and clean."
+
+**Shape-(ii) narrowing, corrected (F5).** The original claim — "there are exactly 5 class-field
+`Constant` defaults tree-wide and all 5 are in `settings.py`/`config.py`" — does not fully hold.
+Re-measured this fix round: **6** class-level `Constant`-valued field defaults exist tree-wide under
+`backend/src/`; 5 are in `settings.py`/`config.py` (correctly captured by this sweep's shape-(ii)
+scope) and the 6th, `backend/src/core/domain/verdict.py:43`
+(`under_maintenance: bool = False`, on `Verdict`), sits entirely OUTSIDE `composition/` — a CORE DOMAIN
+TYPE's own field default, not a settings/config value, so it is correctly out of `ZR-3`'s
+shape-(ii) scope BY DEFINITION (the rule targets settings/config specifically), not a miscount.
+Also: `False` is itself in this sweep's noise-exclusion set, so even had it been collected it could
+never have produced a spurious collision report.
+
+Script: `tools/zr3_duplicate_sweep.py` (committed this fix round — F5; previously scratchpad-only,
+so the recorded command below did not run at HEAD, a C2 gap on this story's central mechanical
+artifact). **Committing it under `tools/` makes the sweep self-referential**: it now also finds
+coincidental numeral collisions inside its own and `tools/citation_sweep.py`'s source (tuple-index
+literals like `d[3]`/`h[2]`, `argv`-count comparisons, an exit code) — adjudicated in §3c along with
+every other coincidental hit, not silently dropped. Command and full output, run at this fix round's
+final HEAD:
 
 ```
-$ python zr3_sweep.py .
+$ python tools/zr3_duplicate_sweep.py .
 backend/src/ declarations collected: 13 (8 shape-i, 5 shape-ii)
-tools/ literal occurrences collected: 911
+tools/ literal occurrences collected: 1024
 
-Colliding pairs (backend/src declared value == tools/ literal), noise excluded: 15
+Colliding pairs (backend/src declared value == tools/ literal), noise excluded: 21
 
+  value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/citation_sweep.py:125
+  value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/citation_sweep.py:127
+  value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/citation_sweep.py:129
   value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/demo_engine/server.py:244
   value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/demo_engine/store.py:22
   value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/demo_loop_gate/backfill_reality_gate.py:30
@@ -219,6 +298,9 @@ Colliding pairs (backend/src declared value == tools/ literal), noise excluded: 
   value='uptime-control' (str)  SRC: backend/src/composition/settings.py:22 [shape-ii Settings.dynamo_control_table]  TOOLS: tools/demo_loop_gate/harness.py:750
   value=3 (int)  SRC: backend/src/composition/config.py:275 [shape-ii FreshnessConfig.stale_after_cycles]  TOOLS: tools/demo_loop_gate/harness.py:903
   value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/demo_loop_gate/harness.py:964
+  value=3 (int)  SRC: backend/src/composition/config.py:275 [shape-ii FreshnessConfig.stale_after_cycles]  TOOLS: tools/zr3_duplicate_sweep.py:160
+  value=3 (int)  SRC: backend/src/composition/config.py:275 [shape-ii FreshnessConfig.stale_after_cycles]  TOOLS: tools/zr3_duplicate_sweep.py:161
+  value=2 (int)  SRC: backend/src/composition/config.py:278 [shape-ii FreshnessConfig.reentry_cycles]  TOOLS: tools/zr3_duplicate_sweep.py:182
 ```
 
 ### 3b. Proof the sweep is capable of finding something (AC3's gate)
@@ -246,19 +328,41 @@ all):**
   **INDEPENDENT** — coincidental int match, not a shared declared VALUE.
 - `tools/demo_loop_gate/harness.py:903` — `dict(list(per_signal.items())[:3])` (a slice bound,
   unrelated to `FreshnessConfig.stale_after_cycles`). **INDEPENDENT.**
-- `tools/demo_loop_gate/harness.py:964` — `print("=" * 78)` inside a different call than the
-  `parents[2]` one above; the `2` the sweep actually matched here is elsewhere in the same file
-  (already covered by the `tools/demo_loop_gate/harness.py:49` entry — the AST walk visits every
-  `Constant`, so a file with more than one coincidental `2` can appear more than once; both resolve
-  to the same `parents[2]` idiom). **INDEPENDENT.**
+- `tools/demo_loop_gate/harness.py:964` — **corrected misread (F3, STORY-196 quality-review fix
+  round, 2026-07-31): the original text said this line was `print("=" * 78)` with the matched `2`
+  "elsewhere in the same file" — WRONG, found without opening the cited line. The real line 964 is
+  `print(json.dumps(evidence, indent=2, default=str))`; the matched literal is the `indent=2` keyword
+  argument, unrelated to `FreshnessConfig.reentry_cycles`.** **INDEPENDENT** (verdict unchanged, only
+  the reason was wrong).
 - `tools/demo_loop_gate/failure_path_reality_gate.py:390` — `("poison took good rows", {**good,
   "poison_signal_locations": 3})`, a self-test fixture value, unrelated to
   `FreshnessConfig.stale_after_cycles`. **INDEPENDENT.**
+- **`tools/demo_engine/store.py:22`'s COINCIDENTAL numeral hit — added in this fix round (F3): the
+  original ledger never adjudicated this collision line at all**, though it appears in §3a's raw
+  sweep output. The matched literal is the bare `2` inside `timedelta(hours=2)` (the `hours=`
+  keyword argument's value), which happens to equal `FreshnessConfig.reentry_cycles` by pure
+  coincidence — this is DISTINCT from the semantic finding below about the WHOLE `VENDOR_HEALTH_WINDOW`
+  value; the nested integer literal itself carries no relationship to `FreshnessConfig`.
+  **INDEPENDENT** (this specific `Constant` node only — the finding on the value it is part of is
+  adjudicated separately, below).
+- **Six new self-referential hits, from committing the sweep scripts under `tools/` this fix round
+  (F5) — `tools/citation_sweep.py:125` (`if len(sys.argv) < 2:`), `:127` (`return 2`), `:129`
+  (`Path(sys.argv[2])`/`len(sys.argv) > 2`), `tools/zr3_duplicate_sweep.py:160` and `:161` (`d[3]`,
+  a tuple-index literal used twice while formatting the shape-i/shape-ii counts), `:182` (`h[2]`, a
+  tuple-index literal while building the dedup key).** All six are argv-length comparisons, an exit
+  code, or tuple-index literals inside the sweep's OWN code — coincidental, not shared declared
+  values. **INDEPENDENT**, all six.
 
-None of the six `2`/`3` coincidences shares any semantic relationship with `FreshnessConfig`; the
-sweep correctly reports them as candidates (that is its job — prove absence of a PATTERN, never
-absence of a problem, per the brief) and adjudication rules them out by reading the surrounding
-code, exactly as required.
+None of the fifteen coincidental hits above (nine from the original run, one of which — `tools/demo_loop_gate/harness.py:964`
+— carried a misread reason now corrected; plus six new self-referential ones from committing the
+sweep scripts) shares any semantic relationship with `FreshnessConfig`; the sweep correctly reports
+them as candidates (that is its job — prove absence of a PATTERN, never absence of a problem, per
+the brief) and adjudication rules them out by reading the surrounding code, exactly as required —
+every citation above was opened and read directly for this fix round, not inferred from the sweep's
+own summary line. **Ledger balance, corrected (F3): 21 total collisions = 6 `MUST-IMPORT-FROM-SRC`
+(below) + 15 `INDEPENDENT`/coincidental (above) — the original ledger listed only 8 coincidental
+lines against 15 collisions (6+8=14, one short: `tools/demo_engine/store.py:22`'s own numeral hit was never
+adjudicated), corrected here.**
 
 **`MUST-IMPORT-FROM-SRC` — genuine findings, filed (see §6):**
 
@@ -299,6 +403,53 @@ code, exactly as required.
   vs **`backend/src/composition/settings.py:50`** (`STATUSPAGE_API_KEY_VAR = "STATUSPAGE_API_KEY"`).
   Identical mechanism and identical risk to the entry immediately above, on the paired credential.
   **MAJOR.**
+
+**Five more `MUST-IMPORT-FROM-SRC` findings, added this fix round (F4) — the same rename-drift
+mechanism as the credential pair above, sitting FIVE LINES ABOVE it in the SAME function, but never
+listed in the original pass.** `build_child_env`'s five unconditional env-dict assignments
+(`tools/demo_loop_gate/env_matrix.py:64-68`) hardcode five more env-var KEY NAMES that
+`backend/src/composition/settings.py::load_settings` (lines 32-38) also reads, by literal string, to
+resolve the SAME settings both composition roots depend on:
+
+- **`tools/demo_loop_gate/env_matrix.py:64`** (`env["CONFIG_DIR"] = config_dir`) vs
+  **`backend/src/composition/settings.py:32`** (`os.environ.get("CONFIG_DIR", "config/apps")`).
+  **`MAJOR`** — the MOST severe of the seven, not merely equal to the credential pair:
+  `CONFIG_DIR` is THE publish guard this whole harness's safety story depends on (§3c's own
+  "defence in depth" language above is built ON TOP of `config/demo`'s empty
+  `statuspage_mapping()`, which `CONFIG_DIR` is what SELECTS). A silent rename-drift here would not
+  merely weaken a defence-in-depth layer, the way the credential pair does — it would point the
+  harness at `config/apps` (the default), which DOES declare a real `statuspage_component_id`
+  (`config/apps/httpcheck.yaml:8`, per CLAUDE.md), reactivating the real publish path this entire
+  guard exists to keep closed.
+- **`tools/demo_loop_gate/env_matrix.py:65`** (`env["AWS_REGION"] = aws_region`) vs
+  **`backend/src/composition/settings.py:33`** (`os.environ.get("AWS_REGION", "us-east-1")`).
+  **MINOR** — same low-churn, contained-blast-radius reasoning as the `aws_region` VALUE finding
+  above; this is the KEY NAME sibling of that finding.
+- **`tools/demo_loop_gate/env_matrix.py:66`** (`env["DYNAMO_ENDPOINT_URL"] = dynamo_endpoint_url`)
+  vs **`backend/src/composition/settings.py:38`**
+  (`os.environ.get("DYNAMO_ENDPOINT_URL") or None`). **MINOR** — a drift here would point the
+  harness's DynamoDB client at nothing (falling through to a real AWS endpoint via boto3's default
+  resolution), which would fail loudly (no such throwaway table exists there) rather than silently
+  misbehave — bounded risk.
+- **`tools/demo_loop_gate/env_matrix.py:67`** (`env["DYNAMO_OBSERVATIONS_TABLE"] = observations_table`)
+  vs **`backend/src/composition/settings.py:34-36`**
+  (`"DYNAMO_OBSERVATIONS_TABLE", "uptime-observations"`). **MINOR** — parallels the
+  already-filed table-NAME-value finding above; this is the KEY NAME sibling.
+- **`tools/demo_loop_gate/env_matrix.py:68`** (`env["DYNAMO_CONTROL_TABLE"] = control_table`) vs
+  **`backend/src/composition/settings.py:37`**
+  (`os.environ.get("DYNAMO_CONTROL_TABLE", "uptime-control")`). **MINOR** — same reasoning as the
+  entry immediately above.
+
+**Why the sweep could not see any of these five (F4).** `ZR-3`'s pinned scope collects the
+`backend/src/` side only as (i) module-level UPPER_CASE constants or (ii) `settings.py`/`config.py`
+class-field defaults. All five of `load_settings`'s `os.environ.get(...)` calls are FUNCTION-BODY
+string literals — neither shape — so the `backend/src/` side of each of these five pairs is
+invisible to `tools/zr3_duplicate_sweep.py` by construction, exactly like the already-adjudicated
+`"0"`/`"HEALTHY"` (§3d) and `"test"` (§3d) cases. This is a FORMATTING ACCIDENT on the `src` side
+(`STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR` happen to be pulled out as named module
+constants two lines below these five calls; the other five env-var names were not), not a
+difference in the underlying rename-drift RISK, which is identical across all seven — so all seven
+belong in the same finding family (see §6, `STORY-202` widened to cover all seven).
 
 **A genuine finding the sweep, by its own literal-equality design, CANNOT catch — found by manual
 reading of `tools/demo_engine/store.py` and `backend/src/composition/vendor_health.py` (§1's evidence
@@ -375,56 +526,142 @@ SCOPE, not merely unflagged)
   independently ("MUST match `make_dynamo_resource`... exactly"), so the coupling is at least
   documented even though it is not import-enforced.
 
-## 4. Catalogue-gap observation (unscored — `GAP-2`)
+### 3e. The private-module import, and the one-way direction itself (F2)
 
-**`composition/vendor_health.py::build_vendor_health_query`
-(`backend/src/composition/vendor_health.py:40-53`) re-implements a DQL-query-building
-responsibility `adapters/inbound/dynatrace/query.py::build_dql_query`
+**`tools/demo_engine/query_grammar.py:26` and `tools/demo_engine/store.py:14` both import a
+PRIVATE, underscore-prefixed adapter-internal module — never adjudicated in the original pass.**
+Both do `from src.adapters.inbound.dynatrace._assembly import parse_ns_timestamp`. This is
+DIRECTION-legal (`tools/` importing `src.*`, never the reverse — see the direction check below),
+but importing an underscore-prefixed module crosses a convention Python does not enforce: `_assembly`
+names itself as an ADAPTER-INTERNAL module, not a published API `tools/` is meant to depend on.
+Adjudicated separately per file, since only one documents the choice:
+
+- **`tools/demo_engine/query_grammar.py:54-66`** (`parse_watermark_bound`) documents the reuse
+  explicitly and correctly: "Reuses the REAL production timestamp parser
+  (`_assembly.py::parse_ns_timestamp`) rather than reimplementing it, so the watermark bound and
+  every row's own `timestamp` are parsed by the exact same logic... (a 6-digit bound sorts
+  lexicographically BEFORE a 9-digit row at the same instant, which is the STORY-051 stall
+  reproduced inside this engine if this parsing is skipped)." **`CLEARED`** — this is the exact
+  reuse-not-reimplement discipline `ZR-3`/`ZR-8` both argue FOR, just crossing a private-module
+  boundary rather than a zone boundary; the reasoning for doing so is stated, not silent.
+- **`tools/demo_engine/store.py:14`** imports the SAME function for the SAME reason (sorting/filtering
+  rows by parsed timestamp in `_answer_ingest`/`_answer_vendor_health`) but its module docstring
+  (`tools/demo_engine/store.py:1-7`) does not say so — no reuse rationale is recorded at this second import site.
+  **`CLEARED`**, same reasoning as `query_grammar.py` (the import itself is sound and direction-legal),
+  but flagged as a documentation gap: a future reader of `store.py` alone would not know this import
+  is deliberate reuse rather than an accidental reach into adapter internals. Not filed as its own
+  story (too small to be worth one), noted as a candidate for `store.py`'s next touch.
+- **The real consequence, beyond encapsulation (F2), stated explicitly rather than left implicit:**
+  because BOTH import sites use the SAME production timestamp parser the real ingest path uses, **a
+  defect in `parse_ns_timestamp` itself is structurally invisible to the demo engine** — the demo
+  engine would parse a malformed or edge-case timestamp exactly as wrongly (or exactly as correctly)
+  as production does, so this stand-in can never catch a `parse_ns_timestamp` bug the real ingest
+  path also has. This is the fidelity trade-off CLAUDE.md's demo-engine section already accepts
+  implicitly (the demo engine exists to test the REST of the pipeline against Grail-shaped rows, not
+  to independently verify the timestamp parser) — worth stating plainly rather than leaving as an
+  unstated assumption.
+
+**The directional half of the "one-way boundary" this report is titled for — verified, not merely
+implied.** Command and full output, re-run at this fix round's HEAD:
+
+```
+$ grep -rn "^from tools\|^import tools\|from tools\.\|import tools\." backend/src --include="*.py"
+$ echo "exit=$?"
+exit=1
+$ grep -rln "^from demo_engine\|^import demo_engine\|^from demo_loop_gate\|^import demo_loop_gate" backend/src --include="*.py"
+$ echo "exit=$?"
+exit=1
+```
+
+Both greps return NO matches (exit 1, ripgrep/grep convention for "no lines matched") — nothing
+under `backend/src/` imports `tools/`, `demo_engine`, or `demo_loop_gate`, by either the qualified
+(`tools.demo_engine...`) or the `sys.path`-relative (`demo_engine...`) import spelling both actually
+appear in this codebase (`tools/demo_engine/scenario.py` and siblings import `demo_engine.*`
+relative to a `sys.path` insertion, never `tools.demo_engine.*` — both spellings checked). This is,
+as the reviewer notes, the cheapest and most mechanically-guardable rule in the whole catalogue: a
+single `lint-imports`-style `forbidden_modules` contract could enforce it directly were `tools/`
+ever brought inside `root_package` — recorded here as re-derivable evidence for `STORY-197`, which
+otherwise gets none from this report.
+
+## 4. `ZR-8` findings — storage and vendor mechanics duplicated outside their owning adapter (both `MAJOR`)
+
+**Landed this fix round (STORY-196 quality-review round, 2026-07-31) as `ZR-8` in
+`docs/scrum/wiki/zone-rules.md`** — GAP-2 (finding 2 below) was originally reported unscored,
+deliberately not catalogued while `zone-rules.md` was under a concurrent quality-review re-read;
+that reason has now expired (the coordinator: "the file is now free"), and a second, independently
+more severe instance (finding 1) surfaced in this same fix round, so both are landed together as one
+rule rather than two separate ad hoc observations. Full rule text, Statement/Source/Coverage
+verdict: `docs/scrum/wiki/zone-rules.md` `ZR-8`.
+
+### Finding 1 — `composition/seed_dynamo.py` duplicates a DynamoDB key schema TWO persistence adapters already own (the biggest miss in the original pass)
+
+`backend/src/composition/seed_dynamo.py:29-30` (`"pk": "TOPOLOGY",` / `"sk": f"APP#{app.id}",`), `:43`
+(`{"pk": "TOPOLOGY", "sk": f"COMPONENT#{comp.id}"}`), and `:58-59`
+(`{"pk": "TOPOLOGY", "sk": f"SIGNAL#{sig.signal_key}"}`) hand-build the SAME key schema
+`DynamoComponentRepository` (`backend/src/adapters/persistence/dynamo_component_repository.py:39-40,53-54`)
+and `DynamoSignalRepository` (`backend/src/adapters/persistence/dynamo_signal_repository.py:41-42`)
+already own and implement — RAW `boto3` persistence (`table.put_item`, `table.update_item`, a
+hand-written `UpdateExpression` with `if_not_exists`) issued directly from the composition zone, on
+the boot path of BOTH composition roots (`composition/run.py::main`'s topology seed call,
+`composition/app.py::create_app`'s lifespan seed call).
+
+**Severity: `MAJOR`, and it is not a theoretical risk — it already drifted once.**
+`tools/demo_loop_gate/failure_path_reality_gate.py:163-172`'s own docstring records the SAME class
+of drift already happening, in a DIFFERENT hand-rolled key site inside this repo: a first version of
+that file used `pk=COMPONENT#<id>, sk=META` where the repository's real schema is
+`pk=TOPOLOGY, sk=COMPONENT#<id>` — the write created a phantom item nothing reads, the read-back
+"verified" it against the SAME wrong key, and this cost two full debugging runs before the mismatch
+was found. `docs/scrum/wiki/persistence-adapters.md:36` already documents `seed_topology_dynamo`
+alongside the two adapters it duplicates, in its own Facts section — the wiki article had already,
+independently, treated this as adapter-adjacent; the zone-rule catalogue and this audit had not
+caught up until this fix round.
+
+**Why the original pass missed it.** §5 (original text) generalised `orchestrate.py`, `pull_loop.py`,
+`seed_dynamo.py`, and `dynamo.py` together as "pure wiring — every branch routes to a named core
+service/query/domain type and returns its result unchanged." That is FALSE for `seed_dynamo.py`
+(routes to `boto3`'s Table API, not a core type) and FALSE for `dynamo.py` (routes to
+`boto3.resource`) — the exact bulk-`CLEAN`-overstatement class this report's own §1 criticises
+STORY-195 for, now found inside itself. Corrected in §5.
+
+**This fell through the crack between STORY-195 (`adapters/`) and STORY-196 (`composition/`)
+auditing disjoint file sets — precisely the failure a two-pass audit exists to prevent, stated
+plainly rather than minimised.** `seed_dynamo.py` is a `composition/` file by directory, so it was
+this story's job, not STORY-195's — the miss is this report's own, not a gap in scope assignment.
+
+**Why the eight `lint-imports` contracts pass it.** `composition` calling `boto3` directly is
+something `adapters-independence` never restricts for the `composition` zone — the contracts check
+import edges, never whether a reachable capability (here, raw table access) was reused via the
+adapter that already encodes it, rather than re-derived.
+
+### Finding 2 — `composition/vendor_health.py::build_vendor_health_query` duplicates a DQL query builder without its validation (`GAP-2`, first reported in this report's original pass)
+
+`backend/src/composition/vendor_health.py:40-53` re-implements a DQL-query-building responsibility
+`adapters/inbound/dynatrace/query.py::build_dql_query`
 (`backend/src/adapters/inbound/dynatrace/query.py:52-102`) already owns, WITHOUT reusing that
 function's `InvalidNativeIdError` breaking-character validation (STORY-021,
-`backend/src/adapters/inbound/dynatrace/query.py:41-49,79-82`).** Both functions interpolate the
-SAME trusted `native_id` config value into a DQL string literal; only `build_dql_query` checks it
-for characters (`"`, `\`, newline, carriage return) that would break out of the `"{native_id}"`
-literal. A `native_id` containing such a character would be rejected loudly, with a named error,
-the moment `build_dql_query` runs (inside the ingest path) — but `check_vendor_id_health`
-(`backend/src/composition/vendor_health.py:96-133`) runs FIRST, at loop startup, and would instead silently
-build a malformed query, send it, and (at best) log a generic "Vendor-id health probe FAILED"
-WARNING from the resulting Grail-side syntax error, rather than the loud, specific,
+`backend/src/adapters/inbound/dynatrace/query.py:41-49,79-82`). Both functions interpolate the SAME
+trusted `native_id` config value into a DQL string literal; only `build_dql_query` checks it for
+characters (`"`, `\`, newline, carriage return) that would break out of the `"{native_id}"` literal.
+A `native_id` containing such a character would be rejected loudly, with a named error, the moment
+`build_dql_query` runs (inside the ingest path) — but `check_vendor_id_health`
+(`backend/src/composition/vendor_health.py:96-133`) runs FIRST, at loop startup, and would instead
+silently build a malformed query, send it, and (at best) log a generic "Vendor-id health probe
+FAILED" WARNING from the resulting Grail-side syntax error, rather than the loud, specific,
 `InvalidNativeIdError`-named failure the ingest path would raise moments later for the identical
-root cause.
+root cause. **Severity: `MAJOR`** (a real correctness/observability gap in shipping code, not a
+stylistic one — matching Finding 1's severity, per the coordinator's ruling that both belong under
+one rule).
 
-**No existing `ZR-n` fits this.** `ZR-1` is about an inbound ADAPTER holding a persistence port —
-not applicable (this is composition duplicating an adapter's TRANSLATION logic, the opposite
-direction). `ZR-2` is about vendor vocabulary inside `core/` — not applicable (`composition/` is
-allowed to see vendor vocabulary by design). `ZR-3` is the `tools/`<->`backend/src/` boundary
-specifically — not applicable (this is entirely within `backend/src/`, between two zones
-`lint-imports` already permits to see each other: `composition` importing/duplicating `adapters`
-logic is legal by the eight contracts, exactly the shape the brief's Context section names as "the
-motivating fact" for this whole sprint). `ZR-6`/`ZR-7` are about port signatures and pagination
-completeness respectively — not applicable.
+**Why the eight `lint-imports` contracts pass both findings.** `composition` legally
+importing/reaching `adapters` — or, in `seed_dynamo.py`'s case, calling `boto3` directly — is
+EXACTLY the wiring permission the eight contracts grant the composition zone by design. The
+contracts check import edges, not whether a REACHABLE capability was actually reused rather than
+re-derived; a module that hand-builds the same key/query a sibling module already encodes imports
+nothing NEW to trip a contract.
 
-**Proposed rule (zone-shaped, stated here per C5 — NOT added to `docs/scrum/wiki/zone-rules.md` by
-this story).** Deliberately not catalogued inline: `zone-rules.md` was under a concurrent
-quality-review re-read for the whole of this story's session (this story's own brief: "a concurrent
-re-review of it is running"), and STORY-195's own precedent is exactly this shape — its original
-audit pass reported `GAP-1` as an unscored observation WITHOUT touching `zone-rules.md`; the
-promotion to a formal, catalogued rule (`ZR-6`) happened only in a LATER, separate quality-review fix
-round. This report follows that same precedent rather than editing a file under active review.
-
-> **Draft `ZR-8` (proposed, not landed).** *Statement:* composition-zone code that constructs a
-> vendor-specific artifact (a query string, a request payload shape) that an adapter under
-> `backend/src/adapters/` already owns the construction AND validation of must call the adapter's
-> builder, not re-implement a parallel version that silently drops part of its validation. *Source:*
-> the PO's general "adapters translate, they don't decide" principle, applied to the specific case
-> where TWO modules both translate the same vendor concept and only one does it completely — the
-> `composition`/`adapters` pairing specifically, since `lint-imports`'s `adapters-independence`
-> contract cannot see a composition-side REIMPLEMENTATION (as opposed to an import) of adapter
-> logic at all. *Compliant counter-pattern already in this codebase:* `tools/demo_engine/
-> assumed_failure_codes.py` importing `PROVISIONAL_STATUS_MAPPING` rather than re-declaring it — the
-> same reuse-not-reimplement discipline `ZR-3` already enforces one zone-pair over. *Coverage
-> verdict:* `GUARDABLE` only as a reviewed lint warning (an AST check for "two functions in
-> different files both build a query/payload for the same vendor concept" is a semantic judgement,
-> not a clean import-edge check), similar in spirit and in stated limitation to `ZR-6`.
+Full detail, the rule's Coverage verdict (`GUARDABLE` only as a reviewed pattern, with its stated
+false-positive risk), and the compliant counter-pattern: `docs/scrum/wiki/zone-rules.md` `ZR-8`.
+Filed as `STORY-205` (§6).
 
 ## 5. `composition` parity report (AC5)
 
@@ -446,7 +683,9 @@ round. This report follows that same precedent rather than editing a file under 
 - **The shared publisher chain.** `backend/src/composition/run.py:121-128` and
   `backend/src/composition/app.py:176-183` both call the SAME
   `composition/publish_helper.py::build_publisher` (`backend/src/composition/publish_helper.py:183-234`)
-  with the same five keyword arguments, sourced from `config.statuspage_mapping()` and either
+  with the same **six** keyword arguments (`component_repo`, `publication_repo`, `clock`,
+  `statuspage_page_id`, `statuspage_api_token`, `component_mapping` — corrected from "five", F5),
+  sourced from `config.statuspage_mapping()` and either
   `LiveSecrets` (`run.py`) or `StatuspageSecrets` (`app.py`, via `load_statuspage_secrets()`) — the
   two secrets types are deliberately DIFFERENT (`StatuspageSecrets` is documented,
   `backend/src/composition/settings.py:63-73`, as "the Statuspage-only half of `LiveSecrets`" so
@@ -460,10 +699,25 @@ by re-reading both files this story rather than re-citing it and stopping.
 
 **The three harder questions the brief poses, answered explicitly (not merely re-derived):**
 
-- **Does anything in `composition/` make a decision that belongs in a core service?** No, with one
-  documented and deliberately-scoped exception. `orchestrate.py`, `pull_loop.py`, `seed_dynamo.py`,
-  `dynamo.py` are pure wiring — every branch in them routes to a named core service/query/domain
-  type and returns its result unchanged. `sample_mode.py::SampleModeIngest.ingest_observations`
+- **Does anything in `composition/` make a decision that belongs in a core service? (F1 correction —
+  the original answer here was FALSE for two of the four files it named.)** The original text
+  claimed `orchestrate.py`, `pull_loop.py`, `seed_dynamo.py`, `dynamo.py` are "pure wiring — every
+  branch routes to a named core service/query/domain type and returns its result unchanged." That is
+  untrue of TWO of the four: `seed_dynamo.py` routes to `boto3`'s Table API, not a core type — and,
+  worse, hand-builds a key schema two persistence adapters already own (`ZR-8` finding 1, §4,
+  `MAJOR`) — and `dynamo.py` routes to `boto3.resource`, also not a core type (though `dynamo.py`
+  itself is NOT a finding: it is the sole place that CONSTRUCTS the DynamoDB resource, which every
+  `adapters/persistence/*` module then RECEIVES as a constructor argument rather than building its
+  own — legitimate composition-root infrastructure wiring, not a duplicate of anything). Precisely
+  per-file, corrected: `pull_loop.py` IS pure wiring (every branch calls `adapters`/`core` functions
+  and returns their result). `orchestrate.py` is ALMOST pure wiring but not entirely —
+  `backend/src/composition/orchestrate.py:95-98` (`since = until - (max_threshold + 2) * interval`) computes an observation
+  window using its OWN `+2` cycles of slack, a small arithmetic rule that does not itself route
+  anywhere; it is documented inline (dossier §8 "overlap for edge cadence") and is not scored as a
+  finding, but it is not "routes to a named type and returns unchanged" either — excluded from that
+  generalisation rather than silently folded into it. `seed_dynamo.py`'s real finding is `ZR-8`
+  (§4), not this bullet — but the FALSE per-file claim that hid it is corrected here.
+  Separately, `sample_mode.py::SampleModeIngest.ingest_observations`
   (`backend/src/composition/sample_mode.py:53-72`) DOES force every observation's `health` to
   `Health.DOWN` while the flag is on — a real domain-shaped decision (what health value an
   observation carries) sitting in `composition/`, not `core/services/`. This is CLEARED, not a
@@ -474,42 +728,71 @@ by re-reading both files this story rather than re-citing it and stopping.
   section names it as inert since the Dynatrace trial expired), not an accidental core-logic leak.
 - **Is any wiring duplicated between the two roots such that they could drift?** No beyond what §5's
   citations already show is IDENTICAL (both call the same `load_settings`/`load_config`/
-  `build_publisher` functions). The one genuine duplication this audit found in `composition/` —
+  `build_publisher` functions). Two genuine duplications this audit found in `composition/` —
   `vendor_health.py` re-implementing a fragment of `adapters/inbound/dynatrace/query.py`'s
-  query-building — is a `composition`<->`adapters` duplication, not a `run.py`<->`app.py` one, so it
-  is reported separately as `GAP-2` (§4), not as a `ZR-5` finding.
+  query-building, and `seed_dynamo.py` re-implementing two persistence adapters' key schema — are
+  BOTH `composition`<->`adapters` duplications, not `run.py`<->`app.py` ones, so they are reported
+  separately as `ZR-8` findings (§4), not as `ZR-5` findings.
 - **Does either root read configuration through a path the other does not?** No — both resolve
   `config_dir`, `dynamo_observations_table`/`dynamo_control_table`, and the Statuspage credential
   pair through the identical `Settings`/`StatuspageSecrets` dataclasses, as cited above.
 
 ## 6. Filed stories (AC2 — MAJORs as their own stories; MINORs batched)
 
-`STORY-202` and `STORY-203` below are proposed, not written to `.scrum/backlog.yaml` by this report
-(the orchestrator is its sole writer, per this story's own operating constraints).
+**`STORY-202`, `STORY-203`, and `STORY-204` (this report's original pass) are already LANDED in
+`.scrum/backlog.yaml` by the orchestrator** — that file is not edited by this report. `STORY-202`'s
+DESCRIPTION below is the WIDENED scope this fix round found (F4); the landed backlog entry may still
+read the original 2-MAJOR version until the orchestrator reconciles it — noted here rather than
+silently assumed updated. New proposed story from this fix round: `STORY-205` (F1), ids from
+`STORY-205` onward per instruction (198-204 already landed).
 
-### STORY-202 — `env_matrix.py` must import the Statuspage secret env-var names from `settings.py`, not re-declare them (2 `ZR-3` MAJORs)
+### STORY-202 — `env_matrix.py` must import SEVEN env-var key names from `settings.py`, not re-declare them (widened this fix round, F4)
 
-- **Type:** defect (`ZR-3`, `MAJOR` ×2 — a credential-safety-relevant duplicated declaration).
-- **Estimate:** 1 (fibonacci) — a two-line import-and-use change in one file.
-- **Offending citations:** `tools/demo_loop_gate/env_matrix.py:75`
-  (`env["STATUSPAGE_PAGE_ID"] = statuspage_page_id`) and `tools/demo_loop_gate/env_matrix.py:77`
-  (`env["STATUSPAGE_API_KEY"] = statuspage_api_token`), duplicating
-  `backend/src/composition/settings.py:49` (`STATUSPAGE_PAGE_ID_VAR`) and
-  `backend/src/composition/settings.py:50` (`STATUSPAGE_API_KEY_VAR`).
-- **Context:** see §3c. A rename of either constant in `settings.py` would silently defeat this
-  harness's fake-credential injection into the credentialed API subprocess, letting
-  `composition/asgi.py`'s `load_dotenv()` fill the gap with REAL repo-root `.env` Statuspage
-  credentials instead — the exact risk CLAUDE.md's demo-engine section and this harness's own
-  docstrings both treat as load-bearing.
+- **Type:** defect (`ZR-3`, `MAJOR` ×3 + `MINOR` ×4 — a credential-safety-relevant and
+  publish-guard-relevant duplicated declaration, widened from the original 2 MAJORs).
+- **Estimate:** 2 (fibonacci, widened from 1) — a seven-line import-and-use change in one file
+  (`build_child_env`), all in the same function, same fix shape.
+- **Offending citations, all in `tools/demo_loop_gate/env_matrix.py`'s `build_child_env`
+  (`:63-77`), vs their `backend/src/composition/settings.py` counterparts:**
+  - `:64` (`env["CONFIG_DIR"]`) vs `backend/src/composition/settings.py:32` — **MAJOR**, added this
+    fix round: `CONFIG_DIR` is THE publish guard (`config/demo`'s empty `statuspage_mapping()` is
+    what `build_publisher` checks; `CONFIG_DIR` is what selects `config/demo` vs `config/apps`).
+  - `:75` (`env["STATUSPAGE_PAGE_ID"]`) vs `backend/src/composition/settings.py:49`
+    (`STATUSPAGE_PAGE_ID_VAR`) — **MAJOR** (original pass).
+  - `:77` (`env["STATUSPAGE_API_KEY"]`) vs `backend/src/composition/settings.py:50`
+    (`STATUSPAGE_API_KEY_VAR`) — **MAJOR** (original pass).
+  - `:65` (`env["AWS_REGION"]`) vs `backend/src/composition/settings.py:33` — MINOR, added this fix
+    round.
+  - `:66` (`env["DYNAMO_ENDPOINT_URL"]`) vs `backend/src/composition/settings.py:38` — MINOR, added
+    this fix round.
+  - `:67` (`env["DYNAMO_OBSERVATIONS_TABLE"]`) vs `backend/src/composition/settings.py:34-36` —
+    MINOR, added this fix round.
+  - `:68` (`env["DYNAMO_CONTROL_TABLE"]`) vs `backend/src/composition/settings.py:37` — MINOR, added
+    this fix round.
+- **Context:** see §3c. A rename of `STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR` in
+  `settings.py` would silently defeat this harness's fake-credential injection into the credentialed
+  API subprocess, letting `composition/asgi.py`'s `load_dotenv()` fill the gap with REAL repo-root
+  `.env` Statuspage credentials instead. A rename of the `"CONFIG_DIR"` string in `settings.py`
+  would silently point the harness at `config/apps` (the real fleet, which DOES declare a real
+  `statuspage_component_id`) instead of `config/demo` — the single most severe of the seven, since
+  it is the guard itself, not defence-in-depth on top of it. All seven escape the sweep for the SAME
+  reason: `load_settings`'s `os.environ.get(...)` calls are function-body literals on the
+  `backend/src/` side, invisible to `ZR-3`'s pinned shape-(i)/(ii) scope — a formatting accident, not
+  a difference in risk (see §3c).
 - **Acceptance criteria (testable):**
   - AC1: `tools/demo_loop_gate/env_matrix.py` imports `STATUSPAGE_PAGE_ID_VAR` and
-    `STATUSPAGE_API_KEY_VAR` from `src.composition.settings` and uses them as the two `env[...]`
-    dict keys in `build_child_env`, in place of the two literal strings.
-  - AC2: A test asserts `build_child_env(...)`'s returned dict has keys equal to
-    `settings.STATUSPAGE_PAGE_ID_VAR`/`settings.STATUSPAGE_API_KEY_VAR` — pinned via the imported
-    symbols, not re-typed literals, so a future rename of either constant would move this test's
-    own expectation with it, not silently pass a now-wrong key.
-  - AC3: Existing `demo_loop_gate` tests exercising `build_child_env` continue to pass unchanged.
+    `STATUSPAGE_API_KEY_VAR` from `src.composition.settings` and uses them as `env[...]` dict keys
+    in `build_child_env`, in place of the two literal strings.
+  - AC2: The same file gains (or `settings.py` exports) named constants for `CONFIG_DIR`,
+    `AWS_REGION`, `DYNAMO_ENDPOINT_URL`, `DYNAMO_OBSERVATIONS_TABLE`, `DYNAMO_CONTROL_TABLE`, used
+    identically on both sides — refinement decides whether `settings.py` grows five more
+    module-level `_VAR` constants (matching the two that already exist) or `load_settings` is
+    refactored to build its `os.environ.get(...)` calls from a single shared name list either side
+    can import.
+  - AC3: A test asserts `build_child_env(...)`'s returned dict has keys equal to the imported
+    symbols for all seven env vars — pinned via the imports, not re-typed literals, so a future
+    rename of any one constant moves this test's own expectation with it.
+  - AC4: Existing `demo_loop_gate` tests exercising `build_child_env` continue to pass unchanged.
 
 ### STORY-203 — batch the 4 MINOR `ZR-3` findings: `tools/` should import shared literals from `backend/src/`, not re-declare them
 
@@ -543,17 +826,17 @@ by re-reading both files this story rather than re-citing it and stopping.
     decides whether that helper lives in `vendor_health.py` (importable) or `tools/demo_engine/`.
   - AC4: Existing tests for all three touched `tools/` files continue to pass unchanged.
 
-### STORY-204 — reuse the adapter's DQL query builder + validation inside `composition/vendor_health.py` (catalogue gap, unscored)
+### STORY-204 — reuse the adapter's DQL query builder + validation inside `composition/vendor_health.py` (already landed; now `ZR-8` finding 2, not a catalogue gap)
 
-- **Type:** chore (catalogue gap, not a `ZR-n` — draft `ZR-8` above; no live-observed vendor error
-  has ever exercised this path, per CLAUDE.md's "two things to know").
-- **Estimate:** 2 (fibonacci).
+- **Type:** defect (**F1 correction: no longer "catalogue gap, not a `ZR-n`"** — `ZR-8` landed this
+  fix round covers it directly, see §4 Finding 2).
+- **Estimate:** 2 (fibonacci) — unchanged.
 - **Offending citation:** `backend/src/composition/vendor_health.py:40-53`
   (`build_vendor_health_query`), which does not call or reuse
   `backend/src/adapters/inbound/dynatrace/query.py:41-49,79-82`'s `InvalidNativeIdError` validation.
-- **Context:** see §4. Refinement should decide the shape (a small shared validator both builders
-  call, vs. `vendor_health.py` composing its query around a shared "quote and validate" helper
-  `query.py` exports) rather than this audit prescribing the fix.
+- **Context:** see §4 Finding 2 and `zone-rules.md` `ZR-8`. Refinement should decide the shape (a
+  small shared validator both builders call, vs. `vendor_health.py` composing its query around a
+  shared "quote and validate" helper `query.py` exports) rather than this audit prescribing the fix.
 - **Acceptance criteria (testable):**
   - AC1: A `native_id` containing a DQL-breaking character (`"`, `\`, newline, carriage return)
     raises the SAME named error (`InvalidNativeIdError` or an equivalent re-exported from `query.py`)
@@ -563,28 +846,79 @@ by re-reading both files this story rather than re-citing it and stopping.
     asserts the named error, mirroring `query.py`'s own existing `InvalidNativeIdError` test.
   - AC3: Existing `test_vendor_health.py` tests continue to pass unchanged for well-formed ids.
 
+### STORY-205 — `composition/seed_dynamo.py` must call the two persistence adapters' key schema, not re-implement it (`ZR-8` finding 1, `MAJOR`)
+
+- **Type:** defect (`ZR-8`, `MAJOR` — a persistence key schema declared a third time, on the boot
+  path of both composition roots, which has already drifted once elsewhere in this repo).
+- **Estimate:** 3 (fibonacci) — touches three seed operations (apps, components, signals) plus a
+  regression test proving the schema now comes from the adapters, not re-typed here.
+- **Offending citations:** `backend/src/composition/seed_dynamo.py:29-30` (app key),
+  `:43` (component key, via `table.update_item`), `:58-59` (signal key, via `table.put_item`) — vs
+  `backend/src/adapters/persistence/dynamo_component_repository.py:39-40,53-54` and
+  `backend/src/adapters/persistence/dynamo_signal_repository.py:41-42`.
+- **Context:** see §4 Finding 1 and `zone-rules.md` `ZR-8`. `DynamoComponentRepository`/
+  `DynamoSignalRepository` do not currently expose an upsert/write method shaped for bulk topology
+  seeding (their `set_status`/`get` are single-item, request-scoped operations) — refinement must
+  decide whether to add a seed-shaped method to each repository (preferred, keeps the schema in
+  ONE place) or export the key-building helper alone for `seed_dynamo.py` to call (a smaller change,
+  but leaves the WRITE call itself duplicated). No repository currently owns `AppConfig`-shaped
+  writes (the `pk=TOPOLOGY, sk=APP#<id>` items) at all — this may need a THIRD adapter method or a
+  small new `TopologyRepository` port, which refinement should size before estimating further.
+- **Acceptance criteria (testable):**
+  - AC1: `seed_topology_dynamo` no longer constructs `{"pk": ..., "sk": ...}` dicts itself for
+    components or signals — it calls a method on `DynamoComponentRepository`/`DynamoSignalRepository`
+    (or an equivalent shared helper those adapters expose) that encodes the SAME schema.
+  - AC2: A regression test changes the key schema INSIDE one of the two repositories (e.g. adds a
+    version-suffix to `sk`) and asserts `seed_topology_dynamo` follows it automatically (writes
+    readable by `list_components`/`get`) WITHOUT `seed_dynamo.py`'s own code changing — the exact
+    drift class `tools/demo_loop_gate/failure_path_reality_gate.py:163-172` already hit once.
+  - AC3: `tools/demo_loop_gate/failure_path_reality_gate.py`'s own hand-rolled-key incident (its
+    docstring) is cited in the story as the motivating precedent, not re-litigated as a new defect.
+  - AC4: Existing `test_dynamo_seed.py` (per `docs/scrum/wiki/persistence-adapters.md`'s History)
+    continues to pass unchanged for the app-seed path, or is updated to match the new call shape if
+    AC1 changes it.
+
 ## 7. `CLEARED` entries, summarized (AC6 — STORY-195 AC4's rule)
 
-Every `CLEARED` entry above is recorded with its reason in place (§3c, §3d, §5) rather than left
-silent. Summarized for the record:
+Every `CLEARED` entry above is recorded with its reason in place (§3c, §3d, §3e, §5) rather than
+left silent. **Counts reconciled this fix round (F3): the original list here said "six" while
+enumerating seven and omitting `tools/demo_loop_gate/harness.py:964` and
+`tools/demo_engine/store.py:22` — corrected below against the
+final, re-derivable ledger balance in §3c (21 total collisions = 6 `MUST-IMPORT-FROM-SRC` + 15
+`INDEPENDENT`).** Summarized for the record:
 
-1. Six numeric ZR-3 sweep hits (`tools/demo_engine/server.py:244`; `parents[2]` in four files;
-   `tools/demo_loop_gate/harness.py:903`'s slice bound; a self-test fixture value) — coincidental int collisions with
+1. NINE coincidental numeral/int `ZR-3` sweep hits from the ORIGINAL tree (`tools/demo_engine/server.py:244`;
+   `parents[2]` in four files, one bullet; `tools/demo_loop_gate/harness.py:903`'s slice bound;
+   `tools/demo_loop_gate/harness.py:964`'s `indent=2` keyword argument (misread as `"=" * 78` in the
+   original pass — reason corrected, verdict unchanged); `tools/demo_loop_gate/
+   failure_path_reality_gate.py:390`'s self-test fixture value; `tools/demo_engine/store.py:22`'s
+   own `timedelta(hours=2)` numeral, previously unadjudicated) — coincidental int collisions with
    `FreshnessConfig.reentry_cycles`/`stale_after_cycles`, unrelated in meaning. `INDEPENDENT`.
-2. `tools/demo_engine/rows.py`'s `STATUS_CODE_HEALTHY`/`STATUS_MESSAGE_HEALTHY` vs
+2. SIX new coincidental numeral hits from committing the sweep scripts under `tools/` this fix round
+   (F5) — `tools/citation_sweep.py:125,127,129` (argv-length comparisons, an exit code) and
+   `tools/zr3_duplicate_sweep.py:160,161,182` (tuple-index literals) — same class as (1),
+   self-referential rather than pre-existing. `INDEPENDENT`.
+3. `tools/demo_engine/rows.py`'s `STATUS_CODE_HEALTHY`/`STATUS_MESSAGE_HEALTHY` vs
    `health_mapping.py`'s inline OR-rule literals. Out of `ZR-3`'s pinned scope (neither shape on the
    `backend/src/` side) AND semantically safer than a true duplicate (an OR-rule, not a sole source
    of truth). `INDEPENDENT`.
-3. `tools/demo_loop_gate/failure_path_reality_gate.py`'s `_DUMMY_LOCAL_CREDENTIAL = "test"` vs
+4. `tools/demo_loop_gate/failure_path_reality_gate.py`'s `_DUMMY_LOCAL_CREDENTIAL = "test"` vs
    `composition/dynamo.py`'s inline `"test"`/`"test"` literals. Out of `ZR-3`'s pinned scope
    (function-body literal on the `backend/src/` side, neither declared shape), and independently
    documented in the citing file's own docstring. `INDEPENDENT`.
-4. `composition/sample_mode.py::SampleModeIngest` forcing `Health.DOWN` — a domain-shaped decision
+5. `composition/sample_mode.py::SampleModeIngest` forcing `Health.DOWN` — a domain-shaped decision
    living in `composition/`, not `core/services/`. `CLEARED`: a first-class, documented, PO-approved
    TEMPORARY design (STORY-048), tracked for removal (STORY-155), inert since the trial expired.
-5. `api/dependencies.py` as a THIRD shared location every `api/v1/*` feature reaches into, beyond
+6. `api/dependencies.py` as a THIRD shared location every `api/v1/*` feature reaches into, beyond
    the brief's literal "core and `api/v1/_shared`" — see §8. `CLEARED`: pure FastAPI DI accessor
    functions typed against `src.core.ports`, no business logic, no cross-feature reach.
+7. `tools/demo_engine/query_grammar.py:26`/`tools/demo_engine/store.py:14`'s private `_assembly.parse_ns_timestamp`
+   import — added this fix round (F2). `CLEARED` for both (direction-legal, reuse-not-reimplement);
+   `store.py`'s own docstring does not state the reuse rationale `query_grammar.py`'s does, noted as
+   a documentation-completeness candidate, not a finding.
+8. `composition/dynamo.py`'s description as "pure wiring" — corrected, not cleared: it routes to
+   `boto3.resource`, not a core type, but is NOT a finding (it is the sole constructor of the
+   DynamoDB resource; every adapter RECEIVES it rather than building its own). See §5 (F1).
 
 ## 8. `api` feature-shape report (AC4)
 
@@ -657,12 +991,28 @@ Extracted 2 citation occurrence(s), 2 distinct (path, line-spec) pair(s) checked
 
 The wrong citation fails, the right one passes — the check discriminates.
 
-**Real run against this report** (final version, after all sections above):
+**Real run against this report, POST fix round** (`tools/citation_sweep.py`, committed this fix
+round — F5):
 
-Command: `python citation_sweep_story196.py docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md`
+Command: `python tools/citation_sweep.py docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md .`
 
 ```
+OK   tools/demo_engine/store.py:22 (file has 83 lines) [line-count only, no anchor]
+OK   tools/demo_loop_gate/harness.py:964 (file has 971 lines) [line-count only, no anchor]
+OK   backend/src/composition/orchestrate.py:95-98 (file has 159 lines) [line-count only, no anchor]
 OK   backend/src/composition/settings.py:21-22 (file has 119 lines) [line-count only, no anchor]
+OK   backend/src/adapters/inbound/dynatrace/health_mapping.py:35 (file has 88 lines) [line-count only, no anchor]
+OK   backend/src/adapters/inbound/dynatrace/query.py:38 (file has 102 lines) [line-count only, no anchor]
+OK   backend/src/adapters/outbound/statuspage/status_mapping.py:5 (file has 27 lines) [line-count only, no anchor]
+OK   backend/src/core/domain/status.py:63 (file has 78 lines) [line-count only, no anchor]
+OK   backend/src/adapters/inbound/dynatrace/adapter.py:23 (file has 43 lines) [line-count only, no anchor]
+OK   backend/src/core/services/ingest_service.py:37 (file has 144 lines) [line-count only, no anchor]
+OK   backend/src/composition/config.py:31 (file has 725 lines) [line-count only, no anchor]
+OK   backend/src/adapters/inbound/dynatrace/dispatch.py:45 (file has 149 lines) [line-count only, no anchor]
+OK   backend/src/adapters/inbound/dynatrace/health_mapping.py:27 (file has 88 lines) [line-count only, no anchor]
+OK   backend/src/api/v1/_shared/errors.py:24 (file has 50 lines) [line-count only, no anchor]
+OK   backend/src/core/services/pipeline.py:190-191 (file has 239 lines) [line-count only, no anchor]
+OK   backend/src/core/domain/verdict.py:43 (file has 75 lines) [anchor matched: 'under_maintenance: bool = False']
 OK   backend/src/composition/settings.py:22 (file has 119 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/harness.py:750 (file has 971 lines) [line-count only, no anchor]
 OK   tools/demo_engine/server.py:244 (file has 254 lines) [line-count only, no anchor]
@@ -671,8 +1021,9 @@ OK   tools/demo_loop_gate/failure_path_reality_gate.py:65 (file has 556 lines) [
 OK   tools/demo_loop_gate/guard_reality_gate.py:23 (file has 132 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/harness.py:49 (file has 971 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/harness.py:903 (file has 971 lines) [line-count only, no anchor]
-OK   tools/demo_loop_gate/harness.py:964 (file has 971 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/failure_path_reality_gate.py:390 (file has 556 lines) [line-count only, no anchor]
+OK   tools/citation_sweep.py:125 (file has 135 lines) [anchor matched: 'if len(sys.argv) < 2:']
+OK   tools/zr3_duplicate_sweep.py:160 (file has 203 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/harness.py:747 (file has 971 lines) [anchor matched: '"uptime-observations"']
 OK   backend/src/composition/settings.py:21 (file has 119 lines) [anchor matched: 'dynamo_observations_table: str = "uptime-observations"']
 OK   tools/demo_loop_gate/env_matrix.py:39 (file has 79 lines) [anchor matched: 'aws_region: str = "us-east-1"']
@@ -684,7 +1035,18 @@ OK   backend/src/composition/settings.py:79-90 (file has 119 lines) [line-count 
 OK   tools/demo_loop_gate/harness.py:73 (file has 971 lines) [line-count only, no anchor]
 OK   tools/demo_loop_gate/env_matrix.py:77 (file has 79 lines) [anchor matched: 'env["STATUSPAGE_API_KEY"] = statuspage_api_token']
 OK   backend/src/composition/settings.py:50 (file has 119 lines) [anchor matched: 'STATUSPAGE_API_KEY_VAR = "STATUSPAGE_API_KEY"']
-OK   tools/demo_engine/store.py:22 (file has 83 lines) [anchor matched: 'VENDOR_HEALTH_WINDOW = timedelta(hours=2)']
+OK   tools/demo_loop_gate/env_matrix.py:64-68 (file has 79 lines) [line-count only, no anchor]
+OK   tools/demo_loop_gate/env_matrix.py:64 (file has 79 lines) [anchor matched: 'env["CONFIG_DIR"] = config_dir']
+OK   backend/src/composition/settings.py:32 (file has 119 lines) [anchor matched: 'os.environ.get("CONFIG_DIR", "config/apps")']
+OK   config/apps/httpcheck.yaml:8 (file has 11 lines) [line-count only, no anchor]
+OK   tools/demo_loop_gate/env_matrix.py:65 (file has 79 lines) [anchor matched: 'env["AWS_REGION"] = aws_region']
+OK   backend/src/composition/settings.py:33 (file has 119 lines) [anchor matched: 'os.environ.get("AWS_REGION", "us-east-1")']
+OK   tools/demo_loop_gate/env_matrix.py:66 (file has 79 lines) [anchor matched: 'env["DYNAMO_ENDPOINT_URL"] = dynamo_endpoint_url']
+OK   backend/src/composition/settings.py:38 (file has 119 lines) [anchor matched: 'os.environ.get("DYNAMO_ENDPOINT_URL") or None']
+OK   tools/demo_loop_gate/env_matrix.py:67 (file has 79 lines) [anchor matched: 'env["DYNAMO_OBSERVATIONS_TABLE"] = observations_table']
+OK   backend/src/composition/settings.py:34-36 (file has 119 lines) [anchor matched: '"DYNAMO_OBSERVATIONS_TABLE", "uptime-observations"']
+OK   tools/demo_loop_gate/env_matrix.py:68 (file has 79 lines) [anchor matched: 'env["DYNAMO_CONTROL_TABLE"] = control_table']
+OK   backend/src/composition/settings.py:37 (file has 119 lines) [anchor matched: 'os.environ.get("DYNAMO_CONTROL_TABLE", "uptime-control")']
 OK   backend/src/composition/vendor_health.py:37 (file has 133 lines) [anchor matched: '_HEALTH_CHECK_WINDOW = "2h"']
 OK   tools/demo_engine/store.py:20-21 (file has 83 lines) [line-count only, no anchor]
 OK   tools/demo_engine/store.py:73-83 (file has 83 lines) [line-count only, no anchor]
@@ -694,6 +1056,14 @@ OK   tools/demo_engine/rows.py:26-32 (file has 93 lines) [line-count only, no an
 OK   tools/demo_loop_gate/failure_path_reality_gate.py:148 (file has 556 lines) [anchor matched: '_DUMMY_LOCAL_CREDENTIAL = "test"']
 OK   backend/src/composition/dynamo.py:23-24 (file has 26 lines) [anchor matched: 'resource_kwargs["aws_access_key_id"] = "test"']
 OK   tools/demo_loop_gate/failure_path_reality_gate.py:138-147 (file has 556 lines) [line-count only, no anchor]
+OK   tools/demo_engine/query_grammar.py:26 (file has 100 lines) [line-count only, no anchor]
+OK   tools/demo_engine/store.py:14 (file has 83 lines) [line-count only, no anchor]
+OK   tools/demo_engine/query_grammar.py:54-66 (file has 100 lines) [anchor matched: 'parse_watermark_bound']
+OK   tools/demo_engine/store.py:1-7 (file has 83 lines) [line-count only, no anchor]
+OK   backend/src/composition/seed_dynamo.py:29-30 (file has 69 lines) [anchor matched: '"pk": "TOPOLOGY",']
+OK   backend/src/adapters/persistence/dynamo_signal_repository.py:41-42 (file has 48 lines) [line-count only, no anchor]
+OK   tools/demo_loop_gate/failure_path_reality_gate.py:163-172 (file has 556 lines) [line-count only, no anchor]
+OK   docs/scrum/wiki/persistence-adapters.md:36 (file has 55 lines) [line-count only, no anchor]
 OK   backend/src/composition/vendor_health.py:40-53 (file has 133 lines) [line-count only, no anchor]
 OK   backend/src/adapters/inbound/dynatrace/query.py:52-102 (file has 102 lines) [line-count only, no anchor]
 OK   backend/src/composition/vendor_health.py:96-133 (file has 133 lines) [line-count only, no anchor]
@@ -710,23 +1080,25 @@ OK   backend/src/composition/settings.py:49-50 (file has 119 lines) [line-count 
 OK   backend/src/composition/sample_mode.py:53-72 (file has 72 lines) [line-count only, no anchor]
 OK   backend/src/composition/vendor_health.py:36 (file has 133 lines) [line-count only, no anchor]
 
-Extracted 67 citation occurrence(s), 47 distinct (path, line-spec) pair(s) checked -- 19 content-anchor-verified, 28 line-count-only (no anchor present), 0 failure(s).
+Extracted 127 citation occurrence(s), 82 distinct (path, line-spec) pair(s) checked -- 32 content-anchor-verified, 50 line-count-only (no anchor present), 0 failure(s).
 ```
 
-**Note on the two extra occurrences (65 -> 67):** this report cites its OWN sweep output inside a
-fenced code block (self-referential by construction — the report describes the sweep that checks the
-report). The first embed (65 occurrences) was captured before the summary sentence below it named two
-more citations by example; both were bare filenames at first (a self-inflicted defect of exactly the
-kind this section exists to catch), fixed to full repo-relative paths, and the count above is the
-sweep's OWN final re-run AFTER that fix — not silently re-adjusted to match a stale number.
+**Self-referential note, carried forward from the original pass and still true:** this report
+cites its OWN sweep output inside a fenced code block; the embedded block above is the sweep's
+final, stable re-run AFTER every citation this fix round introduced was fixed to a full
+repo-relative path and every anchor mismatch was corrected against the real cited line (F3's
+`tools/demo_loop_gate/harness.py:964` misread, and several new anchor mismatches this fix round's additions introduced,
+were all found and fixed by running this exact sweep against the draft, iteratively, before this
+final embed) — never silently re-adjusted to match a stale number.
 
-**0 failures on the real, final run** — every one of this report's 47 distinct `path:line` citations
-resolves, 19 of them content-anchor-verified (not merely line-count-checked). The 28 line-count-only
-entries are mostly multi-line ranges (e.g. `backend/src/composition/settings.py:79-90`,
-`backend/src/composition/vendor_health.py:40-53`) where the
-report's own prose does not carry a literal single-line excerpt to check against — consistent with
-STORY-195's own experience that most citations in a report like this are ranges or symbol references,
-not single-line literal quotes.
+**0 failures on the real, final run** — every one of this report's 82 distinct `path:line` citations
+resolves, 32 of them content-anchor-verified (not merely line-count-checked, nearly double the
+original pass's 19, since this fix round's additions (F1-F5) carry more single-line literal
+excerpts). The 50 line-count-only entries are mostly multi-line ranges (e.g.
+`backend/src/composition/settings.py:79-90`, `backend/src/composition/vendor_health.py:40-53`)
+where the report's own prose does not carry a literal single-line excerpt to check against —
+consistent with STORY-195's own experience that most citations in a report like this are ranges or
+symbol references, not single-line literal quotes.
 
 ## 10. Gate — real output
 
@@ -756,25 +1128,53 @@ this story's own diff touches no file under `backend/src/`).
 
 ## 11. Diff-scope proof (C1) — real output
 
+**F5 correction: the original pass checked only the SPRINT-START base (`d4ad03e`); the coordinator
+asks for the base this story's own commit range names.** Both stated, both empty — `tools/` is
+correctly OUTSIDE C1's restriction (`backend/src/ frontend/ config/` only), so committing the two
+sweep scripts under `tools/` this fix round does not touch it:
+
 ```
 $ git diff --name-only d4ad03e..HEAD -- backend/src frontend config
+$ echo "sprint-start-base exit=$?"
+sprint-start-base exit=0
+$ git diff --name-only d0019f8..HEAD -- backend/src frontend config
+$ echo "commit-range-base exit=$?"
+commit-range-base exit=0
 ```
 
-Empty. Confirmed at HEAD `10ee45a` (the two commits landed on `sprint-66` since STORY-196 was
-dispatched — `d0019f8` and `10ee45a` — touch only `docs/scrum/sprints/2026-07-31-sprint-66/
-audit-core-adapters.md` and `docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md`,
-neither under `backend/src/`, `frontend/`, or `config/`; verified via `git show --stat` on both).
-C1 holds for this story's own commits, which touch only this report and `.scrum/sprint-current.yaml`
-(orchestrator-owned, not written by this story).
+Both empty (a `git diff --name-only` with no output and exit 0 means no files matched, per Git's own
+convention — confirmed, not merely assumed). Every commit this story has made across BOTH its
+original pass and this fix round (`cf6042f`, `5407a40`, `6ece7f8`, and this report's own upcoming
+commit) touches only: this report, `docs/scrum/wiki/zone-rules.md`, `tools/zr3_duplicate_sweep.py`,
+`tools/citation_sweep.py` — none under `backend/src/`, `frontend/`, or `config/`. C1 holds.
 
 ## 12. Wiki
 
-`docs/scrum/wiki/zone-rules.md` is NOT edited by this story (see §4 — the catalogue-gap observation
-is deliberately left unscored/uncatalogued, mirroring `GAP-1`'s own original-pass precedent, and the
-file was under a concurrent quality-review re-read for this story's duration per the brief). No other
-wiki article's `code_refs` overlap this story's diff (this report + the story file only), so no wiki
-blast radius applies. `yt_wiki.py`'s default checks (`sweep facts links refs integrity`) were CLEAN
-before this story started and are unaffected by a docs-only diff outside `docs/scrum/wiki/`.
+**F1/general correction: `docs/scrum/wiki/zone-rules.md` IS edited by this story's fix round** — the
+original pass's "NOT edited... concurrent-edit reason" no longer applies; the coordinator: "the file
+is now free." `ZR-8` landed there (§4), with `code_refs` widened to include the four new citations
+(`backend/src/composition/seed_dynamo.py`, `backend/src/composition/vendor_health.py`,
+`backend/src/adapters/inbound/dynatrace/query.py`,
+`tools/demo_loop_gate/failure_path_reality_gate.py`) and `verified_sha` re-stamped to `ca0cd37`
+(this fix round's starting HEAD, after an actual re-read of every newly-cited file — not a
+mechanical bump). `yt_wiki.py`'s default checks (`sweep facts links refs integrity`), re-run after
+the `ZR-8` edit:
+
+```
+$ python .claude/skills/yourteam/scripts/yt_wiki.py
+== sweep: CLEAN ==
+== facts: CLEAN ==
+== links: CLEAN ==
+== refs: 2 note(s) ==
+  amplifier: `backend/src/composition/run.py` is a code_ref in 5 articles ... narrow it to the article(s) actually ABOUT it
+  amplifier: `pyproject.toml` is a code_ref in 5 articles ... narrow it to the article(s) actually ABOUT it
+== integrity: CLEAN ==
+```
+
+Same two PRE-EXISTING advisory `refs` notes as the sprint-66 baseline (neither names a file this
+story touched — `refs` is advisory only, never blocking, per V5); `sweep`/`facts`/`links`/`integrity`
+all CLEAN. No other wiki article's `code_refs` overlap this story's diff (checked: `zone-rules.md`
+is the only wiki file touched), so no further wiki blast radius applies.
 
 ## History
 
@@ -793,3 +1193,41 @@ before this story started and are unaffected by a docs-only diff outside `docs/s
   third shared location the brief's two-name list did not anticipate. `composition`'s two roots
   re-verified to agree on every `CONFIG_DIR`-adjacent setting, independently of `zone-rules.md`'s
   existing `ZR-5` Fact.
+
+- 2026-07-31 (quality-review fix round): spec PASS on all six AC (independently re-implemented the
+  `ZR-3` sweep from this report's prose and got byte-identical output). Quality `FIX_REQUIRED`, 4
+  MAJOR + 7 minor, from an independent re-audit of all 13 `composition/` modules,
+  `api/dependencies.py`, the six `service.py` files, and the `tools/` boundary crossers. Corrected:
+  (F1) `composition/seed_dynamo.py` — the biggest miss — verdicted `CLEAN` while it hand-builds a
+  DynamoDB key schema two persistence adapters already own, raw `boto3` persistence on the boot path
+  of both composition roots, which had already drifted once
+  (`tools/demo_loop_gate/failure_path_reality_gate.py:163-172`) and which
+  `docs/scrum/wiki/persistence-adapters.md` already treated as adapter-adjacent; the false "pure
+  wiring" generalisation that hid it (also wrong for `dynamo.py`, loose for `backend/src/composition/orchestrate.py:95-98`)
+  corrected in §5; landed as `ZR-8` finding 1 (`MAJOR`) in `zone-rules.md`, widening `GAP-2`
+  (finding 2) into the same rule now that the concurrent-edit deferral has expired; filed
+  `STORY-205`. (F2) the `_assembly.parse_ns_timestamp` private-module import
+  (`query_grammar.py`/`store.py`) adjudicated explicitly (`CLEARED` for both, `store.py` flagged for
+  a missing reuse-rationale docstring), and the one-way direction itself verified with a recorded
+  command (new §3e) rather than left implied by the report's own title. (F3) §3c's ledger corrected
+  to balance (21 collisions = 6 `MUST-IMPORT-FROM-SRC` + 15 `INDEPENDENT`, `tools/demo_engine/store.py:22`'s own
+  numeral hit newly adjudicated) and `tools/demo_loop_gate/harness.py:964`'s misread reason fixed (real content is
+  `indent=2`, not `"=" * 78`) — verdict unchanged, evidence corrected; §7's count reconciled.
+  (F4) five more `env_matrix.py` env-var key-name literals (`CONFIG_DIR`, `AWS_REGION`,
+  `DYNAMO_ENDPOINT_URL`, `DYNAMO_OBSERVATIONS_TABLE`, `DYNAMO_CONTROL_TABLE`) added to §3c —
+  `CONFIG_DIR` graded `MAJOR` (the actual publish guard, more severe than the credential pair it sits
+  five lines above), the other four MINOR; `STORY-202`'s description widened to all seven (the landed
+  backlog entry itself is the orchestrator's to reconcile). (F5) the sweep's real blind-spot class
+  stated honestly (12 of 20 module-level UPPER_CASE constants under `backend/src/` are
+  non-`ast.Constant`-valued, including `ZR-3`'s own compliant reference
+  `PROVISIONAL_STATUS_MAPPING`); the shape-(ii) tree-wide count corrected to 6 (not 5), with the 6th
+  (`backend/src/core/domain/verdict.py:43`) confirmed out of scope by definition rather than miscounted; both
+  sweep scripts (`tools/zr3_duplicate_sweep.py`, `tools/citation_sweep.py`) committed under `tools/`
+  (making the sweep self-referential — six new coincidental hits inside its own source, adjudicated
+  in §3c); §5's "five" keyword arguments to `build_publisher` corrected to six; §11's diff-scope
+  proof stated against both the sprint-start base and this story's own commit-range base;
+  `backend/src/composition/orchestrate.py:95-98` excluded from the "routes and returns unchanged" generalisation. Citation
+  sweep re-run against the fully-edited, final report text (82 distinct pairs, 32
+  content-anchor-verified, 0 failures) — every bare-filename citation this fix round's own new prose
+  introduced was caught by the sweep itself and fixed before this final embed, the same
+  self-inflicted-defect class STORY-195's fix round found in itself.
