@@ -437,7 +437,7 @@ where a zone-wide regression would be caught.
   `record_approval_event`'s signature) stands in for `ProposalState` even though
   `ProposalState` is imported in the SAME file at `backend/src/core/ports/
   proposal_repository.py:6` and used correctly, as the domain type, by the sibling
-  method four lines above it: `backend/src/core/ports/proposal_repository.py:32`
+  method 13 lines above it: `backend/src/core/ports/proposal_repository.py:32`
   (`to_state: ProposalState`, in `resolve`'s signature). The adapter implementing
   this port, `backend/src/adapters/persistence/dynamo_proposal_repository.py:286`
   (`if action == "approved":`), then compares the resulting bare string against a
@@ -468,7 +468,9 @@ where a zone-wide regression would be caught.
   (b) introduce a narrower domain type (e.g. a 2-member `ApprovalAction` enum or
   equivalent) that expresses exactly the legal set. This rule adjudicates that the
   CURRENT bare `str` is a finding; it does not adjudicate which of (a)/(b) is the
-  right fix — that is deliberately left to the fix story STORY-197 files.
+  right fix — that decision belongs to **STORY-200**, the fix story STORY-195 already filed,
+  whose AC3 forces the choice to leave a testable trace. (This previously named STORY-197,
+  which is the GUARD story, not the fix story.)
 - **Coverage verdict.** `GUARDABLE` only partially, and with a real false-positive
   risk: a heuristic AST check (a `core/ports/*` abstract method parameter/return
   annotated as `str`/`int`/`dict`/`bool` where a same-named or clearly-related
@@ -549,7 +551,15 @@ where a zone-wide regression would be caught.
   the port's docstring actually promises (e.g. an accidental cap smaller than what
   "all" requires), and a false fail on a query that is genuinely single-item.
   STORY-197 would need to design that definition carefully rather than assume the
-  AST shape alone settles it; a fix (STORY-199) can straightforwardly add the same
+  AST shape alone settles it. **The implementable form, decided at the STORY-195
+  re-review (2026-07-31) so STORY-197 does not have to rediscover it:** do NOT try to
+  mechanise "provably bounded" — resolving adapter method -> port method -> an English
+  docstring is not mechanically decidable. Instead assert the hard, decidable half (every
+  `.query(`/`.scan(` call site under `adapters/persistence/` loops on `LastEvaluatedKey`)
+  and carry a **named exemption list with a reason per entry**, exactly the shape ZR-1's
+  contract sketch already uses for its enumerated port modules. That is implementable,
+  false-positive-free in this tree, and fails loudly the moment someone adds a sixth
+  unpaginated query — which is the property that matters; a fix (STORY-199) can straightforwardly add the same
   pagination loop the observation repository already uses, which is a much smaller
   design question than the guard.
 
