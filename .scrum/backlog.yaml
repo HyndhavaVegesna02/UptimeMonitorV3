@@ -2131,3 +2131,70 @@ stories:
     priority: 72
     type: chore
     sprint: null
+  - id: STORY-202
+    title: env_matrix.py must import the Statuspage secret env-var NAMES from settings.py, not re-declare them
+    file: null
+    status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MAJOR x2). Story file not yet
+                    # written -- the report section is the source (audit-api-composition-tools.md
+                    # section 6), and it carries three testable AC ready to lift.
+                    # *** THIS ONE IS CREDENTIAL-SAFETY-RELEVANT, which is why a 1-pointer is filed
+                    # separately from the MINOR batch. *** tools/demo_loop_gate/env_matrix.py:75 and
+                    # :77 hardcode the literal env-var KEY NAMES "STATUSPAGE_PAGE_ID" /
+                    # "STATUSPAGE_API_KEY", duplicating STATUSPAGE_PAGE_ID_VAR /
+                    # STATUSPAGE_API_KEY_VAR at backend/src/composition/settings.py:49-50.
+                    # CONSEQUENCE OF A RENAME ON THE settings.py SIDE: the harness's fake-credential
+                    # injection into the credentialed API subprocess silently stops matching, and
+                    # composition/asgi.py's own load_dotenv() fills the gap with the REAL repo-root
+                    # .env Statuspage credentials instead. `decide` publishes recoveries with NO
+                    # human gate and sprint 65 proved that fires, so this is the guard behind the
+                    # guard. NOTE the real publish guard remains config-only (config/demo declares
+                    # no statuspage_component_id); fake credentials are defence in depth -- but this
+                    # defect degrades that defence silently, which is the worst way to lose it.
+                    # AC2 is the good one: pin the test's expectation to the IMPORTED symbols, so a
+                    # future rename moves the test's expectation with it instead of passing a
+                    # now-wrong key.
+    points: 1
+    priority: 73
+    type: defect
+    sprint: null
+  - id: STORY-203
+    title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
+    file: null
+    status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
+                    # Source: audit-api-composition-tools.md section 6, four testable AC.
+                    # NONE is a live defect today -- every value currently agrees. Each is a DRIFT
+                    # risk the next person touching the backend/src/ side has no way to learn about
+                    # from tools/'s own code.
+                    #   harness.py:747,750 "uptime-observations"/"uptime-control" vs settings.py:21-22
+                    #     -- this is the ZR-3 AC3 REFERENCE CASE the sweep had to prove it could find
+                    #   env_matrix.py:39 aws_region default vs settings.py:20
+                    #   failure_path_reality_gate.py:149 _REGION vs the same settings.py:20
+                    #   store.py:22 VENDOR_HEALTH_WINDOW = timedelta(hours=2) vs vendor_health.py:37
+                    #     _HEALTH_CHECK_WINDOW = "2h" -- the CROSS-REPRESENTATION case, which the
+                    #     literal-equality sweep STRUCTURALLY CANNOT SEE (found by direct reading).
+                    #     That is the standing limit of any value-comparison sweep and is worth
+                    #     remembering before trusting an empty ZR-3 result in future.
+    points: 2
+    priority: 74
+    type: chore
+    sprint: null
+  - id: STORY-204
+    title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
+    file: null
+    status: draft   # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
+                    # deliberately NOT landed in zone-rules.md by the audit -- mirroring GAP-1's
+                    # precedent, where promotion happened in a later fix round).
+                    # composition/vendor_health.py:40-53 build_vendor_health_query duplicates the
+                    # DQL-building of adapters/inbound/dynatrace/query.py:41-49,79-82 WITHOUT reusing
+                    # its InvalidNativeIdError validation, so a native_id containing a DQL-breaking
+                    # character (" \ newline CR) silently builds a malformed query on one path and
+                    # raises a named error on the other.
+                    # No live-observed vendor error has ever exercised this path (CLAUDE.md's "two
+                    # things to know"), which is why it is a chore rather than a defect.
+                    # REFINEMENT DECIDES THE SHAPE (a shared validator both builders call, vs
+                    # vendor_health composing around a quote-and-validate helper query.py exports) --
+                    # the audit deliberately did not prescribe the fix.
+    points: 2
+    priority: 75
+    type: chore
+    sprint: null
