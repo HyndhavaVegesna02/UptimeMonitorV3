@@ -304,10 +304,10 @@ Command: `python citation_sweep_story195.py` (scratchpad script,
 run at HEAD `d62276e`. Same regex STORY-194's `citation_sweep_v2.py` used:
 `` `([\w./\\-]+\.(?:py|md)):((?:\d+(?:-\d+)?)(?:,\d+(?:-\d+)?)*)` `` applied to this file's full text,
 each `(path, line-spec)` resolved against the repo root. **First run found 9 failures** — several of
-this report's own citations used a shorthand path (e.g. `dynamo_proposal_repository.py:105` instead
-of the full `backend/src/adapters/persistence/dynamo_proposal_repository.py:105`) that the sweep
-correctly refused to resolve; all were rewritten to full repo-relative paths (the versions now in
-§3/§4 above) and the sweep re-run clean. Final output:
+this report's own citations used a bare filename with no directory prefix instead of the full
+repo-relative path under `backend/src/adapters/persistence/` (etc.) that the sweep correctly refused
+to resolve; all were rewritten to full repo-relative paths (the versions now in §3/§4 above) and the
+sweep re-run clean. Final output:
 
 ```
 OK   backend/src/adapters/persistence/dynamo_proposal_repository.py:286 (file has 316 lines)
