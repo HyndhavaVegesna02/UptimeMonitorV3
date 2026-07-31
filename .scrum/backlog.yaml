@@ -2072,7 +2072,7 @@ stories:
     type: defect
     sprint: null
   - id: STORY-199
-    title: Paginate the four adapters/persistence/ methods that silently truncate against an "all" port contract
+    title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
     file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
     status: draft   # FILED 2026-07-31 from STORY-195's QUALITY REVIEW -- NOT from the audit itself.
                     # The reviewer's independent pass found it inside a file the audit had already

@@ -1,6 +1,6 @@
 ---
 id: STORY-199
-title: Paginate the four adapters/persistence/ methods that silently truncate against an "all" port contract
+title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
 type: defect
 points: 3
 status: draft
@@ -59,7 +59,8 @@ not a violation, and is excluded from this story.
 - [ ] **AC1** — Each of the five call sites (`is_under_maintenance`, `list_windows`,
       `list_components`, `list_signals`, `list_open`) loops on `LastEvaluatedKey` exactly as
       `dynamo_observation_repository.py::in_window` already does, rather than reading a single page.
-- [ ] **AC2** — Each of the four files gains a test-only page-size hook (mirroring `_limit` at
+- [ ] **AC2** — Each of the four files (five methods: dynamo_maintenance_repository.py owns TWO —
+      `is_under_maintenance` and `list_windows`) gains a test-only page-size hook (mirroring `_limit` at
       `dynamo_observation_repository.py:23`), and a test that sets it small, seeds MORE rows than one
       page, and asserts the method still returns/checks the COMPLETE set. This test is demonstrated
       FAILING against the pre-fix code (per the project's mutation/pre-fix-demonstration standing
