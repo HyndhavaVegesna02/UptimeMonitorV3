@@ -170,6 +170,6 @@ def test_zr7_exemptions_are_still_needed() -> None:
                 f"exemption, the fix has landed"
             )
 
-    assert not stale, (
-        "Stale ZR-7 exemption(s) -- update _EXEMPTIONS:\n" + "\n".join(stale)
+    assert not stale, "Stale ZR-7 exemption(s) -- update _EXEMPTIONS:\n" + "\n".join(
+        stale
     )
