@@ -114,11 +114,37 @@ Preconditions: every story Done or Blocked; each Done story's **reality-gate evi
 Runs immediately after review. Inputs: blockers hit, effort-cap trips, estimate vs actual per story, reviewer rejection loops, hotfixes taken, wiki drift stats (articles stale ≥3 sprints), recurring tooling friction.
 
 1. Report honestly: what went well, what dragged, with the specific incidents.
-2. Propose **1–2** concrete amendments — not five. Each must be actionable and checkable. ("AC for list features must include the empty state" — good. "Be more careful" — useless.)
-3. **Route each proposal down the enforcement ladder and name its rung:** DoD command / standing test → script (`yt_gate.py` / `yt_wiki.py` change) → hook → agent definition → `.scrum/checklists/` item → prose in `working-agreements.md`. Prose is the last resort — a lesson that can be a mechanical check becomes one. Checklist items carry the same date + motivating-incident provenance as agreements.
-4. Recurring tooling friction → propose an install here (the second of the two allowed moments).
-5. PO approves/rejects each. Approved → land it at its named rung. Rejected → note it; don't re-propose next sprint unless new evidence.
-6. Write `retro.md`, freeze the sprint folder. Future sessions obey the new rules from their next standup.
+2. **Audit the rules already in force — BEFORE proposing any new one.** Walk `.scrum/checklists/`
+   and `working-agreements.md` and ask of each item: *has this FIRED in the last six sprints* —
+   caught something, blocked something, been cited in a review finding? An item that has not fired
+   in six sprints is proposed for **DELETION**. Deletions are PO-approved and recorded exactly like
+   additions, with the reason. Note that routing a rule down the ladder is **not** deletion: it
+   stays alive and still costs context at every dispatch. Only removal removes cost.
+3. **The default output is ZERO amendments.** Propose at most 1–2, and only where the audit shows
+   no existing rule covered the incident. If one did and was not followed, that is evidence the rule
+   is not being READ — shorten or relocate the existing rule; never add a second rule saying the
+   same thing more emphatically. Each proposal must be actionable and checkable. ("AC for list
+   features must include the empty state" — good. "Be more careful" — useless.)
+   *Why the default is zero:* a ceremony that asks for gaps will produce them whether or not they
+   exist, and a governance surface that can only grow eventually exceeds what any model reliably
+   follows — at which point the newest rules, sitting at the bottom of the longest files, are the
+   first to be skipped. Repeated amendments on one theme mean the earlier ones are not being read,
+   not that a further one is needed.
+4. **Route each surviving proposal down the enforcement ladder and name its rung:** DoD command /
+   standing test → script (`yt_gate.py` / `yt_wiki.py` change) → hook → agent definition →
+   `.scrum/checklists/` item → prose in `working-agreements.md`. Prose is the last resort — a lesson
+   that can be a mechanical check becomes one. Checklist items carry the same date +
+   motivating-incident provenance as agreements, but keep the NARRATIVE in `retro.md` and cite it;
+   the checklist carries the rule, not the story behind it.
+   **The mid-sprint tooling freeze does not apply to the ladder.** If the right rung is a gate
+   command, a script, a hook or an agent definition and the mechanism already exists, land it there
+   immediately rather than settling for prose because the calendar says so. (New dependencies with
+   an install step remain frozen; substantial new code still becomes a story.) A rule that forces
+   lessons to the weakest available rung is worse than no rule.
+5. Recurring tooling friction → propose an install here (the second of the two allowed moments).
+6. PO approves/rejects each addition **and each proposed deletion**. Approved → land it at its named
+   rung. Rejected → note it; don't re-propose next sprint unless new evidence.
+7. Write `retro.md`, freeze the sprint folder. Future sessions obey the new rules from their next standup.
 
 ## 7. Sprint Abort
 

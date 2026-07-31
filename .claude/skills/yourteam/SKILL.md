@@ -5,7 +5,15 @@ description: A complete Scrum-based development methodology where the human is P
 
 # YourTeam
 
-<!-- yourteam_version: 2.1.3 — sprint-47 retro amendments (PO-approved 2026-07-15): external-delivery
+<!-- yourteam_version: 2.2.0 — the ratchet brake (PO-directed 2026-08-01). The retro now AUDITS
+     the rules in force before proposing new ones; its default output is ZERO amendments; an item
+     that hasn't fired in six sprints is proposed for DELETION (routing down the ladder is not
+     deletion — it keeps the token cost). And the mid-sprint tooling freeze no longer blocks the
+     enforcement ladder: an already-decided lesson lands at an already-present mechanism
+     immediately, instead of settling for prose because the calendar says so. Rationale: three
+     amendments in this repo's history named the script rung, called it correct, and took prose
+     because of that freeze — and the prose then failed to hold, which is how a six-amendment
+     family stating one idea came to exist. 2.1.3 — sprint-47 retro amendments (PO-approved 2026-07-15): external-delivery
      contract in execution-modes.md §2 (commit-per-story handoff + never-trust-self-reported-gate);
      generic env-precondition preflight in yt_gate.py (project-supplied `(requires-env: …)` DoD
      annotation, no hardcoded var names). 2.1.2: token-economy amendments (PO-approved 2026-07-15): conditional
@@ -132,7 +140,7 @@ Implementers follow TDD with a commit after every green step — that commit cad
 - AC change on an in-sprint story → log it; finish against the *original* AC; PO decides at review (accept + follow-up story, or reject back to backlog with new AC). Story already Done → automatically a follow-up story.
 - Sprint goal now pointless → PO explicitly aborts (see ceremonies reference: keep done stories via cherry-pick, discard all, or keep branch unmerged).
 - Production broken → hotfix protocol: pause story, fix on `hotfix/` branch from main, full DoD applies, merge, rebase sprint branch, resume. Log it for the retro.
-- Tooling is frozen mid-sprint like scope — new MCPs/tools wait for planning.
+- Tooling is frozen mid-sprint like scope — new MCPs/tools wait for planning. **Exception: the enforcement ladder.** Landing an already-decided lesson at an already-present mechanism (gate command, script, hook, agent definition) is never blocked by the freeze; only new dependencies with an install step are. Substantial new code still becomes a story.
 
 **Sprint end condition:** every committed story is Done or Blocked. Then run the wiki compile pass (blocking — see Wiki Protocol), then call the review.
 
@@ -142,7 +150,7 @@ Demo with evidence: run the app where possible, show test output, walk each stor
 
 ### Retro
 
-Inspect the *process*, not the product: blockers, rework loops, estimate misses, reviewer rejections, hotfixes, wiki drift stats. Propose 1–2 concrete amendments — and **route each down the enforcement ladder**: every proposal names its rung (new gate command/test > script > hook > agent definition > checklist item > prose agreement). Prose is the last resort; a lesson that can be a mechanical check becomes one. PO approves → land it at its rung (checklist items get the date + motivating incident, like agreements). Surface recurring tooling friction here. The review judges output; the retro digs into causes.
+Inspect the *process*, not the product: blockers, rework loops, estimate misses, reviewer rejections, hotfixes, wiki drift stats. **Audit the rules already in force before proposing any new one** — an item that hasn't fired in six sprints is proposed for DELETION, and routing down the ladder is not deletion. **The default output is ZERO amendments**; propose at most 1–2, and only where no existing rule covered the incident. A repeat incident under an existing rule means that rule isn't being read — shorten or relocate it rather than adding a second one. **Route each survivor down the enforcement ladder**: every proposal names its rung (new gate command/test > script > hook > agent definition > checklist item > prose agreement). Prose is the last resort; a lesson that can be a mechanical check becomes one, and **the mid-sprint tooling freeze does not block the ladder** — land it at the mechanism that already exists rather than settling for prose. PO approves additions *and deletions* → land at the named rung (checklist items cite the date + the retro holding the incident; the narrative stays in `retro.md`). Surface recurring tooling friction here. The review judges output; the retro digs into causes.
 
 ## Wiki Protocol (knowledge that cannot rot)
 

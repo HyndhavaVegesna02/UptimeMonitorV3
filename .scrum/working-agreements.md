@@ -19,6 +19,8 @@
   enter a sprint. (Default)
 - 2026-01-01 — Tooling (MCP servers, CLIs) may only change at sprint planning or
   retro; mid-sprint the environment is frozen like scope. (Default)
+  **AMENDED 2026-08-01 — the freeze does NOT cover the enforcement ladder.** See
+  A14 below: landing a lesson at its correct mechanical rung is exempt.
 - 2026-01-01 — One active session: honor .scrum/session.lock; a second session
   runs read-only. (Default)
 
@@ -369,3 +371,74 @@ sleep with polling - and raised it against the spike, which is how it was correc
 removes the very I/O the real system spends its time on can validate control flow while
 mis-measuring cost by an order of magnitude. The two claims travelled in one sentence, which is what
 let the bad half be trusted.
+
+## A14 - the enforcement ladder is EXEMPT from the mid-sprint tooling freeze (2026-08-01, PO-directed)
+
+**Rung: this agreement + `references/ceremonies.md` §6.** The 2026-01-01 default freezes tooling
+mid-sprint. That default now carries one exception: **when a lesson's correct rung is a gate
+command, a script, a hook or an agent definition, you may land it there immediately — mid-sprint,
+without waiting for planning or retro.** The freeze exists to stop scope creep and shiny new
+dependencies. It was never meant to stop the process repairing its own safety net, and adding an
+assertion to an existing script is not a tooling change in the sense the default means.
+
+Unchanged by this: new MCP servers, new CLIs, new runtime dependencies and anything with an install
+step stay frozen mid-sprint. The exemption covers landing an already-decided lesson at an already-
+present mechanism. If landing it needs a new dependency, it is not exempt.
+
+**Motivating incident.** THREE amendments explicitly named the script rung, said it was the right
+one, and took prose instead — each citing this freeze plus the 2026-07-15 ban on ad-hoc skill-script
+edits outside a story:
+- A1-refinement (mid-sprint-63): *"A SCRIPT rung is available and better ... deliberately NOT taken
+  mid-sprint: tooling is frozen by the 2026-01-01 agreement."*
+- A3 (sprint-63 retro): the import-provenance helper, listed under future work as *"the mechanical
+  rung A1/A3 keep declining to take"*.
+- The 2026-07-29 Window Check: *"The script rung WAS considered and is where this belongs
+  long-term ... It is not taken now for two reasons: tooling is frozen mid-sprint."*
+
+In every case the rule landed at the WEAKEST available rung specifically because the strongest one
+was procedurally blocked, and in every case the prose subsequently failed to hold — which is how the
+six-amendment evidence family (A1 through A9) came to exist at all. A rule that forces lessons
+downward is worse than no rule.
+
+**Scope guard.** This is not licence to write production code outside a story: that prohibition is
+separate and stands. Where the mechanical rung is substantial new code, file it as a story and say
+so (STORY-212 is exactly this case). The exemption is for landing the rung, not for skipping the
+gate.
+
+## A15 - rules EXPIRE; the retro audits what exists before adding to it (2026-08-01, PO-directed)
+
+**Rung: `references/ceremonies.md` §6 (retro protocol) + this agreement.** The retro's default
+output is now **ZERO amendments**, and every retro begins by auditing the rules already in force
+rather than by looking for new ones.
+
+1. **Audit first.** Walk `.scrum/checklists/` and this file. For each item ask: *has this FIRED in
+   the last six sprints* — caught something, blocked something, been cited in a review finding? An
+   item that has not fired in six sprints is proposed for **DELETION**, not relocation. Deletions
+   are PO-approved like additions and recorded here with the reason.
+2. **An addition must show no existing rule covered the incident.** If one did and was not followed,
+   that is evidence the rule is not being READ, and the correct response is to shorten or relocate
+   the existing rule — never to add a second one saying the same thing more emphatically.
+3. **Routing down the ladder is not deletion.** Moving a rule from prose to a checklist keeps it
+   alive and still costs tokens at dispatch. Only removal removes cost.
+
+**Motivating evidence.** Governance surface (`working-agreements.md` + the implementer and quality
+checklists), measured 2026-08-01:
+
+| Date | Bytes | |
+| --- | --- | --- |
+| 2026-06-23 | 2,593 | inception |
+| 2026-07-12 | 58,061 | pre-prune peak |
+| 2026-07-12 | 13,195 | v2 migration prune (-77%) |
+| 2026-07-31 | 53,776 | 4.07x regrowth in 19 days |
+
+Two PO-directed amnesties in the record and **not one rule ever retired on its own merits**. The
+2026-07-12 prune did not delete: it routed ~40 entries into `.scrum/checklists/`, which then grew
+3.2x. Meanwhile instruction density is not free — the newest amendments sit at the BOTTOM of the
+longest files, which is where instruction-following degrades first, so the rules bought with the
+most expensive incidents are the ones most likely to be skipped. That is the documented failure mode
+for over-long instruction files, and A3-through-A9 existing at all is this repo's own evidence of it:
+each was added because its predecessor was not followed.
+
+**Deliberately NOT claimed:** that any specific rule is wrong. The claim is narrower — that a system
+which can only ever add is not learning, and that "has this fired?" is a question the process has
+never once asked.
