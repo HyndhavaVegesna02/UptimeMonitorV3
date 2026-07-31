@@ -146,15 +146,17 @@ An audit has no running surface, so the usual "exercise the live path" gate is r
 
 `docs/scrum/stories/STORY-195-audit-core-and-adapters.md`
 
-- [ ] Record the enumeration command and its output; build the file list (58 files per V1).
-- [ ] Read every module; verdict `CLEAN` or finding ids, one line per file.
-- [ ] For each finding: `ZR-n`, resolving `file:line`, `MAJOR`/`MINOR`, and why the contracts pass
-      it — if the answer is "they don't", stop and report a broken build.
-- [ ] Record `CLEARED` entries with reasons, V3's vendor-prose case at minimum.
-- [ ] Name any contradiction with an existing wiki article, both addresses, and file the article for
-      update (AC5).
-- [ ] File every `MAJOR` as its own `draft` story; batch `MINOR`s into one.
-- [ ] Reality gate items 1–3; scoped DoD gate; commit.
+- [x] Record the enumeration command and its output; build the file list (58 files per V1).
+- [x] Read every module; verdict `CLEAN` or finding ids, one line per file.
+- [x] For each finding: `ZR-n`, resolving `file:line`, `MAJOR`/`MINOR`, and why the contracts pass
+      it — if the answer is "they don't", stop and report a broken build. (Zero `ZR-n` findings;
+      one catalogue gap `GAP-1` reported separately, not scored MAJOR/MINOR.)
+- [x] Record `CLEARED` entries with reasons, V3's vendor-prose case at minimum.
+- [x] Name any contradiction with an existing wiki article, both addresses, and file the article for
+      update (AC5). (None found — checked `persistence-adapters.md` directly.)
+- [x] File every `MAJOR` as its own `draft` story; batch `MINOR`s into one. (No MAJOR/MINOR `ZR-n`
+      findings to file; `GAP-1`'s fix filed as STORY-198 anyway, independent of catalogue status.)
+- [x] Reality gate items 1–3; scoped DoD gate; commit.
 
 ### 3 · STORY-196 — Audit `api` + `composition` + the `tools/`→`src/` boundary (2 pts)
 
