@@ -152,7 +152,7 @@ stories:
   - id: STORY-195
     title: Audit the core and adapters zones against the rule catalogue
     file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
-    status: todo
+    status: in_progress   # dispatched 2026-07-31 (session resumed after the usage-limit pause)
     points: 3
     ceremony: implementer + both reviewers
     result: null
