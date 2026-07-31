@@ -28,7 +28,13 @@
 # `alembic upgrade head` and `python scripts/check_fk_direction.py` are retired.
 
 ## Commands (backend)
-- [ ] Tests pass: `pytest` -> exit 0 (requires-env: REQUIRE_DYNAMO)
+- [ ] Tests pass: `python -m pytest` -> exit 0 (requires-env: REQUIRE_DYNAMO)
+      (2026-07-31, PO-approved: invocation changed from the bare `pytest` exe shim, which the
+       same Windows Device Guard / Application Control policy began blocking MID-SPRINT-66 --
+       green at 11:16 UTC, blocked at 16:33 UTC the same day, with no code change in between.
+       Identical to the 2026-07-12 change made for `lint-imports` below: SAME check, SAME
+       tests, module path instead of the blocked shim. Verified: 689 passed, 0 skipped.
+       Filed as STORY-210.)
       (2026-07-30, sprint-64 retro amendment A6: a green `pytest` does NOT by itself
        mean the persistence floor ran. With Docker down and DYNAMO_ENDPOINT_URL unset,
        `backend/tests/conftest.py`'s `dynamo_local` fixture skips every DynamoDB-gated
@@ -51,7 +57,12 @@
        broken.` is the count of record, and `pyproject.toml` declares all eight.)
 - [ ] Code linting check: `ruff check .` -> exit 0
 - [ ] Code formatting check: `ruff format --check .` -> exit 0
-- [ ] CloudFormation template lint: `cfn-lint infra/stack.yaml` -> exit 0
+- [ ] CloudFormation template lint: `python -c "from cfnlint.runner import main; main()" infra/stack.yaml` -> exit 0
+      (2026-07-31, PO-approved: same Device Guard cause as `python -m pytest` above, but cfn-lint
+       needed a DIFFERENT answer -- it has no `__main__`, so `python -m cfnlint` does NOT work;
+       this is its real console-script entry point, `cfn-lint -> cfnlint.runner:main`.
+       A blocked `regex` DLL was a second, separate symptom, cleared by reinstalling regex
+       (2026.7.10 -> 2026.7.19). Verified exit 0 on the unchanged infra/stack.yaml.)
       (second half of the 2026-07-14 DoD amendment, landed STORY-088)
 
 ## Commands (frontend — live from STORY-015a, Sprint 25, run from `frontend/`)
