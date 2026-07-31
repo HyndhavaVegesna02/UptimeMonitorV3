@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py]
-verified_sha: 70a2b4e
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py]
+verified_sha: ca0cd37
 verified_sprint: sprint-66
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -563,9 +563,90 @@ where a zone-wide regression would be caught.
   pagination loop the observation repository already uses, which is a much smaller
   design question than the guard.
 
+#### ZR-8 — storage and vendor mechanics (a key schema, an item shape, a direct table/SDK call, or query construction) live in exactly ONE adapter; another zone calls that adapter rather than re-implementing them
+
+- **Statement.** A DynamoDB key schema, an item shape, a direct table/SDK call, or
+  vendor query-construction logic each belong to exactly ONE adapter
+  (`adapters/persistence/*` for storage mechanics, `adapters/inbound/*`/
+  `adapters/outbound/*` for vendor-protocol mechanics). A different zone that needs
+  that mechanic must CALL the adapter that owns it — never re-derive the schema, the
+  item shape, or the query-building logic in its own code. This bites even where
+  `lint-imports` legally permits the reach (`composition` importing/reaching
+  `adapters`, or calling `boto3` directly, is exactly the wiring privilege the eight
+  contracts grant it) — the contracts check import EDGES, never whether a reachable
+  capability was reused rather than re-derived.
+- **Source.** The PO's "adapters translate, they don't decide" principle, generalized
+  from `ZR-1` (an inbound adapter is the SOLE holder of its own translation) to the
+  sibling risk this rule names explicitly: a NON-adapter zone re-deriving what an
+  adapter already encodes. Motivated by two independently-found instances below, from
+  two different failure classes (a persistence key schema; a vendor query builder's
+  validation) — not a single anecdote generalized too far.
+- **Compliant counter-pattern already in this codebase.**
+  `tools/demo_engine/assumed_failure_codes.py:31` imports
+  `PROVISIONAL_STATUS_MAPPING` from `backend/src/adapters/inbound/dynatrace/health_mapping.py:35`
+  rather than re-declaring it (`ZR-3`'s own compliant reference, one zone-pair over —
+  the same reuse-not-rederive discipline, applied here to `composition`/`adapters`
+  instead of `tools`/`backend/src`). `backend/src/composition/publish_helper.py:216-222`
+  (`build_publisher`) CALLS `StatuspagePublisher`/`make_statuspage_executor()` — the
+  adapter that owns the Statuspage HTTP mechanics — rather than building the HTTP
+  request itself.
+- **Finding 1 — `composition/seed_dynamo.py` duplicates a DynamoDB key schema TWO
+  persistence adapters already own, and it has already drifted once.**
+  `backend/src/composition/seed_dynamo.py:29-30`
+  (`{"pk": "TOPOLOGY", "sk": f"APP#{app.id}"}`), `:43`
+  (`{"pk": "TOPOLOGY", "sk": f"COMPONENT#{comp.id}"}`), and `:58-59`
+  (`{"pk": "TOPOLOGY", "sk": f"SIGNAL#{sig.signal_key}"}`) hand-build the exact key
+  schema `DynamoComponentRepository` (`backend/src/adapters/persistence/dynamo_component_repository.py:39-40,53-54`)
+  and `DynamoSignalRepository` (`backend/src/adapters/persistence/dynamo_signal_repository.py:41-42`)
+  already own and implement — a THIRD declaration of the same schema, sitting on the
+  boot path of BOTH composition roots (`composition/run.py::main`'s topology seed call,
+  `composition/app.py::create_app`'s lifespan seed call). This is not a theoretical
+  risk: `tools/demo_loop_gate/failure_path_reality_gate.py:163-172`'s own docstring
+  records the drift already happening once, in a DIFFERENT hand-rolled key site — a
+  first version used `pk=COMPONENT#<id>, sk=META` where the repository's real schema
+  is `pk=TOPOLOGY, sk=COMPONENT#<id>`, silently writing a phantom item nothing reads
+  and costing two full debugging runs before the mismatch was found.
+  `docs/scrum/wiki/persistence-adapters.md:36` already documents `seed_topology_dynamo`
+  alongside the two adapters it duplicates, in its own Facts — the wiki already treats
+  this as adapter-adjacent; the zone-rule catalogue had not caught up until this
+  finding. This fell through the crack between STORY-195 (`adapters/`) and STORY-196
+  (`composition/`) auditing disjoint file sets — precisely the failure a two-pass audit
+  exists to prevent.
+- **Finding 2 — `composition/vendor_health.py::build_vendor_health_query` duplicates a
+  DQL query builder without its validation (`GAP-2`, first reported STORY-196).**
+  `backend/src/composition/vendor_health.py:40-53` re-implements a fragment of
+  `backend/src/adapters/inbound/dynatrace/query.py:52-102`'s (`build_dql_query`)
+  query-building, interpolating the SAME trusted `native_id` config value into a DQL
+  string literal, WITHOUT reusing `query.py:41-49,79-82`'s `InvalidNativeIdError`
+  breaking-character validation. A `native_id` containing a DQL-breaking character
+  would raise loudly, by name, the moment `build_dql_query` runs (the ingest path) —
+  but `check_vendor_id_health` (`backend/src/composition/vendor_health.py:96-133`) runs
+  FIRST, at loop startup, and would instead silently build a malformed query. Full
+  mechanism: `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §4.
+- **Why the eight `lint-imports` contracts pass both.** `composition` legally
+  importing/reaching `adapters` — or, in `seed_dynamo.py`'s case, calling `boto3`
+  directly, which `adapters-independence` never restricts for `composition` — is
+  EXACTLY the wiring permission the eight contracts grant the composition zone by
+  design. The contracts check import edges, not whether a REACHABLE capability was
+  actually reused rather than re-derived; a module that hand-builds the same key/query
+  a sibling module already encodes imports nothing NEW to trip a contract.
+- **Coverage verdict.** `GUARDABLE` only as a reviewed pattern, not a clean
+  import-linter contract or a general AST rule: "does this composition-zone code
+  re-implement a mechanic an adapter already owns" is a semantic judgement (the same
+  class of limitation `ZR-6` states for its own heuristic) — a static check cannot
+  distinguish a legitimate NEW capability from a re-derived duplicate of an EXISTING
+  one without a maintained, human-curated map of "which adapter owns which mechanic."
+  Best available guard, narrow and per-instance rather than general: a
+  `backend/tests/test_zone_layout.py`-style test asserting `composition/seed_dynamo.py`
+  calls `DynamoComponentRepository`/`DynamoSignalRepository` (or an equivalent shared
+  helper those adapters expose) rather than constructing `{"pk": ..., "sk": ...}`
+  dicts itself, and a parallel assertion that `composition/vendor_health.py` calls
+  `adapters/inbound/dynatrace/query.py`'s validation. STORY-205 (the fix story) should
+  decide the exact shape.
+
 ## Inference (synthesis, not verified)
 
-The eight contracts plus `ZR-1..ZR-7` together are the audit's yardstick: every
+The eight contracts plus `ZR-1..ZR-8` together are the audit's yardstick: every
 `lint-imports`-legal-but-intent-violating shape the PO named now has either a
 contract citation (already mechanical) or a rule id, a verdict, and — where
 `GUARDABLE` — a concrete next rung. A finding with no rule id in STORY-195/196 is
@@ -648,3 +729,26 @@ History**, per the fix round's re-verification requirement.
   citation for the `settings.py` field defaults (no directory prefix) widened to the
   full repo-relative `backend/src/composition/settings.py:21-22`, matching this
   article's own full-path convention everywhere else.
+
+- sprint-66 (STORY-196 quality-review fix round, 2026-07-31): added `ZR-8`, from an
+  independent audit of STORY-196's own footprint (all 13 `composition/` modules,
+  `api/dependencies.py`, six `service.py` files, and the `tools/` boundary crossers)
+  that found the audit's biggest miss: `composition/seed_dynamo.py` hand-builds the
+  SAME DynamoDB key schema `DynamoComponentRepository`/`DynamoSignalRepository`
+  already own — raw `boto3` persistence from the composition zone, a third
+  declaration of one schema on the boot path of both composition roots, which had
+  already drifted once (`tools/demo_loop_gate/failure_path_reality_gate.py:163-172`'s
+  own docstring records it) and which `docs/scrum/wiki/persistence-adapters.md`
+  already treats as adapter-adjacent in its own Facts. STORY-196's original report
+  had verdicted `seed_dynamo.py` `CLEAN` under a false generalisation ("pure wiring —
+  every branch routes to a named core service/query/domain type"), which is untrue of
+  `seed_dynamo.py` (routes to `boto3`'s Table API) and of `composition/dynamo.py`
+  (routes to `boto3.resource`) alike — the SAME bulk-`CLEAN`-overstatement class
+  STORY-196's own report criticises STORY-195 for. `ZR-8` generalizes `GAP-2`
+  (`composition/vendor_health.py` duplicating a DQL query builder without its
+  validation, STORY-196's original finding) and this new `seed_dynamo.py` finding
+  under one statement: storage/vendor mechanics live in exactly one adapter: another
+  zone calls it rather than re-implementing it — legal by every one of the eight
+  `lint-imports` contracts, since they check import edges, never reuse-vs-rederive.
+  Filed as `STORY-205`. Full detail and re-derivation commands:
+  `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md`.
