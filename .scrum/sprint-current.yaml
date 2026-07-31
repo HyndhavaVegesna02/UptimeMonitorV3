@@ -284,10 +284,66 @@ stories:
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: in_progress   # dispatched 2026-07-31 -- the last story; the sprint's whole point
+    status: blocked
     points: 3
-    ceremony: implementer + both reviewers
-    result: null
+    ceremony: implementer (stopped by PO mid-story) + orchestrator completion; NO reviewer pass yet
+    result: >-
+      BLOCKED AT AC7 BY AN ENVIRONMENT REGRESSION, NOT BY ITS OWN WORK. Every other AC is met and
+      verified; the story is NOT marked done because the mechanical floor says a nonzero exit is a
+      nonzero exit, no exceptions. The PO decides at review.
+      WHAT IS DONE AND PROVEN. Two guards landed, and unusually for this repo BOTH were shown RED by
+      the ORCHESTRATOR re-deriving the proofs, not by trusting a self-report -- the implementing
+      agent was stopped by the PO after commits 19fee13/e2fffae/0ba21d0 and could not be resumed.
+        ZR-7 -> backend/tests/test_zr7_pagination_guard.py (2 tests). RED-proven TWICE: removing the
+          is_under_maintenance exemption trips the unexempted-violation check, and exempting a call
+          site that already loops trips the STALE-exemption check (the branch that stops a landed fix
+          leaving a rotting entry behind).
+        ZR-3 -> backend/tests/test_zr3_duplicate_declarations.py (2 tests), promoting the committed
+          tools/zr3_duplicate_sweep.py. RED-proven by injecting a fresh duplicate of
+          Settings.dynamo_observations_table's default into a non-excluded tools/ module.
+      A NEGATIVE RESULT WORTH KEEPING: the same injection into tools/citation_sweep.py did NOT trip
+      the guard. That is CORRECT -- _SELF_EXCLUDE_NAMES skips the two sweep scripts, whose own
+      literals are inherently noisy -- but a green result there looks exactly like a blind spot on
+      first inspection, so it is written down. The exclusion matches on BARE FILENAME, which is
+      broader than intended; a relative-path match would be tighter (noted, not fixed).
+      THE LIVE-VIOLATION PROBLEM, resolved deliberately: three of the strongest guard candidates had
+      live violations, and a zero-tolerance guard would have turned the DoD gate RED and blocked
+      every future story until the fix stories land -- which C4 forbids as a side effect of a guard.
+      Both guards therefore carry enumerated exemption/adjudication lists where EVERY unfixed entry
+      names its fix story (STORY-199 / STORY-202 / STORY-203). Green today, loud on anything new,
+      and shrinking as fixes land. The per-entry fix-story citation is the whole difference between
+      an exemption list and a permanent suppression list.
+      AC6 CLOSED THE LOOP: zone-rules.md now carries an authoritative Adjudication table -- ZR-3 and
+      ZR-7 ENFORCED-BY their tests, the other six GUARDABLE-DEFERRED behind named stories
+      (STORY-206..209 filed for the four ready guards; ZR-6 waits on STORY-200's design decision,
+      ZR-8 on its two fix stories), and ZR-5's operational half recorded UNGUARDABLE with its reason
+      (two OS processes, each reading its own env -- no single-process test sees across that).
+      verified_sha re-stamped ONLY after a real re-read, during which the committed citation_sweep
+      reported 8 failures that ALL PROVED FALSE on direct inspection (two cite a memory file outside
+      the repo; six fail the content-anchor heuristic while the cited lines are exactly right). That
+      limitation is now recorded IN the article so a later story does not "fix" correct citations.
+      AC4 was a verification rather than an edit: both guards are pytest tests, so the contract count
+      stays at EIGHT and every statement of it remains accurate (grep-verified). STORY-206 takes it
+      to nine and must update them all.
+      *** WHY IT IS BLOCKED (AC7). The full 8/8 gate exits 1: pytest -> FAIL(4551) and cfn-lint ->
+      FAIL(4551), both "blocked by your organization's Device Guard policy". PROVEN environmental to
+      the standard the 2026-07-06 agreement demands, not merely asserted:
+        - pytest passes in isolation via the module form -- 689 passed, 0 SKIPPED (685 + the 4 new
+          guard tests), so the code is green and only the .exe shim is blocked;
+        - cfn-lint is blocked one level deeper, even via python -m cfnlint ("DLL load failed while
+          importing _regex: An Application Control policy has blocked this file"), so the module
+          form is NOT a workaround for it the way it is for pytest;
+        - infra/ is UNTOUCHED for the whole sprint, so cfn-lint's input is byte-identical to runs
+          that passed green earlier the same day;
+        - reproduced twice back to back; the other six commands pass, frontend included.
+      This REGRESSED MID-SPRINT: the baseline at d4ad03e was a full 8/8 green with the same runner.
+      Filed as STORY-210, which BLOCKS EVERY FUTURE STORY until fixed. There is direct precedent for
+      the fix in this repo -- the same policy blocked lint-imports.exe and the DoD command was
+      changed to the module form -- but editing .scrum/definition-of-done.md is a PO decision and I
+      have not touched it. ***
+      ALSO OUTSTANDING: no spec or quality review has seen this story. Both reviewers found real
+      defects in all three previous stories, so that gap is material and should be closed before the
+      guards are trusted further.
     order: 4
     plan_note: >-
       THE SPRINT'S POINT: a report is a document, a contract is a build failure. Scope is
@@ -329,6 +385,8 @@ dod_evidence:
 # cannot reach the three frontend commands) at 3b0ff0f, AFTER the orchestrator correction.
 # STORY-195's 5-command SCOPED run at 2c29514 follows STORY-194's.
 # STORY-196's 5-command SCOPED run at b5ef06e follows STORY-195's.
+# STORY-197's FULL 8/8 run at 3eceb32 follows -- it is RED on pytest and cfn-lint, both
+# proven blocked by Device Guard (STORY-210), and it is recorded HONESTLY as RED, not massaged.
   - command: "pytest"
     exit_code: 0
     output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
@@ -404,3 +462,43 @@ dod_evidence:
     output_tail: ""
     commit: b5ef06e
     at: "2026-07-31T11:16:43+00:00"
+  - command: "pytest"
+    exit_code: 4551
+    output_tail: "'C:\\Hyn\\uptime_monitor_v3\\.venv\\Scripts\\pytest.exe' was blocked by your organization's Device Guard policy. | Contact your support person for more info."
+    commit: 3eceb32
+    at: "2026-07-31T16:33:36+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: 3eceb32
+    at: "2026-07-31T16:33:36+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: 3eceb32
+    at: "2026-07-31T16:33:37+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "246 files already formatted"
+    commit: 3eceb32
+    at: "2026-07-31T16:33:37+00:00"
+  - command: "cfn-lint infra/stack.yaml"
+    exit_code: 4551
+    output_tail: "'C:\\Hyn\\uptime_monitor_v3\\.venv\\Scripts\\cfn-lint.exe' was blocked by your organization's Device Guard policy. | Contact your support person for more info."
+    commit: 3eceb32
+    at: "2026-07-31T16:33:37+00:00"
+  - command: "npm test"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:03:40 | Duration  101.97s (transform 14.89s, setup 96.04s, import 52.25s, tests 104.44s, environment 349.14s)"
+    commit: 3eceb32
+    at: "2026-07-31T16:33:37+00:00"
+  - command: "npm run build"
+    exit_code: 0
+    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 811ms"
+    commit: 3eceb32
+    at: "2026-07-31T16:35:22+00:00"
+  - command: "npm run lint"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 lint | > eslint ."
+    commit: 3eceb32
+    at: "2026-07-31T16:35:32+00:00"
