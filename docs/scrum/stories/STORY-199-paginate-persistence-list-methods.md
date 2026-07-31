@@ -67,7 +67,7 @@ not a violation, and is excluded from this story.
 - [ ] **AC3** — `is_under_maintenance` specifically gets a test proving a component whose ONLY
       matching window is on a page past the hook's forced small page size still returns `True` — the
       exact silent-`False` shape this finding describes, not just "list has more than N items."
-- [ ] **AC4** — Existing contract tests for all four methods continue to pass unchanged for the
+- [ ] **AC4** — Existing contract tests for all five methods continue to pass unchanged for the
       single-page case.
 
 ## Open Questions

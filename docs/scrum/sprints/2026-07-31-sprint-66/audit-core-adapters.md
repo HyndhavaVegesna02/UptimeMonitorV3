@@ -247,7 +247,7 @@ original pass).
 
 **Severity:** `MAJOR` — a real, shipping port signature (not a docstring/naming nit) that leaks a
 primitive where the domain type it stands in for (`ProposalState`) is imported in the SAME file and
-used correctly, as the domain type, four lines above at `backend/src/core/ports/proposal_repository.py:32`
+used correctly, as the domain type, 13 lines above at `backend/src/core/ports/proposal_repository.py:32`
 (`to_state: ProposalState`, in the sibling `resolve` method).
 
 **Why the eight `lint-imports` contracts pass it:** import-linter checks import edges between
@@ -665,7 +665,15 @@ OK   docs/scrum/wiki/ingest-service-and-pull-loop.md:80 (file has 333 lines) [li
 OK   docs/scrum/wiki/canonical-types-and-ports.md:159-165 (file has 278 lines) [line-count only, no anchor]
 OK   docs/scrum/wiki/canonical-types-and-ports.md:241 (file has 278 lines) [line-count only, no anchor]
 
-Extracted 52 citation occurrence(s), 38 distinct (path, line-spec) pair(s) checked -- 10 content-anchor-verified, 28 line-count-only (no anchor present), 0 failure(s).
+Extracted 55 citation occurrence(s), 41 distinct (path, line-spec) pair(s) checked -- 10 content-anchor-verified, 31 line-count-only (no anchor present), 0 failure(s).
+
+**Re-recorded by the orchestrator after the STORY-195 re-review (2026-07-31).** The previously
+recorded run (`52 / 38 / 0 failures`) was real but stale — it predated the fix round's own final
+prose edits, which introduced THREE new self-inflicted bare-path citations
+(`ingest_service.py:121`, `status_publisher.py:14-19`, `run.py:182-184`) in the very triage
+section that documents this defect class. Re-running the committed text produced 3 FAILs and
+exit 1. The three prose citations now carry full repo-relative paths and the run above is clean
+at exit 0. Recording this rather than quietly substituting the number, per the bar STORY-194 set.
 ```
 
 **Real run against `docs/scrum/wiki/zone-rules.md`**, since this fix round also edits it (the
@@ -689,14 +697,14 @@ Extracted 59 citation occurrence(s), 47 distinct (path, line-spec) pair(s) check
 - 2× `code-boundary-discipline.md` — a Claude memory file (`C:\Users\Hyndhava\.claude\...\memory\`),
   outside this script's `REPO_ROOT`; STORY-194's own sweep resolved these correctly against the memory
   directory. Verified present and accurate by direct read of that file.
-- `ingest_service.py:121` — the anchor `IngestService.ingest_observations` is a SYMBOL reference
+- `backend/src/core/services/ingest_service.py:121` — the anchor `IngestService.ingest_observations` is a SYMBOL reference
   (naming the enclosing method), not a literal excerpt; the actual line 121 IS
   `self._rejected_repo.save(` (verified directly), matching the article's prose exactly. False
   positive of the heuristic, not a wrong citation.
-- `status_publisher.py:14-19` — same SYMBOL-style class, `StatusPublisherPort.publish(self, change:
+- `backend/src/core/ports/status_publisher.py:14-19` — same SYMBOL-style class, `StatusPublisherPort.publish(self, change:
   StatusChange) -> None`; the real lines 14-19 correctly define exactly that class and method, just
   split across two separate source lines rather than one continuous string. Verified directly.
-- `run.py:182-184` — the anchor is a semicolon-joined PARAPHRASE of three real, separate source lines
+- `backend/src/composition/run.py:182-184` — the anchor is a semicolon-joined PARAPHRASE of three real, separate source lines
   (`settings = load_settings()` / `secrets = load_live_secrets()` / `config =
   load_config(settings.config_dir)`, verified directly at those exact three lines) — a legitimate
   compression for readability, not a literal quote, so a strict substring check against the real
@@ -728,14 +736,44 @@ future reader of the raw FAIL count does not mistake heuristic limitation for ci
 `yt_gate.py --only`, confirmed each selector actually matched its intended command (STORY-178):
 
 ```
-[[GATE_OUTPUT_PLACEHOLDER]]
+Command: `REQUIRE_DYNAMO=1 DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 python .claude/skills/yourteam/scripts/yt_gate.py --only pytest --only lint_imports_command --only "ruff check" --only "ruff format" --only cfn-lint`
+Run by the ORCHESTRATOR at commit `2c29514` (the implementer was killed by a usage limit before it
+could paste this; the placeholder it left is the defect the STORY-195 re-review flagged CRITICAL).
+Only this report's own prose has changed since that commit, so no gate command's input changed.
+
+```
+yt_gate: [1/5] pytest
+yt_gate:   -> PASS
+yt_gate: [2/5] python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"
+yt_gate:   -> PASS
+yt_gate: [3/5] ruff check .
+yt_gate:   -> PASS
+yt_gate: [4/5] ruff format --check .
+yt_gate:   -> PASS
+yt_gate: [5/5] cfn-lint infra/stack.yaml
+yt_gate:   -> PASS
+```
+
+**Pass/skip counts (AC6):** `pytest` **685 passed, 0 SKIPPED** (`REQUIRE_DYNAMO=1`, so a
+Docker-less run would FAIL rather than silently skip ~53 tests — amendment A6); import-linter
+**8 contracts kept, 0 broken**; `ruff check` clean; `ruff format --check` clean (242 files);
+`cfn-lint` clean. Exit code 0 on all five. Merged verbatim into `.scrum/sprint-current.yaml`'s
+`dod_evidence`.
 ```
 
 ## 9. Diff-scope proof (C1) — real output
 
 ```
 $ git diff --name-only d4ad03e..HEAD -- backend/src frontend config
-[[DIFFSCOPE_PLACEHOLDER]]
+Command: `git diff --name-only d4ad03e..HEAD -- backend/src frontend config`
+
+```
+(no output — the command printed nothing)
+```
+
+Empty output means **zero** files under `backend/src/`, `frontend/` or `config/` were touched
+between the sprint start commit and HEAD, so constraint C1 ("nothing is fixed inline") holds for
+this story. Verified independently by the orchestrator, not taken from the implementer's report.
 ```
 
 Empty — C1 holds for the fix round's own commits too (only `docs/scrum/` files touched: this report,
