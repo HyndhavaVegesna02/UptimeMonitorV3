@@ -69,6 +69,12 @@ _NOISE_VALUES = {0, 1, -1, True, False, None, "", "utf-8"}
 #: declaration. Add a future sweep/report script's filename here if it is committed
 #: under `tools/` too.
 _SELF_EXCLUDE_NAMES = {"zr3_duplicate_sweep.py", "citation_sweep.py"}
+#: Matched on the path RELATIVE TO tools/, not on the bare filename (STORY-197
+#: quality review, 2026-07-31): a bare-name match silently skipped ANY
+#: tools/**/citation_sweep.py, and the reviewer demonstrated it -- a genuine
+#: duplicate of Settings.dynamo_observations_table planted in
+#: tools/demo_loop_gate/citation_sweep.py passed, while the identical file
+#: renamed went RED.
 
 _NOT_LITERAL = object()
 
@@ -154,7 +160,7 @@ def collect_tools_literals(tools_root: Path) -> list[tuple]:
     for path in sorted(tools_root.rglob("*.py")):
         if "__pycache__" in path.parts:
             continue
-        if path.name in _SELF_EXCLUDE_NAMES:
+        if path.relative_to(tools_root).as_posix() in _SELF_EXCLUDE_NAMES:
             continue
         try:
             tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))

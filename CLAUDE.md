@@ -231,19 +231,25 @@ guard_reality_gate.py`).
 ## Key commands
 
 Run from the repo root with the virtualenv active (or call `.venv/Scripts/python.exe`
-directly on Windows). Note: `.venv/Scripts/lint-imports.exe` exists but is blocked
-by a Windows Application Control policy — use the `python -c` form below.
+directly on Windows). **Three console-script shims are blocked by this machine's
+Windows Device Guard / Application Control policy and must be invoked via their module
+or entry-point form instead** — the check performed is identical in every case, only the
+entry point differs:
+`lint-imports.exe` (blocked 2026-07-12), and `pytest.exe` + `cfn-lint.exe` (blocked
+2026-07-31, mid-sprint-66 — green at 11:16 UTC, blocked at 16:33 UTC the same day with
+no code change in between; see STORY-210). `cfn-lint` needs its entry point
+(`cfnlint.runner:main`) rather than `-m`, because the package has no `__main__`.
 
 | Task                | Command                                  |
 | ------------------- | ---------------------------------------- |
 | Create venv         | `python -m venv .venv`                    |
 | Install (editable)  | `.venv/Scripts/python.exe -m pip install -e ".[dev]"` |
-| Run tests           | `pytest`                                  |
+| Run tests           | `python -m pytest`                        |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
 | Import boundary     | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` |
 | Lint code           | `ruff check .`                            |
 | Format check        | `ruff format --check .`                   |
-| Lint CloudFormation | `cfn-lint infra/stack.yaml`               |
+| Lint CloudFormation | `python -c "from cfnlint.runner import main; main()" infra/stack.yaml` |
 | Start DynamoDB Local| `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` (host 8001 so the API can own 8000) |
 | Create tables       | `python scripts/create_tables.py` (reads `DYNAMO_ENDPOINT_URL`) |
 | Seed topology       | `python scripts/seed_topology.py` (reads `DYNAMO_ENDPOINT_URL`) |
@@ -260,8 +266,9 @@ by a Windows Application Control policy — use the `python -c` form below.
 `.scrum/definition-of-done.md` is authoritative; the runner is
 `python .claude/skills/yourteam/scripts/yt_gate.py`.
 
-- **Backend (5):** `pytest`, the import-boundary `python -c` above, `ruff check .`,
-  `ruff format --check .`, `cfn-lint infra/stack.yaml`
+- **Backend (5):** `python -m pytest`, the import-boundary `python -c` above,
+  `ruff check .`, `ruff format --check .`, and cfn-lint via
+  `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
 - **Frontend (3, from `frontend/`):** `npm test`, `npm run build`, `npm run lint`
 
 `lint-imports` enforces **eight** contracts: core-independence,
