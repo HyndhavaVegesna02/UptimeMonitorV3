@@ -2043,3 +2043,31 @@ stories:
     priority: 68
     type: chore
     sprint: 66
+  - id: STORY-198
+    title: An adapter re-encodes a domain enum's value as a literal — dynamo_proposal_repository.py:286
+    file: docs/scrum/stories/STORY-198-fix-hardcoded-approved-literal.md
+    status: draft   # FILED 2026-07-31 by the orchestrator from STORY-195's audit (GAP-1). The audit
+                    # drafted the story file; only the orchestrator writes .scrum/ state, and the
+                    # STORY-195 quality review correctly flagged that this entry was MISSING -- the
+                    # story existed as an .md that nothing indexed, so it would never have reached
+                    # planning.
+                    # THE DEFECT: dynamo_proposal_repository.py:286 does `if action == "approved"`
+                    # while :105 correctly compares `proposal.state == ProposalState.OPEN`, in the
+                    # same file, with ProposalState already imported. Verified: ProposalState.APPROVED
+                    # == "approved" (core/domain/proposal.py:28) and `action` is `to_state.value` from
+                    # core/services/approval.py:128, so the literal IS the enum's value today.
+                    # BLAST RADIUS (surfaced at quality review, NOT in the original draft): that
+                    # literal is what writes `approved_actor`, the sole source of Publication.author
+                    # (dynamo_publication_repository.py:94-96). A value drift silently blanks the
+                    # author column on the Publications tab for every row -- it does not raise.
+                    # TEST TRAP TO AVOID: tests/fakes.py::record_approval_event does NOT implement the
+                    # approved_actor denormalization, so the branch is observable ONLY against real
+                    # DynamoDB. A fake-based test here would assert nothing (an A9 smell).
+                    # ROOT CAUSE IS SEPARATE AND DEEPER: the port hands the adapter a string --
+                    # core/ports/proposal_repository.py:45 declares `action: str` while its sibling
+                    # `resolve` takes `to_state: ProposalState` (:32). Fixing only the adapter leaves
+                    # the boundary shape untouched; see the ZR-6 finding filed from the same review.
+    points: 1
+    priority: 69
+    type: defect
+    sprint: null
