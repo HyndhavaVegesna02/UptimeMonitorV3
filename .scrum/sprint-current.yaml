@@ -95,10 +95,51 @@ stories:
   - id: STORY-194
     title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
     file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
-    status: in_progress   # dispatched 2026-07-31
+    status: done
     points: 3
-    ceremony: implementer + both reviewers
-    result: null
+    ceremony: implementer + both reviewers (spec FAIL -> fix round -> orchestrator acceptance check)
+    result: >-
+      DONE at 3b0ff0f. Delivered docs/scrum/wiki/zone-rules.md -- FIVE rules, not the three the
+      first draft had. ZR-1 inbound adapter must not hold/call a persistence port (GUARDABLE: an
+      enumerated forbidden contract over the 9 repository/watermark port modules -- NOT all of
+      core/ports, because core/ports/signal_ingest.py is the documented front door a driving
+      adapter may legitimately name). ZR-2 vendor vocabulary confined to three closed PROSE FORMS
+      inside core/, with the Provenance carve-out (GUARDABLE to a stated extent, residue named:
+      string annotations and dynamically built identifiers stay invisible to a static AST walk).
+      ZR-3 no re-declared constant across the tools/ -> backend/src/ one-way boundary (GUARDABLE
+      by test only; lint-imports is structurally blind to tools/). ZR-4 the five-file api feature
+      convention. ZR-5 composition-root config parity.
+      REVIEW HISTORY, recorded because it is the story's real shape: spec review FAILED (AC5
+      NOT_MET) and quality review returned FIX_REQUIRED with 5 MAJOR + 9 minor. Both were right
+      and both found things the orchestrator had personally accepted -- the second sprint running
+      that this has happened, which is the strongest standing argument for both reviewers on every
+      story. The blocking defects were all in the two things the DOWNSTREAM stories consume: rule
+      DECIDABILITY and the GUARDABLE sketches' implementability. Worst of them: ZR-1's original
+      sketch would have banned all of src.core.ports, failing a shape the dossier documents; and
+      ZR-2 keyed on an open-ended vendor word list ("...") that could not settle 6 real core/ lines
+      or the Pydantic attribute-docstring idiom on nearly every domain field. ZR-2 was rebuilt to
+      key on FORM instead of on words, which is what made it decidable.
+      The implementer pushed BACK on three facts rather than complying (ZR-3's collision count is
+      101 not the 105 quoted at hand-off; test_zone_layout.py spans 125-173 not -174; ZR-5 has no
+      violating citation to give because both roots genuinely agree today) -- recorded as-is, since
+      sprint 65's lesson was that reproducing a measurement is not validating it.
+      ORCHESTRATOR CORRECTION AT ACCEPTANCE (3b0ff0f), a defect NEITHER reviewer could have caught
+      because it emerged FROM the fix round: ZR-3's newly-pinned scope (module-level UPPER_CASE
+      constants, both sides) EXCLUDED the very violation ZR-3 adjudicates -- a function-body literal
+      in tools/demo_loop_gate/harness.py:746-750 duplicating a pydantic FIELD DEFAULT at
+      backend/src/composition/settings.py:21-22. That is also why its narrow measurement returned 0
+      while a real duplicate stood: the 0 was an artifact of the scope, NOT a clean tree. Scope
+      widened to both declaration shapes plus tools/-side literals inside function bodies. *** THIS
+      IS LOAD-BEARING FOR STORY-196 AC3: the sweep MUST find the harness.py case, so a STORY-196
+      sweep reporting 0 while that case stands is a BROKEN SWEEP, not a clean tree. ***
+      AC VERDICTS (AC1-AC6 all MET; AC1/AC6 mechanics and the article text re-verified by the
+      orchestrator directly, not taken from the implementer's self-report): yt_wiki CLEAN on
+      sweep/facts/links/integrity; verified_sha c0a4d71 short + real + empty diff over code_refs;
+      diff over d4ad03e..HEAD touches NOTHING under backend/src/, frontend/ or config/ (C1 holds);
+      5/5 backend gate PASS, 685 passed / 0 SKIPPED.
+      KNOWN TRADE ACCEPTED: the article's code_refs widen backend/src/composition/run.py from a
+      code_ref in 4 articles to 5, tripping an ADVISORY refs amplifier note. Accepted because ZR-5
+      cannot cite the two composition roots without it, and refs never blocks. Worth a retro line.
     order: 1
     plan_note: >-
       THE YARDSTICK -- everything else depends on it, so it can never be dropped. A planning probe
@@ -177,6 +218,33 @@ carried_forward:
     DoD floor, and a standing caveat on every scoped run.
   - >-
     STORY-147 (2) — component group + description; the cheapest UI-gap item.
-dod_evidence: []   # per-story records appended by yt_gate.py; merged VERBATIM (A10 now makes the
-                   # emitted fragment always valid YAML). The FULL gate on the final HEAD is the
-                   # evidence of record at sprint close.
+dod_evidence:
+# per-story records emitted by yt_gate.py and merged VERBATIM (A10 makes the fragment always
+# valid YAML). SCOPED runs mid-sprint; the FULL 8/8 gate on the final HEAD is the evidence of
+# record at sprint close. STORY-194's record below is a 5-command SCOPED run (docs-only diff
+# cannot reach the three frontend commands) at 3b0ff0f, AFTER the orchestrator correction.
+  - command: "pytest"
+    exit_code: 0
+    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
+    commit: f72bae0
+    at: "2026-07-31T02:40:33+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: f72bae0
+    at: "2026-07-31T02:41:07+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: f72bae0
+    at: "2026-07-31T02:41:08+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "242 files already formatted"
+    commit: f72bae0
+    at: "2026-07-31T02:41:08+00:00"
+  - command: "cfn-lint infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: f72bae0
+    at: "2026-07-31T02:41:08+00:00"
