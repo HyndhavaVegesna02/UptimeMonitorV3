@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: b3e1767
+verified_sha: 61595ef
 verified_sprint: sprint-65
 status: verified
 # Re-verified 2026-07-30 (sprint-64) by the orchestrator. Changed code_ref in range: CLAUDE.md
@@ -34,7 +34,13 @@ status: verified
 - **The backend DoD gate is FIVE bare commands**, each must exit 0
   (`.scrum/definition-of-done.md`; enumerate them with
   `python .claude/skills/yourteam/scripts/yt_gate.py --list`, which is the count of record):
-  1. `pytest`
+  1. `python -m pytest`
+     (2026-07-31, sprint-66/STORY-197: invocation moved OFF the `pytest` exe shim for the
+     SAME reason as command 2 below — the machine's Windows Device Guard / Application
+     Control policy began blocking `.venv/Scripts/pytest.exe` MID-SPRINT, green at 11:16
+     UTC and blocked at 16:33 UTC the same day with no code change in between. Same tests,
+     same rootdir, same `testpaths`; module-path invocation instead. PO-approved; the
+     underlying policy problem is STORY-210.)
   2. `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
      (2026-07-12, sprint-44: invocation moved OFF the `lint-imports` exe shim â€” a Windows
      Application Control policy now blocks it on this machine; same check, module-path
@@ -45,7 +51,13 @@ status: verified
      `Contracts: 8 kept, 0 broken.` line, which is the only reliable source for it)
   3. `ruff check .`
   4. `ruff format --check .`
-  5. `cfn-lint infra/stack.yaml` (added STORY-088, sprint-49, in the same DoD amendment that
+  5. `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
+     (2026-07-31, sprint-66/STORY-197: same Device Guard cause as commands 1 and 2, but
+     cfn-lint needed a DIFFERENT answer — the package has no `__main__`, so `python -m
+     cfnlint` does NOT work; this is its real console-script entry point,
+     `cfn-lint = cfnlint.runner:main`. A separately blocked `regex` DLL was a second
+     symptom, cleared by reinstalling regex 2026.7.10 -> 2026.7.19.)
+     (added STORY-088, sprint-49, in the same DoD amendment that
      RETIRED `alembic upgrade head` and `python scripts/check_fk_direction.py` — that is why the
      backend count went 6 → 5 and why "six backend commands" appears throughout this article's
      History; it was true then, and stopped being true at sprint-49)
