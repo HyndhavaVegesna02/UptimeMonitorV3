@@ -664,6 +664,49 @@ reached review — a counterfactual, since that draft never actually shipped (th
 `ingest_service.py` code holds and calls the port instead), not a verified fact about
 code that exists.
 
+## Adjudication — every rule's final verdict (STORY-197, AC6)
+
+**This table is authoritative.** Each rule carries exactly one verdict. `ENFORCED-BY` means a guard
+exists, runs inside the existing eight DoD commands, and has been **shown RED** (C3/A9) — never
+merely "is green". `GUARDABLE-DEFERRED` means the guard is specified in the rule above and a named
+story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold it.
+
+| Rule | Verdict | Detail |
+| --- | --- | --- |
+| ZR-1 | `GUARDABLE-DEFERRED (STORY-206)` | Contract fully specified above (9 enumerated repository/watermark port modules, excluding the `signal_ingest` front door). Tree is CLEAN, so it must be proven RED by the mutation ZR-1 names, not by a live violation. |
+| ZR-2 | `GUARDABLE-DEFERRED (STORY-207)` | AST walk specified above, with its residue stated (string annotations, dynamically built identifiers). Tree is CLEAN — mutation proof required. |
+| ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module. Green today only via a per-entry adjudication list; every unfixed entry names its fix story. |
+| ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
+| ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
+| ZR-6 | `GUARDABLE-DEFERRED (STORY-200)` | Deliberately behind its FIX story, not ahead of it: ZR-6's own text leaves open whether `record_approval_event`'s `action` becomes `ProposalState` or a narrower 2-member type, and a guard written before that choice would encode the wrong target. STORY-200 AC3 forces the decision to leave a testable trace; the guard follows it. |
+| ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice**: removing the `is_under_maintenance` exemption trips the unexempted-violation check, and adding an exemption for a call site that already loops trips the stale-exemption check. Green today only via five reasoned exemptions, each citing STORY-199. |
+| ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). A guard landed today would be RED on real code, and C4 forbids a guard that turns the DoD gate red as a side effect. It follows the fixes. |
+
+**Why only two rules were mechanised (AC5's stopping rule, stated as a result).** ZR-3 and ZR-7 were
+chosen because they are the two highest-severity rules with a **live violation to prove the guard RED
+against** — ZR-7's five findings include a production defect that silently disables maintenance
+suppression, and ZR-3's six include a credential-safety drift risk. Every other rule is either clean
+(ZR-1, ZR-2, ZR-4 — provable only by mutation, so cheaper to land alongside its own story) or blocked
+behind a fix or a design decision (ZR-5's operational half, ZR-6, ZR-8).
+
+### A recorded limitation of `tools/citation_sweep.py`, so nobody "fixes" a correct citation
+
+Run against this article, the sweep reports **8 failures, all of them false**, verified line-by-line
+by direct read at STORY-197 acceptance:
+
+- Two cite `code-boundary-discipline.md`, a **memory file outside the repo** — correctly absent, not
+  a broken citation.
+- Six fail the **content-anchor** check while the cited lines are exactly right, because the anchor
+  the sweep extracts is either a symbol NAME defined elsewhere in the file (`in_window`,
+  `build_publisher`, `IngestService.ingest_observations`) or a multi-line construct rendered on one
+  line in prose (`seed_dynamo.py:29-30`'s key dict, `run.py:182-184`'s three statements,
+  `status_publisher.py:14-19`'s class-plus-signature).
+
+The line-count half of the sweep is sound and the anchor half is a useful heuristic, but **an anchor
+failure is a prompt to read the line, never evidence the citation is wrong.** A future story that
+"fixes" these would be corrupting correct citations to satisfy a heuristic.
+
+
 ## History
 
 - sprint-66 (STORY-194): created. Rules ZR-1..ZR-3 covered the PO's five named areas
