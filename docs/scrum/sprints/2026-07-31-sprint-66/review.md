@@ -70,10 +70,11 @@ the two-reviewer ceremony to save budget.
 
 ## Honest notes on how this sprint was run
 
-- **STORY-197 has had no reviewer pass at all.** Its implementer was stopped mid-story and could not
-  be resumed, so I completed AC4–AC7 myself and re-derived all four RED proofs rather than trusting
-  the agent's self-report. But no independent eyes have checked it. Given the record above, that gap
-  is material.
+- **STORY-197 was written and accepted by the same person for a while.** Its implementer was stopped
+  mid-story and could not be resumed, so I completed AC4–AC7 myself and re-derived all four RED
+  proofs rather than trusting the agent's self-report. I flagged that gap as material; you asked for
+  the reviewer pass, and it promptly found a dangerous defect I had accepted (see the section below).
+  That is the single clearest vindication of the two-reviewer ceremony this sprint produced.
 - **My own error, caught by a reviewer:** my recovery commit for STORY-195 shipped two unfilled
   `[[…PLACEHOLDER]]` tokens under headings claiming "real output". I had grepped the rescued work
   for `TBD` and missed them. Fixed.
@@ -83,32 +84,27 @@ the two-reviewer ceremony to save budget.
 - The plan-verifier was skipped (recorded); my own pre-lock probe caught two gaps that would have
   made STORY-194's AC1 unsatisfiable.
 
-## Why STORY-197 is Blocked — and the decision I need
+## The Device Guard regression (resolved during the sprint)
 
-The full 8/8 gate exits 1. `pytest` and `cfn-lint` both fail with **"blocked by your organization's
-Device Guard policy"**. Proven environmental to the standard the 2026-07-06 agreement demands:
+Mid-sprint, `pytest` and `cfn-lint` began failing with **"blocked by your organization's Device Guard
+policy"**, taking the full gate RED and blocking STORY-197 at AC7. Proven environmental to the
+standard the 2026-07-06 agreement demands — not asserted:
 
-- `pytest` passes in isolation via the module form — **689 passed, 0 skipped** (685 + the 4 new
-  guard tests). Only the `.exe` shim is blocked.
-- `cfn-lint` is blocked one level deeper, even via `python -m cfnlint` (a blocked DLL), so the module
-  form is **not** a workaround for it.
-- `infra/` is untouched all sprint, so `cfn-lint`'s input is byte-identical to green runs earlier the
-  same day.
-- Reproduced twice, back to back. The other six commands pass, frontend included.
-- **It regressed mid-sprint** — the baseline at `d4ad03e` was a full 8/8 green with this same runner.
+- `pytest` passed in isolation via the module form (**689 passed, 0 skipped**); only the `.exe` shim
+  was blocked.
+- `cfn-lint` was blocked one level deeper, even via `python -m cfnlint` (a blocked DLL).
+- `infra/` was untouched all sprint, so `cfn-lint`'s input was byte-identical to green runs earlier
+  the same day.
+- Reproduced twice, back to back; the other six commands passed, frontend included.
+- **It regressed mid-sprint** — the baseline at `d4ad03e` was a full 8/8 green with the same runner.
 
-Filed as **`STORY-210`**, and it blocks the DoD gate itself, so it blocks every future story.
+**Timestamps pin it:** clean at 02:40, 05:07 and 11:16 UTC; blocked at 16:33 UTC the same day.
 
-**Three decisions for you:**
-
-1. **STORY-197** — accept it despite the RED gate (the work is complete and verified, the failure is
-   demonstrably not its own), or leave it Blocked and carry it into sprint 67?
-2. **`STORY-210`** — there is direct precedent for the fix: the same policy blocked
-   `lint-imports.exe` and the DoD command was changed to the module form. I recommend the same for
-   `pytest` (`python -m pytest`). **Editing `.scrum/definition-of-done.md` is your call and I have
-   not touched it.** `cfn-lint` needs a separate answer — reinstall `regex`, a policy exemption, or
-   move it to CI.
-3. **Should STORY-197 get its reviewer pass** before the guards are trusted further?
+You approved the fix, and it is in. Both gate records — the RED and the green — are kept in
+`dod_evidence`, so the regression stays part of the sprint's history rather than being quietly
+overwritten. The underlying policy problem remains filed as **`STORY-210`**; worth raising with
+whoever administers Device Guard, because if its coverage keeps widening the next casualty is
+`ruff.exe` or the npm toolchain, and the module-form workaround only stretches so far.
 
 ## What the STORY-197 reviewer pass found (added after the PO requested it)
 
