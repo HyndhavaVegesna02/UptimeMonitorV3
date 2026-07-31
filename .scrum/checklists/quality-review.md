@@ -2,6 +2,9 @@
 
 > YourTeam v2. Migration map PO-approved 2026-07-12 — this checklist is the BINDING home for
 > these items; dates cite the original motivating agreement (full text in git history).
+>
+> **Amendments are audited for expiry at every retro** (2026-08-01 agreement). Motivating
+> incidents live in the originating sprint's `retro.md` — this file carries the CHECK.
 
 ## Tests-that-lie taxonomy — every member is CRITICAL
 
@@ -35,67 +38,54 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       accepted from memory or generation. Plausible-looking is not verified. (2026-07-17;
       sprint-50 STORY-089 — the CloudFront `CachePolicyId` labeled "CachingOptimized" was a
       fabricated ID that survived cfn-lint AND a quality APPROVE, and 404'd only at live
-      stack create; the sibling OriginRequestPolicyId was a real ID whose comment named a
-      different policy.)
+      stack create.)
 
-- [ ] **For a computational deliverable, MUTATE it -- do not infer pinning from reading.** A green,
-      fully AC-traced suite can leave its story's central arithmetic unpinned. Hardcode or perturb
-      the computation, run the story's tests, and report which went RED; zero RED is a finding, and
-      it outranks anything found by reading. Restore and confirm the tree is clean. (2026-07-30,
-      sprint-63 retro amendment A4 -- this is exactly how STORY-176's critical was found, and
-      nothing else in the pipeline would have found it.)
+## Evidence discipline — audit the artifact, not its output
 
-- [ ] **Reject any two-sided proof whose sides came back IDENTICAL.** When a discrimination proof
-      reports the same outcome on both sides, that is inverted evidence, not weak evidence -- the
-      failure is indistinguishable from "the thing under test does not matter", so the proof argues
-      against a correct fix. Check the mechanism (import provenance, attribute names, fixture
-      skips), not just the numbers.
+- [ ] **Every evidence artifact in the diff must have been demonstrated FAILING.** The
+      implementer-side rule is one item in `implementer.md`; this is the independent check that it
+      actually happened. Verify each of the five mechanics that applies:
+      - **Exit path, not printed values.** An artifact that computes the right numbers, PRINTS
+        them, asserts nothing and exits 0 regardless is a REPORT, not a gate — and a reviewer
+        reading correct numbers out of stdout cannot tell the difference. Require: explicit verdict,
+        non-zero exit on failure, and recorded evidence it was fed deliberately bad input and failed.
+        A polling step that times out must FAIL, not continue with a flag set.
+      - **Reject any two-sided proof whose sides came back IDENTICAL.** That is inverted evidence,
+        not weak evidence: the result is indistinguishable from "the thing under test does not
+        matter", so the proof argues against a correct fix. Check the MECHANISM (import provenance,
+        attribute names, fixture skips), not just the numbers.
+      - **Mutate a computational deliverable yourself — do not infer pinning from reading.** A
+        green, fully AC-traced suite can leave its story's central arithmetic unpinned. Hardcode or
+        perturb the computation, run the story's tests, report which went RED. Zero RED is a
+        finding, and it outranks anything found by reading. Restore and confirm the tree is clean.
+      - **Import provenance where that is the mechanism:** confirm the proof actually called
+        `tools/import_provenance.py::assert_import_root` per side (STORY-187) rather than asserting
+        divergence without checking which tree ran. For every other mechanism the helper does not
+        apply — read the test body and confirm the sides could actually have diverged.
+      - **State set up through the production interface**, never a parallel hand-rolled one; a
+        precondition that writes and re-reads its own wrong key passes vacuously.
+      (Collapsed 2026-08-01 from A3, A4 and A7 — the reviewer-side halves of the six-amendment
+      family described in `implementer.md`. Incidents in the sprint-63 and sprint-64 `retro.md`.
+      This is exactly how STORY-176's critical was found, and nothing else in the pipeline would
+      have found it.)
 
-- [ ] **A reality-gate / discrimination artifact must be able to FAIL. Check its exit path, not its
-      output.** An artifact that computes the right values and PRINTS them, while asserting nothing
-      and exiting 0 regardless, is a REPORT, not a gate -- and a reviewer reading correct numbers out
-      of its stdout cannot tell the difference. Confirm: an explicit verdict, a non-zero exit on
-      failure, and evidence that it was fed deliberately bad input and failed. (2026-07-30, sprint-64
-      retro amendment A7 -- STORY-182's positive-side harness asserted only AC1, printed AC3/AC4/AC5,
-      and exited 0 unconditionally; a polling timeout set a flag and CONTINUED. The values happened to
-      be correct, so it was reported as PASS. Its two sibling gates in the same story got this right
-      (`sys.exit(0 if main() else 1)`), which is what made the inconsistency reviewable at all. The
-      fix was closed by feeding all four new assertions bad evidence and confirming 13/13 raise --
-      that is the expected practice, not an extra.) When the mechanism IS import provenance, confirm the proof
-      actually called `tools/import_provenance.py::assert_import_root` (STORY-187) per side rather
-      than asserting divergence without checking which tree ran; for every other mechanism (attribute
-      names, fixture skips, etc.) the helper does not apply -- read the test body and confirm the
-      sides could actually have diverged. (2026-07-30, sprint-63 retro amendment A3 -- three
-      occurrences in one sprint, each via a DIFFERENT mechanism.)
+- [ ] **Recorded numbers and command output must be CURRENT, not merely real.** Re-run every
+      command the story records and compare against the pasted output. A stale record — true when
+      captured, false at the final commit — is the most common defect class in this repo's recent
+      history, and it reads as verified evidence, which is what makes it dangerous. This includes
+      counts the story's OWN edits invalidated: if a story edits the thing it measured, including
+      its own report, the count must have been re-derived after that edit.
+      (Merged 2026-08-01 from A12b and A13, which were two statements of one rule. Sprint-66's
+      STORY-197 recorded "8 citation-sweep failures" — correct when written; the very paragraph
+      explaining them quoted three by bare filename, which the sweep's regex then matched as three
+      NEW citations. The true figure was 11.)
 
 - [ ] **A guard's FAILURE MESSAGE is part of the guard, and it must not instruct an action its own
       check cannot justify.** Where the check is a PROXY for the real property, the message must say
       so and tell the reader to verify, never assert the conclusion outright. Read every message the
       guard can emit and ask: if someone does exactly what this says, without thinking, is the
-      result correct? (2026-07-31, sprint-66 retro amendment A12 -- STORY-197's ZR-7 guard decided
-      "this method paginates" by finding the STRING `LastEvaluatedKey` anywhere in it, and on a hit
-      emitted "now loops on LastEvaluatedKey; remove this exemption, the fix has landed". A reviewer
-      added a realistic warn-on-truncation stopgap that still read ONE page: the guard then
-      instructed the removal of the exemption covering a LIVE PRODUCTION DEFECT. Following that
-      advice would have left the defect permanently unguarded. The tests were green, the AC were
-      met, and the guard was actively dangerous -- the defect existed only in the message's wording
-      and in the gap between the proxy and the property.)
-
-- [ ] **A recorded COUNT must be re-derived after the last edit to the text that produces it.** A
-      number measured mid-story and then quoted in prose goes stale silently, because nothing
-      recomputes it and the reviewer's instinct is to trust a specific figure. If the story edits
-      the thing being counted -- including its own report -- re-run the count and paste the fresh
-      output. (2026-07-31, sprint-66 retro amendment A12b -- STORY-197 recorded "8 citation-sweep
-      failures, all false" and the number was correct WHEN WRITTEN; the very paragraph explaining
-      those failures quoted three of them by bare filename, which the sweep's own regex then matched
-      as three NEW citations. The true figure was 11. Caught at spec review, under exactly the
-      re-derivability rule the same sprint had been enforcing on everyone else.)
-
-
-- [ ] **Recorded command output must be CURRENT, not merely real.** For every command the story
-      records, re-run it and compare against the pasted output. A stale record -- true when captured,
-      false at the final commit -- is the single most common defect class in this repo's recent
-      history, and it reads as verified evidence, which is what makes it dangerous. Where a story's
-      own edits changed the thing it measured, the count must have been re-derived AFTER that edit.
-      (2026-07-31, sprint-66 retro amendment A13, PO-directed -- the author-side rule is in
-      `implementer.md`; this is the check that it happened.)
+      result correct? (2026-07-31, A12 — STORY-197's ZR-7 guard decided "this method paginates" by
+      finding the STRING `LastEvaluatedKey` anywhere in it, and on a hit emitted "now loops on
+      LastEvaluatedKey; remove this exemption, the fix has landed". A reviewer added a realistic
+      warn-on-truncation stopgap that still read ONE page: the guard then instructed removal of the
+      exemption covering a LIVE PRODUCTION DEFECT. Tests green, AC met, guard actively dangerous.)

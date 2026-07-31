@@ -3,10 +3,19 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 198  # 194-197 CONSUMED 2026-07-31 (sprint-66 audit sprint: rule catalogue, two
-                    # audit passes, guards). NOTE this field was STALE at 180 while 180-193 were
-                    # already in use -- corrected here, so read the max id in `stories`, not this
-                    # field, if they ever disagree again.
+next_story_id: 213  # 211-212 CONSUMED 2026-08-01 (process ratchet-brake: budget planning, the
+                    # evidence-check script rung).
+                    # *** THIS FIELD WENT STALE AGAIN IMMEDIATELY. *** It was corrected to 198 on
+                    # 2026-07-31, and sprint-66 then filed 198-210 the SAME DAY without bumping it,
+                    # so it was wrong by 13 within hours of being fixed. That is now the SECOND
+                    # recorded occurrence (the first: stuck at 180 while 180-193 were in use).
+                    # Twice is a pattern, not an accident — the field is written by hand and read
+                    # by nobody, which is the same shape as velocity.json (see STORY-211).
+                    # Until something derives it: READ THE MAX id IN `stories`, never this field.
+                    # A one-line yt_selftest assertion (next_story_id > max(stories)) would end
+                    # this permanently and belongs with STORY-212's script-rung work.
+                    # 194-197 CONSUMED 2026-07-31 (sprint-66 audit sprint: rule catalogue, two
+                    # audit passes, guards).
                     # 179 CONSUMED 2026-07-29 (dynamo_local port defect).
                     # 178 CONSUMED 2026-07-28 (yt_gate false-green defect).
                     # 177 CONSUMED 2026-07-28 by PO decision D-A (provisional failure mapping).
@@ -2371,4 +2380,59 @@ stories:
     points: 2
     priority: 81
     type: defect
+    sprint: null
+
+  # ── Process: the ratchet brake (filed 2026-08-01, PO-directed) ──────────────
+  # Out of the YourTeam process-analysis session. Four changes landed directly that
+  # day (rule expiry at the retro, enforcement-ladder freeze exemption, the
+  # A1/A3/A4/A7/A9 collapse, the CLAUDE.md prune); these two were deliberately NOT
+  # landed with them and are filed instead — 211 because it changes a planning
+  # ceremony and wants its own sprint, 212 because it is CODE and belongs behind
+  # the DoD gate rather than in an ad-hoc edit.
+  - id: STORY-211
+    title: Plan sprints on context and token budget instead of story points
+    file: docs/scrum/stories/STORY-211-plan-on-context-and-token-budget.md
+    status: draft   # FILED 2026-08-01, PO-deferred explicitly ("i will take it up later").
+                    # Replaces fibonacci points + velocity.json with two MEASURED numbers:
+                    # dispatches (cost) and brief load (feasibility), with capacity expressed
+                    # against the session budget the Window Check already reads.
+                    # The threshold MUST be derived from measured inputs — AC3 forbids shipping
+                    # a bare fraction, which would be a voodoo constant of exactly the kind the
+                    # implementer checklist rejects.
+                    # Likeliest dominant term is the FIXED PREFIX, not the brief: the 2026-07-15
+                    # audit found an unrestricted implementer re-writing ~125k cached tokens per
+                    # dispatch from inherited MCP tool schemas alone. Measure that first (AC1).
+                    # AC7 is the one that makes this falsifiable — predicted vs actual on a real
+                    # planning session. Do not accept without it.
+                    # DRAFT: needs refinement + estimate. Two open questions (effort cap after
+                    # estimates are gone; whether the reviewer pair is one dispatch or two —
+                    # note sprint-66's review explicitly warns this must NOT become an argument
+                    # for trimming the two-reviewer ceremony).
+    points: null
+    priority: 82
+    type: chore
+    sprint: null
+
+  - id: STORY-212
+    title: Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)
+    file: docs/scrum/stories/STORY-212-evidence-check-script-rung.md
+    status: draft   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
+                    # A1/A1-ref/A3/A4/A7/A9 became ONE rule, and this moves its mechanical half to
+                    # the rung six consecutive retros named and declined.
+                    # THE TWO STATED REASONS FOR DECLINING ARE BOTH GONE: the mid-sprint tooling
+                    # freeze now carries an enforcement-ladder exemption (2026-08-01 amendment),
+                    # and "ad-hoc skill-script edits outside a story" is answered by this BEING
+                    # the story. tools/import_provenance.py::assert_import_root (STORY-187)
+                    # already exists and AC6 requires reusing it, not reimplementing it.
+                    # SCOPE GUARD: the old objection — "a reality gate is bespoke, no script can
+                    # judge whether an assertion could have diverged" — is TRUE and is not what
+                    # this claims. It mechanises only the three checks that are not bespoke:
+                    # exit-non-zero-on-bad-input, sides-differ, mutation-turns-something-red.
+                    # AC5 is the interesting one: the tool must be subjected to its own rule.
+                    # DRAFT: needs refinement + estimate. Open question worth settling first —
+                    # tools/ (project) vs the skill's scripts/ (generic); the checks are generic
+                    # but `mutate` needs the project's test-selector syntax.
+    points: null
+    priority: 83
+    type: chore
     sprint: null

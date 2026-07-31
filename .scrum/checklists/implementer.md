@@ -3,6 +3,11 @@
 > YourTeam v2. Migration map PO-approved 2026-07-12 — this checklist is the BINDING home for
 > these items; dates cite the original motivating agreement (full text in git history). New
 > items enter via retro (enforcement-ladder routing) or immediate PO direction.
+>
+> **Amendments are audited for expiry at every retro** (2026-08-01 agreement). An item here
+> earns its place by firing; one that has not fired in six sprints is proposed for DELETION,
+> not relocation. Motivating incidents live in the originating sprint's `retro.md` — this file
+> carries the RULE, not the story behind it.
 
 ## Process discipline
 
@@ -13,6 +18,7 @@
 - [ ] Report green only from a CLEAN committed tree — a gate result over uncommitted changes does not count (2026-06-29).
 - [ ] A story that changes DoD/build/test/run commands updates CLAUDE.md in the same commit (2026-06-23).
 - [ ] A story that deletes code records the why in the story file History — it feeds the wiki tombstone.
+- [ ] Any server/container/process you spawn ends with an OS-level teardown VERIFICATION — process gone by PID (taskkill/kill + re-check) and port freed (netstat or equivalent). A wrapper-job kill alone is not evidence (2026-07-17).
 
 ## Test discipline
 
@@ -25,6 +31,57 @@
 - [ ] Fixtures derive from a REAL captured sample (live call or the producer's own fixtures) — never invented at a plausible-looking scale (2026-07-04).
 - [ ] A story adding side effects to a process entrypoint (env loads, file reads, network, seeding) enumerates every existing test driving that entrypoint and proves each stays hermetic, stated in the report (2026-07-06).
 - [ ] Resource-lifecycle code tears down on EVERY failure path — including partial setup before any finalizer exists — with a leak regression test (2026-06-25).
+
+## Evidence discipline
+
+- [ ] **Any evidence artifact must be demonstrated FAILING before it is trusted.** Proof, gate,
+      discrimination check, or a test that is a defect fix's primary evidence: before you report
+      it, make it fail on purpose and record that it failed. A green result proves the code passes
+      the check; it never proves the check could detect the defect. Five mechanics, all of which
+      have shipped broken here at least once:
+      - **Exit code, not stdout.** The artifact ends in an explicit verdict and a NON-ZERO exit on
+        failure. Printing correct numbers while exiting 0 unconditionally is a report, not a gate,
+        and a reader of its stdout cannot tell the difference. A polling timeout is a FAILURE, never
+        partial evidence. The board records the EXIT CODE.
+      - **Two sides must DIFFER.** A two-sided or discrimination proof records both outcomes and
+        asserts they diverge. Identical outcomes is a FAILED proof whatever value appeared — "green
+        both sides" reads as "the thing under test does not matter", so the proof argues AGAINST a
+        correct fix.
+      - **Mutate a computational deliverable.** If the headline claim is arithmetic, spacing,
+        ordering, thresholds or windowing: mutate the computation, record which tests go RED,
+        restore, confirm `git diff` is empty. Zero RED means UNPINNED — at full coverage, and with
+        every AC traced to a test. Scoped to computational deliverables so it is not a tax on
+        every story.
+      - **Prove which tree ran.** For any check in a git worktree, call
+        `tools/import_provenance.py::assert_import_root` for the module under test, per side,
+        BEFORE reporting either score. This repo is installed EDITABLE — the `.pth` file is a plain
+        absolute `sys.path` entry to `backend`, so `src.*` resolves to the MAIN tree from inside any
+        worktree. Force `PYTHONPATH=<worktree>/backend` (it precedes that entry), or patch the main
+        tree in place and restore it with `git diff` verified empty.
+      - **Read back through the PRODUCTION interface.** If a proof sets up state, write it and read
+        it back through the same interface the system under test uses — never a parallel hand-rolled
+        one. A precondition that writes and re-reads its own wrong key passes VACUOUSLY and then
+        reports a working feature as broken.
+      Two smells to check your own test against before reporting: (a) does every fixture it
+      constructs actually reach the code under test — a fake that is built, never wired up, then
+      asserted on is asserting on a value the test itself supplied; (b) if you changed the guarded
+      behaviour to something plainly WRONG, would this test go red? If you cannot say yes, it is
+      decoration.
+      (Collapsed 2026-08-01 from SIX amendments — A1 sprint-62; A1-refinement, A3 and A4 sprint-63;
+      A7 sprint-64; A9 sprint-65 — which were six statements of one idea, each landed because the
+      previous one had not held. Incidents in each sprint's `retro.md`. The mechanical half of this
+      rule is STORY-212; six retros named the script rung and declined it.)
+
+- [ ] **LAST STEP BEFORE YOU REPORT: re-run every command your story records, and paste the FRESH
+      output.** Not the output you captured while working — the output as of the final commit. Every
+      recorded command without exception: greps, counts, sweeps, gates, diff-scope checks. If a
+      number changes, say so and explain why rather than substituting it quietly; if a command no
+      longer runs at all, that is a finding about your own story. Do this AFTER your last edit,
+      because the thing being measured is often the text you just edited.
+      (2026-07-31, A13, PO-directed. Every story in sprint 66 shipped at least one recorded command
+      whose output no longer reproduced, and NOT ONE was a wrong conclusion — every measurement was
+      true when taken and stale when read. That is the point: this defect is invisible to the author
+      precisely because it was correct when written. Re-running costs ~90 seconds.)
 
 ## Code conventions (this project)
 
@@ -44,123 +101,7 @@
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 ×2).
 - [ ] A Fact asserting BEHAVIOUR (a branch, a threshold, a decision ladder, an error condition)
       cites the TEST that pins it alongside the implementation symbol. A Fact whose only support
-      is a paraphrase of the code's own docstring is marked as such or dropped -- it is a
-      restatement, not a verification (2026-07-29; sprint-62 STORY-149 -- the anti-flap article
-      said `Health.DEGRADED` is "always degraded, regardless of length ... so no length
-      comparison applies", which WAS the defect, faithfully mirroring `pipeline.py`'s own
-      docstring. It survived from sprint-8 to sprint-62 because article and code AGREED: git
-      arithmetic detects divergence, never shared error).
-
-- [ ] A check run in a git WORKTREE must FIRST prove it is executing the worktree's code, not the
-      main tree's: call `tools/import_provenance.py::assert_import_root(module_name, expected_root)`
-      for the module under test and let it print/raise BEFORE reporting either score — it names both
-      the expected root and the actual resolved path when they disagree (STORY-187). The manual
-      fallback stays documented for a module the helper cannot import cleanly: print the imported
-      module's `__file__` (and the value under test) and confirm the path is inside the worktree. This
-      repo is installed EDITABLE (`package-dir = {"" = "backend"}`); the mechanism is a plain absolute
-      `sys.path` entry — the `.pth` file `__editable__.uptime_monitor_v3-0.1.0.pth` contains exactly
-      one line, the absolute path to `backend` — NOT a setuptools `MetaPathFinder` (corrected
-      2026-07-30, STORY-187; the previous wording named "setuptools' finder", which pre-lock
-      verification found wrong). That single `sys.path` entry resolves `src.*` to `<repo>/backend/src`
-      from inside ANY worktree; force `PYTHONPATH=<worktree>/backend`, which precedes it. Patching the
-      MAIN tree in place and restoring it (verifying `git diff` is empty afterwards) is the other
-      acceptable route. (2026-07-29; sprint-63 STORY-180 -- the first run of AC2's discrimination proof
-      reported GREEN ON BOTH SIDES because both sides were the same main-tree code; "green both sides"
-      would have been read as "the constant does not matter", i.e. the proof would have argued AGAINST
-      a correct fix. Applies to any worktree check, not just discrimination proofs.)
-
-- [ ] Any server/container/process you spawn for a reality check ends with an OS-level
-      teardown VERIFICATION — process gone by PID (taskkill/kill + re-check) and port freed
-      (netstat or equivalent) — a wrapper-job kill alone is not evidence (2026-07-17;
-      sprint-51 STORY-094 — the bash-job kill left the port-8010 uvicorn worker alive;
-      an explicit taskkill /PID /F + netstat confirm was required).
-
-- [ ] **A two-sided / discrimination proof must record BOTH outcomes and assert they DIFFER.** It is
-      not enough that each side matches expectation: identical outcomes on both sides is a FAILED
-      proof, never a passed one, whatever value appeared. The proof's authority comes from the sides
-      diverging, so "green both sides" or "red both sides" means the proof did not discriminate and
-      must be fixed before either number is reported. Where the symptom is import provenance
-      specifically, call `tools/import_provenance.py::assert_import_root` per side (STORY-187) rather
-      than eyeballing it — but the mechanism can differ per proof (attribute names, fixture skips,
-      etc.), so the helper closes only the import-provenance case; the manual check (read the test
-      body, confirm the sides could actually have diverged) remains the fallback for everything else.
-      (2026-07-30, sprint-63 retro amendment A3 -- three proofs in ONE sprint came back identical on
-      both sides: STORY-180's discrimination proof (the editable-install/worktree trap, see the A1
-      refinement above), and the orchestrator's own publish-guard harness, which walked a `delegate`
-      attribute where the layers store `_delegate` and so reported a one-element chain on both sides --
-      the safe side green for the wrong reason and the unsafe side falsely looking safe. The A1
-      refinement covers IMPORT PROVENANCE only and would not have caught the second: the mechanisms
-      differ, the symptom does not. Treat the symptom as the trigger.)
-
-- [ ] **If you build a reality-gate, discrimination or proof artifact, it MUST terminate with an
-      explicit verdict and a non-zero exit on failure -- and you must show it failing.** Printing the
-      right numbers is a report; a gate is an exit code. Before you report, feed the artifact
-      deliberately bad input (a value that should trip each assertion) and record that it fails. If a
-      polling/waiting step can time out, the timeout is a FAILURE, never partial evidence.
-      (2026-07-30, sprint-64 retro amendment A7 -- STORY-182's positive-side harness asserted only
-      AC1, printed AC3/AC4/AC5 and exited 0 unconditionally, while its two sibling gates in the same
-      story both ended `sys.exit(0 if main() else 1)`. The values were correct, so it was reported as
-      a PASS by someone reading its stdout. Closed by feeding all four new assertions bad evidence and
-      confirming 13/13 raise -- that is the expected practice, not an extra. The board records the
-      artifact's EXIT CODE; values read out of stdout are not evidence.)
-
-- [ ] **A TEST that is a story's primary evidence for a defect fix must ALSO be demonstrated
-      failing** -- against the pre-fix behaviour, or against a deliberate mutation of the code it
-      guards -- and that demonstration recorded on the board. This is A7's rule widened from
-      artifacts to ordinary tests: a green test proves the code passes it, never that the test could
-      detect the defect at all.
-      Two concrete smells to check your own test against before reporting:
-        (a) does every fixture it constructs actually reach the code under test? A fake that is
-            built, never wired up, and then asserted on is asserting on a value the test itself
-            supplied;
-        (b) if you changed the guarded behaviour to something plainly WRONG, would this test go red?
-            If you cannot say yes, the test is decoration.
-      (2026-07-30, sprint-65 retro amendment A9. TWO defective tests shipped in one sprint and BOTH
-      survived the orchestrator's own review. STORY-190 AC3's "pre-fix stall" test built a
-      `watermark_repo`, never passed it to anything, called `normalize_rows` directly and asserted
-      the watermark was still `None` -- true whether or not anything raised. STORY-191's
-      backward-compat test asserted only `len(scenarios) > 0` and `isinstance(rows, list)` on a
-      function already annotated `-> list[dict]`; the quality reviewer exposed it by MUTATING the
-      legacy branch to emit DOWN -- silently turning every existing scenario DOWN, the worst
-      regression that story could cause -- and the test stayed green. Both cost a full review round
-      to find and minutes to catch this way.)
-
-- [ ] **If a proof SETS UP state, set it up and read it back through the SAME production interface
-      the system under test uses -- never through a parallel hand-rolled implementation.**
-      (2026-07-30, sprint-65 retro amendment A9, second half. A reality gate's precondition wrote a
-      component status to a hand-rolled DynamoDB key and read it back from the SAME hand-rolled key.
-      The key shape was wrong, so the write hit a phantom item nothing reads and the read-back
-      "verified" it against the same wrong key -- the precondition passed VACUOUSLY, the production
-      code correctly did nothing, and the gate reported the feature as broken. Two full runs were
-      spent chasing a defect that did not exist. Going through the repository makes that class of
-      drift impossible by construction.)
-
-- [ ] **If the story's headline deliverable is COMPUTATIONAL -- arithmetic, spacing, ordering,
-      thresholds, windowing -- mutate the computation once and record which tests go RED.** Zero
-      tests RED means the behaviour is UNPINNED, even at full coverage and even with every AC traced
-      to a test. Restore and confirm `git diff` is empty. (2026-07-30, sprint-63 retro amendment A4
-      -- STORY-176 shipped a green, reviewed, fully AC-traced suite in which a mutant
-      `expand_scenario` that ignored `interval_seconds` and hardcoded 30s passed ALL THIRTY new
-      tests. The story's headline claim -- "expands into rows at each monitor's own
-      `interval_seconds`" -- was pinned by nothing. What found it was running the mutant; nothing
-      else in the pipeline could have. Scoped deliberately to computational deliverables so this
-      does not become a tax on every story.)
-
-
-- [ ] **LAST STEP BEFORE YOU REPORT: re-run every command your story records, and paste the FRESH
-      output.** Not the output you captured while working -- the output as of the final commit. This
-      applies to every recorded command without exception: greps, counts, sweeps, gates, diff-scope
-      checks. If a number changes, say so and explain why rather than substituting it quietly; if a
-      command no longer runs at all, that is a finding about your own story.
-      Do this AFTER your last edit, because the thing being measured is often the text you just
-      edited. (2026-07-31, sprint-66 retro amendment A13, PO-directed. Evidence: EVERY story in
-      sprint 66 shipped at least one recorded command whose output no longer reproduced --
-      STORY-195's grep recorded "28 lines" that yields 22; STORY-196's citation sweep record was
-      real but stale against its own final prose; STORY-197's "8 citation failures" was 11, because
-      the very paragraph explaining those failures quoted three of them by bare filename and the
-      sweep's regex matched them as three NEW citations; STORY-194 said "four lines above" where it
-      is 13. NOT ONE was a wrong conclusion -- every measurement was true when taken and stale by
-      the time it was read. That is the point: this class of defect is invisible to the author
-      precisely because it was correct when written, and it consumed roughly a third of this
-      sprint's review findings. Re-running costs about ninety seconds and would have caught all
-      four.)
+      is a paraphrase of the code's own docstring is marked as such or dropped — it is a
+      restatement, not a verification (2026-07-29; the anti-flap article mirrored `pipeline.py`'s
+      own docstring, which WAS the defect, and survived from sprint-8 to sprint-62 because article
+      and code AGREED: git arithmetic detects divergence, never shared error).
