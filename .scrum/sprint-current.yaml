@@ -284,11 +284,53 @@ stories:
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: in_review
+    status: done
     points: 3
-    ceremony: implementer (stopped by PO mid-story) + orchestrator completion + both reviewers (PO-requested)
+    ceremony: implementer (stopped by PO mid-story) + orchestrator completion + BOTH reviewers + fix round
     result: >-
-      UNBLOCKED 2026-07-31 -- the PO approved the DoD invocation change and the FULL 8/8 GATE IS NOW
+      DONE. Spec review PASSED all seven AC (AC1-AC7) after independently re-deriving all four RED
+      proofs by mutation and re-running the full gate itself. Quality review returned FIX_REQUIRED
+      with 3 MAJOR; the fix round below closed every one, each verified by probe rather than by
+      reading. FINAL FULL 8/8 GATE GREEN: 689 passed / 0 SKIPPED, frontend 363 passed, yt_selftest OK,
+      yt_wiki CLEAN on all four blocking checks.
+      *** THE MOST IMPORTANT FIX, AND IT WAS DANGEROUS. *** ZR-7's guard decided "this method
+      paginates" by finding the STRING LastEvaluatedKey anywhere in it. The reviewer added a realistic
+      warn-on-truncation stopgap to is_under_maintenance -- still reading ONE page -- and the guard
+      responded "now loops on LastEvaluatedKey; remove this exemption, the fix has landed", about the
+      exemption covering THE LIVE PRODUCTION DEFECT. Following that instruction would have left the
+      defect permanently unguarded. The guard asserted a conclusion its own proxy could not support.
+      Fixed: the loop check is now per CALL SITE and requires the call to sit INSIDE a
+      LastEvaluatedKey-bearing loop, and the message now says VERIFY IT ACTUALLY PAGES.
+      THREE MORE BLIND SPOTS, each demonstrated GREEN by the reviewer against a deliberately
+      unpaginated call site, all now closed and re-proven by probe: a repository in a SUBDIRECTORY
+      (glob was not recursive), a MODULE-LEVEL function (only class bodies were walked), and a SECOND
+      unpaginated call inside an otherwise-paginating method (loops was computed once per method and
+      inherited). That last shape is realistic production code and is exactly the truncation ZR-7
+      exists to catch. Probe results after the fix: stopgap FLAGGED, real loop PAGES, second call
+      FLAGGED, module-level function FLAGGED, subdirectory repository FLAGGED.
+      ZR-3's self-exclusion matched a BARE FILENAME, so any tools/**/citation_sweep.py anywhere was
+      skipped -- the reviewer proved it by planting a genuine duplicate that passed, then renaming the
+      file and watching it go RED. Now matched on the path relative to tools/, and re-proven.
+      TWO FINDINGS AGAINST THE ORCHESTRATOR, both fair and both fixed:
+        1. CLAUDE.md still instructed the blocked `pytest` and `cfn-lint` shims after I changed the
+           DoD -- violating the very AC4 discipline this story enforces, in a file that already
+           carried that exact workaround note for lint-imports. Fixed in three places, and the
+           Device Guard note now records all three blocked shims together.
+        2. My "8 citation-sweep failures, all false" count was STALE -- it is 11. The limitation
+           prose I wrote itself introduced three new bare-filename regex matches, and I never re-ran
+           the count afterwards. Caught by spec review under exactly the C2 rule this sprint applied
+           to everyone else. Corrected, re-derived, and the cause recorded in the article.
+      ALSO CORRECTED FOR HONESTY: ZR-8's deferral reason claimed a guard would be RED on real code and
+      C4 forbids that -- but ZR-3 and ZR-7 were in precisely that position and this same story solved
+      it with exemption lists, so that was a false excuse. The real reasons are AC5's two-guard cap
+      plus the fact that ZR-8's violations are whole-function SHAPE rather than per-site coordinates,
+      which makes an exemption list a far blunter instrument there. ZR-6's row now carries its own
+      verdict's requirement that it is guardable only as a reviewed warning, never a hard contract.
+      WIKI BLAST RADIUS handled properly rather than re-stamped: the DoD change marked
+      dev-setup-and-dod.md stale (two of its code_refs), so its command list was UPDATED with the
+      Device Guard reason and date, mirroring how it already recorded the 2026-07-12 lint-imports
+      block. zone-rules.md re-stamped twice, each time after a real re-read of what changed.
+      WAS BLOCKED EARLIER at AC7 by the Device Guard regression -- the PO approved the DoD invocation change and the FULL 8/8 GATE IS NOW
       GREEN at 8e18b6d: python -m pytest 689 passed / 0 SKIPPED, all three frontend commands pass,
       yt_selftest OK. AC7 is satisfied. Awaiting the reviewer pass the PO asked for; every other AC
       was already met.
@@ -393,6 +435,7 @@ dod_evidence:
 # proven blocked by Device Guard (STORY-210), and it is recorded HONESTLY as RED, not massaged.
 # The FULL 8/8 GREEN run at 8e18b6d follows it, after the PO-approved DoD invocation change --
 # both records kept, so the RED is visible in history rather than overwritten.
+# The FINAL full 8/8 run after the review fix round follows, at the true final HEAD.
   - command: "pytest"
     exit_code: 0
     output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
@@ -548,3 +591,43 @@ dod_evidence:
     output_tail: "> frontend@0.0.0 lint | > eslint ."
     commit: 0f3dc57
     at: "2026-07-31T16:56:03+00:00"
+  - command: "python -m pytest"
+    exit_code: 0
+    output_tail: "......                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 98%] | backend\\tests\\test_zone_layout.py ....                                   [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 63.44s (0:01:03) ========================"
+    commit: 769ddc5
+    at: "2026-07-31T17:20:18+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: 769ddc5
+    at: "2026-07-31T17:21:27+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: 769ddc5
+    at: "2026-07-31T17:21:28+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "246 files already formatted"
+    commit: 769ddc5
+    at: "2026-07-31T17:21:28+00:00"
+  - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: 769ddc5
+    at: "2026-07-31T17:21:29+00:00"
+  - command: "npm test"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:51:37 | Duration  95.52s (transform 15.42s, setup 87.19s, import 50.08s, tests 107.94s, environment 326.22s)"
+    commit: 769ddc5
+    at: "2026-07-31T17:21:36+00:00"
+  - command: "npm run build"
+    exit_code: 0
+    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 1.36s"
+    commit: 769ddc5
+    at: "2026-07-31T17:23:13+00:00"
+  - command: "npm run lint"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 lint | > eslint ."
+    commit: 769ddc5
+    at: "2026-07-31T17:23:28+00:00"
