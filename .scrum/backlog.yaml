@@ -2132,7 +2132,7 @@ stories:
     type: chore
     sprint: null
   - id: STORY-202
-    title: env_matrix.py must import the Statuspage secret env-var NAMES from settings.py, not re-declare them
+    title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: null
     status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MAJOR x2). Story file not yet
                     # written -- the report section is the source (audit-api-composition-tools.md
@@ -2153,6 +2153,18 @@ stories:
                     # AC2 is the good one: pin the test's expectation to the IMPORTED symbols, so a
                     # future rename moves the test's expectation with it instead of passing a
                     # now-wrong key.
+                    # *** SCOPE WIDENED 2026-07-31 at the STORY-196 fix round, and the severity
+                    # ORDER CHANGED. *** The original entry covered only the 2 Statuspage credential
+                    # names. The quality review pointed out that the SAME rename-drift mechanism
+                    # applies to the five sitting five lines above them -- env_matrix.py:64-68
+                    # CONFIG_DIR, AWS_REGION, DYNAMO_ENDPOINT_URL, DYNAMO_OBSERVATIONS_TABLE,
+                    # DYNAMO_CONTROL_TABLE. They escaped the ZR-3 sweep only because settings.py:32-38
+                    # reads those names as FUNCTION-BODY literals rather than module constants -- a
+                    # formatting accident on the src side, NOT a difference in risk.
+                    # CONFIG_DIR IS NOW GRADED THE MOST SEVERE OF THE SEVEN, above the credential
+                    # pair: the fake credentials are only defence in depth, whereas CONFIG_DIR is
+                    # what selects config/demo and therefore what makes statuspage_mapping() empty --
+                    # it IS the publish guard. Story is now 7 names, not 2.
     points: 1
     priority: 73
     type: defect
@@ -2197,4 +2209,40 @@ stories:
     points: 2
     priority: 75
     type: chore
+    sprint: null
+  - id: STORY-205
+    title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
+    file: null
+    status: draft   # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
+                    # Source: audit-api-composition-tools.md section 6, four testable AC.
+                    # *** ARGUABLY THE BEST BOUNDARY FINDING OF THE AUDIT SPRINT. *** It fell through
+                    # the crack BETWEEN the two audit passes -- STORY-195 covered adapters/,
+                    # STORY-196 covered composition/, and this is composition/ DOING adapters/'s job,
+                    # so each pass could reasonably think the other owned it. That is the exact
+                    # failure mode a two-pass audit is supposed to prevent, and it took an
+                    # independent reviewer pass to catch.
+                    # THE DEFECT: seed_dynamo.py:29-30/:43/:58-59 hand-build the DynamoDB key schema
+                    # (pk=TOPOLOGY, sk=COMPONENT#<id> / SIGNAL#<key>) with raw table.put_item /
+                    # table.update_item and a hand-written UpdateExpression, from the COMPOSITION
+                    # zone. That schema is OWNED by dynamo_component_repository.py:39-40,53-54 and
+                    # dynamo_signal_repository.py:41-42, so it is now declared in THREE places, on
+                    # the boot path of BOTH composition roots.
+                    # THE DRIFT HAS ALREADY BITTEN ONCE, and the scar is in the tree:
+                    # tools/demo_loop_gate/failure_path_reality_gate.py:163-172's docstring records a
+                    # first version using pk=COMPONENT#<id>, sk=META while the repository actually
+                    # uses pk=TOPOLOGY, sk=COMPONENT#<id>.
+                    # CORROBORATION: docs/scrum/wiki/persistence-adapters.md already lists
+                    # seed_dynamo.py in its code_refs and describes seed_topology_dynamo alongside
+                    # the repositories (:36) -- the wiki had effectively filed it with the adapters
+                    # long before the audit looked.
+                    # AC2 IS THE GOOD ONE and must survive refinement: change the key schema INSIDE
+                    # a repository and assert seed_topology_dynamo follows AUTOMATICALLY, without
+                    # seed_dynamo.py changing -- a behavioural drift test, not a source assertion.
+                    # REFINEMENT MUST SIZE THIS BEFORE COMMITTING: the repositories expose no
+                    # seed-shaped bulk upsert today (set_status/get are single-item, request-scoped),
+                    # and NO repository owns AppConfig-shaped writes (pk=TOPOLOGY, sk=APP#<id>) at
+                    # all -- that may need a third method or a small new TopologyRepository port.
+    points: 3
+    priority: 76
+    type: defect
     sprint: null
