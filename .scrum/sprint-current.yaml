@@ -213,10 +213,66 @@ stories:
   - id: STORY-196
     title: Audit api + composition and the tools/ to src/ one-way boundary
     file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
-    status: in_progress   # dispatched 2026-07-31, concurrently with a STORY-195 fix-round re-review
+    status: done
     points: 2
-    ceremony: implementer + both reviewers
-    result: null
+    ceremony: implementer + both reviewers + fix round (spec PASSED first time; quality FIX_REQUIRED)
+    result: >-
+      DONE at b5ef06e. Delivered docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md
+      over all 85 modules (api 55, composition 13, tools 17), each listed with a verdict AND an
+      explicit full-read vs grep-verified annotation -- the lesson from STORY-195's review applied.
+      *** SPEC REVIEW PASSED ALL SIX AC ON THE FIRST PASS, and did the strongest verification seen
+      this sprint: it RE-IMPLEMENTED the ZR-3 sweep independently from the report's prose and got
+      BYTE-IDENTICAL output (13 src declarations, 911 tools literals, the same 15 collisions, the
+      AC3 reference case found unprompted). The quality reviewer independently did the same and also
+      reproduced it exactly. A mechanical claim reproduced by two independent re-implementations is
+      the highest evidence bar anything in this sprint has cleared. ***
+      QUALITY REVIEW returned FIX_REQUIRED (4 MAJOR, 7 minor) from its own pass over all 13
+      composition/ modules, api/dependencies.py, the six service.py files and the tools/ boundary
+      crossers. It also CORROBORATED that api/ is genuinely clean (every src.* edge across all 55
+      modules resolves to the feature's own package, core, _shared or api/dependencies -- never
+      cross-feature, never adapters/composition) and that nothing under backend/src/ imports tools/.
+      WHAT THE REVIEW FOUND THAT THE AUDIT DID NOT -- and the first one is the sprint's best
+      boundary finding:
+        1. composition/seed_dynamo.py IS AN ADAPTER: raw boto3 put_item/update_item plus a
+           hand-written UpdateExpression, hand-building the pk=TOPOLOGY / sk=COMPONENT#<id> key
+           schema OWNED by two repositories -- a third declaration on the boot path of BOTH
+           composition roots. The audit verdicted it CLEAN and section 5 asserted it was "pure
+           wiring". IT FELL THROUGH THE CRACK BETWEEN THE TWO AUDIT PASSES (195 owned adapters/, 196
+           owned composition/, and this is composition/ doing adapters/'s job), which is exactly the
+           failure a two-pass audit exists to prevent. The drift already bit once --
+           failure_path_reality_gate.py:163-172's docstring carries the scar -- and
+           persistence-adapters.md already listed seed_dynamo.py in its code_refs. Filed STORY-205 (3).
+        2. The tools/ pass never adjudicated a PRIVATE-module import (query_grammar.py:26 and
+           store.py:14 both import src.adapters.inbound.dynatrace._assembly) and never verified the
+           DIRECTIONAL half of its own titular one-way rule. Both now adjudicated and recorded.
+        3. The section 3c ledger did not balance (15 pairs, 6 filed, 8 cleared) and one CLEAR quoted
+           the WRONG LINE -- harness.py:964 is `indent=2`, not `print("=" * 78)` -- meaning at least
+           one of 15 was adjudicated without opening the file. The report's own citation checker
+           passed it, because line-count-only checking is precisely its admitted blind spot.
+        4. The MAJOR rating ignored FIVE MORE env-var key names five lines above the credential pair
+           (env_matrix.py:64-68). They escaped the sweep only because settings.py:32-38 reads those
+           names as FUNCTION-BODY literals rather than module constants -- a formatting accident on
+           the src side, not a difference in risk.
+      *** SEVERITY ORDER CORRECTED IN THE FIX ROUND, and this is the one to remember: CONFIG_DIR now
+      outranks the Statuspage credential pair. Fake credentials are only defence in depth; CONFIG_DIR
+      is what selects config/demo and therefore what makes statuspage_mapping() empty -- it IS the
+      publish guard. STORY-202 widened from 2 names to 7. ***
+      ZR-8 LANDED IN THE CATALOGUE (C5 permits and requires recording): storage and vendor mechanics
+      -- a key schema, an item shape, a direct table/SDK call, or query construction -- live in
+      exactly ONE adapter; another zone calls that adapter rather than re-implementing them. It was
+      deliberately WIDENED from the audit's draft, which spoke only of "a query string, a request
+      payload shape" and would NOT have caught a persistence key schema. One rule now covers both
+      GAP-2 (vendor_health.py duplicating the DQL builder without its InvalidNativeIdError
+      validation) and seed_dynamo.py.
+      BOTH SWEEPS ARE NOW COMMITTED under tools/ (zr3_duplicate_sweep.py, citation_sweep.py) -- they
+      had lived only in a scratchpad, so the report's recorded command did not run at HEAD, a C2 gap
+      on the story's central artifact. C1 still holds: tools/ is outside C1's protected set
+      (backend/src, frontend, config), which is verified empty.
+      ORCHESTRATOR NOTE FOR STORY-197: the committed sweep now flags ITS OWN SOURCE
+      (tools/zr3_duplicate_sweep.py:160-182 match config.py's FreshnessConfig defaults). Harmless as
+      a report, but promoting it to a standing test needs a self-exclusion first.
+      GATE: 5/5 scoped PASS, 685 passed / 0 SKIPPED, merged verbatim below. yt_wiki CLEAN on all four
+      blocking checks. C1 diff-scope empty, verified by the orchestrator.
     order: 3
     plan_note: >-
       85 modules (api 55 + composition 13 + tools 17 -- V1). HIGHEST-YIELD SURFACE IN THE SPRINT:
@@ -228,7 +284,7 @@ stories:
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: todo
+    status: in_progress   # dispatched 2026-07-31 -- the last story; the sprint's whole point
     points: 3
     ceremony: implementer + both reviewers
     result: null
@@ -272,6 +328,7 @@ dod_evidence:
 # record at sprint close. STORY-194's record below is a 5-command SCOPED run (docs-only diff
 # cannot reach the three frontend commands) at 3b0ff0f, AFTER the orchestrator correction.
 # STORY-195's 5-command SCOPED run at 2c29514 follows STORY-194's.
+# STORY-196's 5-command SCOPED run at b5ef06e follows STORY-195's.
   - command: "pytest"
     exit_code: 0
     output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
@@ -322,3 +379,28 @@ dod_evidence:
     output_tail: ""
     commit: 2c29514
     at: "2026-07-31T05:08:25+00:00"
+  - command: "pytest"
+    exit_code: 0
+    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 34.71s ============================="
+    commit: b5ef06e
+    at: "2026-07-31T11:16:06+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: b5ef06e
+    at: "2026-07-31T11:16:42+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: b5ef06e
+    at: "2026-07-31T11:16:43+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "244 files already formatted"
+    commit: b5ef06e
+    at: "2026-07-31T11:16:43+00:00"
+  - command: "cfn-lint infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: b5ef06e
+    at: "2026-07-31T11:16:43+00:00"
