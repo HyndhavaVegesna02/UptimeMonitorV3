@@ -213,7 +213,7 @@ stories:
   - id: STORY-196
     title: Audit api + composition and the tools/ to src/ one-way boundary
     file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
-    status: todo
+    status: in_progress   # dispatched 2026-07-31, concurrently with a STORY-195 fix-round re-review
     points: 2
     ceremony: implementer + both reviewers
     result: null
