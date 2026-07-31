@@ -2133,7 +2133,7 @@ stories:
     sprint: null
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
-    file: null
+    file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
     status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MAJOR x2). Story file not yet
                     # written -- the report section is the source (audit-api-composition-tools.md
                     # section 6), and it carries three testable AC ready to lift.
@@ -2171,7 +2171,7 @@ stories:
     sprint: null
   - id: STORY-203
     title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
-    file: null
+    file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # NONE is a live defect today -- every value currently agrees. Each is a DRIFT
@@ -2192,7 +2192,7 @@ stories:
     sprint: null
   - id: STORY-204
     title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
-    file: null
+    file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     status: draft   # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
                     # deliberately NOT landed in zone-rules.md by the audit -- mirroring GAP-1's
                     # precedent, where promotion happened in a later fix round).
@@ -2212,7 +2212,7 @@ stories:
     sprint: null
   - id: STORY-205
     title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
-    file: null
+    file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     status: draft   # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # *** ARGUABLY THE BEST BOUNDARY FINDING OF THE AUDIT SPRINT. *** It fell through
@@ -2248,7 +2248,7 @@ stories:
     sprint: null
   - id: STORY-206
     title: Land ZR-1's guard — an import-linter contract forbidding inbound adapters from importing repository ports
-    file: null
+    file: docs/scrum/stories/STORY-206-land-zr1-inbound-adapter-port-contract.md
     status: draft   # FILED 2026-07-31 by STORY-197 (AC5 stopping rule: guards landed for the two
                     # highest-severity rules WITH live violations; ZR-1 is clean, so it is deferred).
                     # THE CONTRACT IS ALREADY FULLY WRITTEN in docs/scrum/wiki/zone-rules.md ZR-1 --
@@ -2271,7 +2271,7 @@ stories:
     sprint: null
   - id: STORY-207
     title: Land ZR-2's guard — an AST test that vendor vocabulary never becomes an identifier inside core/
-    file: null
+    file: docs/scrum/stories/STORY-207-land-zr2-vendor-vocabulary-ast-test.md
     status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean, mutation proof needed).
                     # Sketch is written in zone-rules.md ZR-2's coverage verdict, including the node
                     # types it must walk (FunctionDef/ClassDef names, arg, Name, Attribute.attr,
@@ -2291,7 +2291,7 @@ stories:
     sprint: null
   - id: STORY-208
     title: Land ZR-4's guard — extend test_zone_layout to assert the five-file api feature SHAPE
-    file: null
+    file: docs/scrum/stories/STORY-208-land-zr4-five-file-feature-test.md
     status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean).
                     # backend/tests/test_zone_layout.py TODAY asserts feature-SET equality against the
                     # api-feature-independence contract and router registration -- but NOT the
@@ -2310,7 +2310,7 @@ stories:
     sprint: null
   - id: STORY-209
     title: Land ZR-5's guard — a composition-root parity test for CONFIG_DIR resolution (code-level half only)
-    file: null
+    file: docs/scrum/stories/STORY-209-land-zr5-composition-root-parity-test.md
     status: draft   # FILED 2026-07-31 by STORY-197 (deferred).
                     # *** READ THE SCOPE LIMIT BEFORE ESTIMATING: this guard CANNOT cover the failure
                     # that actually caused the sprint-64 incident. *** The loop and the API are
@@ -2333,7 +2333,7 @@ stories:
     sprint: null
   - id: STORY-210
     title: Device Guard blocks pytest.exe and cfn-lint.exe — two of the eight DoD commands cannot run
-    file: null
+    file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
     status: draft   # FILED 2026-07-31 by STORY-197, which it BLOCKED at AC7.
                     # *** THIS BLOCKS THE DOD GATE ITSELF, SO IT BLOCKS EVERY FUTURE STORY. Fix it
                     # before the next sprint starts. ***
