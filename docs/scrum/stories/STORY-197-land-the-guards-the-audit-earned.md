@@ -74,6 +74,76 @@ None. What gets guarded is decided from STORY-195/196's severities in-process, u
 
 ## History
 
-- 2026-07-31: drafted and refined in sprint-66 planning. 3 points: writing a contract is small, but
-  proving it RED (including mutate-and-revert on a clean tree) plus the count-consistency sweep plus
-  adjudicating every catalogue rule is the bulk of it.
+- 2026-07-31: drafted and refined in sprint-66 planning.
+- 2026-07-31: implemented. Two guards landed, both **shown RED before being trusted** (C3/A9).
+  The implementing agent was stopped mid-story by the PO after its three commits (`19fee13`,
+  `e2fffae`, `0ba21d0`); it could not be resumed, so the orchestrator completed AC4–AC7 directly
+  and **re-derived every RED proof itself** rather than accepting the agent's self-report.
+
+### The guards
+
+- **ZR-7** -> `backend/tests/test_zr7_pagination_guard.py` (2 tests). Every `.query(`/`.scan(` call
+  site under `adapters/persistence/` must loop on `LastEvaluatedKey` or carry a named, reasoned
+  exemption. Five exemptions are real unfixed findings, each citing **STORY-199**; one
+  (`list_recent`) is permanent, because its port promises a stated bound rather than "all".
+- **ZR-3** -> `backend/tests/test_zr3_duplicate_declarations.py` (2 tests). Promotes the committed
+  `tools/zr3_duplicate_sweep.py` to a standing test; every collision must be adjudicated, and each
+  unfixed entry cites **STORY-202**/**STORY-203**.
+
+### Why these two, and not the other six (AC5's stopping rule, as a result)
+
+ZR-3 and ZR-7 are the two highest-severity rules **with a live violation to prove the guard RED
+against**. ZR-1/ZR-2/ZR-4 are clean (mutation-only proof, cheaper alongside their own stories);
+ZR-5's real risk is cross-process and unguardable by a unit test; ZR-6 waits on STORY-200's design
+decision; ZR-8 has two live violations, so a guard today would be RED on real code. Deferred guards
+filed as **STORY-206..209**; full verdicts in `zone-rules.md`'s Adjudication table.
+
+### The live-violation problem, and how it was resolved
+
+Three of the strongest candidates had live violations. A zero-tolerance guard would have turned the
+DoD gate RED and blocked every future story until the fix stories landed - which C4 forbids as a
+side effect of a guard. Both guards therefore ship with **enumerated exemption/adjudication lists in
+which every unfixed entry names its fix story**, so the guard is green today, fails loudly on any NEW
+violation, and shrinks as fixes land. The per-entry fix-story citation is what stops an exemption
+list becoming a permanent suppression list.
+
+### RED proofs, re-derived by the orchestrator at acceptance
+
+All four were run, observed RED, and reverted; the tree is clean and all 4 tests pass at HEAD.
+
+1. **ZR-7, unexempted violation.** Removed the `is_under_maintenance` exemption ->
+   `AssertionError: ZR-7 violation(s) ... dynamo_maintenance_repository.py:90
+   [DynamoMaintenanceRepository.is_under_maintenance] does not loop on LastEvaluatedKey and has no
+   exemption entry` -- `1 failed, 1 passed`. Reverted.
+2. **ZR-7, stale exemption.** Added an exemption for `dynamo_observation_repository.py:113`, a call
+   site that already loops -> `... :113 -- now loops on LastEvaluatedKey; remove this exemption, the
+   fix has landed`. This is the branch that stops a landed fix leaving a rotting entry. Reverted.
+3. **ZR-3, new collision.** Injected `FAKE_TABLE = "uptime-observations"` into
+   `tools/demo_engine/store.py` -> `ZR-3 collision(s) found with no adjudication on record ... SRC:
+   backend/src/composition/settings.py:21 [shape-ii Settings.dynamo_observations_table] TOOLS:
+   tools/demo_engine/store.py:86`. Reverted.
+4. **A negative result worth recording.** The same injection into `tools/citation_sweep.py` did
+   **not** trip the guard. That is correct, not a hole: `_SELF_EXCLUDE_NAMES` skips the two sweep
+   scripts, whose own literals are inherently noisy. Recorded because the first reading of a
+   green result there looks exactly like a blind spot. **Noted for a future story:** the exclusion
+   matches on BARE FILENAME, so any future `tools/**/citation_sweep.py` anywhere would also be
+   skipped; a relative-path match would be tighter.
+
+### AC4 - contract-count consistency (verification, not an edit)
+
+Neither guard is an import-linter contract - both are pytest tests running inside the existing
+`pytest` DoD command - so the contract count is **unchanged at eight** and no statement needed
+editing. Verified rather than assumed, via `grep -rn` over `CLAUDE.md`, `.scrum/definition-of-done.md`
+and `docs/scrum/wiki/`: every occurrence ("eight contracts" / "same 8 contracts" /
+`Contracts: 8 kept, 0 broken`) is still accurate. **STORY-206 will take this to nine** and must
+update all of them in its own commit.
+
+### AC6 - every rule adjudicated
+
+`zone-rules.md` gained an authoritative Adjudication table: ZR-3 and ZR-7 `ENFORCED-BY` their tests;
+ZR-1/2/4/5/6/8 `GUARDABLE-DEFERRED` with a named story; ZR-5's operational half recorded
+`UNGUARDABLE` with its reason. `verified_sha` re-stamped only after a real re-verification of the
+article's citations - during which the committed `citation_sweep.py` reported **8 failures, all of
+which proved FALSE on direct read** (two cite a memory file outside the repo; six fail the
+content-anchor heuristic while the cited lines are exactly right). That limitation is now recorded in
+the article itself, so a later story does not "fix" correct citations to satisfy a heuristic.

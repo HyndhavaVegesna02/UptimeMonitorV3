@@ -2246,3 +2246,88 @@ stories:
     priority: 76
     type: defect
     sprint: null
+  - id: STORY-206
+    title: Land ZR-1's guard — an import-linter contract forbidding inbound adapters from importing repository ports
+    file: null
+    status: draft   # FILED 2026-07-31 by STORY-197 (AC5 stopping rule: guards landed for the two
+                    # highest-severity rules WITH live violations; ZR-1 is clean, so it is deferred).
+                    # THE CONTRACT IS ALREADY FULLY WRITTEN in docs/scrum/wiki/zone-rules.md ZR-1 --
+                    # lift it verbatim. It enumerates the NINE repository/watermark port modules and
+                    # deliberately EXCLUDES src.core.ports.signal_ingest, because that is the core's
+                    # documented FRONT DOOR (dossier 6/8) that a driving adapter may legitimately
+                    # name; a whole-package ban would fail a shape the design documents.
+                    # THE TREE IS CLEAN, so C3's shown-RED proof MUST be a mutation: temporarily add
+                    # `from src.core.ports.observation_repository import ObservationRepository` to
+                    # adapters/inbound/dynatrace/adapter.py -- even as an unused annotation -- confirm
+                    # the contract trips, then revert. A guard that has only ever been green is not
+                    # accepted (A7/A9), and spec review must return NOT_MET rather than MET-with-a-note.
+                    # Lands inside the EXISTING import-boundary DoD command; it does NOT add a ninth
+                    # command (C4). It DOES take the contract count from eight to nine, so
+                    # CLAUDE.md (twice), .scrum/definition-of-done.md and any wiki article repeating
+                    # the figure must be updated in the SAME commit, with grep evidence before/after.
+    points: 2
+    priority: 77
+    type: chore
+    sprint: null
+  - id: STORY-207
+    title: Land ZR-2's guard — an AST test that vendor vocabulary never becomes an identifier inside core/
+    file: null
+    status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean, mutation proof needed).
+                    # Sketch is written in zone-rules.md ZR-2's coverage verdict, including the node
+                    # types it must walk (FunctionDef/ClassDef names, arg, Name, Attribute.attr,
+                    # keyword.arg, and Constant values that are NOT the sole value of an Expr
+                    # statement -- the last exclusion is what keeps the two PROSE forms compliant).
+                    # THE RESIDUE IS ALREADY STATED and must be carried into the test's docstring
+                    # rather than quietly dropped: a vendor word in a STRING annotation and a
+                    # DYNAMICALLY CONSTRUCTED identifier are invisible to a static AST walk. The
+                    # guard may not be described as fully enforcing ZR-2.
+                    # The detection word list is a RECALL AID, explicitly non-exhaustive -- the RULE
+                    # is the FORM distinction, which is closed and decidable without any word list.
+                    # Mutation proof: add e.g. `dynatrace_code: str` to a core/ domain model, confirm
+                    # RED, revert.
+    points: 2
+    priority: 78
+    type: chore
+    sprint: null
+  - id: STORY-208
+    title: Land ZR-4's guard — extend test_zone_layout to assert the five-file api feature SHAPE
+    file: null
+    status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean).
+                    # backend/tests/test_zone_layout.py TODAY asserts feature-SET equality against the
+                    # api-feature-independence contract and router registration -- but NOT the
+                    # five-file shape, which is why ZR-4 exists at all.
+                    # Sketch (zone-rules.md ZR-4): for each feature from discover_features(v1_dir)
+                    # except an ENUMERATED exception list, assert the file set equals exactly
+                    # {__init__.py, controller.py, models.py, validation.py, service.py}.
+                    # `health` is the ONE documented exception (2 files: it is a static liveness stub
+                    # whose own docstring explains it exists to give api-feature-independence a second
+                    # feature so the contract is non-vacuous). Verified across all ten features by
+                    # STORY-196: nine conform, health is the single deviation.
+                    # Smallest of the four deferred guards.
+    points: 1
+    priority: 79
+    type: chore
+    sprint: null
+  - id: STORY-209
+    title: Land ZR-5's guard — a composition-root parity test for CONFIG_DIR resolution (code-level half only)
+    file: null
+    status: draft   # FILED 2026-07-31 by STORY-197 (deferred).
+                    # *** READ THE SCOPE LIMIT BEFORE ESTIMATING: this guard CANNOT cover the failure
+                    # that actually caused the sprint-64 incident. *** The loop and the API are
+                    # separate OS PROCESSES, each reading its own environment, so setting CONFIG_DIR
+                    # in one does not propagate to the other. No single-process test sees across a
+                    # process boundary. That half is UNGUARDABLE by a unit test and stays runbook
+                    # discipline; only tools/demo_loop_gate/harness.py's own env-setting on BOTH child
+                    # processes covers it operationally.
+                    # WHAT THE GUARD CAN DO (and must not overclaim beyond): patch CONFIG_DIR to an
+                    # arbitrary value and assert load_settings().config_dir resolves to it, plus a
+                    # source-level assertion that NEITHER composition/run.py::main NOR
+                    # composition/app.py::create_app reads os.environ["CONFIG_DIR"] directly -- both
+                    # must route through load_settings(). That catches the regression shape "one root
+                    # starts reading independently of the other", which is real.
+                    # Both roots agree today (verified independently twice, STORY-195 and STORY-196),
+                    # so the proof is a mutation.
+    points: 2
+    priority: 80
+    type: chore
+    sprint: null
