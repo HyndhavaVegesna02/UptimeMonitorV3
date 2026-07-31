@@ -245,12 +245,19 @@ where a zone-wide regression would be caught.
 
 #### ZR-3 — a module-level constant shared across the `tools/` -> `backend/src/` one-way boundary is declared once, in `backend/src/`, and imported by `tools/` — never re-declared
 
-- **Statement.** SCOPE, pinned (see the measurement below for why): a module-level
-  named constant (an UPPER_CASE assignment target) declared in `backend/src/`, whose
-  value `tools/` also needs, must be obtained by `tools/` importing the symbol at
-  runtime. `tools/` must never independently declare its own module-level UPPER_CASE
-  constant equal to a `backend/src/`-declared one. This is about DECLARED CONSTANTS,
-  not every literal in the language — see the measurement below.
+- **Statement.** SCOPE, pinned (see the measurement below for why): a value DECLARED in
+  `backend/src/` — in either of TWO declaration shapes, (i) a module-level named constant
+  (an UPPER_CASE assignment target) or (ii) a **default on a settings/config field**
+  (e.g. `backend/src/composition/settings.py:21-22`) — whose value `tools/` also needs,
+  must be obtained by `tools/` importing the symbol or reading the config at runtime.
+  `tools/` must never independently re-declare or hardcode a value equal to one of those,
+  **whether it does so at module level or inside a function body**. This is about DECLARED
+  values in those two shapes, not every literal in the language — see the measurement below.
+  **Both shapes are in scope deliberately, and shape (ii) plus the function-body clause are
+  what make the adjudicated violation below actually IN scope** (the first draft of this
+  rule pinned only shape (i) at module level, which excluded the one real violation it
+  simultaneously claimed to adjudicate — corrected by the orchestrator at STORY-194
+  acceptance, 2026-07-31).
 - **Source.** PO directive 2026-07-30 concrete rule 4: "`tools/` may import `src.*`,
   never the reverse — so a constant shared between them lives in `backend/src/` and
   `tools/` imports it rather than duplicating the literal." CLAUDE.md's "two things to
@@ -280,11 +287,20 @@ where a zone-wide regression would be caught.
   UPPER_CASE constant declarations only, same two trees — found **0 colliding
   values** by this literal-equality test (the `assumed_failure_codes.py`/
   `health_mapping.py` pair above is a real agreement via IMPORT, which a
-  literal-value comparison cannot see at all; the `harness.py`/`settings.py` pair
-  above is a real violation this scope IS meant to catch, once the sweep also checks
-  "did `tools/` obtain the value via import" rather than just "do the literals
-  match"). This wide-101/narrow-0 gap is the reason the scope is pinned to declared
-  constants rather than every literal. **Note for the record:** this story's own
+  literal-value comparison cannot see at all). This wide-101/narrow-0 gap is the reason
+  the scope is pinned to declared values rather than every literal.
+  **Why that narrow reading returned 0 even though a real duplicate exists — read this
+  before building the sweep (orchestrator correction, STORY-194 acceptance 2026-07-31):**
+  the narrow measurement counted ONLY shape (i) at module level on BOTH sides, and the
+  adjudicated `harness.py`/`settings.py` violation below is neither — `settings.py:21-22`
+  is shape (ii) (a field default, not an UPPER_CASE module constant) and the `harness.py`
+  side is a literal inside a FUNCTION BODY. So the 0 is an artifact of the first draft's
+  too-narrow scope, NOT evidence that the tree is clean. Under the pinned scope as it now
+  stands — both declaration shapes, and `tools/`-side literals anywhere including function
+  bodies — the sweep MUST find the `harness.py` case. **That is the demonstration STORY-196
+  AC3 requires** ("shown capable of finding one" before an empty result elsewhere is
+  accepted): if a STORY-196 sweep reports 0 while that case stands, the sweep is wrong, not
+  the tree. **Note for the record:** this story's own
   re-measurement gives 101, not the 105 quoted at hand-off; the qualitative
   conclusion (wide reading is unusably noisy, narrow reading needs the
   import-exception rule below to catch anything at all) holds under either count —
@@ -293,13 +309,15 @@ where a zone-wide regression would be caught.
 - **Coverage verdict.** `GUARDABLE` (a pytest test — the "duplicated-declaration
   sweep" STORY-196 builds and must demonstrate capable of finding the `harness.py`
   case above before its own "no duplicates" result elsewhere is accepted; STORY-197
-  may promote it to a standing test): parse every module-level UPPER_CASE constant
-  declared under `tools/` and every module-level UPPER_CASE constant declared under
-  `backend/src/`; flag a `tools/`-side value equal to a `backend/src/`-side value
-  UNLESS the `tools/`-side symbol is ITSELF imported from `src` at runtime (a
-  `from src... import THE_SYMBOL` resolving to the same declaration) — "some import
-  exists between the two files" is not the criterion; "this specific value was
-  obtained via that import" is. Not guardable by `lint-imports` itself: its
+  may promote it to a standing test): collect the `backend/src/` side as BOTH declaration
+  shapes — module-level UPPER_CASE constants AND settings/config field defaults — then flag
+  any `tools/`-side literal equal to one of those values, wherever that literal appears
+  (module level or inside a function body), UNLESS the `tools/` side obtains the value from
+  `src` at runtime (an import of the declaring symbol, or a read of the config object,
+  resolving to the same declaration) — "some import exists between the two files" is not the
+  criterion; "this specific value was obtained from `src`" is. Scoping the `backend/src/`
+  side to only module-level UPPER_CASE constants is the mistake that made this rule's own
+  adjudicated violation invisible to it; do not re-introduce it. Not guardable by `lint-imports` itself: its
   `root_package` setting is `"src"` (see [[architecture-boundary]] V6), which makes
   it structurally blind to anything
   under `tools/` (no `tools/` module is even a
@@ -435,6 +453,19 @@ code that exists.
   stated scope widened to match its guard's actual scope (`queries`, package root);
   ZR-1's coverage verdict named the RED-proving mutation; the zone-wide-negative
   caveat added; the `signal.py` citation corrected to `:5-6`.
+
+- sprint-66 (STORY-194 acceptance, orchestrator correction 2026-07-31): ZR-3's pinned
+  SCOPE was internally inconsistent with its own adjudicated violation. The scope covered
+  only shape (i) (module-level UPPER_CASE constants) on both sides, but the violation it
+  adjudicates is a function-body literal in `tools/demo_loop_gate/harness.py:746-750`
+  duplicating a pydantic FIELD DEFAULT at `backend/src/composition/settings.py:21-22` —
+  neither side in scope. That is also why the narrow measurement returned 0 while a real
+  duplicate stood. Corrected in three places (Statement, Measurement, Coverage verdict):
+  the `backend/src/` side now covers both declaration shapes, and the `tools/` side counts
+  literals inside function bodies. Consequence for STORY-196 AC3: the sweep MUST find the
+  `harness.py` case, and a sweep reporting 0 while that case stands is a broken sweep, not
+  a clean tree. Neither reviewer could have caught this — it emerged from the fix round's
+  own scope-pinning.
 
 **AC3 citation-resolution sweep, rebuilt to EXTRACT from the article (not a
 hand-typed manifest) — command and full output recorded in the story file's
