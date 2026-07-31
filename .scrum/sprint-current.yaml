@@ -152,10 +152,58 @@ stories:
   - id: STORY-195
     title: Audit the core and adapters zones against the rule catalogue
     file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
-    status: in_progress   # dispatched 2026-07-31 (session resumed after the usage-limit pause)
+    status: done
     points: 3
-    ceremony: implementer + both reviewers
-    result: null
+    ceremony: implementer + both reviewers + fix round (fix round NOT independently re-reviewed -- see result)
+    result: >-
+      DONE at 2c29514, but read the caveat at the end before treating this as fully verified.
+      Delivered docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md -- all 58 modules
+      (core 31 + adapters 27) enumerated and listed with a verdict; the spec reviewer independently
+      re-ran the enumeration and confirmed the report's two tables match `find` name-for-name in
+      BOTH directions, zero missing and zero extraneous. That part is solid.
+      *** THE SPRINT'S REAL LESSON SO FAR, AND IT IS UNCOMFORTABLE: the audit's value came mostly
+      from ADVERSARIALLY REVIEWING THE AUDIT, not from the audit. *** The first pass reported zero
+      ZR-1..ZR-5 violations and 57 CLEAN verdicts. Spec review returned FAIL (AC2) and quality
+      review FIX_REQUIRED with 4 MAJOR + 9 minor -- and THREE of those MAJORs came from the quality
+      reviewer's own independent pass over ~46 of the 58 files, finding things INSIDE files the
+      audit had already verdicted CLEAN. The 57 CLEAN verdicts were substantially a bulk assertion
+      backed by three greps that only re-measured what planning had already measured.
+      WHAT THE REVIEW FOUND THAT THE AUDIT DID NOT:
+        1. A REAL PRODUCTION DEFECT THAT DOES NOT RAISE -- dynamo_maintenance_repository.py:90-97
+           returns False for a component that IS under maintenance once the 1MB page is exceeded,
+           silently disabling maintenance suppression in `decide`. Four siblings share the shape;
+           the correct paginating pattern already exists in the same directory. Filed STORY-199 (3).
+        2. GAP-1's ROOT CAUSE -- core/ports/proposal_repository.py:45 declares `action: str` while
+           its sibling takes `to_state: ProposalState`. The adapter compares a literal BECAUSE the
+           port hands it a string, so STORY-198's adapter-only fix leaves the boundary untouched.
+           Filed STORY-200 (2). That file had been verdicted CLEAN.
+        3. clickpath_normalizer.py:39 reads a field directly, so its KeyError escapes the
+           quarantine net -- the stall shape STORY-190 closed. Unreachable today. Filed STORY-201 (1).
+      TWO RULES ADDED TO THE CATALOGUE MID-AUDIT (C5 permits this, and requires saying so):
+        ZR-6 a core-owned port expresses every parameter and return in domain types; a primitive
+             standing in for an existing domain type is a boundary finding. (REPLACED the audit's
+             draft ZR-6, which was general Python hygiene applying identically within one zone, with
+             an undecidable escape clause -- the same defect that got ZR-2's first draft rewritten.)
+        ZR-7 an adapter must satisfy the port contract it implements; silently truncating a result
+             set the port promises in full is a boundary violation, not a storage detail.
+      RE-DERIVABILITY DEFECT, the spec FAIL: the report's recorded vendor-word grep claimed "28
+      lines" and did not reproduce -- 22 under its own pattern, 26 under a corrected one, and 4 of
+      the 6 citations it claimed to reconfirm CANNOT match its pattern at all (they read
+      DynamoComponentRepository, not DynamoDB). I re-ran both greps myself and confirmed every
+      number before acting. Corrected in the report and flagged rather than silently substituted,
+      the bar STORY-194 set with its own 105->101.
+      GATE: 5/5 scoped PASS at 2c29514, 685 passed / 0 SKIPPED, merged verbatim below. C1 verified
+      independently by the orchestrator: git diff d4ad03e..HEAD -- backend/src frontend config is
+      EMPTY. yt_wiki CLEAN on all four blocking checks.
+      *** CAVEAT THE PO MUST WEIGH AT REVIEW: the fix round was NEVER INDEPENDENTLY RE-REVIEWED.
+      The implementer was killed mid-edit by the WEEKLY usage limit (resets Aug 4 03:30 IST),
+      leaving verified_sha as a "TBD-fix-round" placeholder that would have failed the wiki
+      integrity check. I recovered the work rather than discarding it (it was a substantially
+      complete fix round, not scraps), stamped the sha to 70a2b4e after confirming the diff over
+      code_refs from there is empty, verified the mechanical floor myself, and read the substantive
+      changes. But no second pair of eyes saw ZR-6, ZR-7, or the revised CLEAN-verdict framing.
+      Given that both reviewers found real defects in BOTH stories this sprint, that is the one
+      soft spot in this story and it should be re-reviewed before STORY-197 builds guards on it. ***
     order: 2
     plan_note: >-
       58 modules (core 31 + adapters 27, __pycache__ excluded -- V1). Every file listed once with a
@@ -223,6 +271,7 @@ dod_evidence:
 # valid YAML). SCOPED runs mid-sprint; the FULL 8/8 gate on the final HEAD is the evidence of
 # record at sprint close. STORY-194's record below is a 5-command SCOPED run (docs-only diff
 # cannot reach the three frontend commands) at 3b0ff0f, AFTER the orchestrator correction.
+# STORY-195's 5-command SCOPED run at 2c29514 follows STORY-194's.
   - command: "pytest"
     exit_code: 0
     output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
@@ -248,3 +297,28 @@ dod_evidence:
     output_tail: ""
     commit: f72bae0
     at: "2026-07-31T02:41:08+00:00"
+  - command: "pytest"
+    exit_code: 0
+    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 58.56s ============================="
+    commit: 2c29514
+    at: "2026-07-31T05:07:22+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: 2c29514
+    at: "2026-07-31T05:08:23+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: 2c29514
+    at: "2026-07-31T05:08:25+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "242 files already formatted"
+    commit: 2c29514
+    at: "2026-07-31T05:08:25+00:00"
+  - command: "cfn-lint infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: 2c29514
+    at: "2026-07-31T05:08:25+00:00"

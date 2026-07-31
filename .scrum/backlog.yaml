@@ -2071,3 +2071,63 @@ stories:
     priority: 69
     type: defect
     sprint: null
+  - id: STORY-199
+    title: Paginate the four adapters/persistence/ methods that silently truncate against an "all" port contract
+    file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
+    status: draft   # FILED 2026-07-31 from STORY-195's QUALITY REVIEW -- NOT from the audit itself.
+                    # The reviewer's independent pass found it inside a file the audit had already
+                    # adjudicated and verdicted CLEAN.
+                    # *** THE MOST CONSEQUENTIAL FINDING OF THE AUDIT SPRINT SO FAR: a real production
+                    # defect that DOES NOT RAISE. *** dynamo_maintenance_repository.py:90-97's
+                    # is_under_maintenance pairs an UNBOUNDED key condition (gsi1pk="MAINT" AND
+                    # gsi1sk <= now -- every window ever created, for every component) with a
+                    # POST-READ FilterExpression on component_id/ends_at, and discards
+                    # LastEvaluatedKey. DynamoDB applies FilterExpression AFTER the 1MB read limit,
+                    # so past that limit it returns False for a component that IS under maintenance
+                    # -- silently disabling maintenance suppression in `decide`.
+                    # FOUR SIBLINGS share the unpaginated shape against ports promising "all":
+                    # dynamo_maintenance_repository.py:66-84 list_windows,
+                    # dynamo_component_repository.py:28-34, dynamo_signal_repository.py:29-36,
+                    # dynamo_proposal_repository.py:172-179.
+                    # THE CORRECT PATTERN IS ALREADY IN THE SAME DIRECTORY:
+                    # dynamo_observation_repository.py:100-118 (pagination loop + a _limit test hook
+                    # + a real-Dynamo test).
+                    # TEST TRAP: the defect only appears past a 1MB page. A test over a handful of
+                    # rows PASSES while the defect stands -- inject a paginated response or use the
+                    # _limit hook. Cites ZR-7, the rule this finding forced into the catalogue.
+    points: 3
+    priority: 70
+    type: defect
+    sprint: null
+  - id: STORY-200
+    title: Give ProposalRepository.record_approval_event a domain-typed action parameter
+    file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
+    status: draft   # FILED 2026-07-31 from STORY-195's quality review. This is the ROOT CAUSE of
+                    # STORY-198: core/ports/proposal_repository.py:45 declares `action: str` while
+                    # the SIBLING method in the same port takes `to_state: ProposalState` (:32), with
+                    # ProposalState imported at :6. The adapter can only compare a literal because
+                    # the PORT handed it a string -- so STORY-198 alone (fixing the adapter) leaves
+                    # the boundary shape untouched. Cites ZR-6.
+                    # OPEN DESIGN QUESTION, stated not dodged: `action`'s legal set is a 2-member
+                    # subset (APPROVED/REJECTED) of a 5-member enum, so the right fix may be a
+                    # NARROWER type rather than ProposalState itself.
+    points: 2
+    priority: 71
+    type: defect
+    sprint: null
+  - id: STORY-201
+    title: Clickpath normalizer hygiene — use require_field for execution.outcome
+    file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
+    status: draft   # FILED 2026-07-31 from STORY-195's quality review.
+                    # clickpath_normalizer.py:39 reads row["execution.outcome"] DIRECTLY instead of
+                    # _assembly.require_field, against the documented policy at _assembly.py:20-30
+                    # and the pattern at http_normalizer.py:22-23. The resulting KeyError is NOT a
+                    # ValueError, so it ESCAPES normalize_rows_lenient's quarantine net -- the exact
+                    # stall shape STORY-190 closed.
+                    # UNREACHABLE TODAY (clickpath is absent from _NORMALIZERS), which is why it is 1
+                    # point and low urgency -- but it directly undercut the audit's CLEARED entry
+                    # claiming "every error class it can possibly catch" was covered.
+    points: 1
+    priority: 72
+    type: chore
+    sprint: null
