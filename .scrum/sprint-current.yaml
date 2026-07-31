@@ -284,11 +284,15 @@ stories:
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: blocked
+    status: in_review
     points: 3
-    ceremony: implementer (stopped by PO mid-story) + orchestrator completion; NO reviewer pass yet
+    ceremony: implementer (stopped by PO mid-story) + orchestrator completion + both reviewers (PO-requested)
     result: >-
-      BLOCKED AT AC7 BY AN ENVIRONMENT REGRESSION, NOT BY ITS OWN WORK. Every other AC is met and
+      UNBLOCKED 2026-07-31 -- the PO approved the DoD invocation change and the FULL 8/8 GATE IS NOW
+      GREEN at 8e18b6d: python -m pytest 689 passed / 0 SKIPPED, all three frontend commands pass,
+      yt_selftest OK. AC7 is satisfied. Awaiting the reviewer pass the PO asked for; every other AC
+      was already met.
+      WAS BLOCKED AT AC7 BY AN ENVIRONMENT REGRESSION, NOT BY ITS OWN WORK. Every other AC is met and
       verified; the story is NOT marked done because the mechanical floor says a nonzero exit is a
       nonzero exit, no exceptions. The PO decides at review.
       WHAT IS DONE AND PROVEN. Two guards landed, and unusually for this repo BOTH were shown RED by
@@ -387,6 +391,8 @@ dod_evidence:
 # STORY-196's 5-command SCOPED run at b5ef06e follows STORY-195's.
 # STORY-197's FULL 8/8 run at 3eceb32 follows -- it is RED on pytest and cfn-lint, both
 # proven blocked by Device Guard (STORY-210), and it is recorded HONESTLY as RED, not massaged.
+# The FULL 8/8 GREEN run at 8e18b6d follows it, after the PO-approved DoD invocation change --
+# both records kept, so the RED is visible in history rather than overwritten.
   - command: "pytest"
     exit_code: 0
     output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
@@ -502,3 +508,43 @@ dod_evidence:
     output_tail: "> frontend@0.0.0 lint | > eslint ."
     commit: 3eceb32
     at: "2026-07-31T16:35:32+00:00"
+  - command: "python -m pytest"
+    exit_code: 0
+    output_tail: "......                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 98%] | backend\\tests\\test_zone_layout.py ....                                   [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 62.93s (0:01:02) ========================"
+    commit: 0f3dc57
+    at: "2026-07-31T16:52:37+00:00"
+  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+    exit_code: 0
+    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+    commit: 0f3dc57
+    at: "2026-07-31T16:53:41+00:00"
+  - command: "ruff check ."
+    exit_code: 0
+    output_tail: "All checks passed!"
+    commit: 0f3dc57
+    at: "2026-07-31T16:53:43+00:00"
+  - command: "ruff format --check ."
+    exit_code: 0
+    output_tail: "246 files already formatted"
+    commit: 0f3dc57
+    at: "2026-07-31T16:53:43+00:00"
+  - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+    exit_code: 0
+    output_tail: ""
+    commit: 0f3dc57
+    at: "2026-07-31T16:53:43+00:00"
+  - command: "npm test"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:23:52 | Duration  110.97s (transform 16.49s, setup 100.94s, import 53.55s, tests 109.61s, environment 392.37s)"
+    commit: 0f3dc57
+    at: "2026-07-31T16:53:50+00:00"
+  - command: "npm run build"
+    exit_code: 0
+    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 1.51s"
+    commit: 0f3dc57
+    at: "2026-07-31T16:55:44+00:00"
+  - command: "npm run lint"
+    exit_code: 0
+    output_tail: "> frontend@0.0.0 lint | > eslint ."
+    commit: 0f3dc57
+    at: "2026-07-31T16:56:03+00:00"
