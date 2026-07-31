@@ -1,6 +1,33 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 66
-status: active     # none | planning | active | review | closed | aborted
+status: closed     # none | planning | active | review | closed | aborted
+                   # CLOSED 2026-07-31. PO ACCEPTED the sprint ("i accept"), velocity 11/11 --
+                   # all four stories Done, full 8/8 gate GREEN at the final HEAD (689 passed,
+                   # 0 SKIPPED; frontend 363 passed), yt_selftest OK, yt_wiki CLEAN on all four
+                   # blocking checks. Branch sprint-66 STAYS UNMERGED (standing directive).
+                   # RETRO: amendments A11 (SCRIPT) and A12/A12b (CHECKLIST) landed at their rungs.
+                   #   A11 -- backlog/story-file parity is now enforced by yt_selftest
+                   #     (test_backlog_story_parity.py): a `file:` pointing at a missing path FAILS,
+                   #     an orphan story file FAILS, `file: null` is an ADVISORY count. Shown RED in
+                   #     both directions. It immediately surfaced that 30 not-done entries repo-wide
+                   #     have no story file.
+                   #   A12 -- a guard's FAILURE MESSAGE is part of the guard: it must not instruct an
+                   #     action its own check cannot justify, and where the check is a PROXY the
+                   #     message must say so. Motivated by ZR-7 telling a developer to delete the
+                   #     exemption covering a LIVE PRODUCTION DEFECT.
+                   #   A12b -- a recorded COUNT must be re-derived after the last edit to the text
+                   #     that produces it (my "8 failures" was really 11, invalidated by the very
+                   #     paragraph explaining it).
+                   # *** THE HEADLINE FOR ANY FUTURE SESSION: the audit's value came overwhelmingly
+                   # from ADVERSARIALLY REVIEWING THE AUDIT, not from the audit. Both reviewers found
+                   # real defects in EVERY story this sprint, several of which the orchestrator had
+                   # personally accepted. Third sprint running. Do NOT trim the two-reviewer ceremony
+                   # to save budget -- on this evidence it is where most defect-finding happens. ***
+                   # 13 stories filed (198-205 findings, 206-209 deferred guards, 210 Device Guard),
+                   # 24 points, ALL drafts needing refinement + a citation re-check before entering
+                   # a sprint. STORY-210 blocks the DoD gate itself and should go first.
+                   # Review: docs/scrum/sprints/2026-07-31-sprint-66/review.md
+                   # Retro:  docs/scrum/sprints/2026-07-31-sprint-66/retro.md
                    # LOCKED 2026-07-31. SCOPE IS FROZEN -- new PO requests go to the backlog.
                    # Tooling is frozen too: no new MCP servers, no ad-hoc skill-script edits
                    # outside a story.

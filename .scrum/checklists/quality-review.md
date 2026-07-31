@@ -67,3 +67,26 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       names, fixture skips, etc.) the helper does not apply -- read the test body and confirm the
       sides could actually have diverged. (2026-07-30, sprint-63 retro amendment A3 -- three
       occurrences in one sprint, each via a DIFFERENT mechanism.)
+
+- [ ] **A guard's FAILURE MESSAGE is part of the guard, and it must not instruct an action its own
+      check cannot justify.** Where the check is a PROXY for the real property, the message must say
+      so and tell the reader to verify, never assert the conclusion outright. Read every message the
+      guard can emit and ask: if someone does exactly what this says, without thinking, is the
+      result correct? (2026-07-31, sprint-66 retro amendment A12 -- STORY-197's ZR-7 guard decided
+      "this method paginates" by finding the STRING `LastEvaluatedKey` anywhere in it, and on a hit
+      emitted "now loops on LastEvaluatedKey; remove this exemption, the fix has landed". A reviewer
+      added a realistic warn-on-truncation stopgap that still read ONE page: the guard then
+      instructed the removal of the exemption covering a LIVE PRODUCTION DEFECT. Following that
+      advice would have left the defect permanently unguarded. The tests were green, the AC were
+      met, and the guard was actively dangerous -- the defect existed only in the message's wording
+      and in the gap between the proxy and the property.)
+
+- [ ] **A recorded COUNT must be re-derived after the last edit to the text that produces it.** A
+      number measured mid-story and then quoted in prose goes stale silently, because nothing
+      recomputes it and the reviewer's instinct is to trust a specific figure. If the story edits
+      the thing being counted -- including its own report -- re-run the count and paste the fresh
+      output. (2026-07-31, sprint-66 retro amendment A12b -- STORY-197 recorded "8 citation-sweep
+      failures, all false" and the number was correct WHEN WRITTEN; the very paragraph explaining
+      those failures quoted three of them by bare filename, which the sweep's own regex then matched
+      as three NEW citations. The true figure was 11. Caught at spec review, under exactly the
+      re-derivability rule the same sprint had been enforcing on everyone else.)
