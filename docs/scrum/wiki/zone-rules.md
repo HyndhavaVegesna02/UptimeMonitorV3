@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py]
-verified_sha: c0a4d71
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py]
+verified_sha: 70a2b4e
 verified_sprint: sprint-66
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -292,7 +292,8 @@ where a zone-wide regression would be caught.
   **Why that narrow reading returned 0 even though a real duplicate exists — read this
   before building the sweep (orchestrator correction, STORY-194 acceptance 2026-07-31):**
   the narrow measurement counted ONLY shape (i) at module level on BOTH sides, and the
-  adjudicated `harness.py`/`settings.py` violation below is neither — `settings.py:21-22`
+  adjudicated `harness.py`/`settings.py` violation below is neither —
+  `backend/src/composition/settings.py:21-22`
   is shape (ii) (a field default, not an UPPER_CASE module constant) and the `harness.py`
   side is a literal inside a FUNCTION BODY. So the 0 is an artifact of the first draft's
   too-narrow scope, NOT evidence that the tree is clean. Under the pinned scope as it now
@@ -411,14 +412,159 @@ where a zone-wide regression would be caught.
   documented runbook discipline (CLAUDE.md's demo-engine section), not a thing a unit
   test can guard.
 
+#### ZR-6 — a core-owned port expresses every parameter and return in domain types; a primitive standing in for a domain type that already exists is a boundary finding
+
+- **Statement.** A `core/ports/*` interface speaks canonical vocabulary only (dossier
+  P3; see also the "already mechanical" section above and ZR-2's port-signature
+  case). Where a domain type already exists for a value a port method takes or
+  returns, that method must use it — a bare `str`/`int`/`dict` standing in for an
+  existing enum, or for a value that is really always one of a small closed set the
+  domain already models, is a boundary finding, not a stylistic nit. This is
+  DELIBERATELY NARROWER than "no port may ever take a primitive" (a signal_key,
+  actor name, or free-text reason is legitimately a `str` — there is no domain type
+  for it to stand in for); the rule bites only where a domain type for the value
+  ALREADY EXISTS in the same codebase and the port declines to use it.
+- **Source.** Dossier P3 / the PO's concrete rule 3 (`code-boundary-discipline.md:31-32`
+  — "a port the core owns must be expressible in domain types — if an interface would
+  have to name vendor words..., it does not belong in `core/ports/`"), read together
+  with ZR-2's port-signature compliant citation
+  (`backend/src/core/ports/status_publisher.py:14-19`,
+  `publish(self, change: StatusChange) -> None`), which is the positive shape this
+  rule generalizes: a port parameter should be the domain type that already models
+  the value, not a primitive standing in for it.
+- **The finding this rule adjudicates.**
+  `backend/src/core/ports/proposal_repository.py:45` (`action: str`, in
+  `record_approval_event`'s signature) stands in for `ProposalState` even though
+  `ProposalState` is imported in the SAME file at `backend/src/core/ports/
+  proposal_repository.py:6` and used correctly, as the domain type, by the sibling
+  method four lines above it: `backend/src/core/ports/proposal_repository.py:32`
+  (`to_state: ProposalState`, in `resolve`'s signature). The adapter implementing
+  this port, `backend/src/adapters/persistence/dynamo_proposal_repository.py:286`
+  (`if action == "approved":`), then compares the resulting bare string against a
+  HARDCODED LITERAL rather than an enum member — the exact shape a correct port
+  signature would make structurally awkward to get wrong. STORY-195 (sprint-66)
+  originally verdicted the adapter-level symptom as an unscored "catalogue gap"
+  (`GAP-1`, filed as `STORY-198`) and separately verdicted the PORT file `CLEAN` —
+  the quality-review fix round (sprint-66) corrected this: the port signature is the
+  root cause, `STORY-198`'s adapter-only fix does not touch it, and it is scored here
+  as its own `ZR-6` finding, `MAJOR` (a real, shipping port signature that leaks a
+  primitive where a domain type already exists and is used correctly one method
+  away).
+- **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
+  edges between modules, never a method signature's parameter types. `action: str`
+  imports nothing at all — there is no edge to check — so this is invisible to every
+  one of the eight contracts by construction, exactly like ZR-1/ZR-2's gaps.
+- **The honest narrowing question, stated plainly (not resolved here).**
+  `action`'s legal set today is a 2-member subset of `ProposalState`'s 5 members
+  (only `"approved"`/`"rejected"` are ever passed, per
+  `backend/src/core/services/approval.py:128`'s `action=to_state.value` where
+  `to_state` is always `ProposalState.APPROVED` or `ProposalState.REJECTED` — see
+  `backend/src/core/services/approval.py:60-70`/`:72-88`). The full `ProposalState`
+  enum also carries `OPEN`, `SUPERSEDED`, `OBSOLETED`, none of which is ever a valid
+  `action`. STORY-197/a fix story therefore has a real choice, not a mechanical
+  "just use `ProposalState`": (a) widen the port to accept `ProposalState` and accept
+  that 3 of 5 members are semantically invalid `action`s (matching the enum ZR-2
+  already treats as canonical, at the cost of an under-constrained signature), or
+  (b) introduce a narrower domain type (e.g. a 2-member `ApprovalAction` enum or
+  equivalent) that expresses exactly the legal set. This rule adjudicates that the
+  CURRENT bare `str` is a finding; it does not adjudicate which of (a)/(b) is the
+  right fix — that is deliberately left to the fix story STORY-197 files.
+- **Coverage verdict.** `GUARDABLE` only partially, and with a real false-positive
+  risk: a heuristic AST check (a `core/ports/*` abstract method parameter/return
+  annotated as `str`/`int`/`dict`/`bool` where a same-named or clearly-related
+  domain `Enum`/`BaseModel` exists in `core/domain/`) would have flagged this
+  specific case, but cannot be a clean, zero-false-positive `lint-imports` contract:
+  it requires a semantic judgement ("does a domain type already exist for this
+  value") that a name-based or type-based heuristic will get wrong on legitimately
+  primitive parameters (a `signal_key: str`, a `reason: str | None`, a `limit: int`)
+  that have no domain type to stand in for at all and never will. `GUARDABLE` as a
+  reviewed lint warning surfaced for human judgement, not as a hard-failing contract
+  — STORY-197 must say so explicitly rather than promise a false-positive-free
+  guard.
+
+#### ZR-7 — an adapter must satisfy the port contract it implements; silently truncating or narrowing a result set the port promises in full is a boundary violation, not a storage detail
+
+- **Statement.** Where a `core/ports/*` interface's docstring promises a complete
+  result set ("all", "every", or a boolean derived from checking the complete set),
+  the adapter implementing it must actually return/check the complete set. Reading
+  only the first DynamoDB page and silently discarding `LastEvaluatedKey` is not a
+  storage-detail simplification when the port's contract is "all" — it is the
+  adapter deciding, silently, to narrow what "all" means, which is exactly the shape
+  the PO's rule "adapters translate, they don't decide" forbids. This is distinct
+  from a port whose contract is explicitly bounded (e.g.
+  `PublicationRepository.list_recent(limit: int = 50)`, whose own docstring promises
+  only "up to `limit` most-recent" — an adapter honoring a stated limit is not a
+  violation of anything).
+- **Source.** The port docstrings themselves promise completeness:
+  `backend/src/core/ports/maintenance_repository.py:13-19`
+  (`list_windows`: "Retrieve all scheduled maintenance windows"),
+  `backend/src/core/ports/component_repository.py:18-25`
+  (`list_components`: "Retrieve all components from the spine"),
+  `backend/src/core/ports/signal_repository.py:18-25`
+  (`list_signals`: "Retrieve every seeded signal"),
+  `backend/src/core/ports/proposal_repository.py:57-64`
+  (`list_open`: "Retrieve all OPEN status proposals... Returns: list[StatusProposal]:
+  A list of all open proposals"), and `is_under_maintenance`'s boolean contract
+  (`backend/src/core/ports/maintenance_repository.py:34-47`) is a claim about the
+  COMPLETE set of windows for a component, not a first-page claim. Also the PO's
+  general "adapters translate, they don't decide" principle (the same principle
+  ZR-1 draws on for persistence-holding).
+- **The finding this rule adjudicates — a real production defect, not a stylistic
+  one.** `backend/src/adapters/persistence/dynamo_maintenance_repository.py:86-97`
+  (`is_under_maintenance`) pairs an UNBOUNDED key condition
+  (`gsi1pk="MAINT" AND gsi1sk <= <now>#�` — every maintenance window ever
+  created, for every component, with no `Limit`) with a POST-READ
+  `FilterExpression` narrowing to `component_id`/`ends_at > at`, and discards
+  `LastEvaluatedKey` — it never loops. DynamoDB applies `FilterExpression` AFTER the
+  1 MB per-page read limit, so once total maintenance-window volume exceeds one
+  page, a component that IS under maintenance can silently receive `False` from
+  this method — not an error, a wrong answer — which `core/services/decide.py`'s
+  suppression logic then silently fails to apply. Four siblings share the identical
+  unpaginated-`query`-against-an-"all"-contract shape:
+  `backend/src/adapters/persistence/dynamo_maintenance_repository.py:66-84`
+  (`list_windows`), `backend/src/adapters/persistence/dynamo_component_repository.py:28-34`
+  (`list_components`), `backend/src/adapters/persistence/dynamo_signal_repository.py:29-36`
+  (`list_signals`), `backend/src/adapters/persistence/dynamo_proposal_repository.py:172-179`
+  (`list_open`). The correct pattern already exists in the SAME directory:
+  `backend/src/adapters/persistence/dynamo_observation_repository.py:100-118`
+  (`in_window`'s `while True` / `ExclusiveStartKey` / `LastEvaluatedKey` loop, with a
+  test-only `self._limit` hook at
+  `backend/src/adapters/persistence/dynamo_observation_repository.py:23` that lets a
+  test force a small page size without needing a real 1 MB of data) — this is not a
+  missing capability, it is an inconsistently-applied one.
+- **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
+  edges; it has no concept of "did this adapter loop over `LastEvaluatedKey`" or "does
+  this docstring's completeness promise hold" — that is runtime pagination behavior
+  against a live-shaped dataset, structurally outside anything a static import-graph
+  tool can see.
+- **Coverage verdict.** `GUARDABLE`, plausibly, but say the false-positive risk
+  honestly: a test asserting "every `.query(`/`.scan(` call site in
+  `adapters/persistence/` either loops on `LastEvaluatedKey` or is provably bounded
+  (a `Limit`/`limit` param whose OWN port docstring promises boundedness, not
+  completeness)" would have caught all four siblings above and would not have
+  flagged `dynamo_publication_repository.py::list_recent` (bounded by contract) or
+  the various `get_item`/single-key `query` calls (structurally a single item, not a
+  page-able list). The risk: this needs a definition of "provably bounded" precise
+  enough to avoid two failure modes — a false pass on a `Limit=` that is NOT what
+  the port's docstring actually promises (e.g. an accidental cap smaller than what
+  "all" requires), and a false fail on a query that is genuinely single-item.
+  STORY-197 would need to design that definition carefully rather than assume the
+  AST shape alone settles it; a fix (STORY-199) can straightforwardly add the same
+  pagination loop the observation repository already uses, which is a much smaller
+  design question than the guard.
+
 ## Inference (synthesis, not verified)
 
-The eight contracts plus `ZR-1..ZR-5` together are the audit's yardstick: every
+The eight contracts plus `ZR-1..ZR-7` together are the audit's yardstick: every
 `lint-imports`-legal-but-intent-violating shape the PO named now has either a
 contract citation (already mechanical) or a rule id, a verdict, and — where
 `GUARDABLE` — a concrete next rung. A finding with no rule id in STORY-195/196 is
 either a new rule (amend this catalogue and say so) or an opinion to drop (sprint-66
-plan, constraint C5).
+plan, constraint C5). `ZR-6` and `ZR-7` were both added mid-sprint, from STORY-195's
+own quality-review fix round, not from the original STORY-194 planning pass — an
+independent audit of STORY-195's footprint found two real, catalogue-worthy shapes
+(a port leaking a primitive; four adapters silently truncating a result set their
+port promises in full) that STORY-194's five originally-drafted rules did not cover.
 
 ZR-1's narrowed contract, had it existed at STORY-190 planning time, would have
 caught that story's tempting-but-architecturally-wrong first draft (an inbound
@@ -470,3 +616,25 @@ code that exists.
 **AC3 citation-resolution sweep, rebuilt to EXTRACT from the article (not a
 hand-typed manifest) — command and full output recorded in the story file's
 History**, per the fix round's re-verification requirement.
+
+- sprint-66 (STORY-195 quality-review fix round, 2026-07-31): added `ZR-6` and `ZR-7`,
+  neither anticipated at STORY-194 planning. An independent audit of STORY-195's own
+  footprint (46 of the 58 files it read) found: (1) STORY-195 had verdicted
+  `core/ports/proposal_repository.py` `CLEAN` while separately quoting its own
+  `action: str` line as the explanation for an adapter-level "catalogue gap" (`GAP-1`)
+  — the port signature leaking a primitive where `ProposalState` already exists and is
+  used correctly one method away is the ROOT CAUSE, not the adapter's literal
+  comparison, and is now scored as its own `ZR-6` finding (`MAJOR`); (2) a genuine,
+  unreported production defect — `dynamo_maintenance_repository.py::is_under_maintenance`
+  and four sibling `list_*` methods pair an unbounded DynamoDB `query` with a
+  post-read filter/no loop, silently truncating past a 1 MB page against a port
+  contract that promises "all" — now `ZR-7` (`MAJOR`). Both rules are `GUARDABLE`
+  only partially, with the false-positive risk stated honestly in each rule's own
+  Coverage verdict, per the same discipline ZR-1/ZR-2/ZR-3 already established. Full
+  detail, the fix stories these findings were filed as, and the re-derivation
+  commands are in `docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md`.
+  Also corrected in passing (found by the fix round's strengthened, content-anchor
+  citation sweep — see that report §7): the ZR-3 measurement note's bare-filename
+  citation for the `settings.py` field defaults (no directory prefix) widened to the
+  full repo-relative `backend/src/composition/settings.py:21-22`, matching this
+  article's own full-path convention everywhere else.

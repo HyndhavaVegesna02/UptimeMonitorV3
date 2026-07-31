@@ -29,13 +29,20 @@ if action == "approved":
 ```
 
 `action`'s only two real values are `ProposalState.APPROVED.value` / `ProposalState.REJECTED.value`
-(`core/services/approval.py:128` derives `action=to_state.value`; the port signature
-`ProposalRepository.record_approval_event` at `backend/src/core/ports/proposal_repository.py:44`
-types `action: str`, never the enum itself). `ProposalState` is already imported in this same file
-(for the correct, enum-member comparison at line 105:
+(`backend/src/core/services/approval.py:128` derives `action=to_state.value`; the port signature
+`ProposalRepository.record_approval_event` at `backend/src/core/ports/proposal_repository.py:45`
+types `action: str`, never the enum itself — corrected from an earlier draft of this story, which
+cited `:44`, the neighboring `actor: str` line, instead). `ProposalState` is already imported in this
+same file (for the correct, enum-member comparison at line 105:
 `if proposal.state == ProposalState.OPEN:`), so there is no missing-import reason for the literal at
 line 286 — it is an avoidable duplication of a domain value that a rename of
 `ProposalState.APPROVED`'s value would silently break, with no import-linter or type-check signal.
+
+**Note (sprint-66 quality-review fix round, STORY-195):** the PORT signature itself (`action: str`) is
+the deeper root cause of this shape, now separately catalogued as `ZR-6` and filed as `STORY-200`.
+This story's fix (the adapter-only literal-to-enum-value comparison) is worth doing on its own terms
+and does not depend on `STORY-200` landing, but does NOT close `ZR-6` — see
+`docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md` §2b/§3 for the full reasoning.
 
 ## Acceptance Criteria
 
