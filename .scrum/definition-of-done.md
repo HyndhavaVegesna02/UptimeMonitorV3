@@ -55,8 +55,18 @@
        2026-07-29: this list said "five" and named five while the line above it
        already said "same 8 contracts" — the runner's own `Contracts: 8 kept, 0
        broken.` is the count of record, and `pyproject.toml` declares all eight.)
-- [ ] Code linting check: `ruff check .` -> exit 0
-- [ ] Code formatting check: `ruff format --check .` -> exit 0
+- [ ] Code linting check: `python -m ruff check .` -> exit 0
+      (2026-08-02, PO-approved, preventive (STORY-210): invocation changed from the bare `ruff`
+       exe shim to its module form. `ruff.exe` is NOT blocked today -- measured at sprint-67
+       planning: `ruff --version` -> `ruff 0.15.20`, exit 0 -- but the same Windows Device Guard /
+       Application Control policy has already widened twice mid-sprint without warning
+       (`lint-imports.exe` 2026-07-12, `pytest.exe` + `cfn-lint.exe` 2026-07-31), and the sprint-66
+       retro named `ruff.exe` as the likeliest next casualty. Same check, same rules, same files;
+       `python -m ruff --version` returns the identical `ruff 0.15.20`, exit 0 -- only the entry
+       point moves.)
+- [ ] Code formatting check: `python -m ruff format --check .` -> exit 0
+      (2026-08-02, PO-approved, preventive (STORY-210): same reasoning and same verification as
+       the line above.)
 - [ ] CloudFormation template lint: `python -c "from cfnlint.runner import main; main()" infra/stack.yaml` -> exit 0
       (2026-07-31, PO-approved: same Device Guard cause as `python -m pytest` above, but cfn-lint
        needed a DIFFERENT answer -- it has no `__main__`, so `python -m cfnlint` does NOT work;

@@ -62,8 +62,15 @@ status: verified
      api-feature-independence, api-outward-independence, adapters-edge-only,
      api-shared-no-feature-imports, src-no-tests — the count read off the runner's own
      `Contracts: 8 kept, 0 broken.` line, which is the only reliable source for it)
-  3. `ruff check .`
-  4. `ruff format --check .`
+  3. `python -m ruff check .`
+     (2026-08-02, sprint-67/STORY-210: invocation moved OFF the `ruff` exe shim to its module
+     form — PREVENTIVE, not a repair: `ruff.exe` was still permitted at sprint-67 planning
+     (`ruff --version` -> `ruff 0.15.20`, exit 0), but the same Device Guard / Application
+     Control policy had already widened twice mid-sprint without warning (commands 1, 2 and 5 in
+     this list), so the retro named `ruff.exe` as the likeliest next casualty. Same check, same
+     rules, same files; `python -m ruff --version` returns the identical version.)
+  4. `python -m ruff format --check .`
+     (2026-08-02, sprint-67/STORY-210: same reasoning as command 3.)
   5. `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
      (2026-07-31, sprint-66/STORY-197: same Device Guard cause as commands 1 and 2, but
      cfn-lint needed a DIFFERENT answer — the package has no `__main__`, so `python -m
@@ -77,9 +84,9 @@ status: verified
   Command 2 became real during Sprint 0 (bootstrap); 3 and 4 were added in Sprint 11.
   - `[tool.ruff]` carries `exclude = [".agents", ".venv", "frontend"]` (`pyproject.toml`; `.agents`
     STORY-016c, `frontend` STORY-015a): `.agents/` is untracked third-party skills tooling that otherwise
-    makes `ruff check .` / `ruff format --check .` exit non-zero; `frontend/` is the JS/TS SPA (no Python)
-    excluded so the Python formatter/linter stays scoped to backend code. `.venv` is already gitignored
-    and conventionally skipped â€” listed for defensiveness.
+    makes `python -m ruff check .` / `python -m ruff format --check .` exit non-zero; `frontend/` is
+    the JS/TS SPA (no Python) excluded so the Python formatter/linter stays scoped to backend code.
+    `.venv` is already gitignored and conventionally skipped â€” listed for defensiveness.
 - **The frontend has its own three-command DoD gate (live as of STORY-015a, sprint-25), run from
   `frontend/`** (`.scrum/definition-of-done.md` "Commands (frontend)"; commands in `frontend/package.json`):
   1. `npm test` â€” Vitest run-once (`"test": "vitest run"`)

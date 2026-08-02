@@ -165,8 +165,8 @@ differs: `lint-imports.exe` (blocked 2026-07-12), `pytest.exe` + `cfn-lint.exe`
 | Run tests           | `python -m pytest`                        |
 | Verify zone imports | `python -c "import src.core, src.adapters, src.composition, src.api"` |
 | Import boundary     | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` |
-| Lint code           | `ruff check .`                            |
-| Format check        | `ruff format --check .`                   |
+| Lint code           | `python -m ruff check .`                  |
+| Format check        | `python -m ruff format --check .`         |
 | Lint CloudFormation | `python -c "from cfnlint.runner import main; main()" infra/stack.yaml` |
 | Start DynamoDB Local| `docker run -d --name uptime_dynamo -p 8001:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory` (host 8001 so the API can own 8000) |
 | Create tables       | `python scripts/create_tables.py` (reads `DYNAMO_ENDPOINT_URL`) |
@@ -188,7 +188,7 @@ worktree's code (`tools/import_provenance.py::assert_import_root`).
 `python .claude/skills/yourteam/scripts/yt_gate.py`.
 
 - **Backend (5):** `python -m pytest`, the import-boundary `python -c` above,
-  `ruff check .`, `ruff format --check .`, and cfn-lint via
+  `python -m ruff check .`, `python -m ruff format --check .`, and cfn-lint via
   `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
 - **Frontend (3, from `frontend/`):** `npm test`, `npm run build`, `npm run lint`
 
