@@ -173,7 +173,7 @@ stories:
   - id: STORY-210
     title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
-    status: todo
+    status: in_progress   # implementer dispatched 2026-08-02T23:52 IST from HEAD 8116a54
     points: 2
     ceremony: implementer + both reviewers
     order: 1

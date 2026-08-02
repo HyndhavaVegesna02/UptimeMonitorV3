@@ -244,11 +244,14 @@ on the final HEAD is the evidence of record**. Plus the wiki compile pass before
 
 ## Steps
 
-- [ ] Cut branch `sprint-67` from `sprint-66` at `86459ea`, tag `sprint-67-start`
+- [x] Cut branch `sprint-67` from `sprint-66` at `86459ea`, tag `sprint-67-start` (tag landed at
+      `405ab09`, the planning commit on top of `86459ea`; that diff touches `.scrum/` + `docs/scrum/`
+      only, so the baseline gate result carries forward — see `sprint-current.yaml` `start_commit`)
 - [ ] STORY-210 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-199 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-202 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-200 — implementer → both reviewers → gate → reality gate
-- [ ] STORY-201 — implementer → gate
+- [ ] ~~STORY-201 — implementer → gate~~ **DROPPED post-lock** (PO-approved) to hold 11 points when
+      STORY-202 absorbed a third file. No work started; returns to the backlog as `ready`.
 - [ ] Wiki compile pass (blocking)
 - [ ] Full 8/8 gate on final HEAD → review
