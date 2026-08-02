@@ -90,8 +90,8 @@ status: verified
   runs the backend five. **Eight commands in total.** The `.scrum/definition-of-done.md` frontend section stopped being a
   "placeholder until then" note and became live in the same commit (`08d91e7`) that documented the
   commands + `frontend/` layout in CLAUDE.md (command-sync agreement; the command table is still
-  in CLAUDE.md, but the `frontend/` directory tree moved to `frontend/README.md` +
-  `wiki/frontend-zone.md` in the 2026-08-01 prune). Toolchain: Vite + React +
+  in CLAUDE.md, but the directory tree moved to the frontend README and the frontend-zone wiki
+  article in the 2026-08-01 prune). Toolchain: Vite + React +
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
   npm on Node 24. Playwright/E2E is deferred to a later integration story.
 - **Running the app locally (STORY-042; `.env` loading STORY-043):** the FastAPI API is served via
