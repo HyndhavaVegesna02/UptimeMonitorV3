@@ -44,6 +44,30 @@ def test_dynamo_signal_repository_contract(dynamo_resource):
     _assert_signal_repository_contract(repo)
 
 
+def test_dynamo_signal_repository_list_signals_paginates(dynamo_resource):
+    """STORY-199 AC2: forcing a small page size must not truncate list_signals
+    against signal_repository.py's 'retrieve every seeded signal' contract."""
+    from src.adapters.persistence.dynamo_signal_repository import DynamoSignalRepository
+
+    settings = load_settings()
+    signals = [
+        Signal(
+            signal_key=f"sig-page-{i}",
+            name=f"Signal {i}",
+            component_id=None,
+            interval_seconds=None,
+        )
+        for i in range(10)
+    ]
+    _seed_signals_dynamo(dynamo_resource, settings, signals)
+
+    repo = DynamoSignalRepository(dynamo_resource, settings.dynamo_control_table)
+    repo._limit = 2
+
+    result = repo.list_signals()
+    assert {s.signal_key for s in result} == {f"sig-page-{i}" for i in range(10)}
+
+
 def _seed_component_dynamo(
     dynamo_resource,
     settings,
