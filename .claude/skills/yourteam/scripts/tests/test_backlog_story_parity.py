@@ -91,7 +91,9 @@ class BacklogStoryParityTest(unittest.TestCase):
     def setUp(self) -> None:
         self.root = project_root()
         if self.root is None:
-            self.skipTest("no .scrum/ directory found — project has not adopted YourTeam")
+            self.skipTest(
+                "no .scrum/ directory found — project has not adopted YourTeam"
+            )
         self.stories = load_backlog(self.root)
         if self.stories is None:
             self.skipTest("no .scrum/backlog.yaml to check")
