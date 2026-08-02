@@ -28,6 +28,7 @@ class DynamoMaintenanceRepository(MaintenanceRepository):
         self._db = db_resource
         self._table_name = table_name
         self._table = self._db.Table(table_name)
+        self._limit: int | None = None  # Hook for testing pagination
 
     def _next_id(self) -> int:
         """Increment sequence counter and return the next Maintenance ID."""
@@ -65,12 +66,27 @@ class DynamoMaintenanceRepository(MaintenanceRepository):
 
     def list_windows(self) -> list[MaintenanceWindow]:
         """Retrieve all scheduled maintenance windows, ordered by starts_at ascending."""
-        response = self._table.query(
-            IndexName="gsi1",
-            KeyConditionExpression=Key("gsi1pk").eq("MAINT"),
-            ScanIndexForward=True,
-        )
-        items = response.get("Items", [])
+        items = []
+        exclusive_start_key = None
+
+        while True:
+            kwargs = {
+                "IndexName": "gsi1",
+                "KeyConditionExpression": Key("gsi1pk").eq("MAINT"),
+                "ScanIndexForward": True,
+            }
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+            if self._limit is not None:
+                kwargs["Limit"] = self._limit
+
+            response = self._table.query(**kwargs)
+            items.extend(response.get("Items", []))
+
+            exclusive_start_key = response.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                break
+
         return [
             MaintenanceWindow(
                 id=int(item["id"]),

@@ -64,6 +64,27 @@ def test_dynamo_maintenance_repository_create_list_delete(dynamo_resource):
         repo.delete(99999)
 
 
+def test_dynamo_maintenance_repository_list_windows_paginates(dynamo_resource):
+    """STORY-199 AC2: forcing a small page size must not truncate list_windows
+    against maintenance_repository.py's 'retrieve all' contract."""
+    settings = load_settings()
+    repo = DynamoMaintenanceRepository(dynamo_resource, settings.dynamo_control_table)
+
+    for i in range(10):
+        repo.create(
+            MaintenanceWindow(
+                component_id=f"comp-page-{i}",
+                starts_at=datetime(2026, 7, 15, 8, i, 0, tzinfo=timezone.utc),
+                ends_at=datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc),
+            )
+        )
+
+    repo._limit = 2
+
+    windows = repo.list_windows()
+    assert {w.component_id for w in windows} == {f"comp-page-{i}" for i in range(10)}
+
+
 def test_dynamo_maintenance_repository_is_under_maintenance_boundaries(dynamo_resource):
     settings = load_settings()
     repo = DynamoMaintenanceRepository(dynamo_resource, settings.dynamo_control_table)
