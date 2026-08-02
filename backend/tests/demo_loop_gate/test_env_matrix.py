@@ -15,6 +15,15 @@ call, not a fixed pair a rerun could collide with.
 from __future__ import annotations
 
 from demo_loop_gate.env_matrix import build_child_env, fresh_table_names
+from src.composition.settings import (
+    AWS_REGION_VAR,
+    CONFIG_DIR_VAR,
+    DYNAMO_CONTROL_TABLE_VAR,
+    DYNAMO_ENDPOINT_URL_VAR,
+    DYNAMO_OBSERVATIONS_TABLE_VAR,
+    STATUSPAGE_API_KEY_VAR,
+    STATUSPAGE_PAGE_ID_VAR,
+)
 
 
 def test_fresh_table_names_are_disjoint_across_calls():
@@ -34,7 +43,7 @@ def test_fresh_table_names_are_never_the_default_or_live_names():
 
 
 def test_build_child_env_sets_config_dir_and_dynamo_vars_and_never_unsets_them():
-    base_env = {"PATH": "/usr/bin", "CONFIG_DIR": "config/apps"}  # a stale value
+    base_env = {"PATH": "/usr/bin", CONFIG_DIR_VAR: "config/apps"}  # a stale value
 
     env = build_child_env(
         base_env=base_env,
@@ -46,18 +55,23 @@ def test_build_child_env_sets_config_dir_and_dynamo_vars_and_never_unsets_them()
         dynatrace_api_token="fake-token",
         statuspage_page_id="story182-fake-page",
         statuspage_api_token="story182-fake-token",
+        aws_region="eu-west-1",
     )
 
     # Every one of the AC1(a)/AC1(b) preconditions is present and CORRECT --
     # the base env's stale CONFIG_DIR=config/apps is overridden, never left.
-    assert env["CONFIG_DIR"] == "config/demo"
-    assert env["DYNAMO_ENDPOINT_URL"] == "http://127.0.0.1:8021"
-    assert env["DYNAMO_OBSERVATIONS_TABLE"] == "story182-obs-abc"
-    assert env["DYNAMO_CONTROL_TABLE"] == "story182-ctrl-abc"
+    # Pinned to the imported symbols (STORY-202 AC3), not re-typed string
+    # literals, so a future rename in settings.py moves the expectation with
+    # it instead of leaving this test asserting a now-wrong key.
+    assert env[CONFIG_DIR_VAR] == "config/demo"
+    assert env[AWS_REGION_VAR] == "eu-west-1"
+    assert env[DYNAMO_ENDPOINT_URL_VAR] == "http://127.0.0.1:8021"
+    assert env[DYNAMO_OBSERVATIONS_TABLE_VAR] == "story182-obs-abc"
+    assert env[DYNAMO_CONTROL_TABLE_VAR] == "story182-ctrl-abc"
     assert env["DYNATRACE_ENV_URL"] == "http://127.0.0.1:9"
     assert env["DYNATRACE_API_TOKEN"] == "fake-token"
-    assert env["STATUSPAGE_PAGE_ID"] == "story182-fake-page"
-    assert env["STATUSPAGE_API_KEY"] == "story182-fake-token"
+    assert env[STATUSPAGE_PAGE_ID_VAR] == "story182-fake-page"
+    assert env[STATUSPAGE_API_KEY_VAR] == "story182-fake-token"
     # base env passthrough
     assert env["PATH"] == "/usr/bin"
 
@@ -89,8 +103,8 @@ def test_build_child_env_omits_optional_dynatrace_and_statuspage_vars_when_none(
 
     assert "DYNATRACE_ENV_URL" not in env
     assert "DYNATRACE_API_TOKEN" not in env
-    assert "STATUSPAGE_PAGE_ID" not in env
-    assert "STATUSPAGE_API_KEY" not in env
+    assert STATUSPAGE_PAGE_ID_VAR not in env
+    assert STATUSPAGE_API_KEY_VAR not in env
 
 
 def test_build_child_env_inherits_a_real_looking_statuspage_key_when_not_overridden():
@@ -102,7 +116,7 @@ def test_build_child_env_inherits_a_real_looking_statuspage_key_when_not_overrid
     API-process call site must pass an explicit fake `statuspage_api_token`,
     the same as the loop call site: omitting the argument does not mean
     "absent" in the child process, it means "whatever is already there"."""
-    base_env = {"STATUSPAGE_API_KEY": "real-looking-secret-do-not-leak"}
+    base_env = {STATUSPAGE_API_KEY_VAR: "real-looking-secret-do-not-leak"}
 
     env = build_child_env(
         base_env=base_env,
@@ -112,14 +126,14 @@ def test_build_child_env_inherits_a_real_looking_statuspage_key_when_not_overrid
         control_table="story182-ctrl-abc",
     )
 
-    assert env["STATUSPAGE_API_KEY"] == "real-looking-secret-do-not-leak"
+    assert env[STATUSPAGE_API_KEY_VAR] == "real-looking-secret-do-not-leak"
 
 
 def test_build_child_env_overrides_a_real_looking_statuspage_key_when_given():
     """The counterpart to the inheritance test above: passing an explicit
     (fake) `statuspage_api_token` DOES override whatever base_env already
     carries -- the defence `harness.py`'s API call site now relies on."""
-    base_env = {"STATUSPAGE_API_KEY": "real-looking-secret-do-not-leak"}
+    base_env = {STATUSPAGE_API_KEY_VAR: "real-looking-secret-do-not-leak"}
 
     env = build_child_env(
         base_env=base_env,
@@ -130,4 +144,4 @@ def test_build_child_env_overrides_a_real_looking_statuspage_key_when_given():
         statuspage_api_token="story182-fake-token",
     )
 
-    assert env["STATUSPAGE_API_KEY"] == "story182-fake-token"
+    assert env[STATUSPAGE_API_KEY_VAR] == "story182-fake-token"
