@@ -442,3 +442,22 @@ each was added because its predecessor was not followed.
 **Deliberately NOT claimed:** that any specific rule is wrong. The claim is narrower — that a system
 which can only ever add is not learning, and that "has this fired?" is a question the process has
 never once asked.
+
+**Baseline, so this agreement is falsifiable.** Measured at the commit that landed it
+(governance = this file + `checklists/implementer.md` + `checklists/quality-review.md`):
+
+| | bytes |
+| --- | --- |
+| before this change (sprint-66 tip) | 53,776 |
+| after | 52,555 |
+| net | **-1,221 (-2.3%)** |
+
+**Read that number honestly: it is nearly nothing.** The A1-A9 collapse removed 6,043 bytes and
+A14+A15 added 4,822 back, because both were written as PROSE — the exact rung this agreement calls
+the last resort. A deliberate de-bloating pass, done immediately after measuring the ratchet, still
+netted -2.3%. That is how strong the pull toward prose is, and it is the best available evidence
+that A15 needs its mechanical rung (an audit script; see STORY-212) rather than more words.
+
+**The test at the sixth sprint from now:** governance is SMALLER than 52,555 bytes, and at least one
+rule has been deleted on its merits rather than routed. If it is larger and nothing was deleted,
+A14/A15 failed and are themselves candidates for deletion under their own rule.
