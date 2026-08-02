@@ -1,8 +1,8 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py]
-verified_sha: 959d0be
-verified_sprint: sprint-66
+verified_sha: 460d3ee
+verified_sprint: sprint-67
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
 # files this article's rules cite as compliant/illustrative/violating examples
@@ -512,28 +512,37 @@ where a zone-wide regression would be caught.
   general "adapters translate, they don't decide" principle (the same principle
   ZR-1 draws on for persistence-holding).
 - **The finding this rule adjudicates — a real production defect, not a stylistic
-  one.** `backend/src/adapters/persistence/dynamo_maintenance_repository.py:86-97`
-  (`is_under_maintenance`) pairs an UNBOUNDED key condition
-  (`gsi1pk="MAINT" AND gsi1sk <= <now>#�` — every maintenance window ever
-  created, for every component, with no `Limit`) with a POST-READ
-  `FilterExpression` narrowing to `component_id`/`ends_at > at`, and discards
-  `LastEvaluatedKey` — it never loops. DynamoDB applies `FilterExpression` AFTER the
-  1 MB per-page read limit, so once total maintenance-window volume exceeds one
-  page, a component that IS under maintenance can silently receive `False` from
+  one. FIXED at STORY-199 (sprint-67, landed `460d3ee`).**
+  `backend/src/adapters/persistence/dynamo_maintenance_repository.py::is_under_maintenance`
+  used to pair an UNBOUNDED key condition (`gsi1pk="MAINT" AND gsi1sk <= <now>#�` —
+  every maintenance window ever created, for every component, with no `Limit`) with a
+  POST-READ `FilterExpression` narrowing to `component_id`/`ends_at > at`, and discard
+  `LastEvaluatedKey` — it never looped. DynamoDB applies `FilterExpression` AFTER the
+  1 MB per-page read limit, so once total maintenance-window volume exceeded one
+  page, a component that IS under maintenance could silently receive `False` from
   this method — not an error, a wrong answer — which `core/services/decide.py`'s
-  suppression logic then silently fails to apply. Four siblings share the identical
+  suppression logic then silently failed to apply. Four siblings shared the identical
   unpaginated-`query`-against-an-"all"-contract shape:
-  `backend/src/adapters/persistence/dynamo_maintenance_repository.py:66-84`
-  (`list_windows`), `backend/src/adapters/persistence/dynamo_component_repository.py:28-34`
-  (`list_components`), `backend/src/adapters/persistence/dynamo_signal_repository.py:29-36`
-  (`list_signals`), `backend/src/adapters/persistence/dynamo_proposal_repository.py:172-179`
-  (`list_open`). The correct pattern already exists in the SAME directory:
-  `backend/src/adapters/persistence/dynamo_observation_repository.py:100-118`
-  (`in_window`'s `while True` / `ExclusiveStartKey` / `LastEvaluatedKey` loop, with a
-  test-only `self._limit` hook at
+  `dynamo_maintenance_repository.py::list_windows`,
+  `dynamo_component_repository.py::list_components`,
+  `dynamo_signal_repository.py::list_signals`,
+  `dynamo_proposal_repository.py::list_open`. The correct pattern already existed in
+  the SAME directory: `dynamo_observation_repository.py::in_window` (`while True` /
+  `ExclusiveStartKey` / `LastEvaluatedKey` loop, with a test-only `self._limit` hook at
   `backend/src/adapters/persistence/dynamo_observation_repository.py:23` that lets a
-  test force a small page size without needing a real 1 MB of data) — this is not a
-  missing capability, it is an inconsistently-applied one.
+  test force a small page size without needing a real 1 MB of data) — this was not a
+  missing capability, it was an inconsistently-applied one. **All five now carry that
+  same loop and the same `self._limit` hook.** `is_under_maintenance` is the one
+  boolean-shaped case: it pages until a matching item is found (returning `True`
+  immediately, never scanning the rest of the GSI partition on the common
+  not-under-maintenance path, which runs every `decide` cycle) or until
+  `LastEvaluatedKey` is exhausted (returning `False`) — it must NEVER terminate on an
+  empty-after-filter page, since the `FilterExpression` empties the leading pages
+  while `KeyConditionExpression` still matches every window. Pinned by
+  `test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_forced_page_size`
+  (`backend/tests/test_dynamo_maintenance_repository.py`), which seeds five
+  other-component windows sorted ahead of the one real match with `_limit=1` and
+  asserts `True`. Full detail: [[persistence-adapters]].
 - **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
   edges; it has no concept of "did this adapter loop over `LastEvaluatedKey`" or "does
   this docstring's completeness promise hold" — that is runtime pagination behavior
@@ -679,7 +688,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
 | ZR-6 | `GUARDABLE-DEFERRED (STORY-200)` | **Guardable only as a reviewed lint WARNING surfaced for human judgement, never as a hard-failing contract** — ZR-6's own coverage verdict says so and requires this to be stated explicitly. Deliberately behind its FIX story, not ahead of it: ZR-6's own text leaves open whether `record_approval_event`'s `action` becomes `ProposalState` or a narrower 2-member type, and a guard written before that choice would encode the wrong target. STORY-200 AC3 forces the decision to leave a testable trace; the guard follows it. |
-| ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice**: removing the `is_under_maintenance` exemption trips the unexempted-violation check, and adding an exemption for a call site that already loops trips the stale-exemption check. Green today only via five reasoned exemptions, each citing STORY-199. |
+| ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing the `is_under_maintenance` `LastEvaluatedKey` loop (a mutation proof, `list_components` used for the recorded run) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
 | ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). **Honest reason, corrected at review:** the blocker is AC5's two-guard cap, not redness — ZR-3 and ZR-7 were in exactly the same "live violations" position and this same commit solved that with exemption lists, so "a guard would be RED" would have been a false excuse. A second, real constraint does apply though: ZR-8's violations are whole-function SHAPE (a duplicated builder, a hand-rolled key schema), not per-call-site coordinates, so an exemption list would be a far blunter instrument here than it is for ZR-3/ZR-7. |
 
 **Why only two rules were mechanised (AC5's stopping rule, stated as a result).** ZR-3 and ZR-7 were
@@ -714,6 +723,15 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-67 (STORY-199): landed the ZR-7 fix. All five findings (`is_under_maintenance`,
+  `list_windows`, `list_components`, `list_signals`, `list_open`) now loop on
+  `LastEvaluatedKey`; `is_under_maintenance` short-circuits `True` on first match and
+  returns `False` only once `LastEvaluatedKey` is exhausted, never on an
+  empty-after-filter page. `test_zr7_pagination_guard.py`'s `_EXEMPTIONS` dropped from
+  six entries to one (the `dynamo_publication_repository.py:53` `PERMANENT` entry for
+  `list_recent`, unaffected). Mutation-proven: removing `list_components`'s loop trips
+  both the guard's unexempted-violation check and its own AC2 pagination test; restored,
+  `git diff` empty. verified_sha -> 460d3ee.
 - sprint-66 (STORY-194): created. Rules ZR-1..ZR-3 covered the PO's five named areas
   ((a) adapter persistence -> ZR-1; (b) core reaching outward -> already mechanical;
   (c) api reaching another feature/an adapter -> already mechanical; (d) vendor
