@@ -47,9 +47,7 @@ def load_settings() -> Settings:
         dynamo_observations_table=os.environ.get(
             DYNAMO_OBSERVATIONS_TABLE_VAR, "uptime-observations"
         ),
-        dynamo_control_table=os.environ.get(
-            DYNAMO_CONTROL_TABLE_VAR, "uptime-control"
-        ),
+        dynamo_control_table=os.environ.get(DYNAMO_CONTROL_TABLE_VAR, "uptime-control"),
         dynamo_endpoint_url=os.environ.get(DYNAMO_ENDPOINT_URL_VAR) or None,
     )
 
