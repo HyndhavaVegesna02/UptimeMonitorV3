@@ -2406,7 +2406,11 @@ stories:
   - id: STORY-210
     title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning and SUBSTANTIALLY RESCOPED.
+    status: done    # SPRINT 67, commits 347a199..a528e25. Spec PASS 8/8 AC; quality FIX_REQUIRED
+                    # (1 MAJOR -- a vacuous assertion whose deletion-mutation left the suite green)
+                    # -> fixed at 0190d75 and re-proven. Full 8/8 gate green at a528e25, 689 passed
+                    # / 0 skipped, selftest 43/43. Awaiting PO acceptance at the sprint-67 review.
+                    # REFINED 2026-08-02 at sprint-67 planning and SUBSTANTIALLY RESCOPED.
                     # The acute failure is CLOSED -- both invocations were changed with PO approval
                     # during sprint 66, and the full 8/8 gate is GREEN at 86459ea (verified today,
                     # 689 passed / 0 skipped). So the filing's "BLOCKS EVERY FUTURE STORY" framing

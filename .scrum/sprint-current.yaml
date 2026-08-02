@@ -173,7 +173,47 @@ stories:
   - id: STORY-210
     title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
-    status: in_progress   # implementer dispatched 2026-08-02T23:52 IST from HEAD 8116a54
+    status: done
+    commits: 347a199..a528e25   # 4 implementer + 3 fix-round
+    review: >-
+      SPEC PASS on all eight AC (its own full-gate run, plus two mutations of is_policy_block in
+      BOTH directions confirming AC5's tests are load-bearing rather than vacuous).
+      QUALITY FIX_REQUIRED, 1 MAJOR + 7 minor -> fixed, re-verified.
+      THE MAJOR IS WORTH THE RETRO'S TIME. test_yt_gate.py:232 asserted `assertIn("2026-07-06")`
+      with a comment claiming it covered AC3's proof protocol. yt_gate.py prints
+      "agreement 2026-07-06" in the UNCONDITIONAL red-gate footer, on every red run regardless of
+      classification -- so the assertion was satisfied by the footer, not by POLICY_BLOCK_PROOF_NOTE.
+      Mutation-proven by the reviewer: deleting the proof-note print left the suite 20/20 GREEN.
+      The text AC3 requires and AC4's entire anti-excuse rationale rests on was pinned by NOTHING.
+      Note the two reviewers did not overlap: spec mutated the DETECTOR and found its tests honest;
+      quality mutated the PRINT and found the assertion hollow. A single reviewer would have missed
+      it -- this is the fourth consecutive sprint in which the independent pass found a real defect.
+      Fixed at 0190d75: asserts "LABEL, not an escape hatch", a substring unique to the note, and the
+      same mutation now goes RED naming that assertion (git diff empty after restore).
+      ALSO FIXED, both inaccuracies THIS DIFF created, both the inference-hardening-into-fact class
+      the story exists to fight: CLAUDE.md still said "Three console-script shims are blocked" while
+      its table showed five in module form (a reader would conclude ruff.exe is blocked -- it is
+      NOT); and the new DoD note quoted the sprint-66 retro as naming ruff.exe when retro.md:177
+      says "ruff.exe OR THE NPM TOOLCHAIN". Both at 0084326.
+    reality_gate: >-
+      SATISFIED BY EXECUTION, not by argument. This story's live path IS the gate runner, and the
+      gate ran end-to-end through the NEW invocations: commands [3/8] and [4/8] below are
+      `python -m ruff check .` and `python -m ruff format --check .`, both exit 0. The policy-block
+      detector was exercised against REAL subprocesses (not mocks) in both directions by the
+      integration tests, and independently re-mutated by both reviewers.
+    followups_not_in_scope: >-
+      FIVE quality-review minors deliberately deferred to keep the post-review diff narrow; they
+      need stories at the next refinement. The one that matters: yt_gate.py:177-208 matches its
+      markers against command OUTPUT, and `ruff` lints the very test file that now CONTAINS those
+      marker strings -- so a genuine lint error within a couple of lines of them would print a
+      POLICY BLOCK banner for an ordinary code failure. The VERDICT is unaffected (the label cannot
+      reach all_green, mutation-proven) and the emitted proof note demands evidence that scenario
+      could not produce, so the A12 shape holds. Do NOT narrow the marker path in a fix -- it is the
+      only signal that caught cfn-lint's DLL block, which did NOT exit 4551.
+      The other four: policy_block is the only result field emit_yaml drops (say so in a comment if
+      deliberate); POLICY_BLOCK_EXIT_CODE/PROOF_NOTE public but _POLICY_BLOCK_MARKERS private with no
+      reason; "STORY-210"/"AC5" jargon in a shipped docstring of a project-GENERIC script (AC6's
+      letter is met, its spirit is not); dev-setup-and-dod.md:10-11 sentence split mid-clause.
     points: 2
     ceremony: implementer + both reviewers
     order: 1
@@ -317,4 +357,55 @@ dod_evidence:
 # per-story records emitted by yt_gate.py and merged VERBATIM. The BASELINE record for this sprint
 # (full 8/8 GREEN at 86459ea, exit 0) is summarised under `baseline.gate` above; per-story records
 # land here once the sprint is locked and work begins.
-  []
+  STORY-210:
+    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD a528e25, exit 0.
+    counts: >-
+      backend 689 passed / 0 SKIPPED (a nonzero skip count is an incomplete gate, not a pass --
+      C5); 8 import contracts kept / 0 broken across 150 files, 429 dependencies; 247 files already
+      formatted; frontend 363 passed in 51 files.
+    adjuncts: yt_selftest 43/43 OK (35/35 at baseline, +8 from this story). yt_wiki CLEAN on all
+      four blocking checks; the same 2 pre-existing advisory `refs` amplifier notes, unrelated.
+    note: >-
+      Commands [3/8] and [4/8] are the NEW module-form ruff invocations this story introduced --
+      so this record is also the proof that the changed DoD is executable, not just edited.
+    fragment:   # emitted by yt_gate.py, merged verbatim
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 64.15s (0:01:04) ========================"
+        commit: a528e25
+        at: "2026-08-02T19:00:20+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: a528e25
+        at: "2026-08-02T19:01:26+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: a528e25
+        at: "2026-08-02T19:01:27+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "247 files already formatted"
+        commit: a528e25
+        at: "2026-08-02T19:01:28+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: a528e25
+        at: "2026-08-02T19:01:28+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
+        commit: a528e25
+        at: "2026-08-02T19:01:36+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 557ms"
+        commit: a528e25
+        at: "2026-08-02T19:03:19+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: a528e25
+        at: "2026-08-02T19:03:30+00:00"

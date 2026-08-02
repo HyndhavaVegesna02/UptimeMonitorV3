@@ -247,7 +247,10 @@ on the final HEAD is the evidence of record**. Plus the wiki compile pass before
 - [x] Cut branch `sprint-67` from `sprint-66` at `86459ea`, tag `sprint-67-start` (tag landed at
       `405ab09`, the planning commit on top of `86459ea`; that diff touches `.scrum/` + `docs/scrum/`
       only, so the baseline gate result carries forward — see `sprint-current.yaml` `start_commit`)
-- [ ] STORY-210 — implementer → both reviewers → gate → reality gate
+- [x] STORY-210 — implementer → both reviewers → gate → reality gate — **DONE** at `a528e25`
+      (`347a199..a528e25`). Spec PASS 8/8 AC; quality FIX_REQUIRED (1 MAJOR: a vacuous assertion
+      that let the proof-note print be deleted with the suite still green) → fixed and re-proven by
+      mutation. Full 8/8 gate green, 689 passed / **0 skipped**, selftest 43/43.
 - [ ] STORY-199 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-202 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-200 — implementer → both reviewers → gate → reality gate

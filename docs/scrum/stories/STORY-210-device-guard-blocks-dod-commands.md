@@ -63,12 +63,12 @@ of this story.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `ruff check .` and `ruff format --check .` become `python -m ruff check .` and
+- [x] **AC1** — `ruff check .` and `ruff format --check .` become `python -m ruff check .` and
       `python -m ruff format --check .` in `.scrum/definition-of-done.md`, with a dated note giving
       the reason, mirroring the two existing precedents in that file (2026-07-12 `lint-imports`,
       2026-07-31 `pytest`/`cfn-lint`). **This changes the DoD and is a PO decision** — it is called
       out for approval in the sprint plan and must not be taken unilaterally.
-- [ ] **AC2** — Every **live instruction** stating those commands is updated in the SAME commit, with
+- [x] **AC2** — Every **live instruction** stating those commands is updated in the SAME commit, with
       grep evidence before and after. The lines are **enumerated**, because "update every statement"
       is too blunt an instruction here and would corrupt the historical record:
 
@@ -90,32 +90,32 @@ of this story.
 
       (Sprint 66's review found `CLAUDE.md` still instructing the blocked shims after the DoD
       changed — the identical miss, one story earlier.)
-- [ ] **AC3** — `yt_gate.py` detects a policy-blocked command and reports it **distinctly from a code
+- [x] **AC3** — `yt_gate.py` detects a policy-blocked command and reports it **distinctly from a code
       failure**, naming it as an environment block and printing the 2026-07-06 proof protocol
       (empty diff since the sprint cut + passes in isolation) that the orchestrator must satisfy
       before discounting it. Detection keys on the observed signatures — exit code `4551` and/or
       `blocked by your organization` / `Application Control policy has blocked` in the output.
-- [ ] **AC4** — **The classification must never downgrade a red.** A policy-blocked command still
+- [x] **AC4** — **The classification must never downgrade a red.** A policy-blocked command still
       exits nonzero, still records `exit_code` faithfully, and still fails the gate. AC3 adds a
       *label*, not an escape hatch. A test asserts the gate's overall exit is still nonzero when a
       command is policy-blocked. (This AC exists because A12's motivating incident was precisely a
       guard whose message invited an action its check could not justify; "environmental" is exactly
       the word that could become an excuse to wave a red through.)
-- [ ] **AC5** — Shown RED **and** shown not-firing, two-sided: a stand-in command reproducing the
+- [x] **AC5** — Shown RED **and** shown not-firing, two-sided: a stand-in command reproducing the
       policy signature is classified as a policy block, **and** a genuinely failing command (a real
       test failure) is NOT classified as one. A detector that labels everything environmental is
       worse than none.
-- [ ] **AC6** — The skill stays **project-generic** (PO directive 2026-07-13): no project names,
+- [x] **AC6** — The skill stays **project-generic** (PO directive 2026-07-13): no project names,
       paths, or command names in `yt_gate.py`. The signatures are platform-level, not project-level,
       which is why they belong in the runner at all.
-- [ ] **AC7** — The `npm` position is recorded in the DoD note and the story report **as measured,
+- [x] **AC7** — The `npm` position is recorded in the DoD note and the story report **as measured,
       not as inferred**: no `-m` form exists, but `node <npm_root>/bin/npm-cli.js` is a shim-free
       analogue (verified `11.6.2`, exit 0, 2026-08-02), and its behaviour under the policy is
       **UNVERIFIED**. Adopting it is a separate PO decision, out of scope here. The story may not
       claim the gate is fully hardened, and may not write "no module form exists" into the DoD as a
       permanent fact — that phrasing was already caught once as an inference presented as a
       measurement.
-- [ ] **AC8** — Full 8/8 DoD gate green at the new invocations, and `yt_selftest` green.
+- [x] **AC8** — Full 8/8 DoD gate green at the new invocations, and `yt_selftest` green.
 
 ## Rung note
 
