@@ -1,9 +1,22 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: a9009d4
-verified_sprint: sprint-65
+verified_sha: b318141
+verified_sprint: sprint-67
 status: verified
+# Re-verified 2026-08-02 (sprint-67, STORY-210). Backend commands 3 and 4 in the "backend DoD
+# gate" Fact below changed FOR REAL this time: `ruff check .` / `ruff format --check .` ->
+# `python -m ruff check .` / `python -m ruff format --check .` (PO-approved, preventive --
+# ruff.exe was NOT blocked, `ruff --version` -> `ruff 0.15.20` exit 0 at sprint-67 planning; same
+# reasoning as commands 1/2/5's earlier moves off their shims). `.scrum/definition-of-done.md`
+# and CLAUDE.md changed in the same commit. The `[tool.ruff] exclude` bullet's command names were
+# also updated to match. The article's "sprint-22: STORY-016c" History line (re-derived at this
+# commit: `:222-223`) is a dated history note about what was literally true then and was
+# deliberately LEFT UNCHANGED -- rewriting it would falsify the record. Frontend commands
+# (`npm test`/`npm run build`/`npm run lint`)
+# UNCHANGED: no `-m` module form exists for `npm`; `node <npm_root>/bin/npm-cli.js --version` is
+# a measured shim-free analogue (11.6.2, exit 0) but its behaviour under the policy is UNVERIFIED
+# and adopting it is a separate PO decision, out of scope here (STORY-210 AC7).
 # Re-verified 2026-08-01 (OUT OF SPRINT — PO-directed process work on branch
 # process/ratchet-brake-from-sprint-66, not a story). CLAUDE.md was pruned 420 -> 292 lines.
 # All five Facts in this article that cite CLAUDE.md were re-read against the pruned file:
