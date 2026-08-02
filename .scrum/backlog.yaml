@@ -2000,7 +2000,9 @@ stories:
   - id: STORY-194
     title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
     file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
-    status: ready   # REFINED 2026-07-31 at sprint-66 planning, in-process under the PO's standing
+    status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
+                    # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
+                    # REFINED 2026-07-31 at sprint-66 planning, in-process under the PO's standing
                     # autonomy directive ("use your own reasoning, don't ask my inputs"). Story 1 of
                     # the boundary/code-discipline AUDIT sprint the PO asked to be reminded about at
                     # every planning (raised sprint-65, scheduled sprint-66).
@@ -2017,7 +2019,9 @@ stories:
   - id: STORY-195
     title: Audit the core and adapters zones against the rule catalogue
     file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
-    status: ready   # REFINED 2026-07-31 (see STORY-194). 58 modules (core 31 + adapters 27,
+    status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
+                    # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
+                    # REFINED 2026-07-31 (see STORY-194). 58 modules (core 31 + adapters 27,
                     # __pycache__ excluded), every one listed with a verdict so coverage is COUNTABLE.
                     # Findings are FILED as their own stories, never fixed inline -- the PO ruled out
                     # one unreviewable mega-refactor explicitly.
@@ -2028,7 +2032,9 @@ stories:
   - id: STORY-196
     title: Audit api + composition and the tools/ to src/ one-way boundary
     file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
-    status: ready   # REFINED 2026-07-31 (see STORY-194). 85 modules (api 55 + composition 13 +
+    status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
+                    # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
+                    # REFINED 2026-07-31 (see STORY-194). 85 modules (api 55 + composition 13 +
                     # tools 17). HIGHEST-YIELD SURFACE IN THE SPRINT: the tools/ -> src/ boundary has
                     # ZERO mechanical coverage -- tools/ sits outside root_package = "src", so
                     # lint-imports cannot see it at all. A compliant reference exists to measure
@@ -2041,7 +2047,9 @@ stories:
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: ready   # REFINED 2026-07-31 (see STORY-194). The sprint's POINT: a report is a document,
+    status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
+                    # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
+                    # REFINED 2026-07-31 (see STORY-194). The sprint's POINT: a report is a document,
                     # a contract is a build failure. Routed DOWN the ladder per the PO directive
                     # (memory code-boundary-discipline: "a ninth import-linter contract beats another
                     # prose paragraph"). SCOPE IS DISCOVERY-DEPENDENT, so AC5 writes the stopping rule
@@ -2055,7 +2063,17 @@ stories:
   - id: STORY-198
     title: An adapter re-encodes a domain enum's value as a literal — dynamo_proposal_repository.py:286
     file: docs/scrum/stories/STORY-198-fix-hardcoded-approved-literal.md
-    status: draft   # FILED 2026-07-31 by the orchestrator from STORY-195's audit (GAP-1). The audit
+    status: superseded   # SUPERSEDED BY STORY-200 at sprint-67 planning (2026-08-02).
+                    # NOT because it was done -- because it was NOT. The previous STORY-200 file
+                    # asserted "STORY-198, already landed"; re-verified WRONG at HEAD 86459ea,
+                    # where dynamo_proposal_repository.py:286 still reads `if action ==
+                    # "approved"`. Running both would edit the same three lines twice: 198 swaps
+                    # the literal for ProposalState.APPROVED.value, then 200 drops the .value when
+                    # it domain-types the port. STORY-200 reaches the better end state in ONE edit
+                    # and absorbs 198's defect, its blast radius (approved_actor is the SOLE
+                    # source of Publication.author) and its test trap (fakes.py:175-183 does NOT
+                    # denormalize approved_actor, so the branch is observable ONLY against real
+                    # DynamoDB -- a fake-based test here asserts nothing while looking green).
                     # drafted the story file; only the orchestrator writes .scrum/ state, and the
                     # STORY-195 quality review correctly flagged that this entry was MISSING -- the
                     # story existed as an .md that nothing indexed, so it would never have reached
@@ -2076,6 +2094,7 @@ stories:
                     # core/ports/proposal_repository.py:45 declares `action: str` while its sibling
                     # `resolve` takes `to_state: ProposalState` (:32). Fixing only the adapter leaves
                     # the boundary shape untouched; see the ZR-6 finding filed from the same review.
+    superseded_by: STORY-200
     points: 1
     priority: 69
     type: defect
@@ -2083,7 +2102,12 @@ stories:
   - id: STORY-199
     title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
     file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
-    status: draft   # FILED 2026-07-31 from STORY-195's QUALITY REVIEW -- NOT from the audit itself.
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning. Every citation re-derived against
+                    # HEAD 86459ea and ALL HOLD (no drift this time). Added AC5 -- empty ZR-7's
+                    # _EXEMPTIONS -- and AC6 (mutation proof); neither could have been in the
+                    # original file, because STORY-197 landed the guard AFTER it was written and
+                    # all five exemptions name this story as their fix. AC5 is self-verifying:
+                    # the guard's stale-exemption test goes RED on any entry left behind.
                     # The reviewer's independent pass found it inside a file the audit had already
                     # adjudicated and verdicted CLEAN.
                     # *** THE MOST CONSEQUENTIAL FINDING OF THE AUDIT SPRINT SO FAR: a real production
@@ -2111,7 +2135,13 @@ stories:
   - id: STORY-200
     title: Give ProposalRepository.record_approval_event a domain-typed action parameter
     file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
-    status: draft   # FILED 2026-07-31 from STORY-195's quality review. This is the ROOT CAUSE of
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning; SUBSUMES STORY-198; 2 -> 3 points.
+                    # The filing's open design question is SETTLED: the port takes ProposalState,
+                    # NOT a new 2-member enum. Reason: the sibling method in the same port
+                    # (resolve, :32) already takes ProposalState for the same two values, and a
+                    # narrower type would need a mapping back to it -- a second declaration of the
+                    # approved/rejected vocabulary, which is the exact ZR-3/ZR-8 duplication class
+                    # this sprint exists to remove. Expiry condition recorded in the story file.
                     # STORY-198: core/ports/proposal_repository.py:45 declares `action: str` while
                     # the SIBLING method in the same port takes `to_state: ProposalState` (:32), with
                     # ProposalState imported at :6. The adapter can only compare a literal because
@@ -2120,14 +2150,18 @@ stories:
                     # OPEN DESIGN QUESTION, stated not dodged: `action`'s legal set is a 2-member
                     # subset (APPROVED/REJECTED) of a 5-member enum, so the right fix may be a
                     # NARROWER type rather than ProposalState itself.
-    points: 2
+    points: 3
     priority: 71
     type: defect
     sprint: null
   - id: STORY-201
     title: Clickpath normalizer hygiene — use require_field for execution.outcome
     file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
-    status: draft   # FILED 2026-07-31 from STORY-195's quality review.
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning; estimate confirmed at 1. Citations
+                    # re-derived and hold. Added an explicit SCOPE LIMIT: the quarantine-net claim
+                    # cannot be shown end-to-end (clickpath is absent from _NORMALIZERS, so no such
+                    # row can reach normalize_rows_lenient); it is an inference from the type
+                    # relationship and must be reported as one, not as "verified".
                     # clickpath_normalizer.py:39 reads row["execution.outcome"] DIRECTLY instead of
                     # _assembly.require_field, against the documented policy at _assembly.py:20-30
                     # and the pattern at http_normalizer.py:22-23. The resulting KeyError is NOT a
@@ -2143,7 +2177,12 @@ stories:
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MAJOR x2). Story file not yet
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning; 1 -> 2 points. The filing assumed
+                    # seven names could just be imported -- but FIVE of them are function-body
+                    # literals in settings.py:32-38 with no symbol to import, so the story must
+                    # FIRST promote them to module constants in backend/src/composition/settings.py.
+                    # That makes this touch production code, not just tools/. AC written (the file
+                    # carried only a "to be lifted" placeholder) + ZR-3 adjudication cleanup.
                     # written -- the report section is the source (audit-api-composition-tools.md
                     # section 6), and it carries three testable AC ready to lift.
                     # *** THIS ONE IS CREDENTIAL-SAFETY-RELEVANT, which is why a 1-pointer is filed
@@ -2174,7 +2213,7 @@ stories:
                     # pair: the fake credentials are only defence in depth, whereas CONFIG_DIR is
                     # what selects config/demo and therefore what makes statuspage_mapping() empty --
                     # it IS the publish guard. Story is now 7 names, not 2.
-    points: 1
+    points: 2
     priority: 73
     type: defect
     sprint: null
@@ -2341,9 +2380,23 @@ stories:
     type: chore
     sprint: null
   - id: STORY-210
-    title: Device Guard blocks pytest.exe and cfn-lint.exe — two of the eight DoD commands cannot run
+    title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
-    status: draft   # FILED 2026-07-31 by STORY-197, which it BLOCKED at AC7.
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning and SUBSTANTIALLY RESCOPED.
+                    # The acute failure is CLOSED -- both invocations were changed with PO approval
+                    # during sprint 66, and the full 8/8 gate is GREEN at 86459ea (verified today,
+                    # 689 passed / 0 skipped). So the filing's "BLOCKS EVERY FUTURE STORY" framing
+                    # is no longer true and the title no longer claims it.
+                    # WHAT REMAINS, and why the retro still wanted it first: the policy widened
+                    # once with no warning, and THREE of the eight commands still run through
+                    # shims -- ruff check / ruff format (ruff.exe) and the three npm ones
+                    # (npm.cmd). Measured today: ruff.exe is STILL ALLOWED, so the ruff work is
+                    # PREVENTIVE; `python -m ruff` confirmed equivalent. npm has NO module form --
+                    # that exposure is irreducible locally and gets stated, not papered over.
+                    # yt_gate.py has NO policy-block detection today (grep: 0 hits across 389
+                    # lines), so the diagnostic is genuinely new work at the SCRIPT rung -- exempt
+                    # from the tooling freeze under A14, and it mechanises the first step of the
+                    # 2026-07-06 agreement, which until now was prose applied from memory.
                     # *** THIS BLOCKS THE DOD GATE ITSELF, SO IT BLOCKS EVERY FUTURE STORY. Fix it
                     # before the next sprint starts. ***
                     # SYMPTOM: `python .claude/skills/yourteam/scripts/yt_gate.py` exits 1 with

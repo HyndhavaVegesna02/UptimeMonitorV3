@@ -1,660 +1,239 @@
 # YourTeam active sprint board. No active sprint when status: none.
-sprint: 66
-status: closed     # none | planning | active | review | closed | aborted
-                   # CLOSED 2026-07-31. PO ACCEPTED the sprint ("i accept"), velocity 11/11 --
-                   # all four stories Done, full 8/8 gate GREEN at the final HEAD (689 passed,
-                   # 0 SKIPPED; frontend 363 passed), yt_selftest OK, yt_wiki CLEAN on all four
-                   # blocking checks. Branch sprint-66 STAYS UNMERGED (standing directive).
-                   # RETRO: amendments A11 (SCRIPT) and A12/A12b (CHECKLIST) landed at their rungs.
-                   #   A11 -- backlog/story-file parity is now enforced by yt_selftest
-                   #     (test_backlog_story_parity.py): a `file:` pointing at a missing path FAILS,
-                   #     an orphan story file FAILS, `file: null` is an ADVISORY count. Shown RED in
-                   #     both directions. It immediately surfaced that 30 not-done entries repo-wide
-                   #     have no story file.
-                   #   A12 -- a guard's FAILURE MESSAGE is part of the guard: it must not instruct an
-                   #     action its own check cannot justify, and where the check is a PROXY the
-                   #     message must say so. Motivated by ZR-7 telling a developer to delete the
-                   #     exemption covering a LIVE PRODUCTION DEFECT.
-                   #   A12b -- a recorded COUNT must be re-derived after the last edit to the text
-                   #     that produces it (my "8 failures" was really 11, invalidated by the very
-                   #     paragraph explaining it).
-                   # *** THE HEADLINE FOR ANY FUTURE SESSION: the audit's value came overwhelmingly
-                   # from ADVERSARIALLY REVIEWING THE AUDIT, not from the audit. Both reviewers found
-                   # real defects in EVERY story this sprint, several of which the orchestrator had
-                   # personally accepted. Third sprint running. Do NOT trim the two-reviewer ceremony
-                   # to save budget -- on this evidence it is where most defect-finding happens. ***
-                   # 13 stories filed (198-205 findings, 206-209 deferred guards, 210 Device Guard),
-                   # 24 points, ALL drafts needing refinement + a citation re-check before entering
-                   # a sprint. STORY-210 blocks the DoD gate itself and should go first.
-                   # Review: docs/scrum/sprints/2026-07-31-sprint-66/review.md
-                   # Retro:  docs/scrum/sprints/2026-07-31-sprint-66/retro.md
-                   # LOCKED 2026-07-31. SCOPE IS FROZEN -- new PO requests go to the backlog.
-                   # Tooling is frozen too: no new MCP servers, no ad-hoc skill-script edits
-                   # outside a story.
-                   # PO DIRECTIVES THIS SESSION (2026-07-31):
-                   #   1. "use your self reasoning ... dont ask my inputs, do your own reasoning"
-                   #      -> full autonomy. Refinement, AC, the lock and every in-sprint judgement
-                   #      call are taken in-process WITHOUT a PO check-in. Subagents ARE used (the
-                   #      PO clarified the directive was about not asking THEM, not about agents).
-                   #      Report decisions at review rather than asking first.
-                   #   2. "the session limit is 44 so keep a look at it and before exhausting full
-                   #      pause" -> watch the session budget and PAUSE WITH A HANDOFF before it is
-                   #      exhausted. Every state edit is committed as it happens so any pause is
-                   #      safe; the drop order in plan.md says what to shed if the session runs
-                   #      short (196 first, then 197's second guard -- never 194, never all of 197).
-                   #   3. Sprint SHAPE and MODE were PO-chosen before the autonomy directive:
-                   #      "Full audit, 11 pts" and "In-process".
-                   # THIS IS THE AUDIT SPRINT the PO asked to be reminded about at EVERY planning
-                   # until scheduled or dropped (memory: wanted-architecture-audit-sprint). It was
-                   # raised at sprint-65 planning and is SCHEDULED HERE -- the reminder obligation
-                   # is discharged for this sprint.
-mode: in-process   # I run implementers and reviewers myself. Chosen over `external` because audit
-                   # work is judgement-heavy reading with no crisp hand-off surface, and sprint 65's
-                   # external delivery self-reported "verified" while ruff was RED with 22 errors
-                   # (incl. F821 undefined `httpx`), after which the PO directed the fix round
-                   # in-process. Ceremony: 3-pointers get implementer -> spec-review || quality
-                   # review -> DoD gate -> reality gate. STORY-196 is 2 points but gets BOTH
-                   # reviewers anyway -- its duplicated-declaration sweep is the sprint's only novel
-                   # mechanical claim.
+sprint: 67
+status: planning   # none | planning | active | review | closed | aborted
+                   # AWAITING PO APPROVAL (2026-08-02). Not locked yet: the branch is not cut and
+                   # scope is not frozen until the PO approves. Two things need a PO ruling first:
+                   #   1. STORY-210 AC1 changes the DEFINITION OF DONE (ruff -> python -m ruff).
+                   #      Same checks, only the entry point moves -- identical in kind to the
+                   #      PO-approved 2026-07-12 lint-imports and 2026-07-31 pytest/cfn-lint
+                   #      changes. Difference: ruff.exe is NOT blocked today, so this is
+                   #      PREVENTIVE. Declining is reasonable and drops STORY-210 to 1 point.
+                   #   2. SUBAGENT USE. This session carries a standing constraint against
+                   #      spawning subagents unless the PO asks for them. The method's core
+                   #      ceremony -- implementer, then spec review || quality review -- is built
+                   #      on them, and sprint 66's single loudest finding was that BOTH reviewers
+                   #      found real defects in EVERY story, several already accepted by the
+                   #      orchestrator, for the third sprint running. Running this sprint without
+                   #      them means the orchestrator writes and accepts its own work, which is
+                   #      the exact structural hazard the sprint-66 retro named.
 goal: >-
-  Find the boundary violations the eight contracts cannot see, and turn as many as possible into
-  contracts that can. Deliverable is FINDINGS PLUS MECHANICAL GUARDS; every non-trivial fix is
-  FILED as its own story, never done inline (PO ruling). Motivating fact: an inbound adapter
-  persisting through a core port passes all eight lint-imports contracts while being
-  architecturally wrong (STORY-190) -- so if one such gap exists, others are probably in the tree.
-branch: sprint-66  # off sprint-65, which STAYS UNMERGED (standing "don't merge with main"
-                   # directive, re-confirmed at the sprint-64 review).
-start_tag: sprint-66-start
-start_commit: d4ad03e
+  Turn sprint 66's audit report into landed fixes. A report is a document; a document does not fix a
+  production defect. Fix the highest-severity findings and drive both standing guards' exemption
+  lists toward empty -- ZR-7 from five entries to zero, ZR-3 losing its two STORY-202 entries -- and
+  harden the DoD gate against the policy that took it red mid-sprint. The success measure is
+  mechanical because sprint 66 built it: every exemption entry names the story meant to remove it,
+  and each guard's stale-exemption test goes RED if a fix lands without its entry being removed.
+mode: in-process
+branch: sprint-67  # to be cut off sprint-66 at 86459ea on approval; sprint-66 STAYS UNMERGED
+                   # (standing "don't merge with main" directive, re-confirmed at sprint-64 review).
+start_tag: sprint-67-start   # to be created at lock
+start_commit: 86459ea
 baseline:
-  tree: clean at d4ad03e
+  tree: clean at 86459ea
   gate: >-
-    FULL 8/8 GREEN at d4ad03e (2026-07-31, this session): pytest 685 passed / 0 SKIPPED,
-    frontend npm test 363 passed in 51 files, all eight commands exit 0.
-  selftest: 32/32 OK, re-run this session
-  wiki: yt_wiki CLEAN at sprint-65 close; re-run inside STORY-194 (it adds an article)
+    FULL 8/8 GREEN at 86459ea, exit 0 (2026-08-02, this session): python -m pytest 689 passed /
+    0 SKIPPED; 8 import contracts kept; ruff check + ruff format clean (247 files); cfn-lint clean;
+    frontend npm test 363 passed in 51 files; npm run build and npm run lint clean.
+  baseline_was_red_first: >-
+    IMPORTANT AND WORTH THE RETRO'S TIME. The first baseline run was RED: `ruff format --check .`
+    exited 1 on .claude/skills/yourteam/scripts/tests/test_backlog_story_parity.py -- the A11
+    AMENDMENT'S OWN FILE, landed at the sprint-66 retro AFTER that sprint's final gate run (which
+    recorded "246 files already formatted"), so the DoD gate never saw it. A single line-wrap;
+    fixed at 86459ea before planning continued. A11 was routed to the SCRIPT rung precisely because
+    a machine should check state parity -- and the file itself never went through the machine that
+    checks code. A13, written in the SAME retro, is the rule that would have caught it.
+  selftest: 35/35 OK, re-run this session after the backlog edits
+  wiki: >-
+    yt_wiki CLEAN on all four blocking checks (sweep, facts, links, integrity). 2 advisory `refs`
+    amplifier notes (run.py and pyproject.toml each a code_ref in 5 articles) -- unchanged, never
+    blocking.
   dynamo: container uptime_dynamo_8021 up on 127.0.0.1:8021, REQUIRE_DYNAMO=1 on every run
 plan_verification:
   dispatched: false
+  contract_sensitive: true
   reason: >-
-    Purely internal sprint -- three of four stories are docs-only, the fourth touches
-    pyproject.toml's contract block and a test. No story consumes another component's output, no
-    adapter/vendor path, no units/scale logic, mode is not external. Recorded per the
-    token-economy amendment (2026-07-15). The probe evidence a verifier would have checked was
-    gathered directly at planning (plan.md "Verified facts at planning", V1-V7, each with the
-    command that produced it).
+    BY THE RULE THIS SPRINT QUALIFIES and a verifier SHOULD have been dispatched -- STORY-200
+    changes a port contract consumed by an adapter AND a core service, and STORY-199 is
+    scale-sensitive logic whose defect only appears past DynamoDB's 1MB page. It was not dispatched
+    for an ENVIRONMENTAL reason (this session's standing constraint on spawning subagents), NOT
+    because it was judged unnecessary. Recorded this way deliberately so the skip is not read as a
+    token-economy skip like sprint 66's.
   self_probe_caught: >-
-    TWO blocking gaps, both folded into the AC BEFORE the lock: (V4) architecture-boundary.md
-    ALREADY owns the eight contracts with citations and narrow code_refs, so the catalogue must
-    LINK to it, not restate it; (V5) yt_wiki has FIVE checks not four, `refs` is advisory unless
-    --strict-refs, AMPLIFIER_THRESHOLD=4, and pyproject.toml is ALREADY a code_ref in 5 articles
-    -- so STORY-194's original AC1 ("passes all four checks" + add pyproject.toml to code_refs)
-    was both imprecise and self-defeating. Also caught: check_integrity REJECTS a 40-char
-    verified_sha (7-12 hex only), and check_facts requires every Facts citation to be covered by
-    code_refs.
+    THREE things, all before the lock, all folded into the stories. (V4) STORY-200's file asserted
+    "STORY-198, already landed" -- FALSE at HEAD, where dynamo_proposal_repository.py:286 still
+    reads `if action == "approved"`; so STORY-200 now SUBSUMES 198 instead of reconciling with it,
+    and 198 is marked superseded. Running both would have edited the same three lines twice.
+    (V6) STORY-202 was filed as "import seven names", but FIVE of them are function-body literals
+    in settings.py:32-38 with no symbol to import -- the story must first promote them to module
+    constants in backend/src/, which makes it touch production code and re-points it 1 -> 2.
+    (V7) STORY-210's whole premise was stale: the acute failure was fixed during sprint 66 and the
+    gate is green, so "BLOCKS EVERY FUTURE STORY" is no longer true. Rescoped to the exposure that
+    genuinely remains, and re-titled.
+  not_equivalent_to_review: >-
+    Stated plainly because sprint 66's loudest finding was exactly this: self-review is weaker than
+    an independent pass. The orchestrator's own probe caught three real problems, which is the same
+    pattern as sprint 66's self-probe -- and sprint 66 then had reviewers find defects in EVERY
+    story anyway, several already personally accepted.
 constraints:
-  C1_no_inline_fixes: >-
-    STORY-195 and STORY-196 produce findings and FILED stories. Their diffs touch no file under
-    backend/src/, frontend/ or config/. PO ruling, not preference: an audit that fixes as it goes
-    yields one unreviewable mega-diff and no backlog.
-  C2_re_derivable: >-
-    Every count and every citation must be re-derivable by command. Reports record the command AND
-    its output; reviewers re-run them. "I read the zone" is not evidence. This IS the sprint's
-    reality gate (see plan.md) -- an audit has no running surface, so re-derivation replaces
-    "exercise the live path".
-  C3_guards_shown_red: >-
-    A guard that has only ever been green is not a guard (A7 + A9). Every new contract or test is
-    shown RED first -- against the real violation, or a deliberate mutation then reverted -- with
-    command and output recorded. A9 makes this a spec-review VERDICT condition: cannot answer
-    "would this go red if I broke the guarded behaviour?" => NOT_MET, never MET-with-a-note.
-  C4_no_new_gate_command: >-
-    A ninth DoD command changes definition-of-done.md's contract and needs its own PO decision.
-    Guards ride inside the existing eight (a contract runs inside command 2, a test inside
-    command 1). A rule guardable ONLY by a new command is filed, not smuggled in.
-  C5_catalogue_is_normative: >-
-    Findings cite ZR-n ids from the catalogue. A finding with no rule id is either a new rule
-    (amend the catalogue in the same sprint and say so) or an opinion (drop it). Where a rule
-    would contradict working-agreements.md, the PO-stated rule wins.
-  C6_env: >-
-    REQUIRE_DYNAMO=1, DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, Docker up. Record pass/skip
-    COUNTS on every backend gate record; a nonzero skip count is an incomplete gate, not a pass.
+  C1_remove_dont_rekey: >-
+    Every guard entry this sprint retires must be REMOVED, not re-keyed. ZR-7's and ZR-3's entries
+    are keyed by (file, line) and the fixes shift those lines, so the tempting move is to update the
+    key. The correct action is deletion -- the violation is gone. Both guards' stale-exemption tests
+    enforce it, which is why this is a constraint and not a hope.
+  C2_shown_red: >-
+    No fix lands without something going RED first. Every story here fixes a defect that green tests
+    currently tolerate, so each carries a mutation or pre-fix proof (199 AC6, 200 AC7, 202 AC4,
+    210 AC5). A fix whose removal turns nothing red is unpinned, whatever the coverage says.
+  C3_dod_change_is_po: >-
+    STORY-210 AC1 changes .scrum/definition-of-done.md and is a PO decision, not taken unilaterally
+    -- mirroring how the sprint-66 change was handled.
+  C4_classification_never_downgrades_a_red: >-
+    STORY-210's policy-block detector LABELS, it does not excuse. A blocked command still exits
+    nonzero and still fails the gate (AC4), and a test asserts it. Written down because
+    "environmental" is precisely the word that could become a wave-through, and A12's motivating
+    incident was a guard whose message invited an action its own check could not justify.
+  C5_env: >-
+    REQUIRE_DYNAMO=1, DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, Docker up. Record pass/skip COUNTS
+    on every backend gate record; a nonzero skip count is an incomplete gate, not a pass.
+    STORY-200's AC5 is meaningless without real DynamoDB -- its branch is invisible to the fake.
+  C6_publish_guard: >-
+    STORY-202 edits the mechanism that SELECTS config/demo, and that selection IS the publish guard
+    (empty statuspage_mapping() -> LoggingPublisher). AC6 requires re-verifying it empirically
+    rather than reasoning that it should be equivalent. `decide` publishes recoveries with NO human
+    gate and sprint 65 proved that path fires.
 stories:
-  - id: STORY-194
-    title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
-    file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
-    status: done
-    points: 3
-    ceremony: implementer + both reviewers (spec FAIL -> fix round -> orchestrator acceptance check)
-    result: >-
-      DONE at 3b0ff0f. Delivered docs/scrum/wiki/zone-rules.md -- FIVE rules, not the three the
-      first draft had. ZR-1 inbound adapter must not hold/call a persistence port (GUARDABLE: an
-      enumerated forbidden contract over the 9 repository/watermark port modules -- NOT all of
-      core/ports, because core/ports/signal_ingest.py is the documented front door a driving
-      adapter may legitimately name). ZR-2 vendor vocabulary confined to three closed PROSE FORMS
-      inside core/, with the Provenance carve-out (GUARDABLE to a stated extent, residue named:
-      string annotations and dynamically built identifiers stay invisible to a static AST walk).
-      ZR-3 no re-declared constant across the tools/ -> backend/src/ one-way boundary (GUARDABLE
-      by test only; lint-imports is structurally blind to tools/). ZR-4 the five-file api feature
-      convention. ZR-5 composition-root config parity.
-      REVIEW HISTORY, recorded because it is the story's real shape: spec review FAILED (AC5
-      NOT_MET) and quality review returned FIX_REQUIRED with 5 MAJOR + 9 minor. Both were right
-      and both found things the orchestrator had personally accepted -- the second sprint running
-      that this has happened, which is the strongest standing argument for both reviewers on every
-      story. The blocking defects were all in the two things the DOWNSTREAM stories consume: rule
-      DECIDABILITY and the GUARDABLE sketches' implementability. Worst of them: ZR-1's original
-      sketch would have banned all of src.core.ports, failing a shape the dossier documents; and
-      ZR-2 keyed on an open-ended vendor word list ("...") that could not settle 6 real core/ lines
-      or the Pydantic attribute-docstring idiom on nearly every domain field. ZR-2 was rebuilt to
-      key on FORM instead of on words, which is what made it decidable.
-      The implementer pushed BACK on three facts rather than complying (ZR-3's collision count is
-      101 not the 105 quoted at hand-off; test_zone_layout.py spans 125-173 not -174; ZR-5 has no
-      violating citation to give because both roots genuinely agree today) -- recorded as-is, since
-      sprint 65's lesson was that reproducing a measurement is not validating it.
-      ORCHESTRATOR CORRECTION AT ACCEPTANCE (3b0ff0f), a defect NEITHER reviewer could have caught
-      because it emerged FROM the fix round: ZR-3's newly-pinned scope (module-level UPPER_CASE
-      constants, both sides) EXCLUDED the very violation ZR-3 adjudicates -- a function-body literal
-      in tools/demo_loop_gate/harness.py:746-750 duplicating a pydantic FIELD DEFAULT at
-      backend/src/composition/settings.py:21-22. That is also why its narrow measurement returned 0
-      while a real duplicate stood: the 0 was an artifact of the scope, NOT a clean tree. Scope
-      widened to both declaration shapes plus tools/-side literals inside function bodies. *** THIS
-      IS LOAD-BEARING FOR STORY-196 AC3: the sweep MUST find the harness.py case, so a STORY-196
-      sweep reporting 0 while that case stands is a BROKEN SWEEP, not a clean tree. ***
-      AC VERDICTS (AC1-AC6 all MET; AC1/AC6 mechanics and the article text re-verified by the
-      orchestrator directly, not taken from the implementer's self-report): yt_wiki CLEAN on
-      sweep/facts/links/integrity; verified_sha c0a4d71 short + real + empty diff over code_refs;
-      diff over d4ad03e..HEAD touches NOTHING under backend/src/, frontend/ or config/ (C1 holds);
-      5/5 backend gate PASS, 685 passed / 0 SKIPPED.
-      KNOWN TRADE ACCEPTED: the article's code_refs widen backend/src/composition/run.py from a
-      code_ref in 4 articles to 5, tripping an ADVISORY refs amplifier note. Accepted because ZR-5
-      cannot cite the two composition roots without it, and refs never blocks. Worth a retro line.
+  - id: STORY-210
+    title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
+    file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
+    status: todo
+    points: 2
+    ceremony: implementer + both reviewers
     order: 1
     plan_note: >-
-      THE YARDSTICK -- everything else depends on it, so it can never be dropped. A planning probe
-      established that the CHEAP violations are absent (V2: no api->adapters import, no outward
-      import from core, no inbound adapter holding a port) and that the SUBTLE shape is everywhere
-      (V3: ~20 vendor mentions inside core/, every one in a docstring). No document in this repo
-      says whether that is compliant, so two auditors could disagree and neither could be shown
-      wrong. AC5 exists to kill ~20 false findings before STORY-195 reports them. AC1 was
-      CORRECTED pre-lock against V4/V5 above.
-  - id: STORY-195
-    title: Audit the core and adapters zones against the rule catalogue
-    file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
-    status: done
+      FIRST because it protects every other story's gate run. RESCOPED AT PLANNING -- read the story
+      file, not the filing: the acute failure is CLOSED (both invocations changed with PO approval
+      in sprint 66; full gate green today). What remains is that the policy widened twice without
+      warning and THREE of eight commands still run through shims. Measured today: ruff.exe is
+      STILL ALLOWED, so AC1/AC2 are PREVENTIVE; `python -m ruff` is confirmed equivalent; npm has NO
+      module form and that exposure is irreducible locally (AC7 requires saying so rather than
+      claiming the gate is hardened). yt_gate.py has ZERO policy-block detection today, so AC3-AC5
+      are genuinely new work at the SCRIPT rung -- exempt from the tooling freeze under A14, and it
+      mechanises the first step of the 2026-07-06 agreement, which until now was prose applied from
+      memory and worked in sprint 66 only because the orchestrator recognised the signature.
+  - id: STORY-199
+    title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
+    file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
+    status: todo
     points: 3
-    ceremony: implementer + both reviewers + fix round (fix round NOT independently re-reviewed -- see result)
-    result: >-
-      DONE at 2c29514, but read the caveat at the end before treating this as fully verified.
-      Delivered docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md -- all 58 modules
-      (core 31 + adapters 27) enumerated and listed with a verdict; the spec reviewer independently
-      re-ran the enumeration and confirmed the report's two tables match `find` name-for-name in
-      BOTH directions, zero missing and zero extraneous. That part is solid.
-      *** THE SPRINT'S REAL LESSON SO FAR, AND IT IS UNCOMFORTABLE: the audit's value came mostly
-      from ADVERSARIALLY REVIEWING THE AUDIT, not from the audit. *** The first pass reported zero
-      ZR-1..ZR-5 violations and 57 CLEAN verdicts. Spec review returned FAIL (AC2) and quality
-      review FIX_REQUIRED with 4 MAJOR + 9 minor -- and THREE of those MAJORs came from the quality
-      reviewer's own independent pass over ~46 of the 58 files, finding things INSIDE files the
-      audit had already verdicted CLEAN. The 57 CLEAN verdicts were substantially a bulk assertion
-      backed by three greps that only re-measured what planning had already measured.
-      WHAT THE REVIEW FOUND THAT THE AUDIT DID NOT:
-        1. A REAL PRODUCTION DEFECT THAT DOES NOT RAISE -- dynamo_maintenance_repository.py:90-97
-           returns False for a component that IS under maintenance once the 1MB page is exceeded,
-           silently disabling maintenance suppression in `decide`. Four siblings share the shape;
-           the correct paginating pattern already exists in the same directory. Filed STORY-199 (3).
-        2. GAP-1's ROOT CAUSE -- core/ports/proposal_repository.py:45 declares `action: str` while
-           its sibling takes `to_state: ProposalState`. The adapter compares a literal BECAUSE the
-           port hands it a string, so STORY-198's adapter-only fix leaves the boundary untouched.
-           Filed STORY-200 (2). That file had been verdicted CLEAN.
-        3. clickpath_normalizer.py:39 reads a field directly, so its KeyError escapes the
-           quarantine net -- the stall shape STORY-190 closed. Unreachable today. Filed STORY-201 (1).
-      TWO RULES ADDED TO THE CATALOGUE MID-AUDIT (C5 permits this, and requires saying so):
-        ZR-6 a core-owned port expresses every parameter and return in domain types; a primitive
-             standing in for an existing domain type is a boundary finding. (REPLACED the audit's
-             draft ZR-6, which was general Python hygiene applying identically within one zone, with
-             an undecidable escape clause -- the same defect that got ZR-2's first draft rewritten.)
-        ZR-7 an adapter must satisfy the port contract it implements; silently truncating a result
-             set the port promises in full is a boundary violation, not a storage detail.
-      RE-DERIVABILITY DEFECT, the spec FAIL: the report's recorded vendor-word grep claimed "28
-      lines" and did not reproduce -- 22 under its own pattern, 26 under a corrected one, and 4 of
-      the 6 citations it claimed to reconfirm CANNOT match its pattern at all (they read
-      DynamoComponentRepository, not DynamoDB). I re-ran both greps myself and confirmed every
-      number before acting. Corrected in the report and flagged rather than silently substituted,
-      the bar STORY-194 set with its own 105->101.
-      GATE: 5/5 scoped PASS at 2c29514, 685 passed / 0 SKIPPED, merged verbatim below. C1 verified
-      independently by the orchestrator: git diff d4ad03e..HEAD -- backend/src frontend config is
-      EMPTY. yt_wiki CLEAN on all four blocking checks.
-      *** CAVEAT THE PO MUST WEIGH AT REVIEW: the fix round was NEVER INDEPENDENTLY RE-REVIEWED.
-      The implementer was killed mid-edit by the WEEKLY usage limit (resets Aug 4 03:30 IST),
-      leaving verified_sha as a "TBD-fix-round" placeholder that would have failed the wiki
-      integrity check. I recovered the work rather than discarding it (it was a substantially
-      complete fix round, not scraps), stamped the sha to 70a2b4e after confirming the diff over
-      code_refs from there is empty, verified the mechanical floor myself, and read the substantive
-      changes. But no second pair of eyes saw ZR-6, ZR-7, or the revised CLEAN-verdict framing.
-      Given that both reviewers found real defects in BOTH stories this sprint, that is the one
-      soft spot in this story and it should be re-reviewed before STORY-197 builds guards on it. ***
+    ceremony: implementer + both reviewers
     order: 2
     plan_note: >-
-      58 modules (core 31 + adapters 27, __pycache__ excluded -- V1). Every file listed once with a
-      verdict so coverage is COUNTABLE, not claimed. Report is sprint HISTORY
-      (docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md), NOT the wiki: a findings
-      list describes a moment and must never be re-stamped as still current.
-  - id: STORY-196
-    title: Audit api + composition and the tools/ to src/ one-way boundary
-    file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
-    status: done
+      THE ONLY LIVE PRODUCTION DEFECT IN THE SET and the sprint's reason to exist -- NEVER dropped.
+      is_under_maintenance silently returns False for a component that IS under maintenance once
+      windows exceed one 1MB page, disabling maintenance suppression in `decide`. It does not raise.
+      Four siblings share the shape; the correct pattern is in the SAME directory
+      (dynamo_observation_repository.in_window, with a _limit hook at :23 that makes the page
+      boundary reachable without a megabyte of fixtures). AC5 is the cheapest evidence in the
+      sprint: ZR-7's _EXEMPTIONS must end EMPTY, and the guard's stale-exemption test goes RED on
+      anything left behind -- sprint 66 wrote that guard to detect this story landing. NOTE for the
+      implementer: is_under_maintenance answers a BOOLEAN, so it pages until the first match and
+      returns True immediately; it must not become a collect-everything loop on the common
+      not-under-maintenance path, which runs every cycle.
+  - id: STORY-202
+    title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
+    file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
+    status: todo
     points: 2
-    ceremony: implementer + both reviewers + fix round (spec PASSED first time; quality FIX_REQUIRED)
-    result: >-
-      DONE at b5ef06e. Delivered docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md
-      over all 85 modules (api 55, composition 13, tools 17), each listed with a verdict AND an
-      explicit full-read vs grep-verified annotation -- the lesson from STORY-195's review applied.
-      *** SPEC REVIEW PASSED ALL SIX AC ON THE FIRST PASS, and did the strongest verification seen
-      this sprint: it RE-IMPLEMENTED the ZR-3 sweep independently from the report's prose and got
-      BYTE-IDENTICAL output (13 src declarations, 911 tools literals, the same 15 collisions, the
-      AC3 reference case found unprompted). The quality reviewer independently did the same and also
-      reproduced it exactly. A mechanical claim reproduced by two independent re-implementations is
-      the highest evidence bar anything in this sprint has cleared. ***
-      QUALITY REVIEW returned FIX_REQUIRED (4 MAJOR, 7 minor) from its own pass over all 13
-      composition/ modules, api/dependencies.py, the six service.py files and the tools/ boundary
-      crossers. It also CORROBORATED that api/ is genuinely clean (every src.* edge across all 55
-      modules resolves to the feature's own package, core, _shared or api/dependencies -- never
-      cross-feature, never adapters/composition) and that nothing under backend/src/ imports tools/.
-      WHAT THE REVIEW FOUND THAT THE AUDIT DID NOT -- and the first one is the sprint's best
-      boundary finding:
-        1. composition/seed_dynamo.py IS AN ADAPTER: raw boto3 put_item/update_item plus a
-           hand-written UpdateExpression, hand-building the pk=TOPOLOGY / sk=COMPONENT#<id> key
-           schema OWNED by two repositories -- a third declaration on the boot path of BOTH
-           composition roots. The audit verdicted it CLEAN and section 5 asserted it was "pure
-           wiring". IT FELL THROUGH THE CRACK BETWEEN THE TWO AUDIT PASSES (195 owned adapters/, 196
-           owned composition/, and this is composition/ doing adapters/'s job), which is exactly the
-           failure a two-pass audit exists to prevent. The drift already bit once --
-           failure_path_reality_gate.py:163-172's docstring carries the scar -- and
-           persistence-adapters.md already listed seed_dynamo.py in its code_refs. Filed STORY-205 (3).
-        2. The tools/ pass never adjudicated a PRIVATE-module import (query_grammar.py:26 and
-           store.py:14 both import src.adapters.inbound.dynatrace._assembly) and never verified the
-           DIRECTIONAL half of its own titular one-way rule. Both now adjudicated and recorded.
-        3. The section 3c ledger did not balance (15 pairs, 6 filed, 8 cleared) and one CLEAR quoted
-           the WRONG LINE -- harness.py:964 is `indent=2`, not `print("=" * 78)` -- meaning at least
-           one of 15 was adjudicated without opening the file. The report's own citation checker
-           passed it, because line-count-only checking is precisely its admitted blind spot.
-        4. The MAJOR rating ignored FIVE MORE env-var key names five lines above the credential pair
-           (env_matrix.py:64-68). They escaped the sweep only because settings.py:32-38 reads those
-           names as FUNCTION-BODY literals rather than module constants -- a formatting accident on
-           the src side, not a difference in risk.
-      *** SEVERITY ORDER CORRECTED IN THE FIX ROUND, and this is the one to remember: CONFIG_DIR now
-      outranks the Statuspage credential pair. Fake credentials are only defence in depth; CONFIG_DIR
-      is what selects config/demo and therefore what makes statuspage_mapping() empty -- it IS the
-      publish guard. STORY-202 widened from 2 names to 7. ***
-      ZR-8 LANDED IN THE CATALOGUE (C5 permits and requires recording): storage and vendor mechanics
-      -- a key schema, an item shape, a direct table/SDK call, or query construction -- live in
-      exactly ONE adapter; another zone calls that adapter rather than re-implementing them. It was
-      deliberately WIDENED from the audit's draft, which spoke only of "a query string, a request
-      payload shape" and would NOT have caught a persistence key schema. One rule now covers both
-      GAP-2 (vendor_health.py duplicating the DQL builder without its InvalidNativeIdError
-      validation) and seed_dynamo.py.
-      BOTH SWEEPS ARE NOW COMMITTED under tools/ (zr3_duplicate_sweep.py, citation_sweep.py) -- they
-      had lived only in a scratchpad, so the report's recorded command did not run at HEAD, a C2 gap
-      on the story's central artifact. C1 still holds: tools/ is outside C1's protected set
-      (backend/src, frontend, config), which is verified empty.
-      ORCHESTRATOR NOTE FOR STORY-197: the committed sweep now flags ITS OWN SOURCE
-      (tools/zr3_duplicate_sweep.py:160-182 match config.py's FreshnessConfig defaults). Harmless as
-      a report, but promoting it to a standing test needs a self-exclusion first.
-      GATE: 5/5 scoped PASS, 685 passed / 0 SKIPPED, merged verbatim below. yt_wiki CLEAN on all four
-      blocking checks. C1 diff-scope empty, verified by the orchestrator.
+    ceremony: implementer + both reviewers
     order: 3
     plan_note: >-
-      85 modules (api 55 + composition 13 + tools 17 -- V1). HIGHEST-YIELD SURFACE IN THE SPRINT:
-      lint-imports sets root_package = "src", so the tools/ -> src/ one-way rule and the
-      no-duplicated-constant rule have ZERO mechanical coverage today (V6). AC3's sweep must be
-      DEMONSTRATED CAPABLE against the known-shared failure-code mapping before any empty result
-      is accepted -- a sweep that has only ever returned empty proves nothing, the same failure
-      shape as a green-only guard. FIRST TO DROP if the session runs short.
-  - id: STORY-197
-    title: Land the mechanical guards the audit earned, and adjudicate every rule
-    file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
-    status: done
+      RE-POINTED 1 -> 2 at planning. The filing assumed seven names could simply be imported; FIVE
+      are function-body literals at settings.py:32-38 with no symbol to import, so the story must
+      first promote them to module constants -- which pulls it into backend/src/ and out of a pure
+      tools/ change. CONFIG_DIR is the most severe of the seven, above the credential pair: fake
+      credentials are defence in depth, whereas CONFIG_DIR selects config/demo and therefore empties
+      statuspage_mapping() -- it IS the publish guard. Keep the KEY NAMES (this story) apart from
+      the duplicated VALUES (STORY-203) or the two will collide. AC5 removes ZR-3's :75/:77
+      adjudications and must NOT touch :39, which cites STORY-203.
+  - id: STORY-200
+    title: Give ProposalRepository.record_approval_event a domain-typed action parameter (subsumes STORY-198)
+    file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
+    status: todo
     points: 3
-    ceremony: implementer (stopped by PO mid-story) + orchestrator completion + BOTH reviewers + fix round
-    result: >-
-      DONE. Spec review PASSED all seven AC (AC1-AC7) after independently re-deriving all four RED
-      proofs by mutation and re-running the full gate itself. Quality review returned FIX_REQUIRED
-      with 3 MAJOR; the fix round below closed every one, each verified by probe rather than by
-      reading. FINAL FULL 8/8 GATE GREEN: 689 passed / 0 SKIPPED, frontend 363 passed, yt_selftest OK,
-      yt_wiki CLEAN on all four blocking checks.
-      *** THE MOST IMPORTANT FIX, AND IT WAS DANGEROUS. *** ZR-7's guard decided "this method
-      paginates" by finding the STRING LastEvaluatedKey anywhere in it. The reviewer added a realistic
-      warn-on-truncation stopgap to is_under_maintenance -- still reading ONE page -- and the guard
-      responded "now loops on LastEvaluatedKey; remove this exemption, the fix has landed", about the
-      exemption covering THE LIVE PRODUCTION DEFECT. Following that instruction would have left the
-      defect permanently unguarded. The guard asserted a conclusion its own proxy could not support.
-      Fixed: the loop check is now per CALL SITE and requires the call to sit INSIDE a
-      LastEvaluatedKey-bearing loop, and the message now says VERIFY IT ACTUALLY PAGES.
-      THREE MORE BLIND SPOTS, each demonstrated GREEN by the reviewer against a deliberately
-      unpaginated call site, all now closed and re-proven by probe: a repository in a SUBDIRECTORY
-      (glob was not recursive), a MODULE-LEVEL function (only class bodies were walked), and a SECOND
-      unpaginated call inside an otherwise-paginating method (loops was computed once per method and
-      inherited). That last shape is realistic production code and is exactly the truncation ZR-7
-      exists to catch. Probe results after the fix: stopgap FLAGGED, real loop PAGES, second call
-      FLAGGED, module-level function FLAGGED, subdirectory repository FLAGGED.
-      ZR-3's self-exclusion matched a BARE FILENAME, so any tools/**/citation_sweep.py anywhere was
-      skipped -- the reviewer proved it by planting a genuine duplicate that passed, then renaming the
-      file and watching it go RED. Now matched on the path relative to tools/, and re-proven.
-      TWO FINDINGS AGAINST THE ORCHESTRATOR, both fair and both fixed:
-        1. CLAUDE.md still instructed the blocked `pytest` and `cfn-lint` shims after I changed the
-           DoD -- violating the very AC4 discipline this story enforces, in a file that already
-           carried that exact workaround note for lint-imports. Fixed in three places, and the
-           Device Guard note now records all three blocked shims together.
-        2. My "8 citation-sweep failures, all false" count was STALE -- it is 11. The limitation
-           prose I wrote itself introduced three new bare-filename regex matches, and I never re-ran
-           the count afterwards. Caught by spec review under exactly the C2 rule this sprint applied
-           to everyone else. Corrected, re-derived, and the cause recorded in the article.
-      ALSO CORRECTED FOR HONESTY: ZR-8's deferral reason claimed a guard would be RED on real code and
-      C4 forbids that -- but ZR-3 and ZR-7 were in precisely that position and this same story solved
-      it with exemption lists, so that was a false excuse. The real reasons are AC5's two-guard cap
-      plus the fact that ZR-8's violations are whole-function SHAPE rather than per-site coordinates,
-      which makes an exemption list a far blunter instrument there. ZR-6's row now carries its own
-      verdict's requirement that it is guardable only as a reviewed warning, never a hard contract.
-      WIKI BLAST RADIUS handled properly rather than re-stamped: the DoD change marked
-      dev-setup-and-dod.md stale (two of its code_refs), so its command list was UPDATED with the
-      Device Guard reason and date, mirroring how it already recorded the 2026-07-12 lint-imports
-      block. zone-rules.md re-stamped twice, each time after a real re-read of what changed.
-      WAS BLOCKED EARLIER at AC7 by the Device Guard regression -- the PO approved the DoD invocation change and the FULL 8/8 GATE IS NOW
-      GREEN at 8e18b6d: python -m pytest 689 passed / 0 SKIPPED, all three frontend commands pass,
-      yt_selftest OK. AC7 is satisfied. Awaiting the reviewer pass the PO asked for; every other AC
-      was already met.
-      WAS BLOCKED AT AC7 BY AN ENVIRONMENT REGRESSION, NOT BY ITS OWN WORK. Every other AC is met and
-      verified; the story is NOT marked done because the mechanical floor says a nonzero exit is a
-      nonzero exit, no exceptions. The PO decides at review.
-      WHAT IS DONE AND PROVEN. Two guards landed, and unusually for this repo BOTH were shown RED by
-      the ORCHESTRATOR re-deriving the proofs, not by trusting a self-report -- the implementing
-      agent was stopped by the PO after commits 19fee13/e2fffae/0ba21d0 and could not be resumed.
-        ZR-7 -> backend/tests/test_zr7_pagination_guard.py (2 tests). RED-proven TWICE: removing the
-          is_under_maintenance exemption trips the unexempted-violation check, and exempting a call
-          site that already loops trips the STALE-exemption check (the branch that stops a landed fix
-          leaving a rotting entry behind).
-        ZR-3 -> backend/tests/test_zr3_duplicate_declarations.py (2 tests), promoting the committed
-          tools/zr3_duplicate_sweep.py. RED-proven by injecting a fresh duplicate of
-          Settings.dynamo_observations_table's default into a non-excluded tools/ module.
-      A NEGATIVE RESULT WORTH KEEPING: the same injection into tools/citation_sweep.py did NOT trip
-      the guard. That is CORRECT -- _SELF_EXCLUDE_NAMES skips the two sweep scripts, whose own
-      literals are inherently noisy -- but a green result there looks exactly like a blind spot on
-      first inspection, so it is written down. The exclusion matches on BARE FILENAME, which is
-      broader than intended; a relative-path match would be tighter (noted, not fixed).
-      THE LIVE-VIOLATION PROBLEM, resolved deliberately: three of the strongest guard candidates had
-      live violations, and a zero-tolerance guard would have turned the DoD gate RED and blocked
-      every future story until the fix stories land -- which C4 forbids as a side effect of a guard.
-      Both guards therefore carry enumerated exemption/adjudication lists where EVERY unfixed entry
-      names its fix story (STORY-199 / STORY-202 / STORY-203). Green today, loud on anything new,
-      and shrinking as fixes land. The per-entry fix-story citation is the whole difference between
-      an exemption list and a permanent suppression list.
-      AC6 CLOSED THE LOOP: zone-rules.md now carries an authoritative Adjudication table -- ZR-3 and
-      ZR-7 ENFORCED-BY their tests, the other six GUARDABLE-DEFERRED behind named stories
-      (STORY-206..209 filed for the four ready guards; ZR-6 waits on STORY-200's design decision,
-      ZR-8 on its two fix stories), and ZR-5's operational half recorded UNGUARDABLE with its reason
-      (two OS processes, each reading its own env -- no single-process test sees across that).
-      verified_sha re-stamped ONLY after a real re-read, during which the committed citation_sweep
-      reported 8 failures that ALL PROVED FALSE on direct inspection (two cite a memory file outside
-      the repo; six fail the content-anchor heuristic while the cited lines are exactly right). That
-      limitation is now recorded IN the article so a later story does not "fix" correct citations.
-      AC4 was a verification rather than an edit: both guards are pytest tests, so the contract count
-      stays at EIGHT and every statement of it remains accurate (grep-verified). STORY-206 takes it
-      to nine and must update them all.
-      *** WHY IT IS BLOCKED (AC7). The full 8/8 gate exits 1: pytest -> FAIL(4551) and cfn-lint ->
-      FAIL(4551), both "blocked by your organization's Device Guard policy". PROVEN environmental to
-      the standard the 2026-07-06 agreement demands, not merely asserted:
-        - pytest passes in isolation via the module form -- 689 passed, 0 SKIPPED (685 + the 4 new
-          guard tests), so the code is green and only the .exe shim is blocked;
-        - cfn-lint is blocked one level deeper, even via python -m cfnlint ("DLL load failed while
-          importing _regex: An Application Control policy has blocked this file"), so the module
-          form is NOT a workaround for it the way it is for pytest;
-        - infra/ is UNTOUCHED for the whole sprint, so cfn-lint's input is byte-identical to runs
-          that passed green earlier the same day;
-        - reproduced twice back to back; the other six commands pass, frontend included.
-      This REGRESSED MID-SPRINT: the baseline at d4ad03e was a full 8/8 green with the same runner.
-      Filed as STORY-210, which BLOCKS EVERY FUTURE STORY until fixed. There is direct precedent for
-      the fix in this repo -- the same policy blocked lint-imports.exe and the DoD command was
-      changed to the module form -- but editing .scrum/definition-of-done.md is a PO decision and I
-      have not touched it. ***
-      ALSO OUTSTANDING: no spec or quality review has seen this story. Both reviewers found real
-      defects in all three previous stories, so that gap is material and should be closed before the
-      guards are trusted further.
+    ceremony: implementer + both reviewers
     order: 4
     plan_note: >-
-      THE SPRINT'S POINT: a report is a document, a contract is a build failure. Scope is
-      DISCOVERY-DEPENDENT so AC5 writes the stopping rule down -- guards for at most the TWO
-      highest-severity guardable findings, everything else filed with a guard sketch. Expect a
-      pytest test rather than a contract for the tools/ boundary (V6). AC7 demands the FULL gate,
-      not --only: STORY-178 means a --only matching nothing exits 0, the one known false-green on
-      the DoD floor. May shrink to ONE guard + every rule adjudicated, never to zero guards.
+      SUBSUMES STORY-198, which had NOT landed despite the previous story file asserting it had --
+      re-verified wrong at HEAD. Re-pointed 2 -> 3 for the absorbed scope and the real-DynamoDB
+      proving test. THE DESIGN QUESTION IS SETTLED AT REFINEMENT, not left open: the port takes
+      ProposalState, NOT a new 2-member enum, because the sibling method in the same port (resolve,
+      :32) already takes ProposalState for the same two values, and a narrower type would need a
+      mapping back to it -- a second declaration of the approved/rejected vocabulary, which is the
+      exact duplication class this sprint removes. The expiry condition for that decision is
+      recorded in the story file. AC5 IS THE ONE THAT MATTERS: fakes.py:175-183 does NOT denormalize
+      approved_actor, so the fixed branch is INVISIBLE to the fake -- the proving test must run
+      against DynamoDB Local, and a fake-based substitute would assert nothing while looking green.
+      Blast radius is real: approved_actor is the SOLE source of Publication.author, so value drift
+      silently blanks the author column for every row.
+  - id: STORY-201
+    title: Clickpath normalizer hygiene — use require_field for execution.outcome
+    file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
+    status: todo
+    points: 1
+    ceremony: implementer + DoD gate (1-2 point ceremony)
+    order: 5
+    plan_note: >-
+      FIRST TO DROP if the session runs short. One line, no dependencies, and the code path is
+      UNREACHABLE today (clickpath is absent from _NORMALIZERS), so it is preventive hygiene. The
+      story now carries an explicit SCOPE LIMIT: the quarantine-net claim cannot be demonstrated
+      end-to-end because no clickpath row can reach normalize_rows_lenient -- it is an inference
+      from MalformedDqlRowError being a ValueError subclass, and must be reported as an inference,
+      not as "verified through the quarantine path".
 sizing_note: >-
-  11 points across 4 stories -- deliberately at the TOP of the PO's stated ~9-11 baseline rather
-  than above it. Sprint 65 ran 13; its retro's honest read was that the size was absorbable but
-  "bought less margin than it looked" (three of five stories needed a fix round). STORY-186 and
-  STORY-189 (1 point each, carried out of sprint 65, both now unblocked since STORY-191 landed)
-  were therefore LEFT OUT rather than topping this up to 13. They are the first sprint-67
-  candidates.
+  11 points across 5 stories -- the top of the stated ~9-11 baseline, same size as sprint 66. The
+  sprint-66 retro found that fix-round cost is driven by story KIND, not size: an audit sprint's
+  deliverable is prose, which fails review in ways code does not. This sprint's deliverable is code
+  with mechanical proofs, so 11 is a considered call rather than a stretch. DROP ORDER if the
+  session runs short: STORY-201 first, then STORY-202. NEVER STORY-199 (the live defect) and never
+  STORY-210 (it keeps the gate trustworthy for everything else).
+ceremony_note: >-
+  Four of five stories get BOTH reviewers, including two below the 3-point threshold, and that is
+  deliberate. Sprint 66's evidence: both reviewers found real defects in EVERY story, several
+  already accepted by the orchestrator, for the third sprint running. STORY-210 is 2 points but
+  edits the DoD and the gate runner itself; STORY-202 is 2 points but touches the publish-guard
+  mechanism. Only STORY-201 -- one line, unreachable code -- takes the small-story ceremony.
 carried_forward:
   - >-
-    STORY-186 (1) — demo-engine doc/test hygiene; unblocked now STORY-191 has landed. Re-verify
-    every line citation before starting -- its own notes record that "seven rejection tests" is
-    really 9 functions / 11 cases, and its cited range is stale.
+    STORY-205 (3) — seed_dynamo.py is an adapter in composition's clothing; arguably the best
+    boundary finding of sprint 66. HELD BACK DELIBERATELY: its own entry says refinement must size
+    it first, because the repositories expose no seed-shaped bulk upsert and NO repository owns
+    AppConfig-shaped writes (pk=TOPOLOGY, sk=APP#<id>) at all -- it may need a new port. Sizing that
+    honestly is a sprint-68 refinement job, not a planning-day guess.
   - >-
-    STORY-189 (1) — the two doc/wiki gaps sprint 64 left. demo-engine.md still does not mention
-    tools/demo_loop_gate/ ANYWHERE, so the fix is a Fact rewrite, not a code_refs addition.
+    STORY-203 (2) — the four MINOR ZR-3 duplications. Deliberately NOT bundled with STORY-202:
+    202 is key NAMES, 203 is duplicated VALUES, and they touch adjacent lines in the same files.
+    Note its store.py:22 case is CROSS-REPRESENTATION (timedelta(hours=2) vs "2h") and is
+    structurally invisible to a literal-equality sweep -- the standing limit of any such sweep.
   - >-
-    STORY-192 — the wiki carries the same em-dash corruption in a shape STORY-188's guard cannot
-    catch (valid UTF-8 carrying mojibake; 246 sequences, 6 files).
+    STORY-204 (2) — vendor_health.py duplicates the DQL builder without its InvalidNativeIdError
+    validation. Refinement must choose the shape; the audit deliberately did not prescribe it.
   - >-
-    STORY-193 — proposal formation is not reliably assertable in a loop run. Do NOT "fix" it by
-    widening the anti-flap window; that is production logic.
+    STORY-206..209 (2/2/1/2) — the four deferred guards. All clean-tree rules, so each needs a
+    MUTATION proof rather than a live violation. STORY-206 takes the contract count 8 -> 9 and must
+    update every statement of that figure in the same commit.
   - >-
-    STORY-178 — yt_gate exits 0 when --only matches nothing; the only known false-green on the
-    DoD floor, and a standing caveat on every scoped run.
+    STORY-186 (1), STORY-189 (1), STORY-147 (2), STORY-192, STORY-193 — carried from sprint 65/66,
+    still unstarted.
   - >-
-    STORY-147 (2) — component group + description; the cheapest UI-gap item.
+    STORY-178 — yt_gate exits 0 when --only matches nothing; the only known false-green on the DoD
+    floor, and a standing caveat on every scoped run. Note STORY-210 touches yt_gate.py this sprint,
+    so there is an argument for folding 178 in -- deliberately NOT done, to keep 210's diff about
+    one thing.
+  - >-
+    STORY-211 (plan on token budget) and STORY-212 (evidence-artifact rule at the script rung) —
+    both PO-deferred process stories, still drafts needing estimates.
 dod_evidence:
-# per-story records emitted by yt_gate.py and merged VERBATIM (A10 makes the fragment always
-# valid YAML). SCOPED runs mid-sprint; the FULL 8/8 gate on the final HEAD is the evidence of
-# record at sprint close. STORY-194's record below is a 5-command SCOPED run (docs-only diff
-# cannot reach the three frontend commands) at 3b0ff0f, AFTER the orchestrator correction.
-# STORY-195's 5-command SCOPED run at 2c29514 follows STORY-194's.
-# STORY-196's 5-command SCOPED run at b5ef06e follows STORY-195's.
-# STORY-197's FULL 8/8 run at 3eceb32 follows -- it is RED on pytest and cfn-lint, both
-# proven blocked by Device Guard (STORY-210), and it is recorded HONESTLY as RED, not massaged.
-# The FULL 8/8 GREEN run at 8e18b6d follows it, after the PO-approved DoD invocation change --
-# both records kept, so the RED is visible in history rather than overwritten.
-# The FINAL full 8/8 run after the review fix round follows, at the true final HEAD.
-  - command: "pytest"
-    exit_code: 0
-    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 33.31s ============================="
-    commit: f72bae0
-    at: "2026-07-31T02:40:33+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: f72bae0
-    at: "2026-07-31T02:41:07+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: f72bae0
-    at: "2026-07-31T02:41:08+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "242 files already formatted"
-    commit: f72bae0
-    at: "2026-07-31T02:41:08+00:00"
-  - command: "cfn-lint infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: f72bae0
-    at: "2026-07-31T02:41:08+00:00"
-  - command: "pytest"
-    exit_code: 0
-    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 58.56s ============================="
-    commit: 2c29514
-    at: "2026-07-31T05:07:22+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: 2c29514
-    at: "2026-07-31T05:08:23+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: 2c29514
-    at: "2026-07-31T05:08:25+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "242 files already formatted"
-    commit: 2c29514
-    at: "2026-07-31T05:08:25+00:00"
-  - command: "cfn-lint infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: 2c29514
-    at: "2026-07-31T05:08:25+00:00"
-  - command: "pytest"
-    exit_code: 0
-    output_tail: "tor.py ...                       [ 93%] | backend\\tests\\test_streak.py .........                                   [ 95%] | backend\\tests\\test_topology_domain.py ........                           [ 96%] | backend\\tests\\test_topology_endpoint.py ......                           [ 97%] | backend\\tests\\test_vendor_health.py ........                             [ 98%] | backend\\tests\\test_verdict.py ........                                   [ 99%] | backend\\tests\\test_zone_layout.py ....                                   [100%] | ============================ 685 passed in 34.71s ============================="
-    commit: b5ef06e
-    at: "2026-07-31T11:16:06+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: b5ef06e
-    at: "2026-07-31T11:16:42+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: b5ef06e
-    at: "2026-07-31T11:16:43+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "244 files already formatted"
-    commit: b5ef06e
-    at: "2026-07-31T11:16:43+00:00"
-  - command: "cfn-lint infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: b5ef06e
-    at: "2026-07-31T11:16:43+00:00"
-  - command: "pytest"
-    exit_code: 4551
-    output_tail: "'C:\\Hyn\\uptime_monitor_v3\\.venv\\Scripts\\pytest.exe' was blocked by your organization's Device Guard policy. | Contact your support person for more info."
-    commit: 3eceb32
-    at: "2026-07-31T16:33:36+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: 3eceb32
-    at: "2026-07-31T16:33:36+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: 3eceb32
-    at: "2026-07-31T16:33:37+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "246 files already formatted"
-    commit: 3eceb32
-    at: "2026-07-31T16:33:37+00:00"
-  - command: "cfn-lint infra/stack.yaml"
-    exit_code: 4551
-    output_tail: "'C:\\Hyn\\uptime_monitor_v3\\.venv\\Scripts\\cfn-lint.exe' was blocked by your organization's Device Guard policy. | Contact your support person for more info."
-    commit: 3eceb32
-    at: "2026-07-31T16:33:37+00:00"
-  - command: "npm test"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:03:40 | Duration  101.97s (transform 14.89s, setup 96.04s, import 52.25s, tests 104.44s, environment 349.14s)"
-    commit: 3eceb32
-    at: "2026-07-31T16:33:37+00:00"
-  - command: "npm run build"
-    exit_code: 0
-    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 811ms"
-    commit: 3eceb32
-    at: "2026-07-31T16:35:22+00:00"
-  - command: "npm run lint"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 lint | > eslint ."
-    commit: 3eceb32
-    at: "2026-07-31T16:35:32+00:00"
-  - command: "python -m pytest"
-    exit_code: 0
-    output_tail: "......                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 98%] | backend\\tests\\test_zone_layout.py ....                                   [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 62.93s (0:01:02) ========================"
-    commit: 0f3dc57
-    at: "2026-07-31T16:52:37+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: 0f3dc57
-    at: "2026-07-31T16:53:41+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: 0f3dc57
-    at: "2026-07-31T16:53:43+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "246 files already formatted"
-    commit: 0f3dc57
-    at: "2026-07-31T16:53:43+00:00"
-  - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: 0f3dc57
-    at: "2026-07-31T16:53:43+00:00"
-  - command: "npm test"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:23:52 | Duration  110.97s (transform 16.49s, setup 100.94s, import 53.55s, tests 109.61s, environment 392.37s)"
-    commit: 0f3dc57
-    at: "2026-07-31T16:53:50+00:00"
-  - command: "npm run build"
-    exit_code: 0
-    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 1.51s"
-    commit: 0f3dc57
-    at: "2026-07-31T16:55:44+00:00"
-  - command: "npm run lint"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 lint | > eslint ."
-    commit: 0f3dc57
-    at: "2026-07-31T16:56:03+00:00"
-  - command: "python -m pytest"
-    exit_code: 0
-    output_tail: "......                           [ 95%] | backend\\tests\\test_topology_endpoint.py ......                           [ 96%] | backend\\tests\\test_vendor_health.py ........                             [ 97%] | backend\\tests\\test_verdict.py ........                                   [ 98%] | backend\\tests\\test_zone_layout.py ....                                   [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 63.44s (0:01:03) ========================"
-    commit: 769ddc5
-    at: "2026-07-31T17:20:18+00:00"
-  - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-    exit_code: 0
-    output_tail: "--------- | Contracts | --------- | Analyzed 150 files, 429 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-    commit: 769ddc5
-    at: "2026-07-31T17:21:27+00:00"
-  - command: "ruff check ."
-    exit_code: 0
-    output_tail: "All checks passed!"
-    commit: 769ddc5
-    at: "2026-07-31T17:21:28+00:00"
-  - command: "ruff format --check ."
-    exit_code: 0
-    output_tail: "246 files already formatted"
-    commit: 769ddc5
-    at: "2026-07-31T17:21:28+00:00"
-  - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-    exit_code: 0
-    output_tail: ""
-    commit: 769ddc5
-    at: "2026-07-31T17:21:29+00:00"
-  - command: "npm test"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  22:51:37 | Duration  95.52s (transform 15.42s, setup 87.19s, import 50.08s, tests 107.94s, environment 326.22s)"
-    commit: 769ddc5
-    at: "2026-07-31T17:21:36+00:00"
-  - command: "npm run build"
-    exit_code: 0
-    output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 1.36s"
-    commit: 769ddc5
-    at: "2026-07-31T17:23:13+00:00"
-  - command: "npm run lint"
-    exit_code: 0
-    output_tail: "> frontend@0.0.0 lint | > eslint ."
-    commit: 769ddc5
-    at: "2026-07-31T17:23:28+00:00"
+# per-story records emitted by yt_gate.py and merged VERBATIM. The BASELINE record for this sprint
+# (full 8/8 GREEN at 86459ea, exit 0) is summarised under `baseline.gate` above; per-story records
+# land here once the sprint is locked and work begins.
+  []

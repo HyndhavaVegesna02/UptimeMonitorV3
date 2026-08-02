@@ -3,8 +3,9 @@ id: STORY-199
 title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
 type: defect
 points: 3
-status: draft
+status: ready
 refined: 2026-07-31
+re_refined: 2026-08-02
 ---
 
 ## Context
@@ -70,6 +71,30 @@ not a violation, and is excluded from this story.
       exact silent-`False` shape this finding describes, not just "list has more than N items."
 - [ ] **AC4** — Existing contract tests for all five methods continue to pass unchanged for the
       single-page case.
+- [ ] **AC5** — `_EXEMPTIONS` in `backend/tests/test_zr7_pagination_guard.py:71` is **EMPTY** at the
+      end of this story, and both ZR-7 tests pass. All five current entries name this story as their
+      fix (`"Fix: STORY-199."`), so landing the fix without removing them is itself a failure — the
+      guard's second test asserts that every exemption still corresponds to a real unpaginated call
+      site, and will go RED on a stale entry. **Do not re-key the entries to the new line numbers;
+      remove them.** This AC is self-verifying and is the cheapest evidence in the story: the guard
+      written in sprint 66 was designed to detect exactly this story landing.
+- [ ] **AC6** — Mutation proof (standing evidence rule): with all five fixed, remove the
+      `LastEvaluatedKey` loop from ONE method, confirm that method's AC2 test goes RED **and** that
+      the ZR-7 guard goes RED naming that call site, then restore and confirm `git diff` is empty.
+      A fix whose removal turns nothing red is unpinned.
+
+## Notes for the implementer
+
+**`is_under_maintenance` is not a "collect everything" loop, and must not become one.** It answers a
+boolean. The correct shape is: page until a match is found, return `True` immediately on the first
+matching item, and return `False` only after `LastEvaluatedKey` is exhausted. Accumulating every
+page into a list before testing would be correct but needlessly reads the whole GSI partition on the
+common "not under maintenance" path — and that path runs every cycle in `decide`.
+
+**Why AC2's test must force the page boundary.** The defect only appears past a 1 MB page. A test
+over a handful of rows passes while the defect stands, which is why the audit's own CLEAN verdict on
+this file was wrong. The `_limit` hook is what makes the boundary reachable without a megabyte of
+fixtures.
 
 ## Open Questions
 
@@ -79,3 +104,10 @@ None.
 
 - 2026-07-31: filed from STORY-195's quality-review fix round finding (`ZR-7`,
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md` §2c/§6).
+- 2026-08-02: refined to `ready` at sprint-67 planning. Every citation in this file was
+  re-derived against HEAD (`86459ea`) and **all of them still hold** — `is_under_maintenance` def
+  at :86 / query at :90, `list_windows` :66/:68, `list_components` :28/:29, `list_signals` :29/:30,
+  `list_open` :172/:174, the reference loop at `dynamo_observation_repository.py` :93-118 with the
+  `_limit` hook at :23. Added **AC5** (empty the ZR-7 exemption list) and **AC6** (mutation proof),
+  neither of which could have been in the original file: the ZR-7 guard did not exist when it was
+  written — STORY-197 landed it later the same day, with five exemptions that all name this story.

@@ -3,8 +3,9 @@ id: STORY-201
 title: Clickpath normalizer hygiene — use require_field for execution.outcome
 type: chore
 points: 1
-status: draft
+status: ready
 refined: 2026-07-31
+re_refined: 2026-08-02
 ---
 
 ## Context
@@ -43,6 +44,19 @@ dispatch path.
 - [ ] **AC3** — Existing `clickpath_normalizer` tests continue to pass unchanged for present-field
       inputs.
 
+## Scope limit — state it, do not overclaim it
+
+The Description's claim is that the error becomes quarantine-net-compatible. **That cannot be proven
+end-to-end here, and the story must not pretend otherwise.** `normalize_rows_lenient(rows, *,
+signal_key)` (`dispatch.py:105-107`) dispatches internally through `_NORMALIZERS`, which maps only
+`"http_monitor_execution"`; clickpath's real `event.type` is explicitly unknown and the registry
+comment says not to guess it. So no clickpath row can reach the lenient path today.
+
+AC2 therefore tests the normalizer **directly**, and the quarantine-compatibility claim rests on the
+type relationship — `MalformedDqlRowError` is a `ValueError` subclass (`_assembly.py:18`) and the
+lenient path catches `ValueError`. That is a sound inference, not a demonstration, and should be
+described that way in the story's report rather than as "verified through the quarantine path".
+
 ## Open Questions
 
 None.
@@ -51,3 +65,9 @@ None.
 
 - 2026-07-31: filed from STORY-195's quality-review fix round (batched MINOR,
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-core-adapters.md` §4/§6).
+- 2026-08-02: refined to `ready` at sprint-67 planning; estimate confirmed at 1. Citations
+  re-derived against HEAD (`86459ea`) and all hold: the bare subscript at
+  `clickpath_normalizer.py:39`, the correct pattern at `http_normalizer.py:22-23`,
+  `MalformedDqlRowError` at `_assembly.py:18` with the policy docstring through `:27`, and the
+  single-entry `_NORMALIZERS` at `dispatch.py:45-47`. Added the scope limit above so the
+  quarantine-net claim is not reported as demonstrated when it is inferred.
