@@ -7,6 +7,7 @@ and the evidence fragment's schema.
 
 from __future__ import annotations
 
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -14,6 +15,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yt_gate  # noqa: E402
+
+YT_GATE_PATH = Path(__file__).resolve().parents[1] / "yt_gate.py"
 
 DOD_SAMPLE = """# Definition of Done
 ## Commands (backend)
@@ -154,6 +157,89 @@ class FindRootTests(unittest.TestCase):
     def test_none_when_absent(self):
         with tempfile.TemporaryDirectory() as td:
             self.assertIsNone(yt_gate.find_root(Path(td)))
+
+
+class PolicyBlockDetectionTests(unittest.TestCase):
+    """STORY-210 AC3/AC5/AC6: the platform-level policy-block signature.
+
+    Two-sided per AC5: fires on the stand-in signatures, does NOT fire on a
+    genuine failure. AC6: signatures are platform-level (exit code, message
+    text a Windows Application Control policy itself emits) — no project
+    names, paths or command names appear here or in the detector.
+    """
+
+    def test_exit_code_4551_alone_is_a_policy_block(self):
+        self.assertTrue(yt_gate.is_policy_block(4551, "some unrelated output"))
+
+    def test_blocked_by_your_organization_marker(self):
+        self.assertTrue(
+            yt_gate.is_policy_block(
+                1, "This operation has been blocked by your organization."
+            )
+        )
+
+    def test_application_control_policy_marker(self):
+        self.assertTrue(
+            yt_gate.is_policy_block(
+                1, "The Application Control policy has blocked this application."
+            )
+        )
+
+    def test_marker_match_is_case_insensitive(self):
+        self.assertTrue(
+            yt_gate.is_policy_block(1, "BLOCKED BY YOUR ORGANIZATION, contact IT")
+        )
+
+    def test_genuine_test_failure_is_not_a_policy_block(self):
+        output = "FAILED tests/test_x.py::test_add - AssertionError: 2 != 3"
+        self.assertFalse(yt_gate.is_policy_block(1, output))
+
+    def test_zero_exit_is_never_a_policy_block_even_with_marker_text(self):
+        # A command that happens to print the marker text but SUCCEEDS (e.g.
+        # a test asserting on the string itself) must never be labelled.
+        self.assertFalse(yt_gate.is_policy_block(0, "blocked by your organization"))
+
+
+class PolicyBlockGateIntegrationTests(unittest.TestCase):
+    """STORY-210 AC3/AC4/AC5 end to end: run the real script as a subprocess."""
+
+    def _run(self, dod_text: str) -> subprocess.CompletedProcess:
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / ".scrum").mkdir()
+            (root / ".scrum" / "definition-of-done.md").write_text(
+                dod_text, encoding="utf-8"
+            )
+            return subprocess.run(
+                [sys.executable, str(YT_GATE_PATH)],
+                cwd=root,
+                capture_output=True,
+                text=True,
+                timeout=60,
+            )
+
+    def test_policy_blocked_stand_in_is_labelled_and_still_reds_the_gate(self):
+        dod = (
+            "## Commands (backend)\n"
+            '- [ ] Blocked: `python -c "import sys; '
+            "print('blocked by your organization'); sys.exit(1)\"` -> exit 0\n"
+        )
+        proc = self._run(dod)
+        combined = proc.stdout + proc.stderr
+        self.assertNotEqual(proc.returncode, 0, combined)  # AC4: never downgrades
+        self.assertIn("POLICY BLOCK", combined)
+        self.assertIn("environment block", combined)
+        self.assertIn("2026-07-06", combined)  # the proof protocol reference
+
+    def test_genuine_failure_is_not_labelled_a_policy_block(self):
+        dod = (
+            "## Commands (backend)\n"
+            '- [ ] Failing: `python -c "import sys; sys.exit(1)"` -> exit 0\n'
+        )
+        proc = self._run(dod)
+        combined = proc.stdout + proc.stderr
+        self.assertNotEqual(proc.returncode, 0, combined)
+        self.assertNotIn("POLICY BLOCK", combined)
 
 
 if __name__ == "__main__":

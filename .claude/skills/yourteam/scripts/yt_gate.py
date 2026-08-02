@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""YourTeam v2 gate runner (yourteam_version: 2.0.0).
+"""YourTeam v2 gate runner (yourteam_version: 2.1.0).
 
 Runs every command in the project's Definition of Done and emits the
 `dod_evidence` YAML fragment for sprint-current.yaml — command, exit code,
@@ -16,6 +16,11 @@ Rules this script enforces by construction:
     2026-07-06): re-run the failing unit with --only in isolation; if it
     passes AND its diff since the sprint cut is empty, record the isolated
     re-run with a prominent note and file a determinism defect.
+  * A command that looks environment-blocked (a Windows Device Guard /
+    Application Control policy, not the code) is LABELLED as such —
+    `is_policy_block()`, platform-level signatures only — but the label
+    never downgrades a red: exit_code is recorded faithfully and still
+    fails the gate (STORY-210, sprint-67).
 
 DoD file format (parsed from .scrum/definition-of-done.md):
   * Sections whose heading starts with `## Commands` hold gate commands.
@@ -163,6 +168,46 @@ def one_line_tail(text: str, limit: int = TAIL_CHARS) -> str:
     return tail.replace("\\", "\\\\").replace('"', '\\"')
 
 
+#: STORY-210 (AC3/AC5/AC6): observed signatures of a Windows Device Guard /
+#: Application Control policy blocking a process, rather than the invoked
+#: command genuinely failing. Platform-level, not project-level — no project
+#: names, paths or command names belong here, which is why this lives in the
+#: generic runner instead of a per-project DoD note.
+POLICY_BLOCK_EXIT_CODE = 4551
+_POLICY_BLOCK_MARKERS = (
+    re.compile(r"blocked by your organization", re.IGNORECASE),
+    re.compile(r"application control policy has blocked", re.IGNORECASE),
+)
+
+#: The 2026-07-06 working agreement's proof protocol, restated here so AC3's
+#: label always ships with it: a policy-block classification is not license
+#: to discount a red on sight.
+POLICY_BLOCK_PROOF_NOTE = (
+    "This is a LABEL, not an escape hatch (agreement 2026-07-06): a policy-blocked "
+    "command still exits nonzero, still records its exit code faithfully, and still "
+    "fails the gate. Before discounting it, prove BOTH: (1) an EMPTY diff on the "
+    "affected command/file since the sprint cut, AND (2) the command passes when "
+    "re-run in isolation with --only. A red without both proven stays a red."
+)
+
+
+def is_policy_block(exit_code: int, output: str) -> bool:
+    """Classify a command result as an environment (policy) block, not a code failure.
+
+    AC5 (two-sided): fires on the observed signatures — exit code 4551 and/or
+    the marker text a Windows Application Control policy itself emits in its
+    block message — and must NOT fire on a genuine failure's output (e.g. a
+    pytest assertion failure). A zero exit is never a block: a command that
+    merely prints marker-like text while succeeding is not blocked (AC4 —
+    the label only ever attaches to something that is already a red).
+    """
+    if exit_code == 0:
+        return False
+    if exit_code == POLICY_BLOCK_EXIT_CODE:
+        return True
+    return any(pattern.search(output) for pattern in _POLICY_BLOCK_MARKERS)
+
+
 _ENV_REF = re.compile(r"\$\{(\w+)\}|\$(\w+)|%(\w+)%")
 
 
@@ -224,6 +269,9 @@ def run_command(entry: dict, root: Path, env: dict, timeout: int) -> dict:
         "exit_code": exit_code,
         "output_tail": one_line_tail(output),
         "at": started.isoformat(timespec="seconds"),
+        # AC3/AC4: a LABEL only — exit_code above is recorded faithfully either
+        # way and is the sole input to the gate's pass/fail decision.
+        "policy_block": is_policy_block(exit_code, output),
     }
 
 
@@ -365,7 +413,14 @@ def main() -> int:
             flush=True,
         )
         r = run_command(entry, root, env, args.timeout)
-        status = "PASS" if r["exit_code"] == 0 else f"FAIL ({r['exit_code']})"
+        # AC3: a policy block is reported distinctly from a plain code failure,
+        # but it is still a FAIL for the purpose of all_green below (AC4).
+        if r["policy_block"]:
+            status = f"POLICY BLOCK (environment, exit {r['exit_code']})"
+        elif r["exit_code"] == 0:
+            status = "PASS"
+        else:
+            status = f"FAIL ({r['exit_code']})"
         print(f"yt_gate:   -> {status}", file=sys.stderr, flush=True)
         all_green = all_green and r["exit_code"] == 0
         results.append(r)
@@ -374,6 +429,21 @@ def main() -> int:
     print(fragment)
     if args.out:
         Path(args.out).write_text(fragment, encoding="utf-8")
+
+    policy_blocked = [r for r in results if r["policy_block"]]
+    if policy_blocked:
+        print(
+            f"yt_gate: POLICY BLOCK — {len(policy_blocked)} command(s) look like an "
+            "environment block (a Windows Device Guard / Application Control policy), "
+            "not a code failure:",
+            file=sys.stderr,
+        )
+        for r in policy_blocked:
+            print(
+                f"yt_gate:   POLICY BLOCK: {r['command']} (exit {r['exit_code']})",
+                file=sys.stderr,
+            )
+        print(f"yt_gate: {POLICY_BLOCK_PROOF_NOTE}", file=sys.stderr)
 
     if not all_green:
         print(
