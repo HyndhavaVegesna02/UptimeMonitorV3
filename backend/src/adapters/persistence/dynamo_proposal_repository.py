@@ -24,6 +24,7 @@ class DynamoProposalRepository(ProposalRepository):
         self._db = db_resource
         self._table_name = table_name
         self._table = self._db.Table(table_name)
+        self._limit: int | None = None  # Hook for testing pagination
 
     def _map_item(self, item: dict) -> StatusProposal:
         from_status = None
@@ -171,11 +172,26 @@ class DynamoProposalRepository(ProposalRepository):
 
     def list_open(self) -> list[StatusProposal]:
         """Retrieve all OPEN status proposals from the repository."""
-        response = self._table.query(
-            IndexName="gsi1",
-            KeyConditionExpression=Key("gsi1pk").eq("PROPOSAL_OPEN"),
-        )
-        items = response.get("Items", [])
+        items = []
+        exclusive_start_key = None
+
+        while True:
+            kwargs = {
+                "IndexName": "gsi1",
+                "KeyConditionExpression": Key("gsi1pk").eq("PROPOSAL_OPEN"),
+            }
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+            if self._limit is not None:
+                kwargs["Limit"] = self._limit
+
+            response = self._table.query(**kwargs)
+            items.extend(response.get("Items", []))
+
+            exclusive_start_key = response.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                break
+
         return [self._map_item(item) for item in items]
 
     def resolve(

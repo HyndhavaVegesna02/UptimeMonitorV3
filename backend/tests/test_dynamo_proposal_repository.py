@@ -122,6 +122,32 @@ def test_dynamo_proposal_repository_get_open_and_get_and_list_open(dynamo_resour
     assert open_list[0] == fetched_open
 
 
+def test_dynamo_proposal_repository_list_open_paginates(dynamo_resource):
+    """STORY-199 AC2: forcing a small page size must not truncate list_open
+    against proposal_repository.py's 'retrieve all OPEN status proposals'
+    contract."""
+    settings = load_settings()
+    repo = DynamoProposalRepository(dynamo_resource, settings.dynamo_control_table)
+
+    saved_ids = []
+    for i in range(10):
+        prop = StatusProposal(
+            component_id=f"comp-page-{i}",
+            from_status=None,
+            to_status=ComponentStatus.DEGRADED,
+            state=ProposalState.OPEN,
+            proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+        )
+        saved = repo.create_open(prop)
+        assert saved is not None
+        saved_ids.append(saved.id)
+
+    repo._limit = 2
+
+    open_proposals = repo.list_open()
+    assert {p.id for p in open_proposals} == set(saved_ids)
+
+
 def test_dynamo_proposal_repository_resolve_guard_and_atomicity(dynamo_resource):
     settings = load_settings()
     repo = DynamoProposalRepository(dynamo_resource, settings.dynamo_control_table)
