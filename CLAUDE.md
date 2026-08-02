@@ -157,6 +157,9 @@ or entry-point form instead** — the check performed is identical, only the ent
 differs: `lint-imports.exe` (blocked 2026-07-12), `pytest.exe` + `cfn-lint.exe`
 (blocked 2026-07-31; see STORY-210). `cfn-lint` needs its entry point
 (`cfnlint.runner:main`) rather than `-m`, because the package has no `__main__`.
+`ruff check .` / `ruff format --check .` below are ALSO module-form (`python -m ruff
+...`), but `ruff.exe` is NOT one of the three blocked shims — that move is preventive
+(STORY-210), taken because the policy has already widened twice unannounced.
 
 | Task                | Command                                  |
 | ------------------- | ---------------------------------------- |

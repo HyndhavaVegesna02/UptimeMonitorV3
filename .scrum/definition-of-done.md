@@ -61,7 +61,8 @@
        planning: `ruff --version` -> `ruff 0.15.20`, exit 0 -- but the same Windows Device Guard /
        Application Control policy has already widened twice mid-sprint without warning
        (`lint-imports.exe` 2026-07-12, `pytest.exe` + `cfn-lint.exe` 2026-07-31), and the sprint-66
-       retro named `ruff.exe` as the likeliest next casualty. Same check, same rules, same files;
+       retro (`docs/scrum/sprints/2026-07-31-sprint-66/retro.md:177`) named the next casualties as
+       "`ruff.exe` or the npm toolchain" -- not `ruff.exe` alone. Same check, same rules, same files;
        `python -m ruff --version` returns the identical `ruff 0.15.20`, exit 0 -- only the entry
        point moves.)
 - [ ] Code formatting check: `python -m ruff format --check .` -> exit 0
