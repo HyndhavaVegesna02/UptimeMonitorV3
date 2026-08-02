@@ -534,11 +534,17 @@ where a zone-wide regression would be caught.
   missing capability, it was an inconsistently-applied one. **All five now carry that
   same loop and the same `self._limit` hook.** `is_under_maintenance` is the one
   boolean-shaped case: it pages until a matching item is found (returning `True`
-  immediately, never scanning the rest of the GSI partition on the common
-  not-under-maintenance path, which runs every `decide` cycle) or until
-  `LastEvaluatedKey` is exhausted (returning `False`) — it must NEVER terminate on an
-  empty-after-filter page, since the `FilterExpression` empties the leading pages
-  while `KeyConditionExpression` still matches every window. Pinned by
+  immediately, short-circuiting out of the loop) or until `LastEvaluatedKey` is
+  exhausted (returning `False`) — it must NEVER terminate on an empty-after-filter
+  page, since the `FilterExpression` empties the leading pages while
+  `KeyConditionExpression` still matches every window. **The cost is asymmetric, and
+  the expensive side is the COMMON one:** the under-maintenance path (the rare one)
+  can return early on the first matching page, but the not-under-maintenance path —
+  the one every `decide` cycle takes when nothing is under maintenance — can only
+  return `False` once `LastEvaluatedKey` is exhausted, i.e. after reading the ENTIRE
+  `MAINT` GSI partition. That cost grows with total maintenance-window history
+  forever; it is inherent to answering the question correctly with a post-read
+  filter, not a defect in this fix. Pinned by
   `test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_forced_page_size`
   (`backend/tests/test_dynamo_maintenance_repository.py`), which seeds five
   other-component windows sorted ahead of the one real match with `_limit=1` and
@@ -688,7 +694,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
 | ZR-6 | `GUARDABLE-DEFERRED (STORY-200)` | **Guardable only as a reviewed lint WARNING surfaced for human judgement, never as a hard-failing contract** — ZR-6's own coverage verdict says so and requires this to be stated explicitly. Deliberately behind its FIX story, not ahead of it: ZR-6's own text leaves open whether `record_approval_event`'s `action` becomes `ProposalState` or a narrower 2-member type, and a guard written before that choice would encode the wrong target. STORY-200 AC3 forces the decision to leave a testable trace; the guard follows it. |
-| ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing the `is_under_maintenance` `LastEvaluatedKey` loop (a mutation proof, `list_components` used for the recorded run) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
+| ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing `list_components`'s `LastEvaluatedKey` loop (the recorded mutation proof) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes (including `is_under_maintenance`) and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
 | ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). **Honest reason, corrected at review:** the blocker is AC5's two-guard cap, not redness — ZR-3 and ZR-7 were in exactly the same "live violations" position and this same commit solved that with exemption lists, so "a guard would be RED" would have been a false excuse. A second, real constraint does apply though: ZR-8's violations are whole-function SHAPE (a duplicated builder, a hand-rolled key schema), not per-call-site coordinates, so an exemption list would be a far blunter instrument here than it is for ZR-3/ZR-7. |
 
 **Why only two rules were mechanised (AC5's stopping rule, stated as a result).** ZR-3 and ZR-7 were
@@ -723,6 +729,19 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-67 (STORY-199 fix round, quality review): **FACT CORRECTION, not a bare
+  re-stamp.** The ZR-7 finding paragraph stated the hot-path cost backwards: it read
+  that `is_under_maintenance` "never scan[s] the rest of the GSI partition on the
+  common not-under-maintenance path". That is inverted — early-return-on-match only
+  ever saves work on the (rare) under-maintenance path; the not-under-maintenance path
+  (the common one, the one `decide` takes every cycle) is the one that reads the
+  ENTIRE `MAINT` partition, because `False` is returned only once `LastEvaluatedKey`
+  is exhausted. Corrected to state the true, asymmetric cost — the common path is the
+  expensive one and it grows with maintenance-window history forever. The
+  implementation is unchanged and correct; only this Fact's description of its cost
+  was wrong. Also fixed the ZR-7 adjudication row, which named `is_under_maintenance`
+  as the method used for the recorded mutation proof when the History entry (and the
+  actual evidence) both say `list_components`. verified_sha -> PLACEHOLDER_SHA.
 - sprint-67 (STORY-199): landed the ZR-7 fix. All five findings (`is_under_maintenance`,
   `list_windows`, `list_components`, `list_signals`, `list_open`) now loop on
   `LastEvaluatedKey`; `is_under_maintenance` short-circuits `True` on first match and
