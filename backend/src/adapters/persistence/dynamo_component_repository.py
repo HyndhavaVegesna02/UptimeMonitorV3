@@ -16,6 +16,7 @@ class DynamoComponentRepository(ComponentRepository):
     def __init__(self, db_resource, table_name: str) -> None:
         self._db = db_resource
         self._table = self._db.Table(table_name)
+        self._limit: int | None = None  # Hook for testing pagination
 
     def _map_item(self, item: dict) -> Component:
         return Component(
@@ -26,11 +27,26 @@ class DynamoComponentRepository(ComponentRepository):
         )
 
     def list_components(self) -> list[Component]:
-        response = self._table.query(
-            KeyConditionExpression=Key("pk").eq("TOPOLOGY")
-            & Key("sk").begins_with("COMPONENT#")
-        )
-        items = response.get("Items", [])
+        items = []
+        exclusive_start_key = None
+
+        while True:
+            kwargs = {
+                "KeyConditionExpression": Key("pk").eq("TOPOLOGY")
+                & Key("sk").begins_with("COMPONENT#")
+            }
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+            if self._limit is not None:
+                kwargs["Limit"] = self._limit
+
+            response = self._table.query(**kwargs)
+            items.extend(response.get("Items", []))
+
+            exclusive_start_key = response.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                break
+
         return [self._map_item(item) for item in items]
 
     def get(self, component_id: str) -> Component | None:

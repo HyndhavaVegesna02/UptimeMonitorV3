@@ -114,6 +114,25 @@ def test_dynamo_component_repository_set_status_contract(dynamo_resource):
     _assert_set_status_contract(repo, known_id="set-status-comp")
 
 
+def test_dynamo_component_repository_list_components_paginates(dynamo_resource):
+    """STORY-199 AC2: forcing a small page size must not truncate list_components
+    against component_repository.py's 'retrieve all components' contract."""
+    from src.adapters.persistence.dynamo_component_repository import (
+        DynamoComponentRepository,
+    )
+
+    settings = load_settings()
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
+
+    for i in range(10):
+        _seed_component_dynamo(dynamo_resource, settings, f"comp-page-{i}", "app-a")
+
+    repo._limit = 2
+
+    components = repo.list_components()
+    assert {c.id for c in components} == {f"comp-page-{i}" for i in range(10)}
+
+
 def test_dynamo_watermark_repository_lifecycle(dynamo_resource):
     from datetime import datetime, timezone
 
