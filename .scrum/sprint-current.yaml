@@ -1,21 +1,30 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 67
-status: planning   # none | planning | active | review | closed | aborted
-                   # AWAITING PO APPROVAL (2026-08-02). Not locked yet: the branch is not cut and
-                   # scope is not frozen until the PO approves. Two things need a PO ruling first:
-                   #   1. STORY-210 AC1 changes the DEFINITION OF DONE (ruff -> python -m ruff).
-                   #      Same checks, only the entry point moves -- identical in kind to the
-                   #      PO-approved 2026-07-12 lint-imports and 2026-07-31 pytest/cfn-lint
-                   #      changes. Difference: ruff.exe is NOT blocked today, so this is
-                   #      PREVENTIVE. Declining is reasonable and drops STORY-210 to 1 point.
-                   #   2. SUBAGENT USE. This session carries a standing constraint against
-                   #      spawning subagents unless the PO asks for them. The method's core
-                   #      ceremony -- implementer, then spec review || quality review -- is built
-                   #      on them, and sprint 66's single loudest finding was that BOTH reviewers
-                   #      found real defects in EVERY story, several already accepted by the
-                   #      orchestrator, for the third sprint running. Running this sprint without
-                   #      them means the orchestrator writes and accepts its own work, which is
-                   #      the exact structural hazard the sprint-66 retro named.
+status: active     # none | planning | active | review | closed | aborted
+                   # LOCKED 2026-08-02. SCOPE IS FROZEN -- new PO requests go to the backlog, not
+                   # into this sprint. Tooling is frozen too, EXCEPT the enforcement ladder (A14).
+                   # THREE PO RULINGS AT PLANNING (2026-08-02), all recorded because they shape
+                   # how the sprint runs:
+                   #   1. SPRINT APPROVED AS SCOPED -- 11 points, all five stories, in-process.
+                   #      The PO did NOT take either of the offered reductions (drop 201, or drop
+                   #      201+202), so the drop order in sizing_note applies only if the SESSION
+                   #      runs short, not as a standing trim.
+                   #   2. THE DoD CHANGE IS APPROVED. STORY-210 AC1 may change
+                   #      .scrum/definition-of-done.md: `ruff check .` -> `python -m ruff check .`
+                   #      and `ruff format --check .` -> `python -m ruff format --check .`.
+                   #      Same checks, same rules, same files -- only the entry point moves. This
+                   #      is PREVENTIVE: ruff.exe is NOT blocked today (measured at planning), and
+                   #      `python -m ruff` was verified equivalent (both report ruff 0.15.20).
+                   #      C3 is therefore SATISFIED -- the story may make the edit. Every other
+                   #      statement of those commands must move in the SAME commit (AC2).
+                   #   3. SUBAGENTS ARE APPROVED for the full ceremony. yt-implementer per story,
+                   #      then yt-spec-reviewer || yt-quality-reviewer concurrently. This restores
+                   #      the ceremony sprints 62-66 ran on, and it matters more than usual here:
+                   #      sprint 66's loudest finding was that BOTH reviewers found real defects in
+                   #      EVERY story, several already personally accepted by the orchestrator,
+                   #      for the third sprint running. The alternative on offer (orchestrator
+                   #      implements and accepts its own work, with review_debt recorded) was NOT
+                   #      taken. No story in this sprint should reach review unreviewed.
 goal: >-
   Turn sprint 66's audit report into landed fixes. A report is a document; a document does not fix a
   production defect. Fix the highest-severity findings and drive both standing guards' exemption
@@ -24,10 +33,16 @@ goal: >-
   mechanical because sprint 66 built it: every exemption entry names the story meant to remove it,
   and each guard's stale-exemption test goes RED if a fix lands without its entry being removed.
 mode: in-process
-branch: sprint-67  # to be cut off sprint-66 at 86459ea on approval; sprint-66 STAYS UNMERGED
-                   # (standing "don't merge with main" directive, re-confirmed at sprint-64 review).
-start_tag: sprint-67-start   # to be created at lock
-start_commit: 86459ea
+branch: sprint-67  # CUT 2026-08-02 off sprint-66; sprint-66 STAYS UNMERGED (standing "don't merge
+                   # with main" directive, re-confirmed at the sprint-64 review).
+start_tag: sprint-67-start   # created at lock, points at 405ab09
+start_commit: 405ab09
+                   # NOTE ON THE TWO SHAs, so the baseline is not misread: the full 8/8 baseline
+                   # gate was measured at 86459ea. 405ab09 is the planning commit on top of it
+                   # (.scrum/ + docs/scrum/ only -- the sprint plan, the refined story files and the
+                   # backlog status updates). `git diff 86459ea..405ab09` touches NO code under
+                   # backend/, frontend/, tools/, config/ or infra/, so the gate result carries
+                   # forward unchanged. Sprint diffs are measured from 405ab09.
 baseline:
   tree: clean at 86459ea
   gate: >-
@@ -49,15 +64,25 @@ baseline:
     blocking.
   dynamo: container uptime_dynamo_8021 up on 127.0.0.1:8021, REQUIRE_DYNAMO=1 on every run
 plan_verification:
-  dispatched: false
+  dispatched: true
+  dispatched_late: true
   contract_sensitive: true
   reason: >-
-    BY THE RULE THIS SPRINT QUALIFIES and a verifier SHOULD have been dispatched -- STORY-200
-    changes a port contract consumed by an adapter AND a core service, and STORY-199 is
-    scale-sensitive logic whose defect only appears past DynamoDB's 1MB page. It was not dispatched
-    for an ENVIRONMENTAL reason (this session's standing constraint on spawning subagents), NOT
-    because it was judged unnecessary. Recorded this way deliberately so the skip is not read as a
-    token-economy skip like sprint 66's.
+    THIS SPRINT QUALIFIES ON TWO INDEPENDENT COUNTS -- STORY-200 changes a port contract consumed by
+    an adapter AND a core service, and STORY-199 is scale-sensitive logic whose defect only appears
+    past DynamoDB's 1MB page. At drafting it was NOT dispatched for an ENVIRONMENTAL reason (this
+    session's standing constraint on spawning subagents), never because it was judged unnecessary --
+    recorded that way deliberately so it would not read as a token-economy skip like sprint 66's.
+  sequencing_deviation: >-
+    THE PO LIFTED THE CONSTRAINT AT APPROVAL, so the verifier WAS dispatched -- but AFTER the PO
+    approved the plan rather than before, which is not where the ceremony puts it. Recorded as a
+    deviation rather than presented as compliance. It still ran BEFORE any implementer and before a
+    line of code was written, which is where most of its value sits: anything it finds lands as an
+    AC correction, not as rework. What it CANNOT do at this point is change what the PO agreed to --
+    so any finding that would alter SCOPE (rather than sharpen an AC) goes back to the PO instead of
+    being absorbed silently.
+  self_probe_caught_before_approval: >-
+    Recorded separately from the verifier's findings so the two are not conflated.
   self_probe_caught: >-
     THREE things, all before the lock, all folded into the stories. (V4) STORY-200's file asserted
     "STORY-198, already landed" -- FALSE at HEAD, where dynamo_proposal_repository.py:286 still
