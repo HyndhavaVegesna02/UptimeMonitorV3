@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: 460d3ee
+verified_sha: fe8df72
 verified_sprint: sprint-67
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -741,7 +741,7 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   implementation is unchanged and correct; only this Fact's description of its cost
   was wrong. Also fixed the ZR-7 adjudication row, which named `is_under_maintenance`
   as the method used for the recorded mutation proof when the History entry (and the
-  actual evidence) both say `list_components`. verified_sha -> PLACEHOLDER_SHA.
+  actual evidence) both say `list_components`. verified_sha -> fe8df72.
 - sprint-67 (STORY-199): landed the ZR-7 fix. All five findings (`is_under_maintenance`,
   `list_windows`, `list_components`, `list_signals`, `list_open`) now loop on
   `LastEvaluatedKey`; `is_under_maintenance` short-circuits `True` on first match and

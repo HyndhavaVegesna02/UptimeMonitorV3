@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
-verified_sha: 460d3ee
+verified_sha: fe8df72
 verified_sprint: sprint-67
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
@@ -51,7 +51,7 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - sprint-67 (STORY-199 fix round, quality review): fixed a self-contradiction — the previous text
   said the proposal-repo files' "own code_refs live in [[zone-rules]], not here", while commit
   `15ea91c` had already added both to THIS article's `code_refs`. No Fact changed; the sentence now
-  matches the front-matter. verified_sha -> PLACEHOLDER_SHA.
+  matches the front-matter. verified_sha -> fe8df72.
 - sprint-67 (STORY-199): `list_components`, `list_windows`, `list_signals`, `is_under_maintenance` and
   `list_open` now loop on `LastEvaluatedKey` instead of silently truncating past a 1MB page — the
   live defect was `is_under_maintenance` returning a silent `False` for a component genuinely under
