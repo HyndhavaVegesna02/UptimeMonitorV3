@@ -80,6 +80,15 @@
 - [ ] Frontend type-check/build: `npm run build` -> exit 0
 - [ ] Frontend lint: `npm run lint` -> exit 0
 
+# NOT CHANGED (STORY-210, 2026-08-02): `npm` still invokes `npm.cmd`. There is no `-m` module
+# form. Measured 2026-08-02: `node "<npm_root>/bin/npm-cli.js" --version` -> `11.6.2`, exit 0 --
+# a shim-free analogue that bypasses `npm.cmd`, the direct counterpart of `python -m ruff`. What
+# is genuinely UNVERIFIED is whether the Application Control policy would block the `.cmd` while
+# permitting `node.exe` -- nothing has tested that, and it cannot be tested until the policy
+# actually blocks something. Adopting `node npm-cli.js` here is a SEPARATE PO decision, out of
+# scope for STORY-210; do not read this note as "the exposure is closed" or as "no shim-free form
+# exists" -- both were caught as inferences-as-measurements during sprint-67 planning.
+
 ## Standing rules (mechanically checked where possible)
 - [ ] Every acceptance criterion has at least one test exercising it.
 - [ ] Core-zone stories (zones 1–4) are tested with in-memory canonical fixtures —
