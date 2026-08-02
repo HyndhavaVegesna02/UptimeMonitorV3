@@ -65,36 +65,17 @@ _QUERY_METHODS = {"query", "scan"}
 
 # (relative file path, call site line number) -> reason. Every entry is either a
 # genuinely bounded query (permanent -- the port's own contract never promises "all")
-# or a real ZR-7 finding awaiting its fix story (STORY-199) -- REMOVE the entry the
+# or a real ZR-7 finding awaiting its fix story -- REMOVE the entry the
 # moment that story lands and this file starts looping on `LastEvaluatedKey`
 # (test_zr7_exemptions_are_still_needed below fails loudly if you forget).
+#
+# STORY-199 (2026-08-03) fixed and removed the five non-PERMANENT entries that
+# used to live here (dynamo_component_repository.py list_components,
+# dynamo_maintenance_repository.py list_windows + is_under_maintenance,
+# dynamo_proposal_repository.py list_open, dynamo_signal_repository.py
+# list_signals) -- all five now loop on LastEvaluatedKey, per C1: removed, not
+# re-keyed to their post-fix line numbers.
 _EXEMPTIONS: dict[tuple[str, int], str] = {
-    (
-        "backend/src/adapters/persistence/dynamo_component_repository.py",
-        29,
-    ): "ZR-7 finding: list_components silently truncates past a 1MB page against "
-    "component_repository.py's 'retrieve all' contract. Fix: STORY-199.",
-    (
-        "backend/src/adapters/persistence/dynamo_maintenance_repository.py",
-        68,
-    ): "ZR-7 finding: list_windows silently truncates past a 1MB page against "
-    "maintenance_repository.py's 'retrieve all' contract. Fix: STORY-199.",
-    (
-        "backend/src/adapters/persistence/dynamo_maintenance_repository.py",
-        90,
-    ): "ZR-7 finding, THE live defect: is_under_maintenance can silently return "
-    "False for a component genuinely under maintenance once maintenance-window "
-    "volume exceeds one DynamoDB page. Fix: STORY-199.",
-    (
-        "backend/src/adapters/persistence/dynamo_proposal_repository.py",
-        174,
-    ): "ZR-7 finding: list_open silently truncates past a 1MB page against "
-    "proposal_repository.py's 'retrieve all' contract. Fix: STORY-199.",
-    (
-        "backend/src/adapters/persistence/dynamo_signal_repository.py",
-        30,
-    ): "ZR-7 finding: list_signals silently truncates past a 1MB page against "
-    "signal_repository.py's 'retrieve all' contract. Fix: STORY-199.",
     (
         "backend/src/adapters/persistence/dynamo_publication_repository.py",
         53,
