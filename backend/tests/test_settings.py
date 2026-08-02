@@ -3,7 +3,42 @@
 from __future__ import annotations
 
 import pytest
-from src.composition.settings import Settings, load_settings
+from src.composition.settings import (
+    AWS_REGION_VAR,
+    CONFIG_DIR_VAR,
+    DYNAMO_CONTROL_TABLE_VAR,
+    DYNAMO_ENDPOINT_URL_VAR,
+    DYNAMO_OBSERVATIONS_TABLE_VAR,
+    Settings,
+    load_settings,
+)
+
+
+def test_env_var_name_constants_match_the_names_load_settings_historically_read(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-202 AC1: the five names `load_settings()` used to read as
+    function-body string literals are now module constants -- and reading
+    the environment THROUGH them still resolves the same value, proven here
+    by round-tripping a value set under each constant's OWN name."""
+    assert CONFIG_DIR_VAR == "CONFIG_DIR"
+    assert AWS_REGION_VAR == "AWS_REGION"
+    assert DYNAMO_OBSERVATIONS_TABLE_VAR == "DYNAMO_OBSERVATIONS_TABLE"
+    assert DYNAMO_CONTROL_TABLE_VAR == "DYNAMO_CONTROL_TABLE"
+    assert DYNAMO_ENDPOINT_URL_VAR == "DYNAMO_ENDPOINT_URL"
+
+    monkeypatch.setenv(CONFIG_DIR_VAR, "config/via-constant")
+    monkeypatch.setenv(AWS_REGION_VAR, "eu-west-1")
+    monkeypatch.setenv(DYNAMO_OBSERVATIONS_TABLE_VAR, "via-constant-obs")
+    monkeypatch.setenv(DYNAMO_CONTROL_TABLE_VAR, "via-constant-ctrl")
+    monkeypatch.setenv(DYNAMO_ENDPOINT_URL_VAR, "http://via-constant:8000")
+
+    settings = load_settings()
+    assert settings.config_dir == "config/via-constant"
+    assert settings.aws_region == "eu-west-1"
+    assert settings.dynamo_observations_table == "via-constant-obs"
+    assert settings.dynamo_control_table == "via-constant-ctrl"
+    assert settings.dynamo_endpoint_url == "http://via-constant:8000"
 
 
 def test_app_settings_succeeds_without_database_url(monkeypatch: pytest.MonkeyPatch):

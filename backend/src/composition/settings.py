@@ -23,19 +23,34 @@ class Settings:
     dynamo_endpoint_url: str | None = None
 
 
+# The env var names `load_settings()` reads (STORY-202: promoted from
+# function-body string literals to module constants, following the same
+# `<NAME>_VAR` convention as `STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR`
+# below) -- so `tools/demo_loop_gate`'s env matrix and harness can IMPORT the
+# key names instead of re-declaring them, closing the rename-drift gap ZR-3
+# flags between `backend/src/` and `tools/`.
+CONFIG_DIR_VAR = "CONFIG_DIR"
+AWS_REGION_VAR = "AWS_REGION"
+DYNAMO_OBSERVATIONS_TABLE_VAR = "DYNAMO_OBSERVATIONS_TABLE"
+DYNAMO_CONTROL_TABLE_VAR = "DYNAMO_CONTROL_TABLE"
+DYNAMO_ENDPOINT_URL_VAR = "DYNAMO_ENDPOINT_URL"
+
+
 def load_settings() -> Settings:
     """Load runtime settings from the environment.
 
     Reads config_dir from ``CONFIG_DIR`` env var, defaulting to ``"config/apps"``.
     """
     return Settings(
-        config_dir=os.environ.get("CONFIG_DIR", "config/apps"),
-        aws_region=os.environ.get("AWS_REGION", "us-east-1"),
+        config_dir=os.environ.get(CONFIG_DIR_VAR, "config/apps"),
+        aws_region=os.environ.get(AWS_REGION_VAR, "us-east-1"),
         dynamo_observations_table=os.environ.get(
-            "DYNAMO_OBSERVATIONS_TABLE", "uptime-observations"
+            DYNAMO_OBSERVATIONS_TABLE_VAR, "uptime-observations"
         ),
-        dynamo_control_table=os.environ.get("DYNAMO_CONTROL_TABLE", "uptime-control"),
-        dynamo_endpoint_url=os.environ.get("DYNAMO_ENDPOINT_URL") or None,
+        dynamo_control_table=os.environ.get(
+            DYNAMO_CONTROL_TABLE_VAR, "uptime-control"
+        ),
+        dynamo_endpoint_url=os.environ.get(DYNAMO_ENDPOINT_URL_VAR) or None,
     )
 
 
