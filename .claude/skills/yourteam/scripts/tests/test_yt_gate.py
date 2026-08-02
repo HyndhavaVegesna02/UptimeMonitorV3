@@ -229,7 +229,12 @@ class PolicyBlockGateIntegrationTests(unittest.TestCase):
         self.assertNotEqual(proc.returncode, 0, combined)  # AC4: never downgrades
         self.assertIn("POLICY BLOCK", combined)
         self.assertIn("environment block", combined)
-        self.assertIn("2026-07-06", combined)  # the proof protocol reference
+        # Distinctive to POLICY_BLOCK_PROOF_NOTE itself -- NOT the unconditional
+        # red-gate footer, which also mentions "2026-07-06" on every red run
+        # regardless of classification and would satisfy a weaker assertion
+        # vacuously (quality review, sprint-67 STORY-210 fix round: proved by
+        # deleting the proof-note print and observing the suite stay green).
+        self.assertIn("LABEL, not an escape hatch", combined)
 
     def test_genuine_failure_is_not_labelled_a_policy_block(self):
         dod = (
