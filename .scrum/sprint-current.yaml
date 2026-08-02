@@ -27,11 +27,19 @@ status: active     # none | planning | active | review | closed | aborted
                    #      taken. No story in this sprint should reach review unreviewed.
 goal: >-
   Turn sprint 66's audit report into landed fixes. A report is a document; a document does not fix a
-  production defect. Fix the highest-severity findings and drive both standing guards' exemption
-  lists toward empty -- ZR-7 from five entries to zero, ZR-3 losing its two STORY-202 entries -- and
-  harden the DoD gate against the policy that took it red mid-sprint. The success measure is
-  mechanical because sprint 66 built it: every exemption entry names the story meant to remove it,
-  and each guard's stale-exemption test goes RED if a fix lands without its entry being removed.
+  production defect. Fix the highest-severity findings and shrink both standing guards' exemption
+  lists -- ZR-7 from SIX entries to ONE, ZR-3 losing its two STORY-202 entries -- and harden the DoD
+  gate against the policy that took it red mid-sprint. The success measure is mechanical because
+  sprint 66 built it: every RETIRED entry names the story meant to remove it, and each guard's
+  stale-exemption test goes RED if a fix lands without its entry being removed.
+  *** THE ARITHMETIC WAS WRONG WHEN THE PO APPROVED IT, AND IS CORRECTED HERE. The plan and this
+  goal both said "five entries to zero". _EXEMPTIONS holds SIX. The sixth --
+  dynamo_publication_repository.py:53 -- is a PERMANENT entry for list_recent, whose port promises
+  "up to `limit`" (a stated bound, not completeness), and STORY-199's own "Not in scope" paragraph
+  says so correctly. IT STAYS. An implementer following the approved text literally would have
+  emptied the dict and taken the DoD gate RED. Found by plan verification AFTER the lock, verified
+  independently by the orchestrator (six keys enumerated via AST), and reported to the PO rather
+  than quietly corrected -- it was the sprint's headline success measure. ***
 mode: in-process
 branch: sprint-67  # CUT 2026-08-02 off sprint-66; sprint-66 STAYS UNMERGED (standing "don't merge
                    # with main" directive, re-confirmed at the sprint-64 review).
@@ -83,6 +91,41 @@ plan_verification:
     being absorbed silently.
   self_probe_caught_before_approval: >-
     Recorded separately from the verifier's findings so the two are not conflated.
+  verdict: GAPS
+  outcome: >-
+    THE DISPATCH PAID FOR ITSELF SEVERAL TIMES OVER -- it returned a blocker in FOUR of the five
+    stories, and the orchestrator's own pre-approval probe had missed every one. Nothing here was
+    taken on the agent's word: the four most consequential claims were re-verified directly before
+    any story text changed (six AST-enumerated _EXEMPTIONS keys; the f-string enum behaviour on
+    Python 3.13.9; the six harness.py literals; `node npm-cli.js --version` -> 11.6.2 exit 0).
+    ELEVEN AC SHARPENINGS applied directly; ONE scope change went back to the PO.
+    THE FOUR THAT WOULD HAVE COST THE MOST:
+      1. STORY-199 AC5 instructed emptying a dict whose sixth entry is PERMANENT -- following it
+         takes the gate RED. This was the sprint's LOCKED headline success measure.
+      2. STORY-200 AC4 claimed byte-identical persistence while comparing by enum identity. But
+         ProposalState is (str, Enum), NOT StrEnum, so f"{action}" yields "ProposalState.APPROVED"
+         on Python 3.13 -- it would have silently corrupted every approval event's sort key.
+      3. STORY-200 AC8 ("existing tests pass unchanged") directly CONTRADICTED AC4: two
+         real-DynamoDB tests pass action="approved", and "approved" is ProposalState.APPROVED is
+         False, so they must change. The story could not have been completed as written.
+      4. STORY-202's promotion silently created six NEW ZR-3 collisions in a third file -- the
+         gate-red the story existed to avoid, caused by the story itself.
+    ALSO CORRECTED, and it is the one the orchestrator is least comfortable about: STORY-210's
+    "npm has no module form, the exposure is irreducible" was an INFERENCE PRESENTED AS A
+    MEASUREMENT, and AC7 would have written it into the DoD as a dated permanent fact. Measured:
+    `node <npm_root>/bin/npm-cli.js --version` returns 11.6.2, exit 0. That is precisely the class
+    of error this sprint's constraint C2 exists to catch, committed in the sprint plan itself.
+  scope_change_post_lock: >-
+    ONE, PO-APPROVED 2026-08-02 after the lock. STORY-202 re-pointed 2 -> 3 and widened to a THIRD
+    file (tools/demo_loop_gate/harness.py, six sites), because promoting the five env-var names to
+    module constants makes their VALUES declared and turns six existing harness.py literals into
+    ZR-3 collisions -- 15 today, 26 after promotion -- failing the DoD gate. The PO chose expansion
+    over adjudication, since the six are true positives by the rule's own logic (api_env["CONFIG_DIR"]
+    re-types a name settings.py owns and breaks on rename exactly as env_matrix.py:64 does) and
+    because growing an exemption list in the sprint dedicated to shrinking it would be perverse.
+    TO HOLD 11 POINTS, STORY-201 (1) WAS DROPPED -- it was the declared first-to-drop item, is one
+    line, and its code path is unreachable today. It returns to the backlog as `ready`, not
+    incomplete: no work was started on it.
   self_probe_caught: >-
     THREE things, all before the lock, all folded into the stories. (V4) STORY-200's file asserted
     "STORY-198, already landed" -- FALSE at HEAD, where dynamo_proposal_repository.py:286 still
@@ -168,18 +211,28 @@ stories:
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
     status: todo
-    points: 2
+    points: 3
     ceremony: implementer + both reviewers
     order: 3
     plan_note: >-
-      RE-POINTED 1 -> 2 at planning. The filing assumed seven names could simply be imported; FIVE
-      are function-body literals at settings.py:32-38 with no symbol to import, so the story must
-      first promote them to module constants -- which pulls it into backend/src/ and out of a pure
-      tools/ change. CONFIG_DIR is the most severe of the seven, above the credential pair: fake
-      credentials are defence in depth, whereas CONFIG_DIR selects config/demo and therefore empties
-      statuspage_mapping() -- it IS the publish guard. Keep the KEY NAMES (this story) apart from
-      the duplicated VALUES (STORY-203) or the two will collide. AC5 removes ZR-3's :75/:77
-      adjudications and must NOT touch :39, which cites STORY-203.
+      RE-POINTED 1 -> 2 at planning, then 2 -> 3 POST-LOCK with PO approval. The filing assumed
+      seven names could simply be imported; FIVE are function-body literals at settings.py:32-38
+      with no symbol to import, so the story must first promote them to module constants -- which
+      pulls it into backend/src/ and out of a pure tools/ change. CONFIG_DIR is the most severe of
+      the seven, above the credential pair: fake credentials are defence in depth, whereas
+      CONFIG_DIR selects config/demo and therefore empties statuspage_mapping() -- it IS the publish
+      guard (re-verified live at planning: config/demo -> {} -> LoggingPublisher).
+      *** THREE FILES, NOT TWO. Promoting the five names makes their VALUES declared to the ZR-3
+      sweep, turning six existing tools/demo_loop_gate/harness.py literals into collisions (15 ->
+      26) and failing the gate. AC8 fixes those six; AC9 requires re-deriving the count after the
+      last edit. They are true positives, not noise: api_env["CONFIG_DIR"] re-types a name
+      settings.py owns. ***
+      TWO TRAPS THE APPROVED TEXT GOT WRONG, both corrected: AC5 said "do not touch the :39 ZR-3
+      entry" -- backwards, because AC2's import line DISPLACES it and stales its key; it must be
+      RE-KEYED, an explicit carve-out from C1 (which governs RETIRED entries, not displaced ones).
+      And AC1 named load_live_secrets(), which reads NONE of the seven.
+      Keep the KEY NAMES (this story) apart from the duplicated VALUES (STORY-203) -- they now meet
+      in harness.py, where :747/:750 belong to STORY-203 and must not be touched here.
   - id: STORY-200
     title: Give ProposalRepository.record_approval_event a domain-typed action parameter (subsumes STORY-198)
     file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
@@ -200,27 +253,20 @@ stories:
       against DynamoDB Local, and a fake-based substitute would assert nothing while looking green.
       Blast radius is real: approved_actor is the SOLE source of Publication.author, so value drift
       silently blanks the author column for every row.
-  - id: STORY-201
-    title: Clickpath normalizer hygiene — use require_field for execution.outcome
-    file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
-    status: todo
-    points: 1
-    ceremony: implementer + DoD gate (1-2 point ceremony)
-    order: 5
-    plan_note: >-
-      FIRST TO DROP if the session runs short. One line, no dependencies, and the code path is
-      UNREACHABLE today (clickpath is absent from _NORMALIZERS), so it is preventive hygiene. The
-      story now carries an explicit SCOPE LIMIT: the quarantine-net claim cannot be demonstrated
-      end-to-end because no clickpath row can reach normalize_rows_lenient -- it is an inference
-      from MalformedDqlRowError being a ValueError subclass, and must be reported as an inference,
-      not as "verified through the quarantine path".
+  # STORY-201 (1) WAS DROPPED from this sprint post-lock -- see plan_verification.scope_change_post_lock.
+  # STORY-202 absorbed a third file and went 2 -> 3, so 201 came out to hold the committed 11 points.
+  # It was the DECLARED first-to-drop item, no work was started, and it returns to the backlog as
+  # `ready` (not incomplete, not blocked). Its refinement work stands and it is a sprint-68 candidate.
 sizing_note: >-
-  11 points across 5 stories -- the top of the stated ~9-11 baseline, same size as sprint 66. The
-  sprint-66 retro found that fix-round cost is driven by story KIND, not size: an audit sprint's
-  deliverable is prose, which fails review in ways code does not. This sprint's deliverable is code
-  with mechanical proofs, so 11 is a considered call rather than a stretch. DROP ORDER if the
-  session runs short: STORY-201 first, then STORY-202. NEVER STORY-199 (the live defect) and never
-  STORY-210 (it keeps the gate trustworthy for everything else).
+  11 points across FOUR stories (210:2 + 199:3 + 202:3 + 200:3) -- the top of the stated ~9-11
+  baseline, same total as sprint 66 but one fewer story. Composition changed post-lock: STORY-202
+  went 2 -> 3 on the PO-approved scope expansion and STORY-201 (1) came out to hold the committed
+  total. The sprint-66 retro found that fix-round cost is driven by story KIND, not size: an audit
+  sprint's deliverable is prose, which fails review in ways code does not. This sprint's deliverable
+  is code with mechanical proofs, so 11 is a considered call rather than a stretch.
+  DROP ORDER if the SESSION runs short (not a standing trim -- the PO declined both reductions on
+  offer): STORY-202 first now that 201 is already out. NEVER STORY-199 (the live production defect,
+  the sprint's reason to exist) and never STORY-210 (it keeps the gate trustworthy for the rest).
 ceremony_note: >-
   Four of five stories get BOTH reviewers, including two below the 3-point threshold, and that is
   deliberate. Sprint 66's evidence: both reviewers found real defects in EVERY story, several
@@ -228,6 +274,16 @@ ceremony_note: >-
   edits the DoD and the gate runner itself; STORY-202 is 2 points but touches the publish-guard
   mechanism. Only STORY-201 -- one line, unreachable code -- takes the small-story ceremony.
 carried_forward:
+  - >-
+    STORY-201 (1) — clickpath require_field. DROPPED FROM THIS SPRINT post-lock to hold 11 points
+    when STORY-202 absorbed a third file. Fully refined and `ready`; no work started. First
+    candidate for sprint 68.
+  - >-
+    UNFILED FOLLOW-UP (needs a story at the next refinement): env_matrix.py:71/:73 hardcode
+    DYNATRACE_ENV_URL / DYNATRACE_API_TOKEN, the same drift risk as STORY-202's seven. Deliberately
+    left out to keep 202 bounded — their settings.py side (:100, :103) is also a function-body
+    literal, so fixing them means promoting two more constants and widening the ZR-3 collision
+    surface again. Recorded here so it is not lost.
   - >-
     STORY-205 (3) — seed_dynamo.py is an adapter in composition's clothing; arguably the best
     boundary finding of sprint 66. HELD BACK DELIBERATELY: its own entry says refinement must size

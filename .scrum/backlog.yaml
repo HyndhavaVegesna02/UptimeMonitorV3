@@ -2158,6 +2158,16 @@ stories:
     title: Clickpath normalizer hygiene — use require_field for execution.outcome
     file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
     status: ready   # REFINED 2026-08-02 at sprint-67 planning; estimate confirmed at 1. Citations
+                    # re-derived and hold; plan verification found NOTHING wrong with it -- the
+                    # only story of the five that came back clean.
+                    # WAS IN SPRINT 67, DROPPED POST-LOCK to hold the committed 11 points when
+                    # STORY-202 absorbed a third file and went 2 -> 3. It was the DECLARED
+                    # first-to-drop item and NO WORK WAS STARTED, so it is `ready`, not
+                    # incomplete. First candidate for sprint 68.
+                    # Carries an explicit SCOPE LIMIT: the quarantine-net claim cannot be shown
+                    # end-to-end (clickpath is absent from _NORMALIZERS, so no such row can reach
+                    # normalize_rows_lenient); it is an inference from MalformedDqlRowError being
+                    # a ValueError subclass, and must be reported as an inference.
                     # re-derived and hold. Added an explicit SCOPE LIMIT: the quarantine-net claim
                     # cannot be shown end-to-end (clickpath is absent from _NORMALIZERS, so no such
                     # row can reach normalize_rows_lenient); it is an inference from the type
@@ -2177,7 +2187,21 @@ stories:
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning; 1 -> 2 points. The filing assumed
+    status: ready   # REFINED 2026-08-02 at sprint-67 planning (1 -> 2), then RE-POINTED 2 -> 3
+                    # POST-LOCK with PO approval after plan verification. IN SPRINT 67.
+                    # Five of the seven names are function-body literals at settings.py:32-38 with
+                    # no symbol to import, so the story must FIRST promote them to module
+                    # constants -- which pulls it into backend/src/, not just tools/.
+                    # *** AND THAT PROMOTION CREATES SIX NEW ZR-3 COLLISIONS in a THIRD file,
+                    # tools/demo_loop_gate/harness.py (15 -> 26), failing the DoD gate. The PO
+                    # chose to EXPAND the story (AC8/AC9) rather than adjudicate them: they are
+                    # true positives -- api_env["CONFIG_DIR"] re-types a name settings.py owns --
+                    # and growing an exemption list in the sprint dedicated to shrinking it would
+                    # be perverse. ***
+                    # Two traps in the pre-verification AC, both corrected: AC5 said "do not touch
+                    # the :39 ZR-3 entry" (backwards -- the new import line DISPLACES it, so it
+                    # must be RE-KEYED, an explicit C1 carve-out), and AC1 named load_live_secrets(),
+                    # which reads NONE of the seven.
                     # seven names could just be imported -- but FIVE of them are function-body
                     # literals in settings.py:32-38 with no symbol to import, so the story must
                     # FIRST promote them to module constants in backend/src/composition/settings.py.
@@ -2213,7 +2237,7 @@ stories:
                     # pair: the fake credentials are only defence in depth, whereas CONFIG_DIR is
                     # what selects config/demo and therefore what makes statuspage_mapping() empty --
                     # it IS the publish guard. Story is now 7 names, not 2.
-    points: 2
+    points: 3
     priority: 73
     type: defect
     sprint: null

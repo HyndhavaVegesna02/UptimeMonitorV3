@@ -85,15 +85,33 @@ its test trap — is folded into the AC below.
 - [ ] **AC2** — `core/services/approval.py:128` passes `to_state` directly instead of
       `to_state.value`; no caller converts to a string at the call site.
 - [ ] **AC3** — The 2-member contract leaves a testable trace rather than a comment: passing a
-      `ProposalState` outside `{APPROVED, REJECTED}` to the recording path raises, proven by a test.
-      (Placement is the implementer's call — `_decide` is the single funnel and already validates
-      the transition via `is_valid_transition` at `approval.py:111` — but "documented in a docstring"
-      alone does NOT satisfy this AC.)
+      `ProposalState` outside `{APPROVED, REJECTED}` to the recording path raises a named error,
+      proven by a test. **The guard lives in the core service (`approval.py`'s `_decide`), not in the
+      adapter** — it is a domain-contract rule, and putting it in the adapter would both misplace it
+      and leave the fake non-conforming.
+
+      **Do not treat `is_valid_transition` as partial cover — it does not constrain this set.**
+      `core/domain/proposal.py:105-107` admits any non-`OPEN` target, so
+      `is_valid_transition(OPEN, SUPERSEDED)` returns `True`. AC3 is entirely new validation.
 - [ ] **AC4** — `DynamoProposalRepository.record_approval_event` compares by enum identity
       (`action is ProposalState.APPROVED`), not against a string literal. The **STORY-198 defect is
-      gone**: no `"approved"` literal remains in that method. The value persisted to DynamoDB is
-      unchanged (`action.value`), so stored items and the `sk` format
-      (`EVENT#<occurred_at>#<action>`) are byte-identical to today's.
+      gone**: no `"approved"` literal remains in that method.
+
+      **The persisted bytes stay identical ONLY if `.value` is used explicitly at both write sites,
+      and this is the trap in the story.** `ProposalState` is `class ProposalState(str, Enum)`
+      (`core/domain/proposal.py:24`) — a str *mixin*, **not** `StrEnum` — so on Python 3.13
+      `Enum.__format__` defers to `Enum.__str__`. Measured at planning:
+
+      ```
+      f'EVENT#TS#{ProposalState.APPROVED}'        -> 'EVENT#TS#ProposalState.APPROVED'
+      f'EVENT#TS#{ProposalState.APPROVED.value}'  -> 'EVENT#TS#approved'
+      ```
+
+      So AC4 **requires `action.value` explicitly at both**:
+      - `dynamo_proposal_repository.py:265` — the `sk` f-string (`EVENT#<occurred_at>#<action>`).
+        Passing the bare member here silently corrupts every event sort key.
+      - `dynamo_proposal_repository.py:268` — the `"action"` item attribute. This one *happens* to
+        survive as a str subclass, but that is luck rather than design; pin it.
 - [ ] **AC5** — **The test trap is honoured.** `backend/tests/fakes.py:175-183`'s
       `record_approval_event` only appends a dict — it does NOT implement the `approved_actor`
       denormalization — so the branch this story fixes is **unobservable through the fake**. The
@@ -106,8 +124,36 @@ its test trap — is folded into the AC below.
       `core/domain/proposal.py:28`, confirm the AC5 test goes RED, restore and confirm `git diff` is
       empty. This is the specific drift the story exists to make impossible to miss — if nothing goes
       red, the coupling is still unpinned and the story is not done.
-- [ ] **AC8** — Existing `DynamoProposalRepository` / `ApprovalService` contract tests pass
-      unchanged, and the full DoD gate is green.
+- [ ] **AC9** — `FakeProposalRepository.record_approval_event` (`backend/tests/fakes.py:175-183`)
+      declares `action: ProposalState`, matching the port. The 2026-06-26 fake/adapter parity
+      agreement means the fake may not keep a signature the port has abandoned — and AC5 cites this
+      file only as a trap, so without this AC nothing updates it.
+- [ ] **AC8** — The full DoD gate is green, and existing contract tests pass **except the two that
+      must change**, named here rather than discovered during implementation:
+
+      - `backend/tests/test_dynamo_proposal_repository.py:193` — passes `action="approved"`, then
+        asserts `approved_actor == "ops-admin"` at `:217`.
+      - `backend/tests/test_dynamo_publication_repository.py:79` — passes `action="approved"`,
+        feeding the `Publication.author` assertion.
+
+      Both hit the real adapter, and `"approved" is ProposalState.APPROVED` is **`False`** (measured),
+      so under AC4's identity comparison the branch stops firing and both go RED. **They must be
+      updated to pass `ProposalState.APPROVED`** — that is in scope, not a regression.
+
+      The fake-backed tests (`test_approval.py:60`, `test_core_ports.py:269`, `test_decisions.py:82`)
+      compare with `==` and survive the str mixin unchanged.
+
+## Re-derive the citations before you start — this story's line numbers WILL have moved
+
+**STORY-199 runs before this story (sprint order 2 vs 4) and edits the same file.** It adds a
+`LastEvaluatedKey` loop to `list_open` at `dynamo_proposal_repository.py:174`, which shifts
+everything below it. Every citation in this file below that line — `:265`, `:268`, `:286`, `:292` —
+is stated against `1e60172` and will be stale by the time this story is implemented.
+
+Re-derive them first (`grep -n "action ==\|approved_actor\|EVENT#" ` on the file). Flag and report
+the new numbers rather than silently substituting them, per the standing re-derivation rule. This
+note exists because the sprint plan made a point of "every citation re-derived, none had drifted"
+while scheduling the drift it was about to cause.
 
 ## Open Questions
 

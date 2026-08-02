@@ -45,10 +45,21 @@ Measured 2026-08-02: `ruff.exe` is **still allowed** (`ruff --version` -> `ruff 
 the ruff work here is **preventive, not a repair**. `python -m ruff --version` also returns `ruff
 0.15.20`, exit 0 — the module form is available and equivalent.
 
-`npm` has no module form. That exposure cannot be closed by an invocation change and must be
-**stated** rather than papered over; if npm is blocked, the frontend third of the gate stops running
-locally and the answer is a policy exemption or CI, not a clever command. Saying so is part of this
-story's deliverable.
+**`npm`'s position, stated as measured rather than as assumed.** An earlier revision of this story
+and of the sprint plan asserted "npm has no module form; the exposure is irreducible". That was an
+**inference, not a measurement, and it is wrong as stated.** Measured 2026-08-02:
+
+```
+node "C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js" --version   ->  11.6.2, exit 0
+npm --version                                                             ->  11.6.2, exit 0
+```
+
+`npm.cmd` is a batch shim, and running `npm-cli.js` under `node.exe` bypasses it — the direct
+analogue of `python -m ruff`. What is **unverified** is whether the Application Control policy would
+block the `.cmd` while permitting `node.exe`; nothing has tested that, and it cannot be tested until
+the policy actually blocks something. So the honest position is: a shim-free form **exists**, its
+value against this policy is **unknown**, and adopting it is a separate DoD decision that is not part
+of this story.
 
 ## Acceptance Criteria
 
@@ -57,10 +68,28 @@ story's deliverable.
       the reason, mirroring the two existing precedents in that file (2026-07-12 `lint-imports`,
       2026-07-31 `pytest`/`cfn-lint`). **This changes the DoD and is a PO decision** — it is called
       out for approval in the sprint plan and must not be taken unilaterally.
-- [ ] **AC2** — Every other statement of those commands is updated in the SAME commit: `CLAUDE.md`
-      (Key commands table and the DoD-gate section) and `docs/scrum/wiki/dev-setup-and-dod.md`.
-      Grep evidence before and after. (Sprint 66's review found `CLAUDE.md` still instructing the
-      blocked shims after the DoD changed — the identical miss, one story earlier.)
+- [ ] **AC2** — Every **live instruction** stating those commands is updated in the SAME commit, with
+      grep evidence before and after. The lines are **enumerated**, because "update every statement"
+      is too blunt an instruction here and would corrupt the historical record:
+
+      | File | Lines | Action |
+      | --- | --- | --- |
+      | `.scrum/definition-of-done.md` | 58, 59 | change (AC1) |
+      | `CLAUDE.md` | 168, 169, 191 | change |
+      | `docs/scrum/wiki/dev-setup-and-dod.md` | 65, 66 | change |
+      | `docs/scrum/wiki/dev-setup-and-dod.md` | 80 | prose — judgement call |
+      | `docs/scrum/wiki/dev-setup-and-dod.md` | **202-203** | **DO NOT TOUCH** |
+
+      `dev-setup-and-dod.md:202-203` is a **dated sprint-22 history note** about `[tool.ruff]
+      exclude`. It records what was true then. Rewriting it would falsify the record — the same class
+      of error as re-stamping a stale wiki article as current.
+
+      Also out of scope: `.agents/skills/yourteam/scripts/yt_gate.py`. That copy differs from the
+      `.claude/` one but `.agents/` is gitignored (`.gitignore:30`) and untracked. Noted here so a
+      reviewer does not file it as a miss.
+
+      (Sprint 66's review found `CLAUDE.md` still instructing the blocked shims after the DoD
+      changed — the identical miss, one story earlier.)
 - [ ] **AC3** — `yt_gate.py` detects a policy-blocked command and reports it **distinctly from a code
       failure**, naming it as an environment block and printing the 2026-07-06 proof protocol
       (empty diff since the sprint cut + passes in isolation) that the orchestrator must satisfy
@@ -79,9 +108,13 @@ story's deliverable.
 - [ ] **AC6** — The skill stays **project-generic** (PO directive 2026-07-13): no project names,
       paths, or command names in `yt_gate.py`. The signatures are platform-level, not project-level,
       which is why they belong in the runner at all.
-- [ ] **AC7** — The irreducible `npm` exposure is recorded honestly in the DoD note and the story
-      report: no module form exists, so a block there is a policy/CI problem. The story may not claim
-      the gate is fully hardened.
+- [ ] **AC7** — The `npm` position is recorded in the DoD note and the story report **as measured,
+      not as inferred**: no `-m` form exists, but `node <npm_root>/bin/npm-cli.js` is a shim-free
+      analogue (verified `11.6.2`, exit 0, 2026-08-02), and its behaviour under the policy is
+      **UNVERIFIED**. Adopting it is a separate PO decision, out of scope here. The story may not
+      claim the gate is fully hardened, and may not write "no module form exists" into the DoD as a
+      permanent fact — that phrasing was already caught once as an inference presented as a
+      measurement.
 - [ ] **AC8** — Full 8/8 DoD gate green at the new invocations, and `yt_selftest` green.
 
 ## Rung note

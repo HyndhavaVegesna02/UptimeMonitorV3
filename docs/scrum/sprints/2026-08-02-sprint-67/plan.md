@@ -1,7 +1,7 @@
 # Sprint 67 — Plan
 
 **Date:** 2026-08-02 · **Branch:** `sprint-67` (off `sprint-66`, which stays unmerged)
-**Mode:** `in-process` · **Committed:** 11 points / 5 stories
+**Mode:** `in-process` · **Committed:** 11 points / 4 stories (5 at approval; see the post-lock note)
 
 ## Goal
 
@@ -10,11 +10,18 @@ guards and seven filed defects; a report is a document, and a document does not 
 defect. This sprint fixes the highest-severity findings and drives both guards' exemption lists
 toward empty — and hardens the DoD gate against the policy that took it red mid-sprint.
 
-The measure of success is unusually crisp for once, because sprint 66 built it: **ZR-7's
-`_EXEMPTIONS` goes from five entries to zero, and ZR-3 loses its two `STORY-202` entries.** Every
-one of those entries names the story that is supposed to remove it, and each guard's
-stale-exemption test goes RED if a fix lands without its entry being removed. The guards were
-written to detect this sprint happening.
+The measure of success is mechanical, because sprint 66 built it: **ZR-7's `_EXEMPTIONS` goes from
+six entries to one, and ZR-3 loses its two `STORY-202` entries.** Every *retired* entry names the
+story that is supposed to remove it, and each guard's stale-exemption test goes RED if a fix lands
+without its entry being removed. The guards were written to detect this sprint happening.
+
+> **Corrected after the lock, and the PO was told rather than it being quietly fixed.** This section
+> originally read "five entries to zero". `_EXEMPTIONS` holds **six**. The sixth —
+> `dynamo_publication_repository.py:53` — is a `PERMANENT` entry for `list_recent`, whose port
+> promises "up to `limit`" rather than completeness, and STORY-199's own "Not in scope" paragraph
+> says so correctly. **It stays.** An implementer following the approved text literally would have
+> emptied the dict and taken the DoD gate RED. Caught by plan verification, then verified
+> independently by enumerating the six keys via AST.
 
 ## Baseline (established at planning, 2026-08-02)
 
@@ -43,9 +50,9 @@ have caught it, and it was written in the very same retro.
 | --- | --- | --- | --- |
 | 1 | **STORY-210** — harden the DoD gate: remaining exe shims + a policy-block diagnostic | 2 | both reviewers |
 | 2 | **STORY-199** — paginate the five truncating persistence methods | 3 | both reviewers |
-| 3 | **STORY-202** — `env_matrix.py` imports all seven env-var names | 2 | both reviewers |
+| 3 | **STORY-202** — `env_matrix.py` imports all seven env-var names | **3** | both reviewers |
 | 4 | **STORY-200** — domain-typed `action` on the proposal port (**subsumes STORY-198**) | 3 | both reviewers |
-| 5 | **STORY-201** — clickpath normalizer uses `require_field` | 1 | implementer + gate |
+| ~~5~~ | ~~**STORY-201** — clickpath normalizer uses `require_field`~~ | ~~1~~ | **dropped post-lock** |
 
 **11 points**, at the top of the stated ~9–11 baseline — the same size as sprint 66. The sprint-66
 retro's finding was that fix-round cost is driven by story *kind*, not size: an audit sprint's
@@ -59,32 +66,46 @@ block cost sprint 66 a blocked story and a diagnosis cycle. The acute emergency 
 — but the exposure is not.
 
 Then **199** (the only live production defect in the set, and the largest), **202** (safety-adjacent
-and touches `settings.py`, which 200 does not), **200** (self-contained, port + adapter + service),
-and **201** last (one line, no dependencies).
+and touches `settings.py`, which 200 does not), and **200** last.
 
-**Drop order if the session runs short:** 201 first, then 202. **Never** 199 — it is the live
-defect and the sprint's reason to exist. 210 is never dropped either, because it is the thing that
-keeps the gate trustworthy for the rest.
+**One ordering hazard, created by this plan and caught in verification:** 199 and 200 both edit
+`dynamo_proposal_repository.py`, and 199's pagination loop at `:174` shifts every citation below it.
+STORY-200's `:265`/`:268`/`:286`/`:292` **will be stale** by the time it runs; its story file now
+carries an instruction to re-derive them first. The plan boasted "every citation re-derived, none
+had drifted" while scheduling the drift it was about to cause.
+
+**Drop order if the session runs short:** 202 first, now that 201 is already out. **Never** 199 — it
+is the live defect and the sprint's reason to exist. 210 is never dropped either, because it is the
+thing that keeps the gate trustworthy for the rest.
 
 ### Ceremony note
 
-Four of five stories get **both reviewers**, including two that are under the 3-point threshold.
-That is deliberate and follows the sprint-66 evidence, not habit: **both reviewers found real
-defects in every story of that sprint**, several already accepted by the orchestrator, for the third
-sprint running. STORY-210 is 2 points but edits the DoD and the gate runner; STORY-202 is 2 points
-but touches the publish-guard mechanism. Only STORY-201 — one line, unreachable code — takes the
-small-story ceremony.
+**All four remaining stories get both reviewers.** Three are 3-pointers, and STORY-210 is 2 points
+but edits the DoD and the gate runner itself. That follows the sprint-66 evidence, not habit: **both
+reviewers found real defects in every story of that sprint**, several already accepted by the
+orchestrator, for the third sprint running. STORY-201 — the only story that would have taken the
+small-story ceremony — is no longer in the sprint.
 
 ## Verified facts at planning
 
 Each was produced by a command, re-run today against HEAD. The sprint-66 retro found that this
 sprint's filings repeatedly carried drifted line numbers, so every citation in every story entering
-this sprint was re-derived. **This time none of them had drifted.**
+this sprint was re-derived. **No `file:line` citation had drifted.**
 
-- **V1 — the ZR-7 exemption list is exactly five entries**, keyed at
-  `dynamo_component_repository.py:29`, `dynamo_maintenance_repository.py:68` and `:90`,
-  `dynamo_proposal_repository.py:174`, `dynamo_signal_repository.py:30`. All five name
-  `"Fix: STORY-199."` Each key points at the exact `.query(` call site.
+**But two of these V-facts were still WRONG, and both are marked CORRECTED below.** Neither was a
+drifted line number — they were a miscount (V1) and an inference written as a measurement (V8), and
+re-checking citations does not catch either. That is worth carrying to the retro: the sprint-66
+lesson was "re-derive your citations", and this plan did that faithfully and still shipped two false
+facts, one of which was the sprint's headline success measure.
+
+- **V1 — CORRECTED. The ZR-7 exemption list holds SIX entries, of which five belong to STORY-199.**
+  The five to retire are keyed at `dynamo_component_repository.py:29`,
+  `dynamo_maintenance_repository.py:68` and `:90`, `dynamo_proposal_repository.py:174`,
+  `dynamo_signal_repository.py:30` — all naming `"Fix: STORY-199."`, each pointing at the exact
+  `.query(` call site. **The sixth, `dynamo_publication_repository.py:53`, is `PERMANENT` and
+  stays.** This V-fact originally said "exactly five", which is what produced the wrong success
+  measure above; it was written from a `grep` that matched only the `STORY-199` reason strings.
+  Re-derived by AST enumeration of the dict keys.
 - **V2 — the live defect is unchanged.** `is_under_maintenance` (def `:86`, query `:90`) still
   pairs `Key("gsi1pk").eq("MAINT") & Key("gsi1sk").lte(...)` with a post-read `FilterExpression` on
   `component_id`/`ends_at` and no `LastEvaluatedKey` loop.
@@ -107,8 +128,15 @@ this sprint was re-derived. **This time none of them had drifted.**
   work is preventive rather than a repair. `python -m ruff --version` returns the same version, so
   the module form is equivalent. `yt_gate.py` contains **no** policy-block detection — grep for
   `4551` / `Device Guard` / `Application Control` returns zero hits across its 389 lines.
-- **V8 — `npm` has no module form.** That exposure cannot be closed by an invocation change, and
-  STORY-210's AC7 requires saying so rather than claiming the gate is fully hardened.
+- **V8 — CORRECTED, and this one is the most instructive.** It read: "`npm` has no module form. That
+  exposure cannot be closed by an invocation change." That was an **inference presented as a
+  measurement** — the exact error constraint C2 exists to catch, committed inside the plan that
+  states C2. Measured: `node <npm_root>/bin/npm-cli.js --version` returns `11.6.2`, exit 0,
+  bypassing the `npm.cmd` shim entirely — the direct analogue of `python -m ruff`. What is genuinely
+  unverified is whether the policy would block the `.cmd` while permitting `node.exe`. AC7 now
+  records that measured position; **adopting** the form is a separate PO decision and is out of
+  scope. Left uncorrected, AC7 would have written "no module form exists" into
+  `.scrum/definition-of-done.md` as a dated permanent fact.
 
 ## Plan verification
 
@@ -135,6 +163,40 @@ then found — in every story, including ones the orchestrator had personally ac
 self-verification above did catch three real problems before the lock (V4, V6, V7), which is the
 same pattern as sprint 66's self-probe. It is better than nothing and weaker than a second pair of
 eyes.
+
+## Post-lock changes (plan verification, 2026-08-02)
+
+The verifier ran after approval and returned **GAPS — a blocker in four of the five stories**. None
+of it was taken on the agent's word: the four most consequential claims were re-verified directly
+before any story text changed (six `_EXEMPTIONS` keys enumerated via AST; the f-string enum
+behaviour on Python 3.13.9; the six `harness.py` literals; `node npm-cli.js --version` → 11.6.2).
+All four checked out.
+
+**Eleven AC sharpenings applied directly. One scope change went back to the PO.**
+
+The four that would have cost the most:
+
+1. **STORY-199 AC5** instructed emptying a dict whose sixth entry is `PERMANENT` — following it
+   takes the gate RED. This was the sprint's locked headline success measure.
+2. **STORY-200 AC4** claimed byte-identical persistence while switching to enum-identity comparison.
+   `ProposalState` is `(str, Enum)`, **not** `StrEnum`, so `f"{action}"` yields
+   `"ProposalState.APPROVED"` on Python 3.13 — it would have silently corrupted the sort key of
+   every approval event written.
+3. **STORY-200 AC8** ("existing tests pass unchanged") directly **contradicted AC4**: two
+   real-DynamoDB tests pass `action="approved"`, and `"approved" is ProposalState.APPROVED` is
+   `False`, so they must change. The story was not completable as written.
+4. **STORY-202's promotion silently created six new ZR-3 collisions** in a third file — the exact
+   gate-red the story exists to prevent, caused by the story itself.
+
+**PO decision on the scope change:** expand STORY-202 to `harness.py` (2 → 3 points) rather than
+adjudicate the six, because they are true positives by the rule's own logic and because growing an
+exemption list in the sprint dedicated to shrinking it would be perverse. **STORY-201 (1) was
+dropped** to hold the committed 11 points — it was the declared first-to-drop item and no work had
+started, so it returns to the backlog as `ready`.
+
+**The honest read on the dispatch:** the orchestrator's own pre-approval probe caught three real
+problems (V4, V6, V7) and felt thorough. It missed all four above. That is the sprint-66 finding
+reproducing itself one sprint later, at the planning stage rather than the review stage.
 
 ## Constraints
 

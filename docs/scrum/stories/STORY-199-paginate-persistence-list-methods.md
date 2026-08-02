@@ -71,13 +71,21 @@ not a violation, and is excluded from this story.
       exact silent-`False` shape this finding describes, not just "list has more than N items."
 - [ ] **AC4** — Existing contract tests for all five methods continue to pass unchanged for the
       single-page case.
-- [ ] **AC5** — `_EXEMPTIONS` in `backend/tests/test_zr7_pagination_guard.py:71` is **EMPTY** at the
-      end of this story, and both ZR-7 tests pass. All five current entries name this story as their
-      fix (`"Fix: STORY-199."`), so landing the fix without removing them is itself a failure — the
-      guard's second test asserts that every exemption still corresponds to a real unpaginated call
-      site, and will go RED on a stale entry. **Do not re-key the entries to the new line numbers;
-      remove them.** This AC is self-verifying and is the cheapest evidence in the story: the guard
-      written in sprint 66 was designed to detect exactly this story landing.
+- [ ] **AC5** — The **five** `_EXEMPTIONS` entries in `backend/tests/test_zr7_pagination_guard.py:71`
+      that name `"Fix: STORY-199."` are **removed**, and both ZR-7 tests pass. **Do not re-key them
+      to the new line numbers; remove them** — the violation is gone, not relocated.
+
+      **The dict does NOT end empty, and an implementer who empties it takes the gate RED.** It holds
+      **six** entries. The sixth —
+      `("backend/src/adapters/persistence/dynamo_publication_repository.py", 53)` — is a
+      **`PERMANENT`** entry for `list_recent`, which this story's own "Not in scope" paragraph
+      correctly declares compliant (its port promises "up to `limit`", a stated bound, not
+      completeness). It **stays**. The correct arithmetic is **six -> one**.
+
+      This AC is otherwise self-verifying and is the cheapest evidence in the story: the guard's
+      second test (`test_zr7_exemptions_are_still_needed`, `:211-241`) asserts every exemption still
+      corresponds to a real unpaginated call site, so it goes RED on any of the five left behind. The
+      guard was written in sprint 66 to detect exactly this story landing.
 - [ ] **AC6** — Mutation proof (standing evidence rule): with all five fixed, remove the
       `LastEvaluatedKey` loop from ONE method, confirm that method's AC2 test goes RED **and** that
       the ZR-7 guard goes RED naming that call site, then restore and confirm `git diff` is empty.
@@ -95,6 +103,23 @@ common "not under maintenance" path — and that path runs every cycle in `decid
 over a handful of rows passes while the defect stands, which is why the audit's own CLEAN verdict on
 this file was wrong. The `_limit` hook is what makes the boundary reachable without a megabyte of
 fixtures.
+
+**The specific loop bug to avoid: do not break on an empty page.** Verified by live probe against
+DynamoDB Local at sprint-67 planning, using the real key condition and `FilterExpression` with
+`Limit=1`:
+
+```
+page 1: Items=0  LastEvaluatedKey=present
+page 2: Items=0  LastEvaluatedKey=present
+page 3: Items=0  LastEvaluatedKey=present
+page 4: Items=1  LastEvaluatedKey=present     <- the match
+```
+
+The GSI sort-key condition (`gsi1pk="MAINT" AND gsi1sk <= now`) matches *every* window ever created,
+and the post-read `FilterExpression` then empties the leading pages. So a loop that stops when a page
+returns no items returns `False` while the component IS under maintenance — reproducing the very
+defect, and doing it in code that looks like it paginates. **Terminate only on an absent
+`LastEvaluatedKey`.**
 
 ## Open Questions
 
