@@ -107,10 +107,17 @@ class DynamoMaintenanceRepository(MaintenanceRepository):
         component is applied by DynamoDB AFTER the per-page 1MB read, so a page
         can come back EMPTY after filtering while later pages still hold a
         match. This loop pages until a match is found (returning True
-        immediately, never scanning the rest of the partition on the common
-        "under maintenance" path) or until LastEvaluatedKey is exhausted
-        (returning False) -- it must NEVER terminate on an empty-after-filter
-        page (STORY-199).
+        immediately) or until LastEvaluatedKey is exhausted (returning False)
+        -- it must NEVER terminate on an empty-after-filter page (STORY-199).
+
+        The cost is asymmetric, and the expensive side is the COMMON one: the
+        under-maintenance path (rare) can return True as soon as it hits the
+        first matching page. The not-under-maintenance path -- the one this
+        method takes on every `decide` cycle when nothing is under maintenance
+        -- can only return False once LastEvaluatedKey is exhausted, i.e. after
+        reading the ENTIRE `MAINT` GSI partition. That is inherent to answering
+        this question correctly with a post-read filter, not a defect; it grows
+        with total maintenance-window history over time.
         """
         at_str = to_canonical_iso(at)
         exclusive_start_key = None
