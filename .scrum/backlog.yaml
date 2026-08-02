@@ -2102,7 +2102,16 @@ stories:
   - id: STORY-199
     title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
     file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning. Every citation re-derived against
+    status: done    # SPRINT 67, commits 1042048..a7a1b96. THE LIVE PRODUCTION DEFECT IS FIXED:
+                    # is_under_maintenance no longer returns a silent False past the 1MB page, and
+                    # the killer variant (terminating on an empty-after-filter page) is pinned by a
+                    # test the spec reviewer independently mutation-proved goes RED. ZR-7's
+                    # _EXEMPTIONS went six -> one, the survivor being the PERMANENT list_recent
+                    # entry. Spec PASS 6/6; quality FIX_REQUIRED on 2 prose MAJORs -> fixed.
+                    # Full 8/8 gate green at a7a1b96, 694 passed / 0 skipped. Follow-ups filed as
+                    # STORY-213 (intermittent test failure) and STORY-214 (shared helper + guard
+                    # rework). Awaiting PO acceptance at the sprint-67 review.
+                    # REFINED 2026-08-02 at sprint-67 planning. Every citation re-derived against
                     # HEAD 86459ea and ALL HOLD (no drift this time). Added AC5 -- empty ZR-7's
                     # _EXEMPTIONS -- and AC6 (mutation proof); neither could have been in the
                     # original file, because STORY-197 landed the guard AFTER it was written and
@@ -2515,5 +2524,62 @@ stories:
                     # but `mutate` needs the project's test-selector syntax.
     points: null
     priority: 83
+    type: chore
+    sprint: null
+
+  - id: STORY-213
+    title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
+    file: null
+    status: draft   # FILED 2026-08-03 from STORY-199's QUALITY REVIEW, with reproduction evidence
+                    # attached. NOT a defect in STORY-199's code, and the reviewer proved that
+                    # before filing: the production loop was mutation-verified correct, and the
+                    # ZR-7 guard independently confirms all six compliant call sites.
+                    # OBSERVED: on the FIRST of eleven full-suite runs against committed HEAD, with
+                    # REQUIRE_DYNAMO=1 and DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021:
+                    #   FAILED backend/tests/test_dynamo_component_repository_list_components_paginates
+                    #   assert {'comp-page-0', 'comp-page-1'} == {10 ids}
+                    # i.e. list_components returned page 1 and stopped. Did NOT recur in 10 further
+                    # full runs (694 passed / 0 skipped each) nor in 25 consecutive targeted runs.
+                    # Both the orchestrator's own gate runs at a7a1b96 were green first time.
+                    # WHY IT IS WORTH A STORY DESPITE BEING RARE: the failure message is
+                    # INDISTINGUISHABLE from "pagination is broken" -- the exact defect the sprint
+                    # just fixed. At ~1-in-11 it will eventually fire for someone who then spends a
+                    # day re-investigating a closed defect. That cost is the story, not the flake.
+                    # HYPOTHESIS (the reviewer's, unconfirmed): a lost write or an absent
+                    # LastEvaluatedKey from DynamoDB Local under the conftest clean_dynamo_tables
+                    # fixture's ~1,400 delete/recreate table cycles per run. Related: STORY-179
+                    # (the fixture's known ephemeral-port defect) -- same fixture, different symptom.
+                    # DO NOT "FIX" BY WEAKENING THE TEST. The test is load-bearing: it is one of the
+                    # five AC2 proofs, and the reviewer showed it goes RED under the real mutation.
+                    # Refinement must choose between hardening the fixture and making the assertion
+                    # self-diagnosing (e.g. failing with the observed page count and LastEvaluatedKey
+                    # state, so the next reader can tell a flake from a regression at a glance).
+    points: null
+    priority: 60
+    type: defect
+    sprint: null
+
+  - id: STORY-214
+    title: Extract the LastEvaluatedKey pagination loop into a shared helper — and rework the ZR-7 guard that would forbid it
+    file: null
+    status: draft   # FILED 2026-08-03 from STORY-199's quality review. Six near-identical copies of
+                    # the same loop now live under adapters/persistence/ (five landed by STORY-199 +
+                    # the original dynamo_observation_repository.py::in_window it copied). The
+                    # reviewer diffed all five against the reference CHARACTER BY CHARACTER and found
+                    # NO divergence today -- so the risk is latent, not realised, which is exactly
+                    # why this is a follow-up and was correctly NOT bolted onto STORY-199.
+                    # *** THE TRAP, AND THE REASON THIS IS NOT A 20-LINE REFACTOR: the ZR-7 guard
+                    # decides "this call site paginates" LEXICALLY -- test_zr7_pagination_guard.py
+                    # :106-121 / :152-157 require the .query( call to sit inside a while/for whose
+                    # subtree contains the literal "LastEvaluatedKey". The guard's own docstring
+                    # already names "pagination delegated to a helper one frame up is invisible" as
+                    # a STILL-OPEN limitation. So extracting the helper flips ALL SIX compliant sites
+                    # RED and requires reworking the guard's detection AND its exemption model in the
+                    # SAME change, or the DoD gate fails. ***
+                    # Refinement should size it at 2-3: helper + guard rework + re-proving all six.
+                    # Sequencing note: it must not land in a sprint that also adds a new persistence
+                    # call site, or the guard rework and the new site will mask each other.
+    points: null
+    priority: 75
     type: chore
     sprint: null

@@ -57,21 +57,21 @@ not a violation, and is excluded from this story.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — Each of the five call sites (`is_under_maintenance`, `list_windows`,
+- [x] **AC1** — Each of the five call sites (`is_under_maintenance`, `list_windows`,
       `list_components`, `list_signals`, `list_open`) loops on `LastEvaluatedKey` exactly as
       `dynamo_observation_repository.py::in_window` already does, rather than reading a single page.
-- [ ] **AC2** — Each of the four files (five methods: dynamo_maintenance_repository.py owns TWO —
+- [x] **AC2** — Each of the four files (five methods: dynamo_maintenance_repository.py owns TWO —
       `is_under_maintenance` and `list_windows`) gains a test-only page-size hook (mirroring `_limit` at
       `dynamo_observation_repository.py:23`), and a test that sets it small, seeds MORE rows than one
       page, and asserts the method still returns/checks the COMPLETE set. This test is demonstrated
       FAILING against the pre-fix code (per the project's mutation/pre-fix-demonstration standing
       rule) before the fix lands, then passing after — with the failing run recorded on the board.
-- [ ] **AC3** — `is_under_maintenance` specifically gets a test proving a component whose ONLY
+- [x] **AC3** — `is_under_maintenance` specifically gets a test proving a component whose ONLY
       matching window is on a page past the hook's forced small page size still returns `True` — the
       exact silent-`False` shape this finding describes, not just "list has more than N items."
-- [ ] **AC4** — Existing contract tests for all five methods continue to pass unchanged for the
+- [x] **AC4** — Existing contract tests for all five methods continue to pass unchanged for the
       single-page case.
-- [ ] **AC5** — The **five** `_EXEMPTIONS` entries in `backend/tests/test_zr7_pagination_guard.py:71`
+- [x] **AC5** — The **five** `_EXEMPTIONS` entries in `backend/tests/test_zr7_pagination_guard.py:71`
       that name `"Fix: STORY-199."` are **removed**, and both ZR-7 tests pass. **Do not re-key them
       to the new line numbers; remove them** — the violation is gone, not relocated.
 
@@ -86,7 +86,7 @@ not a violation, and is excluded from this story.
       second test (`test_zr7_exemptions_are_still_needed`, `:211-241`) asserts every exemption still
       corresponds to a real unpaginated call site, so it goes RED on any of the five left behind. The
       guard was written in sprint 66 to detect exactly this story landing.
-- [ ] **AC6** — Mutation proof (standing evidence rule): with all five fixed, remove the
+- [x] **AC6** — Mutation proof (standing evidence rule): with all five fixed, remove the
       `LastEvaluatedKey` loop from ONE method, confirm that method's AC2 test goes RED **and** that
       the ZR-7 guard goes RED naming that call site, then restore and confirm `git diff` is empty.
       A fix whose removal turns nothing red is unpinned.

@@ -231,7 +231,68 @@ stories:
   - id: STORY-199
     title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
     file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
-    status: todo
+    status: done
+    commits: 1042048..a7a1b96   # 10 implementer + 5 fix-round
+    review: >-
+      SPEC PASS on all six AC. QUALITY FIX_REQUIRED, 2 MAJOR + 5 minor -> fixed, re-verified.
+      THE CODE WAS THE STRONGEST PART OF THE DIFF and no code change was asked for: the quality
+      reviewer diffed all five loops CHARACTER BY CHARACTER against in_window and found no
+      divergence, no stop-on-empty-page in any of the five, `_limit` inert in every production path
+      (assigned only in tests), hooks verbatim-consistent with dynamo_observation_repository.py:23,
+      and the ZR-7 guard's detection logic byte-identical to pre-diff -- nothing weakened while the
+      guarded file was open.
+      BOTH MAJORS WERE PROSE THAT DESCRIBED A CODEBASE THAT DOES NOT EXIST:
+        1. test_zr7_pagination_guard.py:29-38 (and :195) still declared five call sites to be REAL,
+           unfixed ZR-7 violations awaiting STORY-199 -- twenty lines above the _EXEMPTIONS block
+           correctly updated to one, and contradicting zone-rules.md as updated by the SAME commit
+           range. That file is the designated authority on whether persistence paginates; the next
+           audit reads the header and re-files a fixed defect, which is the sprint-66 -> 67 loop
+           this story exists to close. Fixed at 4caf644.
+        2. zone-rules.md:536 -- a `status: verified` Fact -- stated the hot-path cost BACKWARDS:
+           "never scanning the rest of the GSI partition on the common not-under-maintenance path".
+           Inverted. Early `True` saves work on the RARE under-maintenance path; the COMMON path is
+           the one that reads the ENTIRE MAINT partition, because False requires exhausting
+           LastEvaluatedKey. dynamo_maintenance_repository.py:108-111 carried the mirror error.
+           A FALSE verified Fact is worse than a stale one -- the wiki protocol admits incomplete or
+           visibly stale, never trusted-and-wrong -- and someone chasing `decide` latency would have
+           read it and looked elsewhere. Fixed at 005bb41 + 41b2d8f, the wiki entry explicitly
+           labelled a FACT CORRECTION, not a bare re-stamp, and now states the true asymmetric cost
+           AND that it grows with maintenance history forever and is inherent, not a defect.
+      Two further self-contradictions this diff created were also fixed (41b2d8f, fe8df72).
+    reality_gate: >-
+      SATISFIED, and by the strongest evidence in the sprint so far -- the defect's exact shape was
+      reproduced against real DynamoDB Local, not argued. The SPEC reviewer independently mutated
+      is_under_maintenance to terminate on an empty-after-filter page (the killer bug, in code that
+      still looks paginated) and the AC3 test went RED with `assert False is True`; reverted clean.
+      Both reviewers separately re-ran the AC6 mutation and both got the ZR-7 guard RED naming
+      dynamo_component_repository.py:37. These tests cannot run against the fakes -- a page boundary
+      is not reproducible in-memory -- so 0 SKIPPED is load-bearing here, not a formality.
+    evidence_caveat_recorded_deliberately: >-
+      A NUANCE THE IMPLEMENTER'S OWN EVIDENCE DID NOT SURFACE, found by the spec reviewer and worth
+      carrying: mutating list_components the NAIVE way -- dropping the loop AND the `_limit` wiring
+      -- leaves the AC2 test GREEN, because with no Limit applied DynamoDB Local returns all ten
+      tiny seeded rows in one unlimited page. Only the ZR-7 guard catches that form. Re-run
+      faithfully (loop removed, `_limit` kept wired) both go RED. Nothing shipped is defective --
+      every landed method wires `_limit` in -- but it means small-N pagination tests are
+      `_limit`-DEPENDENT: they pin "the loop is gone" only while the hook survives. The guard is
+      doing load-bearing work the tests were assumed to do alone. Relevant to STORY-214.
+    followups_filed: >-
+      TWO NEW STORIES, both filed to the backlog as drafts with their evidence attached:
+      STORY-213 (defect) the intermittent list_components pagination failure -- see below; and
+      STORY-214 (chore) extract the shared pagination helper AND rework the ZR-7 guard that would
+      forbid it, which is why it is 2-3 points and not a refactor.
+      NOT filed, deliberately: the speculative ScanIndexForward=False idea (unmeasured, a behaviour
+      change to a hot path) and two doc nits already fixed in the round.
+    flake_disclosure: >-
+      READ THE GATE RECORD AS "GREEN ON RE-RUN", NOT "DETERMINISTICALLY GREEN". On the FIRST of
+      eleven full-suite runs against committed HEAD, the quality reviewer saw
+      test_dynamo_component_repository_list_components_paginates FAIL, returning only page 1. It did
+      not recur in 10 further full runs or 25 targeted ones, and BOTH of the orchestrator's own gate
+      runs were green first time. The production loop is mutation-verified correct and the mechanism
+      points at the conftest clean_dynamo_tables churn (cf. STORY-179), not at this diff -- so it
+      does not block the story. It is recorded here rather than omitted because the failure message
+      is INDISTINGUISHABLE from "pagination is broken", the very defect just fixed. Filed as
+      STORY-213 with the reproduction evidence. The test must NOT be weakened to silence it.
     points: 3
     ceremony: implementer + both reviewers
     order: 2
@@ -409,3 +470,57 @@ dod_evidence:
         output_tail: "> frontend@0.0.0 lint | > eslint ."
         commit: a528e25
         at: "2026-08-02T19:03:30+00:00"
+  STORY-199:
+    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD a7a1b96, exit 0,
+      GREEN ON THE FIRST ATTEMPT (see stories[STORY-199].flake_disclosure -- a reviewer saw one
+      intermittent failure of the list_components pagination test in 11 runs; this run did not).
+    counts: >-
+      backend 694 passed / 0 SKIPPED -- exactly +5 on the 689 baseline, matching AC2's five new
+      pagination tests and confirming the diff is purely additive; 8 import contracts kept / 0
+      broken; 247 files already formatted; frontend 363 passed in 51 files.
+      0 SKIPPED IS LOAD-BEARING HERE: the five new tests need real DynamoDB Local, because a page
+      boundary cannot be reproduced against the in-memory fakes. A skip would have silently voided
+      the entire story while the gate still read green.
+    adjuncts: yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks after both articles
+      were re-verified (zone-rules.md carries a FACT CORRECTION entry, not a bare re-stamp).
+    fragment:   # emitted by yt_gate.py, merged verbatim
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 694 passed in 62.96s (0:01:02) ========================"
+        commit: a7a1b96
+        at: "2026-08-02T19:49:06+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: a7a1b96
+        at: "2026-08-02T19:50:10+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: a7a1b96
+        at: "2026-08-02T19:50:11+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "247 files already formatted"
+        commit: a7a1b96
+        at: "2026-08-02T19:50:11+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: a7a1b96
+        at: "2026-08-02T19:50:11+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
+        commit: a7a1b96
+        at: "2026-08-02T19:50:18+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 464ms"
+        commit: a7a1b96
+        at: "2026-08-02T19:51:37+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: a7a1b96
+        at: "2026-08-02T19:51:45+00:00"

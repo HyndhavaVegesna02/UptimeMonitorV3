@@ -251,7 +251,14 @@ on the final HEAD is the evidence of record**. Plus the wiki compile pass before
       (`347a199..a528e25`). Spec PASS 8/8 AC; quality FIX_REQUIRED (1 MAJOR: a vacuous assertion
       that let the proof-note print be deleted with the suite still green) → fixed and re-proven by
       mutation. Full 8/8 gate green, 689 passed / **0 skipped**, selftest 43/43.
-- [ ] STORY-199 — implementer → both reviewers → gate → reality gate
+- [x] STORY-199 — implementer → both reviewers → gate → reality gate — **DONE** at `a7a1b96`
+      (`1042048..a7a1b96`). Spec PASS 6/6 AC, having independently reproduced the killer-bug
+      mutation; quality FIX_REQUIRED (2 MAJOR, both prose describing a codebase that no longer
+      exists — a guard declaring its own fixed defects still live, and a **verified** wiki Fact
+      stating the hot-path cost backwards) → fixed and re-verified. Full 8/8 green first attempt,
+      **694 passed / 0 skipped** (+5, purely additive). Two follow-ups filed: STORY-213 (an
+      intermittent failure whose message is indistinguishable from a real pagination defect) and
+      STORY-214 (shared helper + the ZR-7 guard rework it forces).
 - [ ] STORY-202 — implementer → both reviewers → gate → reality gate
 - [ ] STORY-200 — implementer → both reviewers → gate → reality gate
 - [ ] ~~STORY-201 — implementer → gate~~ **DROPPED post-lock** (PO-approved) to hold 11 points when
