@@ -27,15 +27,25 @@ the first three as a silent green before they were closed):
 finding detail this test's exemptions cite.
 
 Why an exemption list, not a hard zero-tolerance assertion (the live-violation problem,
-STORY-197 AC5/C3): five of the seven call sites this file finds are REAL, unfixed ZR-7
-violations today (STORY-199, filed, not fixed here per C1 -- this story guards, it does
-not fix). Landing this guard with zero exemptions would fail the DoD gate on every
-future story until STORY-199 lands, which C4 forbids as a side effect of a guard. So
-this guard is green today only because of a named, reasoned exemption per known
-violation, each citing STORY-199 -- and it fails loudly the moment a NEW, unlisted
-unpaginated `.query(`/`.scan(` call site appears anywhere under `adapters/persistence/`,
-including a REGRESSION of the one call site that is compliant today (verified by
-mutation, see the story's report).
+STORY-197 AC5/C3): AT STORY-197 LANDING, five of the seven call sites this file found
+were REAL, unfixed ZR-7 violations (STORY-199, filed, not fixed there per C1 -- that
+story guarded, it did not fix). Landing the guard with zero exemptions would have
+failed the DoD gate on every future story until STORY-199 landed, which C4 forbids as a
+side effect of a guard. So the guard was green only because of a named, reasoned
+exemption per known violation, each citing STORY-199.
+
+STORY-199 (2026-08-03) fixed all five and removed their exemptions (C1: removed, not
+re-keyed to the fixes' new line numbers -- the violation is gone, not relocated). **At
+HEAD there are ZERO unfixed ZR-7 violations under `adapters/persistence/`**, and
+`_EXEMPTIONS` holds exactly ONE entry: a `PERMANENT` one for
+`dynamo_publication_repository.py::list_recent`, whose own port contract promises only
+"up to `limit`", not completeness, so it was never a violation in the first place. The
+exemption-list DESIGN stays -- a future finding needs the same shape, and STORY-199's
+own report demonstrated the mechanism by mutation. This guard still fails loudly the
+moment a NEW, unlisted unpaginated `.query(`/`.scan(` call site appears anywhere under
+`adapters/persistence/`, including a REGRESSION of any of the six call sites that are
+compliant today (five fixed by STORY-199, one permanently bounded by its own port
+contract).
 
 Maintenance note for a future author (AC3): any new `.py` file ANYWHERE under
 `adapters/persistence/`, and any function in it, is scanned automatically -- nothing to
@@ -192,9 +202,12 @@ def test_no_unexempted_unpaginated_persistence_query() -> None:
 def test_zr7_exemptions_are_still_needed() -> None:
     """Every _EXEMPTIONS entry must still correspond to a real call site that
     still fails the natural (loops-on-LastEvaluatedKey) check. A stale entry
-    (its call site now loops, or vanished) means either STORY-199 landed and the
-    exemption should be REMOVED, or the guard itself regressed -- either way it
-    should not sit unnoticed."""
+    (its call site now loops, or vanished) means either its fix story landed
+    and the exemption should be REMOVED (as STORY-199 did for the five
+    non-PERMANENT entries that used to live here), or the guard itself
+    regressed -- either way it should not sit unnoticed. At HEAD, only the one
+    `PERMANENT` entry remains, and PERMANENT entries are never staleness-checked
+    (see the loop below)."""
     sites = find_query_call_sites(_PERSISTENCE_DIR)
     by_coord = {(file, line): loops for file, line, _qualname, loops in sites}
 
