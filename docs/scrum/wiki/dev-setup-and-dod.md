@@ -1,9 +1,22 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 61595ef
+verified_sha: a9009d4
 verified_sprint: sprint-65
 status: verified
+# Re-verified 2026-08-01 (OUT OF SPRINT — PO-directed process work on branch
+# process/ratchet-brake-from-sprint-66, not a story). CLAUDE.md was pruned 420 -> 292 lines.
+# All five Facts in this article that cite CLAUDE.md were re-read against the pruned file:
+#   - "Key commands" (venv + editable install)            -> unchanged, still there
+#   - "Key commands" (host port 8001, not 8000)           -> unchanged, still there
+#   - "Key commands" (lint_imports_command module form)   -> unchanged, still there
+#   - "Live-loop secrets" (the four env secrets)          -> unchanged, section heading intact
+#   - "commands + frontend/ layout in CLAUDE.md"          -> PARTIALLY MOVED, noted inline below
+# The frontend COMMAND table is still in CLAUDE.md; the frontend directory TREE moved to
+# frontend/README.md + wiki/frontend-zone.md. The Fact is a historical statement about commit
+# 08d91e7 and stays true as history, but a reader following it would not find the layout, so an
+# inline pointer was added rather than leaving the citation silently misleading.
+# NOT a bare re-stamp: no DoD command, env precondition or contract changed.
 # Re-verified 2026-07-30 (sprint-64) by the orchestrator. Changed code_ref in range: CLAUDE.md
 # (STORY-182's demo-loop section + STORY-181-era credential prose). Not a bare re-stamp: the
 # sprint measured a real DoD-gate property that belongs here and was missing -- a green pytest
@@ -76,7 +89,9 @@ status: verified
   shared build step), so a backend-only story never runs the npm gates and a frontend-only story never
   runs the backend five. **Eight commands in total.** The `.scrum/definition-of-done.md` frontend section stopped being a
   "placeholder until then" note and became live in the same commit (`08d91e7`) that documented the
-  commands + `frontend/` layout in CLAUDE.md (command-sync agreement). Toolchain: Vite + React +
+  commands + `frontend/` layout in CLAUDE.md (command-sync agreement; the command table is still
+  in CLAUDE.md, but the `frontend/` directory tree moved to `frontend/README.md` +
+  `wiki/frontend-zone.md` in the 2026-08-01 prune). Toolchain: Vite + React +
   TypeScript (strict), Vitest + React Testing Library + MSW (the only mocked I/O edge in frontend tests),
   npm on Node 24. Playwright/E2E is deferred to a later integration story.
 - **Running the app locally (STORY-042; `.env` loading STORY-043):** the FastAPI API is served via
