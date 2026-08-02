@@ -100,17 +100,42 @@ class DynamoMaintenanceRepository(MaintenanceRepository):
         ]
 
     def is_under_maintenance(self, component_id: str, at: datetime) -> bool:
-        """Check if a component is under active maintenance at a given timestamp."""
+        """Check if a component is under active maintenance at a given timestamp.
+
+        The KeyConditionExpression matches every window ever created for every
+        component (gsi1sk <= at); the FilterExpression narrowing to this
+        component is applied by DynamoDB AFTER the per-page 1MB read, so a page
+        can come back EMPTY after filtering while later pages still hold a
+        match. This loop pages until a match is found (returning True
+        immediately, never scanning the rest of the partition on the common
+        "under maintenance" path) or until LastEvaluatedKey is exhausted
+        (returning False) -- it must NEVER terminate on an empty-after-filter
+        page (STORY-199).
+        """
         at_str = to_canonical_iso(at)
-        # Query gsi1 for all windows starting at or before `at`
-        response = self._table.query(
-            IndexName="gsi1",
-            KeyConditionExpression=Key("gsi1pk").eq("MAINT")
-            & Key("gsi1sk").lte(f"{at_str}#\ufffd"),
-            FilterExpression="ends_at > :at_str AND component_id = :cid",
-            ExpressionAttributeValues={":at_str": at_str, ":cid": component_id},
-        )
-        return len(response.get("Items", [])) > 0
+        exclusive_start_key = None
+
+        while True:
+            # Query gsi1 for all windows starting at or before `at`
+            kwargs = {
+                "IndexName": "gsi1",
+                "KeyConditionExpression": Key("gsi1pk").eq("MAINT")
+                & Key("gsi1sk").lte(f"{at_str}#\ufffd"),
+                "FilterExpression": "ends_at > :at_str AND component_id = :cid",
+                "ExpressionAttributeValues": {":at_str": at_str, ":cid": component_id},
+            }
+            if exclusive_start_key:
+                kwargs["ExclusiveStartKey"] = exclusive_start_key
+            if self._limit is not None:
+                kwargs["Limit"] = self._limit
+
+            response = self._table.query(**kwargs)
+            if response.get("Items"):
+                return True
+
+            exclusive_start_key = response.get("LastEvaluatedKey")
+            if not exclusive_start_key:
+                return False
 
     def delete(self, window_id: int) -> None:
         """Delete a maintenance window by its ID."""

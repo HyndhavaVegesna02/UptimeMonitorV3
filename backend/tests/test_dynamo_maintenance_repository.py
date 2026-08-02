@@ -123,6 +123,50 @@ def test_dynamo_maintenance_repository_is_under_maintenance_boundaries(dynamo_re
     assert repo.is_under_maintenance("other-comp", midpoint) is False
 
 
+def test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_forced_page_size(
+    dynamo_resource,
+):
+    """STORY-199 AC2 + AC3: is_under_maintenance must return True for a component
+    whose ONLY matching window sits on a page past the hook's forced small page
+    size -- the exact silent-False shape the finding describes. The
+    KeyConditionExpression matches every window ever created (any component,
+    any starts_at <= `at`); the FilterExpression narrows to this component AFTER
+    the read, so the leading pages here are non-empty on the wire but come back
+    EMPTY once filtered. A loop that (wrongly) stops on an empty-after-filter
+    page would return False here even though the component IS under
+    maintenance."""
+    settings = load_settings()
+    repo = DynamoMaintenanceRepository(dynamo_resource, settings.dynamo_control_table)
+
+    at = datetime(2026, 7, 15, 11, 0, 0, tzinfo=timezone.utc)
+
+    # Five OTHER components' windows, sorted (by starts_at) ahead of the real
+    # match. Each matches the KeyConditionExpression (gsi1sk <= at) but is
+    # excluded by the component_id filter -- forcing empty-after-filter pages.
+    for i in range(5):
+        repo.create(
+            MaintenanceWindow(
+                component_id=f"other-comp-{i}",
+                starts_at=datetime(2026, 7, 15, 8, i, 0, tzinfo=timezone.utc),
+                ends_at=datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc),
+            )
+        )
+
+    # The ONLY window for the target component -- active at `at`, sorted onto
+    # a page past the forced Limit=1 boundary.
+    repo.create(
+        MaintenanceWindow(
+            component_id="target-comp",
+            starts_at=datetime(2026, 7, 15, 10, 59, 0, tzinfo=timezone.utc),
+            ends_at=datetime(2026, 7, 15, 12, 0, 0, tzinfo=timezone.utc),
+        )
+    )
+
+    repo._limit = 1
+
+    assert repo.is_under_maintenance("target-comp", at) is True
+
+
 def test_dynamo_maintenance_repository_empty(dynamo_resource):
     settings = load_settings()
     repo = DynamoMaintenanceRepository(dynamo_resource, settings.dynamo_control_table)
