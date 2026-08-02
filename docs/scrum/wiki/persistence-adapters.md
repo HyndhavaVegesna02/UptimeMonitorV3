@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py]
-verified_sha: a865f1f
-verified_sprint: sprint-65
+verified_sha: 460d3ee
+verified_sprint: sprint-67
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
 # NOTE for a future story: RejectedObservationRepository is now written by the PULL LOOP as well as
@@ -32,6 +32,10 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - `DynamoPublicationRepository` implements `list_recent` descending Query under the `PUBLICATION` partition, resolving authors via BatchGetItem on distinct proposal METAs using the denormalized `approved_actor` attribute.
 - `DynamoMaintenanceRepository` stores windows under `MAINTWIN#<id>`/`META` and indexes them on `gsi1` using `gsi1pk="MAINT"`, `gsi1sk="<starts_at>#<id>"` for starts_at ascending list queries.
   - **GSI eventual consistency:** Since GSI reads are eventually consistent, `is_under_maintenance` query results may miss windows created seconds earlier. This is an accepted design trade-off because maintenance windows are scheduled ahead of time (PO-accepted 2026-07-14).
+- **Pagination (STORY-199, ZR-7 fix).** `DynamoComponentRepository.list_components`, `DynamoSignalRepository.list_signals` and `DynamoMaintenanceRepository.list_windows` each loop on `LastEvaluatedKey`/`ExclusiveStartKey` (the `dynamo_observation_repository.py::in_window` pattern) instead of reading a single DynamoDB page, and each carries a test-only `self._limit` hook (mirroring `dynamo_observation_repository.py:23`) so a test can force a small page size without a real 1MB of data — proven by `test_dynamo_component_repository_list_components_paginates`, `test_dynamo_signal_repository_list_signals_paginates` (`backend/tests/test_dynamo_adapters.py`) and `test_dynamo_maintenance_repository_list_windows_paginates` (`backend/tests/test_dynamo_maintenance_repository.py`).
+  - `DynamoMaintenanceRepository.is_under_maintenance` also paginates, but as a BOOLEAN short-circuit, not a collect-all loop: it returns `True` on the first page whose post-filter `Items` is non-empty, and returns `False` only once `LastEvaluatedKey` is absent — it must never terminate on an empty-after-filter page, because the GSI `KeyConditionExpression` matches every window ever created and the `component_id`/`ends_at` `FilterExpression` is applied by DynamoDB AFTER the page read, so a component's only matching window can sit several empty-after-filter pages in. Pinned by `test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_forced_page_size` (`backend/tests/test_dynamo_maintenance_repository.py`), which seeds five other-component windows ahead of the one real match with `_limit=1` and asserts `True`.
+  - `DynamoProposalRepository.list_open` (`backend/src/adapters/persistence/dynamo_proposal_repository.py`) has the same collect-all loop, proven by `test_dynamo_proposal_repository_list_open_paginates` (`backend/tests/test_dynamo_proposal_repository.py`); its own code_refs live in [[zone-rules]], not here.
+  - The standing guard for all five is `backend/tests/test_zr7_pagination_guard.py` (ZR-7, [[zone-rules]]); `DynamoPublicationRepository.list_recent`'s `Limit=limit` remains the one PERMANENT exemption because its port promises "up to `limit`", a stated bound, not completeness.
 - `DynamoRejectedObservationRepository` implements the append-only quarantine sink under the `REJECTED#<signal_key|UNKNOWN>` partition with distinct uuid-suffixed SKs, converting payload floats to Decimal to satisfy boto3 serialization.
 - `seed_topology_dynamo` (`src/composition/seed_dynamo.py`) idempotently upserts Git-configured apps, components, and signals into the `TOPOLOGY` partition. Uses an update expression with `if_not_exists` to preserve existing component status on re-seed.
 - Contract parity is verified in `backend/tests/test_dynamo_adapters.py`, `backend/tests/test_dynamo_publication_repository.py`, `backend/tests/test_dynamo_maintenance_repository.py`, `backend/tests/test_dynamo_rejected_observation_repository.py`, and `backend/tests/test_dynamo_seed.py` against a real local DynamoDB instance.
@@ -44,6 +48,13 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-67 (STORY-199): `list_components`, `list_windows`, `list_signals`, `is_under_maintenance` and
+  `list_open` now loop on `LastEvaluatedKey` instead of silently truncating past a 1MB page — the
+  live defect was `is_under_maintenance` returning a silent `False` for a component genuinely under
+  maintenance. Added the "Pagination" Fact above. `is_under_maintenance` is boolean-short-circuiting,
+  not collect-all: page until a match (return `True` immediately) or until `LastEvaluatedKey` is
+  exhausted (return `False`); it never terminates on an empty-after-filter page. verified_sha ->
+  460d3ee.
 - sprint-63 (STORY-180): RE-VERIFIED, no content change. The sweep flagged `backend/tests/conftest.py`
   for STORY-180's `sys.path` insertion-position decision (minor 8, the `tools/` insertion recorded
   as a deliberate front-insertion with its reason) — the `dynamo_local`/`clean_dynamo_tables`
