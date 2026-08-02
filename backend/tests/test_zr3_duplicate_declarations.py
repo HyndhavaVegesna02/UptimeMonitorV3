@@ -7,19 +7,25 @@ Cites: `docs/scrum/wiki/zone-rules.md` ZR-3 (a value DECLARED in `backend/src/` 
 module-level UPPER_CASE constant, or a settings/config field default -- must be
 IMPORTED by `tools/`, never re-declared) and its Coverage verdict, which names this
 exact promotion ("STORY-197 may promote it to a standing test"). Every adjudication
-below reproduces `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md`
-§3c's ledger (15 collisions at this story's HEAD: 6 `MUST-IMPORT-FROM-SRC`, 9
-`INDEPENDENT`/coincidental), not re-derived from scratch.
+below originally reproduced `docs/scrum/sprints/2026-07-31-sprint-66/
+audit-api-composition-tools.md` §3c's ledger (15 collisions at STORY-197's HEAD: 6
+`MUST-IMPORT-FROM-SRC`, 9 `INDEPENDENT`/coincidental). **STORY-202 fixed its two
+`MUST-IMPORT-FROM-SRC` entries** (`env_matrix.py:75`/`:77`, the Statuspage credential
+key names) and re-keyed the three collisions its own edits displaced without
+retiring (`env_matrix.py:39`->`:49`, `harness.py:747`->`:754`, `harness.py:750`->
+`:757`) plus two `INDEPENDENT` entries similarly displaced (`harness.py:903`->`:910`,
+`harness.py:964`->`:971`) -- current count: 13 (4 `MUST-IMPORT-FROM-SRC`, all filed to
+STORY-203; 9 `INDEPENDENT`).
 
 Why an adjudicated-exemption list, not a hard zero-tolerance assertion (the
-live-violation problem, STORY-197 AC5/C3): six of today's fifteen collisions are REAL,
-unfixed ZR-3 violations (STORY-202, STORY-203, filed, not fixed here per C1 -- this
-story guards, it does not fix). Landing this guard with zero exemptions would fail the
-DoD gate on every future story until those fix stories land, which C4 forbids as a side
-effect of a guard. So this guard is green today only because every current collision is
-named, with a reason, below -- and it fails loudly the moment a NEW, unadjudicated
-collision appears anywhere under `tools/`, against anything `backend/src/` declares in
-either of ZR-3's two pinned shapes.
+live-violation problem, STORY-197 AC5/C3): the 4 remaining `MUST-IMPORT-FROM-SRC`
+collisions are REAL, unfixed ZR-3 violations (STORY-203, filed, not fixed here per C1
+-- this story guards, it does not fix). Landing this guard with zero exemptions would
+fail the DoD gate on every future story until that fix story lands, which C4 forbids
+as a side effect of a guard. So this guard is green today only because every current
+collision is named, with a reason, below -- and it fails loudly the moment a NEW,
+unadjudicated collision appears anywhere under `tools/`, against anything
+`backend/src/` declares in either of ZR-3's two pinned shapes.
 
 Maintenance note for a future author (AC3): a new `tools/` literal or `backend/src/`
 declaration that does NOT collide with anything needs no entry at all -- the scan is
@@ -56,20 +62,12 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], a filesystem-ancestor "
         "index unrelated to FreshnessConfig.reentry_cycles."
     ),
-    ("tools/demo_loop_gate/env_matrix.py", 39): (
+    ("tools/demo_loop_gate/env_matrix.py", 49): (
         "MUST-IMPORT-FROM-SRC (MINOR): build_child_env's aws_region parameter "
         "default re-declares Settings.aws_region's default a second time. "
-        "Fix: STORY-203."
-    ),
-    ("tools/demo_loop_gate/env_matrix.py", 75): (
-        "MUST-IMPORT-FROM-SRC (MAJOR): re-declares STATUSPAGE_PAGE_ID_VAR's value "
-        "as an env-dict key instead of importing the constant -- a rename in "
-        "settings.py would silently defeat this harness's fake-credential "
-        "injection. Fix: STORY-202."
-    ),
-    ("tools/demo_loop_gate/env_matrix.py", 77): (
-        "MUST-IMPORT-FROM-SRC (MAJOR): re-declares STATUSPAGE_API_KEY_VAR's value, "
-        "same mechanism and risk as :75. Fix: STORY-202."
+        "Fix: STORY-203. (Re-keyed from :39 by STORY-202's own AC2 import "
+        "block, which displaced this pre-existing collision without "
+        "retiring it -- the collision is unchanged, only its line moved.)"
     ),
     ("tools/demo_loop_gate/failure_path_reality_gate.py", 65): (
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as :30 "
@@ -93,22 +91,28 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as above, a "
         "different file."
     ),
-    ("tools/demo_loop_gate/harness.py", 747): (
+    ("tools/demo_loop_gate/harness.py", 754): (
         "MUST-IMPORT-FROM-SRC (MINOR): the ZR-3 AC3 reference/demonstration case "
         "-- a defensive blocklist literal duplicating "
-        "Settings.dynamo_observations_table's default. Fix: STORY-203."
+        "Settings.dynamo_observations_table's default. Fix: STORY-203. "
+        "(Re-keyed from :747 by STORY-202's own harness.py edits, which "
+        "displaced this pre-existing collision without retiring it.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 750): (
-        "MUST-IMPORT-FROM-SRC (MINOR): paired with :747, duplicates "
-        "Settings.dynamo_control_table's default. Fix: STORY-203."
+    ("tools/demo_loop_gate/harness.py", 757): (
+        "MUST-IMPORT-FROM-SRC (MINOR): paired with :754, duplicates "
+        "Settings.dynamo_control_table's default. Fix: STORY-203. "
+        "(Re-keyed from :750, same cause as :754 above.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 903): (
+    ("tools/demo_loop_gate/harness.py", 910): (
         "INDEPENDENT: dict(list(per_signal.items())[:3]), a slice bound unrelated "
-        "to FreshnessConfig.stale_after_cycles."
+        "to FreshnessConfig.stale_after_cycles. (Re-keyed from :903 by "
+        "STORY-202's own harness.py edits, which displaced this pre-existing "
+        "collision without retiring it.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 964): (
+    ("tools/demo_loop_gate/harness.py", 971): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
-        "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles."
+        "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
+        "(Re-keyed from :964, same cause as :910 above.)"
     ),
 }
 
@@ -123,7 +127,7 @@ def test_zr3_sweep_finds_no_unadjudicated_collision() -> None:
     deduped = sweep.find_collisions(_REPO_ROOT)
     assert deduped, (
         "The sweep found zero collisions -- that would be surprising (STORY-196's "
-        "AC3 demonstration case, harness.py:747/750 vs settings.py:21/22, should "
+        "AC3 demonstration case, harness.py:754/757 vs settings.py:21/22, should "
         "still be present) and is more likely a broken scan than a clean tree; "
         "re-check collect_src_declarations/collect_tools_literals before trusting "
         "an empty result."

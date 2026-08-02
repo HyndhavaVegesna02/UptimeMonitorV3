@@ -59,6 +59,12 @@ from demo_engine.scenario import SignalScenario, expand_scenario  # noqa: E402
 from demo_engine.server import DemoEngineServer  # noqa: E402
 from import_provenance import assert_import_root  # noqa: E402
 from src.composition.config import load_config  # noqa: E402
+from src.composition.settings import (  # noqa: E402
+    CONFIG_DIR_VAR,
+    DYNAMO_CONTROL_TABLE_VAR,
+    DYNAMO_ENDPOINT_URL_VAR,
+    DYNAMO_OBSERVATIONS_TABLE_VAR,
+)
 
 from demo_loop_gate.env_matrix import build_child_env, fresh_table_names  # noqa: E402
 from demo_loop_gate.evidence import (  # noqa: E402
@@ -537,7 +543,7 @@ def run_positive_side(
         )
         print(
             f"API (uvicorn) subprocess launched, pid={api_proc.pid}, "
-            f"env CONFIG_DIR={api_env['CONFIG_DIR']!r}"
+            f"env CONFIG_DIR={api_env[CONFIG_DIR_VAR]!r}"
         )
 
         api_base = f"http://127.0.0.1:{api_port}/api/v1"
@@ -606,7 +612,7 @@ def run_positive_side(
                 print(
                     f"Loop subprocess launched, pid={loop_proc.pid}, env "
                     f"DYNATRACE_ENV_URL={loop_env['DYNATRACE_ENV_URL']!r} "
-                    f"CONFIG_DIR={loop_env['CONFIG_DIR']!r}"
+                    f"CONFIG_DIR={loop_env[CONFIG_DIR_VAR]!r}"
                 )
 
                 # MAJOR 3 (STORY-182 fix round): everything from the launch
@@ -731,17 +737,18 @@ def _assert_ac1_preconditions(
     result: dict = {}
 
     # AC1(a): CONFIG_DIR on the API process -- recorded from the exact env
-    # dict passed to Popen (the API resolved it via settings.py:32 with no
-    # `config_dir` argument, exactly as `asgi.py` boots it).
-    result["config_dir_api"] = api_env["CONFIG_DIR"]
+    # dict passed to Popen (the API resolved it via
+    # settings.py::load_settings with no `config_dir` argument, exactly as
+    # `asgi.py` boots it).
+    result["config_dir_api"] = api_env[CONFIG_DIR_VAR]
     assert result["config_dir_api"].replace("\\", "/").endswith("config/demo"), (
         f"AC1(a) FAILED: API CONFIG_DIR={result['config_dir_api']!r}"
     )
 
     # AC1(b): DYNAMO_ENDPOINT_URL + table names, recorded from the same env.
-    result["dynamo_endpoint_url"] = api_env["DYNAMO_ENDPOINT_URL"]
-    result["observations_table"] = api_env["DYNAMO_OBSERVATIONS_TABLE"]
-    result["control_table"] = api_env["DYNAMO_CONTROL_TABLE"]
+    result["dynamo_endpoint_url"] = api_env[DYNAMO_ENDPOINT_URL_VAR]
+    result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]
+    result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]
     assert result["dynamo_endpoint_url"], "AC1(b) FAILED: DYNAMO_ENDPOINT_URL unset"
     assert result["observations_table"] not in (
         "uptime-observations",
