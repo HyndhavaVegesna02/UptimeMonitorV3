@@ -1,9 +1,17 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: b318141
+verified_sha: 0084326
 verified_sprint: sprint-67
 status: verified
+# Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
+# and .scrum/definition-of-done.md both changed again, but neither change touches a Fact in this
+# article: CLAUDE.md gained one clarifying sentence distinguishing `ruff.exe` (preventive
+# module-form move, NOT blocked) from the three shims that ARE blocked -- the commands and their
+# invocations are unchanged from the STORY-210 re-verification below. .scrum/definition-of-done.md
+# only corrected a retro citation's wording (the sprint-66 retro named the next casualties as
+# "ruff.exe or the npm toolchain", not "ruff.exe" alone) -- no command text changed. Bare re-stamp:
+# no DoD command, env precondition or contract changed.
 # Re-verified 2026-08-02 (sprint-67, STORY-210). Backend commands 3 and 4 in the "backend DoD
 # gate" Fact below changed FOR REAL this time: `ruff check .` / `ruff format --check .` ->
 # `python -m ruff check .` / `python -m ruff format --check .` (PO-approved, preventive --
