@@ -443,21 +443,35 @@ each was added because its predecessor was not followed.
 which can only ever add is not learning, and that "has this fired?" is a question the process has
 never once asked.
 
-**Baseline, so this agreement is falsifiable.** Measured at the commit that landed it
-(governance = this file + `checklists/implementer.md` + `checklists/quality-review.md`):
+**Baseline, so this agreement is falsifiable — recorded as a COMMAND, not a number.** A total
+written into this file changes this file, so it is stale the moment it is saved. Two attempts to
+record one here drifted by 1,065 and then 633 bytes; the third is this. Re-derive instead:
 
-| | bytes |
-| --- | --- |
-| before this change (sprint-66 tip) | 53,776 |
-| after | 52,555 |
-| net | **-1,221 (-2.3%)** |
+```
+git show sprint-66:.scrum/working-agreements.md | wc -c      # the baseline side
+cat .scrum/working-agreements.md .scrum/checklists/implementer.md \
+    .scrum/checklists/quality-review.md | wc -c              # governance at HEAD
+```
 
-**Read that number honestly: it is nearly nothing.** The A1-A9 collapse removed 6,043 bytes and
-A14+A15 added 4,822 back, because both were written as PROSE — the exact rung this agreement calls
-the last resort. A deliberate de-bloating pass, done immediately after measuring the ratchet, still
-netted -2.3%. That is how strong the pull toward prose is, and it is the best available evidence
-that A15 needs its mechanical rung (an audit script; see STORY-212) rather than more words.
+**The one stable figure: the A1-A9 collapse removed 6,043 bytes from the two CHECKLISTS**
+(23,506 -> 17,463), and nothing since has touched them.
 
-**The test at the sixth sprint from now:** governance is SMALLER than 52,555 bytes, and at least one
-rule has been deleted on its merits rather than routed. If it is larger and nothing was deleted,
-A14/A15 failed and are themselves candidates for deletion under their own rule.
+**Read the rest honestly: in raw bytes this pass roughly broke even.** What the collapse removed
+from the checklists, A14 + A15 + this baseline added back to this file as PROSE — the rung A15
+itself calls the last resort. A deliberate de-bloating pass, run immediately after measuring the
+ratchet by someone who had just written the case against it, netted approximately zero. That is how
+strong the pull toward prose is, and it is the best evidence available that A15 needs its mechanical
+rung (an audit script, STORY-212) rather than more words.
+
+**Where it DID pay, because raw bytes hide it:** the two costs are not equivalent. Checklist bytes
+are loaded into EVERY subagent dispatch; this file is loaded ONCE per session at standup. So the
+real change is -6,043 bytes per dispatch (~-1,500 tokens x every implementer and reviewer run) and
++5,887 once per session, against a CLAUDE.md prune of -9,236 in the highest-priority slot there is.
+Per session that is ~-3,350 bytes before a single dispatch. **Prefer removals from the rungs that
+are paid repeatedly.**
+
+**The test at the sixth sprint from now:** run the second command above and compare it against the
+same command at the commit that landed A15 (`git log --oneline -S "A15 - rules EXPIRE"` finds it).
+Governance must be SMALLER, AND at least one rule must have been deleted on its merits rather than
+routed. If it is larger and nothing was deleted, A14/A15 failed and are themselves candidates for
+deletion under their own rule.
