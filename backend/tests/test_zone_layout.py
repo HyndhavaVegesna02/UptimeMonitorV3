@@ -3,6 +3,7 @@
 Cites: Proposal (2026-07-10) §3.4 G4, §6.2, §10 Phase 1.
 """
 
+import ast
 import importlib
 import tomllib
 from pathlib import Path
@@ -171,3 +172,65 @@ def test_zone_layout_agreements() -> None:
 
         # Assert that each route of the feature router is registered under the correct path in OpenAPI
         assert_router_routes_registered(feature, feature_router, openapi_paths)
+
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_SEED_DYNAMO_PATH = _REPO_ROOT / "backend" / "src" / "composition" / "seed_dynamo.py"
+
+_TOPOLOGY_KEY_NAMES = {"pk", "sk"}
+
+
+def find_hand_built_topology_key_dicts(path: Path) -> list[int]:
+    """Line numbers of every `{"pk": ..., "sk": ...}`-shaped dict literal in `path`.
+
+    ZR-8 Finding 1 (`docs/scrum/wiki/zone-rules.md`): the topology key schema is
+    owned by `adapters/persistence/topology_keys.py` alone. A dict literal naming
+    either `"pk"` or `"sk"` as a key, anywhere in this file, means it is being
+    hand-built again rather than obtained from that module.
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    violations = []
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Dict):
+            continue
+        key_names = {
+            key.value
+            for key in node.keys
+            if isinstance(key, ast.Constant) and isinstance(key.value, str)
+        }
+        if key_names & _TOPOLOGY_KEY_NAMES:
+            violations.append(node.lineno)
+    return violations
+
+
+def test_seed_dynamo_owns_no_hand_built_topology_key(tmp_path: Path) -> None:
+    """Meta-test for the guard itself (STORY-205): prove it actually fires,
+    against a throwaway file, before trusting it against the real one below."""
+    offender = tmp_path / "offender.py"
+    offender.write_text(
+        'def f():\n    return {"pk": "TOPOLOGY", "sk": "APP#x"}\n', encoding="utf-8"
+    )
+    violations = find_hand_built_topology_key_dicts(offender)
+    assert violations == [2]
+
+    clean = tmp_path / "clean.py"
+    clean.write_text(
+        "from src.adapters.persistence.topology_keys import app_item_key\n\n\n"
+        "def f():\n    return app_item_key('x')\n",
+        encoding="utf-8",
+    )
+    assert find_hand_built_topology_key_dicts(clean) == []
+
+
+def test_seed_dynamo_uses_shared_topology_key_schema() -> None:
+    """Standing guard (STORY-205, ZR-8 Finding 1, Coverage verdict): asserts
+    `composition/seed_dynamo.py` constructs no `pk`/`sk` dict literal of its own
+    -- it must obtain the topology key schema from
+    `adapters/persistence/topology_keys.py` instead of re-declaring it.
+    """
+    violations = find_hand_built_topology_key_dicts(_SEED_DYNAMO_PATH)
+    assert not violations, (
+        "ZR-8 Finding 1 regression: composition/seed_dynamo.py hand-builds a "
+        "pk/sk topology key dict at line(s) "
+        f"{violations} instead of calling adapters/persistence/topology_keys.py."
+    )

@@ -4,6 +4,11 @@ from __future__ import annotations
 
 import logging
 
+from src.adapters.persistence.topology_keys import (
+    app_item_key,
+    component_item_key,
+    signal_item_key,
+)
 from src.composition.config import Config
 from src.core.domain.status import ComponentStatus
 
@@ -26,8 +31,7 @@ def seed_topology_dynamo(config: Config, db_resource, table_name: str) -> None:
     # 1. Seed Apps
     for app in config.apps:
         app_item = {
-            "pk": "TOPOLOGY",
-            "sk": f"APP#{app.id}",
+            **app_item_key(app.id),
             "id": app.id,
             "name": app.name,
             "config": {"thresholds": app.thresholds.model_dump()},
@@ -40,7 +44,7 @@ def seed_topology_dynamo(config: Config, db_resource, table_name: str) -> None:
             # We use update_item with if_not_exists to update name and app_id,
             # but preserve status if the component already exists.
             table.update_item(
-                Key={"pk": "TOPOLOGY", "sk": f"COMPONENT#{comp.id}"},
+                Key=component_item_key(comp.id),
                 UpdateExpression="SET #n = :name, app_id = :aid, #s = if_not_exists(#s, :default), id = :id",
                 ExpressionAttributeNames={"#n": "name", "#s": "status"},
                 ExpressionAttributeValues={
@@ -55,8 +59,7 @@ def seed_topology_dynamo(config: Config, db_resource, table_name: str) -> None:
     for app in config.apps:
         for sig in app.signals:
             sig_item = {
-                "pk": "TOPOLOGY",
-                "sk": f"SIGNAL#{sig.signal_key}",
+                **signal_item_key(sig.signal_key),
                 "signal_key": sig.signal_key,
                 "app_id": app.id,
                 "name": sig.name,
