@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: d469d2c
+verified_sha: 013f344
 verified_sprint: sprint-67
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -730,7 +730,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module. Green today only via a per-entry adjudication list; every unfixed entry names its fix story. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
-| ZR-6 | `ENFORCED-BY backend/tests/test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`, for this ONE instance | STORY-200 (sprint-67) landed the fix: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover. **This is a per-instance guard, not a general contract**: the BROADER "a port primitive stands in for an existing domain type" rule remains `GUARDABLE` only as a reviewed lint warning (see the rule's Coverage verdict) — no mechanical check exists for a FUTURE port taking the wrong primitive; only this one, now-fixed instance is pinned. |
+| ZR-6 | `FIXED (STORY-200, sprint-67) — NO STANDING GUARD` | The one live violation this rule adjudicated is fixed: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover — proven by `test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`. **That test pins the 2-member SUBSET GUARD, not the port's TYPE.** Mutation-checked: reverting the entire fix (port back to `action: str`, fake back to `str`, adapter back to `if action == "approved":`) leaves the full suite at 696 passed, identical to HEAD — nothing detects a ZR-6 regression. This is honest, not a gap left carelessly: ZR-6's own Coverage verdict (above) already states the general "port primitive stands in for an existing domain type" rule is `GUARDABLE` only as a reviewed lint warning, never a hard-failing contract, and this row now agrees with it instead of contradicting it. A future story could re-widen this port back to `str` with a fully green gate. |
 | ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing `list_components`'s `LastEvaluatedKey` loop (the recorded mutation proof) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes (including `is_under_maintenance`) and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
 | ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). **Honest reason, corrected at review:** the blocker is AC5's two-guard cap, not redness — ZR-3 and ZR-7 were in exactly the same "live violations" position and this same commit solved that with exemption lists, so "a guard would be RED" would have been a false excuse. A second, real constraint does apply though: ZR-8's violations are whole-function SHAPE (a duplicated builder, a hand-rolled key schema), not per-call-site coordinates, so an exemption list would be a far blunter instrument here than it is for ZR-3/ZR-7. |
 
@@ -738,8 +738,12 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 chosen because they are the two highest-severity rules with a **live violation to prove the guard RED
 against** — ZR-7's five findings include a production defect that silently disables maintenance
 suppression, and ZR-3's six include a credential-safety drift risk. Every other rule is either clean
-(ZR-1, ZR-2, ZR-4 — provable only by mutation, so cheaper to land alongside its own story) or blocked
-behind a fix or a design decision (ZR-5's operational half, ZR-6, ZR-8).
+(ZR-1, ZR-2, ZR-4 — provable only by mutation, so cheaper to land alongside its own story), has no
+standing guard by design (ZR-5's operational half is `UNGUARDABLE` — no single-process test sees
+across the two-OS-process boundary that actually caused the incident), or has no standing guard
+because none was ever built for it: **ZR-6's one live instance was fixed at STORY-200 (sprint-67)
+without a mechanised guard** — its adjudication row above records this plainly rather than claiming
+one exists — and ZR-8's two violations remain live, still blocked behind their own fix stories.
 
 ### A recorded limitation of `tools/citation_sweep.py`, so nobody "fixes" a correct citation
 
@@ -838,6 +842,19 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   was wrong. Also fixed the ZR-7 adjudication row, which named `is_under_maintenance`
   as the method used for the recorded mutation proof when the History entry (and the
   actual evidence) both say `list_components`. verified_sha -> fe8df72.
+- sprint-67 (STORY-200 fix round, quality review): **MAJOR — the ZR-6 adjudication row claimed
+  mechanical enforcement that does not exist.** It read `ENFORCED-BY
+  backend/tests/test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`
+  and closed "only this one, now-fixed instance is pinned" — disproved by mutation: reverting the
+  ENTIRE ZR-6 fix (port back to `action: str`, fake back to `str`, adapter back to `if action ==
+  "approved":`) leaves the full suite at 696 passed, IDENTICAL to HEAD. The named test pins the new
+  2-member `{APPROVED, REJECTED}` SUBSET guard; it detects nothing about the port's TYPE. Corrected
+  to `FIXED (STORY-200, sprint-67) — NO STANDING GUARD`, stating plainly that the instance is fixed,
+  the subset is pinned by that one test, and the port-typing regression itself is unguarded — a
+  future story could re-widen the port back to `str` with a fully green gate. Also fixed the
+  contradicting "why only two rules were mechanised" paragraph nine lines below the table, which
+  still listed ZR-6 as present-tense "blocked behind a fix or a design decision" in the same commit
+  that (incorrectly) marked it `ENFORCED-BY`. verified_sha -> 013f344.
 - sprint-67 (STORY-200): landed the ZR-6 fix. `record_approval_event`'s port
   signature now types `action: ProposalState` (decision (a), the sibling method's
   type — not a narrower type; the story file's "design decision" section records
