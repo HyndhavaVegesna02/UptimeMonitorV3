@@ -384,19 +384,41 @@ governs how much these codes may be trusted.
 
 ## History
 
-- sprint-67 (STORY-202): RE-VERIFIED, no content change. `tools/demo_loop_gate/harness.py`
-  and `tools/demo_loop_gate/env_matrix.py` changed (both now import
-  `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_*_VAR`/`STATUSPAGE_*_VAR` from
-  `backend/src/composition/settings.py` instead of re-declaring the env-var key
-  NAMES — see [[zone-rules]] ZR-3), but the publish guard MECHANISM this article
-  documents (`Config.statuspage_mapping()` empty for `config/demo`,
+- sprint-67 (STORY-202 fix round): **the AC6 empirical claim below was actually EXECUTED
+  in this fix round, with captured output** — the orchestrator had reverted this
+  article's `verified_sha` stamp because no evidence existed that the prior claim had
+  run; that gap is now closed. `tools/demo_loop_gate/harness.py` and
+  `tools/demo_loop_gate/env_matrix.py` changed, but import DIFFERENT SUBSETS of the
+  seven names, not both all seven — corrected here to match the correction made in
+  [[zone-rules]] ZR-3's own Facts (an earlier draft of both articles said "both
+  files import all seven"): `env_matrix.py` imports all seven (`CONFIG_DIR_VAR`,
+  `AWS_REGION_VAR`, `DYNAMO_OBSERVATIONS_TABLE_VAR`, `DYNAMO_CONTROL_TABLE_VAR`,
+  `DYNAMO_ENDPOINT_URL_VAR`, `STATUSPAGE_PAGE_ID_VAR`, `STATUSPAGE_API_KEY_VAR`, since
+  it sets all seven as child-env dict keys); `harness.py` imports only the four it
+  actually re-types as a dict key at its six AC8 sites (`CONFIG_DIR_VAR`,
+  `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR`) — it never re-types `AWS_REGION`/
+  `STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY` as a literal dict key anywhere. Both
+  import from `backend/src/composition/settings.py` instead of re-declaring the
+  env-var key NAMES — see [[zone-rules]] ZR-3. The publish guard MECHANISM this
+  article documents (`Config.statuspage_mapping()` empty for `config/demo`,
   `build_publisher` falling through to `LoggingPublisher`, `publish_helper.py:211`)
-  is behaviour-identical: re-verified empirically (not just reasoned) — `load_config(Path("config/demo")).statuspage_mapping()`
-  still returns `{}`, and `build_publisher(...)` with real-looking credentials
-  present still yields a `StatusWritebackPublisher` wrapping a `LoggingPublisher`.
-  `test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`
-  and the disjointness tests cited above still pass unchanged. verified_sha ->
-  `1dc1c73`.
+  is behaviour-identical: re-verified empirically (not just reasoned), executed
+  directly against the production interfaces —
+  `load_config("config/demo").statuspage_mapping()` printed `{}`, and
+  `build_publisher(...)` called with real-looking Statuspage credentials
+  (`statuspage_page_id="REAL-LOOKING-PAGE-ID"`, `statuspage_api_token=
+  "REAL-LOOKING-API-TOKEN"`) present returned a `StatusWritebackPublisher` whose
+  `._delegate` printed as `LoggingPublisher` (`isinstance(..., LoggingPublisher)`
+  → `True`). `test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`
+  and the disjointness tests cited above still pass unchanged. Also confirmed via
+  the two-sided AC4 mutation proof (renaming `CONFIG_DIR_VAR`'s value both at the
+  pre-STORY-202 commit and at HEAD): pre-fix, the harness and `settings.py` were
+  shown to DISAGREE on the injected key name — the harness's fixed `config/demo`
+  value silently failed to reach `load_settings()`, which fell back to the
+  `config/apps` default (the live-page-selecting default) — while at HEAD, after
+  the same rename, they agree, because both now read the one shared symbol.
+  verified_sha -> `<this story's final commit>`.
 - sprint-63 (STORY-176, part 2a): the scenario player (`scenario.py`), the demo fleet
   (`config/demo/`, 13 components / 41 signals / 4 locations across three distinct-`app.id` files),
   the scenarios (`config/demo/scenarios/`), and the config-only publish guard
