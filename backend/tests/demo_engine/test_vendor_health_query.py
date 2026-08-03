@@ -1,12 +1,14 @@
 """STORY-148 AC5 — the SECOND query grammar (`summarize count()`).
 
-`build_vendor_health_query` (`composition/vendor_health.py:40-53`) is the
+`build_vendor_health_dql`
+(`adapters/inbound/dynatrace/query.py:136-155`; relocated here from
+`composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2) is the
 REAL, unmodified production function under test — a different grammar
 entirely from the ingest fetch: `fetch dt.synthetic.events, from:now()-2h |
 filter dt.synthetic.monitor.id == "…" | summarize count()`, whose response
 must be a single row keyed literally `"count()"` (`_extract_count`,
-`vendor_health.py:56-76`). `check_vendor_id_health` runs this at every
-startup, for every configured signal, BEFORE any loop is built — so an
+`composition/vendor_health.py:47-67`). `check_vendor_id_health` runs this at
+every startup, for every configured signal, BEFORE any loop is built — so an
 engine answering only the ingest grammar would make every monitor id look
 dead.
 
@@ -20,9 +22,9 @@ from datetime import datetime, timedelta, timezone
 
 from demo_engine.rows import build_row, format_ns_timestamp
 from demo_engine.store import VENDOR_HEALTH_WINDOW, DemoRowStore
-from src.composition.vendor_health import (
+from src.adapters.inbound.dynatrace.query import (
     _HEALTH_CHECK_WINDOW,
-    build_vendor_health_query,
+    build_vendor_health_dql,
 )
 
 
@@ -38,8 +40,8 @@ def test_vendor_health_query_returns_live_count_for_known_monitor_and_zero_for_u
         )
     )
 
-    known_query = build_vendor_health_query(native_id="MON-KNOWN")
-    unknown_query = build_vendor_health_query(native_id="MON-UNKNOWN")
+    known_query = build_vendor_health_dql(native_id="MON-KNOWN")
+    unknown_query = build_vendor_health_dql(native_id="MON-UNKNOWN")
 
     assert store.handle_query(known_query, request_instant=now) == [{"count()": 1}]
     assert store.handle_query(unknown_query, request_instant=now) == [{"count()": 0}]
@@ -63,7 +65,7 @@ def test_vendor_health_window_tracks_the_request_instant_not_engine_construction
             timestamp=format_ns_timestamp(row_timestamp),
         )
     )
-    query = build_vendor_health_query(native_id="MON-A")
+    query = build_vendor_health_dql(native_id="MON-A")
 
     within_window = row_timestamp + timedelta(hours=1)
     assert store.handle_query(query, request_instant=within_window) == [{"count()": 1}]
@@ -74,12 +76,14 @@ def test_vendor_health_window_tracks_the_request_instant_not_engine_construction
 
 def test_vendor_health_window_matches_the_composition_health_check_window():
     """STORY-180 AC2 (minor 1): `store.py`'s hardcoded `VENDOR_HEALTH_WINDOW`
-    must equal `vendor_health.py`'s `_HEALTH_CHECK_WINDOW` -- the composition
-    constant this engine's literal is deliberately NOT imported from (it is
-    part of the wire contract the engine answers, not borrowed from
-    composition; see `store.py:18-22`). Without this test, a future change to
-    `_HEALTH_CHECK_WINDOW` would make the demo diverge SILENTLY in the one
-    dimension it hardcodes -- this test turns that into a build failure.
+    must equal `adapters/inbound/dynatrace/query.py`'s `_HEALTH_CHECK_WINDOW`
+    (relocated here from `composition/vendor_health.py` at STORY-204) -- the
+    adapter constant this engine's literal is deliberately NOT imported from
+    (it is part of the wire contract the engine answers, not borrowed from
+    the adapter that builds the query; see `store.py:18-23`). Without this
+    test, a future change to `_HEALTH_CHECK_WINDOW` would make the demo
+    diverge SILENTLY in the one dimension it hardcodes -- this test turns
+    that into a build failure.
 
     Parses `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape here, in the TEST only
     (the route decided at planning is the equality test, not teaching the
@@ -108,5 +112,5 @@ def test_vendor_health_query_defaults_request_instant_to_the_real_wall_clock():
         )
     )
 
-    query = build_vendor_health_query(native_id="MON-A")
+    query = build_vendor_health_dql(native_id="MON-A")
     assert store.handle_query(query) == [{"count()": 1}]

@@ -708,6 +708,41 @@ def test_build_dql_query_rejects_native_id_with_dql_breaking_char():
         )
 
 
+# --- build_vendor_health_dql: relocated from composition/vendor_health.py at
+# STORY-204 (ZR-8 finding 2) -- query-construction logic lives in exactly one
+# adapter, sharing build_dql_query's own breaking-character validation. ---
+
+
+def test_build_vendor_health_dql_scopes_to_native_id_and_bounded_window():
+    """The query fetches a bounded window, filters on the monitor id, and
+    summarizes a count -- never the full ingest fetch shape (no watermark/
+    overlap/event.type scoping; this is a cheap existence probe, not ingest).
+    """
+    from src.adapters.inbound.dynatrace.query import build_vendor_health_dql
+
+    query = build_vendor_health_dql(native_id="HTTP_CHECK-ABC123")
+
+    assert 'dt.synthetic.monitor.id == "HTTP_CHECK-ABC123"' in query
+    assert "summarize count()" in query
+    assert "fetch dt.synthetic.events" in query
+    assert "from:now()-" in query
+
+
+def test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char():
+    """STORY-204 AC1: the vendor-health builder rejects a DQL-breaking
+    `native_id` with the SAME `InvalidNativeIdError` `build_dql_query` above
+    raises -- previously this builder lived in `composition/vendor_health.py`
+    with no such validation and silently built a malformed query instead.
+    """
+    from src.adapters.inbound.dynatrace.query import (
+        InvalidNativeIdError,
+        build_vendor_health_dql,
+    )
+
+    with pytest.raises(InvalidNativeIdError):
+        build_vendor_health_dql(native_id='HTTP_CHECK-"; drop')  # contains a quote
+
+
 # --- parse_ns_timestamp edge cases (precision-boundary, STORY-016b) ---
 
 

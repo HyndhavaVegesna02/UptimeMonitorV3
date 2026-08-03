@@ -14,13 +14,17 @@ probe must not block live-loop startup, decided sprint-41 planning).
 
 from __future__ import annotations
 
+import inspect
 import logging
 
-from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
-from src.composition.vendor_health import (
-    build_vendor_health_query,
-    check_vendor_id_health,
+import pytest
+import src.composition.vendor_health as vendor_health_module
+from src.adapters.inbound.dynatrace.query import (
+    _DQL_BREAKING_CHARS,
+    InvalidNativeIdError,
 )
+from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
+from src.composition.vendor_health import check_vendor_id_health
 
 
 def _one_signal_config(
@@ -81,19 +85,6 @@ def _two_signal_config() -> Config:
             )
         ]
     )
-
-
-def test_build_vendor_health_query_scopes_to_native_id_and_bounded_window():
-    """The query fetches a bounded window, filters on the monitor id, and
-    summarizes a count -- never the full ingest fetch shape (no watermark/
-    overlap/event.type scoping; this is a cheap existence probe, not ingest).
-    """
-    query = build_vendor_health_query(native_id="HTTP_CHECK-ABC123")
-
-    assert 'dt.synthetic.monitor.id == "HTTP_CHECK-ABC123"' in query
-    assert "summarize count()" in query
-    assert "fetch dt.synthetic.events" in query
-    assert "from:now()-" in query
 
 
 def test_zero_rows_logs_loud_warning_naming_the_monitor(caplog):
@@ -212,6 +203,49 @@ def test_multiple_signals_each_probed_independently(caplog):
     assert "HTTP_CHECK-DEAD" in message
     assert "sig-dead" in message
     assert "HTTP_CHECK-ALIVE" not in message
+
+
+def test_vendor_health_module_builds_no_dql_string_itself():
+    """STORY-204 AC4: the builder moved, not just the validator --
+    `composition/vendor_health.py` must contain no DQL string construction of
+    its own (no `fetch `, `| filter `, or `| summarize ` literal). Asserted
+    against the REAL module source, not eyeballed -- these three fragments
+    are exactly the pieces `build_vendor_health_dql`
+    (`adapters/inbound/dynatrace/query.py`) assembles; their presence here
+    would mean composition is still building DQL, the violation ZR-8 names.
+    """
+    source = inspect.getsource(vendor_health_module)
+
+    assert "fetch " not in source
+    assert "| filter " not in source
+    assert "| summarize " not in source
+
+
+@pytest.mark.parametrize("breaking_char", _DQL_BREAKING_CHARS)
+def test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char(
+    breaking_char, caplog
+):
+    """STORY-204 AC1/AC2: the vendor-health probe path must reject a
+    `native_id` containing any of the four DQL-breaking characters
+    IDENTICALLY to the ingest path (`build_dql_query`'s
+    `InvalidNativeIdError`) -- not silently build a malformed query. Runs
+    once per character in `_DQL_BREAKING_CHARS`, not one sampled.
+
+    Pre-fix, `build_vendor_health_query` interpolated `native_id` unescaped
+    with no validation, so this raised nothing: the malformed query reached
+    the executor, which here returns a benign response, and
+    `check_vendor_id_health` returned normally -- this test's own RED run
+    against pre-fix HEAD is `pytest.raises`' "DID NOT RAISE".
+    """
+    native_id = f"HTTP_CHECK-{breaking_char}-ABC123"
+    config = _one_signal_config(native_id=native_id, signal_key="sig-1")
+
+    def fake_executor(query: str) -> list[dict]:
+        return [{"count()": 0}]
+
+    with caplog.at_level(logging.WARNING):
+        with pytest.raises(InvalidNativeIdError):
+            check_vendor_id_health(config=config, executor=fake_executor)
 
 
 def test_empty_config_is_a_no_op(caplog):

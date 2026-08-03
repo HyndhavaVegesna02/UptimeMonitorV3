@@ -18,6 +18,17 @@ Parameterizing the fetched
 `event.type` per monitor type is explicitly out of scope (STORY-016c) — only
 the HTTP monitor is live; clickpath/browser remain future work.
 
+`build_vendor_health_dql` is the OTHER DQL shape this module builds: a cheap,
+bounded-window existence probe scoped to one monitor id, unrelated to the
+watermark/overlap ingest fetch above (STORY-070). It was relocated here from
+`composition/vendor_health.py` at STORY-204 (ZR-8 finding 2: query-
+construction logic lives in exactly ONE adapter, and composition calls it
+rather than re-implementing it) -- before the move, composition's copy
+interpolated `native_id` with no breaking-character validation, silently
+building a malformed query instead of raising. Both builders now share
+`_reject_dql_breaking_native_id`, so a `native_id` misconfiguration is
+rejected identically wherever it is interpolated.
+
 `Executor` is the thin injected seam for actually running a DQL query against
 Dynatrace. Production wiring (composition root) will inject a real HTTP-backed
 implementation; every test in this package injects a fake instead — no live
@@ -49,6 +60,26 @@ class InvalidNativeIdError(ValueError):
     """
 
 
+def _reject_dql_breaking_native_id(native_id: str) -> None:
+    """Raise `InvalidNativeIdError` if `native_id` would break out of the
+    `"{native_id}"` DQL string literal it is interpolated into (STORY-021).
+
+    `native_id` is trusted vendor config, not end-user input, and every query
+    built in this module is a read-only Grail fetch, so there is no injection
+    vector here -- a breaking character (e.g. `"`) would still silently
+    malform the query, so it is rejected rather than escaped/sanitized.
+
+    Shared by every DQL builder in this module (STORY-204, ZR-8 finding 2) so
+    a `native_id` misconfiguration is caught identically wherever it is
+    interpolated, instead of another zone re-implementing this check without
+    it.
+    """
+    if any(char in native_id for char in _DQL_BREAKING_CHARS):
+        raise InvalidNativeIdError(
+            f"native_id contains a DQL-breaking character: {native_id!r}"
+        )
+
+
 def build_dql_query(
     *, native_id: str, watermark: datetime | None, overlap: timedelta
 ) -> str:
@@ -71,15 +102,7 @@ def build_dql_query(
     ):
         raise ValueError("watermark must be a tz-aware UTC datetime")
 
-    # `native_id` is interpolated unescaped: it is trusted vendor config (the
-    # monitor id we configured in Dynatrace, not end-user input), and this
-    # query is a read-only Grail fetch, so there is no injection vector here.
-    # A breaking character (e.g. `"`) would still silently malform the query,
-    # so it is rejected rather than escaped/sanitized (STORY-021).
-    if any(char in native_id for char in _DQL_BREAKING_CHARS):
-        raise InvalidNativeIdError(
-            f"native_id contains a DQL-breaking character: {native_id!r}"
-        )
+    _reject_dql_breaking_native_id(native_id)
 
     # `event.type == "http_monitor_execution"` scopes to the canonical per-run
     # row, excluding the same-event.id `http_step_execution` companion that
@@ -100,3 +123,33 @@ def build_dql_query(
 
     filter_expr = " AND ".join(clauses)
     return f"fetch dt.synthetic.events\n| filter {filter_expr}\n| sort timestamp asc"
+
+
+#: Bounded recent window for `build_vendor_health_dql`'s drift-detection
+#: probe (dossier §8, STORY-070 "Decided" section: "a recent bounded window
+#: (e.g. last ~2h ...)"; relocated here from `composition/vendor_health.py`
+#: at STORY-204). Kept separate from `build_dql_query`'s watermark/overlap
+#: window above -- this is a cheap existence probe, not an ingest fetch.
+_HEALTH_CHECK_WINDOW = "2h"
+
+
+def build_vendor_health_dql(*, native_id: str) -> str:
+    """Build a bounded DQL count query scoped to one monitor id (STORY-070;
+    relocated here from `composition/vendor_health.py` at STORY-204, ZR-8
+    finding 2 -- query-construction logic lives in exactly ONE adapter).
+
+    Unlike `build_dql_query` above (which scopes to a watermark/overlap range
+    and the `http_monitor_execution` event type for the real ingest fetch),
+    this is a cheap "does this id exist at all in a recent window" existence
+    probe: a plain bounded-time `fetch` filtered to the monitor id,
+    summarized to a single row count. Shares `_reject_dql_breaking_native_id`
+    with `build_dql_query` above, so a `native_id` misconfiguration raises
+    `InvalidNativeIdError` identically on both paths (STORY-204 AC1) --
+    previously this builder silently built a malformed query instead.
+    """
+    _reject_dql_breaking_native_id(native_id)
+    return (
+        f"fetch dt.synthetic.events, from:now()-{_HEALTH_CHECK_WINDOW}\n"
+        f'| filter dt.synthetic.monitor.id == "{native_id}"\n'
+        "| summarize count()"
+    )

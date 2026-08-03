@@ -23,8 +23,10 @@ from src.adapters.inbound.dynatrace.grail_executor import (
     GrailQueryError,
     make_grail_executor,
 )
-from src.adapters.inbound.dynatrace.query import build_dql_query
-from src.composition.vendor_health import build_vendor_health_query
+from src.adapters.inbound.dynatrace.query import (
+    build_dql_query,
+    build_vendor_health_dql,
+)
 
 
 def _headers():
@@ -266,7 +268,7 @@ def test_two_server_instances_never_collide_on_a_hardcoded_port():
     ):
         assert server_one.base_url != server_two.base_url
 
-        health_query = build_vendor_health_query(native_id="MON-A")
+        health_query = build_vendor_health_dql(native_id="MON-A")
         resp_one = httpx.post(
             f"{server_one.base_url}/platform/storage/query/v1/query:execute",
             headers=_headers(),

@@ -238,8 +238,9 @@ def test_expand_scenario_last_row_is_within_the_vendor_health_window():
     "since engine start". Because expansion is past-anchored to `end_time`,
     the most recent row is always at (or before) `end_time` — trivially
     inside the vendor-health engine's trailing window (`store.py`'s
-    `VENDOR_HEALTH_WINDOW`, mirroring `vendor_health.py`'s
-    `_HEALTH_CHECK_WINDOW`, both 2h) — so `check_vendor_id_health`'s count
+    `VENDOR_HEALTH_WINDOW`, mirroring
+    `adapters/inbound/dynatrace/query.py`'s `_HEALTH_CHECK_WINDOW`, both
+    2h) — so `check_vendor_id_health`'s count
     probe never sees a dead-looking monitor id the instant the scenario is
     expanded (STORY-176 AC2e; the plan-verifier's over-specification note —
     only >=1 row inside the trailing window is required, not dense history)."""
