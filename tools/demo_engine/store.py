@@ -15,10 +15,12 @@ from src.adapters.inbound.dynatrace._assembly import parse_ns_timestamp
 
 from demo_engine.query_grammar import IngestQuery, VendorHealthQuery, parse_query
 
-#: Mirrors `_HEALTH_CHECK_WINDOW` (`composition/vendor_health.py:37`,
-#: `"2h"`) — kept as a literal constant here (not imported) because the
-#: window is part of the WIRE CONTRACT this engine answers, not an
-#: implementation detail borrowed from composition.
+#: Mirrors `_HEALTH_CHECK_WINDOW` (`adapters/inbound/dynatrace/query.py:133`,
+#: `"2h"`; relocated there from `composition/vendor_health.py:37` at
+#: STORY-204, ZR-8 finding 2) — kept as a literal constant here (not
+#: imported) because the window is part of the WIRE CONTRACT this engine
+#: answers, not an implementation detail borrowed from the adapter that
+#: builds the query.
 VENDOR_HEALTH_WINDOW = timedelta(hours=2)
 
 

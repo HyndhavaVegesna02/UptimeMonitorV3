@@ -4,12 +4,14 @@
 Mirrors exactly two shapes:
 
 - the ingest grammar, `build_dql_query`
-  (`adapters/inbound/dynatrace/query.py:85-97`) — always scoped to a monitor
-  id and `event.type`, plus an optional `timestamp >= toTimestamp(...)` lower
-  bound when a watermark exists;
-- the vendor-health grammar, `build_vendor_health_query`
-  (`composition/vendor_health.py:40-53`) — a `summarize count()` existence
-  probe scoped to a monitor id, with a `from:now()-2h` window.
+  (`adapters/inbound/dynatrace/query.py:83-125`) — always scoped to a
+  monitor id and `event.type`, plus an optional
+  `timestamp >= toTimestamp(...)` lower bound when a watermark exists;
+- the vendor-health grammar, `build_vendor_health_dql`
+  (`adapters/inbound/dynatrace/query.py:136-155`; relocated there from
+  `composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2) — a
+  `summarize count()` existence probe scoped to a monitor id, with a
+  `from:now()-2h` window.
 
 This module recognizes exactly these two shapes and raises on anything else,
 so a future third grammar the engine doesn't understand surfaces loudly
@@ -46,7 +48,7 @@ class IngestQuery:
 
 @dataclass(frozen=True)
 class VendorHealthQuery:
-    """A parsed vendor-health-grammar query (`build_vendor_health_query`)."""
+    """A parsed vendor-health-grammar query (`build_vendor_health_dql`)."""
 
     monitor_id: str
 

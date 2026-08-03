@@ -51,16 +51,24 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: self._httpd.server_address[:2], a slice index unrelated to "
         "FreshnessConfig.reentry_cycles."
     ),
-    ("tools/demo_engine/store.py", 22): (
+    ("tools/demo_engine/store.py", 24): (
         "INDEPENDENT (this Constant node only): the bare `2` inside "
         "timedelta(hours=2)'s `hours=` keyword argument. The SEPARATE semantic "
         "finding on the whole VENDOR_HEALTH_WINDOW value (a str/timedelta "
         "cross-representation this sweep's literal-equality comparison cannot see "
-        "at all) is MUST-IMPORT-FROM-SRC, fix: STORY-203."
+        "at all) is MUST-IMPORT-FROM-SRC, fix: STORY-203. (Re-keyed from :22 by "
+        "STORY-204's own store.py docstring edit repointing the "
+        "_HEALTH_CHECK_WINDOW citation to its new home in "
+        "adapters/inbound/dynatrace/query.py, which displaced this "
+        "pre-existing collision without retiring it -- the collision is "
+        "unchanged, only its line moved.)"
     ),
-    ("tools/demo_loop_gate/backfill_reality_gate.py", 30): (
+    ("tools/demo_loop_gate/backfill_reality_gate.py", 31): (
         "INDEPENDENT: Path(__file__).resolve().parents[2], a filesystem-ancestor "
-        "index unrelated to FreshnessConfig.reentry_cycles."
+        "index unrelated to FreshnessConfig.reentry_cycles. (Re-keyed from :30 "
+        "by STORY-204's own module-docstring edit repointing its "
+        "vendor-health-window citation to the relocated adapter builder, which "
+        "displaced this pre-existing collision without retiring it.)"
     ),
     ("tools/demo_loop_gate/env_matrix.py", 49): (
         "MUST-IMPORT-FROM-SRC (MINOR): build_child_env's aws_region parameter "

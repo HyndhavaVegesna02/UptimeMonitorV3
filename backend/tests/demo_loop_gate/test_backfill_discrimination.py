@@ -1,11 +1,12 @@
 """STORY-182 reality gate side 3 — discriminating on backfill.
 
 Restated per the sprint-64 plan (B7): `check_vendor_id_health` needs >=1 row
-INSIDE the trailing 2h window (`vendor_health.py:37,50`), not ">=2h of
-coverage", and the healthy branch is NOT silent -- it logs one INFO line per
-healthy signal (`vendor_health.py:126-133`), contradicting its own docstring
-at `:86` ("logs nothing"; the docstring is wrong, this test is written
-against the CODE).
+INSIDE the trailing 2h window (`adapters/inbound/dynatrace/query.py:133,152`;
+relocated there from `composition/vendor_health.py:37,50` at STORY-204), not
+">=2h of coverage", and the healthy branch is NOT silent -- it logs one INFO
+line per healthy signal (`composition/vendor_health.py:124-132`),
+contradicting its own docstring at `:77` ("logs nothing"; the docstring is
+wrong, this test is written against the CODE).
 
 Two sides, over the SAME fleet config, differing ONLY in whether the engine
 holds any rows in the window:

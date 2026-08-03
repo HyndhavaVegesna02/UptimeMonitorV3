@@ -5,7 +5,7 @@ fleet's 41 signals -- by design, since those five files exist to exercise
 specific cases, not fleet-wide breadth. An unseeded monitor id returns `[]`
 from `demo_engine.store.DemoRowStore` (`store.py:59-72`), so every uncovered
 signal both ingests nothing AND drifts `check_vendor_id_health`
-(`composition/vendor_health.py:96-97,113`) -- STORY-182's AC3/AC4 are
+(`composition/vendor_health.py:95-96,112`) -- STORY-182's AC3/AC4 are
 unreachable through the five existing scenarios alone.
 
 This module is the fix, via the BUILDER route (chosen over a checked-in
@@ -21,10 +21,12 @@ constructing `SignalScenario` in code is exactly the path that invariant
 guards.
 
 Only 5 cycles are used, not ~2h of ladder: `check_vendor_id_health` needs
->=1 row inside the trailing 2h window (`vendor_health.py:37,50`), not 2h of
-coverage -- confirmed empirically by SPIKE-064 (820 rows, 0 drift warnings,
-41 health-OK lines). The literal "2h of coverage" reading would cost ~39,000
-rows for no additional benefit.
+>=1 row inside the trailing 2h window
+(`adapters/inbound/dynatrace/query.py:133,152`; relocated there from
+`composition/vendor_health.py:37,50` at STORY-204), not 2h of coverage --
+confirmed empirically by SPIKE-064 (820 rows, 0 drift warnings, 41 health-OK
+lines). The literal "2h of coverage" reading would cost ~39,000 rows for no
+additional benefit.
 """
 
 from __future__ import annotations

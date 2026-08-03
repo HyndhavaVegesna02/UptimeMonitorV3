@@ -5,8 +5,9 @@
 specific cases (a dark location, a dark monitor, staggered intervals, a late
 return), not fleet-wide breadth. STORY-182's AC3/AC4 need EVERY signal to
 carry >=1 row inside the trailing 2h vendor-health window
-(`composition/vendor_health.py:37,50`), so this module builds a SEPARATE,
-fleet-wide artifact via the BUILDER route: construct one `SignalScenario`
+(`adapters/inbound/dynatrace/query.py:133,152`; relocated there from
+`composition/vendor_health.py:37,50` at STORY-204), so this module builds a
+SEPARATE, fleet-wide artifact via the BUILDER route: construct one `SignalScenario`
 per configured signal directly IN CODE from the loaded `Config` (rather than
 authoring a second checked-in YAML file) and expand it with the real
 `demo_engine.scenario.expand_scenario`.

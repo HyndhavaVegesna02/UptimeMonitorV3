@@ -6,11 +6,12 @@ is driven through an in-memory `DemoRowStore`, exactly the injected
 `Executor` seam `run_periodic` uses in production).
 
 Restated per the sprint-64 plan (B7): the vendor-health probe needs >=1 row
-INSIDE its trailing 2h window (`vendor_health.py:37,50`), not ">=2h of
-coverage", and its healthy branch is NOT silent -- it logs one INFO line per
-healthy signal (`vendor_health.py:126-133`), contradicting its own docstring
-at `:86` ("logs nothing"). Two sides over the SAME demo fleet config, ONLY
-the row store differing:
+INSIDE its trailing 2h window (`adapters/inbound/dynatrace/query.py:133,152`;
+relocated there from `composition/vendor_health.py:37,50` at STORY-204), not
+">=2h of coverage", and its healthy branch is NOT silent -- it logs one INFO
+line per healthy signal (`composition/vendor_health.py:124-132`),
+contradicting its own docstring at `:77` ("logs nothing"). Two sides over the
+SAME demo fleet config, ONLY the row store differing:
   - EMPTY store  -> one `VENDOR-ID DRIFT SUSPECTED` warning PER SIGNAL,
     zero healthy-INFO lines;
   - the B1 fleet-wide COVERAGE store -> zero warnings, one healthy-INFO

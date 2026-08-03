@@ -22,7 +22,7 @@ empty, and nothing data-dependent can be reality-gated. See
   there is no string-typed `duration` parameter to accidentally get wrong.
 - **Both DQL grammars** (`query_grammar.py`, `store.py`) — the ingest fetch
   (`build_dql_query`: monitor id + `event.type` + optional watermark bound)
-  and the vendor-health existence probe (`build_vendor_health_query`:
+  and the vendor-health existence probe (`build_vendor_health_dql`:
   `summarize count()`, `from:now()-2h`), parsed from the real production
   query strings, not guessed at. The watermark bound is PARSED (via the real
   `_assembly.py::parse_ns_timestamp`), never string-compared — a 6-digit
