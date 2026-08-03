@@ -2583,3 +2583,37 @@ stories:
     priority: 75
     type: chore
     sprint: null
+
+  - id: STORY-215
+    title: Close the remaining env-var-NAME drift — the two DYNATRACE_* names, plus the fourth file nobody adjudicated
+    file: null
+    status: draft   # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
+                    # env-var-NAME collisions and deliberately left a bounded remainder; this is
+                    # that remainder, gathered in one place so it is not rediscovered piecemeal.
+                    # THREE SITES, and the third was found by BOTH reviewers independently:
+                    #   1. env_matrix.py:81/:83 -- DYNATRACE_ENV_URL / DYNATRACE_API_TOKEN, still
+                    #      literals. Left out of 202 on purpose: their settings.py side (:100, :103)
+                    #      is ALSO a function-body literal, so fixing them means promoting two more
+                    #      constants and widening the ZR-3 collision surface again -- the same
+                    #      sequence that took 202 from 1 point to 3.
+                    #   2. harness.py:614 -- loop_env['DYNATRACE_ENV_URL'], the same pair, same file
+                    #      family. Correct under 202's carve-out; wrong to leave forever.
+                    #   3. *** backend/tests/test_demo_fleet_config.py:164/:200 hardcode "CONFIG_DIR"
+                    #      directly against settings.py. This is a FOURTH FILE, outside STORY-202's
+                    #      three-file scope, and BOTH reviewers ruled it correctly out of scope for
+                    #      202 AND flagged it as a real residual defect. It is STORY-176's file --
+                    #      the create_app test asserting CONFIG_DIR governs publisher safety. So the
+                    #      literal that re-creates the drift risk sits in the test that guards the
+                    #      PUBLISH GUARD. That is the most consequential of the three. ***
+                    # WHY IT MATTERS: CONFIG_DIR selects config/demo, which empties
+                    # statuspage_mapping(), which is what yields a LoggingPublisher. `decide`
+                    # publishes recoveries with NO human gate. A rename that silently misses this
+                    # test would leave it green while asserting nothing.
+                    # REFINEMENT MUST SIZE IT (expect 2-3, not 1): promoting the two DYNATRACE names
+                    # re-runs 202's own trap -- newly-declared shape-i values turn existing tools/
+                    # literals into ZR-3 collisions. Re-derive the sweep count BEFORE estimating.
+                    # Baseline to beat: 13 collisions at 1210374.
+    points: null
+    priority: 70
+    type: defect
+    sprint: null
