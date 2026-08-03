@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from boto3.dynamodb.conditions import Key
 from src.adapters.persistence.topology_keys import (
-    TOPOLOGY_PK,
+    _TOPOLOGY_PK,
     app_item_key,
     component_item_key,
     component_query_condition,
@@ -19,7 +19,7 @@ from src.adapters.persistence.topology_keys import (
 
 
 def test_topology_pk_constant() -> None:
-    assert TOPOLOGY_PK == "TOPOLOGY"
+    assert _TOPOLOGY_PK == "TOPOLOGY"
 
 
 def test_app_item_key_shape() -> None:
