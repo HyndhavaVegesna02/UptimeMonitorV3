@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: 3c0cdeb
+verified_sha: 1a70f45
 verified_sprint: sprint-67
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -759,6 +759,24 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-67 (STORY-202 quality-review fix round): **MAJOR — the six `harness.py`
+  AC8 site line numbers in the Fact below were the story's own PRE-edit AC8
+  numbers** (`:540`/`:609`/`:736`/`:742`/`:743`/`:744`), copied forward despite
+  AC8's own warning that this story's edits would shift them. Re-derived against
+  HEAD by directly opening each line: `:546`
+  (`f"env CONFIG_DIR={api_env[CONFIG_DIR_VAR]!r}"`), `:615`
+  (`f"CONFIG_DIR={loop_env[CONFIG_DIR_VAR]!r}"`), `:743`
+  (`result["config_dir_api"] = api_env[CONFIG_DIR_VAR]`), `:749`
+  (`result["dynamo_endpoint_url"] = api_env[DYNAMO_ENDPOINT_URL_VAR]`), `:750`
+  (`result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]`),
+  `:751` (`result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]`).
+  Corrected in the Fact above, qualified "line numbers as of `1210374`" per this
+  article's existing convention. `backend/tests/test_zr3_duplicate_declarations.py`'s
+  `failure_path_reality_gate.py:149` adjudication reason (a separate file, not
+  this article, but the same review round) also carried a stale cross-reference
+  to `env_matrix.py:39` five lines after the same module's own docstring
+  documented that collision re-keyed to `:49` — corrected there too.
+  verified_sha -> `1a70f45`.
 - sprint-67 (STORY-202 fix round): **the false "both files import all seven" claim
   corrected** (see the Fact above and the entry below) — measured at HEAD:
   `env_matrix.py` imports all seven, `harness.py` imports only the four it
