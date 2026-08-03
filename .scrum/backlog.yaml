@@ -2635,3 +2635,37 @@ stories:
     priority: 70
     type: defect
     sprint: null
+
+  - id: STORY-216
+    title: Mechanise the ENFORCED-BY claim in zone-rules.md — a row may not claim a guard that does not exist
+    file: null
+    status: draft   # FILED 2026-08-03 at the sprint-67 retro, from STORY-200's quality review
+                    # MAJOR-1 -- the sprint's headline finding.
+                    # WHAT HAPPENED: zone-rules.md marked ZR-6's adjudication row `ENFORCED-BY
+                    # <a named test>` and said "only this one, now-fixed instance is pinned". The
+                    # quality reviewer reverted the ENTIRE ZR-6 fix (port back to `action: str`,
+                    # fake back to `str`, adapter back to `if action == "approved":`) and the suite
+                    # stayed at 696 passed, IDENTICAL TO HEAD. Nothing detected a ZR-6 regression.
+                    # Independently re-derived by the orchestrator in an extracted copy with import
+                    # provenance confirmed: 696 passed. The claim was false.
+                    # WHY A STORY AND NOT AN AMENDMENT: the rule ALREADY EXISTED and was not read.
+                    # zone-rules.md:721-724 defines ENFORCED-BY as requiring a guard "shown RED --
+                    # never merely 'is green'", twelve lines above the row that violated it; ZR-3
+                    # and ZR-7 both record their red demonstrations. Under A15 §2, a rule that
+                    # existed and went unfollowed must be RELOCATED to a rung that holds, never
+                    # restated more emphatically. Per A14's scope guard, substantial new code is a
+                    # story rather than a mid-sprint ladder edit.
+                    # SHAPE (refinement to settle, expect 2-3): a test over zone-rules.md's
+                    # adjudication table asserting that every row claiming ENFORCED-BY names a guard
+                    # that (a) EXISTS as a real test id, and (b) has a recorded red demonstration.
+                    # The hard part is (b) and it is where refinement should spend its time -- "has
+                    # been shown RED" is a historical fact about a mutation, not a property of the
+                    # file, so the table probably needs a machine-readable evidence field before any
+                    # test can check it. Do NOT let that become a reason to check only (a): a row
+                    # naming a real test that pins the WRONG THING is exactly what happened here.
+                    # KEEP IT PROJECT-GENERIC-ADJACENT: the guard catalogue is this project's, so
+                    # this belongs in backend/tests/, NOT in the yourteam skill (2026-07-13 rule).
+    points: null
+    priority: 65
+    type: chore
+    sprint: null
