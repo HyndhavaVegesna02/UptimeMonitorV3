@@ -412,12 +412,19 @@ governs how much these codes may be trusted.
   `._delegate` printed as `LoggingPublisher` (`isinstance(..., LoggingPublisher)`
   → `True`). `test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`
   and the disjointness tests cited above still pass unchanged. Also confirmed via
-  the two-sided AC4 mutation proof (renaming `CONFIG_DIR_VAR`'s value both at the
-  pre-STORY-202 commit and at HEAD): pre-fix, the harness and `settings.py` were
-  shown to DISAGREE on the injected key name — the harness's fixed `config/demo`
-  value silently failed to reach `load_settings()`, which fell back to the
-  `config/apps` default (the live-page-selecting default) — while at HEAD, after
-  the same rename, they agree, because both now read the one shared symbol.
+  the two-sided AC4 mutation proof — a KEY-NAME mismatch (which env-var NAME is
+  used as the `os.environ`/child-env dict key), never a stored config VALUE
+  mismatch: at the pre-STORY-202 commit `6f872c3`, `CONFIG_DIR_VAR` did not yet
+  exist as a constant — the literal `"CONFIG_DIR"` lived directly inside
+  `load_settings()`'s function body, and THAT literal is what was renamed there
+  (to `"CONFIG_DIR_X"`), leaving `env_matrix.py`'s own, separately-hardcoded
+  `"CONFIG_DIR"` literal untouched; at HEAD, the same rename is applied once, to
+  the now-existing `CONFIG_DIR_VAR` constant's value, and both `env_matrix.py`
+  and `settings.py` follow it because they read the one shared symbol. Result:
+  pre-fix, the harness and `settings.py` DISAGREE on the injected key name — the
+  harness's fixed `config/demo` value silently fails to reach `load_settings()`,
+  which falls back to the `config/apps` default (the live-page-selecting
+  default) — while at HEAD, after the identical mutation, they agree.
   verified_sha -> `3c0cdeb`.
 - sprint-63 (STORY-176, part 2a): the scenario player (`scenario.py`), the demo fleet
   (`config/demo/`, 13 components / 41 signals / 4 locations across three distinct-`app.id` files),
