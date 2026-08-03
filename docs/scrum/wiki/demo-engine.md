@@ -384,6 +384,19 @@ governs how much these codes may be trusted.
 
 ## History
 
+- sprint-67 (STORY-202): RE-VERIFIED, no content change. `tools/demo_loop_gate/harness.py`
+  and `tools/demo_loop_gate/env_matrix.py` changed (both now import
+  `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_*_VAR`/`STATUSPAGE_*_VAR` from
+  `backend/src/composition/settings.py` instead of re-declaring the env-var key
+  NAMES — see [[zone-rules]] ZR-3), but the publish guard MECHANISM this article
+  documents (`Config.statuspage_mapping()` empty for `config/demo`,
+  `build_publisher` falling through to `LoggingPublisher`, `publish_helper.py:211`)
+  is behaviour-identical: re-verified empirically (not just reasoned) — `load_config(Path("config/demo")).statuspage_mapping()`
+  still returns `{}`, and `build_publisher(...)` with real-looking credentials
+  present still yields a `StatusWritebackPublisher` wrapping a `LoggingPublisher`.
+  `test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`
+  and the disjointness tests cited above still pass unchanged. verified_sha ->
+  `1dc1c73`.
 - sprint-63 (STORY-176, part 2a): the scenario player (`scenario.py`), the demo fleet
   (`config/demo/`, 13 components / 41 signals / 4 locations across three distinct-`app.id` files),
   the scenarios (`config/demo/scenarios/`), and the config-only publish guard

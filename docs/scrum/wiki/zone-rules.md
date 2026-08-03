@@ -1,6 +1,6 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
 verified_sha: fe8df72
 verified_sprint: sprint-67
 status: verified
@@ -267,18 +267,33 @@ where a zone-wide regression would be caught.
   `PROVISIONAL_STATUS_MAPPING` from `backend/src/adapters/inbound/dynatrace/health_mapping.py:35`,
   rather than re-declaring the `("1", "UNHEALTHY")` / `("2", "DEGRADED")` pairs a
   second time.
-- **A genuine, adjudicated violation (not merely illustrative).**
-  `tools/demo_loop_gate/harness.py:746-750` hardcodes the literal table-name values
-  `"uptime-observations"` (line 747) and `"uptime-control"` (line 750) a second time —
-  duplicating `backend/src/composition/settings.py:21-22`'s
+- **A genuine, adjudicated violation (not merely illustrative). STORY-202 (sprint-67)
+  fixed the SEVEN env-var-NAME collisions this rule originally found in this same
+  file; this VALUE-shaped pair is the one it deliberately left, filed to STORY-203.**
+  `tools/demo_loop_gate/harness.py:753-757` (line numbers as of `1dc1c73`,
+  STORY-202's own edits having displaced this pre-existing collision without
+  retiring it — re-keyed, not removed, per `test_zr3_duplicate_declarations.py`'s
+  `_ADJUDICATED`) hardcodes the literal table-name values `"uptime-observations"`
+  (line 754) and `"uptime-control"` (line 757) a second time — duplicating
+  `backend/src/composition/settings.py:21-22`'s
   `Settings.dynamo_observations_table`/`dynamo_control_table` defaults — even though
   `tools/demo_loop_gate/harness.py:61` already imports `src.composition.config` (a
   SIBLING composition module) for an unrelated reason. This is exactly why "no import
   edge between the declaring modules" is the WRONG exemption criterion: an import edge
   to a DIFFERENT symbol in the same zone does not mean the colliding value was
   actually obtained from `src` — it would have falsely CLEARED a real duplicate. This
-  is a genuine ZR-3 finding, left for STORY-196 to report (not fixed here — C1: nothing
-  is fixed inline in 194/195/196).
+  is a genuine ZR-3 finding, now filed solely to STORY-203 (not fixed here — C1:
+  nothing is fixed inline in 194/195/196).
+- **A second compliant citation, added by the STORY-202 fix.**
+  `tools/demo_loop_gate/env_matrix.py:17-25` and
+  `tools/demo_loop_gate/harness.py:62-67` both import
+  `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_OBSERVATIONS_TABLE_VAR`/
+  `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
+  `STATUSPAGE_API_KEY_VAR` from `backend/src/composition/settings.py` and use them
+  as their env-dict keys, rather than re-declaring the seven env-var NAMES a second
+  time — the same reuse-not-rederive shape as the `assumed_failure_codes.py`
+  citation above, closing the collision this rule's Coverage verdict's own
+  measurement (below) found before STORY-202 landed.
 - **Measurement pinning the scope (re-run this story, at HEAD):** a WIDE reading —
   every scalar `ast.Constant` value (`str`/`int`/`float`/`bool`/`None`) anywhere under
   `tools/` compared against anywhere under `backend/src/` — found **101 distinct
@@ -393,9 +408,9 @@ where a zone-wide regression would be caught.
   its OWN environment, so setting `CONFIG_DIR` in one process's env does not
   propagate to the other's. No import-linter contract and no single-process test can
   see across a process boundary; the harness's own env-setting discipline
-  (`tools/demo_loop_gate/harness.py:519` and `tools/demo_loop_gate/harness.py:580`,
-  setting `config_dir=` explicitly on BOTH child envs) is today's only guard against
-  the operational half, and it is
+  (`tools/demo_loop_gate/harness.py:525` and `tools/demo_loop_gate/harness.py:586`,
+  line numbers as of `0d39de7` post-STORY-202, setting `config_dir=` explicitly on
+  BOTH child envs) is today's only guard against the operational half, and it is
   procedural, not a code invariant.
 - **Coverage verdict.** `GUARDABLE`, but only PARTIALLY — for the code-level half
   only. A parity test that patches `CONFIG_DIR` to an arbitrary value and asserts
@@ -729,6 +744,25 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-67 (STORY-202): fixed the seven env-var-NAME collisions ZR-3's own
+  measurement found in `tools/demo_loop_gate/env_matrix.py` (5) and
+  `tools/demo_loop_gate/harness.py` (6, of which 2 — the Statuspage credential
+  keys — were the pre-existing adjudicated violations; the other 4 arose ONLY
+  because this story's own fix (promoting `settings.py`'s five function-body
+  literals to module constants) made them newly-declared shape-i values, per
+  `test_zr3_duplicate_declarations.py`'s own module docstring). Both files now
+  import `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_OBSERVATIONS_TABLE_VAR`/
+  `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
+  `STATUSPAGE_API_KEY_VAR` from `backend/src/composition/settings.py` rather than
+  re-declaring the key names. `_ADJUDICATED`'s two `env_matrix.py`
+  `MUST-IMPORT-FROM-SRC` entries (`:75`, `:77`) were REMOVED (fixed, not
+  displaced); five entries STORY-202's own edits displaced without retiring were
+  RE-KEYED with their reason text preserved (`env_matrix.py` `:39`->`:49`;
+  `harness.py` `:747`->`:754`, `:750`->`:757`, `:903`->`:910`, `:964`->`:971`).
+  Sweep count: 15 -> 13 (the two retired entries); the remaining 4
+  `MUST-IMPORT-FROM-SRC` entries are now filed solely to STORY-203 (VALUE
+  duplication, not key-NAME duplication — the distinction STORY-202's own scope
+  turned on). verified_sha -> `1dc1c73`.
 - sprint-67 (STORY-199 fix round, quality review): **FACT CORRECTION, not a bare
   re-stamp.** The ZR-7 finding paragraph stated the hot-path cost backwards: it read
   that `is_under_maintenance` "never scan[s] the rest of the GSI partition on the
