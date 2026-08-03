@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
-from boto3.dynamodb.conditions import Key
 from botocore.exceptions import ClientError
 
+from src.adapters.persistence.topology_keys import (
+    component_item_key,
+    component_query_condition,
+)
 from src.core.domain.component import Component, ComponentNotFoundError
 from src.core.domain.status import ComponentStatus
 from src.core.ports.component_repository import ComponentRepository
@@ -31,10 +34,7 @@ class DynamoComponentRepository(ComponentRepository):
         exclusive_start_key = None
 
         while True:
-            kwargs = {
-                "KeyConditionExpression": Key("pk").eq("TOPOLOGY")
-                & Key("sk").begins_with("COMPONENT#")
-            }
+            kwargs = {"KeyConditionExpression": component_query_condition()}
             if exclusive_start_key:
                 kwargs["ExclusiveStartKey"] = exclusive_start_key
             if self._limit is not None:
@@ -51,10 +51,7 @@ class DynamoComponentRepository(ComponentRepository):
 
     def get(self, component_id: str) -> Component | None:
         response = self._table.get_item(
-            Key={
-                "pk": "TOPOLOGY",
-                "sk": f"COMPONENT#{component_id}",
-            },
+            Key=component_item_key(component_id),
             ConsistentRead=True,
         )
         item = response.get("Item")
@@ -65,10 +62,7 @@ class DynamoComponentRepository(ComponentRepository):
     def set_status(self, component_id: str, status: ComponentStatus) -> None:
         try:
             self._table.update_item(
-                Key={
-                    "pk": "TOPOLOGY",
-                    "sk": f"COMPONENT#{component_id}",
-                },
+                Key=component_item_key(component_id),
                 UpdateExpression="SET #status = :status",
                 ExpressionAttributeNames={"#status": "status"},
                 ExpressionAttributeValues={":status": status.value},
