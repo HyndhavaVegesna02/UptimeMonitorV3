@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: 96f9048
+verified_sha: d9a3f95
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -788,6 +788,21 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-205 fix round): RE-VERIFIED, no content change. The sweep flagged
+  `backend/src/adapters/persistence/topology_keys.py`, `backend/tests/test_topology_keys.py`
+  and `backend/tests/test_zone_layout.py` (all `code_refs`) for four quality-review minor
+  fixes: renaming the meta-test `test_seed_dynamo_owns_no_hand_built_topology_key` (this
+  article never cited that name — it cites the real standing guard,
+  `test_seed_dynamo_uses_shared_topology_key_schema`, which is unchanged); sorting
+  `find_hand_built_topology_key_dicts`'s returned line numbers into source order (the
+  Fact above only claims the guard "fails, naming the offending line" — true either way);
+  making `TOPOLOGY_PK` private (`_TOPOLOGY_PK`, no consumer outside the module and its own
+  test); and documenting the guard's blind spots in its own docstring (this article's
+  Coverage verdict already says "narrow and per-instance... checks exactly this one file's
+  exact shape", which the docstring addition is consistent with, not a correction to).
+  Re-confirmed the guard still fires RED and names the offending lines after reintroducing
+  a hand-built `pk`/`sk` dict into `seed_dynamo.py`; file restored, `git diff` empty.
+  verified_sha -> d9a3f95.
 - sprint-68 (STORY-205, sha bump): re-stamped `verified_sha` to `96f9048`. The commit
   that landed the Finding 1 rewrite (`e8768e8`) also touched
   `tools/demo_loop_gate/failure_path_reality_gate.py` (a `code_ref`) in the SAME
