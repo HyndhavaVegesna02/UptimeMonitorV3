@@ -284,16 +284,28 @@ where a zone-wide regression would be caught.
   actually obtained from `src` — it would have falsely CLEARED a real duplicate. This
   is a genuine ZR-3 finding, now filed solely to STORY-203 (not fixed here — C1:
   nothing is fixed inline in 194/195/196).
-- **A second compliant citation, added by the STORY-202 fix.**
-  `tools/demo_loop_gate/env_matrix.py:17-25` and
-  `tools/demo_loop_gate/harness.py:62-67` both import
+- **A second compliant citation, added by the STORY-202 fix — the two files import
+  DIFFERENT SUBSETS of the seven, not both all seven.**
+  `tools/demo_loop_gate/env_matrix.py:17-25` imports all SEVEN —
   `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_OBSERVATIONS_TABLE_VAR`/
   `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
-  `STATUSPAGE_API_KEY_VAR` from `backend/src/composition/settings.py` and use them
-  as their env-dict keys, rather than re-declaring the seven env-var NAMES a second
-  time — the same reuse-not-rederive shape as the `assumed_failure_codes.py`
-  citation above, closing the collision this rule's Coverage verdict's own
-  measurement (below) found before STORY-202 landed.
+  `STATUSPAGE_API_KEY_VAR` — because it sets all seven as child-env dict keys.
+  `tools/demo_loop_gate/harness.py:62-67` imports only the FOUR it actually
+  re-types as a dict key at its six AC8 sites (`:540`, `:609`, `:736`, `:742`,
+  `:743`, `:744`) — `CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`,
+  `DYNAMO_ENDPOINT_URL_VAR`, `DYNAMO_OBSERVATIONS_TABLE_VAR` — because
+  `harness.py` never re-types `AWS_REGION`/`STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY`
+  as a literal dict key anywhere (verified: `grep -n
+  '"AWS_REGION"\|"STATUSPAGE_PAGE_ID"\|"STATUSPAGE_API_KEY"' tools/demo_loop_gate/harness.py`
+  returns zero hits), so there is nothing for it to import for those three. Both
+  files use whichever subset they need as their env-dict keys, rather than
+  re-declaring any of the seven env-var NAMES a second time — the same
+  reuse-not-rederive shape as the `assumed_failure_codes.py` citation above,
+  closing the collision this rule's Coverage verdict's own measurement (below)
+  found before STORY-202 landed. **Four is the complete, correct count for
+  `harness.py`, not an undercount** — an earlier draft of this sentence claimed
+  both files import all seven, which was false at HEAD; corrected in the
+  STORY-202 fix round.
 - **Measurement pinning the scope (re-run this story, at HEAD):** a WIDE reading —
   every scalar `ast.Constant` value (`str`/`int`/`float`/`bool`/`None`) anywhere under
   `tools/` compared against anywhere under `backend/src/` — found **101 distinct
@@ -744,17 +756,38 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-67 (STORY-202 fix round): **the false "both files import all seven" claim
+  corrected** (see the Fact above and the entry below) — measured at HEAD:
+  `env_matrix.py` imports all seven, `harness.py` imports only the four it
+  actually re-types as a dict key. Also landed AC4's two-sided mutation proof
+  (rename `CONFIG_DIR_VAR`'s VALUE both at the pre-STORY-202 commit `6f872c3`
+  and at HEAD, in an isolated `git worktree` for the pre-fix half, restored and
+  `git diff` confirmed empty for the post-fix half): pre-fix, `env_matrix.py`'s
+  hardcoded `"CONFIG_DIR"` literal and the renamed `settings.py` DISAGREE — the
+  harness's `config/demo` value never reaches `load_settings()`, which silently
+  falls back to the `config/apps` default; at HEAD, after the identical rename,
+  both sides agree because they read the one shared `CONFIG_DIR_VAR` symbol. And
+  re-derived AC9's collision count directly (`python tools/zr3_duplicate_sweep.py`
+  at HEAD): **13**, matching the 15-minus-the-two-retired-`env_matrix.py`-entries
+  arithmetic this rule's own Coverage verdict predicted — no discrepancy to
+  report this time (contrast the earlier "101, not 105" measurement above).
 - sprint-67 (STORY-202): fixed the seven env-var-NAME collisions ZR-3's own
   measurement found in `tools/demo_loop_gate/env_matrix.py` (5) and
   `tools/demo_loop_gate/harness.py` (6, of which 2 — the Statuspage credential
   keys — were the pre-existing adjudicated violations; the other 4 arose ONLY
   because this story's own fix (promoting `settings.py`'s five function-body
   literals to module constants) made them newly-declared shape-i values, per
-  `test_zr3_duplicate_declarations.py`'s own module docstring). Both files now
-  import `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_OBSERVATIONS_TABLE_VAR`/
-  `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
-  `STATUSPAGE_API_KEY_VAR` from `backend/src/composition/settings.py` rather than
-  re-declaring the key names. `_ADJUDICATED`'s two `env_matrix.py`
+  `test_zr3_duplicate_declarations.py`'s own module docstring). `env_matrix.py`
+  imports all SEVEN constants (it sets all seven as child-env dict keys);
+  `harness.py` imports only the FOUR it actually re-types as a dict key
+  (`CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR`) — it never re-types `AWS_REGION`/
+  `STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY` as a literal dict key anywhere, so
+  there is nothing there for it to import. Both from
+  `backend/src/composition/settings.py` rather than re-declaring the key
+  names. (An earlier draft of this History entry and the Fact above both said
+  "both files import all seven" — false at HEAD; corrected in the STORY-202
+  fix round.) `_ADJUDICATED`'s two `env_matrix.py`
   `MUST-IMPORT-FROM-SRC` entries (`:75`, `:77`) were REMOVED (fixed, not
   displaced); five entries STORY-202's own edits displaced without retiring were
   RE-KEYED with their reason text preserved (`env_matrix.py` `:39`->`:49`;
