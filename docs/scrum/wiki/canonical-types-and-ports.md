@@ -1,8 +1,8 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
-verified_sha: d469d2c
-verified_sprint: sprint-63
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/src/core/services/approval.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
+verified_sha: 013f344
+verified_sprint: sprint-67
 status: verified
 ---
 
@@ -149,8 +149,9 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `record_approval_event(proposal_id, *, actor, action: ProposalState, notes, occurred_at) -> None`
   — `action` is domain-typed `ProposalState` (STORY-200, sprint-67; was a bare `str` before, ZR-6),
   matching `resolve`'s `to_state: ProposalState` above it. Only `APPROVED`/`REJECTED` are ever legal;
-  the caller (`core/services/approval.py::ApprovalService._decide`) enforces that 2-member subset,
-  raising `InvalidApprovalActionError` (`core/domain/proposal.py::InvalidApprovalActionError`) for
+  the caller (`backend/src/core/services/approval.py::ApprovalService._decide`) enforces that
+  2-member subset, raising `InvalidApprovalActionError`
+  (`core/domain/proposal.py::InvalidApprovalActionError`) for
   any other value — `is_valid_transition` does not cover this, since it admits any non-OPEN target.
   `FakeProposalRepository.record_approval_event` (`backend/tests/fakes.py`) types `action` to match
   but only appends a dict — it does NOT denormalize `approved_actor`, so the adapter's identity-
@@ -290,3 +291,13 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   the `InvalidApprovalActionError` guard and the fake's non-denormalizing-so-unobservable-branch note
   (both new claims). `ProposalState`/`StatusProposal` themselves are unchanged; ZR-6's fix is scoped
   to this one port method. verified_sha -> d469d2c.
+- sprint-67 (STORY-200 fix round, quality review): **MAJOR — the new `_decide` citation used the
+  abbreviated `core/services/approval.py` form, and `backend/src/core/services/approval.py` was not
+  in this article's `code_refs`**, so the fact-checker's citation resolver silently skipped it (it
+  only resolves paths from the repo root) and no future edit to that frequently-touched file would
+  ever flag this article stale. Corrected the citation to the full `backend/src/...` path and added
+  the file to `code_refs`. Also bumped `verified_sprint` from the stale `sprint-63` left over from an
+  earlier partial re-stamp to `sprint-67`, matching `verified_sha`. **Known pre-existing instance of
+  the same abbreviated-path pattern, left unfixed as out of this round's scope and flagged as a
+  candidate:** line 99's `core/services/approval.py` re-exports... citation has the identical
+  problem and predates STORY-200. verified_sha -> 013f344.
