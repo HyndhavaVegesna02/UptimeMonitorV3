@@ -3,7 +3,7 @@ id: STORY-215
 title: Close the remaining env-var-NAME drift — the two DYNATRACE_* names, plus the file that guards the publish guard
 type: defect
 points: 3
-status: draft
+status: ready
 filed: 2026-08-03
 refined: 2026-08-03
 sprint: 68

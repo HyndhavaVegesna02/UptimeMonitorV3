@@ -3,7 +3,7 @@ id: STORY-204
 title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
 type: chore
 points: 2
-status: draft
+status: ready
 filed: 2026-07-31
 refined: 2026-08-03
 sprint: 68

@@ -2271,7 +2271,7 @@ stories:
   - id: STORY-203
     title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
-    status: draft   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
+    status: ready   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # NONE is a live defect today -- every value currently agrees. Each is a DRIFT
                     # risk the next person touching the backend/src/ side has no way to learn about
@@ -2288,11 +2288,11 @@ stories:
     points: 2
     priority: 74
     type: chore
-    sprint: null
+    sprint: 68
   - id: STORY-204
     title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
-    status: draft   # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
+    status: ready   # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
                     # deliberately NOT landed in zone-rules.md by the audit -- mirroring GAP-1's
                     # precedent, where promotion happened in a later fix round).
                     # composition/vendor_health.py:40-53 build_vendor_health_query duplicates the
@@ -2308,11 +2308,11 @@ stories:
     points: 2
     priority: 75
     type: chore
-    sprint: null
+    sprint: 68
   - id: STORY-205
     title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
-    status: draft   # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
+    status: ready   # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # *** ARGUABLY THE BEST BOUNDARY FINDING OF THE AUDIT SPRINT. *** It fell through
                     # the crack BETWEEN the two audit passes -- STORY-195 covered adapters/,
@@ -2344,7 +2344,7 @@ stories:
     points: 3
     priority: 76
     type: defect
-    sprint: null
+    sprint: 68
   - id: STORY-206
     title: Land ZR-1's guard — an import-linter contract forbidding inbound adapters from importing repository ports
     file: docs/scrum/stories/STORY-206-land-zr1-inbound-adapter-port-contract.md
@@ -2605,7 +2605,7 @@ stories:
   - id: STORY-215
     title: Close the remaining env-var-NAME drift - the two DYNATRACE_* names, plus the file that guards the publish guard
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
-    status: draft   # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
+    status: ready   # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
                     # env-var-NAME collisions and deliberately left a bounded remainder; this is
                     # that remainder, gathered in one place so it is not rediscovered piecemeal.
                     # THREE SITES, and the third was found by BOTH reviewers independently:
@@ -2634,7 +2634,7 @@ stories:
     points: 3
     priority: 70
     type: defect
-    sprint: null
+    sprint: 68
 
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md — a row may not claim a guard that does not exist

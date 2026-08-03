@@ -1,13 +1,24 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 68
-status: planning   # none | planning | active | review | closed | aborted
-                   # PROPOSED 2026-08-03, NOT YET LOCKED. Awaiting PO approval of:
-                   #   1. the sprint as scoped (10 points, five stories, in-process)
-                   #   2. the subagent ceremony (sprint 67's ruling was per-sprint; it does not
-                   #      carry over on its own -- see ceremony_note)
-                   #   3. the two-sprint audit-closure map (see closure_map)
-                   # On approval: flip the five stories to `ready` in backlog.yaml, cut branch
-                   # `sprint-68` off `sprint-67`, tag `sprint-68-start`, set status: active.
+status: active     # none | planning | active | review | closed | aborted
+                   # LOCKED 2026-08-03 at a270c29. SCOPE IS FROZEN -- new PO requests go to the
+                   # backlog, not into this sprint. Tooling is frozen too, EXCEPT the enforcement
+                   # ladder (agreement A14).
+                   # THREE PO RULINGS AT PLANNING (2026-08-03):
+                   #   1. SPRINT APPROVED AS SCOPED -- 10 points, four stories, in-process. The PO
+                   #      did not take the drop order, so it applies only if the SESSION runs short,
+                   #      never as a standing trim.
+                   #   2. *** SUBAGENT DISPATCH IS NOW A STANDING AUTHORISATION, NOT A PER-SPRINT
+                   #      RULING. *** PO, verbatim: "from now on no need to ask me for sub agents
+                   #      dispatchment, you can dispatch them as per yourteam." This SUPERSEDES the
+                   #      per-sprint pattern sprints 62-67 used. Dispatch per the skill's own
+                   #      scaling rule: 1-2 points -> implementer + gates; 3+ points -> implementer,
+                   #      then yt-spec-reviewer || yt-quality-reviewer CONCURRENTLY. Do not ask
+                   #      again at future planning; record the dispatches, not the permission.
+                   #   3. THE TWO-SPRINT CLOSURE MAP IS APPROVED (see closure_map) -- sprint 69
+                   #      takes 206/207/208/209/216, and STORY-214 stays out of the closure set.
+                   # PO asked whether any questions remained before locking; answer was NO. No
+                   # blocking ambiguity was carried into the sprint.
                    #
                    # SPRINT 67 IS CLOSED. 11/11 points, all four stories PO-accepted 2026-08-03;
                    # velocity recorded; retro run and its three items (D1, D2, A16) landed. Its
@@ -25,11 +36,17 @@ goal: >-
   MUST-IMPORT-FROM-SRC entries from FOUR to ZERO (measured at planning: 13 colliding pairs, 4 of
   them MUST-IMPORT-FROM-SRC; expected 9 after) and gives ZR-8 its first standing guard.
 mode: in-process
-branch: sprint-68  # TO BE CUT off sprint-67 at lock. Sprints 66 AND 67 STAY UNMERGED (standing
+branch: sprint-68  # CUT 2026-08-03 off sprint-67. Sprints 66 AND 67 STAY UNMERGED (standing
                    # "don't merge with main" directive, re-confirmed at the sprint-64 review).
                    # Nothing this sprint touches main either.
-start_tag: sprint-68-start   # to be created at lock
-start_commit: null           # to be filled at lock
+start_tag: sprint-68-start   # created at lock, points at a270c29
+start_commit: a270c29
+                   # NOTE ON THE TWO SHAs, so the baseline is not misread: the full 8/8 baseline
+                   # gate was measured at 5c4010f. a270c29 is the baseline-recording commit on top
+                   # of it, touching ONLY .scrum/sprint-current.yaml and one story file --
+                   # `git diff 5c4010f..a270c29` touches NO code under backend/, frontend/, tools/,
+                   # config/ or infra/, so the gate result carries forward unchanged. Sprint diffs
+                   # are measured from a270c29.
 plan: docs/scrum/sprints/2026-08-03-sprint-68/plan.md
 
 closure_map: >-
@@ -153,7 +170,7 @@ stories:
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     points: 3
     order: 1
-    status: proposed
+    status: todo
     why_here: >-
       HIGHEST BLAST RADIUS, RUNS EARLY. ZR-8 Finding 1 -- the audit's biggest single miss, found only
       in STORY-196's quality-review fix round because it fell through the crack BETWEEN the two audit
@@ -170,7 +187,7 @@ stories:
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     points: 2
     order: 2
-    status: proposed
+    status: todo
     why_here: >-
       MUST PRECEDE STORY-203 (see plan_verification finding 1). ZR-8 Finding 2: vendor_health.py
       builds DQL without query.py's _DQL_BREAKING_CHARS validation, and the probe it feeds runs
@@ -184,7 +201,7 @@ stories:
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     points: 2
     order: 3
-    status: proposed
+    status: todo
     why_here: >-
       Four MUST-IMPORT-FROM-SRC entries, all MINOR, NONE a live defect today -- every value
       currently agrees; each is a drift risk the next person editing the backend/src/ side cannot
@@ -203,7 +220,7 @@ stories:
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     points: 3
     order: 4
-    status: proposed
+    status: todo
     why_here: >-
       RUNS LAST; ENABLER FOR SPRINT 69's STORY-209. FOUR sites, not the two its old title named:
       (1) env_matrix.py:81,83 and (2) harness.py:614 re-type the DYNATRACE_* pair, whose DECLARING
@@ -253,15 +270,21 @@ sizing_note: >-
   only one describing a defect that has already cost real debugging time.
 
 ceremony_note: >-
-  SUBAGENTS ARE NOT YET AUTHORISED FOR THIS SPRINT. Sprint 67's ruling ("yt-implementer per story,
-  then yt-spec-reviewer || yt-quality-reviewer concurrently; NO STORY MAY REACH REVIEW UNREVIEWED")
-  was recorded as a per-sprint decision and does not carry over on its own.
-  THE CASE FOR RE-CONFIRMING IT: all four sprint-67 stories PASSED spec review and FAILED quality
-  review -- four for four, the fourth consecutive sprint the independent pass caught something real.
-  Eleven blocking findings; TEN were prose, not code. This sprint is the same shape: small diffs
-  whose defects will live in the accompanying catalogue prose (which is why C3 exists). Re-confirming
-  also covers dispatching a real yt-plan-verifier before lock, in place of the orchestrator pass
-  recorded above.
+  SUBAGENT DISPATCH IS A STANDING PO AUTHORISATION AS OF 2026-08-03 -- it is no longer asked for at
+  planning, here or in any future sprint. Dispatch per the skill's own scaling rule.
+  EVERY STORY IN THIS SPRINT IS 2 POINTS OR MORE, so every one gets the full ceremony:
+  yt-implementer, then yt-spec-reviewer || yt-quality-reviewer CONCURRENTLY (they are independent
+  and must not be serialised), then the mechanical DoD gate, then the reality gate. NO STORY REACHES
+  REVIEW UNREVIEWED.
+  WHY THIS MATTERS MORE THAN USUAL HERE: all four sprint-67 stories PASSED spec review and FAILED
+  quality review -- four for four, the fourth consecutive sprint the independent pass caught
+  something real. Eleven blocking findings; TEN were PROSE, not code -- documents made false by the
+  very commit that wrote them. This sprint is the same shape: small diffs whose defects will live in
+  the accompanying catalogue prose. That is what constraint C3 exists for, and it is what the
+  quality reviewer is being asked to look at hardest.
+  BRIEFS CARRY: the story file's AC verbatim, this sprint's plan.md steps, the commit range, the
+  constraints C1-C6, and the RELEVANT VERIFIED wiki Facts (reverse blast radius) -- never session
+  history. zone-rules.md is `status: verified` at 013f344 and every story in this sprint touches it.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:

@@ -3,7 +3,7 @@ id: STORY-205
 title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
 type: defect
 points: 3
-status: draft
+status: ready
 filed: 2026-07-31
 refined: 2026-08-03
 sprint: 68

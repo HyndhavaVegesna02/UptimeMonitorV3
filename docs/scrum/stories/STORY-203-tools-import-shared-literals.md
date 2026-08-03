@@ -3,7 +3,7 @@ id: STORY-203
 title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
 type: chore
 points: 2
-status: draft
+status: ready
 filed: 2026-07-31
 refined: 2026-08-03
 sprint: 68
