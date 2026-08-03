@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
-verified_sha: a5a2d68
+verified_sha: d9a3f95
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
@@ -80,6 +80,15 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-68 (STORY-205 fix round): RE-VERIFIED, no content change. The sweep flagged
+  `topology_keys.py` and `test_topology_keys.py` (both `code_refs`) for the quality-review
+  fix round's rename of the public `TOPOLOGY_PK` constant to `_TOPOLOGY_PK` (no consumer
+  outside the module and its own unit test, confirmed by a whole-repo grep both before and
+  after) and the sort fix + meta-test rename in `backend/tests/test_zone_layout.py` (also a
+  `code_ref`). This article's Facts describe the key-schema module and its consumers at the
+  function level (`app_item_key`, `component_item_key`, `signal_item_key`,
+  `component_query_condition`, `signal_query_condition`) and never name the `TOPOLOGY_PK`
+  constant itself, so no Fact is wrong. verified_sha -> d9a3f95.
 - sprint-68 (STORY-205): landed the ZR-8 Finding 1 fix (see [[zone-rules]]). Added
   `topology_keys.py` to `code_refs` and its Fact above: the single declaration of the
   `TOPOLOGY` key schema in both consumed shapes, imported by `DynamoComponentRepository`,
