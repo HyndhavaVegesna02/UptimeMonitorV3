@@ -1,8 +1,8 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: b3e1767
-verified_sprint: sprint-65
+verified_sha: c815ebe
+verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
 # The key correction: the defect was never 'a lost batch' -- it was a PERMANENTLY STALLED SIGNAL,
@@ -170,18 +170,25 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   runs `check_vendor_id_health(config=..., executor=make_grail_executor(...))` (`run.py::main`) ONCE
   at startup, BEFORE `build_live_loop`/`run_periodic` are built. `check_vendor_id_health`
   (`vendor_health.py::check_vendor_id_health`) iterates every configured signal and runs a bounded
-  DQL count (`vendor_health.py::build_vendor_health_query` â€” a cheap `fetch dt.synthetic.events,
-  from:now()-2h | filter monitor.id == <native_id> | summarize count()` existence probe, distinct
-  from the ingest fetch in [[dynatrace-adapter]]) through the SAME injected `Executor` seam the pull
-  loop uses; a 0-row/0-count result (`vendor_health.py::_extract_count`) logs a PROMINENT WARNING
-  naming the `native_id` + `signal_key`, a healthy id logs only INFO. This is a **loud WARNING, NOT
-  fail-fast** (PO-decided, sprint-41): it must surface a configured-but-empty monitor id immediately
-  but must never block the live loop from starting. Each signal's probe is wrapped in
-  `try/except Exception` that logs a WARNING and `continue`s, so a probe error for one signal never
-  stops the others and never propagates to `main()` â€” the probe cannot take down the loop it protects.
-  It closes the Sprint 38 silent-no-data-pipeline gap (a monitor id recreated in Dynatrace, hotfix
-  `79bfbb3`; see the 2026-07-08 retro working agreement). Uses its own `make_grail_executor` instance
-  (a cheap closure, no network until invoked) so it never depends on `build_live_loop` having run.
+  DQL count (`adapters/inbound/dynatrace/query.py::build_vendor_health_dql` â€” a cheap
+  `fetch dt.synthetic.events, from:now()-2h | filter monitor.id == <native_id> | summarize count()`
+  existence probe, distinct from the ingest fetch in [[dynatrace-adapter]]; relocated into that
+  adapter module from `composition/vendor_health.py` at STORY-204, ZR-8 finding 2 â€” query-
+  construction logic lives in exactly one adapter) through the SAME injected `Executor` seam the
+  pull loop uses; a 0-row/0-count result (`vendor_health.py::_extract_count`) logs a PROMINENT
+  WARNING naming the `native_id` + `signal_key`, a healthy id logs only INFO. This is a **loud
+  WARNING, NOT fail-fast** (PO-decided, sprint-41) **for the EXECUTOR only**: each signal's
+  `executor(query)` call is wrapped in `try/except Exception` that logs a WARNING and `continue`s,
+  so an executor error for one signal never stops the others and never propagates to `main()` â€”
+  that probe cannot take down the loop it protects. It IS fail-fast for a misconfigured
+  `native_id`: `build_vendor_health_dql` raises `InvalidNativeIdError` for a DQL-breaking character
+  BEFORE the executor is ever called, and that call sits outside the try/except, so it DOES
+  propagate out of `check_vendor_id_health` and `main()` identically to the ingest path's
+  `build_dql_query` (STORY-204 AC1) â€” before STORY-204 this same builder validated nothing and
+  would have silently built a malformed query instead. It closes the Sprint 38
+  silent-no-data-pipeline gap (a monitor id recreated in Dynatrace, hotfix `79bfbb3`; see the
+  2026-07-08 retro working agreement). Uses its own `make_grail_executor` instance (a cheap
+  closure, no network until invoked) so it never depends on `build_live_loop` having run.
 - **STORY-048 sample-mode seam (temporary â€” see [[sample-mode]]):** `build_live_loop` step 2's
   `ingest_port` is now `composition/sample_mode.py::SampleModeIngest(delegate=IngestService(...),
   sample_mode_repo=PostgresSampleModeRepository(engine))` instead of a bare `IngestService` â€” a
@@ -331,3 +338,16 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   here, and the STORY-043 `.env`-loading Fact drops `DATABASE_URL` (retired) and corrects
   "production (Railway...)" to "production (AWS ECS Fargate...)" (STORY-089). No ordering, DoD
   command, or test behaviour changed. verified_sha -> b272c32.
+- sprint-68 (STORY-204): the vendor-id drift probe Fact rewritten. `build_vendor_health_query`
+  relocated from `composition/vendor_health.py` into
+  `backend/src/adapters/inbound/dynatrace/query.py` as `build_vendor_health_dql` (ZR-8 finding 2,
+  see [[zone-rules]]), sharing `query.py`'s `_reject_dql_breaking_native_id` with `build_dql_query`
+  instead of validating nothing. **This Fact's own "never propagates to `main()`" claim was only
+  ever true for the executor** — the query-BUILD call was always outside the
+  `try/except Exception` block, so it was vacuously true pre-fix only because the old builder never
+  raised anything; post-fix it CAN raise `InvalidNativeIdError` for a misconfigured `native_id`,
+  and that now correctly propagates, matching the ingest path (STORY-204 AC1). Corrected to state
+  both halves explicitly: NOT fail-fast for the executor, IS fail-fast for a misconfigured
+  `native_id`. `check_vendor_id_health`/`_extract_count` themselves, `run.py::main`'s call site, and
+  every other Fact in this section are unchanged — proven by the ordering/wiring tests in
+  `test_run_live_loop.py`/`test_pull_loop.py` passing unmodified. verified_sha -> c815ebe.

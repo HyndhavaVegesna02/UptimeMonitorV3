@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: 96f9048
+verified_sha: c815ebe
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -97,33 +97,37 @@ real recovery PUBLISH, all driven through the same harness and asserted from per
   only because that mirrors the real captured sample's own shape.
 
 ### The two query grammars (`query_grammar.py`, `store.py`)
-- `parse_query` (`query_grammar.py:69`) recognizes exactly the two DQL shapes production emits: the
-  ingest grammar from `build_dql_query` (`adapters/inbound/dynatrace/query.py:85-97`) and the
-  vendor-health `summarize count()` probe from `build_vendor_health_query`
-  (`composition/vendor_health.py:40-53`).
-- Anything else raises `UnrecognizedDqlQueryError` (`query_grammar.py:34`, raised at `:78` and
-  `:86`), which `server.py:99-101` turns into an HTTP **400**. This fail-loud path is not
+- `parse_query` (`query_grammar.py:71`) recognizes exactly the two DQL shapes production emits: the
+  ingest grammar from `build_dql_query` (`adapters/inbound/dynatrace/query.py:83-125`) and the
+  vendor-health `summarize count()` probe from `build_vendor_health_dql`
+  (`adapters/inbound/dynatrace/query.py:136-155`; relocated there from
+  `composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2 — query-construction logic
+  lives in exactly one adapter).
+- Anything else raises `UnrecognizedDqlQueryError` (`query_grammar.py:36`, raised at `:80` and
+  `:88`), which `server.py:99-101` turns into an HTTP **400**. This fail-loud path is not
   decoration: `grail_executor.py:97` returns `[]` on an unexpected envelope, so a regression from
   loud to silent would be indistinguishable from "no data" — the exact shape of the STORY-051
   ingest stall. STORY-176 adds a third grammar, which is what this guard is for.
 - **The watermark bound is parsed by the REAL production parser** — `parse_watermark_bound`
-  delegates to `_assembly.py::parse_ns_timestamp` (`query_grammar.py:26,66`), imported, never
+  delegates to `_assembly.py::parse_ns_timestamp` (`query_grammar.py:28,68`), imported, never
   reimplemented. Bound and row timestamps are therefore compared as `datetime`s, never as strings:
   a 6-digit-fraction bound sorts lexicographically BEFORE a 9-digit row at the same instant, which
-  reproduces the STORY-051 stall inside the engine if this is skipped (`query_grammar.py:54-64`).
+  reproduces the STORY-051 stall inside the engine if this is skipped (`query_grammar.py:56-66`).
 - Ingest filtering is three-clause — monitor id AND `event.type` AND the watermark lower bound —
-  and results are sorted by parsed timestamp (`store.py:56-68`).
-- The vendor-health answer is `[{"count()": count}]` (`store.py:80`), counted inside
-  `request_instant - VENDOR_HEALTH_WINDOW` (`store.py:73-79`). `VENDOR_HEALTH_WINDOW` is a
-  2-hour literal (`store.py:22`) that mirrors `_HEALTH_CHECK_WINDOW` (`vendor_health.py:37`) but is
-  deliberately NOT imported — the window is part of the wire contract the engine answers, not an
-  implementation detail borrowed from composition. **STORY-180 AC2** closed the divergence risk
-  this created: `test_vendor_health_window_matches_the_composition_health_check_window`
+  and results are sorted by parsed timestamp (`store.py:61-73`).
+- The vendor-health answer is `[{"count()": count}]` (`store.py:85`), counted inside
+  `request_instant - VENDOR_HEALTH_WINDOW` (`store.py:75-84`). `VENDOR_HEALTH_WINDOW` is a
+  2-hour literal (`store.py:24`) that mirrors `_HEALTH_CHECK_WINDOW`
+  (`adapters/inbound/dynatrace/query.py:133`; relocated there from
+  `composition/vendor_health.py:37` at STORY-204) but is deliberately NOT imported — the window is
+  part of the wire contract the engine answers, not an implementation detail borrowed from the
+  adapter that builds the query. **STORY-180 AC2** closed the divergence risk this created:
+  `test_vendor_health_window_matches_the_composition_health_check_window`
   (`test_vendor_health_query.py`) asserts the two are numerically equal (parsing
   `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape in the TEST only) and fails if a future change to the
-  composition constant is not mirrored here — the route decided at planning was this equality
+  adapter constant is not mirrored here — the route decided at planning was this equality
   test, not teaching the engine to parse the DQL `from:` clause (`parse_query` never reads it at
-  all: no `from:` regex exists, `query_grammar.py:28-31`, and `VendorHealthQuery` has no window
+  all: no `from:` regex exists, `query_grammar.py:30-33`, and `VendorHealthQuery` has no window
   field). `request_instant` defaults to the wall clock, but ONLY the vendor-health branch reads it
   — an ingest query never touches it at all (`store.py::handle_query`; pinned by
   `test_ingest_query_never_reads_the_wall_clock`, `test_query_grammar.py`, STORY-180 AC5/minor 7,
@@ -384,6 +388,23 @@ governs how much these codes may be trusted.
 
 ## History
 
+- sprint-68 (STORY-204): `build_vendor_health_query` relocated from `composition/vendor_health.py`
+  into `adapters/inbound/dynatrace/query.py` as `build_vendor_health_dql` (ZR-8 finding 2 — see
+  [[zone-rules]]), sharing a new `_reject_dql_breaking_native_id` validation helper with
+  `build_dql_query`. This engine's own behaviour and every Fact about IT are unchanged — it still
+  parses the identical DQL string shape the relocated builder emits (proven by the existing,
+  unmodified assertions in `test_vendor_health_query.py` and `test_server.py`, only their imports
+  repointed) — but the relocation moved several cited `file:line`s this article pins: the two query
+  grammars section (`query_grammar.py`'s citations for both grammars, `store.py:18-24`'s
+  `VENDOR_HEALTH_WINDOW` mirror comment, whose own line moved 22→24 because its comment grew by two
+  lines), and `test_scenario.py`'s trailing-window comment. `tools/demo_loop_gate/fleet_coverage.py`
+  and `backfill_reality_gate.py` (both `code_refs`) had their own trailing-2h-window citations
+  repointed the same way; `composition/vendor_health.py`'s own body shifted (its docstring grew),
+  so the "healthy branch logs one INFO line" / "contradicts its docstring" citations moved too
+  (`:126-133`→`:124-132`, `:86`→`:77`). All repointed to the new file, verified against the real
+  code, not guessed. verified_sha -> c815ebe (this article's content commit is the direct child of
+  that sha; see the self-reference note elsewhere in this History for why the child's own sha
+  cannot be recorded here).
 - sprint-68 (STORY-205): RE-VERIFIED, no content change. `tools/demo_loop_gate/
   failure_path_reality_gate.py` (a `code_ref`) had its `_component_repo` docstring's
   key-schema citation repointed from `dynamo_component_repository.py:36-41` (already

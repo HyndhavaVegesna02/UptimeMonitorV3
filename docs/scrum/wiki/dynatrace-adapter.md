@@ -1,8 +1,8 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: b3e1767
-verified_sprint: sprint-65
+verified_sha: c815ebe
+verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-177/190 fix round). Facts REWRITTEN, not re-stamped:
 # map_synthetic_status is now a THREE-step resolution (healthy OR-rule -> exact provisional tuple
@@ -60,6 +60,15 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `Executor = Callable[[str], list[dict]]` (`query.py::Executor`) is the injected live-DQL seam.
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
+- **`build_vendor_health_dql(*, native_id)` (`query.py::build_vendor_health_dql`, relocated here
+  from `composition/vendor_health.py` at STORY-204, ZR-8 finding 2) is the OTHER DQL shape this
+  module builds** — a cheap, bounded-window (`query.py::_HEALTH_CHECK_WINDOW`, `"2h"`) existence
+  probe scoped to one monitor id, unrelated to the watermark/overlap ingest fetch above (STORY-070,
+  see [[demo-engine]] and [[zone-rules]] for the probe's own use and the ZR-8 finding it fixed).
+  Shares `query.py::_reject_dql_breaking_native_id` with `build_dql_query` above (the extracted
+  validation both builders now call), so a `native_id` misconfiguration raises the same
+  `InvalidNativeIdError` on both paths — before STORY-204, `composition/vendor_health.py`'s own
+  copy of this builder validated nothing.
 
 ### Real Grail DQL executor (`grail_executor.py`, STORY-016 → reconciled STORY-016b)
 - `make_grail_executor(*, env_url, api_token, http_post=httpx.post, http_get=httpx.get,
@@ -276,3 +285,14 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   system; the Fact above now names the real mechanism, the `EVT#.../DEDUPE` marker item. The
   claim itself (the two rows sharing `event.id` never collide) is unchanged. verified_sha ->
   b272c32.
+- sprint-68 (STORY-204): `query.py` gained a SECOND DQL builder, `build_vendor_health_dql`,
+  relocated here from `composition/vendor_health.py` (ZR-8 finding 2 — see [[zone-rules]]) so
+  query-construction logic lives in exactly one adapter. `build_dql_query`'s own inline
+  breaking-character check was extracted into a shared `_reject_dql_breaking_native_id` helper both
+  builders now call — its behaviour, error type and error message are unchanged (proven by its
+  existing tests passing without modification; `_DQL_BREAKING_CHARS`/`InvalidNativeIdError` are
+  untouched). Added a new Fact for the relocated builder and its own two new tests
+  (`test_build_vendor_health_dql_scopes_to_native_id_and_bounded_window`,
+  `test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char`) in
+  `test_dynatrace_adapter.py`, next to `build_dql_query`'s. No other Fact in this article changed.
+  verified_sha -> c815ebe.
