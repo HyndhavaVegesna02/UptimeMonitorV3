@@ -1,7 +1,7 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
-verified_sha: fe8df72
+verified_sha: d469d2c
 verified_sprint: sprint-67
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
@@ -36,6 +36,23 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   - `DynamoMaintenanceRepository.is_under_maintenance` also paginates, but as a BOOLEAN short-circuit, not a collect-all loop: it returns `True` on the first page whose post-filter `Items` is non-empty, and returns `False` only once `LastEvaluatedKey` is absent — it must never terminate on an empty-after-filter page, because the GSI `KeyConditionExpression` matches every window ever created and the `component_id`/`ends_at` `FilterExpression` is applied by DynamoDB AFTER the page read, so a component's only matching window can sit several empty-after-filter pages in. Pinned by `test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_forced_page_size` (`backend/tests/test_dynamo_maintenance_repository.py`), which seeds five other-component windows ahead of the one real match with `_limit=1` and asserts `True`.
   - `DynamoProposalRepository.list_open` (`backend/src/adapters/persistence/dynamo_proposal_repository.py`) has the same collect-all loop, proven by `test_dynamo_proposal_repository_list_open_paginates` (`backend/tests/test_dynamo_proposal_repository.py`); both files are also `code_refs` here.
   - The standing guard for all five is ZR-7's pagination test in [[zone-rules]]; `DynamoPublicationRepository.list_recent`'s `Limit=limit` remains the one PERMANENT exemption there because its port promises "up to `limit`", a stated bound, not completeness.
+- **`DynamoProposalRepository.record_approval_event` (STORY-200, ZR-6 fix — see [[zone-rules]]).**
+  `action` is `ProposalState`, matching the port. The branch that denormalizes `approved_actor` onto
+  the proposal's META item compares by ENUM IDENTITY (`action is ProposalState.APPROVED`), not a
+  string literal. `.value` is used EXPLICITLY at both write sites — the `sk`
+  (`f"EVENT#{occurred_at_str}#{action.value}"`) and the `"action"` item attribute — because
+  `ProposalState` is `class ProposalState(str, Enum)`, a str MIXIN and not `StrEnum`, so on Python
+  3.13 an f-string over the bare member renders `"ProposalState.APPROVED"`, not `"approved"`; using
+  the bare member at the `sk` site silently corrupts every approval event's sort key (reproduced as
+  an actual failing `get_item` lookup before the fix, and again via the AC7 mutation below — not
+  reasoned about only). Proven ONLY against real DynamoDB Local by
+  `test_dynamo_proposal_repository_record_approval_event`
+  (`backend/tests/test_dynamo_proposal_repository.py`), which asserts BOTH halves: `approved_actor`
+  IS written on approve and is NOT written on reject. `FakeProposalRepository.record_approval_event`
+  (`backend/tests/fakes.py`) only appends a dict — it does not implement this denormalization at
+  all — so this branch is unobservable through the fake; a fake-based test cannot substitute for the
+  real-DynamoDB one. Mutation-proven: changing `ProposalState.APPROVED`'s VALUE (not its name) trips
+  that same test (the sort key it looks up no longer exists); restored, `git diff` empty.
 - `DynamoRejectedObservationRepository` implements the append-only quarantine sink under the `REJECTED#<signal_key|UNKNOWN>` partition with distinct uuid-suffixed SKs, converting payload floats to Decimal to satisfy boto3 serialization.
 - `seed_topology_dynamo` (`src/composition/seed_dynamo.py`) idempotently upserts Git-configured apps, components, and signals into the `TOPOLOGY` partition. Uses an update expression with `if_not_exists` to preserve existing component status on re-seed.
 - Contract parity is verified in `backend/tests/test_dynamo_adapters.py`, `backend/tests/test_dynamo_publication_repository.py`, `backend/tests/test_dynamo_maintenance_repository.py`, `backend/tests/test_dynamo_rejected_observation_repository.py`, and `backend/tests/test_dynamo_seed.py` against a real local DynamoDB instance.
@@ -48,6 +65,16 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-67 (STORY-200): landed the ZR-6 fix (see [[zone-rules]]). Added the
+  `DynamoProposalRepository.record_approval_event` Fact above: enum-identity comparison, explicit
+  `.value` at both write sites, the real-DynamoDB proving test (`fakes.py` cannot observe this
+  branch), and the AC7 mutation proof. `test_dynamo_proposal_repository.py`'s
+  `test_dynamo_proposal_repository_orphan_event_guard` also needed updating (two `action="rejected"`
+  call sites, not named by the story's own AC8 list, which named only the two `"approved"` sites) —
+  the `.value` access on a bare `str` raises `AttributeError` rather than the expected `ClientError`,
+  so every real-adapter caller of this method now passes `ProposalState`, not just the two AC8 named.
+  `test_dynamo_publication_repository.py`'s author-parity test likewise updated. verified_sha ->
+  d469d2c.
 - sprint-67 (STORY-199 fix round, quality review): fixed a self-contradiction — the previous text
   said the proposal-repo files' "own code_refs live in [[zone-rules]], not here", while commit
   `15ea91c` had already added both to THIS article's `code_refs`. No Fact changed; the sentence now
