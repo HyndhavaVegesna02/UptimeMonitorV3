@@ -57,19 +57,52 @@ docstring, and STORY-203 AC4 adjudicates that exact citation. This story relocat
 - [ ] **AC2 — RED first (sprint constraint C2).** That test is written and **shown failing** against
       pre-fix HEAD (the probe returns a malformed string instead of raising). Record the failing
       output, not a description of it.
-- [ ] **AC3 — one declaration.** After the change, `grep -rn "_DQL_BREAKING_CHARS" backend/` returns
-      hits from exactly one module. `build_dql_query`'s behaviour, error type and error message are
-      unchanged — proven by its existing tests passing **without modification**.
+- [ ] **AC3 — one declaration (a REGRESSION CHECK, not evidence).** After the change,
+      `grep -rn "_DQL_BREAKING_CHARS" backend/` returns hits from exactly one module.
+      *Flagged vacuous at plan verification: this already passes at HEAD — `query.py:38` and `:79`
+      are the only hits, as this story's own Context says. It guards against the fix introducing a
+      second declaration; it is not proof the story did anything.* `build_dql_query`'s behaviour,
+      error type and error message are unchanged — proven by its **ingest** tests passing without
+      modification. **Say plainly which OTHER tests must change:** `test_server.py:27`,
+      `test_vendor_health_query.py:23-26` and `test_vendor_health.py:21` import
+      `build_vendor_health_query`/`_HEALTH_CHECK_WINDOW` from `src.composition.vendor_health` and
+      **will** need updating. Leaving a re-export shim in `vendor_health.py` so those imports keep
+      working is **not** an acceptable way to satisfy AC4 — the symbol moves, callers follow.
 - [ ] **AC4 — the builder moved, not just the validator.** `composition/vendor_health.py` contains no
       DQL string construction: no `fetch `, `| filter `, or `| summarize ` literal. Assert it in a
       test; do not eyeball it.
-- [ ] **AC5 — the boundary still holds.** The import-boundary DoD command exits 0 with composition
-      importing `adapters.inbound.dynatrace.query` (legal — composition is the wiring zone). Confirm
-      by running it; do not reason about it.
-- [ ] **AC6 — the citation that moved is repointed.** `tools/demo_engine/store.py`'s docstring
-      reference to `composition/vendor_health.py:37` is updated to the constant's new home in the
-      SAME commit. A stale `file:line` written by the commit that invalidated it is exactly the
-      defect class behind ten of sprint 67's eleven blocking findings.
+- [ ] **AC5 — the boundary still holds (a REGRESSION CHECK, not evidence).** The import-boundary DoD
+      command exits 0. *Flagged vacuous at plan verification: composition already imports
+      `src.adapters.inbound.dynatrace.query` (`vendor_health.py:28`, `pull_loop.py:46`) and the
+      command is green at baseline.* Run it anyway; do not reason about it.
+- [ ] **AC6 — EVERY citation that moved is repointed, from a re-derived set — not just `store.py`.**
+      Grep for references to the relocated symbols and fix all of them in the SAME commit. The set
+      found at plan verification, to be re-derived not copied: `tools/demo_engine/store.py:18`;
+      `tools/demo_engine/query_grammar.py:10-11` and `:7` (the latter cites `query.py:85-97`, itself
+      already imprecise — the clause block is `:87-101`, and this story inserts code above it);
+      `backend/tests/demo_engine/test_vendor_health_query.py:3,8`;
+      `tools/demo_loop_gate/fleet_coverage.py:8,24`;
+      `tools/demo_loop_gate/backfill_reality_gate.py:9,11`;
+      `backend/tests/demo_loop_gate/test_backfill_discrimination.py:4,6`;
+      `test_fleet_coverage.py:8`; `docs/scrum/wiki/demo-engine.md:103,118`.
+      A stale `file:line` written by the commit that invalidated it is exactly the defect class
+      behind ten of sprint 67's eleven blocking findings.
+- [ ] **AC6b — do not break the ZR-3 guard from inside this story.** `_ADJUDICATED` holds
+      `("tools/demo_engine/store.py", 22)`. This story rewrites `store.py`'s `:18-21` comment block —
+      its justification ("borrowed from composition") stops being true — and a one-line change moves
+      `VENDOR_HEALTH_WINDOW` off `:22`, taking `test_zr3_adjudications_are_still_current` RED inside
+      a story that otherwise never touches ZR-3. Re-key that entry if `store.py`'s line count
+      changes, preserving its reason text.
+- [ ] **AC7b — the catalogue moves in the SAME commit (constraint C3).** *Added at plan
+      verification: this story had no `zone-rules.md` AC at all, while the plan claimed every story
+      here carried one.* This commit falsifies four places, and `zone-rules.md` carries both edited
+      files in its `code_refs`, so the sweep marks it stale the moment this lands:
+      `zone-rules.md:667-677` (ZR-8 Finding 2's body — `vendor_health.py:40-53`, `:96-133`,
+      `query.py:52-102`, `query.py:41-49,79-82`); `:695-696` (the Coverage verdict's "a parallel
+      assertion that `composition/vendor_health.py` calls … `query.py`'s validation");
+      `:735` (the ZR-8 row, "Two live violations"); and `:746` ("ZR-8's two violations remain live").
+      Update all four and clear the wiki sweep before the DoD gate. Do not stamp `verified_sha` on
+      prose that was not re-read.
 - [ ] **AC7 — the demo engine still answers the probe.** `tools/demo_engine` parses the
       vendor-health DQL grammar (`demo_engine/query_grammar.py::VendorHealthQuery`). Prove the
       relocated builder's output still parses — the wire contract is the reason `store.py` holds its

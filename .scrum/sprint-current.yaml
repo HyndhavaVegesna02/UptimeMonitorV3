@@ -105,13 +105,57 @@ plan_verification:
     STORY-205 touches the persistence key schema, which is a CONTRACT between the seed path and two
     repositories -- the audit's own citation records that contract drifting once already and costing
     two debugging runs.
-  dispatched: false
+  dispatched: true
+  dispatched_late: true
+  verdict: GAPS   # 11 findings, 5 BLOCKING. ALL FIXED before any implementer was dispatched.
   dispatched_reason: >-
-    Performed BY THE ORCHESTRATOR during this planning pass, not by a dispatched yt-plan-verifier.
-    Sprint 67's subagent ruling was recorded per-sprint and does not carry over on its own; the PO
-    is asked to re-confirm it at approval (see ceremony_note), which would also cover dispatching a
-    real verifier before lock. Recording the substitution rather than letting `dispatched: true`
-    imply a subagent ran.
+    TWO PASSES. The FIRST was performed by the ORCHESTRATOR at planning, because subagents were not
+    yet authorised -- recorded honestly as `dispatched: false` at the time rather than letting the
+    field imply a subagent ran. The PO then made subagent dispatch a STANDING authorisation and
+    asked directly "is the plan verified?" -- to which the honest answer was NO, not independently.
+    A real yt-plan-verifier was dispatched POST-LOCK, pre-implementation. Sprint 67's verifier was
+    also dispatched late and caught that sprint's headline defect; the pattern repeated exactly.
+  headline_finding: >-
+    *** THE VERIFIER REFUTED THE ORCHESTRATOR'S OWN SEVERITY ARGUMENT BY RUNNING THE CODE, NOT BY
+    READING IT. *** STORY-215 claimed a rename would leave THE PUBLISH-GUARD TEST "green while
+    asserting nothing". The verifier ran the mutation's observable state read-only:
+      statuspage_mapping() = {'http-check': 'xdnywbx77npw'}
+      line 174  assert mapping == {}  -> FAIL   <-- the test goes RED
+      delegate type = BestEffortPublisher
+    test_demo_fleet_config.py:174 is a WORKING DETECTOR -- it resolves to the LIVE component id and
+    the real Statuspage chain, which is exactly what it exists to catch. The test that actually
+    passes for the WRONG REASON is the LIVE-side one at :206-212, whose literal sets
+    CONFIG_DIR=config/apps while the fallback default is ALSO "config/apps" -- so it succeeds
+    whatever the variable is called. The residual defect is real; the MECHANISM WAS INVERTED in the
+    story, in plan.md and in this board. An implementer executing AC5 literally would have observed
+    the OPPOSITE of what it demanded and, under C2, been forced to stop. All three sites corrected.
+  other_blocking_gaps: >-
+    (1) STORY-203 AC3 said _ADJUDICATED "loses EXACTLY those four entries" -- but fixing the two
+        us-east-1 sites adds import lines that shift THREE SURVIVING entries
+        (failure_path_reality_gate.py:390, harness.py:910, harness.py:971), taking BOTH ZR-3 guard
+        tests RED. Re-keying is mandatory, not optional. Same defect recurred in STORY-215 (now AC6b).
+    (2) STORY-204 carried NO zone-rules.md AC at all, while plan.md claimed every story here did
+        (constraint C3). Its commit falsifies zone-rules.md :667-677, :695-696, :735 and :746, and
+        marks the article stale with nothing to clear it. Added as AC7b.
+    (3) STORY-215 AC1 cited a MOCK PAYLOAD as a verbatim assertion. test_run_live_loop.py:332 is a
+        fabricated side_effect on a PATCHED load_live_secrets -- it asserts nothing, and its text
+        never matched the real message ("Missing required LIVE secrets:", settings.py:123). The only
+        real pin is test_live_secrets.py:65-68.
+    (4) STORY-215 AC6's "Baseline to beat: 13" is invalidated by STORY-203, which runs EARLIER in
+        this sprint and leaves 9 -- a number the sprint's own story falsifies, the exact sprint-67
+        defect class the goal paragraph warns about.
+  story_205_verdict: >-
+    THE DESIGN DECISION SURVIVED AND GOT CHEAPER. Option (b) confirmed implementable: the
+    UpdateExpression (seed_dynamo.py:44-51) names NO key attribute so only Key= needs the helper;
+    APP# has EXACTLY ONE construction site in the whole tree (seed_dynamo.py:30), so an app_key()
+    helper suffices and no TopologyRepository port is needed; no import-linter contract is
+    threatened. BUT AC2 WAS WRITTEN AGAINST OPTION (a)'s WORLD -- it told the implementer to "change
+    the schema inside a repository", which under (b) ceases to exist once the repositories import it.
+    Restated to "change it wherever the repository OBTAINS it", with two honesty conditions: the
+    unmutated test is green BOTH before and after (so it is evidence only alongside the recorded
+    mutation), and the mutation also reddens test_dynamo_adapters.py:17,82, which is EXPECTED.
+    Also: AC1 was ambiguous about the SECOND key shape -- the boto3 Key().eq()/begins_with() query
+    condition -- through which four literals could have legally survived in the repositories.
   findings: >-
     THE ORCHESTRATOR PASS CHANGED THE PLAN IN FOUR PLACES, recorded rather than silently folded in:
     (1) STORY-204 MUST PRECEDE STORY-203 -- 204 relocates _HEALTH_CHECK_WINDOW, whose file:line is

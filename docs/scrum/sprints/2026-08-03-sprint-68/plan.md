@@ -119,8 +119,11 @@ newly-declared shape-i values turn existing `tools/` literals into *fresh* `ZR-3
 sequence that took 202 from 1 point to 3. AC6 expects the sweep count to move in both directions and
 requires adjudicating every new collision.
 
-Runs last because it re-keys `_ADJUDICATED` line numbers, and doing it after STORY-203 means one
-re-keying pass instead of two — the precise churn STORY-202 caused for STORY-203 last sprint.
+Runs last because it re-keys `_ADJUDICATED` line numbers after STORY-203 has already done so —
+**not**, as this plan first claimed, because that makes it one re-keying pass instead of two.
+Verification refuted that: both stories edit `harness.py`, so its surviving entries shift twice in
+either order. The ordering still helps (215 re-derives against a settled file rather than racing
+203), but the saving is smaller than claimed and both stories now require re-derivation.
 
 **Explicitly out of scope:** `test_settings.py:30` (`assert CONFIG_DIR_VAR == "CONFIG_DIR"`) is the
 **pin**, not a duplication, and survives untouched. A test *asserting* a constant's value is
@@ -152,9 +155,53 @@ difference between this exclusion and the fourth site above.
 **Contract-sensitive: YES**, on two counts — STORY-204 touches the vendor DQL path, STORY-205 touches
 the persistence key schema, which is a contract between the seed path and two repositories.
 
-Verification was performed **by the orchestrator during this planning pass**, not by a dispatched
-`yt-plan-verifier`; see the PO decision below. It changed the plan in four places, recorded here
-rather than silently folded in:
+**A real `yt-plan-verifier` was dispatched POST-LOCK, pre-implementation (2026-08-03), after the PO
+made subagent dispatch a standing authorisation and asked directly whether the plan had been
+verified. Verdict: `GAPS` — 11 findings, 5 blocking. All were fixed in the stories and this plan
+before any implementer was dispatched.** Sprint 67's verifier was also dispatched late and caught
+that sprint's headline defect; the pattern repeated.
+
+**The finding that matters most, because it refuted the orchestrator's own severity argument by
+running the code rather than reading it.** STORY-215 claimed a rename would leave *the publish-guard
+test* "green while asserting nothing." The verifier ran the mutation's observable state read-only:
+
+```
+statuspage_mapping() = {'http-check': 'xdnywbx77npw'}
+line 174  assert mapping == {}   -> FAIL   <-- the test goes RED
+delegate type = BestEffortPublisher
+```
+
+`test_demo_fleet_config.py:174` is a **working detector**. The test that actually passes for the
+wrong reason is the *live*-side one at `:206-212`, whose literal sets `CONFIG_DIR=config/apps` while
+the fallback default is also `"config/apps"` — so it succeeds whatever the variable is called. The
+residual defect is real; the mechanism was **inverted** in the story, in this plan, and on the board.
+An implementer executing that AC literally would have observed the opposite of what it demanded and,
+under C2, been forced to stop. All three sites corrected.
+
+**Four more blocking gaps, each of which would have produced wrong work:**
+- **STORY-203 AC3 said `_ADJUDICATED` "loses exactly those four entries"** — but fixing the two
+  `us-east-1` sites adds import lines that shift three *surviving* entries, taking **both** ZR-3
+  guard tests red. Re-keying is mandatory, not optional. The same defect recurred in STORY-215.
+- **STORY-204 carried no `zone-rules.md` AC at all**, while this plan claimed every story here did
+  (constraint C3). Its commit falsifies four passages and marks the article stale with nothing to
+  clear it.
+- **STORY-215 AC1 cited a mock payload as a verbatim assertion.** `test_run_live_loop.py:332` is a
+  fabricated `side_effect` on a *patched* function — it asserts nothing, and its text never matched
+  the real message (`Missing required LIVE secrets:`). The only real pin is `test_live_secrets.py:65-68`.
+- **STORY-215 AC6's "baseline to beat: 13"** is invalidated by STORY-203, which runs earlier and
+  leaves 9 — a number the sprint's own story falsifies, which is the exact sprint-67 defect class.
+
+**STORY-205's design decision survived, and got cheaper.** Option (b) is confirmed implementable:
+the `UpdateExpression` names no key attribute, `APP#` has exactly one construction site in the tree,
+and no contract is threatened. But **AC2 was written against option (a)'s world** — it told the
+implementer to "change the schema inside a repository", which under (b) no longer exists. Restated,
+with the honest note that the unmutated test is green both before and after.
+
+---
+
+An earlier verification pass was performed **by the orchestrator** before the PO saw this plan. It
+changed the plan in six places, recorded here rather than silently folded in — the first four below
+were confirmed by the verifier, the last two were its own corrections to its first draft:
 
 1. **STORY-204 must precede STORY-203** — 204 relocates the `file:line` that 203 AC4 adjudicates.
    The original priority order had them the other way round.
@@ -201,15 +248,15 @@ self-report.
 
 | Risk | Mitigation |
 | --- | --- |
-| STORY-205 is the sprint's whole design content; if the schema module turns out to need a port after all, 3 points is optimistic | The effort cap (3× estimate → auto-Blocked) applies. It runs second, while the session is fresh, so a block still leaves four stories deliverable. |
-| STORY-203 + STORY-215 both edit `_ADJUDICATED` and `zone-rules.md`'s ZR-3 section | Sequenced adjacently and last, 203 → 215, so the re-keying happens once. Each has an AC naming the other. |
+| STORY-205 is the sprint's whole design content; if the schema module turns out to need a port after all, 3 points is optimistic | **Retired by verification** — option (b) confirmed implementable: the `UpdateExpression` names no key attribute, and `APP#` has exactly one construction site in the tree, so no port is needed. It runs **first**, while the session is fresh; a block still leaves three stories deliverable. |
+| STORY-203 + STORY-215 both edit `_ADJUDICATED` and `zone-rules.md`'s ZR-3 section | Each has an AC naming the other. **Corrected by verification:** they also both edit `harness.py`, so its surviving entries get re-keyed **twice in either order** — the earlier "one re-keying pass instead of two" claim was false. Both stories now require re-deriving coordinates rather than carrying the other's forward. |
 | A "fix" that makes a guard blind — 203's blocklist tautology, 215's untouchable pin | Explicit AC on both (203 AC2, 215 AC3) requiring the guard still fire against the defect it exists to catch. |
 | STORY-215 creates fresh `ZR-3` collisions while removing others — STORY-202's own trap, which took that story from 1 point to 3 | Sized 3 up front rather than discovered mid-sprint. AC6 requires re-deriving the count in both directions and adjudicating every new collision; an unrecognised one is a guard failure, never a silent pass. |
 | Session limit mid-story | Park with a committed handoff (standing PO directive). Drop order if the session runs short: **STORY-203** (all four findings MINOR, none a live defect). Never STORY-215 — sprint 69 depends on it. Never STORY-205 — it is the audit's biggest finding and the only one describing a defect that has already cost real debugging time. |
 
 ## Decisions the PO owns at approval
 
-1. **Approve the sprint as scoped** — 10 points, five stories, in-process. Or take the drop order
+1. **Approve the sprint as scoped** — 10 points, four stories, in-process. Or take the drop order
    above as a standing trim.
 2. **Subagents.** Sprint 67's ruling ("yt-implementer per story, then yt-spec-reviewer ∥
    yt-quality-reviewer; no story reaches review unreviewed") was recorded per-sprint and does not

@@ -63,19 +63,38 @@ vendor, and a vendor's wire behaviour is not supposed to track our config. AC4 t
       re-declaring the literal. Re-derive each `file:line` against HEAD before editing — STORY-202's
       own edits re-keyed three of these once already.
 - [ ] **AC2 — `harness.py`'s blocklist still blocks.** The defensive assertions at `:754`/`:757`
-      still fail when the resolved table name IS the production default. Prove it: set the child env
-      to the default and show the assertion fire. A "fix" that turns a blocklist into a tautology
-      (`x not in (x,)` → always false, or an import that makes both sides trivially equal) is a fail.
-- [ ] **AC3 — the guard's ledger shrinks.** `_ADJUDICATED` loses exactly those four entries.
-      **Zero `MUST-IMPORT-FROM-SRC` entries remain**; every surviving entry is `INDEPENDENT` (or
-      AC4's new adjudication). The guard's stale-entry check goes RED if a fix lands without its
-      entry being removed — that is this story's mechanical success measure, the same shape sprint 67
-      used for ZR-7.
+      still fail when the resolved table name IS the production default. **Directly executable, no
+      subprocess run needed** (confirmed at plan verification): those lines sit inside
+      `_assert_ac1_preconditions` (`harness.py:733`), which takes `api_env` as a plain dict — call it
+      with a fabricated env whose table names ARE the defaults and show the assertion fire.
+      A "fix" that turns the blocklist into a tautology is a fail; note the risk bites only if the
+      **left**-hand side (the resolved value) is replaced by the imported constant, not the right.
+- [ ] **AC3 — the guard's ledger shrinks by four, and every SURVIVING entry in a touched file is
+      RE-KEYED.** `_ADJUDICATED` loses those four entries; **zero `MUST-IMPORT-FROM-SRC` entries
+      remain**; every survivor is `INDEPENDENT` (or AC4's new adjudication).
+      *Corrected at plan verification — the original "loses **exactly** those four entries" was the
+      wrong instruction and would have taken the DoD gate RED.* Line shifts here are near-certain,
+      not speculative: `failure_path_reality_gate.py` imports nothing from `src.composition.settings`
+      today, so fixing `:149` adds an import line and shifts the surviving entry
+      `("…failure_path_reality_gate.py", 390)`; and `harness.py`'s settings import is a six-line
+      parenthesised block that becomes seven, shifting `("…harness.py", 910)` and `("…harness.py",
+      971)`. Stale coordinates fail `test_zr3_adjudications_are_still_current`, and the new
+      coordinates fail `test_zr3_sweep_finds_no_unadjudicated_collision` — **both guards, not one.**
+      Re-key each survivor with its reason text preserved, using the "re-keyed, not removed"
+      convention already in `test_zr3_duplicate_declarations.py`. STORY-215 will re-key `harness.py`
+      again later this sprint; that is expected, and it re-derives rather than trusting these
+      numbers.
 - [ ] **AC4 — `store.py` is adjudicated, not left dangling.** Either the value is obtained from
       `src`, **or** the existing wire-contract justification is upheld and the `_ADJUDICATED` entry
       is rewritten from `MUST-IMPORT-FROM-SRC … Fix: STORY-203` to a reasoned `INDEPENDENT` naming
       that argument. **Leaving an entry pointing at a closed story is a fail.** Whichever way it
       goes, the `file:line` cross-reference is repointed to wherever STORY-204 left the constant.
+      **Found at plan verification, and it materially strengthens the "uphold it" outcome:** the
+      wire-contract agreement is *already mechanically pinned* by
+      `backend/tests/demo_engine/test_vendor_health_query.py:76-91`
+      (`test_vendor_health_window_matches_the_composition_health_check_window`). So upholding the
+      justification does not leave the two values un-guarded against silent divergence — cite that
+      test in the adjudication rather than arguing from the docstring alone.
 - [ ] **AC5 — sweep count, re-derived not predicted.** Run `python tools/zr3_duplicate_sweep.py`
       before and after and record both counts. Arithmetic says 13 → 9. **If it is not 9, say so and
       explain rather than editing the number** (sprint 67 twice found a quoted count that did not
