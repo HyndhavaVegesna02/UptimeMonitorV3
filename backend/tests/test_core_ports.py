@@ -259,7 +259,7 @@ def test_fake_proposal_repository_create_and_get():
     repo.record_approval_event(
         saved.id,
         actor="ops-1",
-        action="approved",
+        action=ProposalState.APPROVED,
         notes="Checked logs, all good",
         occurred_at=resolved_time,
     )

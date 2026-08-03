@@ -99,9 +99,12 @@ class ApprovalService:
         """Helper to encapsulate load -> guard -> resolve -> record event sequence (dossier §12).
 
         The recorded `action` is `to_state` itself (STORY-200) — never a separately
-        re-derived value — so it can never drift from the spine's
-        `ck_approval_events_action` constraint (`action IN ('approved', 'rejected')`),
-        which mirrors `ProposalState`'s terminal values one-for-one.
+        re-derived value. There is no datastore-side constraint backing this in this
+        DynamoDB-only repo: `ck_approval_events_action` was a Postgres CHECK
+        constraint from the Neon era, retired with the relational layer at
+        STORY-087, and DynamoDB validates nothing here. The guard immediately
+        below is therefore the ONLY enforcement that `action` is ever
+        `ProposalState.APPROVED` or `ProposalState.REJECTED`.
 
         `to_state` is validated against the 2-member {APPROVED, REJECTED} set BEFORE
         any repository access (STORY-200 AC3): `is_valid_transition` alone is not

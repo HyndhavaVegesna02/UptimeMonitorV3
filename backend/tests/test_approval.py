@@ -5,6 +5,7 @@ from src.core.domain.proposal import ProposalState, StatusProposal
 from src.core.domain.status import ComponentStatus, StatusChange
 from src.core.services.approval import (
     ApprovalService,
+    InvalidApprovalActionError,
     ProposalNotFoundError,
     ProposalNotOpenError,
 )
@@ -198,8 +199,6 @@ def test_approval_service_decide_rejects_action_outside_approved_or_rejected():
     admits any non-OPEN target (including SUPERSEDED/OBSOLETED), so it does not
     constrain the 2-member {APPROVED, REJECTED} set an approval EVENT may record.
     This guard is the entirely-new validation that does."""
-    from src.core.services.approval import InvalidApprovalActionError
-
     repo = FakeProposalRepository()
     clock = FakeClock(datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc))
     publisher = RecordingStatusPublisher()
