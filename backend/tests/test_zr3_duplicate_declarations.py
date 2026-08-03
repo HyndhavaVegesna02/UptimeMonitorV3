@@ -76,7 +76,8 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
     ("tools/demo_loop_gate/failure_path_reality_gate.py", 149): (
         'MUST-IMPORT-FROM-SRC (MINOR): _REGION = "us-east-1" re-declares '
         "Settings.aws_region's default a second, independent time (a third "
-        "hardcode counting env_matrix.py:39). Fix: STORY-203."
+        "hardcode counting env_matrix.py:49, re-keyed from :39 by STORY-202's "
+        "own AC2 import block -- see the :49 entry above). Fix: STORY-203."
     ),
     ("tools/demo_loop_gate/failure_path_reality_gate.py", 390): (
         "INDEPENDENT: a self-test fixture value "
