@@ -214,14 +214,14 @@ stories:
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     points: 3
     order: 1
-    status: todo   # NOT STARTED. An implementer WAS dispatched 2026-08-03 against the corrected AC
-                   # and died on an ACCOUNT session limit ("resets 11:50pm Asia/Calcutta") before
-                   # writing anything. Verified, not assumed: `git log eca8b3c..HEAD` is EMPTY and
-                   # `git status` is clean, so there is no partial work to preserve and no scraps to
-                   # discard. Rolled back to `todo` rather than left `in_progress`, which would have
-                   # implied work in flight at the next standup.
-                   # RESUME = re-dispatch the SAME brief, unchanged. Nothing about the story or its
-                   # AC needs revisiting: the AC were corrected at b8c7828 after independent plan
+    status: in_progress   # RE-DISPATCHED 2026-08-03 after the account session limit reset. This is
+                   # attempt TWO. Attempt one died on an ACCOUNT session limit ("resets 11:50pm
+                   # Asia/Calcutta") before writing anything -- verified, not assumed: `git log
+                   # eca8b3c..HEAD` was EMPTY and the tree clean, so nothing was preserved and
+                   # nothing discarded, and the board was rolled back to `todo` at the park (c92457a)
+                   # rather than left `in_progress`.
+                   # The brief is UNCHANGED from attempt one. Nothing about the story or its AC
+                   # needed revisiting: the AC were corrected at b8c7828 after independent plan
                    # verification and no implementer has yet tested them against real code.
     commits: null  # no story commits yet
     why_here: >-
