@@ -39,7 +39,8 @@ DYNAMO_ENDPOINT_URL_VAR = "DYNAMO_ENDPOINT_URL"
 def load_settings() -> Settings:
     """Load runtime settings from the environment.
 
-    Reads config_dir from ``CONFIG_DIR`` env var, defaulting to ``"config/apps"``.
+    Reads config_dir from the ``CONFIG_DIR_VAR`` env var (currently
+    ``"CONFIG_DIR"``), defaulting to ``"config/apps"``.
     """
     return Settings(
         config_dir=os.environ.get(CONFIG_DIR_VAR, "config/apps"),
