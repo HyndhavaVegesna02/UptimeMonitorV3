@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
-from boto3.dynamodb.conditions import Key
-
+from src.adapters.persistence.topology_keys import (
+    signal_item_key,
+    signal_query_condition,
+)
 from src.core.domain.topology import Signal
 from src.core.ports.signal_repository import SignalRepository
 
@@ -32,10 +34,7 @@ class DynamoSignalRepository(SignalRepository):
         exclusive_start_key = None
 
         while True:
-            kwargs = {
-                "KeyConditionExpression": Key("pk").eq("TOPOLOGY")
-                & Key("sk").begins_with("SIGNAL#")
-            }
+            kwargs = {"KeyConditionExpression": signal_query_condition()}
             if exclusive_start_key:
                 kwargs["ExclusiveStartKey"] = exclusive_start_key
             if self._limit is not None:
@@ -52,12 +51,7 @@ class DynamoSignalRepository(SignalRepository):
         return sorted(signals, key=lambda s: s.signal_key)
 
     def get(self, signal_key: str) -> Signal | None:
-        response = self._table.get_item(
-            Key={
-                "pk": "TOPOLOGY",
-                "sk": f"SIGNAL#{signal_key}",
-            }
-        )
+        response = self._table.get_item(Key=signal_item_key(signal_key))
         item = response.get("Item")
         if not item:
             return None
