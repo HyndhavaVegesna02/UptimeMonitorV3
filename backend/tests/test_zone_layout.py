@@ -203,7 +203,7 @@ def find_hand_built_topology_key_dicts(path: Path) -> list[int]:
     return violations
 
 
-def test_seed_dynamo_owns_no_hand_built_topology_key(tmp_path: Path) -> None:
+def test_topology_key_guard_detects_and_clears(tmp_path: Path) -> None:
     """Meta-test for the guard itself (STORY-205): prove it actually fires,
     against a throwaway file, before trusting it against the real one below."""
     offender = tmp_path / "offender.py"
