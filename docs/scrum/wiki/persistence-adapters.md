@@ -1,8 +1,8 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
-verified_sha: d469d2c
-verified_sprint: sprint-67
+code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
+verified_sha: a5a2d68
+verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
 # NOTE for a future story: RejectedObservationRepository is now written by the PULL LOOP as well as
@@ -54,7 +54,22 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   real-DynamoDB one. Mutation-proven: changing `ProposalState.APPROVED`'s VALUE (not its name) trips
   that same test (the sort key it looks up no longer exists); restored, `git diff` empty.
 - `DynamoRejectedObservationRepository` implements the append-only quarantine sink under the `REJECTED#<signal_key|UNKNOWN>` partition with distinct uuid-suffixed SKs, converting payload floats to Decimal to satisfy boto3 serialization.
-- `seed_topology_dynamo` (`src/composition/seed_dynamo.py`) idempotently upserts Git-configured apps, components, and signals into the `TOPOLOGY` partition. Uses an update expression with `if_not_exists` to preserve existing component status on re-seed.
+- **`topology_keys.py` (STORY-205, ZR-8 Finding 1 fix — see [[zone-rules]]).**
+  `backend/src/adapters/persistence/topology_keys.py` is the single declaration of the
+  `TOPOLOGY` partition's key schema, in both shapes it is consumed in: the item-key dict
+  (`app_item_key`, `component_item_key`, `signal_item_key`, for `put_item`/
+  `update_item`/`get_item`) and the boto3 query condition (`component_query_condition`,
+  `signal_query_condition`, for `.query()`). `DynamoComponentRepository`,
+  `DynamoSignalRepository` and `seed_topology_dynamo` all import from it rather than
+  each re-declaring the schema — before this story, `seed_dynamo.py` hand-built the same
+  `pk`/`sk` shape independently, a THIRD declaration on the boot path of both
+  composition roots. Pinned by `backend/tests/test_topology_keys.py` (the two shapes,
+  unit-level); the standing guard against a regression (AST-asserts `seed_dynamo.py`
+  builds no `pk`/`sk` dict literal of its own) is documented in [[zone-rules]] (ZR-8).
+- `seed_topology_dynamo` (`backend/src/composition/seed_dynamo.py`) idempotently upserts
+  Git-configured apps, components, and signals into the `TOPOLOGY` partition, obtaining
+  its keys from `topology_keys.py` (above). Uses an update expression with
+  `if_not_exists` to preserve existing component status on re-seed.
 - Contract parity is verified in `backend/tests/test_dynamo_adapters.py`, `backend/tests/test_dynamo_publication_repository.py`, `backend/tests/test_dynamo_maintenance_repository.py`, `backend/tests/test_dynamo_rejected_observation_repository.py`, and `backend/tests/test_dynamo_seed.py` against a real local DynamoDB instance.
 
 ### Testing convention
@@ -65,6 +80,18 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-68 (STORY-205): landed the ZR-8 Finding 1 fix (see [[zone-rules]]). Added
+  `topology_keys.py` to `code_refs` and its Fact above: the single declaration of the
+  `TOPOLOGY` key schema in both consumed shapes, imported by `DynamoComponentRepository`,
+  `DynamoSignalRepository` and `seed_topology_dynamo` (previously each declared it
+  independently, `seed_dynamo.py` being the third and last to stop). **Fixed a stale
+  citation while here**, per this story's AC7: the `seed_topology_dynamo` Fact cited
+  `src/composition/seed_dynamo.py`, a path that does not resolve from the repo root
+  (the tree is `backend/src/...`) — the Facts lint had been skipping that claim
+  entirely; corrected to `backend/src/composition/seed_dynamo.py`. No other Fact in
+  this article changed; `DynamoComponentRepository`/`DynamoSignalRepository`'s own
+  behaviour is unchanged (proven by `test_dynamo_adapters.py` passing without
+  modification), only where they obtain their keys from. verified_sha -> a5a2d68.
 - sprint-67 (STORY-200): landed the ZR-6 fix (see [[zone-rules]]). Added the
   `DynamoProposalRepository.record_approval_event` Fact above: enum-identity comparison, explicit
   `.value` at both write sites, the real-DynamoDB proving test (`fakes.py` cannot observe this
