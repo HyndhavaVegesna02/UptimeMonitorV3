@@ -82,8 +82,13 @@
 - 2026-06-23 — **Measure before optimizing the read path.** The derive-on-read strategy
   ships as-is; availability/status are never persisted. No caching story is created until
   a measurement story demonstrates a real 30-day multi-location read problem.
-- 2026-06-23 — **Defer auth cleanly.** Auth's absence never blocks a story. From the
-  deployment story onward, CORS is restricted to the Vercel origin (+ localhost for dev).
+- 2026-06-23 — **Defer auth cleanly.** Auth's absence never blocks a story.
+  (**D1, sprint-67 retro, PO-approved 2026-08-03:** the CORS clause was DELETED. It read "From the
+  deployment story onward, CORS is restricted to the Vercel origin (+ localhost for dev)" and was
+  factually wrong at HEAD — `grep -rn "CORSMiddleware\|allow_origins" backend/src/` returns nothing,
+  no CORS middleware exists, and Vercel was superseded. A binding agreement instructing a future
+  story to do something wrong is the same failure class as sprint 67's ten prose findings, sitting
+  in this file. The auth half above still binds.)
 
 ## Amendments
 - 2026-07-06 — **A DoD-gate red caused by resource contention rather than the code under
@@ -133,19 +138,19 @@
   because the orchestrator recognized the situation — which caught a MAJOR self-review had missed.
   Rung: prose; may harden to a plan-verification checklist item later.)
 
-- 2026-07-15 — **Expedite STORY-080; the dev-db flake is a standing full-gate false-red until it lands**
-  (sprint-46 retro). STORY-080 (dev-db container port-collision / connection-disconnect) is elevated to
-  top backlog priority to enter the next sprint. It false-red'd BOTH sprint-46 full-gate runs (two
-  different `test_dev_db_*` members), each requiring the contention-proof protocol. Correction to the
-  proposed interim: pytest here runs SERIALLY (no xdist, no addopts), so "serialize the harness tests"
-  is a no-op — the flake is Docker/connection *resource* contention across the full suite (each dev-db
-  test spawns its own container; the gate's own DB container aggravates it), which is exactly STORY-080's
-  domain. Until it lands, the existing 2026-07-06 contention false-red protocol governs (prove: empty
-  diff since sprint cut + passes isolated), and 2026-07-14(b) clean-container hygiene stands. (Rung:
-  backlog priority; the durable fix is STORY-080's own test-rung work — not an ad-hoc skill-script edit
-  outside a story.)
-
 ## Prune record
+- 2026-08-03 — **sprint-67 retro, PO-approved: the first two rules ever deleted on their merits**
+  (every prior removal was a PO-directed amnesty or a routing exercise; A15 asked "has this fired?"
+  and these two answered no because they are DEAD, not merely quiet).
+  **D1** — the CORS clause of the 2026-06-23 "Defer auth cleanly" agreement. Factually wrong at
+  HEAD: no CORS middleware exists anywhere under `backend/src/`, and the Vercel origin it names was
+  superseded. Full text is in the entry itself, which records the deletion inline; the auth half
+  survives.
+  **D2** — the 2026-07-15 "Expedite STORY-080" amendment, removed WHOLE. Fully spent: STORY-080 was
+  accepted at sprint 47, and the `test_dev_db_*` family, `alembic` and `DATABASE_URL` it governs
+  belong to the retired Postgres layer. The 2026-07-06 contention protocol it pointed to is
+  unaffected and still binds. Full text: `git show 626f6b0:.scrum/working-agreements.md`.
+
 - 2026-07-04 — PO-directed prune (post-sprint-32): removed 3 entries that no longer bind —
   (1) 2026-06-26 "External implementation from Sprint 9" and (2) 2026-06-28 "Every sprint lock
   produces an implementer prompt", both superseded wholesale by the 2026-07-02
@@ -469,6 +474,41 @@ real change is -6,043 bytes per dispatch (~-1,500 tokens x every implementer and
 +5,887 once per session, against a CLAUDE.md prune of -9,236 in the highest-priority slot there is.
 Per session that is ~-3,350 bytes before a single dispatch. **Prefer removals from the rungs that
 are paid repeatedly.**
+
+## A16 - the Facts lint may not report CLEAN about text it never checked (2026-08-03, sprint-67 retro)
+
+**Rung: SCRIPT — landed, not described.** `yt_wiki.py` gained a `citations` check (advisory, like
+`refs`; `--strict-citations` promotes it to blocking). It reports two kinds of Fact citation the
+Facts lint silently drops: one whose path does not resolve from the repo root, and a bare `` `:NNN` ``
+with no filename to anchor on.
+
+**Motivating incidents, both sprint-67, both in `status: verified` articles carrying FRESH stamps.**
+Two INDEPENDENT mechanisms, which is what makes this a defect in the floor rather than a lapse:
+1. **STORY-202** — six bare `:NNN` sites copied from the story's own AC text (which explicitly said
+   to re-derive them). Five pointed at unrelated code: `],`, `stdout=out_fh,`, a docstring, a
+   comment. `CITE_RE` needs a filename to anchor on, so they were never citations to the lint at all.
+2. **STORY-200** — a Fact citing an abbreviated `core/services/approval.py` while that file was
+   absent from the article's `code_refs`. `check_facts` skipped it because it does not resolve from
+   the repo root, so future edits to that frequently-changed file would never have staled the
+   article.
+
+**What landing it immediately revealed, and it is larger than the retro claimed.** The retro called
+the abbreviated form "a habit". Measured on the first run: **147 Fact citations across 13 articles
+had never been checked by the Facts lint** — `facts: CLEAN` has been covering a fraction of this
+wiki all along. That number is the finding; it is not actionable in one pass and is deliberately
+advisory so it informs rather than blocks.
+
+**Shown wrong first, in the honest sense.** The first implementation reported **515** notes, because
+`CITE_RE` also matches dotted SYMBOL references (`AvailabilityCalculator.compute`) and the check
+called every one a broken path. That is the "a detector that flags everything is worse than none"
+failure this project already learned at STORY-210 AC5, committed inside the amendment citing it.
+Narrowed to path-shaped citations only (a `/` must be present — the only fully generic separator
+test), then aggregated per-article: 515 → 166 → **33 readable notes plus a total**. The cost of the
+narrowing is stated in the code: a bare `settings.py` shorthand goes unflagged.
+
+**Known false positive, disclosed rather than suppressed:** `dev-setup-and-dod.md`'s `` `:8000` `` is
+a PORT number, not a line reference. No generic rule distinguishes them, and the check is advisory,
+so it is left visible.
 
 **The test at the sixth sprint from now:** run the second command above and compare it against the
 same command at the commit that landed A15 (`git log --oneline -S "A15 - rules EXPIRE"` finds it).

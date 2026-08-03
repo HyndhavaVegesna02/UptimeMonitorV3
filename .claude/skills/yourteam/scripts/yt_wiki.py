@@ -219,6 +219,78 @@ def check_facts(root: Path, articles: dict[Path, str]) -> list[str]:
     return findings
 
 
+# A16 (sprint-67 retro, 2026-08-03). A bare `:NNN` line reference inside a Fact —
+# no filename in front of it — is invisible to CITE_RE, which needs a filename to
+# anchor on. Matched here only to REPORT it, never to resolve it: the check cannot
+# know which file the author meant, which is precisely the problem.
+BARE_LINE_RE = re.compile(r"`:(\d+)(?:-\d+)?`")
+
+
+def check_citations(root: Path, articles: dict[Path, str]) -> list[str]:
+    """Report Fact citations this tool could not check. (A16, sprint-67 retro.)
+
+    `check_facts` answers "is every cited file covered by code_refs?" and, to do
+    that, it must silently drop two kinds of citation: one whose path does not
+    resolve from the repo root, and one with no filename at all. Both then pass
+    as CLEAN — the tool reporting success about text it never examined.
+
+    Sprint 67 hit both, in `status: verified` articles carrying fresh stamps:
+      * six bare `:NNN` sites copied from a story's pre-edit AC text, five of
+        which pointed at unrelated code (a comment, a docstring, `],`);
+      * a Fact citing an abbreviated `core/services/...` path while the file was
+        absent from the article's `code_refs`, so edits to it would never have
+        staled the article.
+
+    Advisory by default, like `refs`: it flags text a human must read, and a
+    citation form is a style question until a project decides otherwise.
+    """
+    findings = []
+    unresolved_total = 0
+    for path, text in sorted(articles.items()):
+        facts = facts_section(text)
+        unresolved = []
+        for cite in sorted(set(CITE_RE.findall(facts))):
+            cite_path = cite.replace("\\", "/")
+            if cite_path.startswith("docs/scrum/"):
+                continue  # cross-references belong to the links check
+            if "/" not in cite_path:
+                # CITE_RE also matches dotted SYMBOL references (`Class.method`),
+                # which are not paths and must never be reported as broken ones.
+                # Requiring a separator is the only fully generic way to tell the
+                # two apart, and a detector that flags everything is worse than
+                # none — measured: without this, 515 notes, nearly all false. The
+                # cost is that a bare `settings.py` shorthand goes unflagged; the
+                # failure class this exists for is path-shaped and wrongly-rooted.
+                continue
+            if (root / cite_path).exists():
+                continue  # resolvable — check_facts owns it from here
+            unresolved.append(cite_path)
+        if unresolved:
+            unresolved_total += len(unresolved)
+            sample = ", ".join(f"`{c}`" for c in unresolved[:3])
+            more = f", +{len(unresolved) - 3} more" if len(unresolved) > 3 else ""
+            findings.append(
+                f"{path.name}: {len(unresolved)} Fact citation(s) do not resolve "
+                f"from the repo root, so the Facts lint SKIPPED them ({sample}"
+                f"{more}) — write full paths, or remove claims whose file is gone"
+            )
+        for line_no in sorted(set(BARE_LINE_RE.findall(facts)), key=int):
+            findings.append(
+                f"{path.name}: Fact cites a bare `:{line_no}` with no filename — "
+                "nothing anchors it, so no lint can check it and it rots silently "
+                f"on the next edit above that line. Use `path/to/file.py:{line_no}` "
+                "or a `::symbol` reference"
+            )
+    if unresolved_total:
+        findings.append(
+            f"TOTAL: {unresolved_total} Fact citation(s) across "
+            f"{sum(1 for f in findings if 'do not resolve' in f)} article(s) were "
+            "never checked by the Facts lint. A `facts: CLEAN` line does not cover "
+            "them — that gap is what this check exists to make visible"
+        )
+    return findings
+
+
 SHORT_SHA_RE = re.compile(r"^[0-9a-f]{7,12}$")
 
 
@@ -288,7 +360,7 @@ def main() -> int:
         "checks",
         nargs="*",
         default=[],
-        help="sweep | facts | links | refs | integrity (default: all)",
+        help="sweep | facts | links | refs | citations | integrity (default: all)",
     )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
     ap.add_argument(
@@ -298,6 +370,11 @@ def main() -> int:
         "--strict-refs",
         action="store_true",
         help="refs: amplifier notes count as findings (exit 1)",
+    )
+    ap.add_argument(
+        "--strict-citations",
+        action="store_true",
+        help="citations: unresolvable/unanchored citations count as findings (exit 1)",
     )
     args = ap.parse_args()
 
@@ -316,7 +393,14 @@ def main() -> int:
         p: p.read_text(encoding="utf-8", errors="replace")
         for p in sorted(wiki.glob("*.md"))
     }
-    checks = args.checks or ["sweep", "facts", "links", "refs", "integrity"]
+    checks = args.checks or [
+        "sweep",
+        "facts",
+        "links",
+        "refs",
+        "citations",
+        "integrity",
+    ]
     all_findings: list[str] = []
     for check in checks:
         advisory = False
@@ -329,6 +413,9 @@ def main() -> int:
         elif check == "refs":
             found = check_refs(articles)
             advisory = not args.strict_refs  # notes by default — never blocks
+        elif check == "citations":
+            found = check_citations(root, articles)
+            advisory = not args.strict_citations  # notes by default (A16)
         elif check == "integrity":
             found = check_integrity(wiki, articles)
         else:

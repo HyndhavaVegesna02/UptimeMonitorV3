@@ -1,8 +1,18 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 67
-status: review     # none | planning | active | review | closed | aborted
-                   # ALL FOUR STORIES DONE, 11/11 POINTS. Sprint-close gate 8/8 GREEN at 9bccac8,
-                   # exit 0, 696 passed / 0 SKIPPED. Wiki compile pass CLEAN. Awaiting PO verdict.
+status: closed     # none | planning | active | review | closed | aborted
+                   # ALL FOUR STORIES ACCEPTED by the PO 2026-08-03. 11/11 points; velocity recorded.
+                   # Sprint-close gate 8/8 GREEN at 9bccac8, exit 0, 696 passed / 0 SKIPPED.
+                   # RETRO RUN AND ITS THREE ITEMS PO-APPROVED, all landed:
+                   #   D1 — deleted the dead CORS/Vercel clause (no CORS middleware exists at HEAD)
+                   #   D2 — deleted the spent "Expedite STORY-080" amendment (STORY-080: sprint 47)
+                   #   A16 — landed at the SCRIPT rung in yt_wiki.py, not written down as prose
+                   # D1 and D2 are the FIRST rules this project has ever deleted on their merits.
+                   # A16's first run revealed 147 Fact citations across 13 articles that the Facts
+                   # lint had never checked — `facts: CLEAN` was covering a fraction of the wiki.
+                   # BRANCH STAYS UNMERGED per the standing PO directive (re-confirmed sprint-64);
+                   # sprint 66 is also unmerged and sprint 67 was cut from it. Nothing touched main.
+                   # NEXT: sprint 68 planning. Candidates in `carried_forward` + STORY-213/214/215/216.
                    # LOCKED 2026-08-02. SCOPE IS FROZEN -- new PO requests go to the backlog, not
                    # into this sprint. Tooling is frozen too, EXCEPT the enforcement ladder (A14).
                    # THREE PO RULINGS AT PLANNING (2026-08-02), all recorded because they shape
