@@ -1,7 +1,7 @@
 ---
 title: API Five-File Feature Convention (+ _shared)
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, backend/tests/test_publications_endpoint.py, pyproject.toml, backend/src/api/v1/_shared/__init__.py, backend/src/api/v1/_shared/errors.py, backend/src/api/v1/_shared/validation.py, backend/src/api/v1/_shared/middleware.py, backend/src/api/v1/_shared/windowing.py, backend/tests/test_shared_windowing.py, backend/tests/test_shared_errors.py]
-verified_sha: b272c32
+verified_sha: d469d2c
 verified_sprint: sprint-63
 status: verified
 ---
@@ -97,6 +97,8 @@ status: verified
   `test_decisions.py` assertions that pinned the old (wrong) `'approve'`/`'reject'` literal were
   updated to `'approved'`/`'rejected'`. No change to the five-file shape, DTOs, or the
   `api-feature-independence` contract. verified_sha → 06cf232.
+  **SUPERSEDED at sprint-67 (STORY-200) — see below: `_decide` now passes `to_state` itself, not
+  `to_state.value`, because `record_approval_event`'s port parameter is `ProposalState`, not `str`.**
 - sprint-40 (STORY-072, record-always publication outcome): `PublicationDTO`
   (`api/v1/publications/models.py`) gains `outcome: str`; `service.py::PublicationsService.list_recent`
   now also maps `p.outcome.value` (Facts updated above). No change to the five-file shape or the
@@ -133,3 +135,15 @@ status: verified
   for future middleware — Fact above corrected to match. `pyproject.toml`'s change was a comment-only
   fix to the vendor-subpackage note (unrelated to this article's contract-count Facts). No other Fact
   or contract count changed. verified_sha -> b272c32.
+- sprint-67 (STORY-200): the sweep flagged `core/services/approval.py` and `test_approval.py`
+  (`ProposalRepository.record_approval_event` gained a domain-typed `action: ProposalState`
+  parameter — see [[canonical-types-and-ports]] and [[persistence-adapters]] for the port/adapter
+  side). `ApprovalService._decide` (`approval.py::ApprovalService._decide`) now passes `action=to_state`
+  directly instead of `to_state.value` (the Fact above marked SUPERSEDED), and gained a NEW guard —
+  raising `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}` before any
+  repository access — proven by
+  `test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`.
+  `test_decisions.py`'s HTTP-level assertions (`event["action"] == "approved"`) are unchanged: they
+  run against `FakeProposalRepository`, which appends `action` verbatim to a dict, and
+  `ProposalState.APPROVED == "approved"` still holds (`ProposalState` is a str-mixin `Enum`). No
+  change to the five-file shape, DTOs, or the `api-feature-independence` contract. verified_sha -> d469d2c.
