@@ -214,7 +214,8 @@ stories:
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     points: 3
     order: 1
-    status: todo
+    status: in_progress   # implementer dispatched 2026-08-03 against AC corrected at b8c7828
+    commits: b8c7828..    # story range starts here
     why_here: >-
       HIGHEST BLAST RADIUS, RUNS EARLY. ZR-8 Finding 1 -- the audit's biggest single miss, found only
       in STORY-196's quality-review fix round because it fell through the crack BETWEEN the two audit
