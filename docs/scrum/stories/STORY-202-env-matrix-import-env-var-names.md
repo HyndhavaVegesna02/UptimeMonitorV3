@@ -91,7 +91,7 @@ meet in this file, so keep the distinction sharp — **this story edits key-name
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `settings.py` declares all seven env-var names as module-level constants, and
+- [x] **AC1** — `settings.py` declares all seven env-var names as module-level constants, and
       **`load_settings()`** reads `os.environ` through those constants rather than through inline
       string literals. No behaviour change: every resolved value and default is identical.
 
@@ -100,7 +100,7 @@ meet in this file, so keep the distinction sharp — **this story edits key-name
       which is among the seven, and its Statuspage reads already delegate to
       `load_statuspage_secrets()`, which already uses the constants (`:88-89`). Including it would be
       silent scope expansion.
-- [ ] **AC2** — `env_matrix.py` imports the seven names from `src.composition.settings` and uses them
+- [x] **AC2** — `env_matrix.py` imports the seven names from `src.composition.settings` and uses them
       as its dict keys. **No literal of any of the SEVEN remains in `env_matrix.py`.**
 
       **Scoped to the seven deliberately — do NOT write "no env-var key literal remains".** Two more
@@ -109,16 +109,16 @@ meet in this file, so keep the distinction sharp — **this story edits key-name
       so pulling them in means promoting two more constants and widening the collision surface AC8
       has to account for. **Filed as a follow-up rather than absorbed**, so this story stays bounded
       and the two are not silently forgotten.
-- [ ] **AC3** — The harness's test expectations are pinned to the **imported symbols**, not to
+- [x] **AC3** — The harness's test expectations are pinned to the **imported symbols**, not to
       re-typed string literals, so a future rename moves the expectation with it instead of passing a
       now-wrong key. (This was flagged at filing as "the good one" and it is: a test that hardcodes
       `"CONFIG_DIR"` re-creates the defect one layer out.)
-- [ ] **AC4** — **Mutation proof, two-sided.** Rename one constant's *value* in `settings.py` (e.g.
+- [x] **AC4** — **Mutation proof, two-sided.** Rename one constant's *value* in `settings.py` (e.g.
       `CONFIG_DIR` -> `CONFIG_DIR_X`) and confirm (i) the harness follows automatically — the child
       process still receives whatever name `settings.py` now declares — and (ii) no test asserts the
       old, now-wrong key. Restore and confirm `git diff` is empty. Doing this at the pre-fix commit
       must show the harness and `settings.py` DISAGREEING; that divergence is the proof.
-- [ ] **AC5** — `_ADJUDICATED` entries `("tools/demo_loop_gate/env_matrix.py", 75)` and `(..., 77)`
+- [x] **AC5** — `_ADJUDICATED` entries `("tools/demo_loop_gate/env_matrix.py", 75)` and `(..., 77)`
       are **removed** from `backend/tests/test_zr3_duplicate_declarations.py:64-73` (both cite "Fix:
       STORY-202"), and both ZR-3 tests pass.
 
@@ -133,21 +133,21 @@ meet in this file, so keep the distinction sharp — **this story edits key-name
       **C1 governs entries being RETIRED, not entries being DISPLACED.** This one is displaced: the
       collision still exists and still belongs to STORY-203, so its key moves and its reason text
       stays. Re-key it.
-- [ ] **AC6** — The publish guard is re-verified, not assumed: with `CONFIG_DIR=config/demo`,
+- [x] **AC6** — The publish guard is re-verified, not assumed: with `CONFIG_DIR=config/demo`,
       `Config.statuspage_mapping()` is still `{}` and `build_publisher` still yields a
       `LoggingPublisher`. This story edits the mechanism that selects the demo config, so it may not
       land on the assertion that it "should be equivalent".
-- [ ] **AC8** — **`tools/demo_loop_gate/harness.py` imports the same constants** and uses them at all
+- [x] **AC8** — **`tools/demo_loop_gate/harness.py` imports the same constants** and uses them at all
       six sites (`:540`, `:609`, `:736`, `:742`, `:743`, `:744` at `1e60172` — **re-derive these, the
       earlier edits in this story shift them**). `harness.py:747` and `:750` are **not touched**; they
       are duplicated *values* belonging to STORY-203.
-- [ ] **AC9** — **The ZR-3 collision count is re-derived and reported after the last edit**, not
+- [x] **AC9** — **The ZR-3 collision count is re-derived and reported after the last edit**, not
       assumed. Run `python tools/zr3_duplicate_sweep.py` and record the number. Baseline is **15**
       before this story; the promotion alone would take it to **26**; with AC2 and AC8 applied it
       should return to **15 minus the two `env_matrix.py` entries AC5 retires**. A number that does
       not land where expected is reported and explained, never quietly substituted — if collisions
       remain, they are named individually rather than absorbed into a new adjudication.
-- [ ] **AC7** — Full DoD gate green, including both ZR-3 tests and both ZR-7 tests.
+- [x] **AC7** — Full DoD gate green, including both ZR-3 tests and both ZR-7 tests.
 
 ## Open Questions
 

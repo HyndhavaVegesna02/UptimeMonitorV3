@@ -2196,7 +2196,15 @@ stories:
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning (1 -> 2), then RE-POINTED 2 -> 3
+    status: done    # SPRINT 67, commits 6f872c3..37b09a0. Built by TWO implementers across an
+                    # account session limit; the orchestrator preserved the first one's wiki prose
+                    # but REFUSED its verification stamp (it contained a false claim and asserted an
+                    # AC6 check that had never run). Spec PASS 9/9; quality FIX_REQUIRED on 2 prose
+                    # MAJORs -> fixed. Full 8/8 gate green at 37b09a0, 695 passed / 0 skipped.
+                    # ZR-3 collisions 15 -> 13, re-derived by the orchestrator. AC6's publish guard
+                    # executed by the implementer AND both reviewers independently. Follow-up filed
+                    # as STORY-215. Awaiting PO acceptance at the sprint-67 review.
+                    # REFINED 2026-08-02 at sprint-67 planning (1 -> 2), then RE-POINTED 2 -> 3
                     # POST-LOCK with PO approval after plan verification. IN SPRINT 67.
                     # Five of the seven names are function-body literals at settings.py:32-38 with
                     # no symbol to import, so the story must FIRST promote them to module

@@ -311,7 +311,70 @@ stories:
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: in_progress   # PARKED MID-STORY 2026-08-03 ~01:50 IST. The implementer hit the account
+    status: done
+    completed: 2026-08-03   # ACROSS AN INTERRUPTION -- see interruption_note below.
+    commits: 6f872c3..37b09a0   # 4 + WIP-preservation + 3 + 6 fix-round, TWO different implementers
+    review: >-
+      SPEC PASS on all NINE AC -- it reproduced AC4's BOTH halves in isolated worktrees (pre-fix
+      DISAGREE at 6f872c3, post-fix AGREE), re-executed AC6, re-derived AC9 at 13, and BYTE-COMPARED
+      all five re-keyed adjudication lines against 6f872c3 to confirm harness.py:747/:750 were
+      DISPLACED, never edited. QUALITY FIX_REQUIRED, 2 MAJOR + 4 minor -> fixed, re-verified.
+      QUALITY JUDGED THE CODE SOUND AND SHIPPABLE AS-IS; both majors were prose. It also proved two
+      things by its own mutation, in an isolated worktree with import provenance confirmed:
+      AC3's symbol-pinning is REAL (renaming CONFIG_DIR_VAR leaves all five test_env_matrix tests
+      GREEN because they follow the symbol, and exactly ONE test fires -- the value pin), and the
+      ZR-3 guard's DETECTION LOGIC was NOT weakened while the story had the guarded file open (both
+      test bodies byte-identical to 6f872c3; re-introducing the literal makes the guard fire).
+      *** MAJOR 1 IS THE SHARPEST FINDING OF THE SPRINT AND BELONGS IN THE RETRO. *** The new
+      zone-rules.md ZR-3 Fact cited harness.py's six AC8 sites as :540/:609/:736/:742/:743/:744 --
+      THE PRE-FIX NUMBERS, COPIED FROM THE STORY'S OWN AC8, WHICH EXPLICITLY SAID "re-derive these,
+      the earlier edits in this story shift them". At HEAD they are :546/:615/:743/:749/:750/:751;
+      FIVE OF SIX pointed at unrelated code (`],`, `stdout=out_fh,`, a docstring, a comment). It sat
+      in a `status: verified` article with a FRESH verified_sha, landed by a commit whose message
+      asserted "Re-read both articles against HEAD; nothing else drifted".
+      MAJOR 2: the ZR-3 ledger contradicted itself within fifteen lines -- one _ADJUDICATED reason
+      still counted "env_matrix.py:39" after this same diff re-keyed that collision to :49. At HEAD
+      :39 is `*,`. That reason string is exactly what STORY-203's implementer will read.
+      Fixed at 89d99f4 / 0f3532c, plus three accuracy minors (1a1f517, 942491d, 1a70f45).
+    the_gap_in_the_mechanical_floor: >-
+      WHY yt_wiki PASSED A FACT WITH FIVE WRONG CITATIONS, and it is a real finding about the floor
+      rather than about this story: the citation sweep anchors on `file:line` forms, and these were
+      BARE `:NNN` with no filename for the regex to bind to. So they were invisible to it and a
+      human reviewer had to catch them. Note the SAME article applies the correct convention
+      elsewhere ("line numbers as of 0d39de7", harness.py:525/:586 -- both verified correct), so the
+      convention was known and applied UNEVENLY. Candidate for the retro at the SCRIPT rung.
+    reality_gate: >-
+      SATISFIED EMPIRICALLY ON THE ONE THAT MATTERS. AC6 is the publish guard and it was EXECUTED,
+      by the implementer and INDEPENDENTLY by BOTH reviewers, against the real production
+      interfaces: load_config("config/demo").statuspage_mapping() -> {}, and build_publisher() with
+      REAL-LOOKING credentials -> StatusWritebackPublisher wrapping a LoggingPublisher
+      (IS LoggingPublisher: True). This story edited the mechanism that SELECTS config/demo, and
+      `decide` publishes recoveries with no human gate, so nothing here was allowed to rest on
+      "should be equivalent". An earlier revision of this very story ASSERTED this check had run
+      when it had not -- which is why the orchestrator refused its wiki stamp mid-story.
+      Also verified by quality: the zone arrow still points tools/ -> src ONLY (grep for any
+      backend/src/ import of tools/ returns nothing), which the 8 import contracts do not cover.
+    interruption_note: >-
+      THIS STORY WAS BUILT BY TWO IMPLEMENTERS ACROSS AN ACCOUNT SESSION LIMIT, and the handoff is
+      worth the retro's attention because it worked. The first landed AC1/AC2/AC3/AC5/AC8 and was
+      killed mid-wiki-update; the orchestrator PRESERVED its coherent prose at 8d200a2 but REFUSED
+      its verification stamp, because the prose contained a false claim ("both files import the
+      seven"; harness.py imports FOUR) and asserted an AC6 check that had never run. Both articles
+      were left reading STALE -- quarantined, readable, barred from any brief -- which is the wiki
+      protocol's designed third state and exactly what it exists for. The second implementer fixed
+      the claim, RAN AC6 for real, and only then re-stamped, in a separate commit. Reviewers were
+      told the story crossed a handoff and to check the WHOLE range, since a handoff is where an AC
+      gets dropped between two agents each assuming the other did it. None was.
+    followups_filed: >-
+      STORY-215 (defect, draft) -- the env-var-NAME drift this story deliberately bounded out, now
+      gathered in one place: env_matrix.py:81/:83 and harness.py:614 (the DYNATRACE_* pair), plus
+      the one BOTH reviewers found independently and BOTH correctly ruled out of scope --
+      backend/tests/test_demo_fleet_config.py:164/:200 hardcode "CONFIG_DIR" in a FOURTH file. That
+      is the consequential one: it is STORY-176's create_app test asserting CONFIG_DIR governs
+      publisher safety, so the literal that re-creates the drift risk sits inside THE TEST THAT
+      GUARDS THE PUBLISH GUARD. Refinement must re-derive the sweep count before estimating, because
+      promoting the two DYNATRACE names re-runs this story's own 1 -> 3 point trap.
+    # PARKED MID-STORY 2026-08-03 ~01:50 IST. The implementer hit the account
                           # session limit (resets 04:50 IST) and terminated early. NOT blocked, not
                           # failed -- interrupted. Resume by dispatching a FRESH implementer with
                           # the brief below; do NOT restart the story from zero.
@@ -564,3 +627,67 @@ dod_evidence:
         output_tail: "> frontend@0.0.0 lint | > eslint ."
         commit: a7a1b96
         at: "2026-08-02T19:51:45+00:00"
+  STORY-202:
+    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD 37b09a0, exit 0,
+      green first attempt (the STORY-213 flake did not fire).
+    counts: >-
+      backend 695 passed / 0 SKIPPED (+1 on STORY-199's 694 -- one new test in test_settings.py,
+      ZERO tests deleted and none weakened, independently confirmed by the quality reviewer);
+      8 import contracts kept / 0 broken; 247 files already formatted; frontend 363 passed in 51
+      files.
+    adjuncts: >-
+      yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks -- and this is the run that
+      matters, because the articles read STALE for the whole middle of this story after the
+      orchestrator refused an unearned stamp. The stamp is now earned.
+      AC9 re-derived BY THE ORCHESTRATOR, not carried forward: `python tools/zr3_duplicate_sweep.py`
+      -> "Colliding pairs (backend/src declared value == tools/ literal), noise excluded: 13".
+      Arithmetic holds: 15 baseline - 2 retired env_matrix.py entries = 13. No new adjudication was
+      added to absorb anything; the 4 remaining MUST-IMPORT-FROM-SRC entries are all STORY-203's.
+    citations_verified_by_orchestrator: >-
+      The six re-derived harness.py sites were opened and read directly, because this exact claim
+      had already been wrong once: :546 f"env CONFIG_DIR={api_env[CONFIG_DIR_VAR]!r}", :615
+      f"CONFIG_DIR={loop_env[CONFIG_DIR_VAR]!r}", :743 result["config_dir_api"], :749
+      result["dynamo_endpoint_url"], :750 result["observations_table"], :751 result["control_table"]
+      -- all six resolve to real constant-using sites. The ZR-3 ledger cross-reference now reads
+      "env_matrix.py:49, re-keyed from :39".
+    fragment:   # emitted by yt_gate.py, merged verbatim
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ============================ 695 passed in 51.66s ============================="
+        commit: 37b09a0
+        at: "2026-08-03T06:25:35+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 37b09a0
+        at: "2026-08-03T06:26:28+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 37b09a0
+        at: "2026-08-03T06:26:29+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "247 files already formatted"
+        commit: 37b09a0
+        at: "2026-08-03T06:26:29+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 37b09a0
+        at: "2026-08-03T06:26:29+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
+        commit: 37b09a0
+        at: "2026-08-03T06:26:37+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 643ms"
+        commit: 37b09a0
+        at: "2026-08-03T06:27:53+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 37b09a0
+        at: "2026-08-03T06:28:03+00:00"

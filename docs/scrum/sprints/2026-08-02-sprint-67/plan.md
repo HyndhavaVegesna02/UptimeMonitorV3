@@ -259,7 +259,13 @@ on the final HEAD is the evidence of record**. Plus the wiki compile pass before
       **694 passed / 0 skipped** (+5, purely additive). Two follow-ups filed: STORY-213 (an
       intermittent failure whose message is indistinguishable from a real pagination defect) and
       STORY-214 (shared helper + the ZR-7 guard rework it forces).
-- [ ] STORY-202 — implementer → both reviewers → gate → reality gate
+- [x] STORY-202 — implementer → both reviewers → gate → reality gate — **DONE** at `37b09a0`
+      (`6f872c3..37b09a0`), built by **two implementers across a session-limit interruption**. Spec
+      PASS 9/9 AC (AC4's both halves, AC5's five re-keys and AC6 all reproduced independently);
+      quality FIX_REQUIRED (2 MAJOR, both stale citations this diff's own line-shifting created —
+      including six `harness.py` sites copied from the AC text that warned to re-derive them) →
+      fixed. Full 8/8 green, **695 passed / 0 skipped**. ZR-3 collisions **15 → 13**. Follow-up
+      filed: STORY-215.
 - [ ] STORY-200 — implementer → both reviewers → gate → reality gate
 - [ ] ~~STORY-201 — implementer → gate~~ **DROPPED post-lock** (PO-approved) to hold 11 points when
       STORY-202 absorbed a third file. No work started; returns to the backlog as `ready`.
