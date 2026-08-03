@@ -266,8 +266,18 @@ on the final HEAD is the evidence of record**. Plus the wiki compile pass before
       including six `harness.py` sites copied from the AC text that warned to re-derive them) →
       fixed. Full 8/8 green, **695 passed / 0 skipped**. ZR-3 collisions **15 → 13**. Follow-up
       filed: STORY-215.
-- [ ] STORY-200 — implementer → both reviewers → gate → reality gate
+- [x] STORY-200 — implementer → both reviewers → gate → reality gate — **DONE** at `9bccac8`
+      (`33b7ccd..9bccac8`). Spec PASS 9/9 AC, having read the persisted bytes back from real
+      DynamoDB (`sk = 'EVENT#…#approved'`, not `#ProposalState.APPROVED`); quality FIX_REQUIRED
+      (5 MAJOR — including a wiki row claiming `ENFORCED-BY` for a guard that **does not exist**,
+      disproved by reverting the whole fix and watching the suite stay green) → all fixed. Full 8/8
+      green, **696 passed / 0 skipped**.
 - [ ] ~~STORY-201 — implementer → gate~~ **DROPPED post-lock** (PO-approved) to hold 11 points when
       STORY-202 absorbed a third file. No work started; returns to the backlog as `ready`.
-- [ ] Wiki compile pass (blocking)
-- [ ] Full 8/8 gate on final HEAD → review
+- [x] Wiki compile pass (blocking) — `yt_wiki` CLEAN on all four blocking checks at `9bccac8`.
+      Eight articles were updated across the sprint, each re-verified by the story that touched it;
+      no article was left stale and no link is broken. The 2 advisory `refs` amplifier notes are
+      unchanged from the sprint baseline and have never been blocking.
+- [x] Full 8/8 gate on final HEAD → review — **exit 0 at `9bccac8`**, 696 passed / 0 skipped,
+      8 contracts kept, 247 formatted, cfn-lint clean, frontend 363/363, build + lint clean.
+      `yt_selftest` 43/43.

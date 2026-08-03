@@ -1,6 +1,8 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 67
-status: active     # none | planning | active | review | closed | aborted
+status: review     # none | planning | active | review | closed | aborted
+                   # ALL FOUR STORIES DONE, 11/11 POINTS. Sprint-close gate 8/8 GREEN at 9bccac8,
+                   # exit 0, 696 passed / 0 SKIPPED. Wiki compile pass CLEAN. Awaiting PO verdict.
                    # LOCKED 2026-08-02. SCOPE IS FROZEN -- new PO requests go to the backlog, not
                    # into this sprint. Tooling is frozen too, EXCEPT the enforcement ladder (A14).
                    # THREE PO RULINGS AT PLANNING (2026-08-02), all recorded because they shape
@@ -440,7 +442,87 @@ stories:
   - id: STORY-200
     title: Give ProposalRepository.record_approval_event a domain-typed action parameter (subsumes STORY-198)
     file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
-    status: todo
+    status: done
+    commits: 33b7ccd..9bccac8   # 8 implementer + 4 fix-round
+    review: >-
+      SPEC PASS on all NINE AC. QUALITY FIX_REQUIRED, 5 MAJOR + 5 minor -> all fixed, re-verified.
+      SPEC DID THE TWO THINGS THAT MATTERED. (1) It wrote through the REAL adapter itself and read
+      the raw item back -- sk='EVENT#2026-06-26T12:05:00.000000+00:00#approved', action='approved',
+      approved_actor='reviewer' -- so the persisted bytes are provably unchanged and the
+      (str, Enum) corruption trap is closed by measurement, not by reading the code.
+      (2) IT ANSWERED THE AC7 QUESTION HONESTLY AND THE ANSWER IS SUBTLE: it reproduced the
+      mutation, then CONTINUED PAST THE FAILURE and found approved_actor is still written correctly
+      under it. Because AC4 compares by OBJECT IDENTITY, a `.value` drift cannot break that branch --
+      the failure mode the story's blast-radius paragraph exists to prevent is now STRUCTURALLY
+      IMPOSSIBLE. So AC7's mutation pins a real but NARROWER coupling (the persisted sk/action byte
+      format) than the narrative implies. It is not vacuous -- the test's lookup key is authored
+      independently of the mutated value. Crucially, spec verified the WIKI DOES NOT OVERCLAIM this:
+      it says the event becomes unreadable at its expected sort key, not that approved_actor broke.
+      The story is correct AND its own motivating hazard has been engineered out rather than merely
+      tested for -- worth recording, because a future reader could otherwise mistake the narrower
+      proof for the broader one.
+    the_major_the_gate_could_not_catch: >-
+      *** MAJOR-1 IS THE FINDING OF THE SPRINT AND BELONGS AT THE TOP OF THE RETRO. ***
+      zone-rules.md:733 marked ZR-6's row `ENFORCED-BY <a named test>, for this ONE instance` and
+      said "only this one, now-fixed instance is pinned". The quality reviewer disproved it by
+      mutation (MUT-6): reverting the ENTIRE ZR-6 fix -- port back to `action: str`, fake back to
+      `str`, adapter back to `if action == "approved":` -- leaves the suite at 696 passed, IDENTICAL
+      TO HEAD. That test pins the NEW 2-member subset guard; NOTHING detects a ZR-6 regression.
+      The table's own definition of ENFORCED-BY (:721-724) requires a guard "shown RED, never merely
+      is green" -- ZR-3 and ZR-7 record their red demonstrations; this row recorded none, AND NONE IS
+      POSSIBLE. A future story could re-widen that port with a fully green gate while the
+      authoritative catalogue told the reader it was guarded: the exact trusted-and-wrong state the
+      wiki protocol forbids. Corrected at d8cb237 to `FIXED (STORY-200) -- NO STANDING GUARD`, with
+      the MUT-6 evidence recorded in the row itself.
+      *** THE ORCHESTRATOR RE-DERIVED MUT-6 INDEPENDENTLY rather than accepting it twice-removed.
+      The implementer DISCLOSED that it had restated the reviewer's number without re-measuring, and
+      that number was about to become a Fact in a `verified` article. Measured in an extracted copy
+      at 9bccac8 with import provenance printed and confirmed (proposal.py resolved to the scratch
+      tree, not the main one), applying exactly the three MUT-6 changes and NOT the `.value` sites:
+      696 passed. The claim is TRUE. Scratch copy removed; main tree verified clean throughout. ***
+    major_4_had_teeth_in_the_code: >-
+      approval.py's rewritten `_decide` docstring asserted the action "can never drift from the
+      spine's `ck_approval_events_action` constraint (action IN ('approved','rejected'))" -- a
+      POSTGRES CHECK CONSTRAINT FROM THE NEON ERA that exists nowhere in this DynamoDB-only repo,
+      retired with the relational layer at STORY-087. After this story the `_decide` guard is the
+      ONLY enforcement, so that sentence is precisely the argument someone would use to DELETE THE
+      GUARD AS REDUNDANT. It also claimed the constraint mirrors ProposalState's terminal values
+      "one-for-one" when there are FOUR, contradicting the paragraph eight lines below it. Fixed at
+      013f344, which now states plainly that nothing backs it at the datastore.
+    second_blind_spot_in_the_mechanical_floor: >-
+      MAJOR-3 found a SECOND way a citation slips past the lint this sprint, and it is a different
+      mechanism from STORY-202's. canonical-types-and-ports.md:152 asserted a Fact about
+      backend/src/core/services/approval.py while that file was NOT in the article's code_refs --
+      and it passed `facts: CLEAN` because the citation was written abbreviated
+      (`core/services/...` not `backend/src/core/services/...`) and yt_wiki.py:213 SKIPS any citation
+      that does not resolve from the repo root. So future edits to approval.py would never have
+      flagged the article stale. Fixed at ef29b6d (full path + code_refs).
+      TAKEN WITH STORY-202's bare `:NNN` gap, that is TWO INDEPENDENT WAYS a citation became
+      invisible to the Facts lint in ONE SPRINT. Both are retro candidates at the SCRIPT rung.
+    reality_gate: >-
+      SATISFIED BY MEASUREMENT ON BOTH SIDES. The persisted bytes were read back from real DynamoDB
+      Local by the spec reviewer (independent of the story's own test), and the quality reviewer ran
+      SIX mutations against an extracted copy with provenance confirmed: MUT-1 (value drift) RED,
+      MUT-2 (bare member in the sk f-string) RED x2 -- the dangerous write site IS pinned -- MUT-5
+      (delete the guard) RED, so the new guard test is not vacuous. MUT-3 and MUT-4 are green and
+      that is disclosed rather than hidden: the `"action"` attribute site survives as a str subclass
+      by luck rather than design, and the adapter's docstring says exactly that.
+    what_the_reviewer_deliberately_cleared: >-
+      Recorded so a later story does not re-litigate settled ground: InvalidApprovalActionError
+      conforms to the codebase's error conventions (base, placement, export, actionable message, and
+      it correctly has no api/_shared/errors.py mapping because it is unreachable through the public
+      API); `_decide` is the right seam and the ONLY in-tree caller, so nothing reaching the repo
+      skips it; leaving approved_actor unimplemented in the fake is CORRECT, because it is an
+      adapter-internal denormalization with no port surface and a fake implementing it would invent
+      semantics the port does not define; both bare wiki re-stamps were earned; and the
+      api-five-file-convention SUPERSEDED mark is correctly scoped.
+      NOTE: this story used `::symbol` citation form throughout and introduced NO bare `:NNN`
+      citations -- which is exactly why it did not repeat STORY-202's failure.
+    followup_candidate: >-
+      canonical-types-and-ports.md:99 carries the SAME abbreviated-path defect MAJOR-3 fixed at
+      :152. It PREDATES this story, so it was left unfixed as out of round scope. It needs a story
+      or a mechanical fix -- and it is evidence the abbreviated form is a habit, not a one-off,
+      which strengthens the case for the script-rung fix above.
     points: 3
     ceremony: implementer + both reviewers
     order: 4
@@ -691,3 +773,63 @@ dod_evidence:
         output_tail: "> frontend@0.0.0 lint | > eslint ."
         commit: 37b09a0
         at: "2026-08-03T06:28:03+00:00"
+  STORY-200:
+    scope: >-
+      FULL 8/8, not a --only run. Orchestrator's own run at final HEAD 9bccac8, exit 0, green first
+      attempt. THIS IS ALSO THE SPRINT-CLOSE RECORD -- 9bccac8 is the final HEAD of sprint 67, so
+      this run is the full-gate evidence of record for the sprint as a whole.
+    counts: >-
+      backend 696 passed / 0 SKIPPED (+1 on STORY-202's 695 -- exactly one new test,
+      test_approval_service_decide_rejects_action_outside_approved_or_rejected; NO test deleted and
+      none weakened, independently confirmed by both reviewers); 8 import contracts kept / 0 broken
+      across 150 files and 429 dependencies; 247 files already formatted; frontend 363 passed in 51
+      files.
+    adjuncts: yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks (sweep, facts, links,
+      integrity) -- the sprint-close wiki state. The same 2 pre-existing advisory `refs` amplifier
+      notes carried unchanged from the sprint baseline; they have never been blocking.
+    independent_mutation_by_orchestrator: >-
+      MUT-6 re-derived at 9bccac8 in an extracted copy, import provenance printed and confirmed:
+      reverting port + fake to `action: str` and the adapter to `if action == "approved":` (and NOT
+      the .value sites, matching the claim exactly) -> 696 passed, identical to HEAD. The corrected
+      ZR-6 row's central claim is TRUE, measured here rather than inherited.
+    fragment:   # emitted by yt_gate.py, merged verbatim
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 696 passed in 83.81s (0:01:23) ========================"
+        commit: 9bccac8
+        at: "2026-08-03T07:27:42+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
+        commit: 9bccac8
+        at: "2026-08-03T07:29:08+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 9bccac8
+        at: "2026-08-03T07:29:09+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "247 files already formatted"
+        commit: 9bccac8
+        at: "2026-08-03T07:29:10+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 9bccac8
+        at: "2026-08-03T07:29:10+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
+        commit: 9bccac8
+        at: "2026-08-03T07:29:18+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 898ms"
+        commit: 9bccac8
+        at: "2026-08-03T07:31:05+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 9bccac8
+        at: "2026-08-03T07:31:18+00:00"

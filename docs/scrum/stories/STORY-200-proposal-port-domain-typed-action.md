@@ -79,12 +79,12 @@ its test trap — is folded into the AC below.
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `ProposalRepository.record_approval_event`'s abstract signature types `action` as
+- [x] **AC1** — `ProposalRepository.record_approval_event`'s abstract signature types `action` as
       `ProposalState`, not `str` (`backend/src/core/ports/proposal_repository.py:45`). Its docstring
       states the contract that only `APPROVED` and `REJECTED` are legal, and why.
-- [ ] **AC2** — `core/services/approval.py:128` passes `to_state` directly instead of
+- [x] **AC2** — `core/services/approval.py:128` passes `to_state` directly instead of
       `to_state.value`; no caller converts to a string at the call site.
-- [ ] **AC3** — The 2-member contract leaves a testable trace rather than a comment: passing a
+- [x] **AC3** — The 2-member contract leaves a testable trace rather than a comment: passing a
       `ProposalState` outside `{APPROVED, REJECTED}` to the recording path raises a named error,
       proven by a test. **The guard lives in the core service (`approval.py`'s `_decide`), not in the
       adapter** — it is a domain-contract rule, and putting it in the adapter would both misplace it
@@ -93,7 +93,7 @@ its test trap — is folded into the AC below.
       **Do not treat `is_valid_transition` as partial cover — it does not constrain this set.**
       `core/domain/proposal.py:105-107` admits any non-`OPEN` target, so
       `is_valid_transition(OPEN, SUPERSEDED)` returns `True`. AC3 is entirely new validation.
-- [ ] **AC4** — `DynamoProposalRepository.record_approval_event` compares by enum identity
+- [x] **AC4** — `DynamoProposalRepository.record_approval_event` compares by enum identity
       (`action is ProposalState.APPROVED`), not against a string literal. The **STORY-198 defect is
       gone**: no `"approved"` literal remains in that method.
 
@@ -112,23 +112,23 @@ its test trap — is folded into the AC below.
         Passing the bare member here silently corrupts every event sort key.
       - `dynamo_proposal_repository.py:268` — the `"action"` item attribute. This one *happens* to
         survive as a str subclass, but that is luck rather than design; pin it.
-- [ ] **AC5** — **The test trap is honoured.** `backend/tests/fakes.py:175-183`'s
+- [x] **AC5** — **The test trap is honoured.** `backend/tests/fakes.py:175-183`'s
       `record_approval_event` only appends a dict — it does NOT implement the `approved_actor`
       denormalization — so the branch this story fixes is **unobservable through the fake**. The
       proving test for AC4 therefore runs against DynamoDB Local, asserts `approved_actor` is
       written on approve and NOT written on reject, and a fake-based test may not be substituted for
       it. (A fake-based test here would assert nothing while looking green.)
-- [ ] **AC6** — End-to-end blast-radius check: an approve still populates `Publication.author`
+- [x] **AC6** — End-to-end blast-radius check: an approve still populates `Publication.author`
       through `dynamo_publication_repository.py:94-96`, asserted against a non-empty author.
-- [ ] **AC7** — Mutation proof: change `ProposalState.APPROVED`'s *value* (not its name) in
+- [x] **AC7** — Mutation proof: change `ProposalState.APPROVED`'s *value* (not its name) in
       `core/domain/proposal.py:28`, confirm the AC5 test goes RED, restore and confirm `git diff` is
       empty. This is the specific drift the story exists to make impossible to miss — if nothing goes
       red, the coupling is still unpinned and the story is not done.
-- [ ] **AC9** — `FakeProposalRepository.record_approval_event` (`backend/tests/fakes.py:175-183`)
+- [x] **AC9** — `FakeProposalRepository.record_approval_event` (`backend/tests/fakes.py:175-183`)
       declares `action: ProposalState`, matching the port. The 2026-06-26 fake/adapter parity
       agreement means the fake may not keep a signature the port has abandoned — and AC5 cites this
       file only as a trap, so without this AC nothing updates it.
-- [ ] **AC8** — The full DoD gate is green, and existing contract tests pass **except the two that
+- [x] **AC8** — The full DoD gate is green, and existing contract tests pass **except the two that
       must change**, named here rather than discovered during implementation:
 
       - `backend/tests/test_dynamo_proposal_repository.py:193` — passes `action="approved"`, then

@@ -2144,7 +2144,17 @@ stories:
   - id: STORY-200
     title: Give ProposalRepository.record_approval_event a domain-typed action parameter
     file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning; SUBSUMES STORY-198; 2 -> 3 points.
+    status: done    # SPRINT 67, commits 33b7ccd..9bccac8. Port typed to ProposalState, adapter
+                    # compares by enum identity, .value explicit at both write sites -- persisted
+                    # bytes verified UNCHANGED by the spec reviewer reading the raw item back from
+                    # real DynamoDB Local. STORY-198's defect is gone with it (subsumed).
+                    # Spec PASS 9/9; quality FIX_REQUIRED on 5 MAJORs (4 prose, 1 leftover call
+                    # site) -> all fixed. Full 8/8 gate green at 9bccac8, 696 passed / 0 skipped.
+                    # NOTE FOR ANY FUTURE STORY TOUCHING THIS PORT: there is NO standing guard
+                    # against re-widening it -- proven by mutation, reverting the whole fix leaves
+                    # the suite green. zone-rules.md's ZR-6 row now says so plainly.
+                    # Awaiting PO acceptance at the sprint-67 review.
+                    # REFINED 2026-08-02 at sprint-67 planning; SUBSUMES STORY-198; 2 -> 3 points.
                     # The filing's open design question is SETTLED: the port takes ProposalState,
                     # NOT a new 2-member enum. Reason: the sibling method in the same port
                     # (resolve, :32) already takes ProposalState for the same two values, and a
