@@ -188,6 +188,16 @@ def find_hand_built_topology_key_dicts(path: Path) -> list[int]:
     owned by `adapters/persistence/topology_keys.py` alone. A dict literal naming
     either `"pk"` or `"sk"` as a key, anywhere in this file, means it is being
     hand-built again rather than obtained from that module.
+
+    Narrow by construction -- this is a literal-`ast.Dict`-node check, nothing more.
+    It CATCHES a plain dict literal (`{"pk": ..., "sk": ...}`), one built inside a
+    nested local helper function, and one assembled via a `**` merge
+    (`{**other, "pk": ...}`). It is BLIND to every other way the same two-key shape
+    can be constructed: `dict(pk=..., sk=...)` (keyword-call form, no `ast.Dict`
+    node at all), item-assignment (`key = {}; key["pk"] = ...`), constant-name keys
+    (`{_PK: ..., _SK: ...}`, since the key must be a literal string `ast.Constant`),
+    and `dict(zip(("pk", "sk"), (...)))`. A pass here means no plain dict literal
+    was found -- it does not mean no hand-built key exists.
     """
     tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
     violations = []
