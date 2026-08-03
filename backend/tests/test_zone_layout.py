@@ -181,7 +181,8 @@ _TOPOLOGY_KEY_NAMES = {"pk", "sk"}
 
 
 def find_hand_built_topology_key_dicts(path: Path) -> list[int]:
-    """Line numbers of every `{"pk": ..., "sk": ...}`-shaped dict literal in `path`.
+    """Line numbers, in source order, of every `{"pk": ..., "sk": ...}`-shaped dict
+    literal in `path`.
 
     ZR-8 Finding 1 (`docs/scrum/wiki/zone-rules.md`): the topology key schema is
     owned by `adapters/persistence/topology_keys.py` alone. A dict literal naming
@@ -200,7 +201,7 @@ def find_hand_built_topology_key_dicts(path: Path) -> list[int]:
         }
         if key_names & _TOPOLOGY_KEY_NAMES:
             violations.append(node.lineno)
-    return violations
+    return sorted(violations)
 
 
 def test_topology_key_guard_detects_and_clears(tmp_path: Path) -> None:
