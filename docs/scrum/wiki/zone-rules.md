@@ -291,9 +291,12 @@ where a zone-wide regression would be caught.
   `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
   `STATUSPAGE_API_KEY_VAR` — because it sets all seven as child-env dict keys.
   `tools/demo_loop_gate/harness.py:62-67` imports only the FOUR it actually
-  re-types as a dict key at its six AC8 sites (`:540`, `:609`, `:736`, `:742`,
-  `:743`, `:744`) — `CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`,
-  `DYNAMO_ENDPOINT_URL_VAR`, `DYNAMO_OBSERVATIONS_TABLE_VAR` — because
+  re-types as a dict key at its six AC8 sites (line numbers as of `1210374`:
+  `:546`, `:615`, `:743`, `:749`, `:750`, `:751` — NOT the story's own AC8
+  numbers, `:540`/`:609`/`:736`/`:742`/`:743`/`:744`, which were the PRE-edit
+  numbers AC8 itself warned would shift) — `CONFIG_DIR_VAR`,
+  `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR` — because
   `harness.py` never re-types `AWS_REGION`/`STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY`
   as a literal dict key anywhere (verified: `grep -n
   '"AWS_REGION"\|"STATUSPAGE_PAGE_ID"\|"STATUSPAGE_API_KEY"' tools/demo_loop_gate/harness.py`
