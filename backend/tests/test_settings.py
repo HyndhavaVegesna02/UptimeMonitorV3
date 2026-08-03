@@ -18,9 +18,15 @@ def test_env_var_name_constants_match_the_names_load_settings_historically_read(
     monkeypatch: pytest.MonkeyPatch,
 ):
     """STORY-202 AC1: the five names `load_settings()` used to read as
-    function-body string literals are now module constants -- and reading
-    the environment THROUGH them still resolves the same value, proven here
-    by round-tripping a value set under each constant's OWN name."""
+    function-body string literals are now module constants, pinned here to
+    their known literal values -- the only assertion in this test that
+    actually fires on a rename (quality-review mutation-verified). The
+    round-trip below sets each env var under the SAME constant
+    `load_settings()` reads and asserts the value comes back: by
+    construction this cannot distinguish "reads through the constant" from
+    "reads the literal" (setenv and load_settings reference the identical
+    symbol, so the two strings can never differ) -- it demonstrates
+    load_settings() still resolves correctly post-promotion, nothing more."""
     assert CONFIG_DIR_VAR == "CONFIG_DIR"
     assert AWS_REGION_VAR == "AWS_REGION"
     assert DYNAMO_OBSERVATIONS_TABLE_VAR == "DYNAMO_OBSERVATIONS_TABLE"
