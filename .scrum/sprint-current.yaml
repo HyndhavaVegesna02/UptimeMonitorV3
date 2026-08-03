@@ -214,8 +214,16 @@ stories:
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     points: 3
     order: 1
-    status: in_progress   # implementer dispatched 2026-08-03 against AC corrected at b8c7828
-    commits: b8c7828..    # story range starts here
+    status: todo   # NOT STARTED. An implementer WAS dispatched 2026-08-03 against the corrected AC
+                   # and died on an ACCOUNT session limit ("resets 11:50pm Asia/Calcutta") before
+                   # writing anything. Verified, not assumed: `git log eca8b3c..HEAD` is EMPTY and
+                   # `git status` is clean, so there is no partial work to preserve and no scraps to
+                   # discard. Rolled back to `todo` rather than left `in_progress`, which would have
+                   # implied work in flight at the next standup.
+                   # RESUME = re-dispatch the SAME brief, unchanged. Nothing about the story or its
+                   # AC needs revisiting: the AC were corrected at b8c7828 after independent plan
+                   # verification and no implementer has yet tested them against real code.
+    commits: null  # no story commits yet
     why_here: >-
       HIGHEST BLAST RADIUS, RUNS EARLY. ZR-8 Finding 1 -- the audit's biggest single miss, found only
       in STORY-196's quality-review fix round because it fell through the crack BETWEEN the two audit
