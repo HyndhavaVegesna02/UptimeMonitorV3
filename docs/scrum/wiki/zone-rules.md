@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: 1a70f45
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
+verified_sha: d469d2c
 verified_sprint: sprint-67
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -462,45 +462,51 @@ where a zone-wide regression would be caught.
   `publish(self, change: StatusChange) -> None`), which is the positive shape this
   rule generalizes: a port parameter should be the domain type that already models
   the value, not a primitive standing in for it.
-- **The finding this rule adjudicates.**
-  `backend/src/core/ports/proposal_repository.py:45` (`action: str`, in
-  `record_approval_event`'s signature) stands in for `ProposalState` even though
-  `ProposalState` is imported in the SAME file at `backend/src/core/ports/
-  proposal_repository.py:6` and used correctly, as the domain type, by the sibling
-  method 13 lines above it: `backend/src/core/ports/proposal_repository.py:32`
-  (`to_state: ProposalState`, in `resolve`'s signature). The adapter implementing
-  this port, `backend/src/adapters/persistence/dynamo_proposal_repository.py:286`
-  (`if action == "approved":`), then compares the resulting bare string against a
+- **The finding this rule adjudicates — FIXED at STORY-200 (sprint-67).**
+  `backend/src/core/ports/proposal_repository.py::ProposalRepository.record_approval_event`
+  (`action: str`) stood in for `ProposalState` even though `ProposalState` is imported
+  in the same file and used correctly, as the domain type, by the sibling method
+  thirteen lines above it: `resolve`'s `to_state: ProposalState`. The adapter
+  implementing this port,
+  `backend/src/adapters/persistence/dynamo_proposal_repository.py::DynamoProposalRepository.record_approval_event`
+  (`if action == "approved":`), then compared the resulting bare string against a
   HARDCODED LITERAL rather than an enum member — the exact shape a correct port
   signature would make structurally awkward to get wrong. STORY-195 (sprint-66)
   originally verdicted the adapter-level symptom as an unscored "catalogue gap"
   (`GAP-1`, filed as `STORY-198`) and separately verdicted the PORT file `CLEAN` —
   the quality-review fix round (sprint-66) corrected this: the port signature is the
-  root cause, `STORY-198`'s adapter-only fix does not touch it, and it is scored here
-  as its own `ZR-6` finding, `MAJOR` (a real, shipping port signature that leaks a
-  primitive where a domain type already exists and is used correctly one method
-  away).
+  root cause, `STORY-198`'s adapter-only fix does not touch it, and it was scored as
+  its own `ZR-6` finding, `MAJOR`. **STORY-200 landed the fix**: the port now types
+  `action: ProposalState`; `STORY-198` was subsumed rather than landed separately
+  (running both would have re-corrupted the same three lines twice — see the story
+  file's "Relationship to STORY-198" section).
 - **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
   edges between modules, never a method signature's parameter types. `action: str`
-  imports nothing at all — there is no edge to check — so this is invisible to every
-  one of the eight contracts by construction, exactly like ZR-1/ZR-2's gaps.
-- **The honest narrowing question, stated plainly (not resolved here).**
-  `action`'s legal set today is a 2-member subset of `ProposalState`'s 5 members
-  (only `"approved"`/`"rejected"` are ever passed, per
-  `backend/src/core/services/approval.py:128`'s `action=to_state.value` where
-  `to_state` is always `ProposalState.APPROVED` or `ProposalState.REJECTED` — see
-  `backend/src/core/services/approval.py:60-70`/`:72-88`). The full `ProposalState`
-  enum also carries `OPEN`, `SUPERSEDED`, `OBSOLETED`, none of which is ever a valid
-  `action`. STORY-197/a fix story therefore has a real choice, not a mechanical
-  "just use `ProposalState`": (a) widen the port to accept `ProposalState` and accept
-  that 3 of 5 members are semantically invalid `action`s (matching the enum ZR-2
-  already treats as canonical, at the cost of an under-constrained signature), or
-  (b) introduce a narrower domain type (e.g. a 2-member `ApprovalAction` enum or
-  equivalent) that expresses exactly the legal set. This rule adjudicates that the
-  CURRENT bare `str` is a finding; it does not adjudicate which of (a)/(b) is the
-  right fix — that decision belongs to **STORY-200**, the fix story STORY-195 already filed,
-  whose AC3 forces the choice to leave a testable trace. (This previously named STORY-197,
-  which is the GUARD story, not the fix story.)
+  imported nothing at all — there was no edge to check — so this was invisible to
+  every one of the eight contracts by construction, exactly like ZR-1/ZR-2's gaps.
+  (Unchanged by the fix — worth restating because the SAME invisibility applies to
+  any future port-typing regression here.)
+- **The narrowing question — RESOLVED at STORY-200, decision (a).**
+  `action`'s legal set was a 2-member subset of `ProposalState`'s 5 members (only
+  `"approved"`/`"rejected"` are ever passed). The fix story had a real choice: (a)
+  widen the port to accept `ProposalState` and accept that 3 of 5 members are
+  semantically invalid `action`s, or (b) introduce a narrower 2-member domain type.
+  **Decision (a) was taken** — the sibling method `resolve(..., to_state:
+  ProposalState)` already speaks `ProposalState` for the same two values, and (b)
+  would have bought type precision at the cost of a second declaration of the
+  approved/rejected vocabulary (the story file's "design decision" section records
+  the full reasoning and an explicit expiry condition: if `action`'s legal set ever
+  stops being a subset of `ProposalState`, e.g. a future action with no corresponding
+  proposal state, decision (a) expires and (b) becomes correct).
+  The "3 invalid members" gap this leaves is closed with a **testable trace, not a
+  comment**: `backend/src/core/services/approval.py::ApprovalService._decide` raises
+  `backend/src/core/domain/proposal.py::InvalidApprovalActionError` for any
+  `to_state` outside `{APPROVED, REJECTED}`, proven by
+  `backend/tests/test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`.
+  This guard is deliberately NEW validation, not reuse of
+  `core/domain/proposal.py::is_valid_transition` — that function admits any non-OPEN
+  target (`is_valid_transition(OPEN, SUPERSEDED)` is `True`), so it does not
+  constrain this narrower set.
 - **Coverage verdict.** `GUARDABLE` only partially, and with a real false-positive
   risk: a heuristic AST check (a `core/ports/*` abstract method parameter/return
   annotated as `str`/`int`/`dict`/`bool` where a same-named or clearly-related
@@ -510,9 +516,10 @@ where a zone-wide regression would be caught.
   value") that a name-based or type-based heuristic will get wrong on legitimately
   primitive parameters (a `signal_key: str`, a `reason: str | None`, a `limit: int`)
   that have no domain type to stand in for at all and never will. `GUARDABLE` as a
-  reviewed lint warning surfaced for human judgement, not as a hard-failing contract
-  — STORY-197 must say so explicitly rather than promise a false-positive-free
-  guard.
+  reviewed lint warning surfaced for human judgement, not as a hard-failing contract —
+  this remains true after STORY-200: the fix closed this ONE instance and pinned the
+  2-member subset with a real test, but did not add a general port-primitive-leak
+  contract, and none is claimed here.
 
 #### ZR-7 — an adapter must satisfy the port contract it implements; silently truncating or narrowing a result set the port promises in full is a boundary violation, not a storage detail
 
@@ -723,7 +730,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module. Green today only via a per-entry adjudication list; every unfixed entry names its fix story. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
-| ZR-6 | `GUARDABLE-DEFERRED (STORY-200)` | **Guardable only as a reviewed lint WARNING surfaced for human judgement, never as a hard-failing contract** — ZR-6's own coverage verdict says so and requires this to be stated explicitly. Deliberately behind its FIX story, not ahead of it: ZR-6's own text leaves open whether `record_approval_event`'s `action` becomes `ProposalState` or a narrower 2-member type, and a guard written before that choice would encode the wrong target. STORY-200 AC3 forces the decision to leave a testable trace; the guard follows it. |
+| ZR-6 | `ENFORCED-BY backend/tests/test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`, for this ONE instance | STORY-200 (sprint-67) landed the fix: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover. **This is a per-instance guard, not a general contract**: the BROADER "a port primitive stands in for an existing domain type" rule remains `GUARDABLE` only as a reviewed lint warning (see the rule's Coverage verdict) — no mechanical check exists for a FUTURE port taking the wrong primitive; only this one, now-fixed instance is pinned. |
 | ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing `list_components`'s `LastEvaluatedKey` loop (the recorded mutation proof) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes (including `is_under_maintenance`) and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
 | ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). **Honest reason, corrected at review:** the blocker is AC5's two-guard cap, not redness — ZR-3 and ZR-7 were in exactly the same "live violations" position and this same commit solved that with exemption lists, so "a guard would be RED" would have been a false excuse. A second, real constraint does apply though: ZR-8's violations are whole-function SHAPE (a duplicated builder, a hand-rolled key schema), not per-call-site coordinates, so an exemption list would be a far blunter instrument here than it is for ZR-3/ZR-7. |
 
@@ -831,6 +838,27 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   was wrong. Also fixed the ZR-7 adjudication row, which named `is_under_maintenance`
   as the method used for the recorded mutation proof when the History entry (and the
   actual evidence) both say `list_components`. verified_sha -> fe8df72.
+- sprint-67 (STORY-200): landed the ZR-6 fix. `record_approval_event`'s port
+  signature now types `action: ProposalState` (decision (a), the sibling method's
+  type — not a narrower type; the story file's "design decision" section records
+  the full reasoning and an explicit expiry condition). The adapter,
+  `DynamoProposalRepository.record_approval_event`, now compares by enum identity
+  (`action is ProposalState.APPROVED`), with `.value` used explicitly at both write
+  sites (the `sk` f-string and the `"action"` item attribute) — `ProposalState` is
+  `class ProposalState(str, Enum)`, a str MIXIN not `StrEnum`, so on Python 3.13 an
+  f-string over the bare member renders `"ProposalState.APPROVED"`, not
+  `"approved"`; omitting `.value` at the `sk` site was confirmed to corrupt every
+  approval event's sort key (reproduced as an actual test failure before the fix,
+  not just reasoned about). The "3 invalid members" gap is closed with
+  `ApprovalService._decide` raising `InvalidApprovalActionError` for any `to_state`
+  outside `{APPROVED, REJECTED}` — deliberately NEW validation, since
+  `is_valid_transition` admits any non-OPEN target and does not constrain this
+  narrower set. Mutation-proven: changing `ProposalState.APPROVED`'s value (not
+  its name) trips
+  `test_dynamo_proposal_repository.py::test_dynamo_proposal_repository_record_approval_event`
+  (the event item becomes unreadable at its expected sort key); restored, `git diff`
+  empty. `STORY-198` was subsumed rather than landed separately (both would have
+  edited the same three lines twice). verified_sha -> d469d2c.
 - sprint-67 (STORY-199): landed the ZR-7 fix. All five findings (`is_under_maintenance`,
   `list_windows`, `list_components`, `list_signals`, `list_open`) now loop on
   `LastEvaluatedKey`; `is_under_maintenance` short-circuits `True` on first match and
