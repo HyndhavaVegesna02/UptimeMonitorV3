@@ -2669,3 +2669,33 @@ stories:
     priority: 65
     type: chore
     sprint: null
+  - id: STORY-217
+    title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
+    file: docs/scrum/stories/STORY-217-topology-write-port.md
+    status: draft   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
+                    # fix to be written down rather than quietly closed. The implementer correctly
+                    # declined to file it (`.scrum/` is orchestrator-owned) and FLAGGED the gap in
+                    # its report instead of treating the AC as satisfied -- exactly the behaviour
+                    # the honesty constraints are for. Filed by the orchestrator at sprint-68
+                    # execution, in the same session, before spec review ran.
+                    # WHAT STORY-205 DID AND DID NOT DO: it removed the topology key SCHEMA
+                    # duplication (three declarations -> one, topology_keys.py). It did NOT change
+                    # that seed_dynamo.py still issues its own boto3 put_item/update_item calls, so
+                    # "composition writes to DynamoDB directly" REMAINS TRUE at HEAD. Stated in
+                    # zone-rules.md ZR-8 Finding 1 (:671-678), not just here.
+                    # THIS MAY LEGITIMATELY CLOSE WITHOUT CODE. Option (a) -- repository write
+                    # methods plus a TopologyRepository port -- was rejected at STORY-205 refinement
+                    # because it forces a NEW CORE-OWNED PORT FOR A VALUE NO CORE SERVICE READS OR
+                    # WRITES. That reasoning does not expire on its own; it expires on a TRIGGER.
+                    # THE EXPIRY CONDITION, which is the whole point of tracking this: if a core
+                    # service ever needs to read or write topology, the shared-module shape expires
+                    # and option (a) becomes correct. Refinement's FIRST job is to re-derive whether
+                    # that has fired -- if not, re-affirm (b), record the re-check date, close.
+                    # TRAP FOR WHOEVER DOES TAKE OPTION (a): the UpdateExpression's
+                    # `if_not_exists(#s, :default)` is LOAD-BEARING -- it preserves runtime component
+                    # status across a re-seed. A port method that flattens it into put_item would
+                    # silently reset every component's status on boot, on BOTH composition roots.
+    points: null    # unestimated -- refinement settles the shape first, and "no code" is a valid one
+    priority: 40
+    type: chore
+    sprint: null
