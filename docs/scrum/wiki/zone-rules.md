@@ -1,8 +1,8 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
-verified_sha: 013f344
-verified_sprint: sprint-67
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py]
+verified_sha: a5a2d68
+verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
 # files this article's rules cite as compliant/illustrative/violating examples
@@ -642,28 +642,40 @@ where a zone-wide regression would be caught.
   (`build_publisher`) CALLS `StatuspagePublisher`/`make_statuspage_executor()` — the
   adapter that owns the Statuspage HTTP mechanics — rather than building the HTTP
   request itself.
-- **Finding 1 — `composition/seed_dynamo.py` duplicates a DynamoDB key schema TWO
-  persistence adapters already own, and it has already drifted once.**
-  `backend/src/composition/seed_dynamo.py:29-30`
-  (`{"pk": "TOPOLOGY", "sk": f"APP#{app.id}"}`), `:43`
-  (`{"pk": "TOPOLOGY", "sk": f"COMPONENT#{comp.id}"}`), and `:58-59`
-  (`{"pk": "TOPOLOGY", "sk": f"SIGNAL#{sig.signal_key}"}`) hand-build the exact key
-  schema `DynamoComponentRepository` (`backend/src/adapters/persistence/dynamo_component_repository.py:39-40,53-54`)
-  and `DynamoSignalRepository` (`backend/src/adapters/persistence/dynamo_signal_repository.py:41-42`)
-  already own and implement — a THIRD declaration of the same schema, sitting on the
-  boot path of BOTH composition roots (`composition/run.py::main`'s topology seed call,
-  `composition/app.py::create_app`'s lifespan seed call). This is not a theoretical
-  risk: `tools/demo_loop_gate/failure_path_reality_gate.py:163-172`'s own docstring
+- **Finding 1 — FIXED at STORY-205 (sprint-68).** `composition/seed_dynamo.py` used to
+  hand-build the exact `TOPOLOGY`-partition key schema `DynamoComponentRepository` and
+  `DynamoSignalRepository` already owned, in THREE places
+  (`backend/src/composition/seed_dynamo.py:29-30` — `{"pk": "TOPOLOGY", "sk":
+  f"APP#{app.id}"}`; `:43`; `:58-59`) — a THIRD declaration of the same schema, sitting
+  on the boot path of BOTH composition roots (`composition/run.py::main`'s topology seed
+  call, `composition/app.py::create_app`'s lifespan seed call). This was not a
+  theoretical risk: `tools/demo_loop_gate/failure_path_reality_gate.py`'s own docstring
   records the drift already happening once, in a DIFFERENT hand-rolled key site — a
-  first version used `pk=COMPONENT#<id>, sk=META` where the repository's real schema
-  is `pk=TOPOLOGY, sk=COMPONENT#<id>`, silently writing a phantom item nothing reads
-  and costing two full debugging runs before the mismatch was found.
-  `docs/scrum/wiki/persistence-adapters.md:36` already documents `seed_topology_dynamo`
-  alongside the two adapters it duplicates, in its own Facts — the wiki already treats
-  this as adapter-adjacent; the zone-rule catalogue had not caught up until this
-  finding. This fell through the crack between STORY-195 (`adapters/`) and STORY-196
+  first version used `pk=COMPONENT#<id>, sk=META` where the repository's real schema is
+  `pk=TOPOLOGY, sk=COMPONENT#<id>`, silently writing a phantom item nothing reads and
+  costing two full debugging runs before the mismatch was found.
+  **The fix (option (b), decided at refinement):** the whole key schema, in BOTH shapes
+  it is consumed in — the item-key dict AND the boto3 query condition
+  (`Key("pk").eq(...) & Key("sk").begins_with(...)`) — now has exactly ONE declaration,
+  `backend/src/adapters/persistence/topology_keys.py` (`app_item_key`,
+  `component_item_key`, `signal_item_key`, `component_query_condition`,
+  `signal_query_condition`). `DynamoComponentRepository`, `DynamoSignalRepository` AND
+  `seed_topology_dynamo` all import from it; `seed_dynamo.py` no longer constructs a
+  `pk`/`sk` dict literal anywhere. `tools/demo_loop_gate/failure_path_reality_gate.py`'s
+  docstring is repointed to cite the schema module rather than the repository lines
+  STORY-199's pagination loops had already displaced. `docs/scrum/wiki/persistence-adapters.md`
+  documents the module alongside the two adapters that import it (see [[persistence-adapters]]).
+  This fell through the crack between STORY-195 (`adapters/`) and STORY-196
   (`composition/`) auditing disjoint file sets — precisely the failure a two-pass audit
   exists to prevent.
+  **Residue, stated rather than quietly closed:** the fix removed the schema
+  duplication only. `seed_dynamo.py` still issues its own `boto3` `put_item`/
+  `update_item` calls directly — "composition writes to DynamoDB directly" remains
+  true, and is a separate, larger question a real topology write port would answer.
+  **Expiry condition:** if a core service ever needs to read or write topology, this
+  shared-module shape expires and a `TopologyRepository` port (option (a), rejected at
+  STORY-205 refinement only because no core service touches this value today) becomes
+  correct.
 - **Finding 2 — `composition/vendor_health.py::build_vendor_health_query` duplicates a
   DQL query builder without its validation (`GAP-2`, first reported STORY-196).**
   `backend/src/composition/vendor_health.py:40-53` re-implements a fragment of
@@ -688,13 +700,16 @@ where a zone-wide regression would be caught.
   class of limitation `ZR-6` states for its own heuristic) — a static check cannot
   distinguish a legitimate NEW capability from a re-derived duplicate of an EXISTING
   one without a maintained, human-curated map of "which adapter owns which mechanic."
-  Best available guard, narrow and per-instance rather than general: a
-  `backend/tests/test_zone_layout.py`-style test asserting `composition/seed_dynamo.py`
-  calls `DynamoComponentRepository`/`DynamoSignalRepository` (or an equivalent shared
-  helper those adapters expose) rather than constructing `{"pk": ..., "sk": ...}`
-  dicts itself, and a parallel assertion that `composition/vendor_health.py` calls
-  `adapters/inbound/dynatrace/query.py`'s validation. STORY-205 (the fix story) should
-  decide the exact shape.
+  **Finding 1's guard now exists and is `ENFORCED-BY`:**
+  `backend/tests/test_zone_layout.py::test_seed_dynamo_uses_shared_topology_key_schema`
+  AST-walks `composition/seed_dynamo.py` for any `{"pk": ..., "sk": ...}`-shaped dict
+  literal and fails, naming the offending line, if one exists — narrow and per-instance
+  (it checks exactly this one file's exact shape), not a general "reused vs re-derived"
+  rule; a second file re-implementing a DIFFERENT mechanic would need its own guard, the
+  same way this one needed to be purpose-built rather than inherited from anywhere else.
+  Finding 2 (`composition/vendor_health.py`) still needs the parallel assertion that it
+  calls `adapters/inbound/dynatrace/query.py`'s validation — STORY-204 (its own fix
+  story) decides that shape.
 
 ## Inference (synthesis, not verified)
 
@@ -732,7 +747,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
 | ZR-6 | `FIXED (STORY-200, sprint-67) — NO STANDING GUARD` | The one live violation this rule adjudicated is fixed: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover — proven by `test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`. **That test pins the 2-member SUBSET GUARD, not the port's TYPE.** Mutation-checked: reverting the entire fix (port back to `action: str`, fake back to `str`, adapter back to `if action == "approved":`) leaves the full suite at 696 passed, identical to HEAD — nothing detects a ZR-6 regression. This is honest, not a gap left carelessly: ZR-6's own Coverage verdict (above) already states the general "port primitive stands in for an existing domain type" rule is `GUARDABLE` only as a reviewed lint warning, never a hard-failing contract, and this row now agrees with it instead of contradicting it. A future story could re-widen this port back to `str` with a fully green gate. |
 | ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing `list_components`'s `LastEvaluatedKey` loop (the recorded mutation proof) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes (including `is_under_maintenance`) and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
-| ZR-8 | `GUARDABLE-DEFERRED (STORY-204, STORY-205)` | Two live violations (`vendor_health.py` duplicating the DQL builder without its validation; `seed_dynamo.py` re-implementing a key schema two repositories own). **Honest reason, corrected at review:** the blocker is AC5's two-guard cap, not redness — ZR-3 and ZR-7 were in exactly the same "live violations" position and this same commit solved that with exemption lists, so "a guard would be RED" would have been a false excuse. A second, real constraint does apply though: ZR-8's violations are whole-function SHAPE (a duplicated builder, a hand-rolled key schema), not per-call-site coordinates, so an exemption list would be a far blunter instrument here than it is for ZR-3/ZR-7. |
+| ZR-8 | Finding 1: `ENFORCED-BY backend/tests/test_zone_layout.py::test_seed_dynamo_uses_shared_topology_key_schema` (STORY-205, sprint-68). Finding 2: `GUARDABLE-DEFERRED (STORY-204)` | **Finding 1 fixed and guarded.** `seed_dynamo.py` now obtains the topology key schema (both shapes: item-key dict and boto3 query condition) from `adapters/persistence/topology_keys.py`, the single module `DynamoComponentRepository`/`DynamoSignalRepository` also import — a THIRD declaration removed, not relocated. **Shown RED twice**: against the real pre-fix file (three hand-built sites, at `seed_dynamo.py:28/43/57` as they stood then) before the wiring landed, and again by deliberately re-introducing one hand-built key post-fix and watching the guard name that exact line; both reverted, `git diff` empty. The guard is SHAPE-narrow (this one file, this one dict shape) per its own Coverage verdict — it says nothing about Finding 2. **Finding 2 remains live**, blocked behind STORY-204 (`vendor_health.py` duplicating the DQL builder without its validation). |
 
 **Why only two rules were mechanised (AC5's stopping rule, stated as a result).** ZR-3 and ZR-7 were
 chosen because they are the two highest-severity rules with a **live violation to prove the guard RED
@@ -743,7 +758,10 @@ standing guard by design (ZR-5's operational half is `UNGUARDABLE` — no single
 across the two-OS-process boundary that actually caused the incident), or has no standing guard
 because none was ever built for it: **ZR-6's one live instance was fixed at STORY-200 (sprint-67)
 without a mechanised guard** — its adjudication row above records this plainly rather than claiming
-one exists — and ZR-8's two violations remain live, still blocked behind their own fix stories.
+one exists. **ZR-8's Finding 1 was fixed and given a mechanised guard at STORY-205 (sprint-68)**,
+after this paragraph's own "why only two" count was written — a guard did not exist at STORY-197
+landing time, which is what this paragraph explains, and does not retroactively change; Finding 2
+remains live, still blocked behind STORY-204.
 
 ### A recorded limitation of `tools/citation_sweep.py`, so nobody "fixes" a correct citation
 
@@ -770,6 +788,32 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-205): **Fixed and guarded ZR-8 Finding 1.** `composition/seed_dynamo.py`
+  no longer hand-builds the `TOPOLOGY` partition's key schema; it now imports
+  `app_item_key`/`component_item_key`/`signal_item_key` from the new
+  `backend/src/adapters/persistence/topology_keys.py`, the single module
+  `DynamoComponentRepository` and `DynamoSignalRepository` also import for both key
+  shapes (item-key dict and boto3 query condition). Added the standing guard
+  `backend/tests/test_zone_layout.py::test_seed_dynamo_uses_shared_topology_key_schema`,
+  shown RED twice (against the real pre-fix file, and again by a deliberate
+  re-introduction post-fix; both reverted). Behavioural drift proof (AC2): the existing
+  round-trip test `test_dynamo_seed.py::test_seed_topology_dynamo` is unchanged and,
+  unmutated, was already green both before and after — it is evidence only alongside
+  two recorded mutations: pre-fix, changing `DynamoComponentRepository`'s own inline
+  `"COMPONENT#"` literal alone reddened it (seed and repository diverged); post-fix,
+  changing the SAME prefix in `topology_keys.py` (the module both now import) left it
+  green — seed_dynamo.py followed automatically, proving the duplication is gone rather
+  than relocated. That same post-fix mutation reddened
+  `test_dynamo_adapters.py:17,82`'s hand-built seed helpers, as expected (they bypass
+  the shared module by design, to test the repositories in isolation) — recorded, not
+  "fixed" into silence. Rewrote the Finding 1 paragraph, its Coverage verdict, the
+  adjudication table row and the "why only two rules were mechanised" paragraph to
+  past/mixed tense; repointed the two already-stale citations
+  (`dynamo_component_repository.py`/`dynamo_signal_repository.py` line numbers STORY-199's
+  pagination loops had displaced) and `failure_path_reality_gate.py`'s docstring to the
+  new schema module. `docs/scrum/wiki/persistence-adapters.md` updated in step (see
+  [[persistence-adapters]]). Finding 2 (`vendor_health.py`) is untouched, still
+  `GUARDABLE-DEFERRED (STORY-204)`. verified_sha -> a5a2d68.
 - sprint-67 (STORY-202 quality-review fix round): **MAJOR — the six `harness.py`
   AC8 site line numbers in the Fact below were the story's own PRE-edit AC8
   numbers** (`:540`/`:609`/`:736`/`:742`/`:743`/`:744`), copied forward despite

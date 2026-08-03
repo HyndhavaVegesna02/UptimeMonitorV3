@@ -165,12 +165,16 @@ def _component_repo(control_table: str) -> DynamoComponentRepository:
     This is not fastidiousness -- hand-rolled keys silently broke this gate.
     The first version used `pk=COMPONENT#<id>, sk=META`; the repository actually
     uses `pk=TOPOLOGY, sk=COMPONENT#<id>`
-    (`dynamo_component_repository.py:36-41`). So the write created a PHANTOM
-    item nothing reads, and the read-back "verified" it against the SAME wrong
-    key -- the AC6(a) precondition passed VACUOUSLY while the real component sat
-    untouched at `operational`. `decide` then correctly declined to publish
-    (there was nothing to recover from) and this gate reported the guard as
-    broken. Two full runs were spent chasing a defect that did not exist.
+    (STORY-205: `adapters/persistence/topology_keys.py::component_item_key`, the
+    single declaration `DynamoComponentRepository` and `seed_topology_dynamo` both
+    import -- previously `dynamo_component_repository.py:36-41`, a citation
+    STORY-199's pagination loops had already displaced by the time this was
+    re-derived). So the write created a PHANTOM item nothing reads, and the
+    read-back "verified" it against the SAME wrong key -- the AC6(a) precondition
+    passed VACUOUSLY while the real component sat untouched at `operational`.
+    `decide` then correctly declined to publish (there was nothing to recover
+    from) and this gate reported the guard as broken. Two full runs were spent
+    chasing a defect that did not exist.
 
     Going through the repository makes that class of drift impossible: if the
     schema changes, this gate follows it by construction.
