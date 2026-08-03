@@ -268,20 +268,31 @@ class DynamoProposalRepository(ProposalRepository):
         proposal_id: int,
         *,
         actor: str,
-        action: str,
+        action: ProposalState,
         notes: str | None,
         occurred_at: datetime,
     ) -> None:
-        """Record an approval or rejection event for a proposal."""
+        """Record an approval or rejection event for a proposal.
+
+        `action` is `ProposalState` (STORY-200 AC1/AC4), NOT a bare `str` — but
+        `ProposalState` is `class ProposalState(str, Enum)`, a str MIXIN rather
+        than `StrEnum`, so on Python 3.13 `Enum.__format__` defers to
+        `Enum.__str__` and an f-string over the bare member renders
+        `"ProposalState.APPROVED"`, not `"approved"`. `.value` is therefore used
+        EXPLICITLY at both write sites below (the `sk` and the `"action"` item
+        attribute) so the persisted bytes are unchanged from the pre-STORY-200
+        string-literal era — using the bare member at either site silently
+        corrupts that site.
+        """
         occurred_at_str = to_canonical_iso(occurred_at)
 
         # Event item: PROPOSAL#<id> / EVENT#<occurred_at>#<action>
         event_item = {
             "pk": f"PROPOSAL#{proposal_id}",
-            "sk": f"EVENT#{occurred_at_str}#{action}",
+            "sk": f"EVENT#{occurred_at_str}#{action.value}",
             "proposal_id": proposal_id,
             "actor": actor,
-            "action": action,
+            "action": action.value,
             "occurred_at": occurred_at_str,
         }
         if notes is not None:
@@ -299,7 +310,7 @@ class DynamoProposalRepository(ProposalRepository):
             }
         ]
 
-        if action == "approved":
+        if action is ProposalState.APPROVED:
             transact_items.append(
                 {
                     "Update": {

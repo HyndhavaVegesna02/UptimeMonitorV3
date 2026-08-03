@@ -202,6 +202,11 @@ def test_dynamo_proposal_repository_resolve_guard_and_atomicity(dynamo_resource)
 
 
 def test_dynamo_proposal_repository_record_approval_event(dynamo_resource):
+    """STORY-200 AC4/AC5: proven against real DynamoDB, never the fake — the
+    fake's `record_approval_event` only appends a dict and does not implement
+    the `approved_actor` denormalization, so this branch is unobservable
+    through it. Asserts BOTH halves: `approved_actor` IS written on approve
+    and is NOT written on reject."""
     settings = load_settings()
     repo = DynamoProposalRepository(dynamo_resource, settings.dynamo_control_table)
 
@@ -219,7 +224,7 @@ def test_dynamo_proposal_repository_record_approval_event(dynamo_resource):
     repo.record_approval_event(
         saved.id,
         actor="ops-admin",
-        action="approved",
+        action=ProposalState.APPROVED,
         notes="Checked dashboard, confirmed",
         occurred_at=occurred_time,
     )
@@ -238,11 +243,44 @@ def test_dynamo_proposal_repository_record_approval_event(dynamo_resource):
     assert event_item["action"] == "approved"
     assert event_item["notes"] == "Checked dashboard, confirmed"
 
-    # approved_actor is denormalized onto META
+    # approved_actor IS denormalized onto META on approve
     meta_item = repo._table.get_item(
         Key={"pk": f"PROPOSAL#{saved.id}", "sk": "META"}
     ).get("Item")
     assert meta_item.get("approved_actor") == "ops-admin"
+
+    # --- AC5's other half: a REJECT never writes approved_actor. ---
+    prop2 = StatusProposal(
+        component_id="comp-event-reject",
+        from_status=None,
+        to_status=ComponentStatus.DEGRADED,
+        state=ProposalState.OPEN,
+        proposed_at=datetime(2026, 6, 26, 12, 0, 0, tzinfo=timezone.utc),
+    )
+    saved2 = repo.create_open(prop2)
+    assert saved2 is not None
+
+    repo.record_approval_event(
+        saved2.id,
+        actor="ops-admin-2",
+        action=ProposalState.REJECTED,
+        notes="Not a real issue",
+        occurred_at=occurred_time,
+    )
+
+    reject_event = repo._table.get_item(
+        Key={
+            "pk": f"PROPOSAL#{saved2.id}",
+            "sk": "EVENT#2026-06-26T12:05:00.000000+00:00#rejected",
+        }
+    ).get("Item")
+    assert reject_event is not None
+    assert reject_event["action"] == "rejected"
+
+    reject_meta = repo._table.get_item(
+        Key={"pk": f"PROPOSAL#{saved2.id}", "sk": "META"}
+    ).get("Item")
+    assert "approved_actor" not in reject_meta
 
 
 def test_dynamo_proposal_repository_orphan_event_guard(dynamo_resource):
@@ -259,7 +297,7 @@ def test_dynamo_proposal_repository_orphan_event_guard(dynamo_resource):
         repo.record_approval_event(
             missing_proposal_id,
             actor="ops-admin",
-            action="rejected",
+            action=ProposalState.REJECTED,
             notes="Should fail",
             occurred_at=occurred_time,
         )
@@ -288,7 +326,7 @@ def test_dynamo_proposal_repository_orphan_event_guard(dynamo_resource):
     repo.record_approval_event(
         saved.id,
         actor="ops-admin",
-        action="rejected",
+        action=ProposalState.REJECTED,
         notes="Should succeed",
         occurred_at=occurred_time,
     )

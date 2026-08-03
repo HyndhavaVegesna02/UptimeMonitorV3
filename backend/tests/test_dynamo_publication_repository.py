@@ -79,7 +79,7 @@ def test_dynamo_publication_repository_author_parity(dynamo_resource):
     proposal_repo.record_approval_event(
         saved_prop1.id,
         actor="alice",
-        action="approved",
+        action=ProposalState.APPROVED,
         notes="Looks good",
         occurred_at=datetime(2026, 6, 26, 12, 2, 0, tzinfo=timezone.utc),
     )
