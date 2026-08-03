@@ -214,16 +214,102 @@ stories:
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     points: 3
     order: 1
-    status: in_progress   # RE-DISPATCHED 2026-08-03 after the account session limit reset. This is
-                   # attempt TWO. Attempt one died on an ACCOUNT session limit ("resets 11:50pm
-                   # Asia/Calcutta") before writing anything -- verified, not assumed: `git log
-                   # eca8b3c..HEAD` was EMPTY and the tree clean, so nothing was preserved and
-                   # nothing discarded, and the board was rolled back to `todo` at the park (c92457a)
-                   # rather than left `in_progress`.
-                   # The brief is UNCHANGED from attempt one. Nothing about the story or its AC
-                   # needed revisiting: the AC were corrected at b8c7828 after independent plan
-                   # verification and no implementer has yet tested them against real code.
-    commits: null  # no story commits yet
+    status: done   # DONE 2026-08-04. Full ceremony run: implementer -> spec review || quality review
+                   # CONCURRENTLY -> minor fix round -> full 8/8 DoD gate -> reality gate.
+                   # Delivered on attempt TWO. Attempt one died on an ACCOUNT session limit before
+                   # writing anything (`git log eca8b3c..HEAD` EMPTY, tree clean -- verified, not
+                   # assumed); the brief was re-dispatched UNCHANGED.
+    commits: 91ab0e5..f643081   # 16 commits: 8 implementer + 1 orchestrator (AC6 filing) + 6 fix
+                   # round + wiki re-verifications.
+    reviews:
+      spec: >-
+        PASS. All seven AC MET, zero gaps, zero scope additions. The reviewer RE-DERIVED rather than
+        trusted: it reproduced the AC2 mutation IN-PROCESS (monkeypatching `_COMPONENT_SK_PREFIX`,
+        since it is read-only and correctly declined to edit tracked source) and got EXACTLY the
+        implementer's numbers -- seed test green, test_dynamo_adapters.py 4 failed / 7 passed. It
+        reproduced AC4's RED non-destructively against a scratch copy, and the guard named the exact
+        line. It also stated plainly where its own chain was inference rather than a fresh run (the
+        pre-fix AC2 mutation against history, which the IMPLEMENTER did execute and record). That
+        self-limiting is the behaviour these reviews exist to produce.
+      quality: >-
+        APPROVE. No critical, no major; four MINOR notes, ALL FIXED in the fix round below.
+        It probed instead of reading: mutating `_COMPONENT_SK_PREFIX` took 6 tests RED, which
+        incidentally disposes of a tests-that-lie risk nobody had raised -- the
+        `ConditionBase == ConditionBase` comparisons in test_topology_keys.py are green unmutated and
+        RED mutated, so boto3's `__eq__` is doing real work rather than trivially passing.
+    ac1_resolved: >-
+      THE GREP COUNT DID NOT MOVE AND THAT IS CORRECT. AC1 required before/after
+      `grep -rn '"TOPOLOGY"' backend/` recorded; both are 10. The implementer called it a coincidence
+      and BOTH the orchestrator and the spec reviewer re-derived it independently: PRODUCTION sites
+      collapsed 8 -> 1 (topology_keys.py only); the surviving 9 are test-only (2 unchanged in
+      test_dynamo_adapters.py, which AC3 REQUIRES to stay unmodified; 6 in the new unit test of the
+      module itself; 1 throwaway meta-test fixture string). The query-condition shape was checked
+      separately -- no `begins_with(` production site survives outside topology_keys.py -- closing
+      AC1's explicit "four literals survive legally" trap.
+    enforced_by_scope: >-
+      THE SPRINT-67 MAJOR-1 TRAP WAS AVOIDED, AND CHECKED FOR RATHER THAN ASSUMED. AC6 forbids an
+      ENFORCED-BY claim wider than the guard actually checks. The quality reviewer enumerated the
+      AST guard against SEVEN construction shapes: dict literals, nested local helpers and `**`
+      merges are CAUGHT; `dict(pk=...)`, item-assignment, constant-name keys and `dict(zip(...))`
+      are MISSED. The guard is narrow -- but zone-rules.md says so, in BOTH the Coverage verdict and
+      the adjudication row ("SHAPE-narrow: this one file, this one dict shape"), and the ZR-8 row
+      claims Finding 1 ONLY, with an inline disclaimer that it says nothing about Finding 2.
+      The claim matches the check. That is the whole of MAJOR-1.
+      The guard also cannot pass vacuously: a moved or renamed target raises FileNotFoundError
+      rather than silently reporting clean.
+    fix_round: >-
+      cb15db6..f643081. All four MINOR quality findings landed rather than deferred, because two of
+      them are about a guard READING BROADER THAN IT IS -- this sprint's own theme, and STORY-216's
+      subject in sprint 69.
+        1. cb15db6 -- renamed the meta-test `test_seed_dynamo_owns_no_hand_built_topology_key`
+           (tmp_path fixtures only, never reads the real file) to
+           `test_topology_key_guard_detects_and_clears`. Its old name sat three lines above the REAL
+           standing guard and read as an assertion about the real file.
+        2. afd857f -- violation line numbers were collected in ast.walk (BFS) order, so failures
+           printed `[28, 57, 43]`. Now sorted into source order. NOTE: this changes the format of
+           AC4's recorded evidence; the guard was re-confirmed RED afterwards, naming its lines in
+           source order, then restored with `git diff` empty.
+        3. b2e9310 -- `TOPOLOGY_PK` was public while all three SK prefixes were private, with no
+           consumer outside the module and its own unit test. The ONLY thing that asymmetry enabled
+           was a caller writing `{"pk": TOPOLOGY_PK, "sk": "APP#" + id}` -- precisely the hand-built
+           key the module exists to eliminate. Now `_TOPOLOGY_PK`, after a whole-repo grep
+           (including tools/ and scripts/) confirmed no real consumer.
+        4. d9a3f95 -- the guard helper's docstring stated only the positive implication. It now
+           records the four shapes it CANNOT see. zone-rules.md already disclosed this; the code did
+           not, and a reader of the test could over-trust a pass.
+    ac6_filing: >-
+      THE IMPLEMENTER REFUSED TO DO THIS AND WAS RIGHT TO. AC6 required a follow-up story filed for
+      the write-port question. The implementer declined -- `.scrum/` is the orchestrator's ledger --
+      and FLAGGED THE GAP IN ITS REPORT rather than marking AC6 satisfied. The orchestrator filed
+      STORY-217 at 7ec1b36, BEFORE either review ran, so both judged AC6 against a real filing.
+      Both passed it.
+    reality_gate: >-
+      PASS, and it is a REAL one: the actual `scripts/seed_topology.py` entrypoint run as a
+      SUBPROCESS against real DynamoDB Local on throwaway tables, then read back through the REAL
+      production repositories. Raw scan showed pk='TOPOLOGY' with sk='APP#httpcheck',
+      'COMPONENT#http-check', 'SIGNAL#http-check'; list_components(), list_signals() and
+      get('http-check') all returned the seeded rows -- exercising BOTH AC1 key shapes, since
+      list_* uses the query condition and get() uses the item-key dict. This is the exact
+      seed-writes / repository-reads pair whose drift cost two debugging runs historically.
+      IT FAILED TWICE FIRST, BOTH TIMES ON THE HARNESS, NOT THE PRODUCT -- recorded because the
+      second is a reusable local-dev fact: DynamoDB Local NAMESPACES TABLES BY ACCESS-KEY-ID +
+      REGION, and `make_dynamo_resource` forces "test"/"test" whenever an endpoint is set
+      (composition/dynamo.py:23-24). Tables created under any other credentials are INVISIBLE to the
+      real entrypoint, which reports them as ResourceNotFoundException -- indistinguishable at first
+      glance from a genuine seeding defect.
+    dod_evidence:   # FULL 8/8 at f643081, exit 0, tree clean. Not scoped with --only: git confirmed
+                    # frontend/ and infra/ untouched since the previous full run, so scoping WOULD
+                    # have been defensible -- the full run was chosen anyway because this is the
+                    # story's evidence of record and the sprint's theme is not overclaiming.
+      - {command: "python -m pytest", exit_code: 0, tail: "704 passed in 63.48s", note: "0 SKIPPED under REQUIRE_DYNAMO=1 + DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021; baseline was 696, this story adds 8. The 1-in-11 pagination flake did NOT fire in any run this story."}
+      - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, tail: "Contracts: 8 kept, 0 broken. (151 files, 432 dependencies)"}
+      - {command: "python -m ruff check .", exit_code: 0, tail: "All checks passed!"}
+      - {command: "python -m ruff format --check .", exit_code: 0, tail: "249 files already formatted"}
+      - {command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml", exit_code: 0, tail: ""}
+      - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+      - {command: "npm run build", exit_code: 0, tail: "built in 772ms"}
+      - {command: "npm run lint", exit_code: 0, tail: "eslint . (clean)"}
+    wiki: all four checks CLEAN at f643081 (sweep, facts, links, integrity)
     why_here: >-
       HIGHEST BLAST RADIUS, RUNS EARLY. ZR-8 Finding 1 -- the audit's biggest single miss, found only
       in STORY-196's quality-review fix round because it fell through the crack BETWEEN the two audit
@@ -338,6 +424,42 @@ ceremony_note: >-
   BRIEFS CARRY: the story file's AC verbatim, this sprint's plan.md steps, the commit range, the
   constraints C1-C6, and the RELEVANT VERIFIED wiki Facts (reverse blast radius) -- never session
   history. zone-rules.md is `status: verified` at 013f344 and every story in this sprint touches it.
+
+retro_candidates:
+  - id: RC-1
+    raised: 2026-08-04 (STORY-205)
+    severity: real, caught by luck rather than by design
+    title: >-
+      CONCURRENT REVIEWERS RACE ON THE WORKING TREE -- the quality reviewer MUTATES source to probe,
+      and the spec reviewer restored its mutation mid-flight.
+    what_happened: >-
+      The skill mandates the two reviews run CONCURRENTLY because they are independent judgements.
+      But yt-quality-reviewer is told it may mutate to probe (restoring afterwards), while
+      yt-spec-reviewer is read-only and treats a dirty tree as something to clean. On STORY-205 the
+      spec reviewer opened its session, found topology_keys.py locally modified
+      (`_COMPONENT_SK_PREFIX = "COMPONENTX#"` -- the quality reviewer's live probe), correctly
+      judged it was outside the reviewed diff, and ran `git checkout --` on it. It then REPORTED the
+      stray mutation to the orchestrator, which is the only reason this was noticed at all.
+    why_it_did_not_bite_here: >-
+      Luck, plus two independent mitigations that happened to hold. The quality reviewer's RED
+      output is internally consistent with the mutation being in effect during its run. The spec
+      reviewer's own reproductions were race-IMMUNE by construction -- a scratch copy for AC4 and an
+      in-process monkeypatch for AC2 -- because it is read-only and could not edit tracked source
+      even had it wanted to. Neither reviewer's evidence is contaminated. But a slightly different
+      interleaving corrupts the quality reviewer's mutation evidence, or worse, gives it a GREEN
+      reading of a mutation that was silently reverted underneath it -- which would look exactly
+      like "the guard does not detect this shape" and could have been reported as a finding.
+    the_rung: >-
+      NOT prose. This is an agent-definition or isolation problem: either the quality reviewer gets
+      `isolation: worktree` when it probes, or its definition forbids mutating tracked files and
+      requires the scratch-copy / monkeypatch technique the spec reviewer used unprompted and which
+      worked perfectly. The second is cheaper and strictly better -- it makes BOTH reviewers
+      race-immune by construction rather than by scheduling. Note the orchestrator caused this by
+      dispatching concurrently as instructed; the instruction and the tool grant are what conflict.
+    do_not: >-
+      Do NOT "fix" this by serialising the reviews. Their independence and concurrency is the point,
+      and four consecutive sprints have had the quality reviewer catch something the spec reviewer
+      did not.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
