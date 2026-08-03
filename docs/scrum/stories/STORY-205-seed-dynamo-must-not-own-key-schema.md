@@ -96,7 +96,11 @@ expires and (a) becomes correct.
 - [ ] **AC7 — `persistence-adapters.md` follows.** That article carries `seed_dynamo.py` in its
       `code_refs`, so this story's diff makes it stale by git arithmetic. Update or re-verify it
       before the story passes the DoD gate (forward blast radius), and do not stamp `verified_sha`
-      on prose that was not re-read.
+      on prose that was not re-read. **Fix its one unresolvable citation while there:** measured at
+      sprint-68 planning, `yt_wiki` reports that article citing `src/composition/seed_dynamo.py` — a
+      path that does not resolve from the repo root (the tree is `backend/src/...`), so the Facts
+      lint has been **skipping** that claim entirely. It is a Fact about the very file this story
+      rewrites.
 
 ## Not in scope
 

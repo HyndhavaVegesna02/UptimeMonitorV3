@@ -53,9 +53,27 @@ closure_map: >-
   Including it pushes a sprint to 13. Also out: STORY-211/212 (process, not architecture).
 
 baseline:
-  tree: TO BE MEASURED at the planning commit, before lock
-  gate: TO BE MEASURED -- full 8/8, REQUIRE_DYNAMO set, recorded here before the sprint goes active
+  tree: clean at 5c4010f (the planning commit)
+  gate: >-
+    FULL 8/8 GREEN at 5c4010f, exit 0 (2026-08-03, this session, REQUIRE_DYNAMO=1 and
+    DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021): python -m pytest 696 passed / 0 SKIPPED;
+    8 import contracts kept, 0 broken (150 files, 429 dependencies); ruff check "All checks passed";
+    ruff format "247 files already formatted"; cfn-lint clean; frontend npm test 363 passed in 51
+    files; npm run build and npm run lint clean. GREEN FIRST TIME -- contrast sprint 67, whose first
+    baseline run was RED on a file the previous sprint's retro landed after its final gate.
+  gate_note: >-
+    The import-boundary command reports "Contracts: 8 kept, 0 broken" TODAY. Sprint 69's STORY-206
+    makes that NINE, and every statement of the number moves in the same commit (see
+    plan_verification).
   selftest: 43/43 OK (re-run 2026-08-03 at a2acc09, this session)
+  wiki: >-
+    All FOUR blocking checks CLEAN at 5c4010f (sweep, facts, links, integrity). Advisory only:
+    2 `refs` amplifier notes (unchanged, never blocking) and 33 `citations` notes covering 147 Fact
+    citations the lint has never checked -- surfaced by amendment A16, which landed at the SCRIPT
+    rung last sprint. One of those notes is now folded into STORY-205 AC7: persistence-adapters.md
+    cites `src/composition/seed_dynamo.py`, which does not resolve from the repo root, so the Facts
+    lint has been SKIPPING a claim about the very file STORY-205 rewrites.
+  dynamo: container uptime_dynamo_8021 up on 127.0.0.1:8021, REQUIRE_DYNAMO=1 on every run
   note: >-
     A RED BASELINE IS AN EDGE CASE THAT MUST BE CAUGHT BEFORE LOCK, not discovered mid-sprint.
     Sprint 67's first baseline run was RED on `ruff format --check` -- against the sprint-66 A11
