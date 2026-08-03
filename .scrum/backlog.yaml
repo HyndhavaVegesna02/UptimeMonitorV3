@@ -2547,7 +2547,7 @@ stories:
 
   - id: STORY-213
     title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
-    file: null
+    file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
     status: draft   # FILED 2026-08-03 from STORY-199's QUALITY REVIEW, with reproduction evidence
                     # attached. NOT a defect in STORY-199's code, and the reviewer proved that
                     # before filing: the production loop was mutation-verified correct, and the
@@ -2572,7 +2572,7 @@ stories:
                     # Refinement must choose between hardening the fixture and making the assertion
                     # self-diagnosing (e.g. failing with the observed page count and LastEvaluatedKey
                     # state, so the next reader can tell a flake from a regression at a glance).
-    points: null
+    points: 2
     priority: 60
     type: defect
     sprint: null
@@ -2603,8 +2603,8 @@ stories:
     sprint: null
 
   - id: STORY-215
-    title: Close the remaining env-var-NAME drift — the two DYNATRACE_* names, plus the fourth file nobody adjudicated
-    file: null
+    title: Close the remaining env-var-NAME drift - the two DYNATRACE_* names, plus the file that guards the publish guard
+    file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     status: draft   # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
                     # env-var-NAME collisions and deliberately left a bounded remainder; this is
                     # that remainder, gathered in one place so it is not rediscovered piecemeal.
@@ -2631,14 +2631,14 @@ stories:
                     # re-runs 202's own trap -- newly-declared shape-i values turn existing tools/
                     # literals into ZR-3 collisions. Re-derive the sweep count BEFORE estimating.
                     # Baseline to beat: 13 collisions at 1210374.
-    points: null
+    points: 3
     priority: 70
     type: defect
     sprint: null
 
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md — a row may not claim a guard that does not exist
-    file: null
+    file: docs/scrum/stories/STORY-216-mechanise-enforced-by-claim.md
     status: draft   # FILED 2026-08-03 at the sprint-67 retro, from STORY-200's quality review
                     # MAJOR-1 -- the sprint's headline finding.
                     # WHAT HAPPENED: zone-rules.md marked ZR-6's adjudication row `ENFORCED-BY
@@ -2665,7 +2665,7 @@ stories:
                     # naming a real test that pins the WRONG THING is exactly what happened here.
                     # KEEP IT PROJECT-GENERIC-ADJACENT: the guard catalogue is this project's, so
                     # this belongs in backend/tests/, NOT in the yourteam skill (2026-07-13 rule).
-    points: null
+    points: 3
     priority: 65
     type: chore
     sprint: null

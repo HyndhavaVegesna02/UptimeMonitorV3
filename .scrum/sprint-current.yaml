@@ -1,845 +1,262 @@
 # YourTeam active sprint board. No active sprint when status: none.
-sprint: 67
-status: closed     # none | planning | active | review | closed | aborted
-                   # ALL FOUR STORIES ACCEPTED by the PO 2026-08-03. 11/11 points; velocity recorded.
-                   # Sprint-close gate 8/8 GREEN at 9bccac8, exit 0, 696 passed / 0 SKIPPED.
-                   # RETRO RUN AND ITS THREE ITEMS PO-APPROVED, all landed:
-                   #   D1 — deleted the dead CORS/Vercel clause (no CORS middleware exists at HEAD)
-                   #   D2 — deleted the spent "Expedite STORY-080" amendment (STORY-080: sprint 47)
-                   #   A16 — landed at the SCRIPT rung in yt_wiki.py, not written down as prose
-                   # D1 and D2 are the FIRST rules this project has ever deleted on their merits.
-                   # A16's first run revealed 147 Fact citations across 13 articles that the Facts
-                   # lint had never checked — `facts: CLEAN` was covering a fraction of the wiki.
-                   # BRANCH STAYS UNMERGED per the standing PO directive (re-confirmed sprint-64);
-                   # sprint 66 is also unmerged and sprint 67 was cut from it. Nothing touched main.
-                   # NEXT: sprint 68 planning. Candidates in `carried_forward` + STORY-213/214/215/216.
-                   # LOCKED 2026-08-02. SCOPE IS FROZEN -- new PO requests go to the backlog, not
-                   # into this sprint. Tooling is frozen too, EXCEPT the enforcement ladder (A14).
-                   # THREE PO RULINGS AT PLANNING (2026-08-02), all recorded because they shape
-                   # how the sprint runs:
-                   #   1. SPRINT APPROVED AS SCOPED -- 11 points, all five stories, in-process.
-                   #      The PO did NOT take either of the offered reductions (drop 201, or drop
-                   #      201+202), so the drop order in sizing_note applies only if the SESSION
-                   #      runs short, not as a standing trim.
-                   #   2. THE DoD CHANGE IS APPROVED. STORY-210 AC1 may change
-                   #      .scrum/definition-of-done.md: `ruff check .` -> `python -m ruff check .`
-                   #      and `ruff format --check .` -> `python -m ruff format --check .`.
-                   #      Same checks, same rules, same files -- only the entry point moves. This
-                   #      is PREVENTIVE: ruff.exe is NOT blocked today (measured at planning), and
-                   #      `python -m ruff` was verified equivalent (both report ruff 0.15.20).
-                   #      C3 is therefore SATISFIED -- the story may make the edit. Every other
-                   #      statement of those commands must move in the SAME commit (AC2).
-                   #   3. SUBAGENTS ARE APPROVED for the full ceremony. yt-implementer per story,
-                   #      then yt-spec-reviewer || yt-quality-reviewer concurrently. This restores
-                   #      the ceremony sprints 62-66 ran on, and it matters more than usual here:
-                   #      sprint 66's loudest finding was that BOTH reviewers found real defects in
-                   #      EVERY story, several already personally accepted by the orchestrator,
-                   #      for the third sprint running. The alternative on offer (orchestrator
-                   #      implements and accepts its own work, with review_debt recorded) was NOT
-                   #      taken. No story in this sprint should reach review unreviewed.
+sprint: 68
+status: planning   # none | planning | active | review | closed | aborted
+                   # PROPOSED 2026-08-03, NOT YET LOCKED. Awaiting PO approval of:
+                   #   1. the sprint as scoped (10 points, five stories, in-process)
+                   #   2. the subagent ceremony (sprint 67's ruling was per-sprint; it does not
+                   #      carry over on its own -- see ceremony_note)
+                   #   3. the two-sprint audit-closure map (see closure_map)
+                   # On approval: flip the five stories to `ready` in backlog.yaml, cut branch
+                   # `sprint-68` off `sprint-67`, tag `sprint-68-start`, set status: active.
+                   #
+                   # SPRINT 67 IS CLOSED. 11/11 points, all four stories PO-accepted 2026-08-03;
+                   # velocity recorded; retro run and its three items (D1, D2, A16) landed. Its
+                   # full board -- including the four dod_evidence blocks that are its evidence of
+                   # record -- is preserved in git at `a2acc09:.scrum/sprint-current.yaml`.
 goal: >-
-  Turn sprint 66's audit report into landed fixes. A report is a document; a document does not fix a
-  production defect. Fix the highest-severity findings and shrink both standing guards' exemption
-  lists -- ZR-7 from SIX entries to ONE, ZR-3 losing its two STORY-202 entries -- and harden the DoD
-  gate against the policy that took it red mid-sprint. The success measure is mechanical because
-  sprint 66 built it: every RETIRED entry names the story meant to remove it, and each guard's
-  stale-exemption test goes RED if a fix lands without its entry being removed.
-  *** THE ARITHMETIC WAS WRONG WHEN THE PO APPROVED IT, AND IS CORRECTED HERE. The plan and this
-  goal both said "five entries to zero". _EXEMPTIONS holds SIX. The sixth --
-  dynamo_publication_repository.py:53 -- is a PERMANENT entry for list_recent, whose port promises
-  "up to `limit`" (a stated bound, not completeness), and STORY-199's own "Not in scope" paragraph
-  says so correctly. IT STAYS. An implementer following the approved text literally would have
-  emptied the dict and taken the DoD gate RED. Found by plan verification AFTER the lock, verified
-  independently by the orchestrator (six keys enumerated via AST), and reported to the PO rather
-  than quietly corrected -- it was the sprint's headline success measure. ***
+  Close the sprint-66 audit's LIVE boundary violations -- the code that is wrong today, not the
+  guards for code that is already clean. ZR-8's two findings (a DynamoDB key schema declared THREE
+  times on the boot path of BOTH composition roots; a vendor DQL builder living in the composition
+  zone without the adapter's breaking-character validation) plus ZR-3's remaining duplicated values
+  and env-var names.
+  The success measure is mechanical because sprint 66 built it: every unfixed entry in
+  test_zr3_duplicate_declarations.py::_ADJUDICATED names the story meant to remove it, and the
+  guard's stale-entry check goes RED if a fix lands while its entry stays. This sprint takes
+  MUST-IMPORT-FROM-SRC entries from FOUR to ZERO (measured at planning: 13 colliding pairs, 4 of
+  them MUST-IMPORT-FROM-SRC; expected 9 after) and gives ZR-8 its first standing guard.
 mode: in-process
-branch: sprint-67  # CUT 2026-08-02 off sprint-66; sprint-66 STAYS UNMERGED (standing "don't merge
-                   # with main" directive, re-confirmed at the sprint-64 review).
-start_tag: sprint-67-start   # created at lock, points at 405ab09
-start_commit: 405ab09
-                   # NOTE ON THE TWO SHAs, so the baseline is not misread: the full 8/8 baseline
-                   # gate was measured at 86459ea. 405ab09 is the planning commit on top of it
-                   # (.scrum/ + docs/scrum/ only -- the sprint plan, the refined story files and the
-                   # backlog status updates). `git diff 86459ea..405ab09` touches NO code under
-                   # backend/, frontend/, tools/, config/ or infra/, so the gate result carries
-                   # forward unchanged. Sprint diffs are measured from 405ab09.
+branch: sprint-68  # TO BE CUT off sprint-67 at lock. Sprints 66 AND 67 STAY UNMERGED (standing
+                   # "don't merge with main" directive, re-confirmed at the sprint-64 review).
+                   # Nothing this sprint touches main either.
+start_tag: sprint-68-start   # to be created at lock
+start_commit: null           # to be filled at lock
+plan: docs/scrum/sprints/2026-08-03-sprint-68/plan.md
+
+closure_map: >-
+  THE PO'S FRAMING, ANSWERED DIRECTLY: "full audit implementations done in 2 sprints."
+  Nine stories, 20 points, ~10 per sprint against a recent velocity of 9/7/8/13/11/11.
+    SPRINT 68 -- FIX WHAT IS BROKEN (10 pts): 205 (3), 204 (2), 203 (2), 215 (3)
+    SPRINT 69 -- GUARD WHAT IS CLEAN (10 pts): 206 (2), 207 (2), 208 (1), 209 (2), 216 (3)
+  WHY THIS SPLIT AND NOT AN EVEN MIX. The sprint-69 four are all CLEAN-TREE rules -- no violation
+  exists to catch, so each is proven by MUTATION rather than by demonstration. That is a different
+  working mode from sprint 68's and mixing them halves both. More decisively: STORY-216 asserts
+  that every ENFORCED-BY row names a guard that EXISTS, and 206/207/208/209 flip four rows INTO
+  ENFORCED-BY. It must run after them, which pins it to sprint 69 and pulls its siblings with it.
+  WHEN SPRINT 69 CLOSES, EVERY ZR-1..ZR-8 RULE HAS A TERMINAL VERDICT. ZR-6 has no standing guard
+  BY DESIGN (its own Coverage verdict rules out a hard-failing contract) and ZR-5's operational
+  half is UNGUARDABLE (no single-process test sees across the two-OS-process boundary that caused
+  the sprint-64 incident). Both are already stated in the catalogue; neither is a gap left open.
+  DELIBERATELY OUTSIDE THE CLOSURE SET: STORY-214 (shared pagination helper + ZR-7 guard rework) --
+  spawned by sprint 67's fix, not an audit finding; ZR-7 is already ENFORCED-BY with a one-entry
+  PERMANENT exemption. It is also TRAPPED: the guard detects pagination LEXICALLY, so extracting
+  the loop turns all five compliant sites red and forces a guard rework in the same change.
+  Including it pushes a sprint to 13. Also out: STORY-211/212 (process, not architecture).
+
 baseline:
-  tree: clean at 86459ea
-  gate: >-
-    FULL 8/8 GREEN at 86459ea, exit 0 (2026-08-02, this session): python -m pytest 689 passed /
-    0 SKIPPED; 8 import contracts kept; ruff check + ruff format clean (247 files); cfn-lint clean;
-    frontend npm test 363 passed in 51 files; npm run build and npm run lint clean.
-  baseline_was_red_first: >-
-    IMPORTANT AND WORTH THE RETRO'S TIME. The first baseline run was RED: `ruff format --check .`
-    exited 1 on .claude/skills/yourteam/scripts/tests/test_backlog_story_parity.py -- the A11
-    AMENDMENT'S OWN FILE, landed at the sprint-66 retro AFTER that sprint's final gate run (which
-    recorded "246 files already formatted"), so the DoD gate never saw it. A single line-wrap;
-    fixed at 86459ea before planning continued. A11 was routed to the SCRIPT rung precisely because
-    a machine should check state parity -- and the file itself never went through the machine that
-    checks code. A13, written in the SAME retro, is the rule that would have caught it.
-  selftest: 35/35 OK, re-run this session after the backlog edits
-  wiki: >-
-    yt_wiki CLEAN on all four blocking checks (sweep, facts, links, integrity). 2 advisory `refs`
-    amplifier notes (run.py and pyproject.toml each a code_ref in 5 articles) -- unchanged, never
-    blocking.
-  dynamo: container uptime_dynamo_8021 up on 127.0.0.1:8021, REQUIRE_DYNAMO=1 on every run
+  tree: TO BE MEASURED at the planning commit, before lock
+  gate: TO BE MEASURED -- full 8/8, REQUIRE_DYNAMO set, recorded here before the sprint goes active
+  selftest: 43/43 OK (re-run 2026-08-03 at a2acc09, this session)
+  note: >-
+    A RED BASELINE IS AN EDGE CASE THAT MUST BE CAUGHT BEFORE LOCK, not discovered mid-sprint.
+    Sprint 67's first baseline run was RED on `ruff format --check` -- against the sprint-66 A11
+    amendment's OWN test file, landed after that sprint's final gate so the gate never saw it.
+    Same risk shape here: sprint 67's retro landed edits to yt_wiki.py and working-agreements.md
+    after its final gate run.
+
 plan_verification:
-  dispatched: true
-  dispatched_late: true
   contract_sensitive: true
   reason: >-
-    THIS SPRINT QUALIFIES ON TWO INDEPENDENT COUNTS -- STORY-200 changes a port contract consumed by
-    an adapter AND a core service, and STORY-199 is scale-sensitive logic whose defect only appears
-    past DynamoDB's 1MB page. At drafting it was NOT dispatched for an ENVIRONMENTAL reason (this
-    session's standing constraint on spawning subagents), never because it was judged unnecessary --
-    recorded that way deliberately so it would not read as a token-economy skip like sprint 66's.
-  sequencing_deviation: >-
-    THE PO LIFTED THE CONSTRAINT AT APPROVAL, so the verifier WAS dispatched -- but AFTER the PO
-    approved the plan rather than before, which is not where the ceremony puts it. Recorded as a
-    deviation rather than presented as compliance. It still ran BEFORE any implementer and before a
-    line of code was written, which is where most of its value sits: anything it finds lands as an
-    AC correction, not as rework. What it CANNOT do at this point is change what the PO agreed to --
-    so any finding that would alter SCOPE (rather than sharpen an AC) goes back to the PO instead of
-    being absorbed silently.
-  self_probe_caught_before_approval: >-
-    Recorded separately from the verifier's findings so the two are not conflated.
-  verdict: GAPS
-  outcome: >-
-    THE DISPATCH PAID FOR ITSELF SEVERAL TIMES OVER -- it returned a blocker in FOUR of the five
-    stories, and the orchestrator's own pre-approval probe had missed every one. Nothing here was
-    taken on the agent's word: the four most consequential claims were re-verified directly before
-    any story text changed (six AST-enumerated _EXEMPTIONS keys; the f-string enum behaviour on
-    Python 3.13.9; the six harness.py literals; `node npm-cli.js --version` -> 11.6.2 exit 0).
-    ELEVEN AC SHARPENINGS applied directly; ONE scope change went back to the PO.
-    THE FOUR THAT WOULD HAVE COST THE MOST:
-      1. STORY-199 AC5 instructed emptying a dict whose sixth entry is PERMANENT -- following it
-         takes the gate RED. This was the sprint's LOCKED headline success measure.
-      2. STORY-200 AC4 claimed byte-identical persistence while comparing by enum identity. But
-         ProposalState is (str, Enum), NOT StrEnum, so f"{action}" yields "ProposalState.APPROVED"
-         on Python 3.13 -- it would have silently corrupted every approval event's sort key.
-      3. STORY-200 AC8 ("existing tests pass unchanged") directly CONTRADICTED AC4: two
-         real-DynamoDB tests pass action="approved", and "approved" is ProposalState.APPROVED is
-         False, so they must change. The story could not have been completed as written.
-      4. STORY-202's promotion silently created six NEW ZR-3 collisions in a third file -- the
-         gate-red the story existed to avoid, caused by the story itself.
-    ALSO CORRECTED, and it is the one the orchestrator is least comfortable about: STORY-210's
-    "npm has no module form, the exposure is irreducible" was an INFERENCE PRESENTED AS A
-    MEASUREMENT, and AC7 would have written it into the DoD as a dated permanent fact. Measured:
-    `node <npm_root>/bin/npm-cli.js --version` returns 11.6.2, exit 0. That is precisely the class
-    of error this sprint's constraint C2 exists to catch, committed in the sprint plan itself.
-  scope_change_post_lock: >-
-    ONE, PO-APPROVED 2026-08-02 after the lock. STORY-202 re-pointed 2 -> 3 and widened to a THIRD
-    file (tools/demo_loop_gate/harness.py, six sites), because promoting the five env-var names to
-    module constants makes their VALUES declared and turns six existing harness.py literals into
-    ZR-3 collisions -- 15 today, 26 after promotion -- failing the DoD gate. The PO chose expansion
-    over adjudication, since the six are true positives by the rule's own logic (api_env["CONFIG_DIR"]
-    re-types a name settings.py owns and breaks on rename exactly as env_matrix.py:64 does) and
-    because growing an exemption list in the sprint dedicated to shrinking it would be perverse.
-    TO HOLD 11 POINTS, STORY-201 (1) WAS DROPPED -- it was the declared first-to-drop item, is one
-    line, and its code path is unreachable today. It returns to the backlog as `ready`, not
-    incomplete: no work was started on it.
-  self_probe_caught: >-
-    THREE things, all before the lock, all folded into the stories. (V4) STORY-200's file asserted
-    "STORY-198, already landed" -- FALSE at HEAD, where dynamo_proposal_repository.py:286 still
-    reads `if action == "approved"`; so STORY-200 now SUBSUMES 198 instead of reconciling with it,
-    and 198 is marked superseded. Running both would have edited the same three lines twice.
-    (V6) STORY-202 was filed as "import seven names", but FIVE of them are function-body literals
-    in settings.py:32-38 with no symbol to import -- the story must first promote them to module
-    constants in backend/src/, which makes it touch production code and re-points it 1 -> 2.
-    (V7) STORY-210's whole premise was stale: the acute failure was fixed during sprint 66 and the
-    gate is green, so "BLOCKS EVERY FUTURE STORY" is no longer true. Rescoped to the exposure that
-    genuinely remains, and re-titled.
-  not_equivalent_to_review: >-
-    Stated plainly because sprint 66's loudest finding was exactly this: self-review is weaker than
-    an independent pass. The orchestrator's own probe caught three real problems, which is the same
-    pattern as sprint 66's self-probe -- and sprint 66 then had reviewers find defects in EVERY
-    story anyway, several already personally accepted.
+    TWO INDEPENDENT COUNTS. STORY-204 touches the vendor DQL path (adapters/inbound/dynatrace);
+    STORY-205 touches the persistence key schema, which is a CONTRACT between the seed path and two
+    repositories -- the audit's own citation records that contract drifting once already and costing
+    two debugging runs.
+  dispatched: false
+  dispatched_reason: >-
+    Performed BY THE ORCHESTRATOR during this planning pass, not by a dispatched yt-plan-verifier.
+    Sprint 67's subagent ruling was recorded per-sprint and does not carry over on its own; the PO
+    is asked to re-confirm it at approval (see ceremony_note), which would also cover dispatching a
+    real verifier before lock. Recording the substitution rather than letting `dispatched: true`
+    imply a subagent ran.
+  findings: >-
+    THE ORCHESTRATOR PASS CHANGED THE PLAN IN FOUR PLACES, recorded rather than silently folded in:
+    (1) STORY-204 MUST PRECEDE STORY-203 -- 204 relocates _HEALTH_CHECK_WINDOW, whose file:line is
+        cited by tools/demo_engine/store.py, which is the exact citation 203 AC4 adjudicates. The
+        backlog priority order had them the other way round.
+    (2) STORY-205'S SHAPE WAS UNDECIDED AND IS NOW DECIDED. Its filed note flagged the sizing risk
+        ("may need a third method or a small new TopologyRepository port"). Refinement chose the
+        schema-module option ZR-8's own Coverage verdict already sanctions in writing, keeping it at
+        3 points. A new core-owned port for a value NO core service reads or writes would launder a
+        boot script through the core.
+    (3) STORY-215'S SCOPE WAS UNDERSTATED BY ITS OWN TITLE. A third CONFIG_DIR reader --
+        scripts/seed_topology.py:25, `os.environ.get("CONFIG_DIR", "config/apps")`, bypassing
+        load_settings() -- was found at THIS refinement and is absent from the audit's list. It is
+        an independent declaration of both the NAME and the DEFAULT, in a third process, which is
+        the sprint-64 incident's own shape. This is why 215 is an ENABLER for sprint 69's 209.
+    (4) STORY-205 AC4'S DRIFT CITATION IS ALREADY CLEAN. tools/demo_loop_gate/
+        failure_path_reality_gate.py routes through the REAL repository at HEAD and its docstring
+        explains why. The audit's citation is history, not a live second site; the AC now says
+        VERIFY, not FIX.
+    ALSO MEASURED FOR SPRINT 69's STORY-206: raising the import-linter contract count 8 -> 9 means
+    updating 15 occurrences of "eight contracts" across 6 LIVING files (CLAUDE.md,
+    .scrum/definition-of-done.md, .scrum/backlog.yaml, zone-rules.md x9,
+    ingest-service-and-pull-loop.md x2, architecture-boundary.md). The 30 further occurrences under
+    docs/scrum/sprints/ and docs/scrum/stories/ are APPEND-ONLY HISTORY and must NOT be edited --
+    they correctly describe what was true then. This is the STORY-210 AC2 pattern.
+
 constraints:
-  C1_remove_dont_rekey: >-
-    Every guard entry this sprint retires must be REMOVED, not re-keyed. ZR-7's and ZR-3's entries
-    are keyed by (file, line) and the fixes shift those lines, so the tempting move is to update the
-    key. The correct action is deletion -- the violation is gone. Both guards' stale-exemption tests
-    enforce it, which is why this is a constraint and not a hope.
-  C2_shown_red: >-
-    No fix lands without something going RED first. Every story here fixes a defect that green tests
-    currently tolerate, so each carries a mutation or pre-fix proof (199 AC6, 200 AC7, 202 AC4,
-    210 AC5). A fix whose removal turns nothing red is unpinned, whatever the coverage says.
-  C3_dod_change_is_po: >-
-    STORY-210 AC1 changes .scrum/definition-of-done.md and is a PO decision, not taken unilaterally
-    -- mirroring how the sprint-66 change was handled.
-  C4_classification_never_downgrades_a_red: >-
-    STORY-210's policy-block detector LABELS, it does not excuse. A blocked command still exits
-    nonzero and still fails the gate (AC4), and a test asserts it. Written down because
-    "environmental" is precisely the word that could become a wave-through, and A12's motivating
-    incident was a guard whose message invited an action its own check could not justify.
-  C5_env: >-
-    REQUIRE_DYNAMO=1, DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, Docker up. Record pass/skip COUNTS
-    on every backend gate record; a nonzero skip count is an incomplete gate, not a pass.
-    STORY-200's AC5 is meaningless without real DynamoDB -- its branch is invisible to the fake.
-  C6_publish_guard: >-
-    STORY-202 edits the mechanism that SELECTS config/demo, and that selection IS the publish guard
-    (empty statuspage_mapping() -> LoggingPublisher). AC6 requires re-verifying it empirically
-    rather than reasoning that it should be equivalent. `decide` publishes recoveries with NO human
-    gate and sprint 65 proved that path fires.
+  C1: >-
+    NOTHING LANDS WITHOUT SOMETHING GOING RED FIRST. Every story carries an explicit mutation or a
+    pre-fix-failing test. Carried from sprint 67, where it worked.
+  C2: >-
+    RE-DERIVE EVERY NUMBER; NEVER COPY ONE. Counts, line numbers and sweep totals are measured at
+    HEAD by the story that quotes them. If a figure does not reproduce, SAY SO rather than editing
+    it. Sprint 67 hit this twice (a 105 that measured 101; a restated mutation number).
+  C3: >-
+    PROSE THAT MISINFORMS IS A BLOCKING DEFECT, NOT A NIT. TEN of sprint 67's ELEVEN blocking review
+    findings were documents made false by the very commit that wrote them. Every story here touches
+    zone-rules.md; each carries an AC requiring the catalogue to move in the SAME commit as the
+    code, INCLUDING the paragraphs below the adjudication table (sprint 67 found a row and the
+    paragraph nine lines under it contradicting each other, in one commit).
+  C4: >-
+    NO ENFORCED-BY CLAIM WIDER THAN WHAT THE GUARD ACTUALLY CHECKS. Sprint 67's MAJOR-1: a row
+    claimed a guard that did not exist, disproved by reverting the whole fix and watching the suite
+    stay at 696 passed. STORY-205 AC6 and STORY-203 AC7 state it per-story; STORY-216 mechanises it
+    next sprint.
+  C5: >-
+    REQUIRE_DYNAMO SET ON EVERY GATE RUN (agreement A6). A nonzero skip count is an INCOMPLETE GATE,
+    not a pass -- a green pytest once hid the entire 53-test persistence floor because Docker was
+    down. STORY-213 and STORY-205 are both DynamoDB-gated.
+  C6: >-
+    BRANCH STAYS UNMERGED. Sprints 66 and 67 are unmerged; 68 cuts from 67. Nothing touches main.
+
 stories:
-  - id: STORY-210
-    title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
-    file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
-    status: done
-    commits: 347a199..a528e25   # 4 implementer + 3 fix-round
-    review: >-
-      SPEC PASS on all eight AC (its own full-gate run, plus two mutations of is_policy_block in
-      BOTH directions confirming AC5's tests are load-bearing rather than vacuous).
-      QUALITY FIX_REQUIRED, 1 MAJOR + 7 minor -> fixed, re-verified.
-      THE MAJOR IS WORTH THE RETRO'S TIME. test_yt_gate.py:232 asserted `assertIn("2026-07-06")`
-      with a comment claiming it covered AC3's proof protocol. yt_gate.py prints
-      "agreement 2026-07-06" in the UNCONDITIONAL red-gate footer, on every red run regardless of
-      classification -- so the assertion was satisfied by the footer, not by POLICY_BLOCK_PROOF_NOTE.
-      Mutation-proven by the reviewer: deleting the proof-note print left the suite 20/20 GREEN.
-      The text AC3 requires and AC4's entire anti-excuse rationale rests on was pinned by NOTHING.
-      Note the two reviewers did not overlap: spec mutated the DETECTOR and found its tests honest;
-      quality mutated the PRINT and found the assertion hollow. A single reviewer would have missed
-      it -- this is the fourth consecutive sprint in which the independent pass found a real defect.
-      Fixed at 0190d75: asserts "LABEL, not an escape hatch", a substring unique to the note, and the
-      same mutation now goes RED naming that assertion (git diff empty after restore).
-      ALSO FIXED, both inaccuracies THIS DIFF created, both the inference-hardening-into-fact class
-      the story exists to fight: CLAUDE.md still said "Three console-script shims are blocked" while
-      its table showed five in module form (a reader would conclude ruff.exe is blocked -- it is
-      NOT); and the new DoD note quoted the sprint-66 retro as naming ruff.exe when retro.md:177
-      says "ruff.exe OR THE NPM TOOLCHAIN". Both at 0084326.
-    reality_gate: >-
-      SATISFIED BY EXECUTION, not by argument. This story's live path IS the gate runner, and the
-      gate ran end-to-end through the NEW invocations: commands [3/8] and [4/8] below are
-      `python -m ruff check .` and `python -m ruff format --check .`, both exit 0. The policy-block
-      detector was exercised against REAL subprocesses (not mocks) in both directions by the
-      integration tests, and independently re-mutated by both reviewers.
-    followups_not_in_scope: >-
-      FIVE quality-review minors deliberately deferred to keep the post-review diff narrow; they
-      need stories at the next refinement. The one that matters: yt_gate.py:177-208 matches its
-      markers against command OUTPUT, and `ruff` lints the very test file that now CONTAINS those
-      marker strings -- so a genuine lint error within a couple of lines of them would print a
-      POLICY BLOCK banner for an ordinary code failure. The VERDICT is unaffected (the label cannot
-      reach all_green, mutation-proven) and the emitted proof note demands evidence that scenario
-      could not produce, so the A12 shape holds. Do NOT narrow the marker path in a fix -- it is the
-      only signal that caught cfn-lint's DLL block, which did NOT exit 4551.
-      The other four: policy_block is the only result field emit_yaml drops (say so in a comment if
-      deliberate); POLICY_BLOCK_EXIT_CODE/PROOF_NOTE public but _POLICY_BLOCK_MARKERS private with no
-      reason; "STORY-210"/"AC5" jargon in a shipped docstring of a project-GENERIC script (AC6's
-      letter is met, its spirit is not); dev-setup-and-dod.md:10-11 sentence split mid-clause.
-    points: 2
-    ceremony: implementer + both reviewers
+  - id: STORY-205
+    title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
+    file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
+    points: 3
     order: 1
-    plan_note: >-
-      FIRST because it protects every other story's gate run. RESCOPED AT PLANNING -- read the story
-      file, not the filing: the acute failure is CLOSED (both invocations changed with PO approval
-      in sprint 66; full gate green today). What remains is that the policy widened twice without
-      warning and THREE of eight commands still run through shims. Measured today: ruff.exe is
-      STILL ALLOWED, so AC1/AC2 are PREVENTIVE; `python -m ruff` is confirmed equivalent; npm has NO
-      module form and that exposure is irreducible locally (AC7 requires saying so rather than
-      claiming the gate is hardened). yt_gate.py has ZERO policy-block detection today, so AC3-AC5
-      are genuinely new work at the SCRIPT rung -- exempt from the tooling freeze under A14, and it
-      mechanises the first step of the 2026-07-06 agreement, which until now was prose applied from
-      memory and worked in sprint 66 only because the orchestrator recognised the signature.
-  - id: STORY-199
-    title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
-    file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
-    status: done
-    commits: 1042048..a7a1b96   # 10 implementer + 5 fix-round
-    review: >-
-      SPEC PASS on all six AC. QUALITY FIX_REQUIRED, 2 MAJOR + 5 minor -> fixed, re-verified.
-      THE CODE WAS THE STRONGEST PART OF THE DIFF and no code change was asked for: the quality
-      reviewer diffed all five loops CHARACTER BY CHARACTER against in_window and found no
-      divergence, no stop-on-empty-page in any of the five, `_limit` inert in every production path
-      (assigned only in tests), hooks verbatim-consistent with dynamo_observation_repository.py:23,
-      and the ZR-7 guard's detection logic byte-identical to pre-diff -- nothing weakened while the
-      guarded file was open.
-      BOTH MAJORS WERE PROSE THAT DESCRIBED A CODEBASE THAT DOES NOT EXIST:
-        1. test_zr7_pagination_guard.py:29-38 (and :195) still declared five call sites to be REAL,
-           unfixed ZR-7 violations awaiting STORY-199 -- twenty lines above the _EXEMPTIONS block
-           correctly updated to one, and contradicting zone-rules.md as updated by the SAME commit
-           range. That file is the designated authority on whether persistence paginates; the next
-           audit reads the header and re-files a fixed defect, which is the sprint-66 -> 67 loop
-           this story exists to close. Fixed at 4caf644.
-        2. zone-rules.md:536 -- a `status: verified` Fact -- stated the hot-path cost BACKWARDS:
-           "never scanning the rest of the GSI partition on the common not-under-maintenance path".
-           Inverted. Early `True` saves work on the RARE under-maintenance path; the COMMON path is
-           the one that reads the ENTIRE MAINT partition, because False requires exhausting
-           LastEvaluatedKey. dynamo_maintenance_repository.py:108-111 carried the mirror error.
-           A FALSE verified Fact is worse than a stale one -- the wiki protocol admits incomplete or
-           visibly stale, never trusted-and-wrong -- and someone chasing `decide` latency would have
-           read it and looked elsewhere. Fixed at 005bb41 + 41b2d8f, the wiki entry explicitly
-           labelled a FACT CORRECTION, not a bare re-stamp, and now states the true asymmetric cost
-           AND that it grows with maintenance history forever and is inherent, not a defect.
-      Two further self-contradictions this diff created were also fixed (41b2d8f, fe8df72).
-    reality_gate: >-
-      SATISFIED, and by the strongest evidence in the sprint so far -- the defect's exact shape was
-      reproduced against real DynamoDB Local, not argued. The SPEC reviewer independently mutated
-      is_under_maintenance to terminate on an empty-after-filter page (the killer bug, in code that
-      still looks paginated) and the AC3 test went RED with `assert False is True`; reverted clean.
-      Both reviewers separately re-ran the AC6 mutation and both got the ZR-7 guard RED naming
-      dynamo_component_repository.py:37. These tests cannot run against the fakes -- a page boundary
-      is not reproducible in-memory -- so 0 SKIPPED is load-bearing here, not a formality.
-    evidence_caveat_recorded_deliberately: >-
-      A NUANCE THE IMPLEMENTER'S OWN EVIDENCE DID NOT SURFACE, found by the spec reviewer and worth
-      carrying: mutating list_components the NAIVE way -- dropping the loop AND the `_limit` wiring
-      -- leaves the AC2 test GREEN, because with no Limit applied DynamoDB Local returns all ten
-      tiny seeded rows in one unlimited page. Only the ZR-7 guard catches that form. Re-run
-      faithfully (loop removed, `_limit` kept wired) both go RED. Nothing shipped is defective --
-      every landed method wires `_limit` in -- but it means small-N pagination tests are
-      `_limit`-DEPENDENT: they pin "the loop is gone" only while the hook survives. The guard is
-      doing load-bearing work the tests were assumed to do alone. Relevant to STORY-214.
-    followups_filed: >-
-      TWO NEW STORIES, both filed to the backlog as drafts with their evidence attached:
-      STORY-213 (defect) the intermittent list_components pagination failure -- see below; and
-      STORY-214 (chore) extract the shared pagination helper AND rework the ZR-7 guard that would
-      forbid it, which is why it is 2-3 points and not a refactor.
-      NOT filed, deliberately: the speculative ScanIndexForward=False idea (unmeasured, a behaviour
-      change to a hot path) and two doc nits already fixed in the round.
-    flake_disclosure: >-
-      READ THE GATE RECORD AS "GREEN ON RE-RUN", NOT "DETERMINISTICALLY GREEN". On the FIRST of
-      eleven full-suite runs against committed HEAD, the quality reviewer saw
-      test_dynamo_component_repository_list_components_paginates FAIL, returning only page 1. It did
-      not recur in 10 further full runs or 25 targeted ones, and BOTH of the orchestrator's own gate
-      runs were green first time. The production loop is mutation-verified correct and the mechanism
-      points at the conftest clean_dynamo_tables churn (cf. STORY-179), not at this diff -- so it
-      does not block the story. It is recorded here rather than omitted because the failure message
-      is INDISTINGUISHABLE from "pagination is broken", the very defect just fixed. Filed as
-      STORY-213 with the reproduction evidence. The test must NOT be weakened to silence it.
-    points: 3
-    ceremony: implementer + both reviewers
+    status: proposed
+    why_here: >-
+      HIGHEST BLAST RADIUS, RUNS EARLY. ZR-8 Finding 1 -- the audit's biggest single miss, found only
+      in STORY-196's quality-review fix round because it fell through the crack BETWEEN the two audit
+      passes (195 covered adapters/, 196 covered composition/, and this is composition/ doing
+      adapters/'s job). Three hand-built topology keys on the boot path of BOTH composition roots.
+      Re-derived at planning: `grep -rn '"TOPOLOGY"' backend/` = 10 sites (5 repositories, 3
+      seed_dynamo, 2 tests).
+      AC2 IS LOAD-BEARING AND CAME FROM THE AUDIT'S OWN FILING NOTE: change the schema INSIDE a
+      repository and assert seed_topology_dynamo follows AUTOMATICALLY with seed_dynamo.py
+      unchanged -- a BEHAVIOURAL drift test, not a source assertion. It is the only AC that proves
+      the duplication is gone rather than relocated.
+  - id: STORY-204
+    title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
+    file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
+    points: 2
     order: 2
-    plan_note: >-
-      THE ONLY LIVE PRODUCTION DEFECT IN THE SET and the sprint's reason to exist -- NEVER dropped.
-      is_under_maintenance silently returns False for a component that IS under maintenance once
-      windows exceed one 1MB page, disabling maintenance suppression in `decide`. It does not raise.
-      Four siblings share the shape; the correct pattern is in the SAME directory
-      (dynamo_observation_repository.in_window, with a _limit hook at :23 that makes the page
-      boundary reachable without a megabyte of fixtures). AC5 is the cheapest evidence in the
-      sprint: ZR-7's _EXEMPTIONS must end EMPTY, and the guard's stale-exemption test goes RED on
-      anything left behind -- sprint 66 wrote that guard to detect this story landing. NOTE for the
-      implementer: is_under_maintenance answers a BOOLEAN, so it pages until the first match and
-      returns True immediately; it must not become a collect-everything loop on the common
-      not-under-maintenance path, which runs every cycle.
-  - id: STORY-202
-    title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
-    file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: done
-    completed: 2026-08-03   # ACROSS AN INTERRUPTION -- see interruption_note below.
-    commits: 6f872c3..37b09a0   # 4 + WIP-preservation + 3 + 6 fix-round, TWO different implementers
-    review: >-
-      SPEC PASS on all NINE AC -- it reproduced AC4's BOTH halves in isolated worktrees (pre-fix
-      DISAGREE at 6f872c3, post-fix AGREE), re-executed AC6, re-derived AC9 at 13, and BYTE-COMPARED
-      all five re-keyed adjudication lines against 6f872c3 to confirm harness.py:747/:750 were
-      DISPLACED, never edited. QUALITY FIX_REQUIRED, 2 MAJOR + 4 minor -> fixed, re-verified.
-      QUALITY JUDGED THE CODE SOUND AND SHIPPABLE AS-IS; both majors were prose. It also proved two
-      things by its own mutation, in an isolated worktree with import provenance confirmed:
-      AC3's symbol-pinning is REAL (renaming CONFIG_DIR_VAR leaves all five test_env_matrix tests
-      GREEN because they follow the symbol, and exactly ONE test fires -- the value pin), and the
-      ZR-3 guard's DETECTION LOGIC was NOT weakened while the story had the guarded file open (both
-      test bodies byte-identical to 6f872c3; re-introducing the literal makes the guard fire).
-      *** MAJOR 1 IS THE SHARPEST FINDING OF THE SPRINT AND BELONGS IN THE RETRO. *** The new
-      zone-rules.md ZR-3 Fact cited harness.py's six AC8 sites as :540/:609/:736/:742/:743/:744 --
-      THE PRE-FIX NUMBERS, COPIED FROM THE STORY'S OWN AC8, WHICH EXPLICITLY SAID "re-derive these,
-      the earlier edits in this story shift them". At HEAD they are :546/:615/:743/:749/:750/:751;
-      FIVE OF SIX pointed at unrelated code (`],`, `stdout=out_fh,`, a docstring, a comment). It sat
-      in a `status: verified` article with a FRESH verified_sha, landed by a commit whose message
-      asserted "Re-read both articles against HEAD; nothing else drifted".
-      MAJOR 2: the ZR-3 ledger contradicted itself within fifteen lines -- one _ADJUDICATED reason
-      still counted "env_matrix.py:39" after this same diff re-keyed that collision to :49. At HEAD
-      :39 is `*,`. That reason string is exactly what STORY-203's implementer will read.
-      Fixed at 89d99f4 / 0f3532c, plus three accuracy minors (1a1f517, 942491d, 1a70f45).
-    the_gap_in_the_mechanical_floor: >-
-      WHY yt_wiki PASSED A FACT WITH FIVE WRONG CITATIONS, and it is a real finding about the floor
-      rather than about this story: the citation sweep anchors on `file:line` forms, and these were
-      BARE `:NNN` with no filename for the regex to bind to. So they were invisible to it and a
-      human reviewer had to catch them. Note the SAME article applies the correct convention
-      elsewhere ("line numbers as of 0d39de7", harness.py:525/:586 -- both verified correct), so the
-      convention was known and applied UNEVENLY. Candidate for the retro at the SCRIPT rung.
-    reality_gate: >-
-      SATISFIED EMPIRICALLY ON THE ONE THAT MATTERS. AC6 is the publish guard and it was EXECUTED,
-      by the implementer and INDEPENDENTLY by BOTH reviewers, against the real production
-      interfaces: load_config("config/demo").statuspage_mapping() -> {}, and build_publisher() with
-      REAL-LOOKING credentials -> StatusWritebackPublisher wrapping a LoggingPublisher
-      (IS LoggingPublisher: True). This story edited the mechanism that SELECTS config/demo, and
-      `decide` publishes recoveries with no human gate, so nothing here was allowed to rest on
-      "should be equivalent". An earlier revision of this very story ASSERTED this check had run
-      when it had not -- which is why the orchestrator refused its wiki stamp mid-story.
-      Also verified by quality: the zone arrow still points tools/ -> src ONLY (grep for any
-      backend/src/ import of tools/ returns nothing), which the 8 import contracts do not cover.
-    interruption_note: >-
-      THIS STORY WAS BUILT BY TWO IMPLEMENTERS ACROSS AN ACCOUNT SESSION LIMIT, and the handoff is
-      worth the retro's attention because it worked. The first landed AC1/AC2/AC3/AC5/AC8 and was
-      killed mid-wiki-update; the orchestrator PRESERVED its coherent prose at 8d200a2 but REFUSED
-      its verification stamp, because the prose contained a false claim ("both files import the
-      seven"; harness.py imports FOUR) and asserted an AC6 check that had never run. Both articles
-      were left reading STALE -- quarantined, readable, barred from any brief -- which is the wiki
-      protocol's designed third state and exactly what it exists for. The second implementer fixed
-      the claim, RAN AC6 for real, and only then re-stamped, in a separate commit. Reviewers were
-      told the story crossed a handoff and to check the WHOLE range, since a handoff is where an AC
-      gets dropped between two agents each assuming the other did it. None was.
-    followups_filed: >-
-      STORY-215 (defect, draft) -- the env-var-NAME drift this story deliberately bounded out, now
-      gathered in one place: env_matrix.py:81/:83 and harness.py:614 (the DYNATRACE_* pair), plus
-      the one BOTH reviewers found independently and BOTH correctly ruled out of scope --
-      backend/tests/test_demo_fleet_config.py:164/:200 hardcode "CONFIG_DIR" in a FOURTH file. That
-      is the consequential one: it is STORY-176's create_app test asserting CONFIG_DIR governs
-      publisher safety, so the literal that re-creates the drift risk sits inside THE TEST THAT
-      GUARDS THE PUBLISH GUARD. Refinement must re-derive the sweep count before estimating, because
-      promoting the two DYNATRACE names re-runs this story's own 1 -> 3 point trap.
-    # PARKED MID-STORY 2026-08-03 ~01:50 IST. The implementer hit the account
-                          # session limit (resets 04:50 IST) and terminated early. NOT blocked, not
-                          # failed -- interrupted. Resume by dispatching a FRESH implementer with
-                          # the brief below; do NOT restart the story from zero.
-    commits_so_far: 6f872c3..8d200a2   # 4 implementer commits + 1 orchestrator WIP-preservation
-    done_so_far: >-
-      82e9219 AC1 -- settings.py's five env-var names promoted to module constants.
-      977ae71 AC2/AC3 -- env_matrix.py imports the seven and uses them as dict keys.
-      0d39de7 AC8 + AC5 -- harness.py imports the constants; ZR-3 adjudications retired and re-keyed.
-      1dc1c73 ruff format follow-up on settings.py.
-      8d200a2 (ORCHESTRATOR, not the implementer) preserves the implementer's uncommitted wiki prose
-      while REFUSING its verification stamp -- see wiki_stamp_refused below.
-    remaining: >-
-      AC4 (two-sided mutation proof), AC6 (EMPIRICAL publish-guard re-verification), AC9 (re-derived
-      ZR-3 collision count), AC7 (full 8/8 gate). Then BOTH reviewers -- no story this sprint may
-      reach review unreviewed (PO ruling 3). Nothing here has been reviewed or gated yet.
-    wiki_stamp_refused: >-
-      THE ORCHESTRATOR DECLINED THE IMPLEMENTER'S WIKI VERIFICATION, and the reason is the resume
-      instruction. Both zone-rules.md and demo-engine.md had verified_sha bumped to 1dc1c73. Two
-      claims in that prose cannot be stood behind:
-        1. zone-rules.md says BOTH files import the seven constants. MEASURED: env_matrix.py imports
-           SEVEN, harness.py imports FOUR (CONFIG_DIR_VAR, DYNAMO_CONTROL_TABLE_VAR,
-           DYNAMO_ENDPOINT_URL_VAR, DYNAMO_OBSERVATIONS_TABLE_VAR). The prose overstates it.
-        2. demo-engine.md asserts AC6's publish guard was "re-verified empirically (not just
-           reasoned)". THERE IS NO EVIDENCE THAT RAN -- the agent died before reporting it. AC6 is
-           precisely the AC that may not be satisfied by reasoning.
-      Stamps reverted to fe8df72 / b3e1767. Both articles now correctly read STALE under yt_wiki:
-      readable, quarantined, barred from any subagent brief. `yt_wiki` therefore EXITS 1 right now
-      and that is the CORRECT state mid-story -- it must be CLEAN again before the story is Done.
-      The prose itself was checked before being preserved: harness.py:754/:757, env_matrix.py:49 and
-      harness.py:525/:586 all resolve. Fix claim 1, prove claim 2, then re-stamp.
-    resume_note: >-
-      ONE THING THE IMPLEMENTER DID THAT EXCEEDS THE WRITTEN AC, and a reviewer must adjudicate it
-      rather than wave it through: AC5 predicted ONE displaced entry to re-key (env_matrix.py :39).
-      Its wiki history entry claims FIVE were re-keyed -- env_matrix.py :39->:49, and harness.py
-      :747->:754, :750->:757, :903->:910, :964->:971. That may well be correct and necessary (its
-      own edits displace more than the story foresaw), but it is UNVERIFIED and it touches
-      harness.py:747/:750, which the story explicitly told it NOT to touch -- as VALUES belonging to
-      STORY-203. Re-keying an adjudication is not the same as editing the colliding line, so this is
-      probably compliant; verify it, do not assume it. Its claimed sweep arithmetic is 15 -> 13.
-      AC9 requires that number be RE-DERIVED and reported, never carried forward on trust.
-    points: 3
-    ceremony: implementer + both reviewers
+    status: proposed
+    why_here: >-
+      MUST PRECEDE STORY-203 (see plan_verification finding 1). ZR-8 Finding 2: vendor_health.py
+      builds DQL without query.py's _DQL_BREAKING_CHARS validation, and the probe it feeds runs
+      FIRST, at loop startup -- so the same misconfigured native_id raises loudly on the ingest path
+      and silently builds a malformed query on the startup path.
+      SHAPE DECIDED AT REFINEMENT: move the BUILDER into the adapter, not merely share a validator.
+      ZR-8 says query construction lives in exactly ONE adapter; the validator-only fix leaves
+      composition building DQL, which IS the violation.
+  - id: STORY-203
+    title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
+    file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
+    points: 2
     order: 3
-    plan_note: >-
-      RE-POINTED 1 -> 2 at planning, then 2 -> 3 POST-LOCK with PO approval. The filing assumed
-      seven names could simply be imported; FIVE are function-body literals at settings.py:32-38
-      with no symbol to import, so the story must first promote them to module constants -- which
-      pulls it into backend/src/ and out of a pure tools/ change. CONFIG_DIR is the most severe of
-      the seven, above the credential pair: fake credentials are defence in depth, whereas
-      CONFIG_DIR selects config/demo and therefore empties statuspage_mapping() -- it IS the publish
-      guard (re-verified live at planning: config/demo -> {} -> LoggingPublisher).
-      *** THREE FILES, NOT TWO. Promoting the five names makes their VALUES declared to the ZR-3
-      sweep, turning six existing tools/demo_loop_gate/harness.py literals into collisions (15 ->
-      26) and failing the gate. AC8 fixes those six; AC9 requires re-deriving the count after the
-      last edit. They are true positives, not noise: api_env["CONFIG_DIR"] re-types a name
-      settings.py owns. ***
-      TWO TRAPS THE APPROVED TEXT GOT WRONG, both corrected: AC5 said "do not touch the :39 ZR-3
-      entry" -- backwards, because AC2's import line DISPLACES it and stales its key; it must be
-      RE-KEYED, an explicit carve-out from C1 (which governs RETIRED entries, not displaced ones).
-      And AC1 named load_live_secrets(), which reads NONE of the seven.
-      Keep the KEY NAMES (this story) apart from the duplicated VALUES (STORY-203) -- they now meet
-      in harness.py, where :747/:750 belong to STORY-203 and must not be touched here.
-  - id: STORY-200
-    title: Give ProposalRepository.record_approval_event a domain-typed action parameter (subsumes STORY-198)
-    file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
-    status: done
-    commits: 33b7ccd..9bccac8   # 8 implementer + 4 fix-round
-    review: >-
-      SPEC PASS on all NINE AC. QUALITY FIX_REQUIRED, 5 MAJOR + 5 minor -> all fixed, re-verified.
-      SPEC DID THE TWO THINGS THAT MATTERED. (1) It wrote through the REAL adapter itself and read
-      the raw item back -- sk='EVENT#2026-06-26T12:05:00.000000+00:00#approved', action='approved',
-      approved_actor='reviewer' -- so the persisted bytes are provably unchanged and the
-      (str, Enum) corruption trap is closed by measurement, not by reading the code.
-      (2) IT ANSWERED THE AC7 QUESTION HONESTLY AND THE ANSWER IS SUBTLE: it reproduced the
-      mutation, then CONTINUED PAST THE FAILURE and found approved_actor is still written correctly
-      under it. Because AC4 compares by OBJECT IDENTITY, a `.value` drift cannot break that branch --
-      the failure mode the story's blast-radius paragraph exists to prevent is now STRUCTURALLY
-      IMPOSSIBLE. So AC7's mutation pins a real but NARROWER coupling (the persisted sk/action byte
-      format) than the narrative implies. It is not vacuous -- the test's lookup key is authored
-      independently of the mutated value. Crucially, spec verified the WIKI DOES NOT OVERCLAIM this:
-      it says the event becomes unreadable at its expected sort key, not that approved_actor broke.
-      The story is correct AND its own motivating hazard has been engineered out rather than merely
-      tested for -- worth recording, because a future reader could otherwise mistake the narrower
-      proof for the broader one.
-    the_major_the_gate_could_not_catch: >-
-      *** MAJOR-1 IS THE FINDING OF THE SPRINT AND BELONGS AT THE TOP OF THE RETRO. ***
-      zone-rules.md:733 marked ZR-6's row `ENFORCED-BY <a named test>, for this ONE instance` and
-      said "only this one, now-fixed instance is pinned". The quality reviewer disproved it by
-      mutation (MUT-6): reverting the ENTIRE ZR-6 fix -- port back to `action: str`, fake back to
-      `str`, adapter back to `if action == "approved":` -- leaves the suite at 696 passed, IDENTICAL
-      TO HEAD. That test pins the NEW 2-member subset guard; NOTHING detects a ZR-6 regression.
-      The table's own definition of ENFORCED-BY (:721-724) requires a guard "shown RED, never merely
-      is green" -- ZR-3 and ZR-7 record their red demonstrations; this row recorded none, AND NONE IS
-      POSSIBLE. A future story could re-widen that port with a fully green gate while the
-      authoritative catalogue told the reader it was guarded: the exact trusted-and-wrong state the
-      wiki protocol forbids. Corrected at d8cb237 to `FIXED (STORY-200) -- NO STANDING GUARD`, with
-      the MUT-6 evidence recorded in the row itself.
-      *** THE ORCHESTRATOR RE-DERIVED MUT-6 INDEPENDENTLY rather than accepting it twice-removed.
-      The implementer DISCLOSED that it had restated the reviewer's number without re-measuring, and
-      that number was about to become a Fact in a `verified` article. Measured in an extracted copy
-      at 9bccac8 with import provenance printed and confirmed (proposal.py resolved to the scratch
-      tree, not the main one), applying exactly the three MUT-6 changes and NOT the `.value` sites:
-      696 passed. The claim is TRUE. Scratch copy removed; main tree verified clean throughout. ***
-    major_4_had_teeth_in_the_code: >-
-      approval.py's rewritten `_decide` docstring asserted the action "can never drift from the
-      spine's `ck_approval_events_action` constraint (action IN ('approved','rejected'))" -- a
-      POSTGRES CHECK CONSTRAINT FROM THE NEON ERA that exists nowhere in this DynamoDB-only repo,
-      retired with the relational layer at STORY-087. After this story the `_decide` guard is the
-      ONLY enforcement, so that sentence is precisely the argument someone would use to DELETE THE
-      GUARD AS REDUNDANT. It also claimed the constraint mirrors ProposalState's terminal values
-      "one-for-one" when there are FOUR, contradicting the paragraph eight lines below it. Fixed at
-      013f344, which now states plainly that nothing backs it at the datastore.
-    second_blind_spot_in_the_mechanical_floor: >-
-      MAJOR-3 found a SECOND way a citation slips past the lint this sprint, and it is a different
-      mechanism from STORY-202's. canonical-types-and-ports.md:152 asserted a Fact about
-      backend/src/core/services/approval.py while that file was NOT in the article's code_refs --
-      and it passed `facts: CLEAN` because the citation was written abbreviated
-      (`core/services/...` not `backend/src/core/services/...`) and yt_wiki.py:213 SKIPS any citation
-      that does not resolve from the repo root. So future edits to approval.py would never have
-      flagged the article stale. Fixed at ef29b6d (full path + code_refs).
-      TAKEN WITH STORY-202's bare `:NNN` gap, that is TWO INDEPENDENT WAYS a citation became
-      invisible to the Facts lint in ONE SPRINT. Both are retro candidates at the SCRIPT rung.
-    reality_gate: >-
-      SATISFIED BY MEASUREMENT ON BOTH SIDES. The persisted bytes were read back from real DynamoDB
-      Local by the spec reviewer (independent of the story's own test), and the quality reviewer ran
-      SIX mutations against an extracted copy with provenance confirmed: MUT-1 (value drift) RED,
-      MUT-2 (bare member in the sk f-string) RED x2 -- the dangerous write site IS pinned -- MUT-5
-      (delete the guard) RED, so the new guard test is not vacuous. MUT-3 and MUT-4 are green and
-      that is disclosed rather than hidden: the `"action"` attribute site survives as a str subclass
-      by luck rather than design, and the adapter's docstring says exactly that.
-    what_the_reviewer_deliberately_cleared: >-
-      Recorded so a later story does not re-litigate settled ground: InvalidApprovalActionError
-      conforms to the codebase's error conventions (base, placement, export, actionable message, and
-      it correctly has no api/_shared/errors.py mapping because it is unreachable through the public
-      API); `_decide` is the right seam and the ONLY in-tree caller, so nothing reaching the repo
-      skips it; leaving approved_actor unimplemented in the fake is CORRECT, because it is an
-      adapter-internal denormalization with no port surface and a fake implementing it would invent
-      semantics the port does not define; both bare wiki re-stamps were earned; and the
-      api-five-file-convention SUPERSEDED mark is correctly scoped.
-      NOTE: this story used `::symbol` citation form throughout and introduced NO bare `:NNN`
-      citations -- which is exactly why it did not repeat STORY-202's failure.
-    followup_candidate: >-
-      canonical-types-and-ports.md:99 carries the SAME abbreviated-path defect MAJOR-3 fixed at
-      :152. It PREDATES this story, so it was left unfixed as out of round scope. It needs a story
-      or a mechanical fix -- and it is evidence the abbreviated form is a habit, not a one-off,
-      which strengthens the case for the script-rung fix above.
+    status: proposed
+    why_here: >-
+      Four MUST-IMPORT-FROM-SRC entries, all MINOR, NONE a live defect today -- every value
+      currently agrees; each is a drift risk the next person editing the backend/src/ side cannot
+      learn about from tools/'s own code. Measured at planning: 13 colliding pairs, 4 of them
+      MUST-IMPORT-FROM-SRC; expected 9 after (AC5 requires re-deriving, not predicting).
+      AC2 GUARDS THE REAL RISK: two of the four sit inside a DEFENSIVE BLOCKLIST asserting the
+      resolved table name is NOT the production default, and a careless "just import the constant"
+      fix turns that blocklist into a tautology.
+      AC4 REQUIRES A GENUINE DECISION on the fifth, CROSS-REPRESENTATION case (store.py's
+      timedelta(hours=2) vs "2h", structurally invisible to any literal-equality sweep): store.py
+      already carries a written WIRE-CONTRACT justification that may well be correct, and upholding
+      it is a legitimate outcome -- but leaving an _ADJUDICATED entry pointing at a closed story is
+      a fail.
+  - id: STORY-215
+    title: Close the remaining env-var-NAME drift — the two DYNATRACE_* names, plus the file that guards the publish guard
+    file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     points: 3
-    ceremony: implementer + both reviewers
     order: 4
-    plan_note: >-
-      SUBSUMES STORY-198, which had NOT landed despite the previous story file asserting it had --
-      re-verified wrong at HEAD. Re-pointed 2 -> 3 for the absorbed scope and the real-DynamoDB
-      proving test. THE DESIGN QUESTION IS SETTLED AT REFINEMENT, not left open: the port takes
-      ProposalState, NOT a new 2-member enum, because the sibling method in the same port (resolve,
-      :32) already takes ProposalState for the same two values, and a narrower type would need a
-      mapping back to it -- a second declaration of the approved/rejected vocabulary, which is the
-      exact duplication class this sprint removes. The expiry condition for that decision is
-      recorded in the story file. AC5 IS THE ONE THAT MATTERS: fakes.py:175-183 does NOT denormalize
-      approved_actor, so the fixed branch is INVISIBLE to the fake -- the proving test must run
-      against DynamoDB Local, and a fake-based substitute would assert nothing while looking green.
-      Blast radius is real: approved_actor is the SOLE source of Publication.author, so value drift
-      silently blanks the author column for every row.
-  # STORY-201 (1) WAS DROPPED from this sprint post-lock -- see plan_verification.scope_change_post_lock.
-  # STORY-202 absorbed a third file and went 2 -> 3, so 201 came out to hold the committed 11 points.
-  # It was the DECLARED first-to-drop item, no work was started, and it returns to the backlog as
-  # `ready` (not incomplete, not blocked). Its refinement work stands and it is a sprint-68 candidate.
+    status: proposed
+    why_here: >-
+      RUNS LAST; ENABLER FOR SPRINT 69's STORY-209. FOUR sites, not the two its old title named:
+      (1) env_matrix.py:81,83 and (2) harness.py:614 re-type the DYNATRACE_* pair, whose DECLARING
+      side (settings.py:114,116,117,119) is itself a function-body literal -- there is no constant to
+      import yet, which is exactly why 202 left them;
+      (3) *** backend/tests/test_demo_fleet_config.py:164,200 -- THE CONSEQUENTIAL ONE. A FOURTH
+      FILE outside 202's scope, flagged by BOTH sprint-67 reviewers independently as a real residual
+      defect. It is STORY-176's file: the create_app test asserting CONFIG_DIR governs PUBLISHER
+      SAFETY. So the literal that re-creates the drift risk sits in the test that guards the PUBLISH
+      GUARD -- CONFIG_DIR selects config/demo, which empties statuspage_mapping(), which is what
+      yields a LoggingPublisher, and `decide` publishes recoveries with NO human gate. A rename that
+      silently missed this test would leave it GREEN WHILE ASSERTING NOTHING. Note the ZR-3 sweep is
+      STRUCTURALLY BLIND to it (it compares backend/src declarations against tools/ literals; this
+      file is under backend/tests/), which is why nobody adjudicated it -- so its fix needs its own
+      mutation, AC5. ***
+      (4) scripts/seed_topology.py:25 -- found at THIS refinement, absent from the audit's list: an
+      independent declaration of both the NAME and the "config/apps" DEFAULT, in a third process.
+      RESIZED 2 -> 3 AT REFINEMENT. Promoting two new constants re-runs STORY-202's own trap:
+      newly-declared shape-i values turn existing tools/ literals into FRESH ZR-3 collisions, the
+      sequence that took 202 from 1 point to 3. AC6 expects the sweep count to move BOTH ways.
+      Last in order because it re-keys _ADJUDICATED line numbers, and doing it after STORY-203 means
+      ONE re-keying pass instead of two -- the precise churn STORY-202 caused STORY-203 last sprint.
+      EXPLICITLY NOT IN SCOPE: test_settings.py:30 (`assert CONFIG_DIR_VAR == "CONFIG_DIR"`) is the
+      PIN, not a duplication, and must survive untouched. A test ASSERTING a constant's value is
+      protection; a test RE-TYPING the name to consume it is drift. That distinction is the whole
+      difference between this exclusion and site 3.
+
 sizing_note: >-
-  11 points across FOUR stories (210:2 + 199:3 + 202:3 + 200:3) -- the top of the stated ~9-11
-  baseline, same total as sprint 66 but one fewer story. Composition changed post-lock: STORY-202
-  went 2 -> 3 on the PO-approved scope expansion and STORY-201 (1) came out to hold the committed
-  total. The sprint-66 retro found that fix-round cost is driven by story KIND, not size: an audit
-  sprint's deliverable is prose, which fails review in ways code does not. This sprint's deliverable
-  is code with mechanical proofs, so 11 is a considered call rather than a stretch.
-  DROP ORDER if the SESSION runs short (not a standing trim -- the PO declined both reductions on
-  offer): STORY-202 first now that 201 is already out. NEVER STORY-199 (the live production defect,
-  the sprint's reason to exist) and never STORY-210 (it keeps the gate trustworthy for the rest).
+  10 points across FOUR stories. Recent velocity: 9 (s62), 7 (s63), 8 (s64), 13 (s65), 11 (s66),
+  11 (s67) -- so 10 sits mid-band and just under the last two sprints, which is deliberate: two of
+  these four carry real design content (205's schema module, 204's builder relocation) rather than
+  mechanical edits.
+  *** STORY-213 WAS IN THIS SPRINT AND WAS REMOVED DURING PLANNING, recorded because the reason is
+  a correction, not a trim. It was placed here as an "enabler" for STORY-205 on the theory that
+  sibling tests polluted a shared control table. Reading its FILED EVIDENCE refuted that: the
+  observed failure was `{'comp-page-0','comp-page-1'} == {10 ids}` -- FEWER rows, i.e. page 1 and
+  stop, a lost LastEvaluatedKey. Pollution yields EXTRA ids. The real (unconfirmed) mechanism is
+  DynamoDB Local flakiness under the fixture's ~1,400 delete/recreate cycles, related to STORY-179 --
+  which protects NONE of this sprint's work, so the enabler argument collapsed and the story left.
+  Its AC were also wrong as first drafted: they demanded reproduction first, which would have
+  BLOCKED it by construction (35 runs already failed to reproduce it). Both corrected in its story
+  file; it is refined, sized at 2, and waits. ***
+  DROP ORDER IF THE SESSION RUNS SHORT (not a standing trim unless the PO takes it):
+    1. STORY-203 -- all four findings graded MINOR by the audit, none a live defect today.
+  NEVER DROP STORY-215: sprint 69's STORY-209 depends on it, and dropping it moves work across the
+  two-sprint boundary the PO set. NEVER DROP STORY-205: it is the audit's biggest finding and the
+  only one describing a defect that has already cost real debugging time.
+
 ceremony_note: >-
-  Four of five stories get BOTH reviewers, including two below the 3-point threshold, and that is
-  deliberate. Sprint 66's evidence: both reviewers found real defects in EVERY story, several
-  already accepted by the orchestrator, for the third sprint running. STORY-210 is 2 points but
-  edits the DoD and the gate runner itself; STORY-202 is 2 points but touches the publish-guard
-  mechanism. Only STORY-201 -- one line, unreachable code -- takes the small-story ceremony.
-carried_forward:
-  - >-
-    STORY-201 (1) — clickpath require_field. DROPPED FROM THIS SPRINT post-lock to hold 11 points
-    when STORY-202 absorbed a third file. Fully refined and `ready`; no work started. First
-    candidate for sprint 68.
-  - >-
-    UNFILED FOLLOW-UP (needs a story at the next refinement): env_matrix.py:71/:73 hardcode
-    DYNATRACE_ENV_URL / DYNATRACE_API_TOKEN, the same drift risk as STORY-202's seven. Deliberately
-    left out to keep 202 bounded — their settings.py side (:100, :103) is also a function-body
-    literal, so fixing them means promoting two more constants and widening the ZR-3 collision
-    surface again. Recorded here so it is not lost.
-  - >-
-    STORY-205 (3) — seed_dynamo.py is an adapter in composition's clothing; arguably the best
-    boundary finding of sprint 66. HELD BACK DELIBERATELY: its own entry says refinement must size
-    it first, because the repositories expose no seed-shaped bulk upsert and NO repository owns
-    AppConfig-shaped writes (pk=TOPOLOGY, sk=APP#<id>) at all -- it may need a new port. Sizing that
-    honestly is a sprint-68 refinement job, not a planning-day guess.
-  - >-
-    STORY-203 (2) — the four MINOR ZR-3 duplications. Deliberately NOT bundled with STORY-202:
-    202 is key NAMES, 203 is duplicated VALUES, and they touch adjacent lines in the same files.
-    Note its store.py:22 case is CROSS-REPRESENTATION (timedelta(hours=2) vs "2h") and is
-    structurally invisible to a literal-equality sweep -- the standing limit of any such sweep.
-  - >-
-    STORY-204 (2) — vendor_health.py duplicates the DQL builder without its InvalidNativeIdError
-    validation. Refinement must choose the shape; the audit deliberately did not prescribe it.
-  - >-
-    STORY-206..209 (2/2/1/2) — the four deferred guards. All clean-tree rules, so each needs a
-    MUTATION proof rather than a live violation. STORY-206 takes the contract count 8 -> 9 and must
-    update every statement of that figure in the same commit.
-  - >-
-    STORY-186 (1), STORY-189 (1), STORY-147 (2), STORY-192, STORY-193 — carried from sprint 65/66,
-    still unstarted.
-  - >-
-    STORY-178 — yt_gate exits 0 when --only matches nothing; the only known false-green on the DoD
-    floor, and a standing caveat on every scoped run. Note STORY-210 touches yt_gate.py this sprint,
-    so there is an argument for folding 178 in -- deliberately NOT done, to keep 210's diff about
-    one thing.
-  - >-
-    STORY-211 (plan on token budget) and STORY-212 (evidence-artifact rule at the script rung) —
-    both PO-deferred process stories, still drafts needing estimates.
-dod_evidence:
-# per-story records emitted by yt_gate.py and merged VERBATIM. The BASELINE record for this sprint
-# (full 8/8 GREEN at 86459ea, exit 0) is summarised under `baseline.gate` above; per-story records
-# land here once the sprint is locked and work begins.
-  STORY-210:
-    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD a528e25, exit 0.
-    counts: >-
-      backend 689 passed / 0 SKIPPED (a nonzero skip count is an incomplete gate, not a pass --
-      C5); 8 import contracts kept / 0 broken across 150 files, 429 dependencies; 247 files already
-      formatted; frontend 363 passed in 51 files.
-    adjuncts: yt_selftest 43/43 OK (35/35 at baseline, +8 from this story). yt_wiki CLEAN on all
-      four blocking checks; the same 2 pre-existing advisory `refs` amplifier notes, unrelated.
-    note: >-
-      Commands [3/8] and [4/8] are the NEW module-form ruff invocations this story introduced --
-      so this record is also the proof that the changed DoD is executable, not just edited.
-    fragment:   # emitted by yt_gate.py, merged verbatim
-      - command: "python -m pytest"
-        exit_code: 0
-        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 689 passed in 64.15s (0:01:04) ========================"
-        commit: a528e25
-        at: "2026-08-02T19:00:20+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: a528e25
-        at: "2026-08-02T19:01:26+00:00"
-      - command: "python -m ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: a528e25
-        at: "2026-08-02T19:01:27+00:00"
-      - command: "python -m ruff format --check ."
-        exit_code: 0
-        output_tail: "247 files already formatted"
-        commit: a528e25
-        at: "2026-08-02T19:01:28+00:00"
-      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-        exit_code: 0
-        output_tail: ""
-        commit: a528e25
-        at: "2026-08-02T19:01:28+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
-        commit: a528e25
-        at: "2026-08-02T19:01:36+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 557ms"
-        commit: a528e25
-        at: "2026-08-02T19:03:19+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: a528e25
-        at: "2026-08-02T19:03:30+00:00"
-  STORY-199:
-    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD a7a1b96, exit 0,
-      GREEN ON THE FIRST ATTEMPT (see stories[STORY-199].flake_disclosure -- a reviewer saw one
-      intermittent failure of the list_components pagination test in 11 runs; this run did not).
-    counts: >-
-      backend 694 passed / 0 SKIPPED -- exactly +5 on the 689 baseline, matching AC2's five new
-      pagination tests and confirming the diff is purely additive; 8 import contracts kept / 0
-      broken; 247 files already formatted; frontend 363 passed in 51 files.
-      0 SKIPPED IS LOAD-BEARING HERE: the five new tests need real DynamoDB Local, because a page
-      boundary cannot be reproduced against the in-memory fakes. A skip would have silently voided
-      the entire story while the gate still read green.
-    adjuncts: yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks after both articles
-      were re-verified (zone-rules.md carries a FACT CORRECTION entry, not a bare re-stamp).
-    fragment:   # emitted by yt_gate.py, merged verbatim
-      - command: "python -m pytest"
-        exit_code: 0
-        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 694 passed in 62.96s (0:01:02) ========================"
-        commit: a7a1b96
-        at: "2026-08-02T19:49:06+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: a7a1b96
-        at: "2026-08-02T19:50:10+00:00"
-      - command: "python -m ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: a7a1b96
-        at: "2026-08-02T19:50:11+00:00"
-      - command: "python -m ruff format --check ."
-        exit_code: 0
-        output_tail: "247 files already formatted"
-        commit: a7a1b96
-        at: "2026-08-02T19:50:11+00:00"
-      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-        exit_code: 0
-        output_tail: ""
-        commit: a7a1b96
-        at: "2026-08-02T19:50:11+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
-        commit: a7a1b96
-        at: "2026-08-02T19:50:18+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 464ms"
-        commit: a7a1b96
-        at: "2026-08-02T19:51:37+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: a7a1b96
-        at: "2026-08-02T19:51:45+00:00"
-  STORY-202:
-    scope: FULL 8/8, not a --only run. Orchestrator's own run at final HEAD 37b09a0, exit 0,
-      green first attempt (the STORY-213 flake did not fire).
-    counts: >-
-      backend 695 passed / 0 SKIPPED (+1 on STORY-199's 694 -- one new test in test_settings.py,
-      ZERO tests deleted and none weakened, independently confirmed by the quality reviewer);
-      8 import contracts kept / 0 broken; 247 files already formatted; frontend 363 passed in 51
-      files.
-    adjuncts: >-
-      yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks -- and this is the run that
-      matters, because the articles read STALE for the whole middle of this story after the
-      orchestrator refused an unearned stamp. The stamp is now earned.
-      AC9 re-derived BY THE ORCHESTRATOR, not carried forward: `python tools/zr3_duplicate_sweep.py`
-      -> "Colliding pairs (backend/src declared value == tools/ literal), noise excluded: 13".
-      Arithmetic holds: 15 baseline - 2 retired env_matrix.py entries = 13. No new adjudication was
-      added to absorb anything; the 4 remaining MUST-IMPORT-FROM-SRC entries are all STORY-203's.
-    citations_verified_by_orchestrator: >-
-      The six re-derived harness.py sites were opened and read directly, because this exact claim
-      had already been wrong once: :546 f"env CONFIG_DIR={api_env[CONFIG_DIR_VAR]!r}", :615
-      f"CONFIG_DIR={loop_env[CONFIG_DIR_VAR]!r}", :743 result["config_dir_api"], :749
-      result["dynamo_endpoint_url"], :750 result["observations_table"], :751 result["control_table"]
-      -- all six resolve to real constant-using sites. The ZR-3 ledger cross-reference now reads
-      "env_matrix.py:49, re-keyed from :39".
-    fragment:   # emitted by yt_gate.py, merged verbatim
-      - command: "python -m pytest"
-        exit_code: 0
-        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ============================ 695 passed in 51.66s ============================="
-        commit: 37b09a0
-        at: "2026-08-03T06:25:35+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: 37b09a0
-        at: "2026-08-03T06:26:28+00:00"
-      - command: "python -m ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 37b09a0
-        at: "2026-08-03T06:26:29+00:00"
-      - command: "python -m ruff format --check ."
-        exit_code: 0
-        output_tail: "247 files already formatted"
-        commit: 37b09a0
-        at: "2026-08-03T06:26:29+00:00"
-      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-        exit_code: 0
-        output_tail: ""
-        commit: 37b09a0
-        at: "2026-08-03T06:26:29+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
-        commit: 37b09a0
-        at: "2026-08-03T06:26:37+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 643ms"
-        commit: 37b09a0
-        at: "2026-08-03T06:27:53+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: 37b09a0
-        at: "2026-08-03T06:28:03+00:00"
-  STORY-200:
-    scope: >-
-      FULL 8/8, not a --only run. Orchestrator's own run at final HEAD 9bccac8, exit 0, green first
-      attempt. THIS IS ALSO THE SPRINT-CLOSE RECORD -- 9bccac8 is the final HEAD of sprint 67, so
-      this run is the full-gate evidence of record for the sprint as a whole.
-    counts: >-
-      backend 696 passed / 0 SKIPPED (+1 on STORY-202's 695 -- exactly one new test,
-      test_approval_service_decide_rejects_action_outside_approved_or_rejected; NO test deleted and
-      none weakened, independently confirmed by both reviewers); 8 import contracts kept / 0 broken
-      across 150 files and 429 dependencies; 247 files already formatted; frontend 363 passed in 51
-      files.
-    adjuncts: yt_selftest 43/43 OK. yt_wiki CLEAN on all four blocking checks (sweep, facts, links,
-      integrity) -- the sprint-close wiki state. The same 2 pre-existing advisory `refs` amplifier
-      notes carried unchanged from the sprint baseline; they have never been blocking.
-    independent_mutation_by_orchestrator: >-
-      MUT-6 re-derived at 9bccac8 in an extracted copy, import provenance printed and confirmed:
-      reverting port + fake to `action: str` and the adapter to `if action == "approved":` (and NOT
-      the .value sites, matching the claim exactly) -> 696 passed, identical to HEAD. The corrected
-      ZR-6 row's central claim is TRUE, measured here rather than inherited.
-    fragment:   # emitted by yt_gate.py, merged verbatim
-      - command: "python -m pytest"
-        exit_code: 0
-        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 696 passed in 83.81s (0:01:23) ========================"
-        commit: 9bccac8
-        at: "2026-08-03T07:27:42+00:00"
-      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-        exit_code: 0
-        output_tail: "Analyzed 150 files, 429 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | Contracts: 8 kept, 0 broken."
-        commit: 9bccac8
-        at: "2026-08-03T07:29:08+00:00"
-      - command: "python -m ruff check ."
-        exit_code: 0
-        output_tail: "All checks passed!"
-        commit: 9bccac8
-        at: "2026-08-03T07:29:09+00:00"
-      - command: "python -m ruff format --check ."
-        exit_code: 0
-        output_tail: "247 files already formatted"
-        commit: 9bccac8
-        at: "2026-08-03T07:29:10+00:00"
-      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-        exit_code: 0
-        output_tail: ""
-        commit: 9bccac8
-        at: "2026-08-03T07:29:10+00:00"
-      - command: "npm test"
-        exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363)"
-        commit: 9bccac8
-        at: "2026-08-03T07:29:18+00:00"
-      - command: "npm run build"
-        exit_code: 0
-        output_tail: "dist/assets/index-teVmGzHT.css                              140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB | gzip: 85.39 kB | built in 898ms"
-        commit: 9bccac8
-        at: "2026-08-03T07:31:05+00:00"
-      - command: "npm run lint"
-        exit_code: 0
-        output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: 9bccac8
-        at: "2026-08-03T07:31:18+00:00"
+  SUBAGENTS ARE NOT YET AUTHORISED FOR THIS SPRINT. Sprint 67's ruling ("yt-implementer per story,
+  then yt-spec-reviewer || yt-quality-reviewer concurrently; NO STORY MAY REACH REVIEW UNREVIEWED")
+  was recorded as a per-sprint decision and does not carry over on its own.
+  THE CASE FOR RE-CONFIRMING IT: all four sprint-67 stories PASSED spec review and FAILED quality
+  review -- four for four, the fourth consecutive sprint the independent pass caught something real.
+  Eleven blocking findings; TEN were prose, not code. This sprint is the same shape: small diffs
+  whose defects will live in the accompanying catalogue prose (which is why C3 exists). Re-confirming
+  also covers dispatching a real yt-plan-verifier before lock, in place of the orchestrator pass
+  recorded above.
+
+carried_forward: >-
+  NOT IN THIS SPRINT, still open, grouped by why they wait:
+    SPRINT 69 (the audit's second half): STORY-206, 207, 208, 209, 216 -- see closure_map. Story
+      files exist for 206-209 as DRAFTS with placeholder AC; they are refined at sprint-69 planning.
+      STORY-216's file was written this session with proposed AC and an open question (does the
+      check belong in backend/tests/ or in yt_wiki.py, where amendment A16 landed).
+    DEFERRED PAST THE CLOSURE SPRINTS: STORY-213 (the 1-in-11 pagination-test flake -- REFINED this
+      session, sized 2, removed from sprint 68 for the reason in sizing_note; deliverable is a
+      SELF-DIAGNOSING assertion, not a reproduction), STORY-214 (shared pagination helper -- trapped
+      behind the ZR-7 guard's lexical detection, see closure_map), STORY-211/212 (process).
+    UNCHANGED AND UNBLOCKED BY THIS SPRINT: the operator-cockpit UI line (gated on a PO
+      look-and-feel checkpoint), the api/v1 surface those pages need, unfinished core business
+      logic, vendor-reality work blocked on the expired Dynatrace trial, docs/encoding hygiene, and
+      production readiness (production health UNVERIFIED since 2026-07-29 -- CloudFront answers,
+      /api/v1/health returned 503, AWS credentials were expired so the cause is unconfirmed).

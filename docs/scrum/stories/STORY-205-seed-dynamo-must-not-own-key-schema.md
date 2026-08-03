@@ -5,61 +5,100 @@ type: defect
 points: 3
 status: draft
 filed: 2026-07-31
+refined: 2026-08-03
+sprint: 68
 ---
-
-> **DRAFT — needs a refinement pass before it may enter a sprint** (Definition of Ready: approved AC
-> + estimate + no open questions). The estimate below is the audit's or the orchestrator's first cut,
-> not a refined one.
 
 ## Context
 
-Filed during sprint 66, the boundary/code-discipline audit. **Authoritative detail:**
-`docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §6, filed from the STORY-196 quality review — four testable AC.
+`ZR-8` Finding 1 (`docs/scrum/wiki/zone-rules.md`) — the sprint-66 audit's biggest single miss, found
+only in STORY-196's quality-review fix round because it fell through the crack between the two audit
+passes: STORY-195 covered `adapters/`, STORY-196 covered `composition/`, and this is `composition/`
+doing `adapters/`'s job. Authoritative detail:
+`docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §6.
 
-This file exists so the story is visible in `docs/scrum/stories/` alongside every other story —
-it was originally landed as a `.scrum/backlog.yaml` entry only, which made it findable at planning
-but invisible here.
+`backend/src/composition/seed_dynamo.py` hand-builds the DynamoDB topology key schema three times —
+`:29-30` (`APP#`), `:43` (`COMPONENT#`), `:58-59` (`SIGNAL#`) — with raw `table.put_item` /
+`table.update_item` and a hand-written `UpdateExpression`. That schema is owned by
+`dynamo_component_repository.py` and `dynamo_signal_repository.py`, so it is declared in **three**
+places, on the boot path of **both** composition roots (`run.py::main`'s topology seed,
+`app.py::create_app`'s lifespan seed). `docs/scrum/wiki/persistence-adapters.md:36` already describes
+`seed_topology_dynamo` alongside the repositories — the wiki had filed it with the adapters long
+before the audit looked.
 
-## The finding, as recorded when it was filed
+**The drift has already bitten once and the scar is in the tree:**
+`tools/demo_loop_gate/failure_path_reality_gate.py:161-176`'s docstring records a first version using
+`pk=COMPONENT#<id>, sk=META` where the repository uses `pk=TOPOLOGY, sk=COMPONENT#<id>` — the write
+created a phantom item nothing read, the read-back "verified" it against the same wrong key, and an
+AC precondition passed vacuously. Two full debugging runs were spent on a defect that did not exist.
 
-```
-Source: audit-api-composition-tools.md section 6, four testable AC.
-*** ARGUABLY THE BEST BOUNDARY FINDING OF THE AUDIT SPRINT. *** It fell through
-the crack BETWEEN the two audit passes -- STORY-195 covered adapters/,
-STORY-196 covered composition/, and this is composition/ DOING adapters/'s job,
-so each pass could reasonably think the other owned it. That is the exact
-failure mode a two-pass audit is supposed to prevent, and it took an
-independent reviewer pass to catch.
-THE DEFECT: seed_dynamo.py:29-30/:43/:58-59 hand-build the DynamoDB key schema
-(pk=TOPOLOGY, sk=COMPONENT#<id> / SIGNAL#<key>) with raw table.put_item /
-table.update_item and a hand-written UpdateExpression, from the COMPOSITION
-zone. That schema is OWNED by dynamo_component_repository.py:39-40,53-54 and
-dynamo_signal_repository.py:41-42, so it is now declared in THREE places, on
-the boot path of BOTH composition roots.
-THE DRIFT HAS ALREADY BITTEN ONCE, and the scar is in the tree:
-tools/demo_loop_gate/failure_path_reality_gate.py:163-172's docstring records a
-first version using pk=COMPONENT#<id>, sk=META while the repository actually
-uses pk=TOPOLOGY, sk=COMPONENT#<id>.
-CORROBORATION: docs/scrum/wiki/persistence-adapters.md already lists
-seed_dynamo.py in its code_refs and describes seed_topology_dynamo alongside
-the repositories (:36) -- the wiki had effectively filed it with the adapters
-long before the audit looked.
-AC2 IS THE GOOD ONE and must survive refinement: change the key schema INSIDE
-a repository and assert seed_topology_dynamo follows AUTOMATICALLY, without
-seed_dynamo.py changing -- a behavioural drift test, not a source assertion.
-REFINEMENT MUST SIZE THIS BEFORE COMMITTING: the repositories expose no
-seed-shaped bulk upsert today (set_status/get are single-item, request-scoped),
-and NO repository owns AppConfig-shaped writes (pk=TOPOLOGY, sk=APP#<id>) at
-all -- that may need a third method or a small new TopologyRepository port.
-```
+**Re-derived at refinement (2026-08-03), not copied from the audit.** `grep -rn '"TOPOLOGY"'` over
+`backend/` returns ten sites: five in the two repositories
+(`dynamo_component_repository.py:35,55,69`, `dynamo_signal_repository.py:36,57`), three in
+`seed_dynamo.py` (`:29`, `:43`, `:58`), two in `backend/tests/test_dynamo_adapters.py:17,82`.
+`failure_path_reality_gate.py` is **already clean** at HEAD — it routes through the real repository
+and its docstring explains why — so the drift citation above is history, not a live second site.
+
+## The design decision, made at refinement (not left to the implementer)
+
+The filed note flagged this as the sizing risk: the repositories expose no seed-shaped bulk upsert
+(`set_status`/`get` are single-item, request-scoped), and **no repository owns `APP#`-shaped writes
+at all**. Two shapes were available:
+
+- **(a) Give the repositories write methods** (`upsert_component`, `upsert_signal`) plus a new
+  `TopologyRepository` port for the `APP#` item.
+- **(b) Extract the key schema into one module the persistence adapters own**, imported by both
+  repositories *and* by `seed_topology_dynamo`. — **CHOSEN.**
+
+Reasoning: `ZR-8`'s own Coverage verdict already sanctions (b) in writing — "calls
+`DynamoComponentRepository`/`DynamoSignalRepository` **(or an equivalent shared helper those adapters
+expose)**". Option (a) forces a new core-owned port for a value no core service reads or writes;
+topology seeding is a composition-time concern, and a port exists to serve the core, not to launder a
+boot script through it. (b) makes the schema single-declaration, which is the finding.
+
+**Stated residue, recorded in the rule rather than quietly closed (AC6):** (b) leaves
+`seed_dynamo.py` issuing its own `boto3` writes. The *schema* stops having three declarations;
+"composition writes to DynamoDB directly" remains true and is a separate, larger question needing a
+real write port. **Expiry condition:** if a core service ever needs to read or write topology, (b)
+expires and (a) becomes correct.
 
 ## Acceptance Criteria
 
-- [ ] To be lifted from the source above and approved at refinement. The source already states
-      testable AC for this story; refinement's job is to confirm they are still accurate against the
-      code, not to invent new ones.
+- [ ] **AC1 — one declaration.** Every topology key (`pk="TOPOLOGY"` with `APP#`/`COMPONENT#`/
+      `SIGNAL#` sort keys) is constructed in exactly ONE module under
+      `backend/src/adapters/persistence/`. Re-derive the site count before and after with the
+      `grep -rn '"TOPOLOGY"' backend/` command above and record both numbers — do not copy the ten
+      quoted in Context.
+- [ ] **AC2 — the behavioural drift test, and it is the important one.** Change the key schema
+      **inside a repository** (e.g. the `COMPONENT#` sort-key prefix) and assert
+      `seed_topology_dynamo` follows **automatically, with `seed_dynamo.py` unchanged** — seed, then
+      read back through the repository, and get the item. This is a *behavioural* test, not a source
+      assertion: it fails today (the two would diverge) and passes after the fix, which is exactly
+      the property AC1 alone cannot prove. Restore the schema; `git diff` empty.
+- [ ] **AC3 — the repositories use it too.** `DynamoComponentRepository`, `DynamoSignalRepository`
+      and `seed_topology_dynamo` all obtain keys from that one module. This removes a THIRD
+      declaration, not a second: leaving the repositories with inline literals would just move the
+      duplication. Existing repository behaviour unchanged, proven by `test_dynamo_adapters.py`
+      passing **without modification**.
+- [ ] **AC4 — a standing guard, shown RED.** A test in `backend/tests/test_zone_layout.py` (the file
+      `ZR-8`'s Coverage verdict names) asserts `composition/seed_dynamo.py` constructs no `pk`/`sk`
+      dict literal of its own. Demonstrated RED by re-introducing one hand-built key and showing the
+      guard fail *naming that site*; restore, `git diff` empty. Record the command and its output.
+- [ ] **AC5 — the catalogue moves in the same commit.** `zone-rules.md`'s `ZR-8` adjudication row
+      leaves `GUARDABLE-DEFERRED (STORY-204, STORY-205)` for its true post-fix verdict, **and** the
+      "why only two rules were mechanised" paragraph nine lines below the table — which names ZR-8's
+      violations as live — is updated in the SAME commit. Sprint 67 found exactly this
+      row-contradicts-paragraph defect left behind by a fix; it does not recur here.
+- [ ] **AC6 — the residue is written down.** `ZR-8`'s rule text states plainly that composition still
+      issues its own `boto3` writes, that only the key schema was unified, and the expiry condition
+      above. A follow-up story is filed for the write-port question. An `ENFORCED-BY` claim wider
+      than what AC4's guard actually checks is a fail (sprint 67, MAJOR-1).
+- [ ] **AC7 — `persistence-adapters.md` follows.** That article carries `seed_dynamo.py` in its
+      `code_refs`, so this story's diff makes it stale by git arithmetic. Update or re-verify it
+      before the story passes the DoD gate (forward blast radius), and do not stamp `verified_sha`
+      on prose that was not re-read.
 
-## Open Questions
+## Not in scope
 
-Refinement must confirm the estimate (3 points) and check
-every `file:line` citation still resolves — this sprint repeatedly found citations that had drifted.
+Introducing a topology write port (filed by AC6); changing *what* `seed_topology_dynamo` writes;
+`scripts/seed_topology.py`'s config resolution (STORY-215 AC2, same sprint).
