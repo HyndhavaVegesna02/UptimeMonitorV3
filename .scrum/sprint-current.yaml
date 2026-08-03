@@ -311,7 +311,47 @@ stories:
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
-    status: todo
+    status: in_progress   # PARKED MID-STORY 2026-08-03 ~01:50 IST. The implementer hit the account
+                          # session limit (resets 04:50 IST) and terminated early. NOT blocked, not
+                          # failed -- interrupted. Resume by dispatching a FRESH implementer with
+                          # the brief below; do NOT restart the story from zero.
+    commits_so_far: 6f872c3..8d200a2   # 4 implementer commits + 1 orchestrator WIP-preservation
+    done_so_far: >-
+      82e9219 AC1 -- settings.py's five env-var names promoted to module constants.
+      977ae71 AC2/AC3 -- env_matrix.py imports the seven and uses them as dict keys.
+      0d39de7 AC8 + AC5 -- harness.py imports the constants; ZR-3 adjudications retired and re-keyed.
+      1dc1c73 ruff format follow-up on settings.py.
+      8d200a2 (ORCHESTRATOR, not the implementer) preserves the implementer's uncommitted wiki prose
+      while REFUSING its verification stamp -- see wiki_stamp_refused below.
+    remaining: >-
+      AC4 (two-sided mutation proof), AC6 (EMPIRICAL publish-guard re-verification), AC9 (re-derived
+      ZR-3 collision count), AC7 (full 8/8 gate). Then BOTH reviewers -- no story this sprint may
+      reach review unreviewed (PO ruling 3). Nothing here has been reviewed or gated yet.
+    wiki_stamp_refused: >-
+      THE ORCHESTRATOR DECLINED THE IMPLEMENTER'S WIKI VERIFICATION, and the reason is the resume
+      instruction. Both zone-rules.md and demo-engine.md had verified_sha bumped to 1dc1c73. Two
+      claims in that prose cannot be stood behind:
+        1. zone-rules.md says BOTH files import the seven constants. MEASURED: env_matrix.py imports
+           SEVEN, harness.py imports FOUR (CONFIG_DIR_VAR, DYNAMO_CONTROL_TABLE_VAR,
+           DYNAMO_ENDPOINT_URL_VAR, DYNAMO_OBSERVATIONS_TABLE_VAR). The prose overstates it.
+        2. demo-engine.md asserts AC6's publish guard was "re-verified empirically (not just
+           reasoned)". THERE IS NO EVIDENCE THAT RAN -- the agent died before reporting it. AC6 is
+           precisely the AC that may not be satisfied by reasoning.
+      Stamps reverted to fe8df72 / b3e1767. Both articles now correctly read STALE under yt_wiki:
+      readable, quarantined, barred from any subagent brief. `yt_wiki` therefore EXITS 1 right now
+      and that is the CORRECT state mid-story -- it must be CLEAN again before the story is Done.
+      The prose itself was checked before being preserved: harness.py:754/:757, env_matrix.py:49 and
+      harness.py:525/:586 all resolve. Fix claim 1, prove claim 2, then re-stamp.
+    resume_note: >-
+      ONE THING THE IMPLEMENTER DID THAT EXCEEDS THE WRITTEN AC, and a reviewer must adjudicate it
+      rather than wave it through: AC5 predicted ONE displaced entry to re-key (env_matrix.py :39).
+      Its wiki history entry claims FIVE were re-keyed -- env_matrix.py :39->:49, and harness.py
+      :747->:754, :750->:757, :903->:910, :964->:971. That may well be correct and necessary (its
+      own edits displace more than the story foresaw), but it is UNVERIFIED and it touches
+      harness.py:747/:750, which the story explicitly told it NOT to touch -- as VALUES belonging to
+      STORY-203. Re-keying an adjudication is not the same as editing the colliding line, so this is
+      probably compliant; verify it, do not assume it. Its claimed sweep arithmetic is 15 -> 13.
+      AC9 requires that number be RE-DERIVED and reported, never carried forward on trust.
     points: 3
     ceremony: implementer + both reviewers
     order: 3
