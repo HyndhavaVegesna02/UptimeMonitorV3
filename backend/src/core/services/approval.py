@@ -6,6 +6,7 @@ Cites dossier §12 (proposal lifecycle) and §T1.1 (commit-first / best-effort s
 from __future__ import annotations
 
 from src.core.domain.proposal import (
+    InvalidApprovalActionError,
     ProposalNotFoundError,
     ProposalNotOpenError,
     ProposalState,
@@ -19,6 +20,7 @@ from src.core.ports import ClockPort, ProposalRepository, StatusPublisherPort
 # (the domain owns them; see src.core.domain.proposal).
 __all__ = [
     "ApprovalService",
+    "InvalidApprovalActionError",
     "ProposalNotFoundError",
     "ProposalNotOpenError",
 ]
@@ -96,11 +98,24 @@ class ApprovalService:
     ) -> StatusProposal:
         """Helper to encapsulate load -> guard -> resolve -> record event sequence (dossier §12).
 
-        The recorded `action` is derived from `to_state.value` (STORY-071) — never
-        a separately-hard-coded literal — so it can never drift from the spine's
+        The recorded `action` is `to_state` itself (STORY-200) — never a separately
+        re-derived value — so it can never drift from the spine's
         `ck_approval_events_action` constraint (`action IN ('approved', 'rejected')`),
         which mirrors `ProposalState`'s terminal values one-for-one.
+
+        `to_state` is validated against the 2-member {APPROVED, REJECTED} set BEFORE
+        any repository access (STORY-200 AC3): `is_valid_transition` alone is not
+        sufficient cover here, since it admits any non-OPEN target (e.g. OPEN ->
+        SUPERSEDED) and this funnel is the sole caller of `record_approval_event`,
+        whose port contract promises only those two values are ever recorded.
         """
+        if to_state not in (ProposalState.APPROVED, ProposalState.REJECTED):
+            raise InvalidApprovalActionError(
+                f"{to_state.value!r} is not a valid approval action; only "
+                f"{ProposalState.APPROVED.value!r} and {ProposalState.REJECTED.value!r} "
+                "may be recorded."
+            )
+
         proposal = self._proposal_repo.get(proposal_id)
         if proposal is None:
             raise ProposalNotFoundError(f"Proposal {proposal_id} not found.")
@@ -121,11 +136,13 @@ class ApprovalService:
             reason=notes,
             resolved_at=now,
         )
-        # Record approval event — action derived from to_state, single source of truth.
+        # Record approval event — action IS to_state, single source of truth
+        # (STORY-200 AC2: the port takes ProposalState, so no caller converts
+        # to a string at the call site).
         self._proposal_repo.record_approval_event(
             proposal_id,
             actor=actor,
-            action=to_state.value,
+            action=to_state,
             notes=notes,
             occurred_at=now,
         )

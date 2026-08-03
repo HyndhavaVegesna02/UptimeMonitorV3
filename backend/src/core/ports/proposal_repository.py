@@ -42,11 +42,22 @@ class ProposalRepository(ABC):
         proposal_id: int,
         *,
         actor: str,
-        action: str,
+        action: ProposalState,
         notes: str | None,
         occurred_at: datetime,
     ) -> None:
-        """Record an approval or rejection event for a proposal."""
+        """Record an approval or rejection event for a proposal.
+
+        `action` must be `ProposalState.APPROVED` or `ProposalState.REJECTED` —
+        those are the only two legal values, because an approval EVENT can only
+        ever record an approve or a reject (dossier §12); the other three
+        `ProposalState` members (`OPEN`, `SUPERSEDED`, `OBSOLETED`) are never
+        legal here even though they are legal `resolve()` targets.
+        Enforcing that 2-member subset is the CALLER's responsibility
+        (`ApprovalService._decide` raises `InvalidApprovalActionError` for any
+        other value before this port method is ever reached) — this method
+        assumes the value has already been validated.
+        """
         raise NotImplementedError
 
     @abstractmethod

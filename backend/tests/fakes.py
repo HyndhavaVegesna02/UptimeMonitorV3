@@ -177,7 +177,7 @@ class FakeProposalRepository(ProposalRepository):
         proposal_id: int,
         *,
         actor: str,
-        action: str,
+        action: ProposalState,
         notes: str | None,
         occurred_at: datetime,
     ) -> None:

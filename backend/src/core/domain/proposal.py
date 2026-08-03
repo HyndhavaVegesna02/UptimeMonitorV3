@@ -21,6 +21,20 @@ class ProposalNotOpenError(ValueError):
     """
 
 
+class InvalidApprovalActionError(ValueError):
+    """Raised when an approval-event `action` is outside {APPROVED, REJECTED}
+    (dossier §12, STORY-200 AC3).
+
+    `record_approval_event`'s `action` is typed `ProposalState` (the same
+    domain type `resolve`'s `to_state` uses), but only two of its five members
+    are ever legal to RECORD as an approval event — `is_valid_transition`
+    admits any non-OPEN target (e.g. OPEN -> SUPERSEDED), so it does not
+    constrain this narrower set. `ApprovalService._decide` raises this before
+    ever reaching the repository, so the 2-member contract leaves a testable
+    trace instead of living only in a comment.
+    """
+
+
 class ProposalState(str, Enum):
     """Actionable and terminal states for a status proposal (dossier §12)."""
 

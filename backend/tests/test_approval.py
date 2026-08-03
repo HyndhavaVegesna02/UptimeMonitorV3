@@ -187,3 +187,31 @@ def test_approval_service_reject_publishes_nothing():
     service.reject(proposal_id=saved.id, actor="operator-1")
 
     assert publisher.published == []
+
+
+# --- STORY-200 AC3: the 2-member {APPROVED, REJECTED} contract on the ---
+# --- approval-recording path is a real, tested guard, not a comment.  ---
+
+
+def test_approval_service_decide_rejects_action_outside_approved_or_rejected():
+    """`_decide` is the single funnel `approve`/`reject` share; `is_valid_transition`
+    admits any non-OPEN target (including SUPERSEDED/OBSOLETED), so it does not
+    constrain the 2-member {APPROVED, REJECTED} set an approval EVENT may record.
+    This guard is the entirely-new validation that does."""
+    from src.core.services.approval import InvalidApprovalActionError
+
+    repo = FakeProposalRepository()
+    clock = FakeClock(datetime(2026, 6, 28, 12, 0, 0, tzinfo=timezone.utc))
+    publisher = RecordingStatusPublisher()
+    service = ApprovalService(proposal_repo=repo, clock=clock, publisher=publisher)
+
+    with pytest.raises(InvalidApprovalActionError):
+        service._decide(
+            proposal_id=999,
+            to_state=ProposalState.SUPERSEDED,
+            actor="operator-1",
+            notes=None,
+        )
+
+    # The guard fires before any repository read/write.
+    assert repo.approval_events == []
