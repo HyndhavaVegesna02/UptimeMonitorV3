@@ -1,8 +1,8 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: a865f1f
-verified_sprint: sprint-65
+verified_sha: d469d2c
+verified_sprint: sprint-67
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITH ONE IMPORTANT ADDITION BELOW: STORY-191 fired the
 # recovery publish path for the FIRST TIME in this repo's history, in a real loop run, and the
@@ -50,6 +50,13 @@ status: verified
 - `StatusWritebackPublisher` + `build_publisher` are tested in `backend/tests/test_publish_helper.py` (STORY-045): write-before-delegate ordering (a spy delegate reads the fake repo's status when called), survives a `BestEffortPublisher`-swallowed delegate failure (write-back stands, nothing recorded), an unknown component id propagates `ComponentNotFoundError` before the delegate is ever reached, and `build_publisher` assembles both D2 shapes (creds+mapping present vs absent, including the empty-mapping-with-creds edge). `backend/tests/test_run_live_loop.py::test_build_live_loop_assembly` (rewritten, not deleted, per the 2026-06-29 contract-change agreement) now asserts the real chain nests `StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))` under `DecideService._publisher`.
 
 ## History
+- sprint-67 (STORY-200, unrelated story — mechanical staleness sweep only): the sweep flagged
+  `backend/tests/test_dynamo_publication_repository.py`, which STORY-200 touched only in
+  `test_dynamo_publication_repository_author_parity`'s `proposal_repo.record_approval_event(...,
+  action=...)` call site (`"approved"` -> `ProposalState.APPROVED`, matching the
+  `ProposalRepository` port's new domain-typed `action` — see [[canonical-types-and-ports]] and
+  [[persistence-adapters]]). The `Publication.author` assertion this article's Fact cites is
+  unchanged and still green. No Fact in this article changed. verified_sha -> d469d2c.
 - sprint-40 (STORY-072, record-always publication outcome): found live at the Sprint 39 wrap â€” a
   real approve (`POST /decisions/2 -> 200`) recorded NOTHING because the real Statuspage publish
   raised a 401 and the old `RecordingPublisher` recorded successes only. `RecordingPublisher.publish`
