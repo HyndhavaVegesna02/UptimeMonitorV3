@@ -1,7 +1,7 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
-verified_sha: b272c32
+verified_sha: d469d2c
 verified_sprint: sprint-63
 status: verified
 ---
@@ -146,7 +146,16 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   `get(proposal_id) -> StatusProposal | None` (STORY-014: lookup by id, returns None if absent),
   `resolve(proposal_id, *, to_state, reason, resolved_at) -> None` (moves open proposal to a terminal
   state; raises `ProposalNotOpenError` if it is missing or no longer open),
-  `record_approval_event(proposal_id, *, actor, action, notes, occurred_at) -> None`, and
+  `record_approval_event(proposal_id, *, actor, action: ProposalState, notes, occurred_at) -> None`
+  — `action` is domain-typed `ProposalState` (STORY-200, sprint-67; was a bare `str` before, ZR-6),
+  matching `resolve`'s `to_state: ProposalState` above it. Only `APPROVED`/`REJECTED` are ever legal;
+  the caller (`core/services/approval.py::ApprovalService._decide`) enforces that 2-member subset,
+  raising `InvalidApprovalActionError` (`core/domain/proposal.py::InvalidApprovalActionError`) for
+  any other value — `is_valid_transition` does not cover this, since it admits any non-OPEN target.
+  `FakeProposalRepository.record_approval_event` (`backend/tests/fakes.py`) types `action` to match
+  but only appends a dict — it does NOT denormalize `approved_actor`, so the adapter's identity-
+  comparison branch (`action is ProposalState.APPROVED`) is unobservable through the fake; see
+  [[persistence-adapters]] for the adapter side and its real-DynamoDB proving test. Also provides
   `list_open() -> list[StatusProposal]` (STORY-014b: returns all open proposals, or `[]` if none exist).
 - `SampleModeRepository` (`sample_mode_repository.py::SampleModeRepository`, STORY-048, sprint-31) —
   the eleventh port, but deliberately NOT counted among the ten stable ones above: it exists ONLY to
@@ -276,3 +285,8 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   exist), and `ObservationRepository.save_new`'s note now describes the idempotent-insert
   guarantee via the real `EVT#.../DEDUPE` marker item instead of "ON CONFLICT DO NOTHING" SQL that
   never ran here. No port signature, contract, or test changed. verified_sha -> b272c32.
+- sprint-67 (STORY-200): `ProposalRepository.record_approval_event`'s Fact above now describes
+  `action: ProposalState` (was `str`) — the port SIGNATURE itself changed, not just a comment. Added
+  the `InvalidApprovalActionError` guard and the fake's non-denormalizing-so-unobservable-branch note
+  (both new claims). `ProposalState`/`StatusProposal` themselves are unchanged; ZR-6's fix is scoped
+  to this one port method. verified_sha -> d469d2c.
