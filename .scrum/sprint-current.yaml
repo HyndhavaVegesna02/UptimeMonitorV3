@@ -326,7 +326,13 @@ stories:
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     points: 2
     order: 2
-    status: todo
+    status: in_progress   # DISPATCHED 2026-08-04 at 673b9f3, tree clean, immediately after
+                   # STORY-205 closed. Full ceremony per ceremony_note (this sprint gives every
+                   # story the 3+ treatment, not just the 3-pointers).
+                   # RC-1 MITIGATION APPLIED AT DISPATCH, not deferred to the retro: the quality
+                   # reviewer's brief will forbid mutating tracked files and require the scratch-copy
+                   # / in-process-monkeypatch technique the spec reviewer used unprompted on
+                   # STORY-205. That makes both concurrent reviewers race-immune BY CONSTRUCTION.
     why_here: >-
       MUST PRECEDE STORY-203 (see plan_verification finding 1). ZR-8 Finding 2: vendor_health.py
       builds DQL without query.py's _DQL_BREAKING_CHARS validation, and the probe it feeds runs
