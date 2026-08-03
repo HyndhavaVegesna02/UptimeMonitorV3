@@ -482,33 +482,19 @@ are paid repeatedly.**
 Facts lint silently drops: one whose path does not resolve from the repo root, and a bare `` `:NNN` ``
 with no filename to anchor on.
 
-**Motivating incidents, both sprint-67, both in `status: verified` articles carrying FRESH stamps.**
-Two INDEPENDENT mechanisms, which is what makes this a defect in the floor rather than a lapse:
-1. **STORY-202** — six bare `:NNN` sites copied from the story's own AC text (which explicitly said
-   to re-derive them). Five pointed at unrelated code: `],`, `stdout=out_fh,`, a docstring, a
-   comment. `CITE_RE` needs a filename to anchor on, so they were never citations to the lint at all.
-2. **STORY-200** — a Fact citing an abbreviated `core/services/approval.py` while that file was
-   absent from the article's `code_refs`. `check_facts` skipped it because it does not resolve from
-   the repo root, so future edits to that frequently-changed file would never have staled the
-   article.
+Two INDEPENDENT mechanisms bit in sprint 67, both in `status: verified` articles carrying FRESH
+stamps — which is what makes this a defect in the floor, not a lapse: STORY-202's six bare `:NNN`
+sites (five pointing at `],`, a docstring, a comment) and STORY-200's abbreviated
+`core/services/approval.py` citing a file absent from the article's `code_refs`.
 
-**What landing it immediately revealed, and it is larger than the retro claimed.** The retro called
-the abbreviated form "a habit". Measured on the first run: **147 Fact citations across 13 articles
-had never been checked by the Facts lint** — `facts: CLEAN` has been covering a fraction of this
-wiki all along. That number is the finding; it is not actionable in one pass and is deliberately
-advisory so it informs rather than blocks.
+**Landing it revealed the real scale: 147 Fact citations across 13 articles had NEVER been checked.**
+`facts: CLEAN` was covering a fraction of this wiki. Advisory by design — that backlog is not
+fixable in one pass, and the number is the point.
 
-**Shown wrong first, in the honest sense.** The first implementation reported **515** notes, because
-`CITE_RE` also matches dotted SYMBOL references (`AvailabilityCalculator.compute`) and the check
-called every one a broken path. That is the "a detector that flags everything is worse than none"
-failure this project already learned at STORY-210 AC5, committed inside the amendment citing it.
-Narrowed to path-shaped citations only (a `/` must be present — the only fully generic separator
-test), then aggregated per-article: 515 → 166 → **33 readable notes plus a total**. The cost of the
-narrowing is stated in the code: a bare `settings.py` shorthand goes unflagged.
-
-**Known false positive, disclosed rather than suppressed:** `dev-setup-and-dod.md`'s `` `:8000` `` is
-a PORT number, not a line reference. No generic rule distinguishes them, and the check is advisory,
-so it is left visible.
+Full narrative, including the first implementation's 515-note false-positive flood and the known
+`` `:8000` `` port-vs-line false positive: `docs/scrum/sprints/2026-08-02-sprint-67/retro.md`. The
+check's own docstring carries the rest. Kept short deliberately: the enforcement is in the script,
+and this file is read at every standup.
 
 **The test at the sixth sprint from now:** run the second command above and compare it against the
 same command at the commit that landed A15 (`git log --oneline -S "A15 - rules EXPIRE"` finds it).

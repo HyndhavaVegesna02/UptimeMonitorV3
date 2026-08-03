@@ -172,3 +172,45 @@ producing that behaviour is worth not disturbing.
 If D1, D2 and A16 are approved, this is the first retro in the record to **delete rules on their
 merits** and to land its only addition at a mechanical rung — which is the behaviour A15 was written
 to produce.
+
+---
+
+## Addendum — what landing the retro actually cost (recorded 2026-08-03, after the fact)
+
+The retro above reported **zero governance growth** for the sprint. That was true when it was
+written and **false ten minutes later**, once its own three approved items landed:
+
+| | 3-file governance sum |
+| --- | --- |
+| `2f31ec9` (A15 landing) | 54,722 bytes |
+| after landing D1 + D2 + A16 | **57,650 bytes (+2,928)** |
+
+**Two deletions, and governance still grew by ~3KB**, because A16's write-up was longer than
+everything D1 and D2 removed. That is precisely what A15 predicted of itself — *"a deliberate
+de-bloating pass, run immediately after measuring the ratchet by someone who had just written the
+case against it, netted approximately zero"* — reproduced one sprint later by the retro enacting
+A15. Recorded rather than quietly absorbed, because a rule whose own metric is allowed to drift is
+the ratchet reasserting itself.
+
+**Corrected in the same pass:** A16's entry was cut roughly in half, with the narrative moved here
+(sprint history, read once) and the mechanics left in the check's docstring (read when editing it).
+Nothing touched `.scrum/checklists/` — the rung paid at *every dispatch* — so the whole delta is
+once-per-session, which A15 explicitly ranks as the cheaper kind.
+
+**The honest scorecard:** two rules deleted on their merits (a first), one amendment landed at a
+mechanical rung instead of prose (also a first for this file), and governance still net *up*. The
+deletions were real. The claim "the ratchet is broken" is not yet earned — A15's six-sprint test
+remains the arbiter, and this addendum is the first datum against it.
+
+## Amendment to the A16 record — it was shown wrong before it was shown right
+
+Worth keeping in the sprint's own history because it repeats the sprint's lesson at the retro's
+expense: A16's first implementation reported **515 notes**, flagging every dotted symbol reference
+(`AvailabilityCalculator.compute`) as an unresolvable path. That is exactly the *"a detector that
+labels everything is worse than none"* failure this project learned at **STORY-210 AC5** — committed
+inside the amendment that cites STORY-210. Narrowed to path-shaped citations (requiring a `/`, the
+only fully generic separator test) and aggregated per article: **515 → 166 → 33 notes plus a total**.
+
+The narrowing has a stated cost, left in the code rather than hidden: a bare `settings.py` shorthand
+goes unflagged. And one false positive is disclosed rather than suppressed — `dev-setup-and-dod.md`'s
+`` `:8000` `` is a port number read as a line reference, which no generic rule distinguishes.
