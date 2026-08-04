@@ -326,13 +326,105 @@ stories:
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     points: 2
     order: 2
-    status: in_progress   # DISPATCHED 2026-08-04 at 673b9f3, tree clean, immediately after
-                   # STORY-205 closed. Full ceremony per ceremony_note (this sprint gives every
-                   # story the 3+ treatment, not just the 3-pointers).
-                   # RC-1 MITIGATION APPLIED AT DISPATCH, not deferred to the retro: the quality
-                   # reviewer's brief will forbid mutating tracked files and require the scratch-copy
-                   # / in-process-monkeypatch technique the spec reviewer used unprompted on
-                   # STORY-205. That makes both concurrent reviewers race-immune BY CONSTRUCTION.
+    status: in_progress   # IMPLEMENTED AND REVIEWED, NOT DONE. Both reviews came back NEGATIVE and
+                   # the FIX ROUND HAS NOT RUN -- its implementer died on an ACCOUNT session limit
+                   # ("resets 4:50am Asia/Calcutta") before writing anything. Verified, not assumed:
+                   # `git log 22895b0..HEAD` is EMPTY and `git status` is clean.
+                   # NOT rolled back to `todo` -- unlike STORY-205's attempt-one park, real committed
+                   # work EXISTS here (d38334b..22895b0). `in_progress` is the honest state.
+                   # RC-1 MITIGATION WAS APPLIED AT DISPATCH AND IT WORKED: the quality reviewer's
+                   # brief forbade mutating tracked files and required the scratch-copy /
+                   # in-process-monkeypatch technique. It confirmed in its report that it modified no
+                   # tracked file, and still proved the AC4 guard evadable and reproduced the RED
+                   # evidence. Both concurrent reviewers were race-immune BY CONSTRUCTION this time.
+                   # KEEP DOING THIS for STORY-203 and STORY-215.
+    commits: d38334b..22895b0   # 3 commits, implementation only; NO fix-round commits exist yet
+    reviews:
+      spec: >-
+        FAIL. AC1-AC7 all MET and verified by RE-EXECUTION, not by reading: the reviewer created a
+        disposable git worktree at pre-fix HEAD (d38334b^), copied the new test in, and reproduced
+        AC2's RED itself -- 4/4 `Failed: DID NOT RAISE InvalidNativeIdError`. It also diffed the
+        touched test files to confirm they were REPOINTED, not rewritten: assertion logic byte-
+        identical, and the relocated builder's output string byte-identical to pre-fix.
+        AC7b is NOT_MET, for two distinct reasons -- see ac7b_gaps below.
+      quality: >-
+        FIX_REQUIRED. Two MAJOR (see major_findings). Confirmed the extraction is behaviour-identical
+        for build_dql_query (helper fires at exactly the point the inline check sat; error type,
+        message and constant byte-identical), confirmed tests were repointed not rewritten, and
+        confirmed the deleted composition test was re-added VERBATIM in the adapter suite -- moved
+        coverage, not lost coverage.
+    the_two_reviewers_disagreed_and_BOTH_WERE_RIGHT: >-
+      THIS IS THE CASE FOR RUNNING THEM INDEPENDENTLY, and it is worth keeping.
+      They examined the SAME ENFORCED-BY claim and reached OPPOSITE-SOUNDING conclusions:
+        QUALITY asked "does the claim EXCEED the check?" -> NO. zone-rules.md cites only the two
+          behaviour tests and describes them accurately; the weak source-scan test is cited nowhere.
+          By the sprint-67 MAJOR-1 standard, clean.
+        SPEC asked "does the claim MATCH THE RULE?" -> NO. ZR-8's statement is "query-construction
+          logic lives in exactly ONE adapter". The ONLY test proving that is AC4's guard
+          (test_vendor_health_module_builds_no_dql_string_itself), and it is CITED NOWHERE. Worse,
+          the Coverage verdict positively asserts there is "no DQL string construction left ... for
+          a guard to police" -- FALSE, since AC4 required that guard and the implementer wrote it.
+      So the catalogue UNDER-claims while DENYING ITS OWN GUARD EXISTS. Neither reviewer alone finds
+      that shape: one was checking for overclaim, the other for rule-fit. Do not collapse these roles.
+    ac7b_gaps:
+      - >-
+        C3 COMMIT-TIMING MISS, NOT RETROACTIVELY FIXABLE. AC7b requires the catalogue to move in the
+        SAME commit as the code. Code landed d38334b; zone-rules.md not until 22895b0, two commits
+        later. For the life of two commits the catalogue called Finding 2 a live violation while the
+        code had already fixed it -- the exact pattern C3 exists to prevent. The spec reviewer
+        confirmed NO dependency forced the split (final line numbers were fixed at d38334b).
+        *** DO NOT REWRITE HISTORY TO MANUFACTURE COMPLIANCE. *** Squashing would destroy SHAs cited
+        in two review reports and in this board, AND destroy the TDD commit cadence that IS the
+        crash-recovery mechanism. Recorded as a genuine miss for the PO at review; the remedy is
+        PROSPECTIVE -- the fix round must land code and the prose it falsifies in ONE commit.
+      - >-
+        ZR-8 Finding 2 must CITE test_vendor_health_module_builds_no_dql_string_itself, and the false
+        "no DQL string construction left for a guard to police" claim must be DELETED.
+    major_findings:
+      - >-
+        MAJOR 1 (found INDEPENDENTLY by BOTH reviewers) -- backend/src/composition/run.py:185-193.
+        The comment at the SOLE call site states the opposite of the new behaviour: it calls the
+        probe "loud (NOT fail-fast)" and says check_vendor_id_health "never raises ... never
+        propagated here". Both halves are now false; run.py was never touched by the diff.
+        THE SUBSTANCE IS A BLAST-RADIUS ASYMMETRY, not the wording. Ingest path: a raising
+        build_dql_query is caught per-cycle by run_periodic (pull_loop.py:199-208), so one bad
+        native_id degrades ONE signal and the rest keep ingesting. Probe path: the raise now aborts
+        main() BEFORE seed_topology_dynamo and before any loop is built -- one bad YAML value stops
+        the ENTIRE loop process. vendor_health.py:91 calls these "identical to the ingest path",
+        which reads as an equivalence that does NOT hold.
+        Operator scenario: uptime-monitor-loop crash-loops in ECS; the operator reads run.py's
+        comment, rules the probe out, and goes hunting in the Dynatrace executor.
+      - >-
+        MAJOR 2 (quality) -- docs/scrum/wiki/dynatrace-adapter.md:56-57 was re-stamped
+        `status: verified`, verified_sha b3e1767 -> c815ebe, sprint-65 -> sprint-68, over a Fact the
+        implementer HAD ALREADY FLAGGED AS FALSE in its own `candidates` list: the article names the
+        breaking chars as '"', backslash, newline -- omitting `\r`, the FOURTH member of
+        _DQL_BREAKING_CHARS (query.py:49). The History entry additionally claims "No other Fact in
+        this article changed."
+        SEVERITY ADJUDICATED BY THE ORCHESTRATOR, because the reviewer honestly flagged uncertainty:
+        it stays MAJOR. .scrum/definition-of-done.md:102-103 is ARTICLE-level ("wiki articles whose
+        code_refs overlap this story's diff are updated OR RE-VERIFIED (verified_sha bumped)"), so
+        the stamp vouches for the whole article. YourTeam core principle 5 settles it independently:
+        knowledge may be incomplete, NEVER trusted-and-wrong. A `verified` stamp over a known-false
+        Fact is exactly the forbidden fourth state.
+        `\r` is NOT incidental: it is the realistic case on this Windows-developed repo (CRLF in a
+        config YAML), and post-STORY-204 it decides between one degraded signal and an aborted loop.
+    minor_findings: >-
+      TWO TO FIX, THREE DECLINED. Fix: (1) test_vendor_health.py:243's unused caplog fixture and
+      `with caplog.at_level(...)` wrapper asserting nothing about logs -- vestigial scaffolding
+      implying an assertion that is not there; (2) vendor_health.py:38 imports _HEALTH_CHECK_WINDOW,
+      an underscore-PRIVATE name, across a module AND zone boundary -- the ONLY private-name import
+      anywhere in backend/src, in a sprint about zone discipline. Rename public, repoint citations,
+      and STOP AND REPORT if it exceeds ~6 sites.
+      DECLINED, do not do them: moving _HEALTH_CHECK_WINDOW to the top of query.py (deliberate and
+      documented); adding signal_key to the InvalidNativeIdError message (would force the adapter to
+      know a composition-level concept).
+      ALSO PROVEN BUT ACCEPTED: the AC4 source-scan guard is EVADABLE -- the quality reviewer showed
+      on a SCRATCH COPY that a re-derived builder using a spliced `fetch` constant, `"|filter "`
+      without the space, and "\n".join(...) passes all three assertions. Acceptable because the
+      DANGEROUS half (missing validation) is caught by the behaviour test, which was proven
+      discriminating -- but the guard's docstring headline claims more than it checks and must
+      disclose the limit, exactly as STORY-205's guard discloses its shape-narrowness.
     why_here: >-
       MUST PRECEDE STORY-203 (see plan_verification finding 1). ZR-8 Finding 2: vendor_health.py
       builds DQL without query.py's _DQL_BREAKING_CHARS validation, and the probe it feeds runs
