@@ -1,7 +1,7 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: c815ebe
+verified_sha: bfa5f77
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
@@ -351,3 +351,14 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   `native_id`. `check_vendor_id_health`/`_extract_count` themselves, `run.py::main`'s call site, and
   every other Fact in this section are unchanged — proven by the ordering/wiring tests in
   `test_run_live_loop.py`/`test_pull_loop.py` passing unmodified. verified_sha -> c815ebe.
+- sprint-68 (STORY-204 fix round): the sweep flagged `run.py`, `vendor_health.py`,
+  `test_vendor_health.py`. `run.py`'s call-site comment (`main()`) was expanded to state the
+  blast-radius asymmetry explicitly (ingest degrades one signal via `run_periodic`, the probe
+  aborts `main()` entirely) — this article's own Fact above already stated that asymmetry
+  correctly (it was one of two reviewers' independent findings that ONLY `run.py`'s comment and
+  `vendor_health.py`'s docstring had regressed to a false "never raises"/"propagates identically"
+  claim; this article's Fact was not one of them). `vendor_health.py`'s docstring gained the same
+  disclosure; `test_vendor_health.py`'s breaking-char test dropped an unused `caplog` fixture and
+  a `with caplog.at_level(...)` wrapper that asserted nothing about logs — the Facts above
+  (`test_vendor_health.py (STORY-070) exercises ... WARNING record ... does NOT propagate`) never
+  cited that wrapper. No Fact in this article changed. verified_sha -> bfa5f77.
