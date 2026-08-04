@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: c815ebe
+verified_sha: bfa5f77
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-177/190 fix round). Facts REWRITTEN, not re-stamped:
@@ -66,7 +66,7 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
 - **`build_vendor_health_dql(*, native_id)` (`query.py::build_vendor_health_dql`, relocated here
   from `composition/vendor_health.py` at STORY-204, ZR-8 finding 2) is the OTHER DQL shape this
-  module builds** — a cheap, bounded-window (`query.py::_HEALTH_CHECK_WINDOW`, `"2h"`) existence
+  module builds** — a cheap, bounded-window (`query.py::HEALTH_CHECK_WINDOW`, `"2h"`) existence
   probe scoped to one monitor id, unrelated to the watermark/overlap ingest fetch above (STORY-070,
   see [[demo-engine]] and [[zone-rules]] for the probe's own use and the ZR-8 finding it fixed).
   Shares `query.py::_reject_dql_breaking_native_id` with `build_dql_query` above (the extracted
@@ -307,3 +307,7 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   caught this — a `verified` stamp over a known-false Fact is the forbidden fourth state (YourTeam
   core principle 5). Fixed the Fact to name all four characters and stated why `\r` matters on this
   Windows-developed repo. verified_sha -> e60d027.
+- sprint-68 (STORY-204 fix round, second pass): `_HEALTH_CHECK_WINDOW` made public
+  (`HEALTH_CHECK_WINDOW`, same fix round, unrelated minor — the only private-name import across a
+  module/zone boundary in `backend/src`). The `build_vendor_health_dql` Fact above repointed to the
+  new public name. verified_sha -> bfa5f77.
