@@ -56,11 +56,22 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   vector). It is still validated first: any `native_id` containing a DQL-breaking character
   (`"`, backslash, `\n`, or `\r` — the FOUR members of `query.py::_DQL_BREAKING_CHARS`) raises the
   named `InvalidNativeIdError` (`query.py::InvalidNativeIdError`) rather than silently malforming
-  the query — rejected, not escaped/sanitized (STORY-021). `\r` is not incidental on this
-  Windows-developed repo: a CRLF-contaminated `native_id` in `config/apps/*.yaml` is the realistic
-  trigger, and post-STORY-204 it decides between one degraded ingest signal
-  (`run_periodic`, [[ingest-service-and-pull-loop]]) and an aborted loop process (the vendor-health
-  probe, `composition/run.py::main`) depending which of the two builders it reaches first.
+  the query — rejected, not escaped/sanitized (STORY-021). `\r` is one of the four guarded
+  characters because the constant defends the DQL string literal against ANY breaking character
+  regardless of provenance — the guard does not depend on a specific ingress story. The one
+  VERIFIED route to a real `\r` in this scalar is an explicit `\r` escape inside a
+  double-quoted YAML scalar (e.g. `native_id: "MON\rA"`). **Ruled out, with the reason:** a
+  CRLF-contaminated `config/apps/*.yaml` on this Windows-developed repo does NOT reach this
+  check — `load_config` reads via `yaml_path.read_text(encoding="utf-8")`
+  (`composition/config.py::load_config`), and `Path.read_text()` applies universal-newline
+  translation, turning `\r\n` into `\n` before PyYAML ever sees it (disproved end-to-end,
+  twice — on a scratch copy with every line ending rewritten to CRLF, `native_id` still loaded
+  with `contains_CR=False`). In the loop process, `composition/run.py::main` always runs the
+  vendor-health probe — sharing the same `_reject_dql_breaking_native_id` validation — BEFORE
+  `seed_topology_dynamo`/`build_live_loop` (`run.py::main`, the probe call precedes both), so a
+  misconfigured `native_id` there always aborts the loop process at startup; the per-cycle
+  degraded-ingest outcome (`run_periodic`, [[ingest-service-and-pull-loop]]) is not reachable for
+  this particular error in that process.
 - `Executor = Callable[[str], list[dict]]` (`query.py::Executor`) is the injected live-DQL seam.
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
@@ -311,3 +322,21 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   (`HEALTH_CHECK_WINDOW`, same fix round, unrelated minor — the only private-name import across a
   module/zone boundary in `backend/src`). The `build_vendor_health_dql` Fact above repointed to the
   new public name. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round): the sprint-68 second-pass entry's "why `\r` matters" was
+  itself FALSE — it asserted a CRLF-contaminated `native_id` in `config/apps/*.yaml` as the
+  realistic trigger. Disproved end-to-end, twice (reviewer + independently): `load_config` reads
+  via `Path.read_text()` (`composition/config.py::load_config`), which applies universal-newline
+  translation before PyYAML ever sees the text, so CRLF line endings in the YAML file cannot
+  reach `native_id` as a literal `\r`. Replaced with the verified trigger (an explicit `\r`
+  escape inside a double-quoted YAML scalar) and the true justification (the constant guards
+  against any breaking character regardless of provenance); the ruled-out CRLF path is stated
+  explicitly, with the reason, so it is not re-derived. Also corrected the adjacent claim that the
+  outcome "depends on which of the two builders" the character reaches first — in the loop
+  process, `composition/run.py::main` always runs the vendor-health probe before
+  `seed_topology_dynamo`/`build_live_loop`, so there is no dependency for that process. Also
+  narrowed "the only private-name import" (line above) to the leading-underscore-*symbol* reading
+  it actually holds under — `composition/app.py:224` imports the private *package*
+  `src.api.v1._shared.errors` across the same kind of zone boundary, which is a private PACKAGE,
+  not a private NAME. No file in this article's `code_refs` changed in this pass (prose-only
+  correction); `verified_sha` is bumped below to this fix round's landing commit anyway, since the
+  correction is itself the re-verification this article needed.
