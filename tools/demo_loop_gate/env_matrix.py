@@ -22,6 +22,7 @@ from src.composition.settings import (
     DYNAMO_OBSERVATIONS_TABLE_VAR,
     STATUSPAGE_API_KEY_VAR,
     STATUSPAGE_PAGE_ID_VAR,
+    Settings,
 )
 
 
@@ -46,7 +47,7 @@ def build_child_env(
     dynatrace_api_token: str | None = None,
     statuspage_page_id: str | None = None,
     statuspage_api_token: str | None = None,
-    aws_region: str = "us-east-1",
+    aws_region: str = Settings.aws_region,
 ) -> dict[str, str]:
     """Build the env dict for one child process (STORY-182 AC1a/AC1b).
 

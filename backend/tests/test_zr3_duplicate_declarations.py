@@ -70,13 +70,6 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "vendor-health-window citation to the relocated adapter builder, which "
         "displaced this pre-existing collision without retiring it.)"
     ),
-    ("tools/demo_loop_gate/env_matrix.py", 49): (
-        "MUST-IMPORT-FROM-SRC (MINOR): build_child_env's aws_region parameter "
-        "default re-declares Settings.aws_region's default a second time. "
-        "Fix: STORY-203. (Re-keyed from :39 by STORY-202's own AC2 import "
-        "block, which displaced this pre-existing collision without "
-        "retiring it -- the collision is unchanged, only its line moved.)"
-    ),
     ("tools/demo_loop_gate/failure_path_reality_gate.py", 65): (
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as :30 "
         "above, a different file."
