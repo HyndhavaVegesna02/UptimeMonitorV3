@@ -1,7 +1,7 @@
 """STORY-148 AC5 — the SECOND query grammar (`summarize count()`).
 
 `build_vendor_health_dql`
-(`adapters/inbound/dynatrace/query.py:136-155`; relocated here from
+(`adapters/inbound/dynatrace/query.py:139-158`; relocated here from
 `composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2) is the
 REAL, unmodified production function under test — a different grammar
 entirely from the ingest fetch: `fetch dt.synthetic.events, from:now()-2h |
@@ -79,13 +79,16 @@ def test_vendor_health_window_matches_the_composition_health_check_window():
     must equal `adapters/inbound/dynatrace/query.py`'s `HEALTH_CHECK_WINDOW`
     (relocated here from `composition/vendor_health.py` at STORY-204; made
     public in the STORY-204 fix round, since an underscore-private name was
-    the only private-name import across a module AND zone boundary in
-    `backend/src`) -- the adapter constant this engine's literal is
-    deliberately NOT imported from (it is part of the wire contract the
-    engine answers, not borrowed from the adapter that builds the query;
-    see `store.py:18-23`). Without this test, a future change to
-    `HEALTH_CHECK_WINDOW` would make the demo diverge SILENTLY in the one
-    dimension it hardcodes -- this test turns that into a build failure.
+    the only private-**name** import across a module AND zone boundary in
+    `backend/src` -- `composition/app.py:224` imports the private *package*
+    `src.api.v1._shared.errors` across a zone boundary too, which is a
+    private PACKAGE, not a private name) -- the adapter constant this
+    engine's literal is deliberately NOT imported from (it is part of the
+    wire contract the engine answers, not borrowed from the adapter that
+    builds the query; see `store.py:18-23`). Without this test, a future
+    change to `HEALTH_CHECK_WINDOW` would make the demo diverge SILENTLY in
+    the one dimension it hardcodes -- this test turns that into a build
+    failure.
 
     Parses `HEALTH_CHECK_WINDOW`'s `"<N>h"` shape here, in the TEST only
     (the route decided at planning is the equality test, not teaching the
