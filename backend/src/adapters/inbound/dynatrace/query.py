@@ -130,7 +130,10 @@ def build_dql_query(
 #: (e.g. last ~2h ...)"; relocated here from `composition/vendor_health.py`
 #: at STORY-204). Kept separate from `build_dql_query`'s watermark/overlap
 #: window above -- this is a cheap existence probe, not an ingest fetch.
-_HEALTH_CHECK_WINDOW = "2h"
+#: PUBLIC (STORY-204 fix round): `composition/vendor_health.py` imports this
+#: across a module AND zone boundary -- an underscore-private name is not
+#: meant to be imported outside its own module, so this is named publicly.
+HEALTH_CHECK_WINDOW = "2h"
 
 
 def build_vendor_health_dql(*, native_id: str) -> str:
@@ -149,7 +152,7 @@ def build_vendor_health_dql(*, native_id: str) -> str:
     """
     _reject_dql_breaking_native_id(native_id)
     return (
-        f"fetch dt.synthetic.events, from:now()-{_HEALTH_CHECK_WINDOW}\n"
+        f"fetch dt.synthetic.events, from:now()-{HEALTH_CHECK_WINDOW}\n"
         f'| filter dt.synthetic.monitor.id == "{native_id}"\n'
         "| summarize count()"
     )

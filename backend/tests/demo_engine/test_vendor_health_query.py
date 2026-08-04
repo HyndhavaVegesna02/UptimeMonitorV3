@@ -23,7 +23,7 @@ from datetime import datetime, timedelta, timezone
 from demo_engine.rows import build_row, format_ns_timestamp
 from demo_engine.store import VENDOR_HEALTH_WINDOW, DemoRowStore
 from src.adapters.inbound.dynatrace.query import (
-    _HEALTH_CHECK_WINDOW,
+    HEALTH_CHECK_WINDOW,
     build_vendor_health_dql,
 )
 
@@ -76,22 +76,24 @@ def test_vendor_health_window_tracks_the_request_instant_not_engine_construction
 
 def test_vendor_health_window_matches_the_composition_health_check_window():
     """STORY-180 AC2 (minor 1): `store.py`'s hardcoded `VENDOR_HEALTH_WINDOW`
-    must equal `adapters/inbound/dynatrace/query.py`'s `_HEALTH_CHECK_WINDOW`
-    (relocated here from `composition/vendor_health.py` at STORY-204) -- the
-    adapter constant this engine's literal is deliberately NOT imported from
-    (it is part of the wire contract the engine answers, not borrowed from
-    the adapter that builds the query; see `store.py:18-23`). Without this
-    test, a future change to `_HEALTH_CHECK_WINDOW` would make the demo
-    diverge SILENTLY in the one dimension it hardcodes -- this test turns
-    that into a build failure.
+    must equal `adapters/inbound/dynatrace/query.py`'s `HEALTH_CHECK_WINDOW`
+    (relocated here from `composition/vendor_health.py` at STORY-204; made
+    public in the STORY-204 fix round, since an underscore-private name was
+    the only private-name import across a module AND zone boundary in
+    `backend/src`) -- the adapter constant this engine's literal is
+    deliberately NOT imported from (it is part of the wire contract the
+    engine answers, not borrowed from the adapter that builds the query;
+    see `store.py:18-23`). Without this test, a future change to
+    `HEALTH_CHECK_WINDOW` would make the demo diverge SILENTLY in the one
+    dimension it hardcodes -- this test turns that into a build failure.
 
-    Parses `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape here, in the TEST only
+    Parses `HEALTH_CHECK_WINDOW`'s `"<N>h"` shape here, in the TEST only
     (the route decided at planning is the equality test, not teaching the
     engine to parse a DQL `from:` clause -- see STORY-180 AC2).
     """
-    match = re.fullmatch(r"(\d+)h", _HEALTH_CHECK_WINDOW)
+    match = re.fullmatch(r"(\d+)h", HEALTH_CHECK_WINDOW)
     assert match is not None, (
-        f"unexpected _HEALTH_CHECK_WINDOW format: {_HEALTH_CHECK_WINDOW!r}"
+        f"unexpected HEALTH_CHECK_WINDOW format: {HEALTH_CHECK_WINDOW!r}"
     )
     assert VENDOR_HEALTH_WINDOW == timedelta(hours=int(match.group(1)))
 

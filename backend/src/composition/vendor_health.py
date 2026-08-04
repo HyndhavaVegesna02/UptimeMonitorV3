@@ -35,7 +35,7 @@ from __future__ import annotations
 import logging
 
 from src.adapters.inbound.dynatrace.query import (
-    _HEALTH_CHECK_WINDOW,
+    HEALTH_CHECK_WINDOW,
     Executor,
     build_vendor_health_dql,
 )
@@ -129,7 +129,7 @@ def check_vendor_id_health(*, config: Config, executor: Executor) -> None:
                     "hotfix 79bfbb3.",
                     signal.native_id,
                     signal.signal_key,
-                    _HEALTH_CHECK_WINDOW,
+                    HEALTH_CHECK_WINDOW,
                 )
             else:
                 logger.info(
@@ -138,5 +138,5 @@ def check_vendor_id_health(*, config: Config, executor: Executor) -> None:
                     signal.signal_key,
                     signal.native_id,
                     count,
-                    _HEALTH_CHECK_WINDOW,
+                    HEALTH_CHECK_WINDOW,
                 )
