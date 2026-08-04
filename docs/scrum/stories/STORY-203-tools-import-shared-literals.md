@@ -112,3 +112,27 @@ vendor, and a vendor's wire behaviour is not supposed to track our config. AC4 t
 The env-var-**NAME** remainder (STORY-215, same sprint). The nine `INDEPENDENT` collisions. Widening
 the sweep to see cross-representation duplicates — that limit is documented, and chasing it is a
 different, much larger story.
+
+## History
+
+- **2026-08-04, fix round — AC7 (constraint C3) NOT MET, and cannot be closed without rewriting
+  history.** AC7 requires the catalogue to move with the code in the same commit. It didn't: the
+  code fixes landed in `e9cb8c8`, `691227f`, `db949c8`, and `zone-rules.md`'s ZR-3 section wasn't
+  updated to record the fix until `3ab9c9b` — after even `1c07def`'s own ledger rewrite. The
+  spec reviewer proved the consequence rather than asserting it: checking out `zone-rules.md` at
+  `1c07def` shows it still reading *"A genuine, adjudicated violation (not merely
+  illustrative)... `tools/demo_loop_gate/harness.py:753-757`... hardcodes the literal table-name
+  values... now filed solely to STORY-203 (not fixed here)"* — asserting a live violation that the
+  very same tree had already fixed. At least two committed states, `92241bd` and `1c07def`, carried
+  that false claim. **The final state at HEAD is correct** — this is a commit-sequencing defect,
+  not a wrong end state. Per PO direction, this is recorded plainly rather than rewritten: no
+  rebase, squash, amend, or reset was performed. AC7 is not claimed MET. STORY-204 carries an
+  identical miss, recorded the same way; both are flagged for PO adjudication.
+- **2026-08-04, fix round — a second, self-inflicted C3 miss inside this very fix round, caught
+  and landed correctly.** The MINOR-1 fix (naming the AC1(b) blocklist asserts' failure messages,
+  commit `b72750e`) added lines inside `harness.py`, displacing two `INDEPENDENT`
+  `test_zr3_duplicate_declarations.py` ledger entries this story had already re-keyed
+  (`:921`->`:927`, `:982`->`:988`) and the `zone-rules.md` line-span it cites (`:761-768` ->
+  `:761-774`) — caught immediately by re-running the ZR-3 guards (both went RED), fixed and landed
+  together with `zone-rules.md`'s own note in the SAME commit (`1d43b1b`), so C3 holds for this
+  second instance even though it did not hold for the first.
