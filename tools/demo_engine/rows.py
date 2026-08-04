@@ -19,7 +19,7 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-#: The one live HTTP monitor event type (`query.py:87`); the only type this
+#: The one live HTTP monitor event type (`query.py:112`); the only type this
 #: engine's ingest grammar ever scopes to.
 EVENT_TYPE_HTTP_MONITOR_EXECUTION = "http_monitor_execution"
 
