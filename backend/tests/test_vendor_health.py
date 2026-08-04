@@ -213,6 +213,18 @@ def test_vendor_health_module_builds_no_dql_string_itself():
     are exactly the pieces `build_vendor_health_dql`
     (`adapters/inbound/dynatrace/query.py`) assembles; their presence here
     would mean composition is still building DQL, the violation ZR-8 names.
+
+    Its limit, disclosed rather than implied by the headline above: this is a
+    literal-substring check on the source text, not a semantic "did this
+    module build DQL" rule. A re-derived builder using a spliced `fetch`
+    constant, `"|filter "` (no space after the pipe), and `"\\n".join(...)`
+    instead of an f-string would pass all three assertions below untouched
+    (proven on a scratch copy at quality review). That gap is acceptable
+    because the DANGEROUS half -- a re-derived builder that skips
+    `_reject_dql_breaking_native_id`'s validation -- is caught by the
+    behaviour test instead:
+    `test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char`
+    below, proven discriminating by its own RED run against pre-fix HEAD.
     """
     source = inspect.getsource(vendor_health_module)
 

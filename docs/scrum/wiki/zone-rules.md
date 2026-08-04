@@ -717,15 +717,27 @@ where a zone-wide regression would be caught.
   rule; a second file re-implementing a DIFFERENT mechanic would need its own guard, the
   same way this one needed to be purpose-built rather than inherited from anywhere else.
   **Finding 2's fix (STORY-204) took a stronger shape than a parallel assertion would
-  have:** rather than a guard that checks `composition/vendor_health.py` calls the
-  adapter's validation, the builder itself now lives ONLY in the adapter — there is no
-  DQL string construction left in `composition/vendor_health.py` for a guard to police,
-  and `backend/tests/test_vendor_health.py::test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char`
+  have:** rather than only a guard that checks `composition/vendor_health.py` calls the
+  adapter's validation, the builder itself moved into the adapter, and a guard also
+  polices `composition/vendor_health.py` directly —
+  `backend/tests/test_vendor_health.py::test_vendor_health_module_builds_no_dql_string_itself`
+  (AC4) is the guard that proves ZR-8's own statement here: it asserts the three literal
+  fragments `build_vendor_health_dql` assembles (`"fetch "`, `"| filter "`,
+  `"| summarize "`) are absent from `inspect.getsource(vendor_health_module)`.
+  **Its limit, proven by mutation, not merely asserted:** it is a literal-substring
+  check on source text, not a semantic "did composition build DQL" rule — a re-derived
+  builder using a spliced `fetch` constant, `"|filter "` (no space after the pipe), and
+  `"\n".join(...)` instead of an f-string passes all three assertions untouched (shown
+  on a scratch copy at quality review). That gap is acceptable because the DANGEROUS
+  half is caught elsewhere: a re-derived builder that skips
+  `_reject_dql_breaking_native_id`'s validation is caught by
+  `backend/tests/test_vendor_health.py::test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char`
   (parametrised over all four `_DQL_BREAKING_CHARS`) plus
-  `backend/tests/test_dynatrace_adapter.py::test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char`
-  pin the behaviour directly. Re-declaring `_DQL_BREAKING_CHARS` a second time is now
-  structurally harder, not merely discouraged, because there is no second builder left
-  to duplicate it into.
+  `backend/tests/test_dynatrace_adapter.py::test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char`,
+  which pin the actual behaviour rather than the source text and were proven
+  discriminating by their own RED run against pre-fix HEAD. Re-declaring
+  `_DQL_BREAKING_CHARS` a second time is now structurally harder, not merely
+  discouraged, because there is no second builder left to duplicate it into.
 
 ## Inference (synthesis, not verified)
 
@@ -763,7 +775,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
 | ZR-6 | `FIXED (STORY-200, sprint-67) — NO STANDING GUARD` | The one live violation this rule adjudicated is fixed: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover — proven by `test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`. **That test pins the 2-member SUBSET GUARD, not the port's TYPE.** Mutation-checked: reverting the entire fix (port back to `action: str`, fake back to `str`, adapter back to `if action == "approved":`) leaves the full suite at 696 passed, identical to HEAD — nothing detects a ZR-6 regression. This is honest, not a gap left carelessly: ZR-6's own Coverage verdict (above) already states the general "port primitive stands in for an existing domain type" rule is `GUARDABLE` only as a reviewed lint warning, never a hard-failing contract, and this row now agrees with it instead of contradicting it. A future story could re-widen this port back to `str` with a fully green gate. |
 | ZR-7 | `ENFORCED-BY backend/tests/test_zr7_pagination_guard.py` | Two tests. **Shown RED twice** at STORY-197, and again at STORY-199 (sprint-67): removing `list_components`'s `LastEvaluatedKey` loop (the recorded mutation proof) trips the unexempted-violation check, and its removal also fails that method's own AC2 pagination test. STORY-199 landed all five fixes (including `is_under_maintenance`) and removed the five matching exemptions (`460d3ee`); `_EXEMPTIONS` now holds exactly ONE entry — `dynamo_publication_repository.py:53`, `PERMANENT`, for `list_recent`'s stated `Limit=limit` bound. |
-| ZR-8 | Finding 1: `ENFORCED-BY backend/tests/test_zone_layout.py::test_seed_dynamo_uses_shared_topology_key_schema` (STORY-205, sprint-68). Finding 2: `ENFORCED-BY backend/tests/test_vendor_health.py::test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char` + `backend/tests/test_dynatrace_adapter.py::test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char` (STORY-204, sprint-68) | **Finding 1 fixed and guarded.** `seed_dynamo.py` now obtains the topology key schema (both shapes: item-key dict and boto3 query condition) from `adapters/persistence/topology_keys.py`, the single module `DynamoComponentRepository`/`DynamoSignalRepository` also import — a THIRD declaration removed, not relocated. **Shown RED twice**: against the real pre-fix file (three hand-built sites, at `seed_dynamo.py:28/43/57` as they stood then) before the wiring landed, and again by deliberately re-introducing one hand-built key post-fix and watching the guard name that exact line; both reverted, `git diff` empty. The guard is SHAPE-narrow (this one file, this one dict shape) per its own Coverage verdict — it says nothing about Finding 2. **Finding 2 fixed and guarded.** `build_vendor_health_dql` now lives in `adapters/inbound/dynatrace/query.py`, sharing `_reject_dql_breaking_native_id` with `build_dql_query`; `composition/vendor_health.py` calls it and builds no DQL string of its own. **Shown RED**: the composition-level parametrised test (all four `_DQL_BREAKING_CHARS`) failed against real pre-fix HEAD with `Failed: DID NOT RAISE InvalidNativeIdError` — the probe silently built a malformed query instead of raising, exactly the defect this rule names; reverted to green by the fix, no code left mutated. |
+| ZR-8 | Finding 1: `ENFORCED-BY backend/tests/test_zone_layout.py::test_seed_dynamo_uses_shared_topology_key_schema` (STORY-205, sprint-68). Finding 2: `ENFORCED-BY backend/tests/test_vendor_health.py::test_vendor_health_module_builds_no_dql_string_itself` (AC4 — the guard that proves ZR-8's own statement, no DQL string construction outside the adapter) + `backend/tests/test_vendor_health.py::test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char` + `backend/tests/test_dynatrace_adapter.py::test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char` (STORY-204, sprint-68) | **Finding 1 fixed and guarded.** `seed_dynamo.py` now obtains the topology key schema (both shapes: item-key dict and boto3 query condition) from `adapters/persistence/topology_keys.py`, the single module `DynamoComponentRepository`/`DynamoSignalRepository` also import — a THIRD declaration removed, not relocated. **Shown RED twice**: against the real pre-fix file (three hand-built sites, at `seed_dynamo.py:28/43/57` as they stood then) before the wiring landed, and again by deliberately re-introducing one hand-built key post-fix and watching the guard name that exact line; both reverted, `git diff` empty. The guard is SHAPE-narrow (this one file, this one dict shape) per its own Coverage verdict — it says nothing about Finding 2. **Finding 2 fixed and guarded.** `build_vendor_health_dql` now lives in `adapters/inbound/dynatrace/query.py`, sharing `_reject_dql_breaking_native_id` with `build_dql_query`; `composition/vendor_health.py` calls it and builds no DQL string of its own. **Shown RED**: the composition-level parametrised test (all four `_DQL_BREAKING_CHARS`) failed against real pre-fix HEAD with `Failed: DID NOT RAISE InvalidNativeIdError` — the probe silently built a malformed query instead of raising, exactly the defect this rule names; reverted to green by the fix, no code left mutated. |
 
 **Why only two rules were mechanised (AC5's stopping rule, stated as a result).** ZR-3 and ZR-7 were
 chosen because they are the two highest-severity rules with a **live violation to prove the guard RED
@@ -848,6 +860,24 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   the moment it landed — the same self-reference gap this article's own History
   shows STORY-197/199/202 hitting and re-stamping in a follow-up commit each time.
   No content changed here.
+- sprint-68 (STORY-204 fix round): **AC7b problem 2 (spec review FAIL).** The adjudication row and
+  Coverage verdict cited only the two validation-parity tests, never
+  `test_vendor_health.py::test_vendor_health_module_builds_no_dql_string_itself` (AC4) — the guard
+  that actually tests ZR-8's own statement ("vendor query-construction logic lives in exactly ONE
+  adapter"). Worse, the Coverage verdict positively claimed "there is no DQL string construction
+  left in `composition/vendor_health.py` for a guard to police" — false, since that guard exists and
+  polices exactly that. Cited it in both the adjudication row and the Coverage verdict; deleted the
+  false claim; disclosed the guard's limit (a literal-substring check, proven evadable by a
+  re-derived builder using a spliced `fetch` constant, `"|filter "` without the space, and
+  `"\n".join(...)` — the dangerous half, missing validation, is still caught by the behaviour
+  test). Also updated `test_vendor_health.py`'s own docstring for the same guard, same disclosure,
+  in the same commit (STORY-205's AC2 docstring-disclosure shape, applied here). Also fixed the
+  run.py/vendor_health.py stale comment (`composition/run.py::main`,
+  `composition/vendor_health.py::check_vendor_id_health`) both reviewers independently found — it
+  claimed the probe "never raises"/"propagates identically to the ingest path"; recorded the real
+  blast-radius asymmetry (ingest degrades one signal via `run_periodic`, the probe aborts `main()`
+  entirely). code_refs already covered every file touched. verified_sha -> (see final sha-bump
+  entry below).
 - sprint-68 (STORY-205): **Fixed and guarded ZR-8 Finding 1.** `composition/seed_dynamo.py`
   no longer hand-builds the `TOPOLOGY` partition's key schema; it now imports
   `app_item_key`/`component_item_key`/`signal_item_key` from the new
