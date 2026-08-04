@@ -407,15 +407,39 @@ stories:
         the stamp vouches for the whole article. YourTeam core principle 5 settles it independently:
         knowledge may be incomplete, NEVER trusted-and-wrong. A `verified` stamp over a known-false
         Fact is exactly the forbidden fourth state.
-        `\r` is NOT incidental: it is the realistic case on this Windows-developed repo (CRLF in a
-        config YAML), and post-STORY-204 it decides between one degraded signal and an aborted loop.
+        *** CORRECTED 2026-08-04 -- THE ORCHESTRATOR'S OWN JUSTIFICATION HERE WAS FALSE, AND THIS
+        ENTRY IS THE PROOF THAT THE LEDGER IS NOT EXEMPT FROM THE RULE IT IS ENFORCING. ***
+        The original text read: "`\r` is NOT incidental: it is the realistic case on this
+        Windows-developed repo (CRLF in a config YAML), and post-STORY-204 it decides between one
+        degraded signal and an aborted loop." That CRLF trigger DOES NOT EXIST. The orchestrator
+        asserted it in a fix-round brief, the implementer reasonably took it at face value and wrote
+        it into a `verified`-stamped wiki Fact, and the quality re-review then DISPROVED IT
+        END-TO-END -- making the cure an instance of the disease it was curing.
+        DISPROVED TWICE, independently: `load_config` reads via
+        `yaml.safe_load(yaml_path.read_text(encoding="utf-8"))` (composition/config.py:611), and
+        `Path.read_text()` applies UNIVERSAL-NEWLINE TRANSLATION, so `\r\n` becomes `\n` before
+        PyYAML ever sees it. The reviewer proved it on scratch copies; the orchestrator then rewrote
+        every line ending in config/apps/httpcheck.yaml to CRLF and loaded it through the real
+        loader: native_id='HTTP_CHECK-38B092E93932C002', contains_CR=False.
+        THE TRUE JUSTIFICATION, which needs no ingress story at all: `_DQL_BREAKING_CHARS` defends
+        the DQL string against ANY breaking character regardless of provenance. The only VERIFIED
+        route to a real `\r` in that scalar is an explicit `\r` escape inside a double-quoted YAML
+        scalar -- which is not CRLF contamination.
+        THE LESSON, and it is the sharpest of the sprint: an orchestrator assertion inside a brief
+        is NOT evidence, and an implementer trusting it is not the implementer's error. Briefs must
+        say what was verified and how -- or omit the claim.
     minor_findings: >-
       TWO TO FIX, THREE DECLINED. Fix: (1) test_vendor_health.py:243's unused caplog fixture and
       `with caplog.at_level(...)` wrapper asserting nothing about logs -- vestigial scaffolding
       implying an assertion that is not there; (2) vendor_health.py:38 imports _HEALTH_CHECK_WINDOW,
-      an underscore-PRIVATE name, across a module AND zone boundary -- the ONLY private-name import
-      anywhere in backend/src, in a sprint about zone discipline. Rename public, repoint citations,
-      and STOP AND REPORT if it exceeds ~6 sites.
+      an underscore-PRIVATE name, across a module AND zone boundary. Rename public, repoint
+      citations, and STOP AND REPORT if it exceeds ~6 sites.
+      *** SECOND ORCHESTRATOR OVERSTATEMENT, CORRECTED 2026-08-04. *** This entry originally called
+      it "the ONLY private-name import anywhere in backend/src". That holds only under a
+      leading-underscore-SYMBOL reading: `composition/app.py:224` imports from the private PACKAGE
+      `src.api.v1._shared.errors`, which also crosses a zone boundary. The accurate claim is about a
+      private NAME. The overstatement propagated into FIVE wiki places before the re-review caught
+      it; all five were narrowed, and so is this one.
       DECLINED, do not do them: moving _HEALTH_CHECK_WINDOW to the top of query.py (deliberate and
       documented); adding signal_key to the InvalidNativeIdError message (would force the adapter to
       know a composition-level concept).
