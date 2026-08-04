@@ -92,28 +92,20 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as above, a "
         "different file."
     ),
-    ("tools/demo_loop_gate/harness.py", 754): (
-        "MUST-IMPORT-FROM-SRC (MINOR): the ZR-3 AC3 reference/demonstration case "
-        "-- a defensive blocklist literal duplicating "
-        "Settings.dynamo_observations_table's default. Fix: STORY-203. "
-        "(Re-keyed from :747 by STORY-202's own harness.py edits, which "
-        "displaced this pre-existing collision without retiring it.)"
-    ),
-    ("tools/demo_loop_gate/harness.py", 757): (
-        "MUST-IMPORT-FROM-SRC (MINOR): paired with :754, duplicates "
-        "Settings.dynamo_control_table's default. Fix: STORY-203. "
-        "(Re-keyed from :750, same cause as :754 above.)"
-    ),
-    ("tools/demo_loop_gate/harness.py", 910): (
+    ("tools/demo_loop_gate/harness.py", 921): (
         "INDEPENDENT: dict(list(per_signal.items())[:3]), a slice bound unrelated "
-        "to FreshnessConfig.stale_after_cycles. (Re-keyed from :903 by "
-        "STORY-202's own harness.py edits, which displaced this pre-existing "
-        "collision without retiring it.)"
+        "to FreshnessConfig.stale_after_cycles. (Re-keyed from :903 to :910 by "
+        "STORY-202's own harness.py edits, then :910 to :921 by STORY-203's own "
+        "harness.py import-block edit (adding `Settings` to the existing "
+        "`from src.composition.settings import (...)` block), which displaced "
+        "this pre-existing collision without retiring it -- the collision is "
+        "unchanged, only its line moved.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 971): (
+    ("tools/demo_loop_gate/harness.py", 982): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
         "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
-        "(Re-keyed from :964, same cause as :910 above.)"
+        "(Re-keyed from :964 to :971, same cause as :921 above, then :971 to "
+        "982 by the same STORY-203 harness.py import-block edit.)"
     ),
 }
 

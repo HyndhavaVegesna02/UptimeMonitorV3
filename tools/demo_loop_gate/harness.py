@@ -64,6 +64,7 @@ from src.composition.settings import (  # noqa: E402
     DYNAMO_CONTROL_TABLE_VAR,
     DYNAMO_ENDPOINT_URL_VAR,
     DYNAMO_OBSERVATIONS_TABLE_VAR,
+    Settings,
 )
 
 from demo_loop_gate.env_matrix import build_child_env, fresh_table_names  # noqa: E402
@@ -750,11 +751,21 @@ def _assert_ac1_preconditions(
     result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]
     result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]
     assert result["dynamo_endpoint_url"], "AC1(b) FAILED: DYNAMO_ENDPOINT_URL unset"
+    # STORY-203 AC1/AC2: the right-hand blocklist values are IMPORTED from
+    # `Settings`'s own defaults, never re-declared -- so this follows a future
+    # rename automatically. The LEFT-hand side stays `result[...]`, read from
+    # the REAL resolved `api_env` above: replacing it with the imported
+    # constant too would turn this into a tautology disconnected from the
+    # actual environment (see backend/tests/demo_loop_gate/
+    # test_harness_assertions.py's blocklist-discrimination tests).
     assert result["observations_table"] not in (
-        "uptime-observations",
+        Settings.dynamo_observations_table,
         "uptime-monitor-observations",
     )
-    assert result["control_table"] not in ("uptime-control", "uptime-monitor-control")
+    assert result["control_table"] not in (
+        Settings.dynamo_control_table,
+        "uptime-monitor-control",
+    )
 
     # Indirect proof CONFIG_DIR really resolved to config/demo: /api/v1/topology
     # and /api/v1/components must show the demo fleet, not config/apps's single
