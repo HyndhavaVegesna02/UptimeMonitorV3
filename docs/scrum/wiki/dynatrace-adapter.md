@@ -54,9 +54,13 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
 - `native_id` is interpolated unescaped into the query string (`query.py::build_dql_query`); a comment
   documents the trusted-input assumption (vendor config id, read-only Grail fetch — no injection
   vector). It is still validated first: any `native_id` containing a DQL-breaking character
-  (`"`, backslash, or a newline — `query.py::_DQL_BREAKING_CHARS`) raises the named
-  `InvalidNativeIdError` (`query.py::InvalidNativeIdError`) rather than silently malforming the query — rejected,
-  not escaped/sanitized (STORY-021).
+  (`"`, backslash, `\n`, or `\r` — the FOUR members of `query.py::_DQL_BREAKING_CHARS`) raises the
+  named `InvalidNativeIdError` (`query.py::InvalidNativeIdError`) rather than silently malforming
+  the query — rejected, not escaped/sanitized (STORY-021). `\r` is not incidental on this
+  Windows-developed repo: a CRLF-contaminated `native_id` in `config/apps/*.yaml` is the realistic
+  trigger, and post-STORY-204 it decides between one degraded ingest signal
+  (`run_periodic`, [[ingest-service-and-pull-loop]]) and an aborted loop process (the vendor-health
+  probe, `composition/run.py::main`) depending which of the two builders it reaches first.
 - `Executor = Callable[[str], list[dict]]` (`query.py::Executor`) is the injected live-DQL seam.
   Production (composition root) injects a real HTTP-backed one; **every test injects a fake** —
   no live Dynatrace call is ever made in a test (working agreement: pure core, mockable edges).
@@ -294,5 +298,12 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   untouched). Added a new Fact for the relocated builder and its own two new tests
   (`test_build_vendor_health_dql_scopes_to_native_id_and_bounded_window`,
   `test_build_vendor_health_dql_rejects_native_id_with_dql_breaking_char`) in
-  `test_dynatrace_adapter.py`, next to `build_dql_query`'s. No other Fact in this article changed.
-  verified_sha -> c815ebe.
+  `test_dynatrace_adapter.py`, next to `build_dql_query`'s.
+- sprint-68 (STORY-204 fix round): the sprint-68 entry above wrongly claimed "No other Fact in this
+  article changed" while re-stamping `verified` over one that was already false — the breaking-char
+  Fact above named only `"`, backslash, and a newline, omitting `\r`, the fourth member of
+  `_DQL_BREAKING_CHARS` (`query.py::_DQL_BREAKING_CHARS`) that was already in the code at the
+  STORY-204 relocation and stayed unlisted through it. Both spec and quality review independently
+  caught this — a `verified` stamp over a known-false Fact is the forbidden fourth state (YourTeam
+  core principle 5). Fixed the Fact to name all four characters and stated why `\r` matters on this
+  Windows-developed repo. verified_sha -> e60d027.
