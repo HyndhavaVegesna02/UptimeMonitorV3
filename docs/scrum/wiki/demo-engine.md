@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: 482d279
+verified_sha: c2fd3d2
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -392,18 +392,28 @@ governs how much these codes may be trusted.
 
 ## History
 
-- sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete — it
-  fixed three `query.py:133`→`:136` sites and narrowed "the only private-name import" in five wiki
-  places, but missed a DIFFERENT stale pattern: the whole-function citation for
-  `build_vendor_health_dql` (`query.py:136-155`, its span BEFORE the fix round's 3-line "PUBLIC"
-  comment insertion) needed the same +3 shift, to `:139-158` — found here (the two-grammars
-  section, above) and in `query_grammar.py:11` and `test_vendor_health_query.py:4` (both
-  `code_refs`), by re-deriving every `query.py` citation in the repo against the real file rather
-  than trusting a named list. Also narrowed the one remaining overstated "only private-name import"
-  occurrence this article's own second-fix-round entry had declined as out of scope:
-  `test_vendor_health_query.py`'s docstring, same wording as the wiki fix below. Citation/wording
-  only, no behaviour change. verified_sha -> 81a1351 (this article's content commit is the direct
-  child of that sha).
+- sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete —
+  fixed four kinds of stale/overstated citation this round, all found by re-deriving every
+  `query.py` citation in the repo against the real file rather than trusting a named list: (1) the
+  `query.py:133,152` citation, which round two never touched at all in two of this article's own
+  `code_refs` (`tools/demo_loop_gate/backfill_reality_gate.py:9`,
+  `tools/demo_loop_gate/fleet_coverage.py:25`) plus two non-`code_ref` siblings — HEAD-derived to
+  `:136,155`; (2) a DIFFERENT stale pattern round two's fix never addressed: the whole-FUNCTION
+  citation for `build_vendor_health_dql` (`query.py:136-155`, its span BEFORE the fix round's
+  3-line "PUBLIC" comment insertion) needed the same +3 shift, to `:139-158` — found here (the
+  two-grammars section, above) and in this article's own `code_refs`
+  `tools/demo_engine/query_grammar.py:11` and
+  `backend/tests/demo_engine/test_vendor_health_query.py:4`; (3)
+  `backend/tests/demo_engine/test_watermark_precision.py:3` (a `code_ref`) cited `query.py:96`
+  (inside an unrelated docstring paragraph) for `since.isoformat().replace("+00:00", "Z")`, which
+  actually lives at `query.py:121` — pre-existing, unrelated to this story's line-shifting edit,
+  caught only by the exhaustive sweep; (4) `tools/demo_engine/rows.py:22` (also a `code_ref`) had a
+  third, unrelated pre-existing error of the same kind: it cited `query.py:87` (a blank docstring
+  line) for the `http_monitor_execution` event-type literal, which is actually at `query.py:112`.
+  Also narrowed the one remaining overstated "only private-name import" occurrence this article's
+  own second-fix-round entry had declined as out of scope: `test_vendor_health_query.py`'s
+  docstring, same wording as the wiki fix below. Citation/wording only, no behaviour change.
+  verified_sha -> c2fd3d2 (this article's content commit is the direct child of that sha).
 - sprint-68 (STORY-204): `build_vendor_health_query` relocated from `composition/vendor_health.py`
   into `adapters/inbound/dynatrace/query.py` as `build_vendor_health_dql` (ZR-8 finding 2 — see
   [[zone-rules]]), sharing a new `_reject_dql_breaking_native_id` validation helper with
