@@ -22,7 +22,7 @@ guards.
 
 Only 5 cycles are used, not ~2h of ladder: `check_vendor_id_health` needs
 >=1 row inside the trailing 2h window
-(`adapters/inbound/dynatrace/query.py:133,152`; relocated there from
+(`adapters/inbound/dynatrace/query.py:136,155`; relocated there from
 `composition/vendor_health.py:37,50` at STORY-204), not 2h of coverage --
 confirmed empirically by SPIKE-064 (820 rows, 0 drift warnings, 41 health-OK
 lines). The literal "2h of coverage" reading would cost ~39,000 rows for no
