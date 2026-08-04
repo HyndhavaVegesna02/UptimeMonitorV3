@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py]
-verified_sha: d554227
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py]
+verified_sha: 1c07def
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -267,23 +267,29 @@ where a zone-wide regression would be caught.
   `PROVISIONAL_STATUS_MAPPING` from `backend/src/adapters/inbound/dynatrace/health_mapping.py:35`,
   rather than re-declaring the `("1", "UNHEALTHY")` / `("2", "DEGRADED")` pairs a
   second time.
-- **A genuine, adjudicated violation (not merely illustrative). STORY-202 (sprint-67)
-  fixed the SEVEN env-var-NAME collisions this rule originally found in this same
-  file; this VALUE-shaped pair is the one it deliberately left, filed to STORY-203.**
-  `tools/demo_loop_gate/harness.py:753-757` (line numbers as of `1dc1c73`,
-  STORY-202's own edits having displaced this pre-existing collision without
-  retiring it — re-keyed, not removed, per `test_zr3_duplicate_declarations.py`'s
-  `_ADJUDICATED`) hardcodes the literal table-name values `"uptime-observations"`
-  (line 754) and `"uptime-control"` (line 757) a second time — duplicating
-  `backend/src/composition/settings.py:21-22`'s
-  `Settings.dynamo_observations_table`/`dynamo_control_table` defaults — even though
-  `tools/demo_loop_gate/harness.py:61` already imports `src.composition.config` (a
-  SIBLING composition module) for an unrelated reason. This is exactly why "no import
-  edge between the declaring modules" is the WRONG exemption criterion: an import edge
-  to a DIFFERENT symbol in the same zone does not mean the colliding value was
-  actually obtained from `src` — it would have falsely CLEARED a real duplicate. This
-  is a genuine ZR-3 finding, now filed solely to STORY-203 (not fixed here — C1:
-  nothing is fixed inline in 194/195/196).
+- **Fixed and guarded (STORY-203, sprint-68) — the last four `MUST-IMPORT-FROM-SRC`
+  entries this rule adjudicated, zero remain.** `tools/demo_loop_gate/harness.py`'s
+  defensive blocklist (`:761-768` at HEAD) now compares the RESOLVED table name
+  (read from the real `api_env`, unchanged) against
+  `Settings.dynamo_observations_table`/`dynamo_control_table` — imported, not
+  re-declared — on the blocklist's RIGHT-hand side only; replacing the LEFT-hand
+  side (the resolved value) with the same import instead would turn the check into
+  a tautology disconnected from the actual environment (demonstrated by mutation:
+  `backend/tests/demo_loop_gate/test_harness_assertions.py`'s
+  `test_assert_ac1_preconditions_blocklist_does_not_fire_on_fresh_table_names` goes
+  RED under that exact mistake). The other two of the four —
+  `tools/demo_loop_gate/env_matrix.py:49` and
+  `tools/demo_loop_gate/failure_path_reality_gate.py:149` at the pre-fix commits
+  (`e9cb8c8`/`691227f`; each fix's own import-block edit shifted the line by +1, to
+  `:50`/`:150` at HEAD) — each hardcoded
+  `Settings.aws_region`'s `"us-east-1"` default a second time; both now import
+  `Settings` and reference `Settings.aws_region`. This is exactly why "no import
+  edge between the declaring modules" was the WRONG exemption criterion: an import
+  edge to a DIFFERENT symbol in the same zone (`harness.py:61` already imported
+  `src.composition.config` before this fix) does not mean the colliding value was
+  actually obtained from `src` — it would have falsely CLEARED a real duplicate.
+  `tools/zr3_duplicate_sweep.py` measured **13 -> 9** colliding pairs across this
+  fix; the remaining 9 are all `INDEPENDENT` (see the Measurement below).
 - **A second compliant citation, added by the STORY-202 fix — the two files import
   DIFFERENT SUBSETS of the seven, not both all seven.**
   `tools/demo_loop_gate/env_matrix.py:17-25` imports all SEVEN —
@@ -322,16 +328,18 @@ where a zone-wide regression would be caught.
   **Why that narrow reading returned 0 even though a real duplicate exists — read this
   before building the sweep (orchestrator correction, STORY-194 acceptance 2026-07-31):**
   the narrow measurement counted ONLY shape (i) at module level on BOTH sides, and the
-  adjudicated `harness.py`/`settings.py` violation below is neither —
-  `backend/src/composition/settings.py:21-22`
+  `harness.py`/`settings.py` violation (fixed at STORY-203, sprint-68; see above) was
+  neither — `backend/src/composition/settings.py:21-22`
   is shape (ii) (a field default, not an UPPER_CASE module constant) and the `harness.py`
-  side is a literal inside a FUNCTION BODY. So the 0 is an artifact of the first draft's
+  side was a literal inside a FUNCTION BODY. So the 0 is an artifact of the first draft's
   too-narrow scope, NOT evidence that the tree is clean. Under the pinned scope as it now
   stands — both declaration shapes, and `tools/`-side literals anywhere including function
-  bodies — the sweep MUST find the `harness.py` case. **That is the demonstration STORY-196
-  AC3 requires** ("shown capable of finding one" before an empty result elsewhere is
-  accepted): if a STORY-196 sweep reports 0 while that case stands, the sweep is wrong, not
-  the tree. **Note for the record:** this story's own
+  bodies — the sweep MUST find such a case were one re-introduced. **That is the
+  demonstration STORY-196 AC3 requires** ("shown capable of finding one" before an empty
+  result elsewhere is accepted); STORY-203 AC6 reconfirmed it by re-introducing the fixed
+  `harness.py` duplicate and watching the sweep-backed guard fail, naming that exact line,
+  before reverting: if a sweep reports 0 while a real duplicate stands, the sweep is wrong,
+  not the tree. **Note for the record:** this story's own
   re-measurement gives 101, not the 105 quoted at hand-off; the qualitative
   conclusion (wide reading is unusably noisy, narrow reading needs the
   import-exception rule below to catch anything at all) holds under either count —
@@ -774,7 +782,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | --- | --- | --- |
 | ZR-1 | `GUARDABLE-DEFERRED (STORY-206)` | Contract fully specified above (9 enumerated repository/watermark port modules, excluding the `signal_ingest` front door). Tree is CLEAN, so it must be proven RED by the mutation ZR-1 names, not by a live violation. |
 | ZR-2 | `GUARDABLE-DEFERRED (STORY-207)` | AST walk specified above, with its residue stated (string annotations, dynamically built identifiers). Tree is CLEAN — mutation proof required. |
-| ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module. Green today only via a per-entry adjudication list; every unfixed entry names its fix story. |
+| ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module — reconfirmed by STORY-203 AC6's own re-introduce/revert mutation. **All four `MUST-IMPORT-FROM-SRC` entries this rule adjudicated are fixed as of STORY-203 (sprint-68); zero remain.** Green via a per-entry adjudication list, now entirely `INDEPENDENT` (9 entries) — a future genuine finding is still expected to be filed there, the same way these four were. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
 | ZR-6 | `FIXED (STORY-200, sprint-67) — NO STANDING GUARD` | The one live violation this rule adjudicated is fixed: the port now types `record_approval_event`'s `action: ProposalState` (decision (a), not a narrower type — see the rule text above), and `ApprovalService._decide` raises `InvalidApprovalActionError` for any `to_state` outside `{APPROVED, REJECTED}`, closing the "3 invalid members" gap `is_valid_transition` does not cover — proven by `test_approval.py::test_approval_service_decide_rejects_action_outside_approved_or_rejected`. **That test pins the 2-member SUBSET GUARD, not the port's TYPE.** Mutation-checked: reverting the entire fix (port back to `action: str`, fake back to `str`, adapter back to `if action == "approved":`) leaves the full suite at 696 passed, identical to HEAD — nothing detects a ZR-6 regression. This is honest, not a gap left carelessly: ZR-6's own Coverage verdict (above) already states the general "port primitive stands in for an existing domain type" rule is `GUARDABLE` only as a reviewed lint warning, never a hard-failing contract, and this row now agrees with it instead of contradicting it. A future story could re-widen this port back to `str` with a fully green gate. |
@@ -821,6 +829,41 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-203): **Fixed and guarded ZR-3's last four `MUST-IMPORT-FROM-SRC` entries;
+  zero remain.** `env_matrix.py:49` and `failure_path_reality_gate.py:149` (pre-fix line
+  numbers; each fix's own import-block edit shifted the line by +1, to `:50`/`:150` at HEAD)
+  each hardcoded `Settings.aws_region`'s `"us-east-1"` default a second time; both now import
+  `Settings` and reference `Settings.aws_region`. `harness.py:754`/`:757`'s defensive blocklist hardcoded
+  `Settings.dynamo_observations_table`/`dynamo_control_table`'s defaults; fixed on the
+  blocklist's RIGHT-hand side only (the LEFT stays the real `api_env` read) — replacing the
+  LEFT-hand side too would turn the check into a tautology disconnected from the environment
+  it exists to guard, demonstrated by mutation:
+  `test_harness_assertions.py::test_assert_ac1_preconditions_blocklist_does_not_fire_on_fresh_table_names`
+  went RED under that exact mistake (a bare `AssertionError` where `httpx.HTTPError` was
+  expected), reverted, `git diff` empty. Adding `Settings` to `harness.py`'s existing import
+  block shifted two surviving `INDEPENDENT` entries by +11 lines (`:910`->`:921`,
+  `:971`->`:982`); re-keyed, reason text preserved. Sweep count: 13 -> 9 (re-derived at HEAD
+  both before and after); the remaining 9 are all `INDEPENDENT`.
+  **AC4's fifth, cross-representation case (`store.py`'s `VENDOR_HEALTH_WINDOW`, invisible to
+  this sweep's literal-equality comparison) was a DECISION, not a fix**: its existing
+  wire-contract justification (the window is part of the vendor wire contract the demo engine
+  answers, not borrowed from `adapters/inbound/dynatrace/query.py`'s `HEALTH_CHECK_WINDOW`) is
+  upheld, and `test_zr3_duplicate_declarations.py`'s entry rewritten from
+  `MUST-IMPORT-FROM-SRC ... Fix: STORY-203` (which would have pointed at this same, now-closed
+  story as an outstanding fix) to `INDEPENDENT`, citing
+  `test_vendor_health_query.py::test_vendor_health_window_matches_the_composition_health_check_window`
+  as the mechanical pin against silent divergence, rather than arguing from the docstring
+  alone. **AC6 mutation proof (re-run for this article):** re-introduced the fixed
+  `harness.py` duplicate (reverted the blocklist's right-hand side back to the literal
+  `"uptime-observations"`) — `test_zr3_sweep_finds_no_unadjudicated_collision` failed, naming
+  `tools/demo_loop_gate/harness.py:762` exactly; reverted, `git diff` empty. Rewrote the ZR-3
+  Fact bullet (the "genuine, adjudicated violation" paragraph, now past tense), the Measurement
+  bullet's stale present-tense "violation" reference, and the adjudication table row (all four
+  `MUST-IMPORT-FROM-SRC` fixed, zero remain). Added `backend/tests/test_zr3_duplicate_declarations.py`
+  and `backend/tests/demo_loop_gate/test_harness_assertions.py` to `code_refs` (both now hold
+  Facts this article cites by name, the same reason `test_vendor_health.py` was added at
+  STORY-204). verified_sha -> `1c07def` (this article's content commit is the direct child of
+  that sha, the same self-reference gap STORY-197/199/202/205 hit before it).
 - sprint-68 (STORY-204 third fix round): the second fix round fixed the `query.py:133`->`:136`
   single-point citation (below) but missed a DIFFERENT stale pattern in Finding 2's own body: the
   `build_vendor_health_dql` whole-function citation, `query.py:136-155`, was that span BEFORE the
