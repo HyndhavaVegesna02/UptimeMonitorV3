@@ -1,7 +1,7 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: bfa5f77
+verified_sha: d554227
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITH ONE IMPORTANT ADDITION BELOW: STORY-191 fired the
@@ -55,6 +55,10 @@ status: verified
   (see [[ingest-service-and-pull-loop]]/[[zone-rules]]), unrelated to `build_publisher`/
   `build_live_loop`'s publisher-chain assembly this article's Facts describe. Re-verified only;
   no Fact changed. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round, unrelated story — mechanical staleness sweep only): the
+  sweep flagged `run.py` again after this round reordered (did not change the substance of) the
+  same comment. Still unrelated to `build_publisher`/`build_live_loop`'s publisher-chain assembly.
+  Re-verified only; no Fact changed. verified_sha -> d554227.
 - sprint-67 (STORY-200, unrelated story — mechanical staleness sweep only): the sweep flagged
   `backend/tests/test_dynamo_publication_repository.py`, which STORY-200 touched only in
   `test_dynamo_publication_repository_author_parity`'s `proposal_repo.record_approval_event(...,
