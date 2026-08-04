@@ -8,7 +8,7 @@ Mirrors exactly two shapes:
   monitor id and `event.type`, plus an optional
   `timestamp >= toTimestamp(...)` lower bound when a watermark exists;
 - the vendor-health grammar, `build_vendor_health_dql`
-  (`adapters/inbound/dynatrace/query.py:136-155`; relocated there from
+  (`adapters/inbound/dynatrace/query.py:139-158`; relocated there from
   `composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2) — a
   `summarize count()` existence probe scoped to a monitor id, with a
   `from:now()-2h` window.
