@@ -6,7 +6,7 @@ is driven through an in-memory `DemoRowStore`, exactly the injected
 `Executor` seam `run_periodic` uses in production).
 
 Restated per the sprint-64 plan (B7): the vendor-health probe needs >=1 row
-INSIDE its trailing 2h window (`adapters/inbound/dynatrace/query.py:133,152`;
+INSIDE its trailing 2h window (`adapters/inbound/dynatrace/query.py:136,155`;
 relocated there from `composition/vendor_health.py:37,50` at STORY-204), not
 ">=2h of coverage", and its healthy branch is NOT silent -- it logs one INFO
 line per healthy signal (`composition/vendor_health.py:124-132`),
