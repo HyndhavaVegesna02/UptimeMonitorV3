@@ -544,7 +544,118 @@ stories:
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     points: 2
     order: 3
-    status: in_progress   # ALL FOUR SITES NOW DONE AND GREEN, reviewed, fix round in flight.
+    status: done   # DONE ON THE CODE 2026-08-04, WITH AC7 NOT MET -- SEE po_adjudication_required.
+                   # Delivered ACROSS TWO SESSIONS (split by the sprint's third session limit),
+                   # then reviewed concurrently, then a fix round, then 8/8 gate + reality gate.
+    commits: e9cb8c8..37d20c0   # session 1: e9cb8c8, 691227f. session 2: db949c8..1e457a0.
+                   # fix round: b72750e..37d20c0. (fd0d42f in between is an orchestrator board commit.)
+    po_adjudication_required: >-
+      *** AC7 IS NOT MET, FOR THE SAME REASON AS STORY-204, AND THIS IS THE SECOND CONSECUTIVE
+      OCCURRENCE. NOT ROUNDED UP. ***
+      AC7 requires zone-rules.md's ZR-3 update to land in the SAME COMMIT as the code (constraint
+      C3). Code landed in e9cb8c8 / 691227f / db949c8; the catalogue not until 3ab9c9b -- after even
+      1c07def's own ledger rewrite. THE SPEC REVIEWER PROVED THE CONSEQUENCE RATHER THAN ASSERTING
+      IT: it checked out zone-rules.md at 1c07def and found it still reading "A genuine, adjudicated
+      violation ... harness.py:753-757 ... hardcodes the literal table-name values ... now filed
+      solely to STORY-203 (not fixed here)" -- a live-violation claim the SAME TREE had already
+      fixed. At least two committed states (92241bd, 1c07def) carried it.
+      THE FINAL STATE AT HEAD IS CORRECT. This is commit SEQUENCING, not a wrong end state, and it
+      is recorded in the STORY FILE's own History rather than absorbed silently.
+      BECAUSE IT IS NOW A PATTERN AND NOT AN INCIDENT, the process response is RC-2 (see
+      retro_candidates): route C3 to the SCRIPT rung instead of restating it a sixth time. The PO's
+      options on the story itself are the same two as STORY-204's: accept as a filed exception, or
+      require a follow-up recording the precedent.
+    reviews:
+      spec: >-
+        FAIL, on AC7 ONLY. AC1-AC6 all MET and verified by RE-EXECUTION: it reproduced BOTH mutation
+        claims (AC2's forbidden-LHS and AC6's reintroduced literal) using scratch copies and
+        in-process patching, confirmed the tracked tree stayed clean throughout, and AST-parsed
+        _ADJUDICATED rather than grepping it -- explicitly avoiding the counting trap the brief
+        warned about.
+      quality: >-
+        APPROVE. No critical, no major; six MINOR, of which THREE were fixed and one was the
+        orchestrator's own. It verified the AC2 claim the hard way -- copied tools/demo_loop_gate/ to
+        scratch, applied the LHS tautology to the COPY, and ran the REAL UNMODIFIED TEST BODIES
+        against it: under the mutation the two-sided test is the ONLY one of three that goes RED, so
+        it is load-bearing rather than decorative. A second mutation (observations RHS pointing at
+        the control-table constant) showed the positive tests discriminate the two symbols
+        individually. It also verified AC4's cited pin by monkeypatching the window to '3h', '2m' and
+        'banana' -- RED in all three, including rejecting an unparseable format rather than skipping.
+        Confirmed it modified NO tracked file -- the RC-1 mitigation held for the third story running.
+    the_implementer_exceeded_the_brief: >-
+      WORTH RECORDING, because it is the behaviour to want. The brief said to replace the blocklist's
+      RIGHT-hand side and prove the blocklist still fires. The implementer did that, then went
+      further: it DELIBERATELY COMMITTED THE FORBIDDEN MISTAKE (moving the imported constant to the
+      LEFT) and showed its own discrimination test go RED, converting "I avoided the trap" into "and
+      here is the test that would have caught me". Both reviewers independently reproduced it.
+      In the fix round it did the same thing again in miniature: adding the AC1(b) failure messages
+      shifted two ledger entries a further +6 lines and took BOTH ZR-3 guards RED -- it caught its
+      own regression, re-keyed in the same commit, and self-reported that the fix round had itself
+      missed C3 once before correcting it. That is the "re-derive after your own edits" lesson from
+      STORY-204 actually landing rather than being nodded at.
+    fix_round: >-
+      b72750e..37d20c0. Three of the six MINORs fixed, one filed as a story, one declined, one taken
+      by the orchestrator.
+        b72750e -- harness.py's two blocklist asserts were the ONLY message-less asserts in
+          _assert_ac1_preconditions; the quality reviewer's mutation showed the failure surfacing as
+          a BARE AssertionError with empty text. Both now name the offending table, and the
+          discrimination tests were widened with `match=` to prove the message fires.
+        b68165c -- demo-engine.md's History recorded a grep returning "zero hits" that now returns
+          3, all inside that same new paragraph. The substantive claim was true; the RECORD was
+          self-invalidating -- the same shape as sprint-66's STORY-197 count. Reworded to reproduce.
+        1d43b1b -- fixed a stale ":30 above" cross-reference (now :31, re-keyed during STORY-204):
+          the one place this four-times-re-keyed ledger no longer read coherently to someone new.
+        DECLINED (consistency-only, no defect): test_harness_assertions.py importing settings symbols
+          via harness's re-export rather than directly.
+        FILED AS STORY-218 (a real finding, outside this story's footprint): Settings declares every
+          default TWICE -- as a dataclass field default AND as a load_settings() os.environ.get
+          fallback. Since load_settings() is the only construction site and passes every field
+          explicitly, THE CLASS DEFAULTS ARE NEVER WHAT PRODUCTION RESOLVES, so this story's
+          "follows a rename automatically" holds only for the declaration nothing uses. The ZR-3
+          sweep is STRUCTURALLY blind to it (src-internal, one file).
+        TAKEN BY THE ORCHESTRATOR: this board's own stale park note (fixed at fd0d42f).
+    reality_gate: >-
+      PASS -- and it tests the story's CLAIM, not just its code. The story's stated real value is
+      that the blocklist now FOLLOWS A FUTURE RENAME automatically, so that was made the experiment:
+      the real `_assert_ac1_preconditions` was called with real dicts against a dead port (the
+      blocklist asserts sit ABOVE the first httpx.get, so reaching the HTTP call proves the env was
+      let through).
+        production observations/control names -> AssertionError NAMING the offending table
+        both fresh                            -> passed the blocklist, then ConnectError as expected
+        after renaming the DECLARED DEFAULT to 'uptime-observations-v2':
+          blocklist vs the NEW name -> BLOCKED     <- it followed the rename
+          blocklist vs the OLD name -> LET THROUGH <- it stopped guarding the stale literal
+      Also confirmed zero hardcoded copies of the three defaults survive in env_matrix.py,
+      failure_path_reality_gate.py or harness.py.
+      BOUNDED HONESTLY: this demonstrates following a rename of the DECLARED FIELD DEFAULT. A rename
+      made only in load_settings()'s own fallback would NOT be followed -- that is STORY-218, and it
+      bounds this result rather than weakening it.
+      TWO HARNESS ERRORS ON THE WAY, BOTH THE ORCHESTRATOR'S: _assert_ac1_preconditions is
+      keyword-only with three params (api_base, api_env, expected_component_ids) and was first
+      called with one positional dict, which surfaced as a TypeError that LOOKED like the blocklist
+      failing to fire. Recorded because "my harness is broken" and "the code is broken" are
+      indistinguishable until you read the signature.
+    dod_evidence:   # FULL 8/8 at 37d20c0, exit 0, tree clean.
+      - {command: "python -m pytest", exit_code: 0, tail: "713 passed in 53.60s", note: "0 SKIPPED under REQUIRE_DYNAMO=1; 710 -> 713, this story adds 3 blocklist-discrimination tests. The 1-in-11 pagination flake did NOT fire in any run this sprint."}
+      - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, tail: "Contracts: 8 kept, 0 broken. (151 files, 432 dependencies)"}
+      - {command: "python -m ruff check .", exit_code: 0, tail: "All checks passed!"}
+      - {command: "python -m ruff format --check .", exit_code: 0, tail: "249 files already formatted"}
+      - {command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml", exit_code: 0, tail: ""}
+      - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+      - {command: "npm run build", exit_code: 0, tail: "clean"}
+      - {command: "npm run lint", exit_code: 0, tail: "eslint . (clean)"}
+    sprint_goal_measure: >-
+      *** THE SPRINT GOAL'S MECHANICAL MEASURE IS NOW MET, AND THE ORCHESTRATOR VERIFIED IT
+      INDEPENDENTLY RATHER THAN TAKING THE REPORT'S WORD. ***
+      The goal was to take MUST-IMPORT-FROM-SRC entries from FOUR to ZERO. AST-parsing
+      _ADJUDICATED at 37d20c0: 9 entries, 0 MUST-IMPORT-FROM-SRC, 9 INDEPENDENT. The sweep reports
+      9 colliding pairs -- exactly the number AC5 predicted (13 at planning -> 9), measured rather
+      than assumed at both ends.
+      NOTE THE COUNTING TRAP, which the orchestrator fell into first: `grep -c
+      MUST-IMPORT-FROM-SRC` returns a misleading number because it counts the string across reason
+      PROSE, not dict entries. Only an entry-accurate method (AST) gives the real count. Both
+      reviewers were warned and both used one.
+    wiki: sweep/facts/links/integrity CLEAN at 37d20c0
                    # *** THE PARK NOTE THAT STOOD HERE IS SUPERSEDED AND WAS FALSE AT HEAD. *** It
                    # read "2 of the 4 sites DONE, the other 2 NOT STARTED / RESUME FROM harness.py /
                    # that test does not exist in any commit". All of that became false when the
