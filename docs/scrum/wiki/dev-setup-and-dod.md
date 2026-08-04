@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: bfa5f77
+verified_sha: d554227
 verified_sprint: sprint-68
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
@@ -341,3 +341,8 @@ status: verified
   [[ingest-service-and-pull-loop]]/[[zone-rules]]); this article cites no line number or quoted
   wording from that comment, and states no Fact about DoD commands, contract counts, or fixture
   mechanics that it touches. Re-verified only; no Fact changed. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round): the sweep flagged `run.py` again. This round reordered
+  (did not change the substance of) the same comment's opening sentence so its fail-fast scope is
+  stated on its own line (see [[dynatrace-adapter]]/[[zone-rules]]); this article still cites no
+  line number or quoted wording from it. Re-verified only; no Fact changed. verified_sha ->
+  d554227.
