@@ -1,7 +1,7 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: bfa5f77
+verified_sha: d554227
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
@@ -362,3 +362,9 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   a `with caplog.at_level(...)` wrapper that asserted nothing about logs — the Facts above
   (`test_vendor_health.py (STORY-070) exercises ... WARNING record ... does NOT propagate`) never
   cited that wrapper. No Fact in this article changed. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round): the sweep flagged `run.py` again. This round reordered
+  (did not change the substance of) the call-site comment so its opening sentence states the
+  fail-fast scope on its own (see [[dynatrace-adapter]]/[[zone-rules]]). This article's own Fact
+  above already stated both halves (NOT fail-fast for the executor, IS fail-fast for a
+  misconfigured `native_id`) correctly and is unaffected. Re-verified only; no Fact changed.
+  verified_sha -> d554227.
