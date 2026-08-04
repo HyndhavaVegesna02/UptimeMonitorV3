@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py]
-verified_sha: bfa5f77
+verified_sha: d554227
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -891,6 +891,12 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   actually hold under — `composition/app.py:224` imports the private *package*
   `src.api.v1._shared.errors` across the same kind of zone boundary, which is a private PACKAGE,
   not a private name. No file in this article's `code_refs` changed (prose-only correction).
+- sprint-68 (STORY-204 second fix round): the sweep flagged `run.py` again. STORY-204's second fix
+  round reordered (did not change the substance of) the vendor-id drift probe's call-site comment
+  so its opening line states the fail-fast scope on its own (see [[dynatrace-adapter]]). The
+  blast-radius asymmetry this article records (ingest degrades one signal via `run_periodic`, the
+  probe aborts `main()` entirely) is unchanged. Re-verified only; no Fact changed. verified_sha ->
+  d554227.
 - sprint-68 (STORY-205): **Fixed and guarded ZR-8 Finding 1.** `composition/seed_dynamo.py`
   no longer hand-builds the `TOPOLOGY` partition's key schema; it now imports
   `app_item_key`/`component_item_key`/`signal_item_key` from the new
