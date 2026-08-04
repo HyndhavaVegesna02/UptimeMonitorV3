@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py]
-verified_sha: c815ebe
+verified_sha: bfa5f77
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -693,8 +693,9 @@ where a zone-wide regression would be caught.
   — the SAME validation, not a second copy of it — so a `native_id` misconfiguration
   is rejected identically on both paths. `composition/vendor_health.py` now imports
   and calls the adapter's builder instead of re-deriving it; it no longer builds any
-  DQL string itself. The bounded-window constant `_HEALTH_CHECK_WINDOW = "2h"` moved
-  with the builder (`query.py:133`). Full mechanism:
+  DQL string itself. The bounded-window constant `HEALTH_CHECK_WINDOW = "2h"` moved
+  with the builder (`query.py:133`; made public in the STORY-204 fix round — the only
+  private-name import across a module/zone boundary in `backend/src`). Full mechanism:
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §4.
 - **Why the eight `lint-imports` contracts pass both.** `composition` legally
   importing/reaching `adapters` — or, in `seed_dynamo.py`'s case, calling `boto3`
@@ -876,8 +877,11 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   `composition/vendor_health.py::check_vendor_id_health`) both reviewers independently found — it
   claimed the probe "never raises"/"propagates identically to the ingest path"; recorded the real
   blast-radius asymmetry (ingest degrades one signal via `run_periodic`, the probe aborts `main()`
-  entirely). code_refs already covered every file touched. verified_sha -> (see final sha-bump
-  entry below).
+  entirely). code_refs already covered every file touched. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 fix round, second pass): `_HEALTH_CHECK_WINDOW` made public
+  (`HEALTH_CHECK_WINDOW`, an unrelated minor from the same fix round — the only private-name
+  import across a module/zone boundary in `backend/src`). Finding 2's Fact above repointed to the
+  new public name. verified_sha -> bfa5f77.
 - sprint-68 (STORY-205): **Fixed and guarded ZR-8 Finding 1.** `composition/seed_dynamo.py`
   no longer hand-builds the `TOPOLOGY` partition's key schema; it now imports
   `app_item_key`/`component_item_key`/`signal_item_key` from the new
