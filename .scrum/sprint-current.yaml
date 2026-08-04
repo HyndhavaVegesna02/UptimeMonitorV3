@@ -544,9 +544,41 @@ stories:
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     points: 2
     order: 3
-    status: in_progress   # DISPATCHED 2026-08-04 at ad7302c, tree clean, immediately after
-                   # STORY-204 closed. Its dependency is now satisfied: STORY-204 relocated the
-                   # store.py citation that AC4 adjudicates, which is WHY 203 was ordered after it.
+    status: in_progress   # PARTIALLY DELIVERED -- 2 of the 4 sites are DONE AND GREEN, the other 2
+                   # are NOT STARTED. The implementer died on an ACCOUNT session limit ("resets
+                   # 4:10pm Asia/Calcutta") MID-STEP, unlike this sprint's two earlier deaths which
+                   # both happened before any write.
+                   # *** UNCOMMITTED SCRAPS WERE FOUND AND DISCARDED, and this is why the rule
+                   # exists: *** the working tree held a HALF-APPLIED change that would have taken
+                   # the guard RED. It had DELETED harness.py's two _ADJUDICATED entries (:754,
+                   # :757) while harness.py ITSELF WAS NEVER FIXED -- so the guard would have had no
+                   # adjudication for a still-live collision -- plus imports in
+                   # test_harness_assertions.py for an AC2 test that was never written. Neither half
+                   # stands alone. Discarded per the standing rule (last green commit is truth), NOT
+                   # salvaged. Nothing of value was lost: the deleted reason texts live at HEAD.
+                   # STATE VERIFIED AFTER DISCARD, not assumed: tree clean at 691227f, full suite
+                   # 710 passed / 0 SKIPPED, and the 40 ZR-3 + demo_loop_gate tests green.
+                   # DEPENDENCY WAS SATISFIED: STORY-204 relocated the store.py citation that AC4
+                   # adjudicates, which is WHY 203 was ordered after it.
+    measured_state: >-
+      MEASURED AT THE PARK, so the next session resumes on numbers instead of re-deriving them --
+      but AC5 STILL REQUIRES ITS OWN BEFORE/AFTER RUN; these are a resume aid, not evidence.
+        `python tools/zr3_duplicate_sweep.py` -> 11 colliding pairs (13 at planning, minus the 2
+          just fixed). THE STORY'S 13 -> 9 ARITHMETIC IS THEREFORE HOLDING: 11 now, and closing
+          harness.py's two takes it to 9 exactly as predicted.
+        `_ADJUDICATED` -> 11 entries: 2 MUST-IMPORT-FROM-SRC + 9 INDEPENDENT.
+        The 2 remaining MUST-IMPORT-FROM-SRC are BOTH in harness.py, at :754 and :757 -- the
+          table-name pair, which is the AC2 blocklist trap.
+      Note `grep -c MUST-IMPORT-FROM-SRC` returns 9 and is MISLEADING -- it counts the string across
+      reason prose, not entries. The 2 above came from AST-parsing the dict.
+    done_so_far: >-
+      TWO COMMITS, both green, both the `"us-east-1"` half of the story:
+        e9cb8c8 -- env_matrix.py imports Settings.aws_region instead of re-declaring "us-east-1"
+        691227f -- failure_path_reality_gate.py, the same fix (it was a THIRD hardcode of the
+          same default)
+      RESUME FROM: harness.py's two table-name literals (:754, :757), then AC2 through AC7. The
+      implementer had confirmed RED for both remaining sites and was writing the AC2 blocklist test
+      when it died -- that test does not exist in any commit.
                    # THREE LESSONS FROM 204 CARRIED INTO THIS BRIEF, not left in the retro:
                    #   1. SWEEP, DON'T LIST. A named citation list failed twice on 204; only an
                    #      exhaustive re-derivation + verification grep closed it. AC1 and AC3 here
