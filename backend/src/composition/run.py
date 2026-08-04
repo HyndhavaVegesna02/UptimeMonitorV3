@@ -184,15 +184,16 @@ async def main() -> None:
     config = load_config(settings.config_dir)
     clock = SystemClock()
 
-    # STORY-070: loud (NOT fail-fast) vendor-id drift probe, run once here
-    # before the engine/loops are built, so a configured-but-empty Dynatrace
-    # monitor id surfaces as early in startup as possible. Uses its own Grail
+    # STORY-070: loud vendor-id drift probe, run once here before the
+    # engine/loops are built -- NOT fail-fast for the EXECUTOR (an HTTP
+    # failure/timeout for one monitor is caught and logged internally, never
+    # propagated here), but IS fail-fast for a misconfigured `native_id`
+    # (STORY-204). Run so a configured-but-empty Dynatrace monitor id
+    # surfaces as early in startup as possible (that is what "loud" refers
+    # to above). Uses its own Grail
     # executor instance (cheap: just a closure over the endpoint/headers, no
     # network call until invoked) so this never depends on `build_live_loop`
-    # having run yet. `check_vendor_id_health` is NOT fail-fast for the
-    # EXECUTOR -- a probe error for one monitor (HTTP failure, timeout) is
-    # caught and logged internally, never propagated here. It IS fail-fast
-    # for a misconfigured `native_id` (STORY-204): the query-build call sits
+    # having run yet. For the misconfigured-`native_id` case: the query-build call sits
     # outside that try/except, so a DQL-breaking character raises
     # `InvalidNativeIdError` HERE and aborts `main()` before
     # `seed_topology_dynamo`/`build_live_loop` ever run. This is NOT the same
