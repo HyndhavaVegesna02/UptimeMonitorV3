@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: 1c07def
+verified_sha: b72750e
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -402,6 +402,12 @@ governs how much these codes may be trusted.
   against this file: zero hits **outside this entry** — the entry's own prose and its quoted
   grep pattern are matches, so a bare "zero hits" no longer reproduces; re-running against the
   file with this paragraph excluded is the reproducible form). verified_sha -> `1c07def`.
+- sprint-68 (STORY-203 fix round): RE-VERIFIED, no content change. A quality-review minor added a
+  named failure message to each of `harness.py`'s two AC1(b) blocklist asserts (`:761-774`,
+  widened from `:761-768`; commit `b72750e`) — the only code_ref this article holds that changed
+  since the entry above. Checked the exact diff directly: it adds two `f"AC1(b) FAILED: …"` string
+  literals and no new line/value this article's Facts cite (the AC8 dict-key Facts below reference
+  unrelated sites). Nothing here made false. verified_sha -> `b72750e`.
 - sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete —
   fixed four kinds of stale/overstated citation this round, all found by re-deriving every
   `query.py` citation in the repo against the real file rather than trusting a named list: (1) the
