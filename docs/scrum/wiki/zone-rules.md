@@ -688,7 +688,7 @@ where a zone-wide regression would be caught.
   FIRST, at loop startup, and would instead silently build a malformed query. **The
   fix (option (b), decided at refinement, the same shape as Finding 1's):** the
   builder itself moved into the adapter as `build_vendor_health_dql`
-  (`backend/src/adapters/inbound/dynatrace/query.py:136-155`), sharing a new
+  (`backend/src/adapters/inbound/dynatrace/query.py:139-158`), sharing a new
   `_reject_dql_breaking_native_id` helper (`query.py:63-80`) with `build_dql_query`
   — the SAME validation, not a second copy of it — so a `native_id` misconfiguration
   is rejected identically on both paths. `composition/vendor_health.py` now imports
@@ -821,6 +821,14 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-204 third fix round): the second fix round fixed the `query.py:133`->`:136`
+  single-point citation (below) but missed a DIFFERENT stale pattern in Finding 2's own body: the
+  `build_vendor_health_dql` whole-function citation, `query.py:136-155`, was that span BEFORE the
+  fix round's 3-line "PUBLIC" comment insertion and needed the same +3 shift, to `:139-158` —
+  corrected below. Found by re-deriving every `query.py` citation in the repo against the real
+  file, not by trusting a named list (a named four-site list given for this round was itself
+  incomplete). No Fact's substance changed; citation-only. verified_sha -> 81a1351 (this article's
+  content commit is the direct child of that sha).
 - sprint-68 (STORY-204): **Fixed and guarded ZR-8 Finding 2 — the second and final live
   violation this rule adjudicated.** `composition/vendor_health.py` no longer builds any DQL
   string; `build_vendor_health_query` relocated into
