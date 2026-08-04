@@ -694,8 +694,11 @@ where a zone-wide regression would be caught.
   is rejected identically on both paths. `composition/vendor_health.py` now imports
   and calls the adapter's builder instead of re-deriving it; it no longer builds any
   DQL string itself. The bounded-window constant `HEALTH_CHECK_WINDOW = "2h"` moved
-  with the builder (`query.py:133`; made public in the STORY-204 fix round — the only
-  private-name import across a module/zone boundary in `backend/src`). Full mechanism:
+  with the builder (`query.py:136`; made public in the STORY-204 fix round — the only
+  private-**name** import across a module AND zone boundary in `backend/src`, under a
+  leading-underscore-*symbol* reading; `composition/app.py:224` imports the private *package*
+  `src.api.v1._shared.errors` across a zone boundary too, which is a private PACKAGE, not a
+  private name). Full mechanism:
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §4.
 - **Why the eight `lint-imports` contracts pass both.** `composition` legally
   importing/reaching `adapters` — or, in `seed_dynamo.py`'s case, calling `boto3`
@@ -879,9 +882,15 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   blast-radius asymmetry (ingest degrades one signal via `run_periodic`, the probe aborts `main()`
   entirely). code_refs already covered every file touched. verified_sha -> bfa5f77.
 - sprint-68 (STORY-204 fix round, second pass): `_HEALTH_CHECK_WINDOW` made public
-  (`HEALTH_CHECK_WINDOW`, an unrelated minor from the same fix round — the only private-name
-  import across a module/zone boundary in `backend/src`). Finding 2's Fact above repointed to the
-  new public name. verified_sha -> bfa5f77.
+  (`HEALTH_CHECK_WINDOW`, an unrelated minor from the same fix round — the only private-**name**
+  import across a module AND zone boundary in `backend/src`, under a leading-underscore-*symbol*
+  reading). Finding 2's Fact above repointed to the new public name. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round): fixed a stale line ref (`query.py:133` -> `:136`, moved
+  by bfa5f77's added comment lines) in Finding 2's Fact above, and narrowed both "the only
+  private-name import" occurrences in this article to the leading-underscore-*symbol* reading they
+  actually hold under — `composition/app.py:224` imports the private *package*
+  `src.api.v1._shared.errors` across the same kind of zone boundary, which is a private PACKAGE,
+  not a private name. No file in this article's `code_refs` changed (prose-only correction).
 - sprint-68 (STORY-205): **Fixed and guarded ZR-8 Finding 1.** `composition/seed_dynamo.py`
   no longer hand-builds the `TOPOLOGY` partition's key schema; it now imports
   `app_item_key`/`component_item_key`/`signal_item_key` from the new
