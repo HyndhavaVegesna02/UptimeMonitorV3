@@ -118,9 +118,12 @@ real recovery PUBLISH, all driven through the same harness and asserted from per
 - The vendor-health answer is `[{"count()": count}]` (`store.py:85`), counted inside
   `request_instant - VENDOR_HEALTH_WINDOW` (`store.py:75-84`). `VENDOR_HEALTH_WINDOW` is a
   2-hour literal (`store.py:24`) that mirrors `HEALTH_CHECK_WINDOW`
-  (`adapters/inbound/dynatrace/query.py:133`; relocated there from
+  (`adapters/inbound/dynatrace/query.py:136`; relocated there from
   `composition/vendor_health.py:37` at STORY-204, made public in the STORY-204 fix round — the
-  only private-name import across a module/zone boundary in `backend/src`) but is deliberately NOT
+  only private-**name** import across a module AND zone boundary in `backend/src`, under a
+  leading-underscore-*symbol* reading; `composition/app.py:224` imports the private *package*
+  `src.api.v1._shared.errors` across a zone boundary too, which is a private PACKAGE, not a
+  private name) but is deliberately NOT
   imported — the window is part of the wire contract the engine answers, not an implementation
   detail borrowed from the adapter that builds the query. **STORY-180 AC2** closed the divergence
   risk this created: `test_vendor_health_window_matches_the_composition_health_check_window`
@@ -407,14 +410,23 @@ governs how much these codes may be trusted.
   that sha; see the self-reference note elsewhere in this History for why the child's own sha
   cannot be recorded here).
 - sprint-68 (STORY-204 fix round): `_HEALTH_CHECK_WINDOW` made public
-  (`HEALTH_CHECK_WINDOW`) at its one declaration (`query.py`) — the only private-name
-  import across a module AND zone boundary in `backend/src`. Repointed the two Facts
+  (`HEALTH_CHECK_WINDOW`) at its one declaration (`query.py`) — the only private-**name**
+  import across a module AND zone boundary in `backend/src`, under a
+  leading-underscore-*symbol* reading. Repointed the two Facts
   above that named the old private form (the `VENDOR_HEALTH_WINDOW` mirror comment,
   the equality test's docstring/parse citation) and `tools/demo_engine/store.py`'s own
   comment (line count unchanged, so `store.py:24`'s `VENDOR_HEALTH_WINDOW` line — and
   the ZR-3 ledger's `(store.py, 24)` key — is unaffected). This article's own History
   entries above stay in their original historical wording (they narrate what STORY-204
   did at the time, which used the private name). verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round): fixed a stale line ref
+  (`adapters/inbound/dynatrace/query.py:133` -> `:136`, moved by bfa5f77's added comment
+  lines) in the `VENDOR_HEALTH_WINDOW`-mirror Fact above, and narrowed both "the only
+  private-name import" occurrences in this article to the leading-underscore-*symbol*
+  reading they actually hold under — `composition/app.py:224` imports the private
+  *package* `src.api.v1._shared.errors` across the same kind of zone boundary, which is
+  a private PACKAGE, not a private name. No file in this article's `code_refs` changed
+  (prose-only correction).
 - sprint-68 (STORY-205): RE-VERIFIED, no content change. `tools/demo_loop_gate/
   failure_path_reality_gate.py` (a `code_ref`) had its `_component_repo` docstring's
   key-schema citation repointed from `dynamo_component_repository.py:36-41` (already
