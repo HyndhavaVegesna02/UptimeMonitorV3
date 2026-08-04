@@ -74,6 +74,7 @@ from demo_engine.scenario import load_scenario_file  # noqa: E402
 from src.adapters.persistence.dynamo_component_repository import (  # noqa: E402
     DynamoComponentRepository,
 )
+from src.composition.settings import Settings  # noqa: E402
 from src.core.domain.status import ComponentStatus  # noqa: E402
 
 from demo_loop_gate.harness import (  # noqa: E402
@@ -146,7 +147,7 @@ POISON_SIGNAL_KEY = "search-service-query"
 #: Cost the first run of this gate; kept here so the next reader does not pay it
 #: again.
 _DUMMY_LOCAL_CREDENTIAL = "test"
-_REGION = "us-east-1"
+_REGION = Settings.aws_region
 
 
 def _dynamo():

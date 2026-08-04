@@ -74,19 +74,15 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as :30 "
         "above, a different file."
     ),
-    ("tools/demo_loop_gate/failure_path_reality_gate.py", 149): (
-        'MUST-IMPORT-FROM-SRC (MINOR): _REGION = "us-east-1" re-declares '
-        "Settings.aws_region's default a second, independent time (a third "
-        "hardcode counting env_matrix.py:49, re-keyed from :39 by STORY-202's "
-        "own AC2 import block -- see the :49 entry above). Fix: STORY-203."
-    ),
-    ("tools/demo_loop_gate/failure_path_reality_gate.py", 394): (
+    ("tools/demo_loop_gate/failure_path_reality_gate.py", 395): (
         "INDEPENDENT: a self-test fixture value "
         '("poison_signal_locations": 3), unrelated to '
-        "FreshnessConfig.stale_after_cycles. (Re-keyed from :390 by STORY-205's "
-        "own `_component_repo` docstring edit, which displaced this "
-        "pre-existing collision without retiring it -- the collision is "
-        "unchanged, only its line moved.)"
+        "FreshnessConfig.stale_after_cycles. (Re-keyed from :390 to :394 by "
+        "STORY-205's own `_component_repo` docstring edit; re-keyed again "
+        "from :394 to :395 by STORY-203's own failure_path_reality_gate.py "
+        "import-block edit (adding `from src.composition.settings import "
+        "Settings`), which displaced this pre-existing collision without "
+        "retiring it -- the collision is unchanged, only its line moved.)"
     ),
     ("tools/demo_loop_gate/guard_reality_gate.py", 23): (
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as above, a "
