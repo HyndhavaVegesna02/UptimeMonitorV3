@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: c2fd3d2
+verified_sha: 1c07def
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -392,6 +392,14 @@ governs how much these codes may be trusted.
 
 ## History
 
+- sprint-68 (STORY-203): RE-VERIFIED, no content change. The sweep flagged `harness.py`,
+  `env_matrix.py` and `failure_path_reality_gate.py` (all `code_refs`) for the ZR-3 fix ([[zone-rules]]):
+  the last four `MUST-IMPORT-FROM-SRC` collisions this project adjudicated (two
+  `Settings.aws_region` re-declarations, `harness.py`'s table-name blocklist) are fixed. No Fact
+  in this article cites a line number or value inside the changed spans, so nothing here was made
+  false — checked directly (`grep` for `harness.py:`/`env_matrix.py:`/
+  `failure_path_reality_gate.py:`/`aws_region`/`us-east-1`/`uptime-observations`/`uptime-control`
+  against this file: zero hits). verified_sha -> `1c07def`.
 - sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete —
   fixed four kinds of stale/overstated citation this round, all found by re-deriving every
   `query.py` citation in the repo against the real file rather than trusting a named list: (1) the
