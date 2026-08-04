@@ -720,11 +720,19 @@ stories:
       it is a legitimate outcome -- but leaving an _ADJUDICATED entry pointing at a closed story is
       a fail.
   - id: STORY-215
+    status_note_dispatch: >-
+      DISPATCHED 2026-08-04 at 2d352bc, tree clean, immediately after STORY-203 closed. LAST STORY
+      OF THE SPRINT. Its AC6 baseline dependency is now SATISFIED AND MEASURED: STORY-203 took the
+      sweep 13 -> 9, so AC6's "expect 9" is confirmed rather than forecast.
+      FOUR LESSONS CARRIED IN, all earned this sprint: sweep-don't-list; re-derive after your own
+      edits (STORY-203's fix round shifted its own ledger keys +6 and caught it); a brief states only
+      what was verified; and C3 is the constraint that has failed TWICE -- if it fails a third time
+      the process response is already written (RC-2, route it to the script rung).
     title: Close the remaining env-var-NAME drift — the two DYNATRACE_* names, plus the file that guards the publish guard
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     points: 3
     order: 4
-    status: todo
+    status: in_progress
     why_here: >-
       RUNS LAST; ENABLER FOR SPRINT 69's STORY-209. FOUR sites, not the two its old title named:
       (1) env_matrix.py:81,83 and (2) harness.py:614 re-type the DYNATRACE_* pair, whose DECLARING
