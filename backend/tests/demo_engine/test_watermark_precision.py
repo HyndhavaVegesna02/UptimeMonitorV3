@@ -1,6 +1,6 @@
 """STORY-148 AC4 — the watermark bound is PARSED, not string-compared.
 
-`query.py:96` emits `since.isoformat().replace("+00:00", "Z")`, whose
+`query.py:121` emits `since.isoformat().replace("+00:00", "Z")`, whose
 fractional precision varies: `datetime.isoformat()` omits the fraction
 entirely when `microsecond == 0` (0-digit) and emits exactly 6 digits
 otherwise, while real rows always carry 9 (`...746000000Z`, fixture:4). Any
