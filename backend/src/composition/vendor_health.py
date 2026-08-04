@@ -88,9 +88,19 @@ def check_vendor_id_health(*, config: Config, executor: Executor) -> None:
     IS fail-fast for a misconfigured `native_id`: `build_vendor_health_dql`
     raises `InvalidNativeIdError` for a DQL-breaking character BEFORE the
     executor is ever called, and that raise is deliberately outside the
-    try/except below, so it propagates out of this function identically to
-    the ingest path's `build_dql_query` (STORY-204 AC1) -- a misconfigured id
-    is a config error, not a transient probe failure.
+    try/except below, so it propagates out of this function -- a
+    misconfigured id is a config error, not a transient probe failure.
+
+    That raise is NOT blast-radius-equivalent to the ingest path, even
+    though both call the same `_reject_dql_breaking_native_id` validation.
+    On the ingest path a raising `build_dql_query` is caught PER-CYCLE by
+    `run_periodic` (`pull_loop.py::run_periodic`), so one bad `native_id`
+    degrades only that ONE signal and every other signal keeps ingesting. On
+    THIS probe path the raise propagates out of `check_vendor_id_health` and
+    aborts `main()` (`composition/run.py::main`) BEFORE
+    `seed_topology_dynamo` and before any loop is built -- one bad
+    `native_id` in config stops the ENTIRE loop process, not just one
+    signal.
     """
     for app in config.apps:
         for signal in app.signals:

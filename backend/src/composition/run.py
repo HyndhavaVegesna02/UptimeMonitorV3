@@ -189,8 +189,18 @@ async def main() -> None:
     # monitor id surfaces as early in startup as possible. Uses its own Grail
     # executor instance (cheap: just a closure over the endpoint/headers, no
     # network call until invoked) so this never depends on `build_live_loop`
-    # having run yet. `check_vendor_id_health` never raises -- a probe error
-    # for one monitor is caught and logged internally, never propagated here.
+    # having run yet. `check_vendor_id_health` is NOT fail-fast for the
+    # EXECUTOR -- a probe error for one monitor (HTTP failure, timeout) is
+    # caught and logged internally, never propagated here. It IS fail-fast
+    # for a misconfigured `native_id` (STORY-204): the query-build call sits
+    # outside that try/except, so a DQL-breaking character raises
+    # `InvalidNativeIdError` HERE and aborts `main()` before
+    # `seed_topology_dynamo`/`build_live_loop` ever run. This is NOT the same
+    # blast radius as the ingest path: there, `run_periodic`
+    # (`pull_loop.py::run_periodic`) catches the identical raise per-cycle,
+    # so a bad `native_id` degrades only that one signal and the rest keep
+    # ingesting. Here, one bad `native_id` in config crash-loops the ENTIRE
+    # loop process, not just one signal.
     health_executor = make_grail_executor(
         env_url=secrets.dynatrace_env_url,
         api_token=secrets.dynatrace_api_token,
