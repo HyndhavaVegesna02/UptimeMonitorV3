@@ -544,7 +544,18 @@ stories:
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     points: 2
     order: 3
-    status: todo
+    status: in_progress   # DISPATCHED 2026-08-04 at ad7302c, tree clean, immediately after
+                   # STORY-204 closed. Its dependency is now satisfied: STORY-204 relocated the
+                   # store.py citation that AC4 adjudicates, which is WHY 203 was ordered after it.
+                   # THREE LESSONS FROM 204 CARRIED INTO THIS BRIEF, not left in the retro:
+                   #   1. SWEEP, DON'T LIST. A named citation list failed twice on 204; only an
+                   #      exhaustive re-derivation + verification grep closed it. AC1 and AC3 here
+                   #      are both citation/line-number work -- the same trap, pre-armed.
+                   #   2. RE-DERIVE AFTER 204's EDITS. 204's three fix rounds re-keyed _ADJUDICATED
+                   #      twice and rewrote store.py's comment block. Every line number in this
+                   #      story's file predates that. NOTHING quoted in the story is trustworthy.
+                   #   3. THE BRIEF STATES ONLY WHAT WAS VERIFIED. 204's headline defect was an
+                   #      orchestrator assertion taken on faith into a `verified` wiki Fact.
     why_here: >-
       Four MUST-IMPORT-FROM-SRC entries, all MINOR, NONE a live defect today -- every value
       currently agrees; each is a drift risk the next person editing the backend/src/ side cannot
