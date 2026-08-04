@@ -100,7 +100,7 @@ real recovery PUBLISH, all driven through the same harness and asserted from per
 - `parse_query` (`query_grammar.py:71`) recognizes exactly the two DQL shapes production emits: the
   ingest grammar from `build_dql_query` (`adapters/inbound/dynatrace/query.py:83-125`) and the
   vendor-health `summarize count()` probe from `build_vendor_health_dql`
-  (`adapters/inbound/dynatrace/query.py:136-155`; relocated there from
+  (`adapters/inbound/dynatrace/query.py:139-158`; relocated there from
   `composition/vendor_health.py:40-53` at STORY-204, ZR-8 finding 2 — query-construction logic
   lives in exactly one adapter).
 - Anything else raises `UnrecognizedDqlQueryError` (`query_grammar.py:36`, raised at `:80` and
@@ -392,6 +392,18 @@ governs how much these codes may be trusted.
 
 ## History
 
+- sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete — it
+  fixed three `query.py:133`→`:136` sites and narrowed "the only private-name import" in five wiki
+  places, but missed a DIFFERENT stale pattern: the whole-function citation for
+  `build_vendor_health_dql` (`query.py:136-155`, its span BEFORE the fix round's 3-line "PUBLIC"
+  comment insertion) needed the same +3 shift, to `:139-158` — found here (the two-grammars
+  section, above) and in `query_grammar.py:11` and `test_vendor_health_query.py:4` (both
+  `code_refs`), by re-deriving every `query.py` citation in the repo against the real file rather
+  than trusting a named list. Also narrowed the one remaining overstated "only private-name import"
+  occurrence this article's own second-fix-round entry had declined as out of scope:
+  `test_vendor_health_query.py`'s docstring, same wording as the wiki fix below. Citation/wording
+  only, no behaviour change. verified_sha -> 81a1351 (this article's content commit is the direct
+  child of that sha).
 - sprint-68 (STORY-204): `build_vendor_health_query` relocated from `composition/vendor_health.py`
   into `adapters/inbound/dynatrace/query.py` as `build_vendor_health_dql` (ZR-8 finding 2 — see
   [[zone-rules]]), sharing a new `_reject_dql_breaking_native_id` validation helper with
