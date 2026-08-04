@@ -399,7 +399,9 @@ governs how much these codes may be trusted.
   in this article cites a line number or value inside the changed spans, so nothing here was made
   false — checked directly (`grep` for `harness.py:`/`env_matrix.py:`/
   `failure_path_reality_gate.py:`/`aws_region`/`us-east-1`/`uptime-observations`/`uptime-control`
-  against this file: zero hits). verified_sha -> `1c07def`.
+  against this file: zero hits **outside this entry** — the entry's own prose and its quoted
+  grep pattern are matches, so a bare "zero hits" no longer reproduces; re-running against the
+  file with this paragraph excluded is the reproducible form). verified_sha -> `1c07def`.
 - sprint-68 (STORY-204 third fix round): the second fix round's sweep was still incomplete —
   fixed four kinds of stale/overstated citation this round, all found by re-deriving every
   `query.py` citation in the repo against the real file rather than trusting a named list: (1) the
