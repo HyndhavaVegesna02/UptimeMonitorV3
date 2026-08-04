@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: c815ebe
+verified_sha: bfa5f77
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -117,14 +117,15 @@ real recovery PUBLISH, all driven through the same harness and asserted from per
   and results are sorted by parsed timestamp (`store.py:61-73`).
 - The vendor-health answer is `[{"count()": count}]` (`store.py:85`), counted inside
   `request_instant - VENDOR_HEALTH_WINDOW` (`store.py:75-84`). `VENDOR_HEALTH_WINDOW` is a
-  2-hour literal (`store.py:24`) that mirrors `_HEALTH_CHECK_WINDOW`
+  2-hour literal (`store.py:24`) that mirrors `HEALTH_CHECK_WINDOW`
   (`adapters/inbound/dynatrace/query.py:133`; relocated there from
-  `composition/vendor_health.py:37` at STORY-204) but is deliberately NOT imported — the window is
-  part of the wire contract the engine answers, not an implementation detail borrowed from the
-  adapter that builds the query. **STORY-180 AC2** closed the divergence risk this created:
-  `test_vendor_health_window_matches_the_composition_health_check_window`
+  `composition/vendor_health.py:37` at STORY-204, made public in the STORY-204 fix round — the
+  only private-name import across a module/zone boundary in `backend/src`) but is deliberately NOT
+  imported — the window is part of the wire contract the engine answers, not an implementation
+  detail borrowed from the adapter that builds the query. **STORY-180 AC2** closed the divergence
+  risk this created: `test_vendor_health_window_matches_the_composition_health_check_window`
   (`test_vendor_health_query.py`) asserts the two are numerically equal (parsing
-  `_HEALTH_CHECK_WINDOW`'s `"<N>h"` shape in the TEST only) and fails if a future change to the
+  `HEALTH_CHECK_WINDOW`'s `"<N>h"` shape in the TEST only) and fails if a future change to the
   adapter constant is not mirrored here — the route decided at planning was this equality
   test, not teaching the engine to parse the DQL `from:` clause (`parse_query` never reads it at
   all: no `from:` regex exists, `query_grammar.py:30-33`, and `VendorHealthQuery` has no window
@@ -405,6 +406,15 @@ governs how much these codes may be trusted.
   code, not guessed. verified_sha -> c815ebe (this article's content commit is the direct child of
   that sha; see the self-reference note elsewhere in this History for why the child's own sha
   cannot be recorded here).
+- sprint-68 (STORY-204 fix round): `_HEALTH_CHECK_WINDOW` made public
+  (`HEALTH_CHECK_WINDOW`) at its one declaration (`query.py`) — the only private-name
+  import across a module AND zone boundary in `backend/src`. Repointed the two Facts
+  above that named the old private form (the `VENDOR_HEALTH_WINDOW` mirror comment,
+  the equality test's docstring/parse citation) and `tools/demo_engine/store.py`'s own
+  comment (line count unchanged, so `store.py:24`'s `VENDOR_HEALTH_WINDOW` line — and
+  the ZR-3 ledger's `(store.py, 24)` key — is unaffected). This article's own History
+  entries above stay in their original historical wording (they narrate what STORY-204
+  did at the time, which used the private name). verified_sha -> bfa5f77.
 - sprint-68 (STORY-205): RE-VERIFIED, no content change. `tools/demo_loop_gate/
   failure_path_reality_gate.py` (a `code_ref`) had its `_component_repo` docstring's
   key-schema citation repointed from `dynamo_component_repository.py:36-41` (already
