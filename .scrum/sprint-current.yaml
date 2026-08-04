@@ -326,19 +326,29 @@ stories:
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     points: 2
     order: 2
-    status: in_progress   # IMPLEMENTED AND REVIEWED, NOT DONE. Both reviews came back NEGATIVE and
-                   # the FIX ROUND HAS NOT RUN -- its implementer died on an ACCOUNT session limit
-                   # ("resets 4:50am Asia/Calcutta") before writing anything. Verified, not assumed:
-                   # `git log 22895b0..HEAD` is EMPTY and `git status` is clean.
-                   # NOT rolled back to `todo` -- unlike STORY-205's attempt-one park, real committed
-                   # work EXISTS here (d38334b..22895b0). `in_progress` is the honest state.
-                   # RC-1 MITIGATION WAS APPLIED AT DISPATCH AND IT WORKED: the quality reviewer's
-                   # brief forbade mutating tracked files and required the scratch-copy /
-                   # in-process-monkeypatch technique. It confirmed in its report that it modified no
-                   # tracked file, and still proved the AC4 guard evadable and reproduced the RED
-                   # evidence. Both concurrent reviewers were race-immune BY CONSTRUCTION this time.
-                   # KEEP DOING THIS for STORY-203 and STORY-215.
-    commits: d38334b..22895b0   # 3 commits, implementation only; NO fix-round commits exist yet
+    status: done   # DONE ON THE CODE, WITH ONE AC PERMANENTLY UNMET -- SEE po_adjudication_required.
+                   # Delivered across an implementation round plus THREE fix rounds, two full
+                   # concurrent review passes, a full 8/8 DoD gate and a live reality gate.
+                   # RC-1 MITIGATION WAS APPLIED AT EVERY DISPATCH AND IT WORKED: the quality
+                   # reviewer's brief forbade mutating tracked files and required the scratch-copy /
+                   # in-process-monkeypatch technique. Both reviewers confirmed they modified no
+                   # tracked file -- and the SECOND one still produced the sharpest finding of the
+                   # sprint under that constraint, proving it costs nothing. KEEP DOING THIS.
+    po_adjudication_required: >-
+      *** ONE AC IS PERMANENTLY NOT_MET AND ONLY THE PO CAN DISPOSE OF IT. NOT ROUNDED UP. ***
+      AC7b requires the zone-rules.md catalogue to move in the SAME COMMIT as the code that
+      falsifies it (constraint C3). The implementation put the code in d38334b and the catalogue in
+      22895b0, two commits later. For the life of two commits the catalogue described ZR-8 Finding 2
+      as a live violation while the code had already fixed it -- exactly the pattern C3 exists to
+      prevent. The spec reviewer confirmed NO dependency forced the split.
+      IT CANNOT BE CLOSED BY ANY FURTHER FIX ROUND. Only history rewriting would do it, and that was
+      forbidden deliberately: those SHAs are cited in four review reports and in this board, and
+      squashing would destroy the TDD commit cadence that IS the crash-recovery mechanism -- the
+      mechanism that made this sprint's TWO session-limit deaths survivable.
+      EVERY OTHER AC IS MET, including AC7b's content-correctness half. The PO's options are to
+      accept it as a filed exception, or to require a follow-up recording the precedent.
+    commits: d38334b..c443d64   # 4 rounds: implementation (3 commits) + fix round 1 (12) + fix
+                   # round 2 (11) + fix round 3 (11), plus orchestrator board commits.
     reviews:
       spec: >-
         FAIL. AC1-AC7 all MET and verified by RE-EXECUTION, not by reading: the reviewer created a
@@ -449,6 +459,78 @@ stories:
       DANGEROUS half (missing validation) is caught by the behaviour test, which was proven
       discriminating -- but the guard's docstring headline claims more than it checks and must
       disclose the limit, exactly as STORY-205's guard discloses its shape-narrowness.
+    fix_rounds: >-
+      THREE ROUNDS, AND THE SAME DEFECT CLASS RECURRED IN ALL THREE: a `file:line` citation
+      invalidated by this story's OWN edits. This is the single most useful thing the story taught.
+        ROUND 1 (5aa136f..fc787a7, 12 commits) -- closed all three prior MAJORs: the run.py
+          call-site comment, the `\r` wiki Fact, and ZR-8's uncited guard + false "no guard to
+          police" claim. Left `query.py:133` stale.
+        ROUND 2 (fc787a7..69716db, 11 commits) -- closed the two MAJORs the re-review found. Fixed
+          THREE instances of the stale `:133` citation and MISSED FOUR MORE. The orchestrator found
+          them by grepping AFTER the round reported complete -- and BOTH numbers were wrong in each,
+          not one: `:152` is a bare `\"\"\"` docstring close; the real construction is `:154-158`.
+        ROUND 3 (69716db..c443d64, 11 commits) -- the instruction was CHANGED from "fix these four
+          sites" to "SWEEP SYSTEMATICALLY AND PROVE IT BY RE-GREPPING", because a named list had by
+          then failed twice. The sweep found SIX MORE beyond the four named, including a DIFFERENT
+          CITATION PATTERN a site-list structurally could not see (whole-function spans
+          `query.py:136-155`, needing the same +3 shift to `:139-158`) and TWO UNRELATED PRE-EXISTING
+          errors (rows.py:22 `:87`->`:112`, test_watermark_precision.py:3 `:96`->`:121`).
+      THE LESSON, and it belongs in the retro: when a defect class recurs, STOP RE-ISSUING THE LIST
+      AND CHANGE THE METHOD. The orchestrator independently re-derived all 45 surviving
+      `query.py:N` citations against the real file afterwards; every live one resolves correctly and
+      the only remaining `:133`/`:152` hits are History bullets NARRATING the fix ("was X -> now Y"),
+      which are correct as historical narrative.
+    orchestrator_error: >-
+      *** THE SHARPEST FINDING OF THE SPRINT WAS AGAINST THE ORCHESTRATOR, AND IT WAS FOUND BY
+      RUNNING CODE RATHER THAN READING IT -- for the second sprint running. ***
+      Fix round 1's brief asserted, as justification for why `\r` matters, that "a CRLF-contaminated
+      native_id in config/apps/*.yaml is the realistic trigger". THE ORCHESTRATOR INVENTED THAT AND
+      NEVER RAN IT. The implementer reasonably took it at face value and wrote it into a
+      `verified`-stamped wiki Fact -- making the cure an instance of the disease it was curing
+      (MAJOR 2 was itself a dishonest `verified` stamp).
+      The quality re-review DISPROVED IT END-TO-END on scratch copies; the orchestrator then
+      confirmed independently by rewriting every line ending in config/apps/httpcheck.yaml to CRLF
+      and loading it through the real loader: native_id='HTTP_CHECK-38B092E93932C002',
+      contains_CR=False. `Path.read_text()` applies universal-newline translation, so `\r\n` becomes
+      `\n` before PyYAML ever sees it (composition/config.py:611).
+      A SECOND, SMALLER ONE: the orchestrator also asserted `_HEALTH_CHECK_WINDOW` was "the ONLY
+      private-name import anywhere in backend/src". True only for underscore-prefixed SYMBOLS --
+      composition/app.py:224 imports from the private PACKAGE src.api.v1._shared.errors across a
+      zone boundary. It propagated into FIVE wiki places plus a test docstring before being caught.
+      BOTH WERE CORRECTED IN THIS BOARD TOO (ba0909d), not only in the wiki -- the ledger that
+      enforces "never trusted-and-wrong" does not get an exemption from it.
+      THE RULE THIS YIELDS: an orchestrator assertion inside a brief is NOT evidence. A brief must
+      say what was verified and how, or omit the claim. An implementer trusting it is not the
+      implementer's error.
+    reality_gate: >-
+      PASS. Not more unit tests: a REAL demo-engine HTTP server on a real socket, driven by the REAL
+      unmodified `make_grail_executor`, through the REAL `check_vendor_id_health` -- the same call
+      run.py::main makes. The relocated builder's DQL was ANSWERED over the wire
+      (`executor(dql) -> [{'count()': 3}]`), proving the demo engine's grammar still parses what the
+      adapter now emits; a silent break here would disable the loop's startup probe.
+      Then the NEW failure path, which is the whole point of the story: all FOUR breaking characters
+      raised InvalidNativeIdError through the probe, each naming the offending value. Pre-fix this
+      path silently built a malformed query. Note the `\r` case raised too -- which independently
+      supports the CORRECTED justification above: the constant defends the DQL string regardless of
+      how the character got there, needing no ingress story at all.
+      No publisher was constructed anywhere in the harness, so nothing could reach Statuspage.
+    dod_evidence:   # FULL 8/8 at c443d64, exit 0, tree clean.
+      - {command: "python -m pytest", exit_code: 0, tail: "710 passed in 76.16s", note: "0 SKIPPED under REQUIRE_DYNAMO=1; 704 -> 710, this story adds 6. The 1-in-11 pagination flake did NOT fire in any run."}
+      - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, tail: "Contracts: 8 kept, 0 broken. (151 files, 432 dependencies)"}
+      - {command: "python -m ruff check .", exit_code: 0, tail: "All checks passed!"}
+      - {command: "python -m ruff format --check .", exit_code: 0, tail: "249 files already formatted"}
+      - {command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml", exit_code: 0, tail: ""}
+      - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+      - {command: "npm run build", exit_code: 0, tail: "clean"}
+      - {command: "npm run lint", exit_code: 0, tail: "eslint . (clean)"}
+    wiki: sweep/facts/links/integrity CLEAN at c443d64
+    scope_additions: >-
+      TWO, BOTH THE ORCHESTRATOR'S CALL AND NEITHER REQUIRED BY ANY AC -- flagged by the spec
+      reviewer and recorded rather than buried. (1) `_HEALTH_CHECK_WINDOW` renamed public
+      (`HEALTH_CHECK_WINDOW`): a real zone-hygiene fix, since a private name was being imported
+      across a zone boundary in a sprint about zone discipline. (2) the vestigial caplog wrapper
+      removed from the AC1/AC2 test. Both came from quality-review MINORs that the orchestrator
+      chose to fold into a fix round instead of deferring.
     why_here: >-
       MUST PRECEDE STORY-203 (see plan_verification finding 1). ZR-8 Finding 2: vendor_health.py
       builds DQL without query.py's _DQL_BREAKING_CHARS validation, and the probe it feeds runs
