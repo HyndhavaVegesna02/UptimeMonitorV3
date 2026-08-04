@@ -24,9 +24,16 @@ evidence.
 
 from __future__ import annotations
 
+import httpx
 import pytest
 from demo_loop_gate.harness import (
+    CONFIG_DIR_VAR,
+    DYNAMO_CONTROL_TABLE_VAR,
+    DYNAMO_ENDPOINT_URL_VAR,
+    DYNAMO_OBSERVATIONS_TABLE_VAR,
     RealityGateError,
+    Settings,
+    _assert_ac1_preconditions,
     _assert_ac3_ingest,
     _assert_ac4_vendor_health,
     _assert_ac5_approvals,
@@ -151,3 +158,66 @@ def test_parse_pytest_skip_count_reads_the_dash_q_summary_line():
 def test_parse_pytest_skip_count_reads_a_nonzero_skip_count():
     stdout = "........ss                    [100%]\n8 passed, 2 skipped in 0.51s\n"
     assert _parse_pytest_skip_count(stdout) == 2
+
+
+# STORY-203 AC2 -- `_assert_ac1_preconditions`'s AC1(b) blocklist (harness.py's
+# defensive assertions at the resolved-table-name checks) must still block
+# when the resolved value IS the production default, proving the STORY-203
+# fix (importing `Settings.dynamo_observations_table`/`dynamo_control_table`
+# into the blocklist's RIGHT-hand side) did not turn the check into a
+# tautology disconnected from `api_env`. Both table-name asserts sit ABOVE
+# `_assert_ac1_preconditions`'s first `httpx.get` call, so a fabricated
+# `api_env` dict reaches them with no network/subprocess mocking needed.
+
+
+def _fabricated_env(*, observations_table: str, control_table: str) -> dict:
+    return {
+        CONFIG_DIR_VAR: "C:/repo/config/demo",
+        DYNAMO_ENDPOINT_URL_VAR: "http://127.0.0.1:8021",
+        DYNAMO_OBSERVATIONS_TABLE_VAR: observations_table,
+        DYNAMO_CONTROL_TABLE_VAR: control_table,
+    }
+
+
+def test_assert_ac1_preconditions_blocklist_fires_on_production_observations_table():
+    bad_env = _fabricated_env(
+        observations_table=Settings.dynamo_observations_table,
+        control_table="story203-fresh-control-table",
+    )
+    with pytest.raises(AssertionError):
+        _assert_ac1_preconditions(
+            api_base="http://127.0.0.1:1", api_env=bad_env, expected_component_ids=[]
+        )
+
+
+def test_assert_ac1_preconditions_blocklist_fires_on_production_control_table():
+    bad_env = _fabricated_env(
+        observations_table="story203-fresh-observations-table",
+        control_table=Settings.dynamo_control_table,
+    )
+    with pytest.raises(AssertionError):
+        _assert_ac1_preconditions(
+            api_base="http://127.0.0.1:1", api_env=bad_env, expected_component_ids=[]
+        )
+
+
+def test_assert_ac1_preconditions_blocklist_does_not_fire_on_fresh_table_names():
+    """Two-sided (evidence discipline): a FRESH (non-default) pair of table
+    names must NOT trip the blocklist. Proves the two tests above discriminate
+    real input rather than raising `AssertionError` unconditionally --
+    exactly the tautology risk AC2 names (the LEFT-hand side, the resolved
+    value, being replaced by the imported constant instead of the RIGHT).
+
+    The call still fails past the blocklist (nothing is listening on
+    `127.0.0.1:1`), but that failure must be `httpx`'s connection error, never
+    the blocklist's `AssertionError` -- if it were, the blocklist would be
+    firing on every input, good or bad.
+    """
+    good_env = _fabricated_env(
+        observations_table="story203-fresh-observations-table",
+        control_table="story203-fresh-control-table",
+    )
+    with pytest.raises(httpx.HTTPError):
+        _assert_ac1_preconditions(
+            api_base="http://127.0.0.1:1", api_env=good_env, expected_component_ids=[]
+        )
