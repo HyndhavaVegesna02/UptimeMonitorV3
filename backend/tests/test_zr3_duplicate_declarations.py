@@ -14,18 +14,33 @@ audit-api-composition-tools.md` §3c's ledger (15 collisions at STORY-197's HEAD
 key names) and re-keyed the three collisions its own edits displaced without
 retiring (`env_matrix.py:39`->`:49`, `harness.py:747`->`:754`, `harness.py:750`->
 `:757`) plus two `INDEPENDENT` entries similarly displaced (`harness.py:903`->`:910`,
-`harness.py:964`->`:971`) -- current count: 13 (4 `MUST-IMPORT-FROM-SRC`, all filed to
-STORY-203; 9 `INDEPENDENT`).
+`harness.py:964`->`:971`) -- count after STORY-202: 13 (4 `MUST-IMPORT-FROM-SRC`, all
+filed to STORY-203; 9 `INDEPENDENT`).
+
+**STORY-203 fixed all four remaining `MUST-IMPORT-FROM-SRC` entries.** Two
+(`env_matrix.py:49`, `failure_path_reality_gate.py:149`) each hardcoded
+`Settings.aws_region`'s `"us-east-1"` default a second time; two
+(`harness.py:754`/`:757`) hardcoded `Settings.dynamo_observations_table`/
+`dynamo_control_table`'s defaults inside a defensive blocklist (fixed on its
+RIGHT-hand side only -- the LEFT stays the real resolved `api_env` read, or the
+blocklist becomes a tautology disconnected from the environment it exists to
+check; see `backend/tests/demo_loop_gate/test_harness_assertions.py`'s
+blocklist-discrimination tests). AC4's fifth, cross-representation case
+(`store.py`'s `VENDOR_HEALTH_WINDOW`, invisible to this sweep's
+literal-equality comparison) was a DECISION, not a fix: its existing
+wire-contract justification is upheld and its entry below is `INDEPENDENT`,
+not `MUST-IMPORT-FROM-SRC`. **Current count: 9, all `INDEPENDENT`, zero
+`MUST-IMPORT-FROM-SRC` remain.**
 
 Why an adjudicated-exemption list, not a hard zero-tolerance assertion (the
-live-violation problem, STORY-197 AC5/C3): the 4 remaining `MUST-IMPORT-FROM-SRC`
-collisions are REAL, unfixed ZR-3 violations (STORY-203, filed, not fixed here per C1
--- this story guards, it does not fix). Landing this guard with zero exemptions would
-fail the DoD gate on every future story until that fix story lands, which C4 forbids
-as a side effect of a guard. So this guard is green today only because every current
-collision is named, with a reason, below -- and it fails loudly the moment a NEW,
-unadjudicated collision appears anywhere under `tools/`, against anything
-`backend/src/` declares in either of ZR-3's two pinned shapes.
+live-violation problem, STORY-197 AC5/C3): every entry below is `INDEPENDENT`
+today, but the list stays an adjudication ledger, not a zero-tolerance
+assertion -- a future genuine `MUST-IMPORT-FROM-SRC` finding is expected to be
+filed here again, the same way STORY-203's four were. So this guard is green
+today only because every current collision is named, with a reason, below --
+and it fails loudly the moment a NEW, unadjudicated collision appears anywhere
+under `tools/`, against anything `backend/src/` declares in either of ZR-3's
+two pinned shapes.
 
 Maintenance note for a future author (AC3): a new `tools/` literal or `backend/src/`
 declaration that does NOT collide with anything needs no entry at all -- the scan is
@@ -56,7 +71,17 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "timedelta(hours=2)'s `hours=` keyword argument. The SEPARATE semantic "
         "finding on the whole VENDOR_HEALTH_WINDOW value (a str/timedelta "
         "cross-representation this sweep's literal-equality comparison cannot see "
-        "at all) is MUST-IMPORT-FROM-SRC, fix: STORY-203. (Re-keyed from :22 by "
+        "at all) is ALSO adjudicated INDEPENDENT, not MUST-IMPORT-FROM-SRC "
+        "(STORY-203 AC4, a decision rather than a fix): store.py:18-23's own "
+        "docstring upholds the wire-contract justification -- the window is "
+        "part of the vendor WIRE CONTRACT this engine answers, not an "
+        "implementation detail borrowed from "
+        "adapters/inbound/dynatrace/query.py's HEALTH_CHECK_WINDOW ('2h', "
+        "line 136) -- and that agreement is mechanically pinned by "
+        "backend/tests/demo_engine/test_vendor_health_query.py::"
+        "test_vendor_health_window_matches_the_composition_health_check_window, "
+        "so upholding the justification does not leave the two values "
+        "unguarded against silent divergence. (Re-keyed from :22 by "
         "STORY-204's own store.py docstring edit repointing the "
         "_HEALTH_CHECK_WINDOW citation to its new home in "
         "adapters/inbound/dynatrace/query.py, which displaced this "
@@ -120,7 +145,9 @@ def test_zr3_sweep_finds_no_unadjudicated_collision() -> None:
     deduped = sweep.find_collisions(_REPO_ROOT)
     assert deduped, (
         "The sweep found zero collisions -- that would be surprising (STORY-196's "
-        "AC3 demonstration case, harness.py:754/757 vs settings.py:21/22, should "
+        "original AC3 demonstration case, harness.py:754/757 vs settings.py:21/22, "
+        "was fixed by STORY-203, but the remaining INDEPENDENT collisions -- e.g. "
+        "harness.py:49 vs config.py's FreshnessConfig.reentry_cycles=2 -- should "
         "still be present) and is more likely a broken scan than a clean tree; "
         "re-check collect_src_declarations/collect_tools_literals before trusting "
         "an empty result."
