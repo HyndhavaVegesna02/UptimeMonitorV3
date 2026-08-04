@@ -184,7 +184,7 @@ def test_assert_ac1_preconditions_blocklist_fires_on_production_observations_tab
         observations_table=Settings.dynamo_observations_table,
         control_table="story203-fresh-control-table",
     )
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="AC1\\(b\\) FAILED.*observations table"):
         _assert_ac1_preconditions(
             api_base="http://127.0.0.1:1", api_env=bad_env, expected_component_ids=[]
         )
@@ -195,7 +195,7 @@ def test_assert_ac1_preconditions_blocklist_fires_on_production_control_table():
         observations_table="story203-fresh-observations-table",
         control_table=Settings.dynamo_control_table,
     )
-    with pytest.raises(AssertionError):
+    with pytest.raises(AssertionError, match="AC1\\(b\\) FAILED.*control table"):
         _assert_ac1_preconditions(
             api_base="http://127.0.0.1:1", api_env=bad_env, expected_component_ids=[]
         )

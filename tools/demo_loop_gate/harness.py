@@ -761,10 +761,16 @@ def _assert_ac1_preconditions(
     assert result["observations_table"] not in (
         Settings.dynamo_observations_table,
         "uptime-monitor-observations",
+    ), (
+        f"AC1(b) FAILED: observations table resolved to the production default "
+        f"{result['observations_table']!r}"
     )
     assert result["control_table"] not in (
         Settings.dynamo_control_table,
         "uptime-monitor-control",
+    ), (
+        f"AC1(b) FAILED: control table resolved to the production default "
+        f"{result['control_table']!r}"
     )
 
     # Indirect proof CONFIG_DIR really resolved to config/demo: /api/v1/topology
