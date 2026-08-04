@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py]
-verified_sha: 1c07def
+verified_sha: b68165c
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -269,7 +269,8 @@ where a zone-wide regression would be caught.
   second time.
 - **Fixed and guarded (STORY-203, sprint-68) — the last four `MUST-IMPORT-FROM-SRC`
   entries this rule adjudicated, zero remain.** `tools/demo_loop_gate/harness.py`'s
-  defensive blocklist (`:761-768` at HEAD) now compares the RESOLVED table name
+  defensive blocklist (`:761-774` at HEAD — a fix-round edit named each assert's failure
+  message, widening the span from `:761-768`) now compares the RESOLVED table name
   (read from the real `api_env`, unchanged) against
   `Settings.dynamo_observations_table`/`dynamo_control_table` — imported, not
   re-declared — on the blocklist's RIGHT-hand side only; replacing the LEFT-hand
@@ -864,6 +865,20 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   Facts this article cites by name, the same reason `test_vendor_health.py` was added at
   STORY-204). verified_sha -> `1c07def` (this article's content commit is the direct child of
   that sha, the same self-reference gap STORY-197/199/202/205 hit before it).
+- sprint-68 (STORY-203 fix round): a quality-review minor asked for a named failure message on
+  each of the AC1(b) blocklist asserts (`harness.py:761-774` at HEAD, widened from `:761-768`) —
+  every other assert in `_assert_ac1_preconditions` already carried one. That edit added lines
+  inside the function, shifting the two `INDEPENDENT` entries the bullet above re-keyed to
+  `:921`/`:982` a further +6 lines each, to `:927`/`:988`; re-keyed again in
+  `test_zr3_duplicate_declarations.py`, reason text preserved, `test_zr3_adjudications_are_still_current`
+  and `test_zr3_sweep_finds_no_unadjudicated_collision` both re-verified green. **This fix round
+  also missed constraint C3 once**: `zone-rules.md`'s ZR-3 update (this article, `3ab9c9b`) landed
+  after the code fixes it describes (`e9cb8c8`, `691227f`, `db949c8`) and after `1c07def`'s own
+  ledger rewrite — at least two committed states (`92241bd`, `1c07def`) carried this article still
+  asserting a live violation the tree had already fixed. Recorded plainly in
+  `docs/scrum/stories/STORY-203-tools-import-shared-literals.md`'s History per PO direction; not
+  rewritten, and AC7 is not claimed MET. verified_sha -> `b68165c` (this article's content
+  commit is the direct child of that sha, the same self-reference gap noted above).
 - sprint-68 (STORY-204 third fix round): the second fix round fixed the `query.py:133`->`:136`
   single-point citation (below) but missed a DIFFERENT stale pattern in Finding 2's own body: the
   `build_vendor_health_dql` whole-function citation, `query.py:136-155`, was that span BEFORE the
