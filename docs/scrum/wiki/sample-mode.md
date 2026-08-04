@@ -1,7 +1,7 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
 code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: bfa5f77
+verified_sha: d554227
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only because run.py and
@@ -323,6 +323,10 @@ produced ordinary data flowing through it.
   (see [[ingest-service-and-pull-loop]]/[[zone-rules]]), a block this article does not cite or
   quote — `build_live_loop`, the seam this article's Facts describe, is untouched. Re-verified
   only; no Fact changed. verified_sha -> bfa5f77.
+- sprint-68 (STORY-204 second fix round, unrelated story — mechanical staleness sweep only): the
+  sweep flagged `run.py` again after this round reordered (did not change the substance of) the
+  same comment. Still not cited or quoted here; `build_live_loop` is untouched. Re-verified only;
+  no Fact changed. verified_sha -> d554227.
 - sprint-67 (STORY-200, unrelated story — mechanical staleness sweep only): the sweep flagged
   `backend/tests/fakes.py`, which STORY-200 touched only in `FakeProposalRepository.record_approval_event`'s
   `action` type annotation (`str` -> `ProposalState`, matching the port). `FakeSampleModeRepository`
