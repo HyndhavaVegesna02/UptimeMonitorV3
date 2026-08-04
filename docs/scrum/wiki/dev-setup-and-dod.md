@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 0084326
-verified_sprint: sprint-67
+verified_sha: bfa5f77
+verified_sprint: sprint-68
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
 # and .scrum/definition-of-done.md both changed again, but neither change touches a Fact in this
@@ -336,3 +336,8 @@ status: verified
   superseded" bullets were corrected to say STORY-181 fixed the Railway/Vercel and STORY-017
   comments (rather than claiming they "still" name them). No Fact in THIS article quotes that
   History section's wording. Re-verified only; no further Fact change. verified_sha -> c6d7657.
+- sprint-68 (STORY-204 fix round): the sweep flagged `run.py`. STORY-204's fix round expanded the
+  vendor-id drift probe's call-site comment (correcting a stale "never raises" claim — see
+  [[ingest-service-and-pull-loop]]/[[zone-rules]]); this article cites no line number or quoted
+  wording from that comment, and states no Fact about DoD commands, contract counts, or fixture
+  mechanics that it touches. Re-verified only; no Fact changed. verified_sha -> bfa5f77.
