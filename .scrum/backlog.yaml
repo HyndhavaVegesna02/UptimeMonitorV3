@@ -2699,3 +2699,35 @@ stories:
     priority: 40
     type: chore
     sprint: null
+  - id: STORY-218
+    title: Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it
+    file: docs/scrum/stories/STORY-218-settings-defaults-declared-twice.md
+    status: draft   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
+                    # NARROWED A CLAIM THAT STORY MADE rather than finding a defect in it.
+                    # VERIFIED INDEPENDENTLY BY THE ORCHESTRATOR at settings.py before filing:
+                    # every default is declared TWICE -- as a dataclass field default (:19-21) AND
+                    # as an os.environ.get(..., "<literal>") fallback inside load_settings() (:47-51).
+                    # load_settings() is the ONLY construction site and passes EVERY field
+                    # explicitly, so THE CLASS-LEVEL DEFAULTS ARE NEVER WHAT PRODUCTION RESOLVES.
+                    # test_settings.py:64-66 pins the load_settings() path, not the class defaults.
+                    # WHY IT MATTERS: STORY-203 pointed harness.py's defensive table-name blocklist
+                    # at Settings.dynamo_observations_table and claims it "follows a future rename
+                    # automatically". True only of the DECLARED FIELD DEFAULT. Rename the live
+                    # default (load_settings' fallback + the test pinning it) and leave line 20
+                    # alone: THE FULL SUITE STAYS GREEN while the blocklist guards a name nothing
+                    # resolves to and PERMITS THE REAL PRODUCTION DEFAULT -- the exact failure the
+                    # blocklist exists to prevent.
+                    # WHY NO GUARD CATCHES IT: zr3_duplicate_sweep.py compares backend/src/
+                    # declarations against tools/ literals. This duplication is src-INTERNAL (both
+                    # declarations in ONE file), so the sweep is STRUCTURALLY blind to it -- the same
+                    # blind-spot class already documented for the cross-representation store.py case.
+                    # A clean ZR-3 sweep says NOTHING about it, which is how it survived the
+                    # sprint-66 audit and three ZR-3 stories.
+                    # TRAP FOR REFINEMENT: the obvious fix `os.environ.get(VAR) or Settings.<field>`
+                    # treats an explicitly-set EMPTY string as absent. Arguably right for a table
+                    # name, arguably wrong; :51's dynamo_endpoint_url already uses `or None`
+                    # deliberately. Decide PER FIELD and record the reasoning.
+    points: null    # unestimated -- refinement settles the canonical-declaration shape first
+    priority: 45    # above STORY-217: this one silently weakens a guard that ALREADY SHIPPED
+    type: chore
+    sprint: null

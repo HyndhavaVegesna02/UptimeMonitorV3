@@ -544,20 +544,27 @@ stories:
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     points: 2
     order: 3
-    status: in_progress   # PARTIALLY DELIVERED -- 2 of the 4 sites are DONE AND GREEN, the other 2
-                   # are NOT STARTED. The implementer died on an ACCOUNT session limit ("resets
-                   # 4:10pm Asia/Calcutta") MID-STEP, unlike this sprint's two earlier deaths which
-                   # both happened before any write.
-                   # *** UNCOMMITTED SCRAPS WERE FOUND AND DISCARDED, and this is why the rule
-                   # exists: *** the working tree held a HALF-APPLIED change that would have taken
-                   # the guard RED. It had DELETED harness.py's two _ADJUDICATED entries (:754,
-                   # :757) while harness.py ITSELF WAS NEVER FIXED -- so the guard would have had no
-                   # adjudication for a still-live collision -- plus imports in
-                   # test_harness_assertions.py for an AC2 test that was never written. Neither half
-                   # stands alone. Discarded per the standing rule (last green commit is truth), NOT
-                   # salvaged. Nothing of value was lost: the deleted reason texts live at HEAD.
-                   # STATE VERIFIED AFTER DISCARD, not assumed: tree clean at 691227f, full suite
-                   # 710 passed / 0 SKIPPED, and the 40 ZR-3 + demo_loop_gate tests green.
+    status: in_progress   # ALL FOUR SITES NOW DONE AND GREEN, reviewed, fix round in flight.
+                   # *** THE PARK NOTE THAT STOOD HERE IS SUPERSEDED AND WAS FALSE AT HEAD. *** It
+                   # read "2 of the 4 sites DONE, the other 2 NOT STARTED / RESUME FROM harness.py /
+                   # that test does not exist in any commit". All of that became false when the
+                   # story was resumed and finished. STORY-203's QUALITY REVIEWER CAUGHT IT AND
+                   # NAMED IT WITHOUT SCORING IT, since its brief did not say whose job resumption
+                   # board hygiene is. IT IS THE ORCHESTRATOR'S, and this correction is the answer:
+                   # a stale board is the same defect class this sprint has spent itself on --
+                   # prose made false by work that moved past it. The ledger is not exempt.
+                   # HISTORY WORTH KEEPING: this story was delivered ACROSS TWO SESSIONS, split by
+                   # the sprint's THIRD account session limit. That death was MID-STEP (the two
+                   # earlier ones died before any write) and left HALF-APPLIED SCRAPS that would
+                   # have taken the ZR-3 guard RED: harness.py's two _ADJUDICATED entries had been
+                   # DELETED while harness.py ITSELF WAS NEVER FIXED, so the guard had no
+                   # adjudication for a still-live collision, plus imports for an AC2 test that was
+                   # never written. Neither half stood alone. Discarded per last-green-commit-is-
+                   # truth, NOT salvaged; nothing was lost (the reason texts were intact at HEAD).
+                   # Verified after the discard, not assumed: 710 passed / 0 SKIPPED, tree clean.
+                   # THAT IS THE CASE FOR THE COMMIT-AFTER-EVERY-GREEN-STEP CADENCE. It is why two
+                   # of the four sites survived a mid-step death, and it is why this sprint has
+                   # survived three session limits with zero lost work.
                    # DEPENDENCY WAS SATISFIED: STORY-204 relocated the store.py citation that AC4
                    # adjudicates, which is WHY 203 was ordered after it.
     measured_state: >-
@@ -707,6 +714,52 @@ retro_candidates:
       Do NOT "fix" this by serialising the reviews. Their independence and concurrency is the point,
       and four consecutive sprints have had the quality reviewer catch something the spec reviewer
       did not.
+  - id: RC-2
+    raised: 2026-08-04 (STORY-204 and STORY-203, consecutively)
+    severity: >-
+      THE HEADLINE PROCESS FINDING OF THE SPRINT. Not an incident -- a PATTERN, and by the skill's
+      own ratchet-brake rule a pattern is evidence the RULE IS AT THE WRONG RUNG.
+    title: >-
+      CONSTRAINT C3 ("the catalogue moves in the SAME COMMIT as the code it describes") FAILED IN
+      TWO CONSECUTIVE STORIES DESPITE BEING PROMINENT IN EVERY BRIEF. It is prose. It must become
+      a mechanism.
+    what_happened: >-
+      STORY-204: code in d38334b, zone-rules.md not until 22895b0 -- two commits during which the
+      catalogue called ZR-8 Finding 2 a live violation that the tree had already fixed.
+      STORY-203: code in e9cb8c8/691227f/db949c8, zone-rules.md not until 3ab9c9b. The spec reviewer
+      PROVED the consequence instead of asserting it -- it checked out zone-rules.md at 1c07def and
+      found it still reading "A genuine, adjudicated violation ... harness.py:753-757 ... hardcodes
+      the literal table-name values ... now filed solely to STORY-203 (not fixed here)", asserting a
+      live violation the SAME TREE had already fixed. At least two committed states carried it.
+      NEITHER was a wrong final state. Both were commit SEQUENCING, and both are now permanent and
+      flagged for PO adjudication, because rewriting history to manufacture compliance was refused
+      (the SHAs are cited in six review reports, and squashing would destroy the TDD commit cadence
+      that is the crash-recovery mechanism -- see STORY-203's status note for why that cadence is
+      not negotiable this sprint).
+    why_prose_cannot_hold_it: >-
+      C3 was in the sprint constraints, in plan.md, in the board, and stated PROMINENTLY IN EVERY
+      IMPLEMENTER BRIEF the orchestrator wrote -- including, for STORY-203, an explicit "STORY-204
+      missed this and the miss is permanent; do not repeat it". It was still missed. Under working
+      agreement A15 §2 and the skill's ratchet brake, a rule that existed and went unfollowed must
+      be RELOCATED to a rung that holds, never restated more emphatically. Writing it in a sixth
+      place is the one response the process forbids.
+    the_rung: >-
+      THE SCRIPT RUNG, and the mechanism ALREADY EXISTS -- which matters, because A14's mid-sprint
+      tooling freeze does NOT block landing an already-decided lesson at an already-present
+      mechanism. `yt_wiki.py` already computes staleness as pure git arithmetic
+      (`git diff <verified_sha>..HEAD -- <code_refs>`). What is missing is only that it runs at HEAD.
+      PROPOSED: a `--range <base>..<head>` mode that walks each commit in a story's range and
+      asserts the sweep is CLEAN AT EVERY COMMIT, not merely at the tip. That is exactly C3,
+      expressed mechanically, and it would have gone RED on both stories at the offending commit.
+      Then make it a reviewer-run command or a DoD gate entry so it cannot be skipped by attention.
+      SIZE IT HONESTLY AT THE RETRO: this is real new code in yt_wiki.py, so under A14 it is
+      plausibly a STORY rather than an in-sprint ladder edit. Do not let that judgement become a
+      reason to take prose again -- that exact move is what the ratchet brake was written to stop,
+      and this repo already has a six-amendment family stating one idea because of it.
+    do_not: >-
+      Do NOT respond by adding a seventh restatement of C3, and do NOT respond by relaxing C3 --
+      the rule is correct and the defect it prevents (documents made false by the commit that wrote
+      them) was TEN of sprint 67's ELEVEN blocking findings.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
