@@ -235,7 +235,7 @@ def test_vendor_health_module_builds_no_dql_string_itself():
 
 @pytest.mark.parametrize("breaking_char", _DQL_BREAKING_CHARS)
 def test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char(
-    breaking_char, caplog
+    breaking_char,
 ):
     """STORY-204 AC1/AC2: the vendor-health probe path must reject a
     `native_id` containing any of the four DQL-breaking characters
@@ -255,9 +255,8 @@ def test_check_vendor_id_health_rejects_native_id_with_dql_breaking_char(
     def fake_executor(query: str) -> list[dict]:
         return [{"count()": 0}]
 
-    with caplog.at_level(logging.WARNING):
-        with pytest.raises(InvalidNativeIdError):
-            check_vendor_id_health(config=config, executor=fake_executor)
+    with pytest.raises(InvalidNativeIdError):
+        check_vendor_id_health(config=config, executor=fake_executor)
 
 
 def test_empty_config_is_a_no_op(caplog):
