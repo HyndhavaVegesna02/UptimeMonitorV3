@@ -732,7 +732,70 @@ stories:
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     points: 3
     order: 4
-    status: in_progress
+    status: in_progress   # CODE COMPLETE AND GATED, BUT *** UNREVIEWED ***. Not `done`, and not
+                   # rounded up to it: implementation (935cd70..7fb87fe) + an orchestrator-found
+                   # fix round (c752c14) + full 8/8 DoD gate + a live reality gate all passed, but
+                   # BOTH REVIEWERS DIED TOGETHER on the sprint's FOURTH account session limit
+                   # ("resets 3pm Asia/Calcutta") before returning a verdict.
+                   # Reviewers are READ-ONLY so nothing could be lost, but the tree was VERIFIED
+                   # anyway rather than assumed -- the spec reviewer's last line was a check for its
+                   # own leftover artifacts: tree clean at c752c14, `git worktree list` shows only
+                   # main plus the unrelated pre-existing yourteam-skill-analysis one, and the only
+                   # stash is the pre-existing 2026-07-14 STORY-017 spike.
+                   # RESUME = RE-DISPATCH BOTH REVIEWERS CONCURRENTLY. Nothing about the code needs
+                   # revisiting first. Their briefs must carry the pre-review defect below as a
+                   # CLAIM TO VERIFY, not a finding to trust.
+    commits: 935cd70..c752c14   # 4 implementation + 1 fix round. 4c180f5 in between is a board commit.
+    dod_evidence:   # FULL 8/8 at c752c14, exit 0, tree clean. Gate ran BEFORE review because the
+                    # orchestrator found the defect below pre-review and had it fixed first.
+      - {command: "python -m pytest", exit_code: 0, tail: "714 passed in 46.94s", note: "0 SKIPPED under REQUIRE_DYNAMO=1; 713 -> 714. The 1-in-11 pagination flake has NOT fired once this entire sprint."}
+      - {command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\"", exit_code: 0, tail: "Contracts: 8 kept, 0 broken."}
+      - {command: "python -m ruff check .", exit_code: 0, tail: "All checks passed!"}
+      - {command: "python -m ruff format --check .", exit_code: 0, tail: "249 files already formatted"}
+      - {command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml", exit_code: 0, tail: ""}
+      - {command: "npm test", exit_code: 0, tail: "Test Files 51 passed (51) | Tests 363 passed (363)"}
+      - {command: "npm run build", exit_code: 0, tail: "clean"}
+      - {command: "npm run lint", exit_code: 0, tail: "eslint . (clean)"}
+    orchestrator_found_defect: >-
+      *** FOUND PRE-REVIEW BY THE ORCHESTRATOR, BY PRINTING THE CITED LINES RATHER THAN READING
+      AROUND THEM -- AND IT IS C3's THIRD FAILURE THIS SPRINT. *** Fixed in c752c14; see RC-2's
+      `third_occurrence` for the process consequence, which is the load-bearing part.
+      Commit 935cd70 added DYNATRACE_* imports to env_matrix.py and harness.py, falsifying the
+      STORY-202-era ZR-3 Fact in zone-rules.md: it claimed env_matrix.py "imports all SEVEN" and
+      harness.py "imports only the FOUR" at six named re-type sites. At HEAD those were NINE and
+      FIVE, and the six cited line numbers pointed at a `print(`, an f-string fragment, two
+      comments, a blank line and an assignment.
+      WORSE THAN THE FIRST TWO C3 MISSES: STORY-204's and STORY-203's left a CORRECT end state and
+      failed only on sequencing. THIS ONE LEFT THE WIKI FALSE AT HEAD. Adding a correct new History
+      entry (7fb87fe) is not the same as repairing a Fact the same story broke.
+      *** AND IT DEFEATED THE TOOL. *** verified_sha had been bumped to b887883, so yt_wiki.py's git
+      arithmetic had nothing behind it and reported `sweep: CLEAN` OVER A FALSE FACT. A clean sweep
+      means only that verified_sha is not behind; it can never mean the Facts are true.
+      THE FIX ROUND WAS TOLD TO SWEEP, NOT SPOT-FIX, AND THAT PAID: it found MORE than was named --
+      harness.py has SEVEN re-type sites (not six), three further citations had shifted from the
+      same commit, and a citation_sweep.py false-positive count had drifted 11 -> 27 across six fix
+      rounds since STORY-197 without anyone re-running it.
+      IT ALSO DISCLOSED THE LIMIT OF ITS OWN VERIFICATION UNPROMPTED -- stated that a CLEAN sweep is
+      not evidence its Facts are true, listed exactly what it re-read, and said plainly it had NOT
+      line-by-line audited demo-engine.md's ~580 unrelated Fact lines, only targeted-checked the
+      spans this story's commits could have touched. That is the discipline this sprint set out to
+      install, arriving voluntarily rather than under instruction.
+    reality_gate: >-
+      PASS, run against the guard that actually matters. This story closed env-var-NAME drift on the
+      path that decides whether a process talks to the LIVE public Statuspage, so the check was the
+      guard itself through the REAL composition root.
+        settings.py declares NINE <NAME>_VAR constants, each consumed by symbol.
+        REAL create_app() under CONFIG_DIR=config/demo -> statuspage_mapping() == {} -- the guard
+          holds and no live StatuspagePublisher can be constructed. This is the ONLY safe way to
+          exercise this path: the repo-root .env supplies real Statuspage credentials from any
+          launch directory, so the assertion is on the DELEGATE, never on credential absence.
+          config/apps was never used.
+        Renamed CONFIG_DIR_VAR's VALUE and set only the new var -> load_settings().config_dir still
+          resolved 'config/demo'. Both sides read one symbol, so a rename cannot separate them --
+          which is the drift the story exists to close. Restored.
+        test_settings.py's `assert CONFIG_DIR_VAR == "CONFIG_DIR"` PIN survived untouched -- a test
+          asserting a constant's VALUE is protection; a test re-typing the name to consume it is
+          drift, and this story had to keep the first while removing the second.
     why_here: >-
       RUNS LAST; ENABLER FOR SPRINT 69's STORY-209. FOUR sites, not the two its old title named:
       (1) env_matrix.py:81,83 and (2) harness.py:614 re-type the DYNATRACE_* pair, whose DECLARING
