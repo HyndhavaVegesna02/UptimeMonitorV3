@@ -38,6 +38,13 @@ components:
 """
     (config_dir / "cli_app.yaml").write_text(yaml_content, encoding="utf-8")
 
+    # These two names are re-typed literals, not CONFIG_DIR_VAR/DYNAMO_ENDPOINT_URL_VAR
+    # imports, on purpose: this dict is a subprocess env, a real process boundary the
+    # CLI under test reads via os.environ, so there is nothing importable to cross it
+    # with -- the literal string IS the wire contract. Left deliberately, unlike
+    # test_demo_fleet_config.py's in-process setenv sites, which import the constants
+    # because they cross no such boundary; see that file's module docstring for the
+    # pin-vs-drift distinction this mirrors.
     env = {
         **os.environ,
         "DYNAMO_ENDPOINT_URL": dynamo_local.endpoint_url,
@@ -72,6 +79,8 @@ def test_seed_topology_cli_invalid_config_fails(dynamo_local, tmp_path):
     config_dir.mkdir()
     (config_dir / "bad.yaml").write_text("invalid_yaml: [unclosed", encoding="utf-8")
 
+    # Same subprocess-env-boundary rationale as the success test above: the two
+    # names are deliberately re-typed literals, not constant imports.
     env = {
         **os.environ,
         "DYNAMO_ENDPOINT_URL": dynamo_local.endpoint_url,
