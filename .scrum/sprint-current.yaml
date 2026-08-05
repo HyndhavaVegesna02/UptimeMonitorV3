@@ -967,8 +967,38 @@ retro_candidates:
       DISHONEST-STAMP path, e.g. by refusing to accept a verified_sha bump in a commit that touches
       the article's own code_refs without touching the Facts that cite them, or by recording WHICH
       Facts were re-read. Sizing this honestly is retro work; the point here is that the obvious
-      mechanism is necessary but NOT sufficient, and three occurrences is enough evidence to design
-      for both paths at once.
+      mechanism is necessary but NOT sufficient.
+    fourth_occurrence: >-
+      *** CORRECTION: THE COUNT IS FOUR, NOT THREE -- AND THE FOURTH IS THE ONE THAT SHOULD DRIVE
+      THE DESIGN. *** Found by STORY-215's QUALITY REVIEWER inside the very bullet written to
+      document the third occurrence, and verified independently by the orchestrator before being
+      recorded here. Everything above this field was written believing the count was three; it is
+      corrected rather than rewritten, because the sequence is itself the evidence.
+      WHAT WAS WRONG: the fix-round bullet said 935cd70's import insertion shifted the six harness.py
+      citations by +1. The real shift is +2, and HALF OF IT PREDATES STORY-215 ENTIRELY. Verified:
+        git show 1d43b1b:tools/demo_loop_gate/harness.py | sed -n '546p'
+          -> f"API (uvicorn) subprocess launched, pid={api_proc.pid}, "     <- NOT the cited site
+      So those six citations were ALREADY FALSE at STORY-203's own fix-round commit 1d43b1b.
+      STORY-203's import-block edit falsified them, and STORY-203 STAMPED verified_sha OVER THEM.
+      WHY THIS FOURTH CASE IS THE IMPORTANT ONE: STORY-203 never touched the cited CONTENT. It added
+      an import line elsewhere in harness.py, which shifted the lines underneath it. The Facts became
+      false through PURE LINE DISPLACEMENT by an unrelated edit in the same file -- and the stamp
+      then certified them. No reviewer caught it at the time; it surfaced two stories later, only
+      because a reviewer checked the arithmetic in a bullet about a different defect.
+      SO THE TWO FAILURE PATHS ARE NOT "SEQUENCING" AND "DISHONEST STAMP" -- THEY ARE:
+        (i) prose not landing with the code that falsified it (STORY-204, STORY-203 AC7), and
+        (ii) A STAMP CERTIFYING FACTS THE STAMPER DID NOT RE-READ -- which has now happened at least
+             TWICE (STORY-203's 1d43b1b, STORY-215's 7fb87fe) and which NO git-arithmetic check can
+             detect, because in both cases the article was legitimately stale, legitimately touched,
+             and legitimately re-stamped. The arithmetic was right. The claim was false.
+      DESIGN CONSEQUENCE, and it is sharper than the `--range` proposal above: line-number citations
+      into files that other stories edit are STRUCTURALLY fragile, and `verified_sha` is a
+      human-or-agent CLAIM that no sweep can audit. The retro should weigh (a) a citation checker
+      that RESOLVES each `file:line` against the file and fails when it lands on a blank line, a
+      comment, or a non-matching construct -- `tools/citation_sweep.py` ALREADY EXISTS and reports
+      27 failures today, up from a recorded 11, so the capability is present and unenforced -- and
+      (b) requiring a stamp to name which Facts were re-read. (a) would have caught ALL FOUR
+      occurrences; the `--range` sweep would have caught only the first two.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
