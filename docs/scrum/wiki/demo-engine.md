@@ -1,7 +1,7 @@
 ---
 title: The Grail demo engine — a local stand-in for the expired Dynatrace trial (tools/demo_engine/)
 code_refs: [tools/demo_engine/__init__.py, tools/demo_engine/rows.py, tools/demo_engine/query_grammar.py, tools/demo_engine/store.py, tools/demo_engine/server.py, tools/demo_engine/scenario.py, tools/demo_engine/assumed_failure_codes.py, backend/tests/demo_engine/test_rows.py, backend/tests/demo_engine/test_query_grammar.py, backend/tests/demo_engine/test_watermark_precision.py, backend/tests/demo_engine/test_vendor_health_query.py, backend/tests/demo_engine/test_server.py, backend/tests/demo_engine/test_via_grail_executor.py, backend/tests/demo_engine/test_assumed_failure_codes.py, backend/tests/demo_engine/test_scenario.py, backend/tests/demo_engine/test_scenario_coverage.py, backend/tests/test_demo_fleet_config.py, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/conftest.py, config/demo/fleet-core.yaml, config/demo/fleet-platform.yaml, config/demo/fleet-edge.yaml, config/demo/scenarios/clean-fleet.yaml, config/demo/scenarios/dark-location.yaml, config/demo/scenarios/dark-monitor.yaml, config/demo/scenarios/staggered-intervals.yaml, config/demo/scenarios/late-return.yaml, config/demo/scenarios/down-ladder.yaml, config/demo/scenarios/partial-breadth.yaml, config/demo/scenarios/degraded-ladder.yaml, config/demo/scenarios/poison-row.yaml, tools/demo_loop_gate/__init__.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, tools/demo_loop_gate/fleet_coverage.py, tools/demo_loop_gate/guard_reality_gate.py, tools/demo_loop_gate/backfill_reality_gate.py, tools/demo_loop_gate/failure_path_reality_gate.py, tools/demo_loop_gate/publisher_chain.py, tools/demo_loop_gate/evidence.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/dispatch.py]
-verified_sha: b72750e
+verified_sha: b887883
 verified_sprint: sprint-68
 status: verified          # verified | stale | archived
 # Re-verified 2026-07-30 (sprint-64, STORY-183) by the orchestrator. Changed paths in the range
@@ -392,6 +392,26 @@ governs how much these codes may be trusted.
 
 ## History
 
+- sprint-68 (STORY-215): RE-VERIFIED, no content change. The sweep flagged `harness.py`,
+  `env_matrix.py` (both `code_refs`) for the ZR-3 remainder fix ([[zone-rules]]): the two
+  `DYNATRACE_*` env-var NAMES are now imported from `settings.py`'s new
+  `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` constants instead of re-typed as
+  literals (`env_matrix.py:82,84`, `harness.py:615`'s dict-key access inside a
+  diagnostic `print`) — no behaviour change, same values flow to the same child-env
+  dict keys. Also flagged `backend/tests/test_demo_fleet_config.py` (a `code_ref`): its
+  `create_app()` publish-safety pair now sets four env vars through
+  `CONFIG_DIR_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
+  `STATUSPAGE_API_KEY_VAR` instead of re-typed literals. No Fact in this article cites
+  a line number inside any of the three changed spans (checked directly: `grep -no
+  'harness\.py:[0-9]*\|env_matrix\.py:[0-9]*\|test_demo_fleet_config\.py:[0-9]*'` against
+  this file returns only the bare `.py:` prefixes inside the STORY-203 History entry
+  below and this entry's own text, no trailing line number anywhere else), and the
+  publish-guard MECHANISM this article documents (`Config.statuspage_mapping()` empty
+  for `config/demo`, `build_publisher` falling through to `LoggingPublisher`) is
+  unchanged — the same two tests this article already cites by name
+  (`test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`,
+  the disjointness tests) still pass, unmodified in substance. verified_sha ->
+  `b887883`.
 - sprint-68 (STORY-203): RE-VERIFIED, no content change. The sweep flagged `harness.py`,
   `env_matrix.py` and `failure_path_reality_gate.py` (all `code_refs`) for the ZR-3 fix ([[zone-rules]]):
   the last four `MUST-IMPORT-FROM-SRC` collisions this project adjudicated (two

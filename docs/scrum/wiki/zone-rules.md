@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py]
-verified_sha: 1d43b1b
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py, backend/tests/test_live_secrets.py, backend/tests/test_demo_fleet_config.py, scripts/seed_topology.py]
+verified_sha: b887883
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -830,6 +830,68 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-215): **Closed STORY-202's remainder — the two `DYNATRACE_*`
+  env-var NAMES, plus a third and fourth `CONFIG_DIR` reader the sweep cannot see at
+  all.** `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` promoted in `settings.py`
+  (same `<NAME>_VAR` convention as the other seven), and `load_live_secrets` now reads
+  through them; `tools/demo_loop_gate/env_matrix.py:82,84` and `harness.py:615` (a
+  dict-key literal inside a `print`, not the f-string's own `"DYNATRACE_ENV_URL="`
+  text, which does not match) import the constants instead of re-typing them —
+  `grep -rn '"DYNATRACE_ENV_URL"\|"DYNATRACE_API_TOKEN"' tools/` now zero hits.
+  **Sweep count, re-derived at this story's own start commit and again after each
+  edit:** 9 (start, matching STORY-203's post-fix count) -> 12 with ONLY the two
+  constants declared and `tools/` left un-fixed (`test_zr3_sweep_finds_no_
+  unadjudicated_collision` went RED, naming exactly the three sites above — no more,
+  no fewer) -> 9 again once `tools/` was fixed in the same commit. Landing both
+  together is why the net is 9 -> 9, not a story that appears to leave the guard
+  broken. Adding the import line to `harness.py`'s existing `from
+  src.composition.settings import (...)` block re-keyed the two surviving
+  `INDEPENDENT` entries it had already re-keyed twice this sprint (STORY-202 then
+  STORY-203): `:927` -> `:928`, `:988` -> `:989`; re-keyed in
+  `test_zr3_duplicate_declarations.py`, reason text preserved, both ZR-3 guard tests
+  re-verified green.
+  **A fourth `MUST-IMPORT-FROM-SRC`-shaped site was found that this rule's own sweep
+  cannot see and never adjudicated**, because `tools/zr3_duplicate_sweep.py:209-211`
+  scans only `backend/src/` (declaring side) against `tools/` (consuming side) —
+  `backend/tests/test_demo_fleet_config.py:163-164,168-169,199-202` re-typed
+  `"CONFIG_DIR"`/`"DYNAMO_ENDPOINT_URL"`/`"STATUSPAGE_PAGE_ID"`/`"STATUSPAGE_API_KEY"`
+  as literals in the `create_app()` publish-safety pair (STORY-176), the last two
+  being the credential-name drift the "why only two rules were mechanised"
+  paragraph below already names among ZR-3's credential-safety drift risk. Fixed by
+  importing `CONFIG_DIR_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/
+  `STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR` — invisible to the sweep either
+  way, so this fix is verified by AC5's mutation, not by a sweep count.
+  `backend/tests/test_settings.py:30` (`assert CONFIG_DIR_VAR == "CONFIG_DIR"`) is
+  the PIN, not a duplication, and was left untouched — a test asserting a constant's
+  value is protection; a test re-typing the name to consume it is drift.
+  **A fifth site, also outside the sweep's two scanned trees**:
+  `scripts/seed_topology.py:25` read `CONFIG_DIR` via its own
+  `os.environ.get("CONFIG_DIR", "config/apps")`, independently declaring both the
+  name and the default a third time. Now calls `load_settings()` first and uses
+  `settings.config_dir`; confirmed at execution that `load_settings` was already
+  imported (`:20`) and called (`:34`), so this was a re-order, not a new dependency
+  — the AC's escape hatch for an import obstacle did not apply and was not used.
+  **AC5's two-sided mutation (renaming `CONFIG_DIR_VAR`'s VALUE in `settings.py`,
+  run pre-fix in an isolated `git worktree` with `PYTHONPATH=<worktree>/backend`,
+  `module.__file__` printed to prove the worktree tree ran):**
+  `test_demo_fleet_config.py:174` (the demo-side assertion) went RED —
+  `statuspage_mapping() = {'http-check': 'xdnywbx77npw'}`, delegate type
+  `BestEffortPublisher` — a WORKING detector, not rescued by this story's fix; while
+  `test_demo_fleet_config.py:206-212` (the live-side assertion) stayed GREEN, because
+  its own literal sets `CONFIG_DIR=config/apps`, which is also the resolved default
+  when the renamed var is unset — passing for the wrong reason regardless of what the
+  variable is called. That vacuity is what the site-3/site-5 fixes above close.
+  **No claim that the tools<->src name boundary is now fully closed**: this rule's
+  own sweep is structurally blind to `backend/tests/` and `scripts/`, so a future
+  re-typed name in either tree would not be caught by `test_zr3_sweep_finds_no_
+  unadjudicated_collision` — only by a mutation proof like AC5's, which is not a
+  standing guard (`ZR-5`'s STORY-209, sprint-69, is the nearest planned mechanisation,
+  and it is scoped to `CONFIG_DIR` parity between the two composition roots, not a
+  general `backend/tests/`/`scripts/` sweep widening). Added
+  `backend/tests/test_live_secrets.py` to `code_refs` (it now holds the
+  `DYNATRACE_*_VAR` pin this article's Compliant-citation reasoning depends on).
+  verified_sha -> b887883 (this article's content commit is the direct child of
+  that sha, the same self-reference gap STORY-197/199/202/203/205 hit before it).
 - sprint-68 (STORY-203): **Fixed and guarded ZR-3's last four `MUST-IMPORT-FROM-SRC` entries;
   zero remain.** `env_matrix.py:49` and `failure_path_reality_gate.py:149` (pre-fix line
   numbers; each fix's own import-block edit shifted the line by +1, to `:50`/`:150` at HEAD)
