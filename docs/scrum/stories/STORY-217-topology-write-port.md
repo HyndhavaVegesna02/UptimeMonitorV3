@@ -71,3 +71,23 @@ remembers a decision was made and on what grounds.
 
 The key schema itself (STORY-205, done). `ZR-8` Finding 2 (STORY-204). Changing *what*
 `seed_topology_dynamo` writes.
+
+---
+
+## Planning re-check, 2026-08-05 (sprint-69 planning) — **estimate 1, NOT in sprint 69**
+
+**Question 1 is answered mechanically, and the answer is NO — the expiry condition has not fired.**
+`grep -rn "topology\|APP#" backend/src/core/` at HEAD returns twelve hits and every one is a READ
+or a docstring: `core/domain/topology.py` (the `Signal` read model), `core/ports/signal_repository.py`
+(*"Port interface for **reading** seeded-topology signals"*), and prose in three other ports. **No
+`core/services/*` writes topology; none reads it through a write-capable port.** Seeding remains a
+composition-time boot concern.
+
+So the cheapest correct outcome stands: re-affirm option (b), record the re-check date in
+`zone-rules.md` ZR-8's Finding 1 alongside the expiry condition, and close without code — which
+that section's own text sanctions in advance. **Sized 1 point** on that basis. If a future sprint
+finds the trigger fired, this becomes option (a) and re-estimates at 3+.
+
+Deliberately NOT pulled into sprint 69: sprint 69 is the audit-closure guard set, and this story's
+correct outcome is a documentation re-affirmation with no guard in it. It belongs with the next
+batch, where its 1 point buys a dated re-check rather than diluting a themed sprint.

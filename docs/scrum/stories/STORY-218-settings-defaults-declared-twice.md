@@ -67,3 +67,26 @@ about it, which is exactly why it survived the sprint-66 audit and three ZR-3 st
 
 STORY-203's blocklist fix itself (correct, reviewed, and passed). The env-var-NAME duplications
 (STORY-215). Widening the ZR-3 sweep to cross-representation cases.
+
+---
+
+## Planning re-check, 2026-08-05 (sprint-69 planning) — **estimate 2, NOT in sprint 69**
+
+**Re-verified at HEAD; the finding is unchanged and exact.** `backend/src/composition/settings.py`
+declares three literals twice — `:19-21` as dataclass field defaults (`"us-east-1"`,
+`"uptime-observations"`, `"uptime-control"`) and `:46-49` again as `os.environ.get(..., "<literal>")`
+fallbacks inside `load_settings()`, which is still the only construction site and still passes every
+field explicitly. `config_dir` is the one field with **no** class default, so it is declared once —
+worth noting because it is the shape the other three should converge on.
+
+**Sized 2.** One field-by-field decision (question 2, falsiness) is the only real thinking; the edit
+is small and `test_settings.py` already pins the resolved values, so the regression surface is
+covered before the change starts.
+
+**Question 3 splits out.** Extending `zr3_duplicate_sweep.py` to see `src`-internal duplication is a
+redesign of a sweep built around `src`-vs-`tools`, and this story's own text says not to let that
+block the fix. If a guard is wanted, it is a separate story — file it when this one lands, sized
+against what the fix actually looks like.
+
+Deliberately NOT pulled into sprint 69: it is a duplication fix, not an audit-closure guard, and
+sprint 69 is already at its committed size.

@@ -74,3 +74,35 @@ round so they would not be half-done:
 
 The retro amendment routing C3 down the enforcement ladder (RC-2 — the retro's call). Re-auditing
 every wiki Fact. Widening the ZR-3 duplicate sweep.
+
+---
+
+## Planning re-check, 2026-08-05 (sprint-69 planning) — **estimate 3, NOT in sprint 69**
+
+**Re-measured at HEAD, per article** (`tools/citation_sweep.py <article> .`, all 16):
+
+| article | fails | | article | fails |
+| --- | ---: | --- | --- | ---: |
+| demo-engine.md | 73 | | dynatrace-adapter.md | 2 |
+| zone-rules.md | 28 | | canonical-types-and-ports.md | 1 |
+| core-pipeline-and-availability.md | 17 | | config-layer.md | 1 |
+| ingest-service-and-pull-loop.md | 1 | | persistence-adapters.md | 1 |
+| **the other eight articles** | **0** | | **TOTAL** | **124** |
+
+Down from the 126 at filing, and the shape is as filed: **three articles hold 118 of the 124**, and
+eight are already at zero. That distribution is what makes option (1)'s per-article ratchet cheap —
+eight articles can be pinned at absolute zero immediately, and only three carry a nonzero baseline.
+
+The retro's A18 landed the **staleness** half of C3 (`yt_wiki.py c3 --range`) and measured its
+limits: advisory, and blind to occurrences (iii), (iv) and (v) in the table above. This story is the
+resolution half, which is the half that reaches them. **A18 does not supersede it.**
+
+**Sized 3**, on the (3)-then-(1) path this story already names as likely: enforce on
+line-numbered citations, treat bare filenames as advisory, ratchet per article against a committed
+baseline — plus the two known-real `config-layer.md` fixes. The residual risk is that tightening
+the tool's anchor heuristics turns out to be needed to make even the line-numbered class
+enforceable; if it does, that is a split, not a scope creep, and this story says so up front.
+
+Deliberately NOT pulled into sprint 69: it is a tooling/enforcement story against the wiki, not an
+audit-closure guard, and sprint 69 is already at its committed size. It is the strongest candidate
+for sprint 70's first slot — sprint 68 produced five occurrences of the defect it prevents.
