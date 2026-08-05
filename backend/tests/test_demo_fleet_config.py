@@ -26,6 +26,20 @@ locations/freshness" trap — closed as of STORY-146 quality rework F4
 of discarding, `config.py:715-721`) — are both proven by loading the real
 three-file directory and reading every declared `locations`/`freshness`
 block back per `app.id`.
+
+STORY-215 AC3: the two `create_app()` tests below (AC3(b)) used to `monkeypatch.setenv`
+`"CONFIG_DIR"`/`"DYNAMO_ENDPOINT_URL"`/`"STATUSPAGE_PAGE_ID"`/`"STATUSPAGE_API_KEY"` as
+raw literals, re-typing four names `settings.py` already exposes as `<NAME>_VAR`
+constants -- drift the ZR-3 sweep is structurally blind to, because this file lives
+under `backend/tests/`, outside the two trees `tools/zr3_duplicate_sweep.py` scans.
+Fixed by importing and setenv-ing through `CONFIG_DIR_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/
+`STATUSPAGE_PAGE_ID_VAR`/`STATUSPAGE_API_KEY_VAR` instead. This is DRIFT, not a pin: a
+test that *re-types a name to consume it* silently stops tracking a rename.
+`backend/tests/test_settings.py:30` (`assert CONFIG_DIR_VAR == "CONFIG_DIR"`) is the
+opposite shape -- a test that *asserts a constant's value* -- and is the PIN that stops
+a rename from silently changing the wire contract with the deployed environment. It is
+deliberately left untouched here; do not "fix" it into an import, or the protection it
+provides is deleted.
 """
 
 from __future__ import annotations
@@ -35,6 +49,12 @@ from pathlib import Path
 
 from src.composition.config import load_config
 from src.composition.publish_helper import LoggingPublisher, build_publisher
+from src.composition.settings import (
+    CONFIG_DIR_VAR,
+    DYNAMO_ENDPOINT_URL_VAR,
+    STATUSPAGE_API_KEY_VAR,
+    STATUSPAGE_PAGE_ID_VAR,
+)
 from tests.fakes import FakeClock, FakeComponentRepository, FakePublicationRepository
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -160,13 +180,13 @@ def test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delega
     from src.composition.app import create_app
     from src.composition.publish_helper import StatusWritebackPublisher
 
-    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", _NO_IO_DYNAMO_ENDPOINT_URL)
-    monkeypatch.setenv("CONFIG_DIR", str(DEMO_CONFIG_DIR))
+    monkeypatch.setenv(DYNAMO_ENDPOINT_URL_VAR, _NO_IO_DYNAMO_ENDPOINT_URL)
+    monkeypatch.setenv(CONFIG_DIR_VAR, str(DEMO_CONFIG_DIR))
     # Fake-but-present credentials — proves the guard holds even WITH
     # credentials, matching the real repo-root `.env` exposure this AC exists
     # to close.
-    monkeypatch.setenv("STATUSPAGE_PAGE_ID", "REAL-LOOKING-PAGE-ID")
-    monkeypatch.setenv("STATUSPAGE_API_KEY", "REAL-LOOKING-API-TOKEN")
+    monkeypatch.setenv(STATUSPAGE_PAGE_ID_VAR, "REAL-LOOKING-PAGE-ID")
+    monkeypatch.setenv(STATUSPAGE_API_KEY_VAR, "REAL-LOOKING-API-TOKEN")
 
     app = create_app()
 
@@ -196,10 +216,10 @@ def test_create_app_with_live_config_dir_and_real_looking_creds_selects_real_pub
         StatusWritebackPublisher,
     )
 
-    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", _NO_IO_DYNAMO_ENDPOINT_URL)
-    monkeypatch.setenv("CONFIG_DIR", str(LIVE_CONFIG_DIR))
-    monkeypatch.setenv("STATUSPAGE_PAGE_ID", "REAL-LOOKING-PAGE-ID")
-    monkeypatch.setenv("STATUSPAGE_API_KEY", "REAL-LOOKING-API-TOKEN")
+    monkeypatch.setenv(DYNAMO_ENDPOINT_URL_VAR, _NO_IO_DYNAMO_ENDPOINT_URL)
+    monkeypatch.setenv(CONFIG_DIR_VAR, str(LIVE_CONFIG_DIR))
+    monkeypatch.setenv(STATUSPAGE_PAGE_ID_VAR, "REAL-LOOKING-PAGE-ID")
+    monkeypatch.setenv(STATUSPAGE_API_KEY_VAR, "REAL-LOOKING-API-TOKEN")
 
     app = create_app()
 
