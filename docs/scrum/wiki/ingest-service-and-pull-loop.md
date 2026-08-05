@@ -1,14 +1,15 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: d554227
-verified_sprint: sprint-68
+verified_sha: PLACEHOLDER
+verified_sprint: sprint-69
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
 # The key correction: the defect was never 'a lost batch' -- it was a PERMANENTLY STALLED SIGNAL,
 # because the raise happened before the watermark advance and the next cycle re-read the same
-# window. Records where each piece lives (adapter pure, composition decides) and the zone trap the
-# eight contracts cannot catch.
+# window. Records where each piece lives (adapter pure, composition decides) and the zone trap
+# that, at the time, none of the eight contracts could catch (closed sprint-69, STORY-206, by a
+# ninth contract -- see the "Zone note" Fact below and [[zone-rules]] ZR-1).
 # Re-verified 2026-07-30 (sprint-65 quality-review round). NEW Fact: rejected_at falls back to
 # SystemClock() rather than an inline datetime.now(), keeping the quarantine timestamp injectable.
 ---
@@ -92,11 +93,15 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   back to `SystemClock()` rather than calling `datetime.now(...)` inline. An inline call would have
   been the ONLY direct wall-clock read in `backend/src/` outside `adapters/system_clock.py` and would
   make the quarantine timestamp untestable.
-- **Zone note worth keeping:** having the inbound adapter write quarantine rows itself would pass all
-  eight `lint-imports` contracts (adapters may import core, and the port lives in `core/ports/`)
-  while turning a translation layer into an orchestrator. Only `composition` decides what happens to
-  an adapter's output. The gate does catch the CONCRETE `adapters.persistence.*` variant — only the
-  core-port route is invisible to it.
+- **Zone note worth keeping — the core-port gap CLOSED at STORY-206 (sprint-69).** Having the
+  inbound adapter write quarantine rows itself used to pass all eight `lint-imports` contracts
+  that existed at the time (adapters may import core, and the port lives in `core/ports/`) while
+  turning a translation layer into an orchestrator — only `composition` decides what happens to an
+  adapter's output. The gate already caught the CONCRETE `adapters.persistence.*` variant; the
+  core-port route was the one gap. The ninth contract, `inbound-adapters-dont-persist`
+  (`pyproject.toml`), now forbids `src.adapters.inbound` from importing any of the nine
+  repository/watermark ports — see [[zone-rules]] ZR-1 — so the core-port route is no longer
+  invisible to the gate either.
 
 ### The pull loop â€” `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone â€” the one zone allowed to import BOTH `src.core` and
@@ -368,3 +373,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   above already stated both halves (NOT fail-fast for the executor, IS fail-fast for a
   misconfigured `native_id`) correctly and is unaffected. Re-verified only; no Fact changed.
   verified_sha -> d554227.
+- sprint-69 (STORY-206, verified_sha bumped `d554227` -> PLACEHOLDER): the "Zone note worth
+  keeping" Fact was WRONG as of this commit's own change — it claimed the core-port route (an
+  inbound adapter holding and calling a persistence port) was "invisible to" the import-linter
+  gate. STORY-206 adds a ninth contract, `inbound-adapters-dont-persist` (`pyproject.toml`), that
+  catches exactly this route — see [[zone-rules]] ZR-1's now-`ENFORCED-BY` adjudication row. The
+  Fact is corrected to state the gap is closed rather than open; the frontmatter comment's "eight
+  contracts cannot catch" note is likewise corrected to "at the time... closed sprint-69". No other
+  Fact in this article touches `pyproject.toml` or a contract count.
