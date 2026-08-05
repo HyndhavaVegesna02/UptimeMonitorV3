@@ -999,6 +999,38 @@ retro_candidates:
       27 failures today, up from a recorded 11, so the capability is present and unenforced -- and
       (b) requiring a stamp to name which Facts were re-read. (a) would have caught ALL FOUR
       occurrences; the `--range` sweep would have caught only the first two.
+    fifth_occurrence: >-
+      *** FIVE. AND THIS ONE SETTLES THE MECHANISM QUESTION, because NO STALENESS SWEEP COULD EVER
+      HAVE CAUGHT IT -- not the current one, not the proposed `--range` one. ***
+      Found by the ORCHESTRATOR while resolving zone-rules.md's honest STALE state as part of the
+      sprint-end wiki compile pass -- i.e. found by doing the ceremony, not by a reviewer.
+      TWO citations claim `scripts/seed_topology.py:44` is
+      `sum(len(app.signals) for app in config.apps)`:
+        backend/src/composition/config.py:316   <- A SOURCE-CODE DOCSTRING, not a wiki file
+        docs/scrum/wiki/config-layer.md:264     <- a Fact, in an article stamped `verified` at b272c32
+      VERIFIED HISTORY:
+        5c72bf6 -> line 44   (citation was CORRECT)
+        e605cf1 -> line 47   (STORY-215's OWN AC4 commit b887883 removed `import os` and the
+                              os.environ.get line, shifting it +3 and falsifying both citations)
+        HEAD    -> line 48   (the second fix round's comment reword added one more)
+      At HEAD, `:44` is a BLANK LINE.
+      *** WHY NO SWEEP CAN SEE IT: `scripts/seed_topology.py` IS NOT IN config-layer.md's
+      `code_refs`. *** Verified. So yt_wiki.py's git arithmetic has nothing to compare and will
+      never flag that article however wrong the citation becomes -- staleness detection is
+      STRUCTURALLY blind to a citation that points OUTSIDE the citing article's own code_refs. And
+      config.py:316 is a SOURCE DOCSTRING, which no wiki tooling covers at all.
+      THIS IS DECISIVE FOR THE RETRO. The five occurrences split:
+        (i)   STORY-204 AC7 -- prose not landing with its code        -> `--range` catches
+        (ii)  STORY-203 AC7 -- same                                    -> `--range` catches
+        (iii) STORY-215/7fb87fe -- stamp over a Fact not re-read       -> `--range` MISSES
+        (iv)  STORY-203/1d43b1b -- stamp over line-displaced Facts     -> `--range` MISSES
+        (v)   this one -- citation outside the citing article's        -> `--range` MISSES, and so
+              code_refs, plus a source-file docstring                     does EVERY staleness check
+      ONLY CITATION RESOLUTION CATCHES ALL FIVE. `tools/citation_sweep.py` ALREADY EXISTS, already
+      resolves citations, and already reports 27 failures against a recorded 11 -- the capability is
+      PRESENT AND UNENFORCED. The retro's cheapest correct move is very likely to WIRE THE EXISTING
+      TOOL INTO THE GATE, not to write a new one. Size the 27 pre-existing failures as their own
+      story; do not let that backlog become the reason to keep taking prose.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
