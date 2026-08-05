@@ -1,8 +1,8 @@
 ---
-title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
+title: Zone-intent rule catalogue — the boundary rules the nine contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py, backend/tests/test_live_secrets.py, backend/tests/test_demo_fleet_config.py, scripts/seed_topology.py, tools/zr3_duplicate_sweep.py]
-verified_sha: 6ba2558
-verified_sprint: sprint-68
+verified_sha: PLACEHOLDER
+verified_sprint: sprint-69
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
 # files this article's rules cite as compliant/illustrative/violating examples
@@ -14,7 +14,7 @@ status: verified
 # (sprint-5 retro amendment). `pyproject.toml` is deliberately NOT a code_ref
 # here: it is already a code_ref in 5 articles against the refs-check's
 # AMPLIFIER_THRESHOLD of 4, and architecture-boundary.md already owns the
-# eight import-linter contracts — this article LINKS to that article for the
+# nine import-linter contracts — this article LINKS to that article for the
 # mechanical set instead of re-citing or restating it. Likewise
 # `docs/scrum/wiki/api-five-file-convention.md` is referenced by wiki link syntax,
 # never as a code_ref (it is docs, and `check_facts` already skips
@@ -23,11 +23,14 @@ status: verified
 
 ## Purpose
 
-The eight `lint-imports` contracts ([[architecture-boundary]]) check *import direction*
+The nine `lint-imports` contracts ([[architecture-boundary]]) check *import direction*
 only. STORY-190 showed that an inbound adapter holding and calling a core persistence
-port passes all eight while being architecturally wrong — `adapters` legally importing
-`core` is exactly what a translation-only adapter does too, so the contracts cannot
-distinguish "translates" from "translates and persists." This article catalogues the
+port passed all eight contracts that existed at the time while being architecturally
+wrong — `adapters` legally importing `core` is exactly what a translation-only adapter
+does too, so the (then-eight) contracts could not distinguish "translates" from
+"translates and persists." **STORY-206 closed exactly this gap** with a ninth contract,
+`inbound-adapters-dont-persist` — see ZR-1's adjudication row below; the other rules
+this article catalogues remain the sort no `lint-imports` contract sees. This article catalogues the
 zone-*intent* rules that live beyond that mechanical floor: what the PO's 2026-07-30
 directive requires, which of the PO's five named areas the contracts already cover
 (short section below), and — the actual gap this catalogue exists to name — the rules
@@ -66,7 +69,7 @@ and a future guard (STORY-197) mechanises where possible.
   the purpose of dependency injection — that shape exists only in `composition/`.
 
 None of the above is restated from [[architecture-boundary]]; that article owns the
-eight-contract citations. This article's job is everything below, which the contracts
+nine-contract citations. This article's job is everything below, which the contracts
 cannot see.
 
 **A caveat on two Facts below (ZR-1's "0 current violations" and ZR-2's "zero vendor
@@ -82,7 +85,12 @@ at any future review, and STORY-197 AC6 already requires re-adjudicating every
 catalogue rule against a fresh read before re-stamping `verified_sha`, which is exactly
 where a zone-wide regression would be caught.
 
-### The gap — rules the eight contracts do not enforce
+### The gap — rules the nine contracts do not enforce
+
+**ZR-1 note (STORY-206):** the ninth contract, `inbound-adapters-dont-persist`, now
+enforces ZR-1 directly — see its adjudication row below. It is catalogued here
+alongside ZR-2..ZR-8 because this section documents the rule's Statement, Source and
+citations regardless of enforcement status; the row is the authoritative verdict.
 
 #### ZR-1 — an inbound adapter is a pure translation function; it must never hold or call a persistence port
 
@@ -513,10 +521,10 @@ where a zone-wide regression would be caught.
   `action: ProposalState`; `STORY-198` was subsumed rather than landed separately
   (running both would have re-corrupted the same three lines twice — see the story
   file's "Relationship to STORY-198" section).
-- **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
+- **Why the nine `lint-imports` contracts pass it.** Import-linter checks import
   edges between modules, never a method signature's parameter types. `action: str`
   imported nothing at all — there was no edge to check — so this was invisible to
-  every one of the eight contracts by construction, exactly like ZR-1/ZR-2's gaps.
+  every one of the nine contracts by construction, exactly like ZR-2's gap.
   (Unchanged by the fix — worth restating because the SAME invisibility applies to
   any future port-typing regression here.)
 - **The narrowing question — RESOLVED at STORY-200, decision (a).**
@@ -619,7 +627,7 @@ where a zone-wide regression would be caught.
   (`backend/tests/test_dynamo_maintenance_repository.py`), which seeds five
   other-component windows sorted ahead of the one real match with `_limit=1` and
   asserts `True`. Full detail: [[persistence-adapters]].
-- **Why the eight `lint-imports` contracts pass it.** Import-linter checks import
+- **Why the nine `lint-imports` contracts pass it.** Import-linter checks import
   edges; it has no concept of "did this adapter loop over `LastEvaluatedKey`" or "does
   this docstring's completeness promise hold" — that is runtime pagination behavior
   against a live-shaped dataset, structurally outside anything a static import-graph
@@ -657,7 +665,7 @@ where a zone-wide regression would be caught.
   that mechanic must CALL the adapter that owns it — never re-derive the schema, the
   item shape, or the query-building logic in its own code. This bites even where
   `lint-imports` legally permits the reach (`composition` importing/reaching
-  `adapters`, or calling `boto3` directly, is exactly the wiring privilege the eight
+  `adapters`, or calling `boto3` directly, is exactly the wiring privilege the nine
   contracts grant it) — the contracts check import EDGES, never whether a reachable
   capability was reused rather than re-derived.
 - **Source.** The PO's "adapters translate, they don't decide" principle, generalized
@@ -733,10 +741,10 @@ where a zone-wide regression would be caught.
   `src.api.v1._shared.errors` across a zone boundary too, which is a private PACKAGE, not a
   private name). Full mechanism:
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md` §4.
-- **Why the eight `lint-imports` contracts pass both.** `composition` legally
+- **Why the nine `lint-imports` contracts pass both.** `composition` legally
   importing/reaching `adapters` — or, in `seed_dynamo.py`'s case, calling `boto3`
   directly, which `adapters-independence` never restricts for `composition` — is
-  EXACTLY the wiring permission the eight contracts grant the composition zone by
+  EXACTLY the wiring permission the nine contracts grant the composition zone by
   design. The contracts check import edges, not whether a REACHABLE capability was
   actually reused rather than re-derived; a module that hand-builds the same key/query
   a sibling module already encodes imports nothing NEW to trip a contract.
@@ -778,7 +786,7 @@ where a zone-wide regression would be caught.
 
 ## Inference (synthesis, not verified)
 
-The eight contracts plus `ZR-1..ZR-8` together are the audit's yardstick: every
+The nine contracts plus `ZR-1..ZR-8` together are the audit's yardstick: every
 `lint-imports`-legal-but-intent-violating shape the PO named now has either a
 contract citation (already mechanical) or a rule id, a verdict, and — where
 `GUARDABLE` — a concrete next rung. A finding with no rule id in STORY-195/196 is
@@ -805,7 +813,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 
 | Rule | Verdict | Detail |
 | --- | --- | --- |
-| ZR-1 | `GUARDABLE-DEFERRED (STORY-206)` | Contract fully specified above (9 enumerated repository/watermark port modules, excluding the `signal_ingest` front door). Tree is CLEAN, so it must be proven RED by the mutation ZR-1 names, not by a live violation. |
+| ZR-1 | `ENFORCED-BY inbound-adapters-dont-persist` | A ninth `lint-imports` contract (`pyproject.toml`, STORY-206) forbids `src.adapters.inbound` from importing any of the nine enumerated repository/watermark port modules, excluding the `signal_ingest` front door and `clock`/`status_publisher` (neither is persistence). **Shown RED**: temporarily adding `from src.core.ports.observation_repository import ObservationRepository` (an unused import) to `backend/src/adapters/inbound/dynatrace/adapter.py` tripped the import-boundary DoD command — exit 1, `inbound-adapters-dont-persist` BROKEN, naming the edge `src.adapters.inbound.dynatrace.adapter -> src.core.ports.observation_repository`; reverted, exit 0, `Contracts: 9 kept, 0 broken.`, `git diff` empty. **Residue, stated rather than hidden:** the `forbidden_modules` list's completeness — that a newly added persistence/repository port is appended to it in the SAME commit that adds the port — is maintained BY HAND until STORY-220 (sprint 70) lands the completeness test; a new port module added without updating this list is invisible to this guard. |
 | ZR-2 | `GUARDABLE-DEFERRED (STORY-207)` | AST walk specified above, with its residue stated (string annotations, dynamically built identifiers). Tree is CLEAN — mutation proof required. |
 | ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module — reconfirmed by STORY-203 AC6's own re-introduce/revert mutation. **All four `MUST-IMPORT-FROM-SRC` entries this rule adjudicated are fixed as of STORY-203 (sprint-68); zero remain.** Green via a per-entry adjudication list, now entirely `INDEPENDENT` (9 entries) — a future genuine finding is still expected to be filed there, the same way these four were. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
@@ -1417,3 +1425,15 @@ History**, per the fix round's re-verification requirement.
   `lint-imports` contracts, since they check import edges, never reuse-vs-rederive.
   Filed as `STORY-205`. Full detail and re-derivation commands:
   `docs/scrum/sprints/2026-07-31-sprint-66/audit-api-composition-tools.md`.
+- sprint-69 (STORY-206, verified_sha bumped `6ba2558` -> PLACEHOLDER): ZR-1's adjudication row
+  flips `GUARDABLE-DEFERRED (STORY-206)` -> `` `ENFORCED-BY inbound-adapters-dont-persist` ``. The
+  ninth `lint-imports` contract (`pyproject.toml`) is now real, shown RED by mutation and reverted
+  (`git diff` empty) — see the row for the exact command output. Contract count of record moves
+  8 -> 9 throughout this article's own general/current-tense prose (title, Purpose, ZR-6/ZR-7/ZR-8
+  "why the contracts pass it" Facts, the closing Inference paragraph); the legend's "existing eight
+  DoD commands" phrase (a DoD-COMMAND count, not a contract count) is unchanged by design, and
+  dated History entries above keep whatever count was accurate at the sprint they describe. The
+  Purpose section's STORY-190 example ("passed all eight ... that existed at the time") is likewise
+  left as a historically-accurate count with a forward pointer to this story, rather than bumped to
+  a now-false "passes all nine." `forbidden_modules`' own completeness (a newly added port appended
+  in the same commit) remains hand-maintained until STORY-220 (sprint 70) — the row states this.
