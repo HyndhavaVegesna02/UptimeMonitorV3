@@ -879,6 +879,33 @@ retro_candidates:
       Do NOT respond by adding a seventh restatement of C3, and do NOT respond by relaxing C3 --
       the rule is correct and the defect it prevents (documents made false by the commit that wrote
       them) was TEN of sprint 67's ELEVEN blocking findings.
+    third_occurrence: >-
+      *** C3 FAILED A THIRD TIME, IN STORY-215, AND THIS ONE IS WORSE THAN THE FIRST TWO. ***
+      Found by the ORCHESTRATOR pre-review, not by a reviewer, and verified by printing the cited
+      lines rather than reading around them.
+      STORY-215's commit 935cd70 added DYNATRACE_* imports to env_matrix.py and harness.py, which
+      falsified the STORY-202-era ZR-3 Fact at zone-rules.md:296-312 -- it claims env_matrix.py
+      "imports all SEVEN" (now NINE) and harness.py "imports only the FOUR" (now FIVE), and its six
+      cited re-type line numbers now point at a `print(`, an f-string fragment, two comments, a
+      blank line and an assignment.
+      WHY IT IS WORSE: STORY-204's and STORY-203's misses were SEQUENCING with a CORRECT END STATE.
+      THIS ONE LEFT THE WIKI FALSE AT HEAD. A correct new History entry was added in 7fb87fe, which
+      is not the same as repairing a Fact the same story broke.
+      *** AND IT DEFEATED THE TOOL, WHICH IS THE PART THAT MATTERS FOR RC-2's DESIGN. *** The
+      implementer bumped zone-rules.md's verified_sha to b887883, so yt_wiki.py's git arithmetic had
+      nothing behind and reported `sweep: CLEAN` OVER A FALSE FACT. A verified_sha bump is a CLAIM
+      ABOUT WHAT A HUMAN-OR-AGENT RE-READ, and no sweep can check it -- the same defect class as
+      STORY-204's MAJOR 2. That Fact had ALREADY been bitten by this exact shape once before and
+      says so in its own text ("NOT the story's own AC8 numbers ... which were the PRE-edit numbers
+      AC8 itself warned would shift").
+      CONSEQUENCE FOR RC-2's PROPOSED MECHANISM -- do not skip this at the retro: a per-commit
+      `yt_wiki --range` sweep would NOT have caught this either, because the article was never
+      STALE by git arithmetic once the sha was bumped. So RC-2's script must also address the
+      DISHONEST-STAMP path, e.g. by refusing to accept a verified_sha bump in a commit that touches
+      the article's own code_refs without touching the Facts that cite them, or by recording WHICH
+      Facts were re-read. Sizing this honestly is retro work; the point here is that the obvious
+      mechanism is necessary but NOT sufficient, and three occurrences is enough evidence to design
+      for both paths at once.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
