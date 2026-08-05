@@ -48,13 +48,21 @@
 - [ ] Import boundary holds: `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` -> exit 0
       (2026-07-12: invocation changed from the `lint-imports` exe shim, which a Windows
        Application Control policy now blocks; same check, same 8 contracts, module path)
-      (import-linter; EIGHT contracts, from dossier §4, §13, Sprint 14 and later:
+      (import-linter; NINE contracts, from dossier §4, §13, Sprint 14 and later:
        core-independence, core-internal-layering [domain<-ports<-services],
        adapters-independence, api-feature-independence, api-outward-independence,
-       adapters-edge-only, api-shared-no-feature-imports, src-no-tests.
+       adapters-edge-only, api-shared-no-feature-imports, src-no-tests,
+       inbound-adapters-dont-persist.
        2026-07-29: this list said "five" and named five while the line above it
        already said "same 8 contracts" — the runner's own `Contracts: 8 kept, 0
        broken.` is the count of record, and `pyproject.toml` declares all eight.)
+      (2026-08-05, STORY-206: the count of record moved 8 -> 9 -- `pyproject.toml`
+       gained a ninth contract, `inbound-adapters-dont-persist` (ZR-1's guard,
+       `docs/scrum/wiki/zone-rules.md`), forbidding `src.adapters.inbound` from
+       importing the nine repository/watermark ports. The runner's own `Contracts:
+       9 kept, 0 broken.` line is now the count of record. This is a CONTRACT count;
+       the DoD stays at EIGHT commands -- the new contract runs inside this existing
+       command, no ninth command was added.)
 - [ ] Code linting check: `python -m ruff check .` -> exit 0
       (2026-08-02, PO-approved, preventive (STORY-210): invocation changed from the bare `ruff`
        exe shim to its module form. `ruff.exe` is NOT blocked today -- measured at sprint-67

@@ -104,6 +104,33 @@ type = "forbidden"
 source_modules = ["src"]
 forbidden_modules = ["tests"]
 
+# ZR-1 (docs/scrum/wiki/zone-rules.md): an inbound adapter is a pure translation
+# function — it returns canonical values and persists nothing. This forbids the
+# PERSISTENCE/REPOSITORY ports specifically, not the whole `src.core.ports` package:
+# `src.core.ports.signal_ingest` is the core's documented FRONT DOOR (dossier §6/§8,
+# a driving adapter may legitimately reference it) and `src.core.ports.clock` /
+# `src.core.ports.status_publisher` are not persistence, so banning the whole
+# package would forbid a shape the design documents as legitimate (STORY-206).
+[[tool.importlinter.contracts]]
+name = "inbound-adapters-dont-persist"
+type = "forbidden"
+source_modules = ["src.adapters.inbound"]
+forbidden_modules = [
+    "src.core.ports.component_repository",
+    "src.core.ports.maintenance_repository",
+    "src.core.ports.observation_repository",
+    "src.core.ports.proposal_repository",
+    "src.core.ports.publication_repository",
+    "src.core.ports.rejected_observation_repository",
+    "src.core.ports.sample_mode_repository",
+    "src.core.ports.signal_repository",
+    "src.core.ports.watermark",
+]
+# Maintenance note (STORY-197): a newly added repository/persistence port
+# module MUST be appended to this list in the SAME commit that adds it, or
+# it is invisible to this guard. `src.core.ports.signal_ingest` (the front
+# door) and `src.core.ports.clock`/`status_publisher` (not persistence)
+# are deliberately excluded — see the Statement above.
 
 
 [tool.ruff]

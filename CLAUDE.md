@@ -195,8 +195,9 @@ worktree's code (`tools/import_provenance.py::assert_import_root`).
   `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
 - **Frontend (3, from `frontend/`):** `npm test`, `npm run build`, `npm run lint`
 
-`lint-imports` enforces eight zone contracts; `ruff` covers style, import sorting and
-formatting; `cfn-lint` validates the CloudFormation stack.
+`lint-imports` enforces nine zone contracts (STORY-206 added `inbound-adapters-dont-persist`,
+ZR-1's guard); `ruff` covers style, import sorting and formatting; `cfn-lint` validates the
+CloudFormation stack.
 
 ## Database & DynamoDB Local (dossier §3, §4, §17)
 
