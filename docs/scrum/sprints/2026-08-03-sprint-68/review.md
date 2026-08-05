@@ -108,6 +108,23 @@ describes), in **STORY-204** and **STORY-203**, where AC7 explicitly required it
 
 **Options:** accept as filed exceptions, or require a follow-up story recording the precedent.
 
+### PO verdict — 2026-08-05
+
+> "accept all four stories, accept both AC7 misses as filed exceptions"
+
+**All four stories ACCEPTED. 10 of 10 points. Both AC7 misses accepted as filed exceptions** — the
+first option; no follow-up story was required.
+
+Filed, not erased: **both AC stay NOT_MET on the record.** STORY-204 is not a 7-for-7 story and
+STORY-203 is not a 6-for-6 one, and neither may be described that way later. And because no
+follow-up was required, **RC-2 at the retro is now the only remaining response** to a constraint
+that has failed five times — if the retro declines to route C3 down the ladder, these two misses
+produce no mechanism at all.
+
+**Nothing is merged.** The standing PO directive keeps sprints 66, 67 and 68 off main, and
+acceptance at review does not override it — `sprint-68` stays a live branch off `sprint-67`, which
+is off `sprint-66`. Velocity recorded: sprint 68, committed 10, accepted 10.
+
 ---
 
 ## What the sprint produced beyond the points

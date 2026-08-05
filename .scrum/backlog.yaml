@@ -2271,7 +2271,14 @@ stories:
   - id: STORY-203
     title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
-    status: ready   # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
+    status: done    # SPRINT 68, commits e9cb8c8..37d20c0. PO-ACCEPTED 2026-08-05 *** WITH AC7
+                    # ACCEPTED AS A FILED EXCEPTION -- AC7 REMAINS NOT_MET ON THE RECORD. *** The
+                    # catalogue landed after the code (constraint C3), for the second consecutive
+                    # story; the end state is correct and no further work can close it. Not a
+                    # 6-for-6 story; do not describe it as one. Board: .scrum/sprint-current.yaml
+                    # po_verdict + this story's po_adjudication_resolved.
+                    # ORIGINAL FILING NOTE FOLLOWS.
+                    # FILED 2026-07-31 from STORY-196's audit (ZR-3, MINOR x4, batched per AC2).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # NONE is a live defect today -- every value currently agrees. Each is a DRIFT
                     # risk the next person touching the backend/src/ side has no way to learn about
@@ -2292,7 +2299,14 @@ stories:
   - id: STORY-204
     title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
-    status: ready   # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
+    status: done    # SPRINT 68, commits d38334b..c443d64 (implementation + THREE fix rounds).
+                    # PO-ACCEPTED 2026-08-05 *** WITH AC7b ACCEPTED AS A FILED EXCEPTION -- AC7b
+                    # REMAINS NOT_MET ON THE RECORD. *** The catalogue landed two commits after the
+                    # code (constraint C3); the end state is correct and no further work can close
+                    # it. Not a 7-for-7 story; do not describe it as one. Board:
+                    # .scrum/sprint-current.yaml po_verdict + po_adjudication_resolved.
+                    # ORIGINAL FILING NOTE FOLLOWS.
+                    # FILED 2026-07-31 from STORY-196's audit as a CATALOGUE GAP (draft ZR-8,
                     # deliberately NOT landed in zone-rules.md by the audit -- mirroring GAP-1's
                     # precedent, where promotion happened in a later fix round).
                     # composition/vendor_health.py:40-53 build_vendor_health_query duplicates the
@@ -2312,7 +2326,13 @@ stories:
   - id: STORY-205
     title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
-    status: ready   # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
+    status: done    # SPRINT 68, commits 91ab0e5..f643081. PO-ACCEPTED 2026-08-05, ALL AC MET, no
+                    # exception. The key schema now has ONE declaration --
+                    # adapters/persistence/topology_keys.py -- imported by both repositories and by
+                    # the seed; reality-gated through the real scripts/seed_topology.py against real
+                    # DynamoDB. AC6's follow-up is STORY-217.
+                    # ORIGINAL FILING NOTE FOLLOWS.
+                    # FILED 2026-07-31 from STORY-196's QUALITY REVIEW (ZR-8 finding 1, MAJOR).
                     # Source: audit-api-composition-tools.md section 6, four testable AC.
                     # *** ARGUABLY THE BEST BOUNDARY FINDING OF THE AUDIT SPRINT. *** It fell through
                     # the crack BETWEEN the two audit passes -- STORY-195 covered adapters/,
@@ -2605,7 +2625,13 @@ stories:
   - id: STORY-215
     title: Close the remaining env-var-NAME drift - the two DYNATRACE_* names, plus the file that guards the publish guard
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
-    status: ready   # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
+    status: done    # SPRINT 68. PO-ACCEPTED 2026-08-05, ALL 8 AC MET, no exception -- spec review
+                    # PASS outright. Nine <NAME>_VAR constants now in settings.py; the publish-guard
+                    # test and tools/ point at them. NOTE: this story's AC7 carries no same-commit
+                    # clause, so the sprint's C3 misses are recorded here as constraint violations,
+                    # NOT as AC failures -- that distinction is deliberate. Follow-up: STORY-218.
+                    # ORIGINAL FILING NOTE FOLLOWS.
+                    # FILED 2026-08-03 from STORY-202's review. STORY-202 closed seven of the
                     # env-var-NAME collisions and deliberately left a bounded remainder; this is
                     # that remainder, gathered in one place so it is not rediscovered piecemeal.
                     # THREE SITES, and the third was found by BOTH reviewers independently:

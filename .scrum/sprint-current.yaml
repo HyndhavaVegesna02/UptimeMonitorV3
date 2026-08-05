@@ -1,6 +1,12 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 68
-status: active     # none | planning | active | review | closed | aborted
+status: review     # none | planning | active | review | closed | aborted
+                   # REVIEWED 2026-08-05. *** PO VERDICT: ALL FOUR STORIES ACCEPTED. 10/10 points.
+                   # BOTH AC7 MISSES (STORY-204, STORY-203) ACCEPTED AS FILED EXCEPTIONS *** -- see
+                   # po_verdict below and each story's po_adjudication_resolved. Velocity recorded
+                   # (sprint 68: committed 10, accepted 10). RETRO IS THE NEXT CEREMONY; RC-1 and
+                   # RC-2 below are its input. NOTHING MERGES: the standing PO directive keeps
+                   # sprints 66, 67 AND 68 off main, and acceptance does not override it.
                    # LOCKED 2026-08-03 at a270c29. SCOPE IS FROZEN -- new PO requests go to the
                    # backlog, not into this sprint. Tooling is frozen too, EXCEPT the enforcement
                    # ladder (agreement A14).
@@ -219,6 +225,7 @@ stories:
                    # Delivered on attempt TWO. Attempt one died on an ACCOUNT session limit before
                    # writing anything (`git log eca8b3c..HEAD` EMPTY, tree clean -- verified, not
                    # assumed); the brief was re-dispatched UNCHANGED.
+    po_verdict: ACCEPTED 2026-08-05, all AC met, no exception. NOT MERGED (66/67/68 stay off main).
     commits: 91ab0e5..f643081   # 16 commits: 8 implementer + 1 orchestrator (AC6 filing) + 6 fix
                    # round + wiki re-verifications.
     reviews:
@@ -334,8 +341,15 @@ stories:
                    # in-process-monkeypatch technique. Both reviewers confirmed they modified no
                    # tracked file -- and the SECOND one still produced the sharpest finding of the
                    # sprint under that constraint, proving it costs nothing. KEEP DOING THIS.
-    po_adjudication_required: >-
-      *** ONE AC IS PERMANENTLY NOT_MET AND ONLY THE PO CAN DISPOSE OF IT. NOT ROUNDED UP. ***
+    po_verdict: >-
+      ACCEPTED 2026-08-05, WITH AC7b ACCEPTED AS A FILED EXCEPTION. PO, verbatim: "accept all four
+      stories, accept both AC7 misses as filed exceptions." So AC7b stays NOT_MET on the record --
+      the exception is filed, not erased, and nobody may later read this story as 7-for-7. No
+      follow-up story was required; the process response is RC-2 at the retro. NOT MERGED (standing
+      directive: sprints 66/67/68 stay off main).
+    po_adjudication_resolved: >-
+      *** ONE AC IS PERMANENTLY NOT_MET AND ONLY THE PO CAN DISPOSE OF IT. NOT ROUNDED UP.
+      DISPOSED 2026-08-05: ACCEPTED AS A FILED EXCEPTION -- see po_verdict above. ***
       AC7b requires the zone-rules.md catalogue to move in the SAME COMMIT as the code that
       falsifies it (constraint C3). The implementation put the code in d38334b and the catalogue in
       22895b0, two commits later. For the life of two commits the catalogue described ZR-8 Finding 2
@@ -549,9 +563,17 @@ stories:
                    # then reviewed concurrently, then a fix round, then 8/8 gate + reality gate.
     commits: e9cb8c8..37d20c0   # session 1: e9cb8c8, 691227f. session 2: db949c8..1e457a0.
                    # fix round: b72750e..37d20c0. (fd0d42f in between is an orchestrator board commit.)
-    po_adjudication_required: >-
+    po_verdict: >-
+      ACCEPTED 2026-08-05, WITH AC7 ACCEPTED AS A FILED EXCEPTION -- the same ruling as STORY-204,
+      given in the same breath. PO, verbatim: "accept all four stories, accept both AC7 misses as
+      filed exceptions." AC7 stays NOT_MET on the record. No follow-up story was required, so RC-2
+      at the retro is the ONLY remaining response to the pattern -- if the retro declines to route
+      C3 down the ladder, this sprint's two AC misses will have produced no mechanism at all.
+      NOT MERGED (standing directive: sprints 66/67/68 stay off main).
+    po_adjudication_resolved: >-
       *** AC7 IS NOT MET, FOR THE SAME REASON AS STORY-204, AND THIS IS THE SECOND CONSECUTIVE
-      OCCURRENCE. NOT ROUNDED UP. ***
+      OCCURRENCE. NOT ROUNDED UP.
+      DISPOSED 2026-08-05: ACCEPTED AS A FILED EXCEPTION -- see po_verdict above. ***
       AC7 requires zone-rules.md's ZR-3 update to land in the SAME COMMIT as the code (constraint
       C3). Code landed in e9cb8c8 / 691227f / db949c8; the catalogue not until 3ab9c9b -- after even
       1c07def's own ledger rewrite. THE SPEC REVIEWER PROVED THE CONSEQUENCE RATHER THAN ASSERTING
@@ -738,6 +760,7 @@ stories:
                    # NOT carry a same-commit clause, so this sprint's C3 misses here are CONSTRAINT
                    # violations recorded on the board -- NOT AC failures. That distinction is not
                    # blurred: 204 and 203 need PO adjudication, this one does not.
+    po_verdict: ACCEPTED 2026-08-05, all 8 AC met, no exception. NOT MERGED (66/67/68 off main).
     superseded_status_note: >-
       The park note that stood here said "CODE COMPLETE AND GATED, BUT UNREVIEWED -- not `done`, and
       not rounded up to it", after BOTH reviewers died together on the sprint's FOURTH session limit.
@@ -1114,6 +1137,36 @@ retro_candidates:
       PRESENT AND UNENFORCED. The retro's cheapest correct move is very likely to WIRE THE EXISTING
       TOOL INTO THE GATE, not to write a new one. Size the 27 pre-existing failures as their own
       story; do not let that backlog become the reason to keep taking prose.
+
+po_verdict:
+  date: 2026-08-05
+  ceremony: sprint-68 review (docs/scrum/sprints/2026-08-03-sprint-68/review.md)
+  head_at_review: 21127b5
+  verbatim: "accept all four stories, accept both AC7 misses as filed exceptions"
+  ruling: >-
+    ALL FOUR STORIES ACCEPTED. 10 of 10 points. Both AC7 misses -- STORY-204's AC7b and STORY-203's
+    AC7, the same constraint C3 twice -- ACCEPTED AS FILED EXCEPTIONS. The PO took the first of the
+    two options put to them and did NOT require a follow-up story recording the precedent.
+    WHAT "FILED EXCEPTION" MEANS HERE, so nobody re-reads it more generously later:
+      - Both AC remain NOT_MET on the record. The exception is filed, not erased. Neither story may
+        ever be described as having met all its AC.
+      - No further work can close them (only history rewriting could, and that was refused
+        deliberately -- those SHAs are cited in eight review reports and on this board).
+      - BECAUSE NO FOLLOW-UP STORY WAS REQUIRED, RC-2 AT THE RETRO IS THE ONLY REMAINING RESPONSE
+        TO A CONSTRAINT THAT HAS NOW FAILED FIVE TIMES. If the retro declines to route C3 down the
+        enforcement ladder, this sprint's two AC misses produce no mechanism whatsoever.
+  velocity_recorded: sprint 68 -- committed 10, accepted 10 (.scrum/velocity.json)
+  merge: >-
+    *** NOTHING IS MERGED. *** The standing PO directive keeps sprints 66, 67 AND 68 unmerged, and
+    PO acceptance at review does NOT override it. The skill's default ("accept -> merged to main")
+    is SUPERSEDED here by the PO's explicit instruction, which outranks it. sprint-68 stays a live
+    branch off sprint-67, which is off sprint-66.
+  next_ceremony: >-
+    RETRO. Its input is retro_candidates RC-1 and RC-2 below. Per the v2.2.0 ratchet brake the retro
+    must AUDIT the rules already in force before proposing anything, its default output is ZERO
+    amendments, and RC-2 must NOT be answered with prose a sixth time -- the ladder rung it names is
+    the SCRIPT rung (wire tools/citation_sweep.py, filed as STORY-219), and A14 says the mid-sprint
+    tooling freeze does not block landing it.
 
 carried_forward: >-
   NOT IN THIS SPRINT, still open, grouped by why they wait:
