@@ -362,7 +362,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   verified (`sum(len(app.signals) for app in config.apps)` really is at `:48` in
   `scripts/seed_topology.py` at HEAD), not a Fact re-read blind, so `verified_sha` moves
   to `d24f59b` (this fix's own commit). Two adjacent citations in the same Fact —
-  `seed_dynamo.py:56` (real line: `60`) and `vendor_health.py:97` (real line: `106`) — are
-  ALSO stale, but predate sprint-68 (drifted under STORY-204/STORY-205, before this
-  sprint started, and untouched by any sprint-68 commit) and are left as pre-existing
+  `backend/src/composition/seed_dynamo.py:56` (real line: `60`) and
+  `backend/src/composition/vendor_health.py:97` (real line: `106`) — are ALSO stale, but
+  predate sprint-68 (drifted under STORY-204/STORY-205, before this sprint started, and
+  untouched by any sprint-68 commit) and are left as pre-existing
   findings, not fixed here.
