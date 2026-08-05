@@ -861,6 +861,23 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-215 second fix round): quality review returned two MAJORs against
+  the bullet immediately below (the one written to document C3's third failure),
+  both **verified against source before this fix landed**. This is a prose-only
+  correction — no code changed, so no RED/GREEN evidence gate applies here; the
+  two corrections are inline within that bullet (marked `**Corrected...**`), plus
+  a clarifying clause on the AC5-vacuity bullet further down. Summary of what was
+  wrong and what is now true, both re-derived against HEAD after the edit:
+  (1) that bullet's closing line claimed `verified_sha` changed to "this commit's
+  own parent" — `git show c752c14 -- docs/scrum/wiki/zone-rules.md` shows no
+  `verified_sha` line touched at all; it is corrected to state plainly that
+  `verified_sha` stays `b887883`, unchanged, and why that stamp is still accurate.
+  (2) that bullet's shift arithmetic said `935cd70` alone shifted the six stale
+  citations by +1; the real shift is +2, cumulative across two stories — STORY-203's
+  own `1d43b1b` shifted them +1 first (before STORY-215 touched the file), and
+  STORY-203's own wiki commit (`37d20c0`) then stamped `verified_sha` straight onto
+  `1d43b1b`, the very commit that had just broken them; `935cd70` added the second
+  +1. Corrected to name both stories and both shifts, not STORY-215 alone.
 - sprint-68 (STORY-215 fix round): **MAJOR — the `verified_sha` bump in the STORY-215
   landing commit (`7fb87fe`) certified a ZR-3 Fact this same story's own earlier commit
   (`935cd70`) had already made false, and the false Fact was STILL false at the sha the
@@ -872,10 +889,25 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   in the SAME commit), `env_matrix.py` imports all nine, and `harness.py` imports FIVE
   (not four — `DYNATRACE_ENV_URL_VAR`), at SEVEN re-type sites (not six), none of which
   the six OLD cited line numbers (`:546`, `:615`, `:743`, `:749`, `:750`, `:751`) still
-  point at: `935cd70`'s own import-block insertion shifted every one of them by +1
-  (verified directly: `:546`->print text, `:615`->an unrelated f-string fragment,
-  `:743`->a comment, `:749`->blank, `:750`->a comment, `:751`->the unrelated
-  `DYNAMO_ENDPOINT_URL_VAR` re-type site now one line later). Because `yt_wiki.py`
+  point at, and the true shift is **+2, cumulative across two stories, not the +1 a
+  prior version of this very bullet attributed to `935cd70` alone.** Re-derived by
+  walking each site through three commits — `1210374` (STORY-202, the numbers as
+  originally cited and correct), `1d43b1b` (STORY-203's own harness.py import-block
+  edit), and HEAD (`935cd70`, STORY-215's import-block edit):
+  `:546`->`:547`->`:548`, `:615`->`:616`->`:617`, `:743`->`:744`->`:745`,
+  `:749`->`:750`->`:751`, `:750`->`:751`->`:752`, `:751`->`:752`->`:753` — every site
+  shifted +1 at `1d43b1b` and +1 again at `935cd70`. **`1d43b1b` predates STORY-215
+  entirely**: `git show 1d43b1b:tools/demo_loop_gate/harness.py | sed -n '546p'`
+  prints `f"API (uvicorn) subprocess launched, pid={api_proc.pid}, "` — not the
+  CONFIG_DIR re-type site — so these six citations were already false the moment
+  STORY-203's `1d43b1b` landed, before STORY-215 touched the file at all. **And
+  STORY-203 stamped `verified_sha` over that falseness itself**: its own wiki
+  blast-radius commit, `37d20c0`, bumped `verified_sha` straight to `1d43b1b` —
+  the very commit whose edit had just shifted these six sites — without noticing
+  the untouched "second compliant citation" Fact's six line numbers no longer
+  pointed at what they claimed. This is not solely STORY-215's doing: STORY-215's
+  `935cd70` added the second +1 on top of a Fact STORY-203 had already broken and
+  already certified as re-read. Because `yt_wiki.py`
   computes staleness as git arithmetic against `verified_sha`, bumping it to `b887883`
   told the tool the ENTIRE article had been re-read against that sha, so the sweep
   reported CLEAN over a Fact that was false at that exact sha — the same defect class
@@ -901,8 +933,17 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   actually re-read. **A CLEAN `yt_wiki.py sweep` after this fix is evidence only that
   `verified_sha` is not behind — it is not evidence any Fact is true; that can only
   come from actually re-reading the cited lines, which is what this bullet records
-  happening.** verified_sha -> (this commit's own parent, the same self-reference gap
-  every prior ZR-3 fix round has hit).
+  happening.** `verified_sha` is **NOT changed by this commit (`c752c14`)** — it
+  stays `b887883`, set by `7fb87fe`. That stamp remains accurate for what it
+  actually certifies (code drift, not prose correctness): `git diff b887883
+  c752c14 --stat` touches only `docs/scrum/wiki/demo-engine.md`,
+  `docs/scrum/wiki/zone-rules.md` and `.scrum/sprint-current.yaml` — no file in
+  this article's `code_refs` changed between `b887883` and this commit, so the
+  sha is still the right one to diff FROM. What `b887883` never certified, and
+  what re-bumping it here would have wrongly implied, is that the Fact's PROSE
+  was correct — it was false at `b887883` itself (per the MAJOR above), and this
+  bullet fixes that falseness by re-reading the cited lines, not by moving the
+  sha.
 - sprint-68 (STORY-215): **Closed STORY-202's remainder — the two `DYNATRACE_*`
   env-var NAMES, plus a third and fourth `CONFIG_DIR` reader the sweep cannot see at
   all.** `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` promoted in `settings.py`
@@ -959,7 +1000,15 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   `test_demo_fleet_config.py:226-232` (the live-side assertion) stayed GREEN, because
   its own literal sets `CONFIG_DIR=config/apps`, which is also the resolved default
   when the renamed var is unset — passing for the wrong reason regardless of what the
-  variable is called. That vacuity is what the site-3/site-5 fixes above close.
+  variable is called. That vacuity is what the site-3/site-5 fixes above close **for
+  the rename mutation** — AC5's definition of the fix. It is **not closed
+  intrinsically**: with `CONFIG_DIR_VAR`'s setenv line deleted entirely,
+  `load_settings()` resolves the unset var to its own default, `"config/apps"`,
+  which `load_config` reads into the same `{'http-check': 'xdnywbx77npw'}` mapping
+  `LIVE_CONFIG_DIR` (`config/apps`, absolute) also yields — so
+  `test_demo_fleet_config.py:219-232` still passes with that line gone. No
+  constant substitution can fix this; the test would have to assert against a
+  `CONFIG_DIR` value that DIFFERS from the default to stop passing vacuously.
   **Corrected in the STORY-215 fix round: this bullet originally read `:174` and
   `:206-212`** — the exact lines at the pre-fix (`61152a3^`) commit the AC5 mutation
   ran against, which this bullet copied forward uncorrected even though the same
