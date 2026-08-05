@@ -21,9 +21,10 @@ from src.composition.settings import load_settings
 
 def main() -> int:
     # 1. Load settings (resolves config_dir via CONFIG_DIR_VAR, same name +
-    # default `load_settings()` owns -- STORY-215 AC4: this used to be an
-    # independent `os.environ.get("CONFIG_DIR", "config/apps")` here,
-    # duplicating both the name and the default a second time).
+    # default `load_settings()` owns -- STORY-215 AC4: this used to read the
+    # config-dir env var directly here via os.environ.get, with its own
+    # hardcoded fallback path, duplicating both the name and the default a
+    # second time).
     settings = load_settings()
 
     # 2. Load config
