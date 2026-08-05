@@ -266,3 +266,72 @@ already records) or delete it.
 
 Approving all three lands two mechanisms and removes one piece of prose, for roughly zero net
 governance growth.
+
+---
+
+## 7. LANDED — PO approved all three, 2026-08-05
+
+### A17 — landed at the agent-definition rung
+
+`yt-quality-reviewer.md` and `yt-spec-reviewer.md`, mirrored into
+`.claude/skills/yourteam/templates/agents/` (parity verified; `yt_selftest.py` 43/43 OK). Both
+markers bumped to `yourteam_version: 2.2.1`. Kept project-generic per the 2026-07-13 rule.
+
+### A18 — landed as `yt_wiki.py c3 --range BASE..HEAD`
+
+**Discrimination proof (A1/A3 — both sides recorded, and they differ):**
+
+| Side | Range | Result | Exit |
+| --- | --- | --- | --- |
+| STORY-204's offending commit | `d38334b~1..d38334b` | **4 findings, `zone-rules.md` named** | **1** |
+| STORY-203's offending commit | `e9cb8c8~1..e9cb8c8` | **1 finding, `zone-rules.md` named** | **1** |
+| the catalogue commit that fixed 204 | `22895b0~1..22895b0` | CLEAN | 0 |
+| a commit moving code AND article together | `f643081~1..f643081` | CLEAN | 0 |
+| bad range | `nosuchref..HEAD` | setup error on stderr | **4** |
+
+It goes RED on both commits that produced a real AC failure and names `zone-rules.md` — the article
+C3 was about — on both. The negative side is not "green because nothing ran": three ranges that
+genuinely satisfy C3 come back clean, including one where code and article moved together.
+
+**A defect this check had, found by testing its own error path.** A bad range first reported as an
+advisory *note* and exited **0** — a check that could not run, reading as a check that found
+nothing. That is the exact A7 failure mode this repo has already paid for. Setup failures now return
+exit **4** and never a finding. Worth recording because it was caught by testing the failure path
+rather than the happy one, which is what A7 asks for and what would otherwise have shipped.
+
+**Two bugs fixed on the way, both pre-existing:**
+
+- `git()` decoded subprocess output with the **platform locale codec** (cp1252 on Windows), which
+  raises on any non-ASCII byte and leaves `stdout` as `None`. Harmless while git output was only
+  ASCII paths; fatal the moment a check reads a blob. Now pinned to UTF-8 with `errors="replace"`.
+- The module docstring said "three mechanical checks" while listing six.
+
+**Honest measurement, which is why it ships ADVISORY and not blocking.** The filters — only
+MODIFIED files (a newly added file cannot falsify prose written about it), and only files an
+article both lists in `code_refs` *and* cites by name in its Facts — cut the noise but did not
+remove it: **45 notes across sprint 68's 101 commits, 11 of them on STORY-205, a story no reviewer
+faulted.** The cause is structural: mid-story green steps do not falsify a "this violation is live"
+claim; only the **completing** commit does, and arithmetic cannot see which commit that is. Wired
+into `.scrum/checklists/quality-review.md` as a per-story command whose output is **notes to judge,
+not verdicts.** The "completing commit" question goes to STORY-219's refinement.
+
+### D3 — landed
+
+Clause (b) removed; the deletion recorded in the prune record with its three grounds. Clauses (a),
+(c), (d) untouched.
+
+### Correction to §6's closing claim
+
+I wrote that approving all three would cost "roughly zero net governance growth." **That was wrong,
+and the measured number is +2,528 bytes**, even after A17/A18 were cut back to pointers:
+
+| File | Start | HEAD | |
+| --- | --- | --- | --- |
+| `working-agreements.md` | 38,990 | 41,067 | +2,077 — read **once per session** |
+| `checklists/quality-review.md` | 7,574 | 8,025 | +451 — read **per dispatch** |
+| `checklists/implementer.md` | 9,889 | 9,889 | unchanged |
+
+D3 removed a clause but the prune record that documents it costs more than the clause did — which
+is A15's own thesis restated: **this file cannot delete without writing.** No further trimming was
+done, because what remains is the evidence A15 requires. The number is reported rather than
+explained away; the sixth-sprint test in A16 is the one that settles whether the brake works.

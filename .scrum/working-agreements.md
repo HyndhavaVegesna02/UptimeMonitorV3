@@ -111,10 +111,7 @@
   limited to the commands the story's diff can affect; the FULL nine-command gate remains mandatory
   — and is the evidence of record — at least once at sprint close on the final HEAD. A red at any
   scope still blocks. (Rung: prose — orchestrator procedure; `--only` already exists in the script.)
-  (b) **Clean-container gates:** before any full gate run, stop idle dev-DB containers so only the
-  gate's own DB is running (the proven sprint-45 flake root cause was idle-container contention).
-  STORY-080 is the durable fix and is PO-prioritized for next refinement; no test is skipped in the
-  meantime. (Rung: prose until STORY-080 lands the test-rung fix.)
+  (b) **DELETED 2026-08-05 — D3, sprint-68 retro.** See the prune record.
   (c) **Board evidence hygiene:** at sprint close, superseded `dod_evidence`/`gate_notes` narrative
   moves into the sprint's `review.md`; `sprint-current.yaml` carries only the final evidence block —
   it is re-read at every standup. (Rung: prose.)
@@ -139,6 +136,17 @@
   Rung: prose; may harden to a plan-verification checklist item later.)
 
 ## Prune record
+- 2026-08-05 — **D3, sprint-68 retro, PO-approved: the THIRD rule deleted on its merits.**
+  The 2026-07-14 token-economy amendment's clause **(b) "Clean-container gates"** — *stop idle dev-DB
+  containers before a full gate run … (Rung: prose until STORY-080 lands the test-rung fix.)*
+  Removed whole, on three independent grounds: its own stated expiry condition was met (STORY-080
+  accepted at **sprint 47**, "standing gate false-red resolved"); its subject is retired with the
+  Postgres layer (`backend/tests/` has no `test_dev_db_*` file, it has `test_no_postgres_guard.py`);
+  and it has **zero citations across sprints 63–68**. Nothing is lost — the general case is the
+  2026-07-06 contention protocol, which HAS fired and is untouched. Clauses (a), (c) and (d) of the
+  same amendment all still fire and stay. Full text:
+  `git show e982927:.scrum/working-agreements.md`.
+
 - 2026-08-03 — **sprint-67 retro, PO-approved: the first two rules ever deleted on their merits**
   (every prior removal was a PO-directed amnesty or a routing exercise; A15 asked "has this fired?"
   and these two answered no because they are DEAD, not merely quiet).
@@ -501,3 +509,17 @@ same command at the commit that landed A15 (`git log --oneline -S "A15 - rules E
 Governance must be SMALLER, AND at least one rule must have been deleted on its merits rather than
 routed. If it is larger and nothing was deleted, A14/A15 failed and are themselves candidates for
 deletion under their own rule.
+
+## A17 — the reviewers are race-immune by construction (2026-08-05, sprint-68 retro)
+
+**Rung: AGENT DEFINITION — landed in both reviewer definitions; the rule is THERE, not here.**
+Not a new rule. "You never modify files" already existed and was bypassed **through Bash**, so per
+A15 §2 it was made concrete rather than restated. Do NOT serialise the reviews.
+
+## A18 — C3 has a mechanism, and it reaches two of its five failure modes (2026-08-05, sprint-68 retro)
+
+**Rung: SCRIPT — `yt_wiki.py c3 --range BASE..HEAD`.** Run per STORY range. Advisory by default
+(`--strict-c3` blocks) because its bound is measured, not assumed: RED on both commits that cost an
+AC, but 45 notes over sprint 68 — it cannot tell a completing commit from a TDD step. Read
+`check_c3`'s docstring before trusting or dismissing a note. **STORY-219 is the half that reaches
+the other three.** Narrative: `docs/scrum/sprints/2026-08-03-sprint-68/retro.md`.

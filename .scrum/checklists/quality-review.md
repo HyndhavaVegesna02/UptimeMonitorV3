@@ -29,6 +29,11 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
 
 - [ ] Spot-check the implementer checklist items applicable to this diff (validators on new frozen types, empty-input + non-aligned boundary tests, fake/adapter parity, five-file shape test, tz-aware validation, docstrings).
 - [ ] Duplication scan against the existing codebase for any new helper/assembly logic.
+- [ ] If the story touches a wiki article's `code_refs`, run
+      `python .claude/skills/yourteam/scripts/yt_wiki.py c3 --range <story-range>` and read the
+      notes: a commit that changed a file an article CITES without touching the article left the
+      catalogue false for that window. Notes, not verdicts — it cannot tell a completing commit
+      from a TDD step, so judge each. (A18, sprint-68 retro: C3 failed 5x in one sprint as prose.)
 - [ ] Error paths: everything that can realistically fail has a handled, tested failure path.
 - [ ] YAGNI applies to your own suggestions — no abstractions for hypothetical futures; do not demand restructuring beyond the story's footprint.
 

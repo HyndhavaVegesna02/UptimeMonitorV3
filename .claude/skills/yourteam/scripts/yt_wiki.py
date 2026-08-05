@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""YourTeam v2 wiki checker (yourteam_version: 2.0.0).
+"""YourTeam v2 wiki checker (yourteam_version: 2.2.1 — adds the c3 catalogue-lag check).
 
-Mechanizes the wiki protocol's three mechanical checks over docs/scrum/wiki/:
+Mechanizes the wiki protocol's mechanical checks over docs/scrum/wiki/:
 
   sweep  — staleness: for every `status: verified` article, run
            `git diff --name-only <verified_sha>..HEAD -- <code_refs>`;
@@ -19,6 +19,11 @@ Mechanizes the wiki protocol's three mechanical checks over docs/scrum/wiki/:
            cited as a code_ref by many articles quarantines them ALL on any
            touch (one shared file once re-staled a third of a wiki). Notes
            by default; findings under --strict-refs.
+  c3     — catalogue-lag lint (retro sprint-68, 2026-08-05; needs --range
+           BASE..HEAD): for every non-merge commit in the range, a commit that
+           MODIFIES a file an article both lists in code_refs and cites by name in
+           its Facts must touch that article too. Notes by default; findings under
+           --strict-c3. Read per STORY range. Bounds: check_c3's docstring.
   integrity — wiki-integrity lint (retro sprint-49, 2026-07-16): (1) verified_sha
            must be a SHORT sha (7-12 hex) — a 40-char full sha is the tell of a
            bulk "bump every article to HEAD" pass that never re-verified the Facts
@@ -39,6 +44,7 @@ Usage:
   python yt_wiki.py            # all four checks
   python yt_wiki.py sweep --update
   python yt_wiki.py facts links
+  python yt_wiki.py c3 --range sprint-68-start..HEAD    # not in the default run
 
 Exit codes: 0 clean; 1 findings in any requested check; 4 setup error.
 """
@@ -93,8 +99,18 @@ def facts_section(text: str) -> str:
 
 
 def git(root: Path, *args: str) -> subprocess.CompletedProcess:
+    # encoding is pinned: text=True alone decodes with the platform locale codec
+    # (cp1252 on Windows), which raises on any non-ASCII byte in file CONTENT and
+    # leaves stdout None. Harmless while git output was only ASCII paths; fatal once
+    # a check reads a blob. errors="replace" matches how articles are read on disk.
     return subprocess.run(
-        ["git", *args], cwd=root, capture_output=True, text=True, timeout=60
+        ["git", *args],
+        cwd=root,
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=60,
     )
 
 
@@ -354,13 +370,132 @@ def check_links(root: Path, wiki: Path, articles: dict[Path, str]) -> list[str]:
     return findings
 
 
+def _blob_text(root: Path, blob: str, cache: dict[str, str]) -> str:
+    if blob not in cache:
+        cache[blob] = git(root, "cat-file", "-p", blob).stdout
+    return cache[blob]
+
+
+def check_c3(root: Path, wiki: Path, rng: str) -> list[str] | None:
+    """C3 — the catalogue moves in the SAME COMMIT as the code it describes.
+
+    For every non-merge commit in <base>..<head>: if the commit touches a file
+    that some article lists in its `code_refs`, that same commit must also touch
+    that article. This is pure git arithmetic over commit contents — no checkout,
+    no judgment, no new dependency.
+
+    Frontmatter is read AS OF EACH COMMIT (one `ls-tree` per commit, blobs cached),
+    not at HEAD, so an article that gains a code_ref mid-range does not retroactively
+    condemn the commits before it.
+
+    ADVISORY BY DEFAULT (--strict-c3 blocks), and the reason is measured, not assumed.
+    Two known bounds, stated because a check that oversells itself is worse than none:
+
+    1. IT CATCHES THE SEQUENCING CLASS ONLY — prose landing after the code it
+       describes. It cannot see a `verified_sha` bumped over a Fact nobody re-read,
+       nor a citation into a file the citing article does not list as a code_ref: in
+       both the arithmetic is correct and the CLAIM is what is false. On the five C3
+       failures of sprint 68 it reaches two. Those need citation resolution.
+    2. IT CANNOT TELL A COMPLETING COMMIT FROM A TDD STEP, and that is where its
+       noise comes from. Measured on sprint 68 (101 commits): RED on both commits
+       that produced a real AC failure, and 45 notes overall — 11 of them on
+       STORY-205, a story no reviewer faulted. Mid-story green steps do not falsify a
+       "this violation is live" claim; only the commit that COMPLETES the change
+       does, and which commit that is, is not visible to arithmetic. Read the notes
+       per story range, not per sprint.
+    """
+    findings: list[str] = []
+    # A SETUP failure returns None, never a finding. c3 is advisory by default, so a
+    # bad range reported as a note would exit 0 — a check that cannot run reading as
+    # a check that found nothing. That is the A7 failure mode this repo already paid
+    # for once, and it was caught here by testing the error path rather than the
+    # happy one.
+    try:
+        rel_wiki = wiki.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        print(
+            f"yt_wiki: wiki dir {wiki} is outside the repo root {root} — "
+            "c3 cannot range-check it",
+            file=sys.stderr,
+        )
+        return None
+
+    rev = git(root, "rev-list", "--reverse", "--no-merges", rng)
+    if rev.returncode != 0:
+        print(f"yt_wiki: c3 bad range '{rng}': {rev.stderr.strip()}", file=sys.stderr)
+        return None
+    shas = [s for s in rev.stdout.split() if s]
+
+    blobs: dict[str, str] = {}
+    for sha in shas:
+        status = [
+            line.split("\t")
+            for line in git(
+                root, "show", "--name-status", "--format=", sha
+            ).stdout.splitlines()
+            if "\t" in line
+        ]
+        if not status:
+            continue
+        touched = {parts[-1] for parts in status}
+        # Only a file that ALREADY EXISTED can falsify prose written about it. A
+        # newly ADDED file cannot: no article can cite a line that did not exist.
+        # Renames (R) and deletions (D) very much can, so only "A" is dropped.
+        files = [parts[-1] for parts in status if parts[0][:1] != "A"]
+        if not files:
+            continue
+        tree = git(root, "ls-tree", "-r", sha, "--", rel_wiki).stdout.splitlines()
+        for line in tree:
+            if "\t" not in line:
+                continue
+            info, apath = line.split("\t", 1)
+            parts = info.split()
+            if len(parts) < 3 or parts[1] != "blob" or not apath.endswith(".md"):
+                continue
+            if "/archive/" in apath:
+                continue
+            atext = _blob_text(root, parts[2], blobs)
+            meta = parse_frontmatter(atext)
+            refs = meta.get("code_refs") or []
+            if not refs or meta.get("status") == "archived":
+                continue
+            if apath in touched:
+                continue  # the article moved with the code — this is C3 satisfied
+            # A code_ref only says "this article is ABOUT this area". What C3 protects
+            # is a CLAIM, and a claim lives in a Fact that names the file. So require
+            # both: the file is in code_refs AND some Fact in the article (as of this
+            # commit) cites it by name. Without the second half every TDD green step
+            # under a broad code_ref reads as a violation.
+            facts = facts_section(atext)
+            hits = [
+                f
+                for f in files
+                if f != apath and covered(f, refs) and Path(f).name in facts
+            ]
+            if hits:
+                extra = f" (+{len(hits) - 1} more)" if len(hits) > 1 else ""
+                findings.append(
+                    f"{sha[:9]}: {Path(apath).name} not updated, but the commit "
+                    f"touched its code_ref {hits[0]}{extra}"
+                )
+    return findings
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "checks",
         nargs="*",
         default=[],
-        help="sweep | facts | links | refs | citations | integrity (default: all)",
+        help="sweep | facts | links | refs | citations | integrity | c3 "
+        "(default: all but c3, which needs --range)",
+    )
+    ap.add_argument(
+        "--range",
+        dest="rng",
+        default=None,
+        metavar="BASE..HEAD",
+        help="c3: commit range to check (required by, and only used by, the c3 check)",
     )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
     ap.add_argument(
@@ -375,6 +510,11 @@ def main() -> int:
         "--strict-citations",
         action="store_true",
         help="citations: unresolvable/unanchored citations count as findings (exit 1)",
+    )
+    ap.add_argument(
+        "--strict-c3",
+        action="store_true",
+        help="c3: catalogue-lag notes count as findings (exit 1)",
     )
     args = ap.parse_args()
 
@@ -418,6 +558,16 @@ def main() -> int:
             advisory = not args.strict_citations  # notes by default (A16)
         elif check == "integrity":
             found = check_integrity(wiki, articles)
+        elif check == "c3":
+            if not args.rng:
+                print(
+                    "yt_wiki: the c3 check requires --range BASE..HEAD", file=sys.stderr
+                )
+                return 4
+            found = check_c3(root, wiki, args.rng)
+            if found is None:
+                return 4  # setup failure, never a silent advisory pass
+            advisory = not args.strict_c3  # notes by default — see check_c3's docstring
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4
