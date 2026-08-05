@@ -313,7 +313,7 @@ class AppConfig(BaseModel):
     replaced by a ``Config``-level accessor) because every existing consumer
     reads ``app.signals`` off an ``AppConfig`` (``run.py:136``,
     ``seed_dynamo.py:56``, ``composition/vendor_health.py:97``,
-    ``scripts/seed_topology.py:44``, plus three sites in this module)."""
+    ``scripts/seed_topology.py:48``, plus three sites in this module)."""
 
     thresholds: AntiFlapThresholds = _SECTION_10_DEFAULTS
     """Per-app anti-flap thresholds (dossier §10).  Defaults to 5/3/2/2 when omitted."""

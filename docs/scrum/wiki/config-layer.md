@@ -261,7 +261,7 @@ shift every other line in the file):
 - `backend/src/composition/run.py:136` — `for signal in app.signals:`
 - `backend/src/composition/seed_dynamo.py:56` — `for sig in app.signals:`
 - `backend/src/composition/vendor_health.py:97` — `for signal in app.signals:`
-- `scripts/seed_topology.py:44` — `sum(len(app.signals) for app in config.apps)`
+- `scripts/seed_topology.py:48` — `sum(len(app.signals) for app in config.apps)`
 
 `run.py` is unchanged by this story (verified — not in its diff) even though
 it is one of these seven readers.
@@ -347,3 +347,17 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   comment-only fix to an unrelated vendor-subpackage note (`adapters-independence` contract
   comment) — this article cites `pyproject.toml` for dependency/config concerns, not that
   comment. No Fact changed; re-verified only. verified_sha -> b272c32.
+- sprint-68 (STORY-215, citation fix only, verified_sha NOT bumped): the "Seven surviving
+  readers of `app.signals`" Fact cited `scripts/seed_topology.py:44`; STORY-215 AC4
+  (`b887883`) removed a line from that file, shifting the real line to `:47`, and a later
+  fix-round comment edit shifted it again to `:48` — corrected here to `:48`. This was
+  invisible to the mechanical staleness sweep because `scripts/seed_topology.py` (like
+  `run.py`, `seed_dynamo.py`, and `vendor_health.py`, the other three files in that same
+  Fact) is **not** in this article's `code_refs` above — only `config.py` is, so the
+  sweep's git-diff-since-`verified_sha` check has nothing to compare `seed_topology.py`
+  against. Caught by a manual citation-shape sweep, not the tool. Only this one citation
+  was re-derived and fixed; the rest of the article was NOT re-read, so `verified_sha`
+  stays at `b272c32` rather than being bumped over unread Facts. Two adjacent citations in
+  the same Fact — `seed_dynamo.py:56` (real line: `60`) and `vendor_health.py:97` (real
+  line: `106`) — are ALSO stale, but predate sprint-68 (drifted under STORY-204/STORY-205,
+  before this sprint started) and are left as pre-existing findings, not fixed here.
