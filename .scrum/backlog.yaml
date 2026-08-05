@@ -2731,3 +2731,37 @@ stories:
     priority: 45    # above STORY-217: this one silently weakens a guard that ALREADY SHIPPED
     type: chore
     sprint: null
+  - id: STORY-219
+    title: Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced
+    file: docs/scrum/stories/STORY-219-enforce-citation-resolution.md
+    status: draft   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
+                    # STORY-215's fix round surfaced the candidate and correctly said it was the
+                    # orchestrator's call, not its own, rather than half-fixing 126 findings.
+                    # THE EVIDENCE IS FIVE OCCURRENCES IN ONE SPRINT of a `file:line` citation made
+                    # false by a commit that never touched the cited content (board: RC-2).
+                    # WHY RESOLUTION, NOT STALENESS: a --range staleness sweep catches 2 of the 5.
+                    # Occurrence (v) is decisive -- config-layer.md cites scripts/seed_topology.py
+                    # which is NOT in its code_refs, so NO staleness check can ever flag it; and the
+                    # second site is a SOURCE DOCSTRING (config.py:316) that no wiki tooling covers.
+                    # A verified_sha bump is a CLAIM ABOUT WHAT SOMEONE RE-READ and no arithmetic
+                    # can audit it -- occurrences (iii) and (iv) are both that, and in both the
+                    # arithmetic was RIGHT while the claim was FALSE.
+                    # THE OBSTACLE, SIZED HONESTLY: citation_sweep.py reports 126 failures today,
+                    # MOSTLY ITS OWN FALSE POSITIVES by its documented limits (bare filenames,
+                    # anchor heuristics) -- demo-engine.md 73, zone-rules.md 28,
+                    # core-pipeline-and-availability.md 17, 6 articles already at zero. So it cannot
+                    # just be dropped into the DoD gate; it would be RED on arrival.
+                    # REFINEMENT PICKS THE SHAPE. Likely cheapest correct: enforce only citations
+                    # CARRYING A LINE NUMBER (the failing class in all five occurrences), then
+                    # ratchet on a per-article baseline so new drift fails while the backlog is paid
+                    # down. DO NOT let the 126 become the reason enforcement never lands -- that is
+                    # exactly how the recorded count drifted 11 -> 27 -> 28 unnoticed.
+                    # TWO KNOWN-REAL (not false-positive) FAILURES TO FIX WHILE HERE, verified at
+                    # filing and deliberately left unfixed so they would not be half-done:
+                    # config-layer.md cites seed_dynamo.py:56 (real :60) and vendor_health.py:97
+                    # (real :106), both drifted under STORY-204/205 BEFORE sprint 68 opened.
+    points: null    # unestimated -- refinement settles the enforcement shape first
+    priority: 70    # high: this is the mechanism RC-2 concluded is needed, and the evidence is five
+                    # occurrences in a single sprint
+    type: chore
+    sprint: null
