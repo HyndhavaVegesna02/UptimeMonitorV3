@@ -7,7 +7,6 @@ config/apps/ (or CONFIG_DIR).
 
 from __future__ import annotations
 
-import os
 import sys
 from pathlib import Path
 
@@ -21,24 +20,28 @@ from src.composition.settings import load_settings
 
 
 def main() -> int:
-    # 1. Load config
-    config_dir = os.environ.get("CONFIG_DIR", "config/apps")
+    # 1. Load settings (resolves config_dir via CONFIG_DIR_VAR, same name +
+    # default `load_settings()` owns -- STORY-215 AC4: this used to be an
+    # independent `os.environ.get("CONFIG_DIR", "config/apps")` here,
+    # duplicating both the name and the default a second time).
+    settings = load_settings()
+
+    # 2. Load config
     try:
-        config = load_config(config_dir)
+        config = load_config(settings.config_dir)
     except (ValueError, TypeError) as exc:
         print(f"Topology Config Load Failure: {exc}", file=sys.stderr)
         return 1
 
-    # 2. Load settings and seed
+    # 3. Seed
     try:
-        settings = load_settings()
         db_resource = make_dynamo_resource(settings)
         seed_topology_dynamo(config, db_resource, settings.dynamo_control_table)
     except Exception as exc:
         print(f"Topology Seeding Failure: {exc}", file=sys.stderr)
         return 3
 
-    # 3. Print summary
+    # 4. Print summary
     num_apps = len(config.apps)
     num_components = sum(len(app.components) for app in config.apps)
     num_signals = sum(len(app.signals) for app in config.apps)
