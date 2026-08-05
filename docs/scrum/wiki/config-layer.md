@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: b272c32
-verified_sprint: sprint-63
+verified_sha: d24f59b
+verified_sprint: sprint-68
 status: verified
 ---
 
@@ -347,17 +347,22 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   comment-only fix to an unrelated vendor-subpackage note (`adapters-independence` contract
   comment) — this article cites `pyproject.toml` for dependency/config concerns, not that
   comment. No Fact changed; re-verified only. verified_sha -> b272c32.
-- sprint-68 (STORY-215, citation fix only, verified_sha NOT bumped): the "Seven surviving
-  readers of `app.signals`" Fact cited `scripts/seed_topology.py:44`; STORY-215 AC4
-  (`b887883`) removed a line from that file, shifting the real line to `:47`, and a later
-  fix-round comment edit shifted it again to `:48` — corrected here to `:48`. This was
-  invisible to the mechanical staleness sweep because `scripts/seed_topology.py` (like
-  `run.py`, `seed_dynamo.py`, and `vendor_health.py`, the other three files in that same
-  Fact) is **not** in this article's `code_refs` above — only `config.py` is, so the
-  sweep's git-diff-since-`verified_sha` check has nothing to compare `seed_topology.py`
-  against. Caught by a manual citation-shape sweep, not the tool. Only this one citation
-  was re-derived and fixed; the rest of the article was NOT re-read, so `verified_sha`
-  stays at `b272c32` rather than being bumped over unread Facts. Two adjacent citations in
-  the same Fact — `seed_dynamo.py:56` (real line: `60`) and `vendor_health.py:97` (real
-  line: `106`) — are ALSO stale, but predate sprint-68 (drifted under STORY-204/STORY-205,
-  before this sprint started) and are left as pre-existing findings, not fixed here.
+- sprint-68 (STORY-215, citation fix, `verified_sha` bumped `b272c32` -> `d24f59b`): the
+  "Seven surviving readers of `app.signals`" Fact cited `scripts/seed_topology.py:44`;
+  STORY-215 AC4 (`b887883`) removed a line from that file, shifting the real line to
+  `:47`, and a later fix-round comment edit shifted it again to `:48` — corrected here to
+  `:48`, in both this article and `config.py`'s own docstring. This was invisible to the
+  mechanical staleness sweep because `scripts/seed_topology.py` (like `run.py`,
+  `seed_dynamo.py`, and `vendor_health.py`, the other three files in that same Fact) is
+  **not** in this article's `code_refs` above — only `config.py` is, so the sweep's
+  git-diff-since-`verified_sha` check has nothing to compare `seed_topology.py` against.
+  Caught by a manual citation-shape sweep, not the tool. `git diff b272c32..HEAD` across
+  every `code_refs` file confirms `config.py` was the only one that changed since
+  `b272c32`, and its sole change is this same docstring line — self-authored and directly
+  verified (`sum(len(app.signals) for app in config.apps)` really is at `:48` in
+  `scripts/seed_topology.py` at HEAD), not a Fact re-read blind, so `verified_sha` moves
+  to `d24f59b` (this fix's own commit). Two adjacent citations in the same Fact —
+  `seed_dynamo.py:56` (real line: `60`) and `vendor_health.py:97` (real line: `106`) — are
+  ALSO stale, but predate sprint-68 (drifted under STORY-204/STORY-205, before this
+  sprint started, and untouched by any sprint-68 commit) and are left as pre-existing
+  findings, not fixed here.
