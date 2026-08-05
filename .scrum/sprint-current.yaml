@@ -1,6 +1,26 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 68
-status: review     # none | planning | active | review | closed | aborted
+status: closed     # none | planning | active | review | closed | aborted
+                   # *** SPRINT 68 IS CLOSED 2026-08-05. Review AND retro both run. ***
+                   # RETRO OUTCOME (docs/scrum/sprints/2026-08-03-sprint-68/retro.md, landed in
+                   # 2239618): PO approved all three proposals.
+                   #   A17 -> AGENT DEFINITION rung. RC-1 closed. NOT a new rule: "You never
+                   #     modify files" already existed and was bypassed through BASH, so per A15
+                   #     §2 it was made concrete instead of restated. Spec reviewer got the mirror
+                   #     rule (never clean the tree). Mirrored into templates; parity verified.
+                   #   A18 -> SCRIPT rung. RC-2 closed as far as arithmetic can reach:
+                   #     `yt_wiki.py c3 --range BASE..HEAD`. RED on both commits that cost an AC
+                   #     (naming zone-rules.md), CLEAN on three ranges that satisfy C3, exit 4 on
+                   #     a bad range. ADVISORY, because measured: 45 notes over 101 commits, 11 on
+                   #     a story nobody faulted -- it cannot tell a completing commit from a TDD
+                   #     step. STORY-219 reaches C3's other three failure modes.
+                   #   D3 -> the THIRD rule ever deleted on its merits (2026-07-14 clause (b)).
+                   # Governance 56,453 -> 58,981. The retro's "roughly zero" claim was WRONG and is
+                   # corrected in the retro itself with the per-file split.
+                   # NEXT CEREMONY: SPRINT 69 PLANNING -- the closure map's second half
+                   # (STORY-206/207/208/209/216, 10 pts) plus refinement of the three drafts filed
+                   # this sprint (STORY-217/218/219). STILL UNMERGED: 66, 67 and 68 all stay off
+                   # main by standing PO directive.
                    # REVIEWED 2026-08-05. *** PO VERDICT: ALL FOUR STORIES ACCEPTED. 10/10 points.
                    # BOTH AC7 MISSES (STORY-204, STORY-203) ACCEPTED AS FILED EXCEPTIONS *** -- see
                    # po_verdict below and each story's po_adjudication_resolved. Velocity recorded
@@ -1161,7 +1181,16 @@ po_verdict:
     PO acceptance at review does NOT override it. The skill's default ("accept -> merged to main")
     is SUPERSEDED here by the PO's explicit instruction, which outranks it. sprint-68 stays a live
     branch off sprint-67, which is off sprint-66.
-  next_ceremony: >-
+  retro_outcome: >-
+    RUN AND LANDED 2026-08-05 in 2239618. RC-1 -> A17 (agent definition). RC-2 -> A18 (script),
+    honestly bounded to 2 of C3's 5 failure modes with STORY-219 carrying the rest. Plus D3, the
+    third rule ever deleted on its merits. The A15 audit ran FIRST and found sprint 68 had added
+    ZERO governance bytes -- the first sprint in the record to add none. Two rules failed the
+    six-sprint firing test and were KEPT with reasons: the read-path prohibition (dormant
+    preventive rule -- A15's test cannot tell that from a dead one, a limit now recorded against
+    STORY-212) and the effort cap (its "3x its estimate in attempts" trigger has no unit, so it
+    CANNOT fire; flagged as the leading candidate for the next retro).
+  superseded_next_ceremony: >-
     RETRO. Its input is retro_candidates RC-1 and RC-2 below. Per the v2.2.0 ratchet brake the retro
     must AUDIT the rules already in force before proposing anything, its default output is ZERO
     amendments, and RC-2 must NOT be answered with prose a sixth time -- the ladder rung it names is
