@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: PLACEHOLDER
+verified_sha: 0769b0a
 verified_sprint: sprint-69
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
@@ -347,7 +347,7 @@ status: verified
   stated on its own line (see [[dynatrace-adapter]]/[[zone-rules]]); this article still cites no
   line number or quoted wording from it. Re-verified only; no Fact changed. verified_sha ->
   d554227.
-- sprint-69 (STORY-206, verified_sha bumped `d554227` -> PLACEHOLDER): `pyproject.toml` gained a
+- sprint-69 (STORY-206, verified_sha bumped `d554227` -> `0769b0a`): `pyproject.toml` gained a
   ninth `lint-imports` contract, `inbound-adapters-dont-persist` (ZR-1's guard — see
   [[zone-rules]]). The Facts bullet naming all contracts by number and by name is corrected from
   EIGHT to NINE, with the ninth contract added to the list and the quoted runner output moved from
