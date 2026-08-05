@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: b272c32
+verified_sha: d62c69b
 verified_sprint: sprint-63
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -19,7 +19,7 @@ status: verified
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
 - **Import boundary (dossier §4)** is enforced by import-linter, run as the bare command
-  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with eight contracts:
+  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with nine contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
     `src.composition`, `src.api`, `sqlalchemy`, `httpx`, or `boto3` (`pyproject.toml` ("core-independence")).
   - `core-internal-layering` (layers): `src.core.queries` → `src.core.services` →
@@ -38,6 +38,13 @@ status: verified
   - `api-shared-no-feature-imports` (forbidden): `src.api.v1._shared` may not import any of the
     10 feature packages (`pyproject.toml` ("api-shared-no-feature-imports")).
   - `src-no-tests` (forbidden): `src` may not import `tests` (`pyproject.toml` ("src-no-tests")).
+  - `inbound-adapters-dont-persist` (forbidden, STORY-206, ZR-1's guard — [[zone-rules]]):
+    `src.adapters.inbound` may not import any of the nine repository/watermark ports
+    (`src.core.ports.component_repository`, `maintenance_repository`, `observation_repository`,
+    `proposal_repository`, `publication_repository`, `rejected_observation_repository`,
+    `sample_mode_repository`, `signal_repository`, `watermark`) — deliberately excluding
+    `signal_ingest` (the core's documented front door, dossier §6/§8), `clock` and
+    `status_publisher` (neither is persistence) (`pyproject.toml` ("inbound-adapters-dont-persist")).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.
@@ -159,4 +166,10 @@ status: verified
   exist yet" comment was corrected — `inbound.dynatrace`, `outbound.statuspage` and `persistence`
   all exist today. The Fact above paraphrasing that comment is corrected to match; no contract
   count or boundary behaviour changed. verified_sha -> b272c32.
+- sprint-69 (STORY-206, `d62c69b`): added the ninth contract, `inbound-adapters-dont-persist`
+  (ZR-1's guard — see [[zone-rules]]), forbidding `src.adapters.inbound` from importing the nine
+  repository/watermark ports. Tree was clean (0 violations) before this story; shown RED by
+  mutation (temporarily importing `src.core.ports.observation_repository` into
+  `backend/src/adapters/inbound/dynatrace/adapter.py`), reverted, `git diff` empty. Contract count
+  moves 8 -> 9; `lint-imports`: 9 kept / 0 broken. verified_sha -> d62c69b.
 
