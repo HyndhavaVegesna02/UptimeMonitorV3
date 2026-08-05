@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the eight contracts cannot see
 code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py, backend/tests/test_live_secrets.py, backend/tests/test_demo_fleet_config.py, scripts/seed_topology.py]
-verified_sha: b887883
+verified_sha: 6ba2558
 verified_sprint: sprint-68
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -831,22 +831,24 @@ live violation remains under this rule.
 
 ### A recorded limitation of `tools/citation_sweep.py`, so nobody "fixes" a correct citation
 
-**Re-run for this fix round (STORY-215): 27 failures, all of them false** — up from the
-**11** this section originally recorded at STORY-197 acceptance, because every fix round
-since (STORY-199 through this one) has quoted more real citations by bare filename in its
-own History prose without re-running this command afterward, the same "count must be
-re-derived AFTER the prose that changes it" lapse this section already called out once
-against itself. Categorised by direct read, not assumed from the pattern:
+**Re-run for STORY-215's third fix round: 28 failures, all of them false** — one more
+than the **27** the second fix round recorded, because that same fix round's own
+AC5-vacuity clarification bullet added a further bare-filename mention
+(`test_demo_fleet_config.py:219-232`) without re-running this count afterward — the
+identical "count must be re-derived AFTER the prose that changes it" lapse this section
+calls out against every fix round since STORY-199, now demonstrated against itself a
+second time, one fix round later. Up from the **11** this section originally recorded at
+STORY-197 acceptance. Categorised by direct read, not assumed from the pattern:
 
 - Two cite `code-boundary-discipline.md`, a **memory file outside the repo** — correctly absent, not
   a broken citation.
-- **Twenty are self-inflicted bare-filename mentions across this article's own History
+- **Twenty-one are self-inflicted bare-filename mentions across this article's own History
   prose** (this section's own examples plus every fix-round bullet that quotes a real
   citation without its directory prefix for readability — `env_matrix.py:39/49`,
   `query.py:63-80/133/136/136-155`, `composition/app.py:224`,
   `dynamo_publication_repository.py:53`, `seed_dynamo.py:29-30`, `run.py:182-184`,
   `status_publisher.py:14-19`, `harness.py:61/615/616/754/761-774`,
-  `test_demo_fleet_config.py:174/194/226-232`, `failure_path_reality_gate.py:149`); the
+  `test_demo_fleet_config.py:174/194/219-232/226-232`, `failure_path_reality_gate.py:149`); the
   sweep's regex matches each bare mention as a fresh citation and fails it as "file does
   not exist" even though the real, full-path citation elsewhere in the article is fine.
 - **Five fail the content-anchor check** while the cited lines are exactly right, because the anchor
@@ -861,6 +863,36 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-215 third fix round, `verified_sha` bumped `b887883` -> `6ba2558`,
+  named Facts re-read): the sweep flagged this article STALE again — `scripts/seed_topology.py`
+  changed since `b887883` (the second fix round's comment reword, `7cd1d19`, +1 net line).
+  `git diff --stat b887883..8da2f2e` across every file in this article's `code_refs`
+  confirms `scripts/seed_topology.py` was the ONLY one that changed — so this article's
+  sole affected Fact is the "fifth site" `scripts/seed_topology.py:25` `CONFIG_DIR` bullet
+  above. Re-read directly against both the commit it makes a historical claim about and
+  HEAD: the pre-fix claims (`os.environ.get("CONFIG_DIR", "config/apps")` at `:25`,
+  `load_settings` imported at `:20`, called at `:34`) are frozen citations into `b887883^`
+  and still read exactly that at that commit — the comment reword landed after AC4's
+  restructure and never touched that earlier commit. The current-state claim ("now calls
+  `load_settings()` first and uses `settings.config_dir`") is still true at HEAD too
+  (`settings = load_settings()` at `:28`, `config = load_config(settings.config_dir)` at
+  `:32`, both one line further down than at `b887883` itself — `:27`/`:31` — because of
+  the SAME comment reword). That claim is prose, not a bare line citation, so it needed
+  no text edit; only the frozen pre-fix historical citations above (`:25`, `:20`, `:34`,
+  into `b887883^`) would have needed correcting had the comment reword touched anything
+  before them in that earlier commit, which it didn't. No
+  Fact changed; only this one block was re-read, so `verified_sha` moves to `6ba2558`
+  (this fix round's own last commit) rather than being bumped blindly over the rest of
+  the article.
+  Also corrected, in the same commit: the `tools/citation_sweep.py` count section above
+  ("A recorded limitation...") still read **27 failures / Twenty bare-filename mentions**
+  — stale by one, because the immediately preceding fix round's own AC5-vacuity bullet
+  added a further bare-filename mention (`test_demo_fleet_config.py:219-232`) without
+  re-running this count afterward. Re-run: **28 failures, Twenty-one bare-filename
+  mentions** (2 memory-file + 21 bare-filename + 5 anchor-heuristic = 28); the missing
+  citation added to the named list. This is the same "count must be re-derived after the
+  prose that changes it" lapse this section already calls out against every fix round
+  since STORY-199 — now caught one fix round after it happened, not immediately.
 - sprint-68 (STORY-215 second fix round): quality review returned two MAJORs against
   the bullet immediately below (the one written to document C3's third failure),
   both **verified against source before this fix landed**. This is a prose-only
