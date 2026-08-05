@@ -1,8 +1,8 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: d554227
-verified_sprint: sprint-68
+verified_sha: PLACEHOLDER
+verified_sprint: sprint-69
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
 # and .scrum/definition-of-done.md both changed again, but neither change touches a Fact in this
@@ -78,11 +78,12 @@ status: verified
   2. `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
      (2026-07-12, sprint-44: invocation moved OFF the `lint-imports` exe shim â€” a Windows
      Application Control policy now blocks it on this machine; same check, module-path
-     invocation instead. It enforces **EIGHT** contracts, not the five this article claimed
-     until sprint-62: core-independence, core-internal-layering, adapters-independence,
+     invocation instead. It enforces **NINE** contracts (STORY-206, sprint-69, added the
+     ninth): core-independence, core-internal-layering, adapters-independence,
      api-feature-independence, api-outward-independence, adapters-edge-only,
-     api-shared-no-feature-imports, src-no-tests — the count read off the runner's own
-     `Contracts: 8 kept, 0 broken.` line, which is the only reliable source for it)
+     api-shared-no-feature-imports, src-no-tests, inbound-adapters-dont-persist — the
+     count read off the runner's own `Contracts: 9 kept, 0 broken.` line, which is the
+     only reliable source for it)
   3. `python -m ruff check .`
      (2026-08-02, sprint-67/STORY-210: invocation moved OFF the `ruff` exe shim to its module
      form — PREVENTIVE, not a repair: `ruff.exe` was still permitted at sprint-67 planning
@@ -346,3 +347,10 @@ status: verified
   stated on its own line (see [[dynatrace-adapter]]/[[zone-rules]]); this article still cites no
   line number or quoted wording from it. Re-verified only; no Fact changed. verified_sha ->
   d554227.
+- sprint-69 (STORY-206, verified_sha bumped `d554227` -> PLACEHOLDER): `pyproject.toml` gained a
+  ninth `lint-imports` contract, `inbound-adapters-dont-persist` (ZR-1's guard — see
+  [[zone-rules]]). The Facts bullet naming all contracts by number and by name is corrected from
+  EIGHT to NINE, with the ninth contract added to the list and the quoted runner output moved from
+  `Contracts: 8 kept` to `Contracts: 9 kept`. The DoD command count is UNCHANGED at eight — the new
+  contract runs inside the existing import-boundary command; "Eight commands in total" and the
+  History entries' own dated counts are untouched by design.
