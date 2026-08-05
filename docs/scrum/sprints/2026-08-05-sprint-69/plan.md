@@ -1,7 +1,14 @@
 # Sprint 69 — Plan
 
-**Status:** PROPOSED, awaiting PO approval. Not locked. **Plan-verified (GAPS found and closed — see
-below).**
+**Status:** **APPROVED AND LOCKED 2026-08-05.** Plan-verified pre-lock (GAPS found and closed — see
+below). Branch cut from `29eb824`, tagged `sprint-69-start`. Scope is frozen: PO requests from here
+go to the backlog, not into this sprint.
+
+**PO decision at approval:** *"take the 11 with AC6"* — clarified, because AC6 had come to mean two
+things. **11 points, STORY-220 deferred to sprint 70**; STORY-206's current AC6 (the catalogue row
+flip) is in. The declined alternative was 13 with the completeness test pulled back in. **Accepted
+consequence:** for one sprint ZR-1's forbidden-module list is complete only as far as a human
+maintains it, and STORY-206 AC6 requires the row to say so.
 **Mode:** in-process · **Branch:** `sprint-69`, to be cut from `sprint-68` (`240549b`) · **Points:** 11 · **Stories:** 5
 
 **Verified precondition at the cut point.** Tree clean at `240549b`; the sprint-68 close baseline is

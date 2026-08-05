@@ -2368,7 +2368,8 @@ stories:
   - id: STORY-206
     title: Land ZR-1's guard — an import-linter contract forbidding inbound adapters from importing repository ports
     file: docs/scrum/stories/STORY-206-land-zr1-inbound-adapter-port-contract.md
-    status: draft   # FILED 2026-07-31 by STORY-197 (AC5 stopping rule: guards landed for the two
+    status: ready   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
+                    # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (AC5 stopping rule: guards landed for the two
                     # highest-severity rules WITH live violations; ZR-1 is clean, so it is deferred).
                     # THE CONTRACT IS ALREADY FULLY WRITTEN in docs/scrum/wiki/zone-rules.md ZR-1 --
                     # lift it verbatim. It enumerates the NINE repository/watermark port modules and
@@ -2393,11 +2394,12 @@ stories:
                     # discrimination rule, not a site list.
     priority: 77
     type: chore
-    sprint: null
+    sprint: 69
   - id: STORY-207
     title: Land ZR-2's guard — an AST test that vendor vocabulary never becomes an identifier inside core/
     file: docs/scrum/stories/STORY-207-land-zr2-vendor-vocabulary-ast-test.md
-    status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean, mutation proof needed).
+    status: ready   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
+                    # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean, mutation proof needed).
                     # Sketch is written in zone-rules.md ZR-2's coverage verdict, including the node
                     # types it must walk (FunctionDef/ClassDef names, arg, Name, Attribute.attr,
                     # keyword.arg, and Constant values that are NOT the sole value of an Expr
@@ -2413,11 +2415,12 @@ stories:
     points: 2
     priority: 78
     type: chore
-    sprint: null
+    sprint: 69
   - id: STORY-208
     title: Land ZR-4's guard — extend test_zone_layout to assert the five-file api feature SHAPE
     file: docs/scrum/stories/STORY-208-land-zr4-five-file-feature-test.md
-    status: draft   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean).
+    status: ready   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
+                    # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean).
                     # backend/tests/test_zone_layout.py TODAY asserts feature-SET equality against the
                     # api-feature-independence contract and router registration -- but NOT the
                     # five-file shape, which is why ZR-4 exists at all.
@@ -2432,11 +2435,12 @@ stories:
     points: 1
     priority: 79
     type: chore
-    sprint: null
+    sprint: 69
   - id: STORY-209
     title: Land ZR-5's guard — a composition-root parity test for CONFIG_DIR resolution (code-level half only)
     file: docs/scrum/stories/STORY-209-land-zr5-composition-root-parity-test.md
-    status: draft   # FILED 2026-07-31 by STORY-197 (deferred).
+    status: ready   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
+                    # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred).
                     # *** READ THE SCOPE LIMIT BEFORE ESTIMATING: this guard CANNOT cover the failure
                     # that actually caused the sprint-64 incident. *** The loop and the API are
                     # separate OS PROCESSES, each reading its own environment, so setting CONFIG_DIR
@@ -2455,7 +2459,7 @@ stories:
     points: 2
     priority: 80
     type: chore
-    sprint: null
+    sprint: 69
   - id: STORY-210
     title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
@@ -2671,7 +2675,8 @@ stories:
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md — a row may not claim a guard that does not exist
     file: docs/scrum/stories/STORY-216-mechanise-enforced-by-claim.md
-    status: draft   # FILED 2026-08-03 at the sprint-67 retro, from STORY-200's quality review
+    status: ready   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
+                    # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-08-03 at the sprint-67 retro, from STORY-200's quality review
                     # MAJOR-1 -- the sprint's headline finding.
                     # WHAT HAPPENED: zone-rules.md marked ZR-6's adjudication row `ENFORCED-BY
                     # <a named test>` and said "only this one, now-fixed instance is pinned". The
@@ -2700,7 +2705,7 @@ stories:
     points: 3
     priority: 65
     type: chore
-    sprint: null
+    sprint: 69
   - id: STORY-217
     title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
     file: docs/scrum/stories/STORY-217-topology-write-port.md
