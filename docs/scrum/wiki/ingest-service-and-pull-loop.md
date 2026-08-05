@@ -1,7 +1,7 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
 code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
-verified_sha: PLACEHOLDER
+verified_sha: 1903e55
 verified_sprint: sprint-69
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-190). NEW section added on partial-batch resilience.
@@ -373,7 +373,7 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   above already stated both halves (NOT fail-fast for the executor, IS fail-fast for a
   misconfigured `native_id`) correctly and is unaffected. Re-verified only; no Fact changed.
   verified_sha -> d554227.
-- sprint-69 (STORY-206, verified_sha bumped `d554227` -> PLACEHOLDER): the "Zone note worth
+- sprint-69 (STORY-206, verified_sha bumped `d554227` -> `1903e55`): the "Zone note worth
   keeping" Fact was WRONG as of this commit's own change — it claimed the core-port route (an
   inbound adapter holding and calling a persistence port) was "invisible to" the import-linter
   gate. STORY-206 adds a ninth contract, `inbound-adapters-dont-persist` (`pyproject.toml`), that
