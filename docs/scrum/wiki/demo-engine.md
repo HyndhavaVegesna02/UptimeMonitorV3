@@ -404,8 +404,17 @@ governs how much these codes may be trusted.
   `STATUSPAGE_API_KEY_VAR` instead of re-typed literals. No Fact in this article cites
   a line number inside any of the three changed spans (checked directly: `grep -no
   'harness\.py:[0-9]*\|env_matrix\.py:[0-9]*\|test_demo_fleet_config\.py:[0-9]*'` against
-  this file returns only the bare `.py:` prefixes inside the STORY-203 History entry
-  below and this entry's own text, no trailing line number anywhere else), and the
+  this file returns hits WITH a trailing line number only at the sites already
+  named above, plus the STORY-203 History entry below. **The pattern's other hits
+  are bare filename-colon prefixes carrying no trailing digit, and are not
+  confined to the STORY-203 entry and this entry's own text as a prior version
+  of this parenthetical claimed** — two are up in the Facts section, in a
+  "pinned by" citation that names test functions by their qualified test-module
+  path rather than a line number, and two more are the STORY-203 History
+  entry's own prose naming its grep targets by filename. None of the bare
+  hits falls inside any changed span, since none carries a line number at all
+  — that material conclusion still holds: no Fact anywhere in this article
+  cites a line number inside a changed span), and the
   publish-guard MECHANISM this article documents (`Config.statuspage_mapping()` empty
   for `config/demo`, `build_publisher` falling through to `LoggingPublisher`) is
   unchanged — the same two tests this article already cites by name
