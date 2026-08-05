@@ -1,8 +1,8 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: d24f59b
-verified_sprint: sprint-68
+verified_sha: PLACEHOLDER
+verified_sprint: sprint-69
 status: verified
 ---
 
@@ -270,8 +270,8 @@ it is one of these seven readers.
 `backend/src/composition/config.py` lives in the composition zone.  It imports
 `AntiFlapThresholds` from `src.core.services.pipeline` (composition → core is
 allowed).  Core never imports from `src.composition` (enforced by the
-`core-independence` import-linter contract).  No new contract was added; the
-eight existing contracts all stay KEPT.
+`core-independence` import-linter contract).  No new contract was added by this story; the
+nine existing contracts (STORY-206, sprint-69, added the ninth) all stay KEPT.
 
 ### Dependency
 `pyyaml` was added to `[project.dependencies]` in `pyproject.toml` (sprint-16,
@@ -367,3 +367,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   predate sprint-68 (drifted under STORY-204/STORY-205, before this sprint started, and
   untouched by any sprint-68 commit) and are left as pre-existing
   findings, not fixed here.
+- sprint-69 (STORY-206, verified_sha bumped `d24f59b` -> PLACEHOLDER): `pyproject.toml` (a
+  `code_ref`) gained a ninth `lint-imports` contract, `inbound-adapters-dont-persist` (ZR-1's
+  guard — see [[zone-rules]]), unrelated to `config.py`. The "Composition-zone placement" Fact's
+  "eight existing contracts all stay KEPT" is corrected to nine; no other Fact touches contract
+  count or `config.py` behaviour.
