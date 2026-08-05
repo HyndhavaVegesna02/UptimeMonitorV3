@@ -269,8 +269,11 @@ where a zone-wide regression would be caught.
   second time.
 - **Fixed and guarded (STORY-203, sprint-68) — the last four `MUST-IMPORT-FROM-SRC`
   entries this rule adjudicated, zero remain.** `tools/demo_loop_gate/harness.py`'s
-  defensive blocklist (`:761-774` at HEAD — a fix-round edit named each assert's failure
-  message, widening the span from `:761-768`) now compares the RESOLVED table name
+  defensive blocklist (`:762-775` at HEAD — a fix-round edit named each assert's failure
+  message, widening the span from `:761-768`; STORY-215's own `935cd70` added one more
+  import line to `harness.py`'s import block, shifting this span a further +1, from the
+  `:761-774` this article previously, and at the time correctly, recorded) now compares
+  the RESOLVED table name
   (read from the real `api_env`, unchanged) against
   `Settings.dynamo_observations_table`/`dynamo_control_table` — imported, not
   re-declared — on the blocklist's RIGHT-hand side only; replacing the LEFT-hand
@@ -282,40 +285,61 @@ where a zone-wide regression would be caught.
   `tools/demo_loop_gate/env_matrix.py:49` and
   `tools/demo_loop_gate/failure_path_reality_gate.py:149` at the pre-fix commits
   (`e9cb8c8`/`691227f`; each fix's own import-block edit shifted the line by +1, to
-  `:50`/`:150` at HEAD) — each hardcoded
+  `:50`/`:150`) — each hardcoded
   `Settings.aws_region`'s `"us-east-1"` default a second time; both now import
-  `Settings` and reference `Settings.aws_region`. This is exactly why "no import
+  `Settings` and reference `Settings.aws_region`. `env_matrix.py`'s site shifted a
+  further +2 at HEAD, to `:52` (STORY-215's `935cd70` added two more constants,
+  `DYNATRACE_API_TOKEN_VAR`/`DYNATRACE_ENV_URL_VAR`, to the same import block);
+  `failure_path_reality_gate.py` was untouched by that commit, so its site stays
+  `:150` at HEAD. This is exactly why "no import
   edge between the declaring modules" was the WRONG exemption criterion: an import
   edge to a DIFFERENT symbol in the same zone (`harness.py:61` already imported
   `src.composition.config` before this fix) does not mean the colliding value was
   actually obtained from `src` — it would have falsely CLEARED a real duplicate.
   `tools/zr3_duplicate_sweep.py` measured **13 -> 9** colliding pairs across this
-  fix; the remaining 9 are all `INDEPENDENT` (see the Measurement below).
-- **A second compliant citation, added by the STORY-202 fix — the two files import
-  DIFFERENT SUBSETS of the seven, not both all seven.**
-  `tools/demo_loop_gate/env_matrix.py:17-25` imports all SEVEN —
-  `CONFIG_DIR_VAR`/`AWS_REGION_VAR`/`DYNAMO_OBSERVATIONS_TABLE_VAR`/
-  `DYNAMO_CONTROL_TABLE_VAR`/`DYNAMO_ENDPOINT_URL_VAR`/`STATUSPAGE_PAGE_ID_VAR`/
-  `STATUSPAGE_API_KEY_VAR` — because it sets all seven as child-env dict keys.
-  `tools/demo_loop_gate/harness.py:62-67` imports only the FOUR it actually
-  re-types as a dict key at its six AC8 sites (line numbers as of `1210374`:
-  `:546`, `:615`, `:743`, `:749`, `:750`, `:751` — NOT the story's own AC8
-  numbers, `:540`/`:609`/`:736`/`:742`/`:743`/`:744`, which were the PRE-edit
-  numbers AC8 itself warned would shift) — `CONFIG_DIR_VAR`,
-  `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
-  `DYNAMO_OBSERVATIONS_TABLE_VAR` — because
-  `harness.py` never re-types `AWS_REGION`/`STATUSPAGE_PAGE_ID`/`STATUSPAGE_API_KEY`
-  as a literal dict key anywhere (verified: `grep -n
-  '"AWS_REGION"\|"STATUSPAGE_PAGE_ID"\|"STATUSPAGE_API_KEY"' tools/demo_loop_gate/harness.py`
-  returns zero hits), so there is nothing for it to import for those three. Both
+  fix; the remaining 9 are all `INDEPENDENT` (see the Measurement below; re-run at
+  HEAD for this fix round, still 9).
+- **A second compliant citation, added by the STORY-202 fix and widened by STORY-215 —
+  the two files import DIFFERENT SUBSETS of the NINE, not both all nine.**
+  **Corrected in this fix round (STORY-215 fix round): this Fact previously said SEVEN
+  and FOUR — false at its own `verified_sha` (`b887883`), not merely stale by the time
+  of this fix round, because `935cd70` (an ancestor of `b887883`) had already promoted
+  `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` and added both to `env_matrix.py`
+  (one of them to `harness.py`) before this article's `verified_sha` was stamped over
+  it.** `backend/src/composition/settings.py` now declares NINE `<NAME>_VAR` env-var-name
+  constants: the original seven (`CONFIG_DIR_VAR`, `AWS_REGION_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR`, `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `STATUSPAGE_PAGE_ID_VAR`, `STATUSPAGE_API_KEY_VAR`) plus `DYNATRACE_ENV_URL_VAR`/
+  `DYNATRACE_API_TOKEN_VAR` (STORY-215 AC1).
+  `tools/demo_loop_gate/env_matrix.py:17-28` imports all NINE — `AWS_REGION_VAR`,
+  `CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR`, `DYNATRACE_API_TOKEN_VAR`, `DYNATRACE_ENV_URL_VAR`,
+  `STATUSPAGE_API_KEY_VAR`, `STATUSPAGE_PAGE_ID_VAR` — because it sets all nine as
+  child-env dict keys (`build_child_env`'s body,
+  `tools/demo_loop_gate/env_matrix.py:76-90`).
+  `tools/demo_loop_gate/harness.py:62-69` imports only the FIVE it actually
+  re-types as a dict key, at its SEVEN re-type sites — re-derived directly against
+  HEAD for this fix round (not carried forward from any commit message or prior wiki
+  text): `:548` (`api_env[CONFIG_DIR_VAR]`, inside the API-launch evidence `print`),
+  `:616` (`loop_env[DYNATRACE_ENV_URL_VAR]`, inside the loop-launch evidence `print`),
+  `:617` (`loop_env[CONFIG_DIR_VAR]`, the same `print`), `:745`
+  (`result["config_dir_api"] = api_env[CONFIG_DIR_VAR]`), `:751`
+  (`result["dynamo_endpoint_url"] = api_env[DYNAMO_ENDPOINT_URL_VAR]`), `:752`
+  (`result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]`), `:753`
+  (`result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]`) — the five imported
+  symbols are `CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
+  `DYNAMO_OBSERVATIONS_TABLE_VAR`, `DYNATRACE_ENV_URL_VAR` — because
+  `harness.py` never re-types `AWS_REGION`/`DYNATRACE_API_TOKEN`/`STATUSPAGE_PAGE_ID`/
+  `STATUSPAGE_API_KEY` as a literal dict key anywhere (verified: `grep -n
+  '"AWS_REGION"\|"DYNATRACE_API_TOKEN"\|"STATUSPAGE_PAGE_ID"\|"STATUSPAGE_API_KEY"'
+  tools/demo_loop_gate/harness.py` returns zero hits), so there is nothing for it to
+  import for those four. Both
   files use whichever subset they need as their env-dict keys, rather than
-  re-declaring any of the seven env-var NAMES a second time — the same
+  re-declaring any of the nine env-var NAMES a second time — the same
   reuse-not-rederive shape as the `assumed_failure_codes.py` citation above,
   closing the collision this rule's Coverage verdict's own measurement (below)
-  found before STORY-202 landed. **Four is the complete, correct count for
-  `harness.py`, not an undercount** — an earlier draft of this sentence claimed
-  both files import all seven, which was false at HEAD; corrected in the
-  STORY-202 fix round.
+  found before STORY-202 landed. **Five is the complete, correct count for
+  `harness.py` at HEAD, not an undercount.**
 - **Measurement pinning the scope (re-run this story, at HEAD):** a WIDE reading —
   every scalar `ast.Constant` value (`str`/`int`/`float`/`bool`/`None`) anywhere under
   `tools/` compared against anywhere under `backend/src/` — found **101 distinct
@@ -807,21 +831,28 @@ live violation remains under this rule.
 
 ### A recorded limitation of `tools/citation_sweep.py`, so nobody "fixes" a correct citation
 
-Run against this article, the sweep reports **11 failures, all of them false**, verified
-line-by-line by direct read at STORY-197 acceptance and re-counted at review:
+**Re-run for this fix round (STORY-215): 27 failures, all of them false** — up from the
+**11** this section originally recorded at STORY-197 acceptance, because every fix round
+since (STORY-199 through this one) has quoted more real citations by bare filename in its
+own History prose without re-running this command afterward, the same "count must be
+re-derived AFTER the prose that changes it" lapse this section already called out once
+against itself. Categorised by direct read, not assumed from the pattern:
 
 - Two cite `code-boundary-discipline.md`, a **memory file outside the repo** — correctly absent, not
   a broken citation.
-- **Three are self-inflicted by this very section**, which quotes three of the real failures by
-  bare filename for readability; the sweep's regex matches those mentions as fresh citations and
-  they fail as "file does not exist". The count was written as 8 BEFORE this section existed and
-  was not re-run afterwards — caught at spec review, and a fair hit under the same C2 rule this
-  sprint applied to everyone else: a recorded count must be re-derived AFTER the prose that
-  changes it.
-- Six fail the **content-anchor** check while the cited lines are exactly right, because the anchor
-  the sweep extracts is either a symbol NAME defined elsewhere in the file (`in_window`,
-  `build_publisher`, `IngestService.ingest_observations`) or a multi-line construct rendered on one
-  line in prose (`seed_dynamo.py:29-30`'s key dict, `run.py:182-184`'s three statements,
+- **Twenty are self-inflicted bare-filename mentions across this article's own History
+  prose** (this section's own examples plus every fix-round bullet that quotes a real
+  citation without its directory prefix for readability — `env_matrix.py:39/49`,
+  `query.py:63-80/133/136/136-155`, `composition/app.py:224`,
+  `dynamo_publication_repository.py:53`, `seed_dynamo.py:29-30`, `run.py:182-184`,
+  `status_publisher.py:14-19`, `harness.py:61/615/616/754/761-774`,
+  `test_demo_fleet_config.py:174/194/226-232`, `failure_path_reality_gate.py:149`); the
+  sweep's regex matches each bare mention as a fresh citation and fails it as "file does
+  not exist" even though the real, full-path citation elsewhere in the article is fine.
+- **Five fail the content-anchor check** while the cited lines are exactly right, because the anchor
+  the sweep extracts is either a symbol NAME defined elsewhere in the file
+  (`IngestService.ingest_observations`, `list_open`, `build_publisher`) or a multi-line
+  construct rendered on one line in prose (`run.py:182-184`'s three statements,
   `status_publisher.py:14-19`'s class-plus-signature).
 
 The line-count half of the sweep is sound and the anchor half is a useful heuristic, but **an anchor
@@ -830,14 +861,62 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
 
 ## History
 
+- sprint-68 (STORY-215 fix round): **MAJOR — the `verified_sha` bump in the STORY-215
+  landing commit (`7fb87fe`) certified a ZR-3 Fact this same story's own earlier commit
+  (`935cd70`) had already made false, and the false Fact was STILL false at the sha the
+  bump pointed to (`b887883`), not merely stale by the time it was read.** The "second
+  compliant citation" Fact claimed `env_matrix.py` "imports all SEVEN" and `harness.py`
+  "imports only the FOUR" it re-types as a dict key, at six named sites. At HEAD (and at
+  `b887883`, since `935cd70` is its ancestor): `settings.py` declares NINE `<NAME>_VAR`
+  constants (not seven — `935cd70` added `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR`
+  in the SAME commit), `env_matrix.py` imports all nine, and `harness.py` imports FIVE
+  (not four — `DYNATRACE_ENV_URL_VAR`), at SEVEN re-type sites (not six), none of which
+  the six OLD cited line numbers (`:546`, `:615`, `:743`, `:749`, `:750`, `:751`) still
+  point at: `935cd70`'s own import-block insertion shifted every one of them by +1
+  (verified directly: `:546`->print text, `:615`->an unrelated f-string fragment,
+  `:743`->a comment, `:749`->blank, `:750`->a comment, `:751`->the unrelated
+  `DYNAMO_ENDPOINT_URL_VAR` re-type site now one line later). Because `yt_wiki.py`
+  computes staleness as git arithmetic against `verified_sha`, bumping it to `b887883`
+  told the tool the ENTIRE article had been re-read against that sha, so the sweep
+  reported CLEAN over a Fact that was false at that exact sha — the same defect class
+  as STORY-204's MAJOR 2 (an article re-stamped over a Fact the implementer had already
+  flagged as wrong), and the third instance of it this sprint. **Fixed**: the "second
+  compliant citation" Fact rewritten to NINE/FIVE with all seven re-type sites
+  re-derived directly against HEAD (`:548`, `:616`, `:617`, `:745`, `:751`, `:752`,
+  `:753`); the "Fixed and guarded (STORY-203)" Fact's own two stale spans corrected
+  (`harness.py`'s blocklist `:761-774`->`:762-775`; `env_matrix.py`'s `Settings.aws_region`
+  site `:50`->`:52`, further shifted by `935cd70`'s two added imports;
+  `failure_path_reality_gate.py`'s site untouched, still `:150`); and three more stale
+  citations this same commit's line-shifts produced, found by re-deriving the WHOLE
+  ZR-3 section rather than spot-fixing only the ones named — `env_matrix.py:82,84`
+  corrected to `:84,86`, `harness.py:615` corrected to `:616` (both in the main
+  STORY-215 History bullet below), and `test_demo_fleet_config.py:174`/`:206-212`
+  corrected to `:194`/`:226-232` (the AC5 mutation citations, shifted by the SAME
+  story's separate `61152a3` commit, +20 net lines). **Re-verified, not re-stamped
+  blindly, this time**: every `file:line` citation in the ZR-3 section was re-opened
+  and its content read directly against HEAD before this bullet was written — see the
+  full re-derivation list in the STORY-215 implementer's report. Also re-checked (not
+  re-stamped): `demo-engine.md`, the other article `7fb87fe` bumped `verified_sha` on —
+  no content-affecting drift found; see that article's own History for what was
+  actually re-read. **A CLEAN `yt_wiki.py sweep` after this fix is evidence only that
+  `verified_sha` is not behind — it is not evidence any Fact is true; that can only
+  come from actually re-reading the cited lines, which is what this bullet records
+  happening.** verified_sha -> (this commit's own parent, the same self-reference gap
+  every prior ZR-3 fix round has hit).
 - sprint-68 (STORY-215): **Closed STORY-202's remainder — the two `DYNATRACE_*`
   env-var NAMES, plus a third and fourth `CONFIG_DIR` reader the sweep cannot see at
   all.** `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` promoted in `settings.py`
   (same `<NAME>_VAR` convention as the other seven), and `load_live_secrets` now reads
-  through them; `tools/demo_loop_gate/env_matrix.py:82,84` and `harness.py:615` (a
+  through them; `tools/demo_loop_gate/env_matrix.py:84,86` and `harness.py:616` (a
   dict-key literal inside a `print`, not the f-string's own `"DYNATRACE_ENV_URL="`
   text, which does not match) import the constants instead of re-typing them —
   `grep -rn '"DYNATRACE_ENV_URL"\|"DYNATRACE_API_TOKEN"' tools/` now zero hits.
+  **Corrected in the STORY-215 fix round: this bullet originally read `:82,84` and
+  `:615`** — the commit message's own line numbers for the PRE-fix literal sites;
+  this same commit's import-block insertion (+2 lines in `env_matrix.py`, +1 in
+  `harness.py`) had already shifted the FIXED sites to `:84,86`/`:616` by the time
+  this commit landed, so the bullet was wrong from the moment it was written, not
+  merely stale by the time of this fix round.
   **Sweep count, re-derived at this story's own start commit and again after each
   edit:** 9 (start, matching STORY-203's post-fix count) -> 12 with ONLY the two
   constants declared and `tools/` left un-fixed (`test_zr3_sweep_finds_no_
@@ -874,13 +953,18 @@ failure is a prompt to read the line, never evidence the citation is wrong.** A 
   **AC5's two-sided mutation (renaming `CONFIG_DIR_VAR`'s VALUE in `settings.py`,
   run pre-fix in an isolated `git worktree` with `PYTHONPATH=<worktree>/backend`,
   `module.__file__` printed to prove the worktree tree ran):**
-  `test_demo_fleet_config.py:174` (the demo-side assertion) went RED —
+  `test_demo_fleet_config.py:194` (the demo-side assertion) went RED —
   `statuspage_mapping() = {'http-check': 'xdnywbx77npw'}`, delegate type
   `BestEffortPublisher` — a WORKING detector, not rescued by this story's fix; while
-  `test_demo_fleet_config.py:206-212` (the live-side assertion) stayed GREEN, because
+  `test_demo_fleet_config.py:226-232` (the live-side assertion) stayed GREEN, because
   its own literal sets `CONFIG_DIR=config/apps`, which is also the resolved default
   when the renamed var is unset — passing for the wrong reason regardless of what the
   variable is called. That vacuity is what the site-3/site-5 fixes above close.
+  **Corrected in the STORY-215 fix round: this bullet originally read `:174` and
+  `:206-212`** — the exact lines at the pre-fix (`61152a3^`) commit the AC5 mutation
+  ran against, which this bullet copied forward uncorrected even though the same
+  story's own `61152a3` (AC3, +20 net lines to this file's docstring and import block)
+  had already shifted them to `:194`/`:226-232` by the time this bullet was written.
   **No claim that the tools<->src name boundary is now fully closed**: this rule's
   own sweep is structurally blind to `backend/tests/` and `scripts/`, so a future
   re-typed name in either tree would not be caught by `test_zr3_sweep_finds_no_

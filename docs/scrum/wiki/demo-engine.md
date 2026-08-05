@@ -396,7 +396,7 @@ governs how much these codes may be trusted.
   `env_matrix.py` (both `code_refs`) for the ZR-3 remainder fix ([[zone-rules]]): the two
   `DYNATRACE_*` env-var NAMES are now imported from `settings.py`'s new
   `DYNATRACE_ENV_URL_VAR`/`DYNATRACE_API_TOKEN_VAR` constants instead of re-typed as
-  literals (`env_matrix.py:82,84`, `harness.py:615`'s dict-key access inside a
+  literals (`env_matrix.py:84,86`, `harness.py:616`'s dict-key access inside a
   diagnostic `print`) — no behaviour change, same values flow to the same child-env
   dict keys. Also flagged `backend/tests/test_demo_fleet_config.py` (a `code_ref`): its
   `create_app()` publish-safety pair now sets four env vars through
@@ -410,8 +410,12 @@ governs how much these codes may be trusted.
   for `config/demo`, `build_publisher` falling through to `LoggingPublisher`) is
   unchanged — the same two tests this article already cites by name
   (`test_create_app_with_demo_config_dir_yields_empty_mapping_and_logging_delegate`,
-  the disjointness tests) still pass, unmodified in substance. verified_sha ->
-  `b887883`.
+  the disjointness tests) still pass, unmodified in substance. **Corrected in the
+  STORY-215 fix round: this entry originally cited `env_matrix.py:82,84` and
+  `harness.py:615`** — the commit message's own pre-fix line numbers, which this
+  commit's own import-block insertion (+2/+1 lines respectively) had already shifted
+  to `:84,86`/`:616` by the time this entry was written; this citation is illustrative
+  prose, not a Fact, but wrong is wrong. verified_sha -> `b887883`.
 - sprint-68 (STORY-203): RE-VERIFIED, no content change. The sweep flagged `harness.py`,
   `env_matrix.py` and `failure_path_reality_gate.py` (all `code_refs`) for the ZR-3 fix ([[zone-rules]]):
   the last four `MUST-IMPORT-FROM-SRC` collisions this project adjudicated (two
