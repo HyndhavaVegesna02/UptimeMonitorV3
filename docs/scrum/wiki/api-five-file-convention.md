@@ -1,7 +1,7 @@
 ---
 title: API Five-File Feature Convention (+ _shared)
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, backend/tests/test_publications_endpoint.py, pyproject.toml, backend/src/api/v1/_shared/__init__.py, backend/src/api/v1/_shared/errors.py, backend/src/api/v1/_shared/validation.py, backend/src/api/v1/_shared/middleware.py, backend/src/api/v1/_shared/windowing.py, backend/tests/test_shared_windowing.py, backend/tests/test_shared_errors.py]
-verified_sha: PLACEHOLDER
+verified_sha: f3319cb
 verified_sprint: sprint-69
 status: verified
 ---
@@ -156,7 +156,7 @@ status: verified
   corrected `verified_sprint`, left at the stale `sprint-63` in the previous re-stamp despite
   `verified_sha` already reading `d469d2c` — a within-diff inconsistency the reviewer caught.
   verified_sha -> 013f344.
-- sprint-69 (STORY-206, verified_sha bumped `013f344` -> PLACEHOLDER): `pyproject.toml` (a
+- sprint-69 (STORY-206, verified_sha bumped `013f344` -> `f3319cb`): `pyproject.toml` (a
   `code_ref`) gained a ninth `lint-imports` contract, `inbound-adapters-dont-persist` (ZR-1's guard
   — see [[zone-rules]]), unrelated to `_shared`/feature fencing. The `_shared`-fencing Fact's quoted
   `lint-imports: 8 kept / 0 broken` is corrected to 9 kept; no other Fact, the five-file shape, or
