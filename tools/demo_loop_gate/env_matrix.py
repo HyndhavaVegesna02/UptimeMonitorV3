@@ -20,6 +20,8 @@ from src.composition.settings import (
     DYNAMO_CONTROL_TABLE_VAR,
     DYNAMO_ENDPOINT_URL_VAR,
     DYNAMO_OBSERVATIONS_TABLE_VAR,
+    DYNATRACE_API_TOKEN_VAR,
+    DYNATRACE_ENV_URL_VAR,
     STATUSPAGE_API_KEY_VAR,
     STATUSPAGE_PAGE_ID_VAR,
     Settings,
@@ -79,9 +81,9 @@ def build_child_env(
     env[DYNAMO_CONTROL_TABLE_VAR] = control_table
 
     if dynatrace_env_url is not None:
-        env["DYNATRACE_ENV_URL"] = dynatrace_env_url
+        env[DYNATRACE_ENV_URL_VAR] = dynatrace_env_url
     if dynatrace_api_token is not None:
-        env["DYNATRACE_API_TOKEN"] = dynatrace_api_token
+        env[DYNATRACE_API_TOKEN_VAR] = dynatrace_api_token
     if statuspage_page_id is not None:
         env[STATUSPAGE_PAGE_ID_VAR] = statuspage_page_id
     if statuspage_api_token is not None:

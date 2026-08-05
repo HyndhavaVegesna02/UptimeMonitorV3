@@ -63,6 +63,14 @@ class MissingLiveSecretError(ValueError):
 STATUSPAGE_PAGE_ID_VAR = "STATUSPAGE_PAGE_ID"
 STATUSPAGE_API_KEY_VAR = "STATUSPAGE_API_KEY"
 
+# The required Dynatrace secret names `load_live_secrets()` reads (STORY-215
+# AC1: promoted from function-body string literals to module constants, the
+# same `<NAME>_VAR` convention as `CONFIG_DIR_VAR` etc. above -- left as
+# literals by STORY-202 on purpose, because promoting them creates fresh
+# ZR-3 collisions of its own; STORY-215 AC2/AC6 adjudicate those).
+DYNATRACE_ENV_URL_VAR = "DYNATRACE_ENV_URL"
+DYNATRACE_API_TOKEN_VAR = "DYNATRACE_API_TOKEN"
+
 
 @dataclass(frozen=True)
 class LiveSecrets:
@@ -111,12 +119,12 @@ def load_live_secrets() -> LiveSecrets:
     Raises MissingLiveSecretError if required Dynatrace secrets are missing.
     """
     missing = []
-    env_url = os.environ.get("DYNATRACE_ENV_URL")
+    env_url = os.environ.get(DYNATRACE_ENV_URL_VAR)
     if not env_url:
-        missing.append("DYNATRACE_ENV_URL")
-    dt_token = os.environ.get("DYNATRACE_API_TOKEN")
+        missing.append(DYNATRACE_ENV_URL_VAR)
+    dt_token = os.environ.get(DYNATRACE_API_TOKEN_VAR)
     if not dt_token:
-        missing.append("DYNATRACE_API_TOKEN")
+        missing.append(DYNATRACE_API_TOKEN_VAR)
 
     if missing:
         raise MissingLiveSecretError(

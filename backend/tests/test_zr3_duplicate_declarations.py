@@ -117,22 +117,26 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as above, a "
         "different file."
     ),
-    ("tools/demo_loop_gate/harness.py", 927): (
+    ("tools/demo_loop_gate/harness.py", 928): (
         "INDEPENDENT: dict(list(per_signal.items())[:3]), a slice bound unrelated "
         "to FreshnessConfig.stale_after_cycles. (Re-keyed from :903 to :910 by "
         "STORY-202's own harness.py edits, then :910 to :921 by STORY-203's own "
         "harness.py import-block edit (adding `Settings` to the existing "
         "`from src.composition.settings import (...)` block), then :921 to :927 "
         "by STORY-203's own fix-round edit adding failure messages to the "
-        "AC1(b) blocklist asserts -- the collision is unchanged, only its line "
-        "moved.)"
+        "AC1(b) blocklist asserts, then :927 to :928 by STORY-215's own "
+        "harness.py import-block edit (adding `DYNATRACE_ENV_URL_VAR` to the "
+        "existing `from src.composition.settings import (...)` block) -- the "
+        "collision is unchanged, only its line moved.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 988): (
+    ("tools/demo_loop_gate/harness.py", 989): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
         "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
         "(Re-keyed from :964 to :971, same cause as :927 above, then :971 to "
         "982 by the same STORY-203 harness.py import-block edit, then :982 to "
-        "988 by the same STORY-203 fix-round message edit that re-keyed :927.)"
+        "988 by the same STORY-203 fix-round message edit that re-keyed :927, "
+        "then :988 to :989 by the same STORY-215 harness.py import-block edit "
+        "that re-keyed :927 to :928 above.)"
     ),
 }
 

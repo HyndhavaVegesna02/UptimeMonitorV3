@@ -64,6 +64,7 @@ from src.composition.settings import (  # noqa: E402
     DYNAMO_CONTROL_TABLE_VAR,
     DYNAMO_ENDPOINT_URL_VAR,
     DYNAMO_OBSERVATIONS_TABLE_VAR,
+    DYNATRACE_ENV_URL_VAR,
     Settings,
 )
 
@@ -612,7 +613,7 @@ def run_positive_side(
                 )
                 print(
                     f"Loop subprocess launched, pid={loop_proc.pid}, env "
-                    f"DYNATRACE_ENV_URL={loop_env['DYNATRACE_ENV_URL']!r} "
+                    f"DYNATRACE_ENV_URL={loop_env[DYNATRACE_ENV_URL_VAR]!r} "
                     f"CONFIG_DIR={loop_env[CONFIG_DIR_VAR]!r}"
                 )
 

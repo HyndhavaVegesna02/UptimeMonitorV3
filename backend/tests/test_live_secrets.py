@@ -11,12 +11,38 @@ from __future__ import annotations
 
 import pytest
 from src.composition.settings import (
+    DYNATRACE_API_TOKEN_VAR,
+    DYNATRACE_ENV_URL_VAR,
     LiveSecrets,
     MissingLiveSecretError,
     StatuspageSecrets,
     load_live_secrets,
     load_statuspage_secrets,
 )
+
+
+def test_dynatrace_env_var_name_constants_match_the_names_load_live_secrets_historically_read(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-215 AC1: the two `DYNATRACE_*` names `load_live_secrets()` used to
+    read as function-body string literals are now module constants (same
+    `<NAME>_VAR` convention `CONFIG_DIR_VAR` etc. already use), pinned here to
+    their known literal values. As with `test_settings.py`'s equivalent pin,
+    the round-trip below cannot by itself distinguish "reads through the
+    constant" from "reads the literal" (setenv and load_live_secrets
+    reference the identical symbol) -- it demonstrates load_live_secrets()
+    still resolves correctly post-promotion."""
+    assert DYNATRACE_ENV_URL_VAR == "DYNATRACE_ENV_URL"
+    assert DYNATRACE_API_TOKEN_VAR == "DYNATRACE_API_TOKEN"
+
+    monkeypatch.setenv(DYNATRACE_ENV_URL_VAR, "https://dt.example.com")
+    monkeypatch.setenv(DYNATRACE_API_TOKEN_VAR, "dt.token.123")
+    monkeypatch.delenv("STATUSPAGE_PAGE_ID", raising=False)
+    monkeypatch.delenv("STATUSPAGE_API_KEY", raising=False)
+
+    secrets = load_live_secrets()
+    assert secrets.dynatrace_env_url == "https://dt.example.com"
+    assert secrets.dynatrace_api_token == "dt.token.123"
 
 
 def test_load_live_secrets_success_all_set(monkeypatch: pytest.MonkeyPatch):
