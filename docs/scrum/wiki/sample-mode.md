@@ -493,7 +493,7 @@ produced ordinary data flowing through it.
   `adapters/persistence/dynamo_sample_mode_repository.py` — that rot predates this story and is
   not one of its 16(+2) enumerated sites; noted as a candidate for STORY-155 (sample-mode
   removal) or a follow-up wiki-accuracy story. verified_sha -> b272c32.
-- sprint-69 (STORY-206, verified_sha bumped `b272c32` -> `8397da9`): the sweep flagged
+- sprint-69 (STORY-206, verified_sha bumped `d554227` -> `8397da9`): the sweep flagged
   `pyproject.toml` (a `code_ref`, present because `sample_mode` is one of the `api-feature-independence`
   contract's member modules). STORY-206 added a ninth, UNRELATED contract,
   `inbound-adapters-dont-persist` (ZR-1's guard — see [[zone-rules]]); `api-feature-independence`'s
