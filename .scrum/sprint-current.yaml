@@ -68,7 +68,7 @@ stories:
   - id: STORY-206
     title: Land ZR-1's guard -- an import-linter contract forbidding inbound adapters from importing repository ports
     points: 3
-    board: in-progress   # todo | in-progress | blocked | review | done
+    board: review        # todo | in-progress | blocked | review | done
                          # BACK from review: quality review returned FIX_REQUIRED with 4 MAJORs,
                          # all four independently confirmed by the orchestrator. Spec review had
                          # PASSED (7/7 AC MET) -- the AC are met; what is wrong is that the story
@@ -77,63 +77,60 @@ stories:
     pipeline: full       # 3+ pts -> implementer + spec review || quality review
     order: 1             # widest ripple: the only story escaping backend/tests/
     blocked_question: null
-    attempts: 2          # first implementer DIED on the session limit at the last AC7 article;
+    attempts: 2          # 1: first implementer DIED on the session limit at the last AC7 article;
                          # tree was CLEAN and 13 commits coherent, so nothing was discarded --
                          # the orchestrator verified the tail rather than re-dispatching.
     paused_at_commit: null
-    commit_range: d62c69b..51fa6a9
-    dod_evidence:
+    commit_range: a90d74a..550634c   # CORRECTED (RC-4): the earlier `d62c69b..51fa6a9` excluded
+                                    # d62c69b -- the commit landing the contract itself, i.e. the
+                                    # substance of AC1/AC2/AC5. Two-dot semantics drop the left
+                                    # endpoint. Now spans lock -> rework tail.
+    rework_range: 8b805ae..550634c  # attempt 2: 12 implementer commits + 1 orchestrator tail
+    dod_evidence:   # POST-REWORK, full 8/8 at 550634c. Emitted by yt_gate.py, merged verbatim.
       - command: "python -m pytest"
         exit_code: 0
-        output_tail: "======================= 714 passed in 91.39s (0:01:31) ========================"
-        commit: 51fa6a9
-        at: "2026-08-06T05:55:48+00:00"
+        output_tail: "======================= 714 passed in 91.00s (0:01:31) ========================"
+        commit: 550634c
+        at: "2026-08-06T12:19:00+00:00"
       - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
         exit_code: 0
         output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-        commit: 51fa6a9
-        at: "2026-08-06T05:57:22+00:00"
+        commit: 550634c
+        at: "2026-08-06T12:20:31+00:00"
       - command: "python -m ruff check ."
         exit_code: 0
         output_tail: "All checks passed!"
-        commit: 51fa6a9
-        at: "2026-08-06T05:57:23+00:00"
+        commit: 550634c
+        at: "2026-08-06T12:20:32+00:00"
       - command: "python -m ruff format --check ."
         exit_code: 0
         output_tail: "249 files already formatted"
-        commit: 51fa6a9
-        at: "2026-08-06T05:57:24+00:00"
+        commit: 550634c
+        at: "2026-08-06T12:20:33+00:00"
       - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
         exit_code: 0
         output_tail: ""
-        commit: 51fa6a9
-        at: "2026-08-06T05:57:25+00:00"
+        commit: 550634c
+        at: "2026-08-06T12:20:34+00:00"
       - command: "npm test"
         exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  92.92s"
-        commit: 51fa6a9
-        at: "2026-08-06T06:05:47+00:00"
+        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  154.31s"
+        commit: 550634c
+        at: "2026-08-06T12:24:47+00:00"
         note: >-
-          *** THIS IS THE VALID SIGNAL FOR npm test, AND IT IS A RE-RUN. *** The full-gate pass at
-          05:57 recorded npm test exit 1 (2 failures in
-          frontend/src/pages/MaintenancePage.test.tsx, an inline-422 assertion whose Start field
-          rendered value=""). CONTENTION PROVEN per the 2026-07-06 agreement, both limbs:
-          (1) `git diff --stat sprint-69-start..HEAD -- frontend/` is EMPTY -- STORY-206 touched
-          no frontend file; (2) it passes with adequate resources -- `npm test --
-          --no-file-parallelism` gave 51 files / 363 tests passed, and then the UNMODIFIED gate
-          command run alone (this entry, machine-emitted by yt_gate.py --only "npm test", same
-          commit 51fa6a9) also passed. Nothing was hand-transcribed.
-          A FLAKY GATE IS NEVER LEFT AS THE STANDING GATE: filed as STORY-221.
+          PASSED FIRST TIME on this run -- no re-run needed, unlike the attempt-1 gate. The
+          STORY-221 flake did not fire. It is still filed and still real; one green run is not
+          evidence it is gone.
       - command: "npm run build"
         exit_code: 0
-        output_tail: "✓ built in 1.43s"
-        commit: 51fa6a9
-        at: "2026-08-06T06:00:26+00:00"
+        output_tail: "built in 1.05s"
+        commit: 550634c
+        at: "2026-08-06T12:25:10+00:00"
       - command: "npm run lint"
         exit_code: 0
         output_tail: "> eslint ."
-        commit: 51fa6a9
-        at: "2026-08-06T06:00:48+00:00"
+        commit: 550634c
+        at: "2026-08-06T12:25:32+00:00"
     blast_radius_resolved: true   # AC7's five pyproject.toml-citing articles all updated or
                                   # re-verified with bumped verified_sha (commits 729c866..51fa6a9)
     spec_review:
@@ -209,6 +206,44 @@ stories:
         touching the working tree -- the correct shape, and the contrast with RC-3 is instructive.
         It also said plainly that the one-commit-per-article cadence was right and worth keeping,
         rather than manufacturing a finding.
+    rework:
+      at: 2026-08-06
+      commits: 12 implementer + 1 orchestrator tail (8b805ae..550634c)
+      qm1_decision_validated: >-
+        BOTH CONTROLS RE-VERIFIED INDEPENDENTLY BY THE ORCHESTRATOR, not taken from the report.
+        NEGATIVE: `from src.core.ports import SignalIngestPort` in the inbound adapter -> exit 1,
+        "Contracts: 8 kept, 1 broken", nine chained violations. POSITIVE: the exact-module form
+        `from src.core.ports.signal_ingest import SignalIngestPort` in the same place -> exit 0,
+        "inbound-adapters-dont-persist KEPT", "Contracts: 9 kept, 0 broken". Both reverted, tree
+        clean. The positive control is what the whole decision rested on, and it holds: the shape
+        ZR-1 documents as legitimate IS expressible, just only in the exact-module form.
+      residue_2_is_sharper_than_briefed: >-
+        The implementer's residue (2) on ZR-1's row goes further than the brief asked, correctly:
+        the package form is not forbidden AS A FORM -- it trips only because core/ports/__init__.py
+        re-exports all nine modules, so a future narrowing of those re-exports could SILENTLY
+        REOPEN the package form as an escape hatch, and nothing guards that. That is a better
+        statement of the limit than the one requested.
+      orchestrator_tail:
+        - >-
+          The Facts-coverage lint was CLEAN at this session's standup and showed ONE finding after
+          the rework: the corrected Fact in ingest-service-and-pull-loop.md cited `pyproject.toml`
+          inline while that file is not in the article's code_refs. The implementer reported this
+          as pre-existing and out of scope; it was neither -- STORY-206's own commit 1903e55
+          introduced it. Fixed by the orchestrator as a trivial tail (550634c): citation REMOVED,
+          not code_ref added, because sprint-44 deleted that code_ref on a quality-review MAJOR and
+          re-adding it would silently reverse a reviewed decision AND make the article the sixth
+          citing a file already over the refs-amplifier threshold.
+        - >-
+          NOTED, NOT CHURNED: the rework widened architecture-boundary.md's code_refs to include
+          backend/src/core/ports/__init__.py (it now makes a load-bearing claim about that file's
+          re-exports), which pushes that path to FOUR articles and across the refs amplifier
+          threshold. Advisory only. The trade is justified -- narrowing it back would re-open a
+          Facts-coverage finding -- but it is a real cost this story added.
+      gate_after_rework: >-
+        Full 8/8 GREEN on the first attempt, no flake this time: 714 passed / 0 skipped under
+        REQUIRE_DYNAMO=1, "Contracts: 9 kept, 0 broken", npm test 51 files / 363 tests.
+        Evidence block below replaced wholesale; the earlier contention note is preserved in
+        gate_notes as process history.
     # AC7 pre-declares it: pyproject.toml is a code_ref in FIVE wiki articles
     # (architecture-boundary, api-five-file-convention, config-layer,
     # dev-setup-and-dod, sample-mode). Expected, not a gate-time surprise.
