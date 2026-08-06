@@ -239,6 +239,55 @@ stories:
           re-exports), which pushes that path to FOUR articles and across the refs amplifier
           threshold. Advisory only. The trade is justified -- narrowing it back would re-open a
           Facts-coverage finding -- but it is a real cost this story added.
+    quality_re_review:
+      verdict: FIX_REQUIRED
+      at: 2026-08-06
+      majors: 1
+      closed_from_round_1: "QM-1 (contract fix + 3 of 4 prose sites), QM-2, QM-3, QM-4, and 5 of 6 minors -- all verified closed"
+      new_major:
+        id: QM-5
+        text: >-
+          *** THE REPLACEMENT SENTENCE WAS ALSO FALSE, AND STAMPED "verified by mutation". ***
+          ZR-1's residue (2) claimed "a future change narrowing that __init__.py's re-exports could
+          silently reopen the package form as an escape hatch". The reviewer falsified it in a
+          scratch tree; the orchestrator then re-falsified it independently (first two attempts
+          INVALID -- import-linter resolved src.* to the MAIN tree, the trap CLAUDE.md documents;
+          re-run with PYTHONPATH pinned and provenance asserted):
+            - narrowed to the three non-persistence ports, the package-form FRONT DOOR import
+              imports cleanly AND reports 9 kept / 0 broken -> narrowing REMOVES a false positive;
+            - a forbidden port via the package form after narrowing is an ImportError -> dead code,
+              not an escape.
+          So the claim was not merely unproven, it was BACKWARDS: it would have deterred the
+          correct future cleanup by branding it a security regression, inside the row zone-rules
+          itself calls the authoritative verdict. Same defect class as the MAJOR it was written to
+          fix -- an unverified causal inference carried under a "verified by mutation" stamp.
+        fixed_by: orchestrator, 13bbb07
+        replacement_is_mutated: >-
+          The new residue (2) states what was actually tested, including the REAL hole, which was
+          verified before being written: a PEP 562 __getattr__/importlib dynamic re-export resolves
+          ObservationRepository at runtime while the contract reports 9 kept / 0 broken -- an
+          inbound adapter could hold a repository port with a fully green gate. Static analysis
+          cannot follow it. That is the shape nothing guards.
+      minors_fixed_by_orchestrator: >-
+        pyproject's own header comment still carried the bare `lint-imports` invocation (the exact
+        falsehood QM-3 fixed elsewhere) and now also warns about the sys.path/PYTHONPATH trap that
+        cost two wrong answers above; zone-rules' mirrored contract block had drifted from the
+        shipped comment and is now labelled a spec reproduction with the build config authoritative;
+        config-layer's "governed by core-independence alone" was over-broad (adapters-edge-only and
+        api-outward-independence also fence src.composition); the orchestrator's own explanatory
+        parenthetical moved out of a Fact body into the frontmatter comment, where zone-rules keeps
+        the identical note.
+      facts_lint_caught_the_orchestrator_twice: >-
+        Both explanatory notes written while fixing this cited the build-config path in backticks
+        INSIDE a Facts section, re-triggering the same coverage finding being fixed. The lint is
+        lexical and was right both times. Worth remembering: the fix for a citation finding must
+        not itself be phrased as a citation.
+      refs_amplifier_trade: >-
+        The reviewer independently endorsed keeping core/ports/__init__.py as a code_ref on
+        architecture-boundary.md: it is a narrow, boundary-defining file of the same class as the
+        four zone __init__.py files already cited, not a broad-churn file, and writing the Fact to
+        avoid the citation would mean stating a mechanism without naming the file that causes it --
+        the unverifiable-prose shape QM-1 existed to punish.
       gate_after_rework: >-
         Full 8/8 GREEN on the first attempt, no flake this time: 714 passed / 0 skipped under
         REQUIRE_DYNAMO=1, "Contracts: 9 kept, 0 broken", npm test 51 files / 363 tests.
