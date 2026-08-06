@@ -111,6 +111,15 @@ forbidden_modules = ["tests"]
 # a driving adapter may legitimately reference it) and `src.core.ports.clock` /
 # `src.core.ports.status_publisher` are not persistence, so banning the whole
 # package would forbid a shape the design documents as legitimate (STORY-206).
+#
+# `backend/src/core/ports/__init__.py` re-exports every port, including all
+# nine forbidden ones, and import-linter follows INDIRECT chains by default —
+# so an inbound adapter MUST import a port by its EXACT module, e.g.
+# `from src.core.ports.signal_ingest import SignalIngestPort`, never the
+# package form `from src.core.ports import SignalIngestPort` (that form
+# trips this contract on all nine forbidden modules at once, even for the
+# front door, because it transitively imports the whole package — verified
+# by mutation, STORY-206 rework).
 [[tool.importlinter.contracts]]
 name = "inbound-adapters-dont-persist"
 type = "forbidden"
@@ -126,11 +135,12 @@ forbidden_modules = [
     "src.core.ports.signal_repository",
     "src.core.ports.watermark",
 ]
-# Maintenance note (STORY-197): a newly added repository/persistence port
-# module MUST be appended to this list in the SAME commit that adds it, or
-# it is invisible to this guard. `src.core.ports.signal_ingest` (the front
-# door) and `src.core.ports.clock`/`status_publisher` (not persistence)
-# are deliberately excluded — see the Statement above.
+# Maintenance note (STORY-197; this contract landed by STORY-206): a newly
+# added repository/persistence port module MUST be appended to this list in
+# the SAME commit that adds it, or it is invisible to this guard.
+# `src.core.ports.signal_ingest` (the front door) and
+# `src.core.ports.clock`/`status_publisher` (not persistence) are
+# deliberately excluded — see the comment block above the contract.
 
 
 [tool.ruff]
