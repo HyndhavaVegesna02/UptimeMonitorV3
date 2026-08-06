@@ -131,6 +131,22 @@ stories:
         at: "2026-08-06T06:00:48+00:00"
     blast_radius_resolved: true   # AC7's five pyproject.toml-citing articles all updated or
                                   # re-verified with bumped verified_sha (commits 729c866..51fa6a9)
+    spec_review:
+      verdict: PASS
+      at: 2026-08-06
+      ac_trace: "AC1..AC7 all MET, each with a ran:true check"
+      independently_reproduced: >-
+        The reviewer re-performed the AC3 mutation itself and got the same result as the
+        orchestrator's record: exit 1 / inbound-adapters-dont-persist BROKEN naming the edge, then
+        exit 0 / 9 kept 0 broken on revert. AC3 has now been seen RED by two parties.
+      notable: >-
+        AC4's discrimination held in BOTH directions under an independent sweep -- contract-count
+        claims bumped across nine living files, DoD-command-count claims preserved unchanged at
+        CLAUDE.md:188, dev-setup-and-dod.md:119/355 and zone-rules.md:810/1434, dated History
+        entries correctly left alone, and zero diffs under docs/scrum/sprints/ or
+        docs/scrum/stories/. No STORY-220 scope creep.
+    quality_review:
+      verdict: pending
     # AC7 pre-declares it: pyproject.toml is a code_ref in FIVE wiki articles
     # (architecture-boundary, api-five-file-convention, config-layer,
     # dev-setup-and-dod, sample-mode). Expected, not a gate-time surprise.
@@ -303,6 +319,42 @@ retro_candidates:
       corpus. The grammar STORY-216 implements must therefore STRIP a leading verdict marker from
       inside the span before resolving the remainder. Caught while verifying STORY-206; recorded
       here so STORY-216's implementer does not rediscover it as four false REDs.
+
+  - id: RC-3
+    raised: 2026-08-06 (STORY-206 spec review)
+    severity: high
+    text: >-
+      *** THE ORCHESTRATOR'S BRIEF OVERRODE AN AGENT-DEFINITION RULE, AND THE AGENT OBEYED THE
+      BRIEF. *** A17 (sprint-68 retro, landed at the AGENT DEFINITION rung precisely so it could
+      not be bypassed) gives the spec reviewer the mirror rule: NEVER clean the tree. The
+      orchestrator's brief said "re-run the mutation yourself if you want it; that is exactly the
+      kind of check this project wants doubled." The reviewer did, then reverted with
+      `git checkout --` -- and disclosed it plainly rather than hiding it, which is the only
+      reason this is visible at all.
+      WHY IT MATTERS BEYOND THE LETTER: the quality reviewer was running CONCURRENTLY. A17's whole
+      claim is that the two reviewers are race-immune BY CONSTRUCTION -- quality never modifies,
+      spec never cleans. The brief broke the construction, so for the duration of that mutation the
+      quality reviewer could have been reading or testing a mutated tree. No harm was detected
+      (both trees verified clean before and after, and the quality verdict is assessed against
+      this), but the immunity was not there.
+      THE LESSON IS NOT "the reviewer should have refused" -- it is that a brief can silently
+      outrank a rule the retro deliberately placed at a higher rung. Ask at the retro whether the
+      ladder needs a rule that a dispatch brief may not authorise what an agent definition forbids,
+      and note that A15 applies: this rule EXISTS and was overridden, so it should be relocated or
+      made concrete, not restated.
+  - id: RC-4
+    raised: 2026-08-06 (STORY-206 spec review)
+    severity: low
+    text: >-
+      The orchestrator briefed the story's commit range as `d62c69b..51fa6a9`. Two-dot git
+      semantics EXCLUDE the left endpoint -- and d62c69b is the commit that actually lands the
+      contract in pyproject.toml plus the CLAUDE.md / definition-of-done.md edits, i.e. the whole
+      substance of AC1, AC2 and AC5. The reviewer noticed, read it as necessary context, and said
+      so. The correct range was `a90d74a..51fa6a9`. Cheap to fix, easy to repeat: the range is
+      hand-assembled by the orchestrator at every dispatch, and a reviewer told "this diff is your
+      primary review object, do not re-explore" is being pointed away from the story's core commit.
+      Candidate rung: compute the range mechanically from the board's story-start commit rather
+      than by hand.
 
 gate_notes:
   - story: STORY-206
