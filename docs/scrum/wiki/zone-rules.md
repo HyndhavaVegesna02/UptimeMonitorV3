@@ -141,10 +141,24 @@ citations regardless of enforcement status; the row is the authoritative verdict
   # door) and `src.core.ports.clock`/`status_publisher` (not persistence)
   # are deliberately excluded — see the Statement above.
   ```
-  Verified 0 current violations. STORY-197 can show this RED by temporarily adding
+  **An inbound adapter must import a port by its exact module — never the package
+  form.** `backend/src/core/ports/__init__.py` re-exports every port, including all
+  nine forbidden ones, and import-linter follows indirect chains by default, so
+  `from src.core.ports import SignalIngestPort` (the package form, naming only the
+  front door) still trips this contract on all nine forbidden modules at once —
+  proven by mutation (STORY-206 rework: `Contracts: 8 kept, 1 broken`, all nine named
+  via the `src.core.ports` re-export chain; reverted). Only
+  `from src.core.ports.signal_ingest import SignalIngestPort` (the exact-module form)
+  is KEPT (`Contracts: 9 kept, 0 broken`). Do not widen the contract with
+  `allow_indirect_imports = true` to permit the package form — that would also blind
+  the guard to the package-level form of `ObservationRepository` et al., which is the
+  most likely shape of a real violation given 26 sites in this repo already use
+  `from src.core.ports import X`.
+
+  Verified 0 current violations. STORY-206 showed this RED by temporarily adding
   (then reverting) e.g. `from src.core.ports.observation_repository import
   ObservationRepository` to `backend/src/adapters/inbound/dynatrace/adapter.py` — even
-  only as an unused type annotation, never called — and confirming the contract trips.
+  only as an unused type annotation, never called — and confirmed the contract tripped.
 
 #### ZR-2 — inside `core/`, a vendor name is compliant only in three closed prose FORMS, never as an identifier/annotation/signature/dict-key/stored-value — except inside the one field the domain itself designates for vendor identifiers
 
@@ -813,7 +827,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 
 | Rule | Verdict | Detail |
 | --- | --- | --- |
-| ZR-1 | `ENFORCED-BY inbound-adapters-dont-persist` | A ninth `lint-imports` contract (`pyproject.toml`, STORY-206) forbids `src.adapters.inbound` from importing any of the nine enumerated repository/watermark port modules, excluding the `signal_ingest` front door and `clock`/`status_publisher` (neither is persistence). **Shown RED**: temporarily adding `from src.core.ports.observation_repository import ObservationRepository` (an unused import) to `backend/src/adapters/inbound/dynatrace/adapter.py` tripped the import-boundary DoD command — exit 1, `inbound-adapters-dont-persist` BROKEN, naming the edge `src.adapters.inbound.dynatrace.adapter -> src.core.ports.observation_repository`; reverted, exit 0, `Contracts: 9 kept, 0 broken.`, `git diff` empty. **Residue, stated rather than hidden:** the `forbidden_modules` list's completeness — that a newly added persistence/repository port is appended to it in the SAME commit that adds the port — is maintained BY HAND until STORY-220 (sprint 70) lands the completeness test; a new port module added without updating this list is invisible to this guard. |
+| ZR-1 | `ENFORCED-BY inbound-adapters-dont-persist` | A ninth `lint-imports` contract (`pyproject.toml`, STORY-206) forbids `src.adapters.inbound` from importing any of the nine enumerated repository/watermark port modules, excluding the `signal_ingest` front door and `clock`/`status_publisher` (neither is persistence). **Shown RED**: temporarily adding `from src.core.ports.observation_repository import ObservationRepository` (an unused import) to `backend/src/adapters/inbound/dynatrace/adapter.py` tripped the import-boundary DoD command — exit 1, `inbound-adapters-dont-persist` BROKEN, naming the edge `src.adapters.inbound.dynatrace.adapter -> src.core.ports.observation_repository`; reverted, exit 0, `Contracts: 9 kept, 0 broken.`, `git diff` empty. **Residue, stated rather than hidden (two, not one):** (1) the `forbidden_modules` list's completeness — that a newly added persistence/repository port is appended to it in the SAME commit that adds the port — is maintained BY HAND until STORY-220 (sprint 70) lands the completeness test; a new port module added without updating this list is invisible to this guard. (2) the guard binds the EXACT-MODULE import form only (`from src.core.ports.signal_ingest import SignalIngestPort`); the package form (`from src.core.ports import SignalIngestPort`) is not itself forbidden as a form and would still trip the contract today only because `core/ports/__init__.py`'s re-exports make it transitively import all nine forbidden modules at once (verified by mutation, STORY-206 rework) — a future change narrowing that `__init__.py`'s re-exports could silently reopen the package form as an escape hatch, and nothing here guards against that. |
 | ZR-2 | `GUARDABLE-DEFERRED (STORY-207)` | AST walk specified above, with its residue stated (string annotations, dynamically built identifiers). Tree is CLEAN — mutation proof required. |
 | ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module — reconfirmed by STORY-203 AC6's own re-introduce/revert mutation. **All four `MUST-IMPORT-FROM-SRC` entries this rule adjudicated are fixed as of STORY-203 (sprint-68); zero remain.** Green via a per-entry adjudication list, now entirely `INDEPENDENT` (9 entries) — a future genuine finding is still expected to be filed there, the same way these four were. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
@@ -1437,3 +1451,16 @@ History**, per the fix round's re-verification requirement.
   left as a historically-accurate count with a forward pointer to this story, rather than bumped to
   a now-false "passes all nine." `forbidden_modules`' own completeness (a newly added port appended
   in the same commit) remains hand-maintained until STORY-220 (sprint 70) — the row states this.
+- sprint-69 (STORY-206 rework, quality review MAJOR-1/MINOR-3, verified_sha unchanged at
+  `b8e22d2` — no code_ref moved, only this article's own prose was corrected): ZR-1's Coverage
+  verdict stated the exact-module-import constraint positively for the first time — the package
+  form (`from src.core.ports import SignalIngestPort`) is not itself forbidden but trips the
+  contract today only because `core/ports/__init__.py`'s re-exports make it transitively import
+  all nine forbidden modules at once; proven by mutation both directions (`8 kept, 1 broken` ->
+  `9 kept, 0 broken`), both reverted, `git diff` empty. The adjudication row's single stated
+  residue became TWO: the pre-existing hand-maintained-list residue is kept verbatim (not
+  weakened — the PO's STORY-220 approval was conditioned on that sentence), and a second residue
+  is added naming the exact-module-form dependency as a real, if currently harmless, gap. Also
+  fixed: the Coverage verdict's "STORY-197 can show this RED... " was future tense and
+  misattributed the mutation to STORY-197 (ZR-1's completeness-test story) rather than STORY-206
+  (the story that actually ran it) — corrected to past tense, attributed to STORY-206.
