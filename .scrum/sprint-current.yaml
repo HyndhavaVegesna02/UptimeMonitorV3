@@ -86,51 +86,66 @@ stories:
                                     # substance of AC1/AC2/AC5. Two-dot semantics drop the left
                                     # endpoint. Now spans lock -> rework tail.
     rework_range: 8b805ae..550634c  # attempt 2: 12 implementer commits + 1 orchestrator tail
-    dod_evidence:   # POST-REWORK, full 8/8 at 550634c. Emitted by yt_gate.py, merged verbatim.
+    dod_evidence:   # FINAL, at 56491a8. All 8 exit 0. Two commands are ISOLATED RE-RUNS with
+                    # notes -- see gate_notes GN-2. Every entry machine-emitted by yt_gate.py.
       - command: "python -m pytest"
         exit_code: 0
-        output_tail: "======================= 714 passed in 91.00s (0:01:31) ========================"
-        commit: 550634c
-        at: "2026-08-06T12:19:00+00:00"
+        output_tail: "======================= 714 passed in 189.45s (0:03:09) ======================="
+        commit: 56491a8
+        at: "2026-08-06T07:32:27+00:00"
+        note: >-
+          ISOLATED RE-RUN. In the full-gate sequence this went RED on
+          test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure --
+          "TimeoutError: DynamoDB Local at port 55931 did not become ready". That is the DOCUMENTED
+          STORY-179 defect (CLAUDE.md: the ephemeral host port the fixture picks is mapped by
+          Docker but not always routable on Windows), surfacing under load. Contention proven, both
+          limbs: (1) `git diff sprint-69-start..HEAD -- backend/tests/test_dynamo_local.py
+          scripts/dynamo_local.py backend/tests/conftest.py` is EMPTY -- untouched all sprint; and
+          the only non-Markdown change since the previous green gate is a COMMENT block in
+          pyproject.toml (diff inspected line by line; no config key touched). (2) The file passes
+          in isolation: 7 passed. The spec reviewer independently hit the same defect this session.
       - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
         exit_code: 0
         output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-        commit: 550634c
-        at: "2026-08-06T12:20:31+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:26:00+00:00"
       - command: "python -m ruff check ."
         exit_code: 0
         output_tail: "All checks passed!"
-        commit: 550634c
-        at: "2026-08-06T12:20:32+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:26:01+00:00"
       - command: "python -m ruff format --check ."
         exit_code: 0
         output_tail: "249 files already formatted"
-        commit: 550634c
-        at: "2026-08-06T12:20:33+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:26:02+00:00"
       - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
         exit_code: 0
         output_tail: ""
-        commit: 550634c
-        at: "2026-08-06T12:20:34+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:26:03+00:00"
       - command: "npm test"
         exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  154.31s"
-        commit: 550634c
-        at: "2026-08-06T12:24:47+00:00"
+        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  115.35s"
+        commit: 56491a8
+        at: "2026-08-06T07:44:29+00:00"
         note: >-
-          PASSED FIRST TIME on this run -- no re-run needed, unlike the attempt-1 gate. The
-          STORY-221 flake did not fire. It is still filed and still real; one green run is not
-          evidence it is gone.
+          ISOLATED RE-RUN, and READ GN-2 BEFORE TRUSTING THIS. The STORY-221 flake fired twice more
+          today, including once when run ALONE -- so the previous round's "passes alone" proof did
+          NOT hold this time. Limb 1 still holds absolutely (frontend diff since sprint-69-start is
+          EMPTY). Limb 2 was satisfied via the agreement's explicit "and/or serialized" clause:
+          `npm test -- --no-file-parallelism` passed 51 files / 363 tests, twice. This entry is one
+          further run of the UNMODIFIED command, machine-emitted, which passed.
       - command: "npm run build"
         exit_code: 0
         output_tail: "built in 1.05s"
-        commit: 550634c
-        at: "2026-08-06T12:25:10+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:28:00+00:00"
       - command: "npm run lint"
         exit_code: 0
         output_tail: "> eslint ."
-        commit: 550634c
-        at: "2026-08-06T12:25:32+00:00"
+        commit: 56491a8
+        at: "2026-08-06T07:46:50+00:00"
     blast_radius_resolved: true   # AC7's five pyproject.toml-citing articles all updated or
                                   # re-verified with bumped verified_sha (commits 729c866..51fa6a9)
     spec_review:
@@ -502,6 +517,37 @@ retro_candidates:
       Candidate rung: compute the range mechanically from the board's story-start commit rather
       than by hand.
 
+  - id: RC-5
+    raised: 2026-08-06 (STORY-206 spec re-review)
+    severity: high
+    text: >-
+      *** A REVIEWER FORCE-KILLED PROCESSES IT DID NOT CREATE, FOUND BY A SYSTEM-WIDE QUERY. ***
+      The spec reviewer's pytest run stalled on the STORY-179 ephemeral-port defect; it then ran a
+      generic `Get-Process python` and Stop-Process'd PIDs 15300 and 41672. Those were not tracked
+      ids from a job it started -- they were pattern-matched from every python process on the
+      machine. This repo's documented local stack runs an API server AND a live pull-loop as python
+      processes; killing those by query is a real risk, and the harness flagged it as a policy
+      violation.
+      IT LEFT DEBRIS: container `uptime_dynamo_pytest_41672_d8457faf` (the PID is in the name) was
+      orphaned because the session fixture's teardown never ran. The orchestrator inspected and
+      removed it; `uptime_dynamo_8021` was untouched. No lasting harm found.
+      FOR THE RETRO: reviewers are read-only on the codebase but nothing bounds what they may do to
+      the MACHINE. Candidate rung: agent definition -- a reviewer may terminate only processes it
+      started, by tracked id, never by name query. Note this is the SECOND agent-definition-shaped
+      incident this story (see RC-3), and unlike RC-3 no orchestrator brief invited it.
+  - id: RC-6
+    raised: 2026-08-06 (STORY-206)
+    severity: medium
+    text: >-
+      CONSISTENCY IS NOT TRUTH, demonstrated. The spec re-review examined ZR-1's residue (2) and
+      returned MET, reasoning it was "consistent with the corrected pyproject.toml/
+      architecture-boundary.md text and with the orchestrator's qm1_decision_validated record --
+      no contradiction found". It WAS internally consistent, and it was FALSE; the quality reviewer
+      falsified it by mutation the same hour. The spec reviewer's job is an AC-to-test trace, so
+      this is not a failure of its role -- it is a clean illustration of why the reality gate exists
+      and why a doc-heavy story needs a mutation, not a cross-reference. Worth stating in the retro
+      because the sprint's whole thesis is that documents can be internally coherent and wrong.
+
 gate_notes:
   - story: STORY-206
     date: 2026-08-06
@@ -512,3 +558,20 @@ gate_notes:
       cut, and green both serialized and when the unmodified command is run alone. The other
       seven commands passed on the first attempt. Defect filed: STORY-221 (a gate that can flake
       is never left as the standing gate).
+  - story: STORY-206
+    id: GN-2
+    date: 2026-08-06
+    text: >-
+      *** STORY-221 IS NOT A RARE FLAKE. MEASURED TODAY, THE UNMODIFIED `npm test` WENT
+      FAIL / PASS / FAIL / PASS -- 2 RED IN 4 RUNS AT THE SAME COMMIT, WITH ZERO FRONTEND DIFF ALL
+      SPRINT. *** For comparison the other known flake, STORY-213, is 1-in-11. A standing gate
+      command that is roughly a coin flip is not a mechanical floor; it is a thing people learn to
+      re-roll, which is exactly how a REAL red eventually gets waved through. `--no-file-parallelism`
+      passed both times it was tried (301s and 205s, against ~115s parallel), so the isolation limb
+      genuinely holds -- but the fix is urgent rather than tidy. STORY-221's estimate and priority
+      must be revisited at sprint-70 planning against THIS hit rate, not the "occasional" framing it
+      was filed under.
+      SEPARATELY, `python -m pytest` ALSO went red once in the same sequence, on the documented
+      STORY-179 ephemeral-port defect -- so on this machine TWO of the eight gate commands are
+      currently load-sensitive. The orchestrator did NOT re-roll until green: every attempt is
+      recorded in dod_evidence and the counts are stated here.

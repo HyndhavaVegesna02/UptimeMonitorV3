@@ -54,6 +54,37 @@ pattern-matching to this one. That second risk is the expensive one.
 This is a distinct defect from the known backend flake (STORY-213, 1-in-11 `list_components`
 pagination). Two independent flakes in one gate is the thing to notice.
 
+## MEASURED HIT RATE — 2026-08-06, later the same day (read this before estimating)
+
+The filing above described this as an occasional false-red. **Four more runs of the UNMODIFIED gate
+command at a single commit (`56491a8`), with zero frontend diff for the whole sprint, went:**
+
+| run | mode | result |
+| --- | --- | --- |
+| 1 | parallel, inside the full 8-command gate | **FAIL** (2 tests, inline-422 assertions) |
+| 2 | parallel, run alone | PASS |
+| 3 | parallel, run alone | **FAIL** (`MaintenancePage.test.tsx:248`, timeout at 5000ms) |
+| 4 | parallel, run alone | PASS |
+| — | `--no-file-parallelism` ×2 | PASS, PASS (301s and 205s vs ~115s parallel) |
+
+**That is 2 red in 4, not a rare flake** — and note run 3 failed *alone*, which breaks the
+"passes in isolation" limb that discounted the first occurrence. The serialized limb is what held.
+Different assertions failed on different runs, so this is a load/timing sensitivity across the file,
+not one brittle test.
+
+For comparison, the other known flake (STORY-213) is 1-in-11.
+
+**Why that changes the priority, not just the number.** A standing gate command at roughly a coin
+flip stops being a mechanical floor and becomes something people re-roll — which is precisely how a
+*real* red eventually gets waved through. The 2026-07-06 contention protocol is designed to be an
+exception; at this rate it becomes the routine path, and the protocol's own warning about
+discounting reds turns from a safeguard into a habit.
+
+**Also observed the same day:** `python -m pytest` went red once in the same sequence on the
+documented STORY-179 ephemeral-port defect. **Two of the eight gate commands are currently
+load-sensitive on this machine.** Whether STORY-179 and this story should be fixed together — they
+share a "the gate is not trustworthy under load" root — is a planning question worth asking.
+
 ## Refinement should settle
 
 1. **Is it the `datetime-local` typing specifically?** `user.type()` on a `datetime-local` input is
