@@ -98,10 +98,14 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   that existed at the time (adapters may import core, and the port lives in `core/ports/`) while
   turning a translation layer into an orchestrator — only `composition` decides what happens to an
   adapter's output. The gate already caught the CONCRETE `adapters.persistence.*` variant; the
-  core-port route was the one gap. The ninth contract, `inbound-adapters-dont-persist`
-  (`pyproject.toml`), now forbids `src.adapters.inbound` from importing any of the nine
-  repository/watermark ports — see [[zone-rules]] ZR-1 — so the core-port route is no longer
-  invisible to the gate either.
+  core-port route was the one gap. The ninth contract, `inbound-adapters-dont-persist`, now
+  forbids `src.adapters.inbound` from importing any of the nine repository/watermark ports —
+  see [[zone-rules]] ZR-1 for the rule and [[architecture-boundary]] for the contract set itself
+  — so the core-port route is no longer invisible to the gate either. (This Fact deliberately
+  names no build-config file: that citation was removed on 2026-08-06 and the reason is recorded
+  in this article's History. The contract set is owned by [[architecture-boundary]]; this article
+  links to it rather than re-citing it, the same discipline [[zone-rules]] records in its own
+  frontmatter.)
 
 ### The pull loop â€” `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone â€” the one zone allowed to import BOTH `src.core` and
@@ -381,3 +385,12 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   Fact is corrected to state the gap is closed rather than open; the frontmatter comment's "eight
   contracts cannot catch" note is likewise corrected to "at the time... closed sprint-69". No other
   Fact in this article touches `pyproject.toml` or a contract count.
+  **Follow-up, same story, orchestrator (2026-08-06):** that corrected Fact cited
+  `` `pyproject.toml` `` inline, and this article does not carry it in `code_refs` — so
+  `yt_wiki.py facts` went from CLEAN (verified at this session's standup) to one finding, a
+  regression introduced by this very entry. The citation was REMOVED rather than the `code_ref`
+  added, because sprint-44 deleted `pyproject.toml` from `code_refs` on a quality-review MAJOR
+  (over-broad: touched by every dependency change anywhere) and adding it back would silently
+  reverse that decision — and would make this article the SIXTH citing a file already over the
+  refs-amplifier threshold. The Fact now links to [[architecture-boundary]] for the contract set
+  instead. Facts lint re-run: CLEAN.
