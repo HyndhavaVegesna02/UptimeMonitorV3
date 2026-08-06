@@ -68,11 +68,16 @@ stories:
   - id: STORY-206
     title: Land ZR-1's guard -- an import-linter contract forbidding inbound adapters from importing repository ports
     points: 3
-    board: review        # todo | in-progress | blocked | review | done
+    board: in-progress   # todo | in-progress | blocked | review | done
+                         # BACK from review: quality review returned FIX_REQUIRED with 4 MAJORs,
+                         # all four independently confirmed by the orchestrator. Spec review had
+                         # PASSED (7/7 AC MET) -- the AC are met; what is wrong is that the story
+                         # left three documents asserting something demonstrably false. Re-work
+                         # dispatched; both reviews re-run after.
     pipeline: full       # 3+ pts -> implementer + spec review || quality review
     order: 1             # widest ripple: the only story escaping backend/tests/
     blocked_question: null
-    attempts: 1          # first implementer DIED on the session limit at the last AC7 article;
+    attempts: 2          # first implementer DIED on the session limit at the last AC7 article;
                          # tree was CLEAN and 13 commits coherent, so nothing was discarded --
                          # the orchestrator verified the tail rather than re-dispatching.
     paused_at_commit: null
@@ -146,7 +151,64 @@ stories:
         entries correctly left alone, and zero diffs under docs/scrum/sprints/ or
         docs/scrum/stories/. No STORY-220 scope creep.
     quality_review:
-      verdict: pending
+      verdict: FIX_REQUIRED
+      at: 2026-08-06
+      majors: 4
+      all_four_independently_confirmed_by_orchestrator: true
+      findings:
+        - id: QM-1
+          severity: major
+          text: >-
+            *** THE RECORDED RATIONALE FOR THE NINE/THREE SPLIT IS FALSE IN THE REPO'S DOMINANT
+            IMPORT FORM. *** backend/src/core/ports/__init__.py re-exports ALL ports including the
+            nine repositories, and import-linter's ForbiddenContract follows INDIRECT chains by
+            default (allow_indirect_imports is unset). CONFIRMED BY THE ORCHESTRATOR: putting
+            `from src.core.ports import SignalIngestPort` -- the FRONT DOOR, the one port ZR-1 says
+            an inbound adapter may legitimately name -- into adapters/inbound/dynatrace/adapter.py
+            breaks the contract, exit 1, "Contracts: 8 kept, 1 broken", with NINE chained
+            violations (adapter -> src.core.ports -> src.core.ports.<each repository>), not one of
+            which names signal_ingest. 26 sites in this repo use the `from src.core.ports import X`
+            idiom. Only the exact-module form survives, and no document says so, while THREE
+            documents assert the opposite (the pyproject comment, architecture-boundary.md:45-47,
+            ZR-1's Coverage verdict).
+          decision: >-
+            FIX THE DOCUMENTS, NOT THE CONTRACT. Do NOT set allow_indirect_imports = true: that
+            would also legalise `from src.core.ports import ObservationRepository`, i.e. blind the
+            guard to the package-level form of the very violation it exists to catch -- and that is
+            the MOST LIKELY form, given 26 sites already use it. The guard as built is STRONGER
+            than documented and the stance is defensible: an inbound adapter importing the ports
+            PACKAGE transitively pulls in every repository port. Correct the three documents and
+            add this as a SECOND stated residue on ZR-1's row.
+        - id: QM-2
+          severity: major
+          text: >-
+            sample-mode.md:496's new History entry records "verified_sha bumped `b272c32` ->
+            `8397da9`". CONFIRMED WRONG: `git show 8397da9^:...` gives the actual prior frontmatter
+            value as `d554227`. The from-sha was copied out of an older History line instead of
+            read off the frontmatter, breaking the provenance chain. The other five articles record
+            theirs correctly.
+        - id: QM-3
+          severity: major
+          text: >-
+            architecture-boundary.md:21-22 -- the very sentence this diff edited from "eight" to
+            "nine" -- still says the import boundary is "run as the bare command `lint-imports`".
+            That exe shim has been Device-Guard-blocked since 2026-07-12; CLAUDE.md,
+            .scrum/definition-of-done.md:48-50 and dev-setup-and-dod.md:79-81 all carry the module
+            form. Pre-existing, but the diff edited this sentence and re-stamped verified_sha,
+            which is the act of asserting the Facts were re-read.
+        - id: QM-4
+          severity: major
+          text: >-
+            architecture-boundary.md frontmatter now carries verified_sha d62c69b (a sprint-69
+            commit) against verified_sprint sprint-63, while its own new History entry says
+            sprint-69. CONFIRMED at the file. The other five articles in this same story bumped
+            both fields, and api-five-file-convention.md:154-156 records a prior reviewer blocking
+            on exactly this mismatch.
+      good_faith_note: >-
+        The reviewer re-proved the guard by mutation in a SCRATCH COPY OUTSIDE THE REPO, never
+        touching the working tree -- the correct shape, and the contrast with RC-3 is instructive.
+        It also said plainly that the one-commit-per-article cadence was right and worth keeping,
+        rather than manufacturing a finding.
     # AC7 pre-declares it: pyproject.toml is a code_ref in FIVE wiki articles
     # (architecture-boundary, api-five-file-convention, config-layer,
     # dev-setup-and-dod, sample-mode). Expected, not a gate-time surprise.
