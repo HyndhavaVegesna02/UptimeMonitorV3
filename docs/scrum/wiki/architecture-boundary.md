@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
-verified_sha: d62c69b
+verified_sha: c34e193
 verified_sprint: sprint-69
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -193,6 +193,9 @@ status: verified
   to its module form (Device-Guard-blocked since 2026-07-12 — CLAUDE.md, `.scrum/definition-of-
   done.md` and [[dev-setup-and-dod]] already carried the module form). `verified_sprint`
   corrected sprint-63 -> sprint-69 to match this History entry's sprint (frontmatter/History
-  mismatch caught by review). verified_sha unchanged at `d62c69b` — the code it describes has not
-  moved, only this article's own prose was wrong.
+  mismatch caught by review). The same rework also fixed the maintenance-note referent and
+  attribution above `pyproject.toml`'s `inbound-adapters-dont-persist` contract (a `code_ref` of
+  this article) — comment-only, no contract structure changed. verified_sha bumped
+  `d62c69b` -> `c34e193` (the `pyproject.toml` comment-fix commit) to reflect that `code_ref`
+  moving; the sweep would otherwise flag this article STALE against it.
 
