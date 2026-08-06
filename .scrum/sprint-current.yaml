@@ -68,22 +68,96 @@ stories:
   - id: STORY-206
     title: Land ZR-1's guard -- an import-linter contract forbidding inbound adapters from importing repository ports
     points: 3
-    board: todo          # todo | in-progress | blocked | review | done
+    board: review        # todo | in-progress | blocked | review | done
     pipeline: full       # 3+ pts -> implementer + spec review || quality review
     order: 1             # widest ripple: the only story escaping backend/tests/
     blocked_question: null
-    attempts: 0
+    attempts: 1          # first implementer DIED on the session limit at the last AC7 article;
+                         # tree was CLEAN and 13 commits coherent, so nothing was discarded --
+                         # the orchestrator verified the tail rather than re-dispatching.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    commit_range: d62c69b..51fa6a9
+    dod_evidence:
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "======================= 714 passed in 91.39s (0:01:31) ========================"
+        commit: 51fa6a9
+        at: "2026-08-06T05:55:48+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        commit: 51fa6a9
+        at: "2026-08-06T05:57:22+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 51fa6a9
+        at: "2026-08-06T05:57:23+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "249 files already formatted"
+        commit: 51fa6a9
+        at: "2026-08-06T05:57:24+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: 51fa6a9
+        at: "2026-08-06T05:57:25+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  92.92s"
+        commit: 51fa6a9
+        at: "2026-08-06T06:05:47+00:00"
+        note: >-
+          *** THIS IS THE VALID SIGNAL FOR npm test, AND IT IS A RE-RUN. *** The full-gate pass at
+          05:57 recorded npm test exit 1 (2 failures in
+          frontend/src/pages/MaintenancePage.test.tsx, an inline-422 assertion whose Start field
+          rendered value=""). CONTENTION PROVEN per the 2026-07-06 agreement, both limbs:
+          (1) `git diff --stat sprint-69-start..HEAD -- frontend/` is EMPTY -- STORY-206 touched
+          no frontend file; (2) it passes with adequate resources -- `npm test --
+          --no-file-parallelism` gave 51 files / 363 tests passed, and then the UNMODIFIED gate
+          command run alone (this entry, machine-emitted by yt_gate.py --only "npm test", same
+          commit 51fa6a9) also passed. Nothing was hand-transcribed.
+          A FLAKY GATE IS NEVER LEFT AS THE STANDING GATE: filed as STORY-221.
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "✓ built in 1.43s"
+        commit: 51fa6a9
+        at: "2026-08-06T06:00:26+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> eslint ."
+        commit: 51fa6a9
+        at: "2026-08-06T06:00:48+00:00"
+    blast_radius_resolved: true   # AC7's five pyproject.toml-citing articles all updated or
+                                  # re-verified with bumped verified_sha (commits 729c866..51fa6a9)
     # AC7 pre-declares it: pyproject.toml is a code_ref in FIVE wiki articles
     # (architecture-boundary, api-five-file-convention, config-layer,
     # dev-setup-and-dod, sample-mode). Expected, not a gate-time surprise.
     reality_gate:
-      discrimination_proof: null   # AC3: add the unused ObservationRepository import to
-                                   # adapters/inbound/dynatrace/adapter.py -> import-boundary
-                                   # command exits NONZERO naming inbound-adapters-dont-persist;
-                                   # revert; exit 0; git diff empty. Both invocations verbatim.
+      # RE-RUN BY THE ORCHESTRATOR, 2026-08-06, and this matters: the first implementer died on
+      # the session limit before reporting, so its AC3 proof survived only as PROSE inside
+      # architecture-boundary.md and the ZR-1 row. A guard's red demonstration asserted in a
+      # document nobody watched fail is exactly sprint-67's MAJOR-1. So the mutation was
+      # performed again, by the orchestrator, and THIS is the evidence of record.
+      discrimination_proof:
+        mutation: >-
+          Added to backend/src/adapters/inbound/dynatrace/adapter.py (unused import, never called):
+          `from src.core.ports.observation_repository import ObservationRepository  # noqa: F401`
+        command: 'python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"'
+        mutated_exit_code: 1
+        mutated_output_tail: >-
+          inbound-adapters-dont-persist BROKEN | Contracts: 8 kept, 1 broken. |
+          ---------------- | Broken contracts | ---------------- |
+          inbound-adapters-dont-persist | src.adapters.inbound is not allowed to import
+          src.core.ports.observation_repository: | -   src.adapters.inbound.dynatrace.adapter ->
+          src.core.ports.observation_repository (l.14)
+        reverted_exit_code: 0
+        reverted_output_tail: "inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        git_diff_after_revert: empty   # `git diff --stat` produced no output; `git status --short` clean
+        verdict: >-
+          The guard names the contract, the source module, the forbidden module AND the exact
+          import line. It has now been seen RED by the orchestrator, not merely claimed.
 
   - id: STORY-207
     title: Land ZR-2's guard -- an AST test that vendor vocabulary never becomes an identifier inside core/
@@ -206,5 +280,37 @@ deferred:
     extracting the loop turns five compliant sites red and forces a guard rework in the same change.
   STORY-213: "The 1-in-11 pagination flake. Did not fire in sprint 68. Still filed."
 
-retro_candidates: []
-gate_notes: []
+retro_candidates:
+  - id: RC-1
+    raised: 2026-08-06 (STORY-206)
+    text: >-
+      An implementer died on the session limit AFTER doing the work and BEFORE reporting it, so
+      its AC3 mutation proof existed only as prose it had written into a wiki article claiming
+      "shown RED ... reverted, git diff empty". The tree was clean and the 13 commits coherent, so
+      nothing was discarded -- but the PROOF was unrecoverable and had to be re-performed by the
+      orchestrator. Worth asking at the retro whether a shown-RED proof should be committed as a
+      FILE (e.g. the command + both output tails under the sprint dir) at the moment it is
+      produced, rather than living in an agent's final report which a session limit can delete.
+      Note the window check was honoured: 79% at dispatch, under the 85 threshold. The rule
+      reduces this risk; it cannot remove it, because the limit can arrive mid-agent.
+  - id: RC-2
+    raised: 2026-08-06 (STORY-206 -> STORY-216)
+    text: >-
+      COORDINATION NOTE FOR STORY-216, not a defect. The house convention puts the verdict marker
+      INSIDE the backtick code span -- ZR-1's new row reads `ENFORCED-BY inbound-adapters-dont-persist`,
+      matching ZR-3/ZR-7/ZR-8. STORY-216 AC1 as written says "ENFORCED-BY marks the cell, not each
+      reference", which reads as if the marker were outside the span. It is not, anywhere in the
+      corpus. The grammar STORY-216 implements must therefore STRIP a leading verdict marker from
+      inside the span before resolving the remainder. Caught while verifying STORY-206; recorded
+      here so STORY-216's implementer does not rediscover it as four false REDs.
+
+gate_notes:
+  - story: STORY-206
+    date: 2026-08-06
+    text: >-
+      Full 8-command gate ran RED on `npm test` (2 failures, MaintenancePage.test.tsx inline-422
+      assertions). DISCOUNTED AS CONTENTION under the 2026-07-06 agreement, with both limbs
+      proven and recorded in the dod_evidence note above -- empty frontend diff since the sprint
+      cut, and green both serialized and when the unmodified command is run alone. The other
+      seven commands passed on the first attempt. Defect filed: STORY-221 (a gate that can flake
+      is never left as the standing gate).
