@@ -1,7 +1,7 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: a192e17
+verified_sha: c34e193
 verified_sprint: sprint-69
 status: verified
 ---
@@ -376,5 +376,9 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
 - sprint-69 (STORY-206 rework, quality review MINOR): "No new contract was added by this story"
   was ambiguous once STORY-206 was named two words later — a reader could not tell whether "this
   story" meant STORY-206 or the article's own subject. Reworded to state the Fact directly (this
-  placement is governed by `core-independence` alone) rather than via a story reference.
-  verified_sha unchanged at `a192e17` — no code_ref moved, wording-only.
+  placement is governed by `core-independence` alone) rather than via a story reference. The same
+  rework also fixed the maintenance-note referent and attribution above `pyproject.toml`'s
+  `inbound-adapters-dont-persist` contract (a `code_ref` of this article) — comment-only, no
+  contract structure changed. verified_sha bumped `a192e17` -> `c34e193` (the `pyproject.toml`
+  comment-fix commit) to reflect that `code_ref` moving; the sweep would otherwise flag this
+  article STALE against it.
