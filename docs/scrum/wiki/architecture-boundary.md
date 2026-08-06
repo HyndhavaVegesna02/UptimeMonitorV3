@@ -1,6 +1,6 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
-code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
+code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py, backend/src/core/ports/__init__.py]
 verified_sha: c34e193
 verified_sprint: sprint-69
 status: verified
@@ -197,5 +197,9 @@ status: verified
   attribution above `pyproject.toml`'s `inbound-adapters-dont-persist` contract (a `code_ref` of
   this article) — comment-only, no contract structure changed. verified_sha bumped
   `d62c69b` -> `c34e193` (the `pyproject.toml` comment-fix commit) to reflect that `code_ref`
-  moving; the sweep would otherwise flag this article STALE against it.
+  moving; the sweep would otherwise flag this article STALE against it. `code_refs` gained
+  `backend/src/core/ports/__init__.py` — the new Facts (both the general one and the History
+  entry above) cite it as the file whose re-exports cause the package-import form to trip the
+  contract, so it defines part of what this article now describes (`yt_wiki.py facts` flagged the
+  citation as uncovered; added rather than removed the citation, since it is load-bearing).
 
