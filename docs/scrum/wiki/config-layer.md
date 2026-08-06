@@ -270,8 +270,9 @@ it is one of these seven readers.
 `backend/src/composition/config.py` lives in the composition zone.  It imports
 `AntiFlapThresholds` from `src.core.services.pipeline` (composition → core is
 allowed).  Core never imports from `src.composition` (enforced by the
-`core-independence` import-linter contract).  No new contract was added by this story; the
-nine existing contracts (STORY-206, sprint-69, added the ninth) all stay KEPT.
+`core-independence` import-linter contract).  This placement is governed by `core-independence`
+alone — no additional contract targets it; the nine existing contracts (STORY-206, sprint-69,
+added the ninth, unrelated to `config.py`) all stay KEPT.
 
 ### Dependency
 `pyyaml` was added to `[project.dependencies]` in `pyproject.toml` (sprint-16,
@@ -372,3 +373,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   guard — see [[zone-rules]]), unrelated to `config.py`. The "Composition-zone placement" Fact's
   "eight existing contracts all stay KEPT" is corrected to nine; no other Fact touches contract
   count or `config.py` behaviour.
+- sprint-69 (STORY-206 rework, quality review MINOR): "No new contract was added by this story"
+  was ambiguous once STORY-206 was named two words later — a reader could not tell whether "this
+  story" meant STORY-206 or the article's own subject. Reworded to state the Fact directly (this
+  placement is governed by `core-independence` alone) rather than via a story reference.
+  verified_sha unchanged at `a192e17` — no code_ref moved, wording-only.
