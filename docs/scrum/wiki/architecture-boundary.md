@@ -2,7 +2,7 @@
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py]
 verified_sha: d62c69b
-verified_sprint: sprint-63
+verified_sprint: sprint-69
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
@@ -18,8 +18,11 @@ status: verified
 - `src` is the importable top-level package; it physically lives at `backend/src` and is
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
-- **Import boundary (dossier §4)** is enforced by import-linter, run as the bare command
-  `lint-imports`, configured in `pyproject.toml` ("tool.importlinter") with nine contracts:
+- **Import boundary (dossier §4)** is enforced by import-linter, run via the module form
+  `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
+  (the `lint-imports` exe shim has been Device-Guard-blocked since 2026-07-12 — same check,
+  same contracts, module path instead of the blocked shim), configured in `pyproject.toml`
+  ("tool.importlinter") with nine contracts:
   - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
     `src.composition`, `src.api`, `sqlalchemy`, `httpx`, or `boto3` (`pyproject.toml` ("core-independence")).
   - `core-internal-layering` (layers): `src.core.queries` → `src.core.services` →
@@ -45,6 +48,12 @@ status: verified
     `sample_mode_repository`, `signal_repository`, `watermark`) — deliberately excluding
     `signal_ingest` (the core's documented front door, dossier §6/§8), `clock` and
     `status_publisher` (neither is persistence) (`pyproject.toml` ("inbound-adapters-dont-persist")).
+    **An inbound adapter MUST import a port by its exact module**, e.g.
+    `from src.core.ports.signal_ingest import SignalIngestPort` — never the package form
+    `from src.core.ports import SignalIngestPort`. `backend/src/core/ports/__init__.py`
+    re-exports every port, and import-linter follows indirect chains by default, so the
+    package-level form transitively imports all nine forbidden modules at once and trips
+    this contract even for the front door (verified by mutation, STORY-206 rework).
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.
@@ -172,4 +181,18 @@ status: verified
   mutation (temporarily importing `src.core.ports.observation_repository` into
   `backend/src/adapters/inbound/dynatrace/adapter.py`), reverted, `git diff` empty. Contract count
   moves 8 -> 9; `lint-imports`: 9 kept / 0 broken. verified_sha -> d62c69b.
+- sprint-69 (STORY-206 rework, quality review MAJOR-1/3/4, same `d62c69b`): the first pass's
+  recorded rationale was FALSE — `from src.core.ports import SignalIngestPort` in the inbound
+  adapter (the package form, naming only the front door) still trips
+  `inbound-adapters-dont-persist`, because `backend/src/core/ports/__init__.py` re-exports every
+  port and import-linter follows indirect chains by default; reproduced (`Contracts: 8 kept, 1
+  broken`, all nine forbidden modules named via the `src.core.ports` re-export chain) and the
+  exact-module control proved KEPT (`Contracts: 9 kept, 0 broken`), both reverted, `git diff`
+  empty. Added the positive constraint (import by exact module, never the package) to the Facts
+  above, and corrected the import-boundary command Fact from the blocked `lint-imports` exe shim
+  to its module form (Device-Guard-blocked since 2026-07-12 — CLAUDE.md, `.scrum/definition-of-
+  done.md` and [[dev-setup-and-dod]] already carried the module form). `verified_sprint`
+  corrected sprint-63 -> sprint-69 to match this History entry's sprint (frontmatter/History
+  mismatch caught by review). verified_sha unchanged at `d62c69b` — the code it describes has not
+  moved, only this article's own prose was wrong.
 
