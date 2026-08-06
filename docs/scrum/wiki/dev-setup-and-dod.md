@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 0769b0a
+verified_sha: c34e193
 verified_sprint: sprint-69
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
@@ -354,3 +354,10 @@ status: verified
   `Contracts: 8 kept` to `Contracts: 9 kept`. The DoD command count is UNCHANGED at eight — the new
   contract runs inside the existing import-boundary command; "Eight commands in total" and the
   History entries' own dated counts are untouched by design.
+- sprint-69 (STORY-206 rework, wiki sweep): the sweep flagged this article STALE again —
+  `pyproject.toml` (a `code_ref`) moved at `c34e193` (quality-review MAJOR-1 fix: corrected the
+  maintenance-note referent/attribution above the `inbound-adapters-dont-persist` contract's
+  comment block, and stated the exact-module-import requirement — see [[architecture-boundary]]
+  and [[zone-rules]] for the substance). Comment-only, no contract count or command list changed;
+  this article already carried the module-form invocation (`:78`), so no Fact here needed
+  correcting. Re-verified only. verified_sha bumped `0769b0a` -> `c34e193`.
