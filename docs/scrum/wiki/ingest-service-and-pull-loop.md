@@ -10,6 +10,12 @@ status: verified
 # window. Records where each piece lives (adapter pure, composition decides) and the zone trap
 # that, at the time, none of the eight contracts could catch (closed sprint-69, STORY-206, by a
 # ninth contract -- see the "Zone note" Fact below and [[zone-rules]] ZR-1).
+# `pyproject.toml` is deliberately NOT cited in the Facts and NOT a code_ref here: sprint-44
+# removed it from code_refs on a quality-review MAJOR (over-broad -- touched by every dependency
+# change anywhere), and re-adding it would both reverse that decision and make this the sixth
+# article citing a file already past the refs-amplifier threshold. The contract set is owned by
+# [[architecture-boundary]]; this article links there instead. Same discipline [[zone-rules]]
+# records in its own frontmatter.
 # Re-verified 2026-07-30 (sprint-65 quality-review round). NEW Fact: rejected_at falls back to
 # SystemClock() rather than an inline datetime.now(), keeping the quarantine timestamp injectable.
 ---
@@ -101,11 +107,7 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   core-port route was the one gap. The ninth contract, `inbound-adapters-dont-persist`, now
   forbids `src.adapters.inbound` from importing any of the nine repository/watermark ports —
   see [[zone-rules]] ZR-1 for the rule and [[architecture-boundary]] for the contract set itself
-  — so the core-port route is no longer invisible to the gate either. (This Fact deliberately
-  names no build-config file: that citation was removed on 2026-08-06 and the reason is recorded
-  in this article's History. The contract set is owned by [[architecture-boundary]]; this article
-  links to it rather than re-citing it, the same discipline [[zone-rules]] records in its own
-  frontmatter.)
+  — so the core-port route is no longer invisible to the gate either.
 
 ### The pull loop â€” `run_cycle` / `run_periodic` (`composition/pull_loop.py`)
 - The loop lives in the composition zone â€” the one zone allowed to import BOTH `src.core` and

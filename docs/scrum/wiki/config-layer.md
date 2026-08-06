@@ -270,9 +270,11 @@ it is one of these seven readers.
 `backend/src/composition/config.py` lives in the composition zone.  It imports
 `AntiFlapThresholds` from `src.core.services.pipeline` (composition → core is
 allowed).  Core never imports from `src.composition` (enforced by the
-`core-independence` import-linter contract).  This placement is governed by `core-independence`
-alone — no additional contract targets it; the nine existing contracts (STORY-206, sprint-69,
-added the ninth, unrelated to `config.py`) all stay KEPT.
+`core-independence` import-linter contract).  On the core↔composition axis this placement is
+governed by `core-independence` alone — though `adapters-edge-only` and `api-outward-independence`
+also forbid their own zones from importing `src.composition`, so `config.py` is fenced from three
+directions, not one. STORY-206 (sprint-69) added a ninth contract, unrelated to `config.py`; all
+nine stay KEPT.
 
 ### Dependency
 `pyyaml` was added to `[project.dependencies]` in `pyproject.toml` (sprint-16,
