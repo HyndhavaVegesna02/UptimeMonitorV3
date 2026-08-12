@@ -775,11 +775,12 @@ stories:
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md -- a row may not claim a guard that does not exist
     points: 3
-    board: todo
+    board: in-progress
     pipeline: full
     order: 5             # FORCED LAST: its inputs are the four rows the stories above write
     blocked_question: null
-    attempts: 0
+    attempts: 1
+    started_at_commit: 3263e17   # dispatched 2026-08-12; all four sibling rows now landed
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false
