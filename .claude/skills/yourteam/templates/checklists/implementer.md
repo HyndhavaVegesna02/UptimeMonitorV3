@@ -34,6 +34,7 @@
 
 ## Wiki discipline
 
-- [ ] Blast radius is the MECHANICAL sweep over all articles (`yt_wiki.py sweep`) — never hand-picked.
+- [ ] Route new knowledge before writing it: a test/lint first, then CLAUDE.md, then a `tier: reference` article for reasons — a new `tier: map` article is the last resort, because it is the only one with recurring cost.
+- [ ] Blast radius is the MECHANICAL sweep over all map articles (`yt_wiki.py sweep`) — never hand-picked. Run it AFTER your last commit; there is no `verified_sha` to bump.
 - [ ] Facts cite SYMBOLS (`file.py::name`), not bare line numbers.
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches.

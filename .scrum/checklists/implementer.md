@@ -96,7 +96,9 @@
 
 ## Wiki discipline
 
-- [ ] Blast radius is the MECHANICAL sweep over all articles (`python .claude/skills/yourteam/scripts/yt_wiki.py sweep`) — never hand-picked; shared `code_refs` files drift multiple articles (2026-06-28).
+- [ ] **Route new knowledge before writing it** (2026-08-12): can it be a test, lint or gate command? Write the check — a Fact citing `file:line` that can go stale is a test that hasn't been written. Load-bearing every session? CLAUDE.md. A *reason* (why a decision was made, why code was killed)? A `tier: reference` article — no `code_refs`, no Facts, never swept. Only what is left earns a `tier: map` article, the one tier that costs something every sprint.
+- [ ] Blast radius is the MECHANICAL sweep over all `tier: map` articles (`python .claude/skills/yourteam/scripts/yt_wiki.py sweep`) — never hand-picked; shared `code_refs` files drift multiple articles (2026-06-28). **Run it AFTER your last commit** — a sweep measured before your final edit is evidence about a tree that no longer exists (2026-08-12).
+- [ ] There is no `verified_sha` to bump (2026-08-12). The staleness baseline is the article's own last commit, so re-verifying means TOUCHING the article — an appended `## History` line when no Fact changed. The converse binds too: editing a swept article IS claiming you re-read its Facts, so do not touch one you have not re-read.
 - [ ] Facts cite SYMBOLS (`file.py::ClassName`, `file.py::function`) — bare line numbers only where no symbol applies (2026-06-27).
 - [ ] Every Fact's cited file is covered by the article's `code_refs`; `code_refs` list the files that DEFINE the subject, not everything it touches (2026-06-25 ×2).
 - [ ] A Fact asserting BEHAVIOUR (a branch, a threshold, a decision ladder, an error condition)

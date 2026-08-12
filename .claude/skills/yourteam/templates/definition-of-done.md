@@ -10,8 +10,9 @@
 
 ## Standing rules (mechanically checked where possible)
 - [ ] Every acceptance criterion has at least one test exercising it
-- [ ] Forward blast radius resolved: wiki articles whose code_refs overlap this
-      story's diff are updated or re-verified (verified_sha bumped)
+- [ ] Forward blast radius resolved: `tier: map` wiki articles whose code_refs
+      overlap this story's diff are updated or re-verified within the story, and
+      `yt_wiki.py sweep` is CLEAN when run AFTER the story's last commit
 - [ ] If the story changed build/test/run commands, stack, or architecture:
       CLAUDE.md updated in the same commit
 - [ ] If the story deleted code: the reason is recorded in the story file History

@@ -31,7 +31,7 @@ Runs once, when no `.scrum/` exists.
 1. Explore first: README, structure, recent commits, existing CLAUDE.md, test setup.
 2. Same interview, but grounded ("I see Express + Jest — keep that?"). Capture the observed coding conventions — naming, structure, error handling, test patterns — into a `wiki/conventions.md` article (with `code_refs` to representative files) so every future subagent brief carries them. Present it to the PO with the rest of the inception output.
 3. **Conflict scan (mandatory):** read existing CLAUDE.md, AGENTS.md, and any agent config. List every instruction that contradicts YourTeam mechanics (e.g., "commit directly to main" vs branch-per-sprint, existing commit/PR conventions vs story commits, "always do X first" vs the standup). Because the PO's files outrank this skill, unresolved conflicts would silently disable parts of the methodology — so each one must be resolved explicitly at inception: the PO either amends the conflicting line or records a sanctioned exception in working-agreements.md. Never proceed to Sprint 0 with unresolved conflicts.
-4. Offer one optional extra: **wiki seeding** — a pass writing initial verified articles for core modules (each with `code_refs` and current `verified_sha`). PO may skip; the wiki then grows organically from sprint 1.
+4. Offer one optional extra: **wiki seeding** — a pass writing initial `tier: map` articles for core modules (each with `code_refs`; the staleness baseline is the seeding commit itself, derived, nothing to stamp). Seed sparingly: route by the wiki protocol's four-row table first, so conventions that can be a lint become one and always-loaded facts go to CLAUDE.md. PO may skip; the wiki then grows organically from sprint 1.
 5. CLAUDE.md handling: append the YourTeam section only. Never rewrite existing content. If AGENTS.md exists (other agents work on this repo), append the same pointer section there too — agents that don't know about `.scrum/` would otherwise commit outside the sprint flow.
 6. **Bootstrap the project-local machinery** (both fresh and existing projects), from the skill's `templates/`:
    - Copy `templates/agents/yt-*.md` → `.claude/agents/` (confirm model AND effort tiers with the PO: default Sonnet/high implementer, Opus/high reviewers, Opus/xhigh plan verifier, Haiku/low scout — an unpinned effort silently inherits whatever the session runs at).
@@ -50,7 +50,7 @@ Per story:
 1. Draft `docs/scrum/stories/STORY-NNN-slug.md` from the template: context, description, acceptance criteria, open questions.
 2. AC must be **testable** — each criterion phrased so it can become a test or a checkable command. "Works well" is not AC; "GET /habits returns 200 with an empty list when none exist" is.
 3. Estimate: fibonacci 1, 2, 3, 5, 8. Complexity, not hours. An 8 means "split me" — propose the split; an 8 can never enter a sprint.
-4. High blast radius bumps the estimate: if the story's likely files are referenced by many wiki articles, that's load-bearing code — raise the points and note it (this also forces the full review pipeline).
+4. High blast radius bumps the estimate: if the story's likely files are referenced by many `tier: map` wiki articles, that's load-bearing code — raise the points and note it (this also forces the full review pipeline). `tier: reference` articles never enter this count; they carry no `code_refs`.
 5. Present to PO. Approved → `status: ready` in backlog.yaml. **Definition of Ready: approved AC + estimate + zero unresolved questions.**
 
 Defect stories: repro steps in context, the fix expressed as AC ("given X, Y no longer happens"). Severity decides path — normal defects wait for planning; critical ones take the Hotfix Protocol.
@@ -98,7 +98,7 @@ Order stories by, in priority:
 
 ## 5. Sprint Review
 
-Preconditions: every story Done or Blocked; each Done story's **reality-gate evidence recorded** (live render-vs-wire spot check for consumer/rendering stories, live vendor-path probe for adapter stories, no AC deferred informally — a story whose live path never ran is not Done); the sprint branch rebased onto current main with full DoD re-run if main moved (edge-cases.md #2); inter-story commit dependencies checked so mixed verdicts don't cherry-pick through a dependency (edge-cases.md #3); AND the wiki compile pass has run (it blocks review — see wiki-protocol.md; `yt_wiki.py` must exit 0).
+Preconditions: every story Done or Blocked; each Done story's **reality-gate evidence recorded** (live render-vs-wire spot check for consumer/rendering stories, live vendor-path probe for adapter stories, no AC deferred informally — a story whose live path never ran is not Done); the sprint branch rebased onto current main with full DoD re-run if main moved (edge-cases.md #2); inter-story commit dependencies checked so mixed verdicts don't cherry-pick through a dependency (edge-cases.md #3); AND the wiki compile pass has run (it blocks review — see wiki-protocol.md; `yt_wiki.py` must exit 0, run AFTER the sprint's last commit).
 
 1. Prepare `review.md` in the sprint folder: per story — what was built, AC checklist with evidence (test output, DoD records from sprint-current.yaml), demo steps.
 2. Demo live where possible: run the app, execute the commands, show output. Evidence over claims.
@@ -107,7 +107,7 @@ Preconditions: every story Done or Blocked; each Done story's **reality-gate evi
    - **Reject** → story returns to backlog `status: ready` with the PO's feedback appended to the story file; its commits stay on the sprint branch, off main.
 4. Present Blocked stories with their exact questions; answers go into the story file; story returns to backlog, re-estimated if the answer changed scope.
 5. Record accepted points into velocity.json. Returned stories get re-estimated with what was learned.
-6. After all verdicts: merge accepted work to main (whole branch if everything accepted; cherry-pick story commits if mixed — new SHAs! — and ALSO apply the ceremony/state commits, which are records exempt from verdicts; verify the sprint folder exists on the default branch — edge-cases.md #11), then re-stamp the verified_sha of every wiki article verified this sprint to the resulting main commit (edge-cases.md #4), delete or keep the sprint branch per PO preference, freeze the sprint folder.
+6. After all verdicts: merge accepted work to main (whole branch if everything accepted; cherry-pick story commits if mixed — new SHAs! — and ALSO apply the ceremony/state commits, which are records exempt from verdicts; verify the sprint folder exists on the default branch — edge-cases.md #11), delete or keep the sprint branch per PO preference, freeze the sprint folder. **No wiki re-stamp pass** — the staleness baseline is derived from each article's own last commit, so cherry-picks carry it along (edge-cases.md #4, retired). Re-run `yt_wiki.py` on the merged default branch as the confirmation.
 
 ## 6. Retrospective
 

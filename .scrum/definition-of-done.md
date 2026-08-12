@@ -107,8 +107,18 @@
       identifiers only in provenance fields. (Belt-and-suspenders to lint-imports.)
 - [ ] No persisted verdicts. Availability/status are derived on read. A caching
       story may exist ONLY after a measurement story shows a real read problem.
-- [ ] Forward blast radius resolved: wiki articles whose code_refs overlap this
-      story's diff are updated or re-verified (verified_sha bumped).
+- [ ] Forward blast radius resolved: `tier: map` wiki articles whose code_refs overlap
+      this story's diff are updated or re-verified WITHIN the story, with no intervening
+      commit leaving the repo asserting something false, and
+      `python .claude/skills/yourteam/scripts/yt_wiki.py sweep` is CLEAN when run AFTER
+      the story's last commit.
+      (2026-08-12: `verified_sha` is retired. The staleness baseline is DERIVED — the
+       article's own last commit — so there is no stamp to bump and a commit touching the
+       article and its code_ref together is trivially not stale. This replaces both the
+       "bump the sha" instruction and sprint-68's A18 "same commit" clause, which sprint-69
+       redrafted to "same STORY, no false intermediate" after it proved unsatisfiable from
+       both ends. The trailing "AFTER the story's last commit" is that redraft's own
+       sentence, now mechanically true rather than merely stated.)
 - [ ] If the story changed build/test/run commands, stack, or architecture:
       CLAUDE.md updated in the same commit.
 - [ ] If the story deleted code: the reason is recorded in the story file History.

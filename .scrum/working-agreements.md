@@ -116,8 +116,10 @@
   moves into the sprint's `review.md`; `sprint-current.yaml` carries only the final evidence block —
   it is re-read at every standup. (Rung: prose.)
   (d) Landed the same day at the script/agent rungs: `yt_wiki.py` format-only auto-verify (a
-  whitespace-only diff since `verified_sha` bumps the sha mechanically — one formatter commit had
-  re-staled 7 articles) + staleness-amplifier `refs` lint (advisory; `--strict-refs` to block);
+  whitespace-only diff since the baseline cannot have changed a Fact, so the article is simply not
+  stale — one formatter commit had re-staled 7 articles; the mechanical *sha bump* this originally
+  performed went away with `verified_sha` on 2026-08-12, the skip did not) + staleness-amplifier
+  `refs` lint (advisory; `--strict-refs` to block);
   `yt_gate.py` strips decorative banner lines from evidence tails; both reviewer agent defs scoped
   to the story's diff pack (targeted context reads allowed, broad repo re-exploration prohibited).
   PO quality constraints honored: spec/quality reviewers stay SEPARATE (independence), no coverage
@@ -518,11 +520,14 @@ A15 §2 it was made concrete rather than restated. Do NOT serialise the reviews.
 
 ## A18 — C3 has a mechanism, and it reaches two of its five failure modes (2026-08-05, sprint-68 retro)
 
-**Rung: SCRIPT — `yt_wiki.py c3 --range BASE..HEAD`.** Run per STORY range. Advisory by default
-(`--strict-c3` blocks) because its bound is measured, not assumed: RED on both commits that cost an
-AC, but 45 notes over sprint 68 — it cannot tell a completing commit from a TDD step. Read
-`check_c3`'s docstring before trusting or dismissing a note. **STORY-219 is the half that reaches
-the other three.** Narrative: `docs/scrum/sprints/2026-08-03-sprint-68/retro.md`.
+**Rung: SCRIPT — `yt_wiki.py sweep`, run after the story's last commit.** Originally
+`yt_wiki.py c3 --range BASE..HEAD`, advisory, read per STORY range; **that check was DELETED
+2026-08-12** when the staleness baseline became derived. The derived sweep IS c3's satisfiable
+half — "the article moved with the code" is now measured continuously at HEAD as
+`baseline == the code_ref's commit` — and it produces a verdict instead of the 45 per-commit notes
+c3 emitted over sprint 68, which it could not tell apart from TDD steps. **STORY-219 is the half
+that reaches the other three failure modes** (citation resolution) and is unaffected. Narrative:
+`docs/scrum/sprints/2026-08-03-sprint-68/retro.md`.
 
 **REDRAFTED 2026-08-12 (sprint-69 retro, PO-approved) — "same commit" is replaced by "same STORY,
 no false intermediate".** C3's literal same-commit reading is unsatisfiable in two OPPOSITE
@@ -535,13 +540,19 @@ situations, both of which occurred in sprint 69:
   subject.
 
 The rule, as it now reads:
-1. The wiki correction and the `verified_sha` bump land **within the story**, and **no intervening
-   commit may leave the repo asserting something false**.
-2. **`verified_sha` tracks the last commit that touched `code_refs` — it is NOT the article's own
-   commit**, so a self-reference is never required and a PLACEHOLDER dance is never correct.
+1. The wiki correction lands **within the story**, and **no intervening commit may leave the repo
+   asserting something false**.
+2. **There is no `verified_sha`** (retired 2026-08-12). The baseline is the article's own last
+   commit, derived by `git log -1 -- <article>`, so the self-reference this clause was written to
+   forbid is impossible by construction rather than prohibited by prose — a commit carrying the
+   article and its `code_ref` together is trivially not stale. The converse now binds: **touching a
+   swept article IS re-verifying it**, so do not edit one whose Facts you have not re-read. When no
+   Fact changed, the re-verification is an appended `## History` line.
 3. **Run `yt_wiki.py` AFTER the story's last commit.** A sweep measured before the final edit is not
    evidence about the story. Sprint 69 opened with a committed "sweep CLEAN" line that was true when
    run and false at HEAD, which is exactly this failure.
 
-Per A15 this REPLACES the earlier reading rather than restating it. Narrative: RC-9 and RC-10 in
-`docs/scrum/sprints/2026-08-05-sprint-69/retro.md`.
+Per A15 this REPLACES the earlier reading rather than restating it. Clause 2 was redrafted a second
+time on 2026-08-12, when the field it governed was deleted; the amplifier problem it names in the
+"from above" case is now bounded by the `map`/`reference` tier split rather than by stamp
+discipline. Narrative: RC-9 and RC-10 in `docs/scrum/sprints/2026-08-05-sprint-69/retro.md`.

@@ -34,7 +34,7 @@ You are an implementer on this project's dev team, dispatched to complete exactl
 7. **Stay inside the story.** No unrelated refactoring, no drive-by improvements. Notice something worth fixing → report it as a candidate backlog item.
 8. **Fixtures derive from a real captured sample** (a live response, or the producer's own test fixtures) — never invented at a plausible-looking scale. If no real sample is available, that is a blocking question, not a judgment call.
 9. **Tick the `plan.md` checkbox** for each completed step.
-10. **Wiki blast radius is the mechanical sweep**, never hand-picked: run `python .claude/skills/yourteam/scripts/yt_wiki.py sweep` and update or flag every article it reports. Facts cite symbols (`file.py::name`), not bare line numbers.
+10. **Wiki blast radius is the mechanical sweep**, never hand-picked: run `python .claude/skills/yourteam/scripts/yt_wiki.py sweep` **after your last commit** and update or flag every article it reports. There is no `verified_sha` to bump — the baseline is the article's own last commit, so touching the article is what re-verifies it, and a commit carrying the article and its `code_ref` together is trivially not stale. Route new knowledge first (test/lint > CLAUDE.md > `tier: reference` article > new `tier: map` article). Facts cite symbols (`file.py::name`), not bare line numbers.
 11. **If genuinely blocked** (ambiguous AC, missing decision): stop, state the exact question, return control. Do not implement both options.
 12. **Before reporting done:** the tree must be CLEAN (every change committed — a gate result over uncommitted changes does not count); run every DoD command yourself and confirm exit 0; self-review your diff once for debug leftovers and dead code.
 

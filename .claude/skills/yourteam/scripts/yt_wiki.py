@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""YourTeam v2 wiki checker (yourteam_version: 2.2.1 — adds the c3 catalogue-lag check).
+"""YourTeam v2 wiki checker (yourteam_version: 2.3.0 — tiers + DERIVED staleness).
 
 Mechanizes the wiki protocol's mechanical checks over docs/scrum/wiki/:
 
-  sweep  — staleness: for every `status: verified` article, run
-           `git diff --name-only <verified_sha>..HEAD -- <code_refs>`;
-           any hit means the article is stale (agreement 2026-06-28: the
-           sweep, never eyeballing, decides blast radius). An unresolvable
-           verified_sha (e.g. lost to a cherry-pick) counts as stale
-           (edge-case #4). --update rewrites `status: verified` -> stale
-           in the flagged files.
+  sweep  — staleness, for every `tier: map` article with `status: verified`.
+           The baseline is DERIVED, never stored: it is the article's own last
+           commit (`git log -1 -- <article>`). Any `code_ref` touched after that
+           commit means the article is stale (agreement 2026-06-28: the sweep,
+           never eyeballing, decides blast radius). --update rewrites
+           `status: verified` -> stale in the flagged files.
+           `tier: reference` articles make no live-code claims and are not swept.
   facts  — coverage lint: every file a Fact cites must be covered by the
            article's code_refs, else the staleness check can never flag
            that Fact and it rots silently (agreement 2026-06-25).
@@ -19,32 +19,42 @@ Mechanizes the wiki protocol's mechanical checks over docs/scrum/wiki/:
            cited as a code_ref by many articles quarantines them ALL on any
            touch (one shared file once re-staled a third of a wiki). Notes
            by default; findings under --strict-refs.
-  c3     — catalogue-lag lint (retro sprint-68, 2026-08-05; needs --range
-           BASE..HEAD): for every non-merge commit in the range, a commit that
-           MODIFIES a file an article both lists in code_refs and cites by name in
-           its Facts must touch that article too. Notes by default; findings under
-           --strict-c3. Read per STORY range. Bounds: check_c3's docstring.
-  integrity — wiki-integrity lint (retro sprint-49, 2026-07-16): (1) verified_sha
-           must be a SHORT sha (7-12 hex) — a 40-char full sha is the tell of a
-           bulk "bump every article to HEAD" pass that never re-verified the Facts
-           (sprint-49: 12 articles laundered to one 40-char sha). (2) status:
-           archived ⇒ the file must LIVE under wiki/archive/ AND carry
-           archived_sprint + archived_reason frontmatter — a status-flip that
-           leaves the article in the main dir with no tombstone is a fake archive
-           the sweep silently skips (sprint-49: migrations-and-db.md).
+  integrity — wiki-integrity lint (retro sprint-49, 2026-07-16; tier half added
+           2026-08-12): (1) status: archived ⇒ the file must LIVE under
+           wiki/archive/ AND carry archived_sprint + archived_reason frontmatter
+           — a status-flip that leaves the article in the main dir with no
+           tombstone is a fake archive the sweep silently skips (sprint-49:
+           migrations-and-db.md). (2) `tier: reference` ⇒ NO code_refs and NO
+           `## Facts` section. That is what makes "not swept" honest instead of
+           an escape hatch: a reference article asserts nothing about live code,
+           so it has nothing that can rot. An unknown tier is a finding, for the
+           same reason an unknown status is.
 
-The sweep skips LLM re-verification it can prove unnecessary: if the diff
-since verified_sha is whitespace-only (`git diff -w --ignore-blank-lines`
-empty), no Fact content can have changed — with --update the verified_sha is
-bumped mechanically instead of marking stale (retro sprint-45: one formatter
-commit re-staled 7 articles, costing two re-verification waves). Any
+WHY THE BASELINE IS DERIVED (2026-08-12). It used to be a stored `verified_sha`.
+Bumping that field creates a NEW commit, which leaves the stamp pointing one
+commit too early — the "verified_sha self-reference" repair commit, eight of them
+in this repo, and unsatisfiable under per-step TDD where a wiki correction may cite
+code that does not exist yet (sprint-69 retro, RC-10). Deriving the baseline from
+the article's own last commit makes that class impossible by construction: a commit
+touching the article and its code_ref TOGETHER is trivially not stale. It also
+retires the c3 catalogue-lag check, whose satisfiable half this IS, and the
+short-sha integrity rule, which existed only to detect a bulk re-stamp of a field
+that no longer exists.
+
+The cost, accepted deliberately: an edit to a swept article resets its baseline
+whether or not the Facts were re-read. So editing a swept article IS re-verifying
+it — if you are not re-verifying, do not touch it.
+
+The sweep skips re-verification it can prove unnecessary: if the diff since the
+baseline is whitespace-only (`git diff -w --ignore-blank-lines` empty), no Fact
+content can have changed, so the article is not stale (retro sprint-45: one
+formatter commit re-staled 7 articles, costing two re-verification waves). Any
 non-whitespace change (even a quote-style swap) still stales normally.
 
 Usage:
-  python yt_wiki.py            # all four checks
+  python yt_wiki.py            # all checks
   python yt_wiki.py sweep --update
   python yt_wiki.py facts links
-  python yt_wiki.py c3 --range sprint-68-start..HEAD    # not in the default run
 
 Exit codes: 0 clean; 1 findings in any requested check; 4 setup error.
 """
@@ -125,11 +135,43 @@ def covered(path: str, refs: list[str]) -> bool:
 
 KNOWN_STATUSES = {"verified", "stale", "archived"}
 
+# Absent `tier` means `map`: every article predating the 2026-08-12 tier split
+# made live-code claims, so the backward-compatible default must be the swept one.
+KNOWN_TIERS = {"map", "reference"}
+DEFAULT_TIER = "map"
+
+
+def article_baseline(root: Path, path: Path) -> str | None:
+    """The article's own last commit — the DERIVED staleness baseline.
+
+    Replaces the stored `verified_sha` (2026-08-12). Returns None when the
+    article has no commit yet: a file written but not committed is not evidence
+    about anything, and the sweep reads committed state.
+    """
+    try:
+        rel = path.resolve().relative_to(root.resolve()).as_posix()
+    except ValueError:
+        return None
+    out = git(root, "log", "-1", "--format=%H", "--", rel)
+    return out.stdout.strip() or None if out.returncode == 0 else None
+
 
 def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str]:
     findings = []
     for path, text in articles.items():
         meta = parse_frontmatter(text)
+        tier = meta.get("tier", DEFAULT_TIER)
+        if tier not in KNOWN_TIERS:
+            findings.append(
+                f"{path.name}: UNRECOGNIZED tier={tier!r} — article is invisible to "
+                f"the sweep; use one of {sorted(KNOWN_TIERS)}"
+            )
+            continue
+        if tier == "reference":
+            # Not a silent skip: a reference article is unswept because it asserts
+            # nothing about live code, and `integrity` is what holds it to that.
+            print(f"  note: {path.name} not swept (tier=reference — no live claims)")
+            continue
         status = meta.get("status")
         if status != "verified":
             # Silent exclusion from the sweep is how knowledge rots invisibly:
@@ -143,16 +185,20 @@ def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str
                     "to the sweep; fix the frontmatter"
                 )
             continue
-        sha, refs = meta.get("verified_sha"), meta.get("code_refs") or []
-        if not sha or not refs:
-            findings.append(f"{path.name}: verified but missing verified_sha/code_refs")
-            continue
-        if git(root, "cat-file", "-e", f"{sha}^{{commit}}").returncode != 0:
+        refs = meta.get("code_refs") or []
+        if not refs:
             findings.append(
-                f"{path.name}: UNRESOLVABLE verified_sha {sha} — treat as stale (edge-case #4)"
+                f"{path.name}: tier=map and verified but no code_refs — nothing anchors "
+                "its Facts, so nothing can ever flag them stale"
             )
             continue
-        diff = git(root, "diff", "--name-only", f"{sha}..HEAD", "--", *refs)
+        base = article_baseline(root, path)
+        if base is None:
+            print(
+                f"  note: {path.name} not swept (no commit yet — uncommitted article)"
+            )
+            continue
+        diff = git(root, "diff", "--name-only", f"{base}..HEAD", "--", *refs)
         hits = [ln for ln in diff.stdout.splitlines() if ln.strip()]
         if diff.returncode != 0:
             findings.append(
@@ -162,30 +208,17 @@ def check_sweep(root: Path, articles: dict[Path, str], update: bool) -> list[str
             # Format-only drift: content identical once whitespace is ignored →
             # no Fact can have been invalidated; re-verifying with an LLM is
             # pure waste. Conservative by construction — ANY non-whitespace
-            # change still stales. (Retro sprint-45, 2026-07-14.)
+            # change still stales. (Retro sprint-45, 2026-07-14.) Under a derived
+            # baseline this needs no write: the same comparison stays empty on
+            # every later sweep, so there is no stamp to keep up to date.
             ws = git(
-                root, "diff", "-w", "--ignore-blank-lines", f"{sha}..HEAD", "--", *refs
+                root, "diff", "-w", "--ignore-blank-lines", f"{base}..HEAD", "--", *refs
             )
             if ws.returncode == 0 and not ws.stdout.strip():
-                if update:
-                    head = git(root, "rev-parse", "HEAD").stdout.strip()
-                    new = re.sub(
-                        rf"^(verified_sha:\s*){re.escape(sha)}",
-                        rf"\g<1>{head}",
-                        text,
-                        count=1,
-                        flags=re.M,
-                    )
-                    path.write_text(new, encoding="utf-8")
-                    print(
-                        f"  note: {path.name} format-only drift — verified_sha "
-                        f"auto-bumped to {head[:7]} (no LLM re-verify needed)"
-                    )
-                else:
-                    print(
-                        f"  note: {path.name} format-only drift in {len(hits)} "
-                        "path(s) — auto-verifiable with --update"
-                    )
+                print(
+                    f"  note: {path.name} format-only drift in {len(hits)} "
+                    "path(s) — no Fact content can have changed"
+                )
                 continue
             findings.append(
                 f"{path.name}: STALE — {len(hits)} changed path(s): {', '.join(hits[:5])}"
@@ -307,46 +340,55 @@ def check_citations(root: Path, articles: dict[Path, str]) -> list[str]:
     return findings
 
 
-SHORT_SHA_RE = re.compile(r"^[0-9a-f]{7,12}$")
-
-
 def check_integrity(wiki: Path, articles: dict[Path, str]) -> list[str]:
-    """Wiki-integrity lint (retro sprint-49, 2026-07-16).
+    """Wiki-integrity lint (retro sprint-49, 2026-07-16; tier half 2026-08-12).
 
-    Two mechanical guards for failure modes an external delivery slipped past the
-    other checks:
-      1. verified_sha must be a SHORT sha (7-12 hex). A 40-char full sha is the
-         tell of a bulk re-stamp that never re-verified the per-article Facts —
-         which launders staleness and defeats the sweep's whole premise.
-      2. status: archived ⇒ the file lives under wiki/archive/ AND carries
+    Two mechanical guards for ways an article can escape the sweep while still
+    looking like knowledge:
+      1. status: archived ⇒ the file lives under wiki/archive/ AND carries
          archived_sprint + archived_reason frontmatter. A status-flip that leaves
          the article in the main dir with no tombstone is a fake archive: the
          sweep skips `status: archived`, so the flip silences the linter instead
          of being caught by it.
+      2. tier: reference ⇒ no code_refs and no `## Facts` section. Reference
+         articles are exempt from staleness because they claim nothing about live
+         code — reasons, decisions, tombstones. The moment one cites code it is a
+         map article wearing an exemption, which is precisely the trusted-and-wrong
+         state the protocol exists to prevent.
+
+    The former guard on `verified_sha` being a short sha is retired with the field
+    itself (2026-08-12): it detected a bulk re-stamp of a stamp that no longer
+    exists, and the derived baseline cannot be bulk-set at all.
     """
     findings = []
     for path, text in articles.items():  # main-dir articles
         meta = parse_frontmatter(text)
-        sha = meta.get("verified_sha")
-        if sha and not SHORT_SHA_RE.match(sha):
-            findings.append(
-                f"{path.name}: verified_sha {sha!r} is not a short sha (7-12 hex) — a "
-                "40-char sha signals a bulk re-stamp with no per-article re-verification"
-            )
         if meta.get("status") == "archived":
             findings.append(
                 f"{path.name}: status=archived but the file is in the main wiki dir — move "
                 "it to wiki/archive/ with archived_sprint + archived_reason (a real tombstone)"
             )
+        tier = meta.get("tier", DEFAULT_TIER)
+        if tier not in KNOWN_TIERS:
+            findings.append(
+                f"{path.name}: UNRECOGNIZED tier={tier!r} — use one of {sorted(KNOWN_TIERS)}"
+            )
+        elif tier == "reference":
+            if meta.get("code_refs"):
+                findings.append(
+                    f"{path.name}: tier=reference but declares code_refs — a reference "
+                    "article makes no live-code claims. Drop the refs, or make it tier: map"
+                )
+            if facts_section(text).strip():
+                findings.append(
+                    f"{path.name}: tier=reference but has a `## Facts` section — Facts cite "
+                    "live code and are never swept at this tier. Move them to a tier: map "
+                    "article, or restate them as Inference"
+                )
     archive = wiki / "archive"
     if archive.is_dir():
         for path in sorted(archive.glob("*.md")):
             meta = parse_frontmatter(path.read_text(encoding="utf-8", errors="replace"))
-            sha = meta.get("verified_sha")
-            if sha and not SHORT_SHA_RE.match(sha):
-                findings.append(
-                    f"archive/{path.name}: verified_sha {sha!r} is not a short sha (7-12 hex)"
-                )
             missing = [
                 k for k in ("archived_sprint", "archived_reason") if not meta.get(k)
             ]
@@ -370,132 +412,13 @@ def check_links(root: Path, wiki: Path, articles: dict[Path, str]) -> list[str]:
     return findings
 
 
-def _blob_text(root: Path, blob: str, cache: dict[str, str]) -> str:
-    if blob not in cache:
-        cache[blob] = git(root, "cat-file", "-p", blob).stdout
-    return cache[blob]
-
-
-def check_c3(root: Path, wiki: Path, rng: str) -> list[str] | None:
-    """C3 — the catalogue moves in the SAME COMMIT as the code it describes.
-
-    For every non-merge commit in <base>..<head>: if the commit touches a file
-    that some article lists in its `code_refs`, that same commit must also touch
-    that article. This is pure git arithmetic over commit contents — no checkout,
-    no judgment, no new dependency.
-
-    Frontmatter is read AS OF EACH COMMIT (one `ls-tree` per commit, blobs cached),
-    not at HEAD, so an article that gains a code_ref mid-range does not retroactively
-    condemn the commits before it.
-
-    ADVISORY BY DEFAULT (--strict-c3 blocks), and the reason is measured, not assumed.
-    Two known bounds, stated because a check that oversells itself is worse than none:
-
-    1. IT CATCHES THE SEQUENCING CLASS ONLY — prose landing after the code it
-       describes. It cannot see a `verified_sha` bumped over a Fact nobody re-read,
-       nor a citation into a file the citing article does not list as a code_ref: in
-       both the arithmetic is correct and the CLAIM is what is false. On the five C3
-       failures of sprint 68 it reaches two. Those need citation resolution.
-    2. IT CANNOT TELL A COMPLETING COMMIT FROM A TDD STEP, and that is where its
-       noise comes from. Measured on sprint 68 (101 commits): RED on both commits
-       that produced a real AC failure, and 45 notes overall — 11 of them on
-       STORY-205, a story no reviewer faulted. Mid-story green steps do not falsify a
-       "this violation is live" claim; only the commit that COMPLETES the change
-       does, and which commit that is, is not visible to arithmetic. Read the notes
-       per story range, not per sprint.
-    """
-    findings: list[str] = []
-    # A SETUP failure returns None, never a finding. c3 is advisory by default, so a
-    # bad range reported as a note would exit 0 — a check that cannot run reading as
-    # a check that found nothing. That is the A7 failure mode this repo already paid
-    # for once, and it was caught here by testing the error path rather than the
-    # happy one.
-    try:
-        rel_wiki = wiki.resolve().relative_to(root.resolve()).as_posix()
-    except ValueError:
-        print(
-            f"yt_wiki: wiki dir {wiki} is outside the repo root {root} — "
-            "c3 cannot range-check it",
-            file=sys.stderr,
-        )
-        return None
-
-    rev = git(root, "rev-list", "--reverse", "--no-merges", rng)
-    if rev.returncode != 0:
-        print(f"yt_wiki: c3 bad range '{rng}': {rev.stderr.strip()}", file=sys.stderr)
-        return None
-    shas = [s for s in rev.stdout.split() if s]
-
-    blobs: dict[str, str] = {}
-    for sha in shas:
-        status = [
-            line.split("\t")
-            for line in git(
-                root, "show", "--name-status", "--format=", sha
-            ).stdout.splitlines()
-            if "\t" in line
-        ]
-        if not status:
-            continue
-        touched = {parts[-1] for parts in status}
-        # Only a file that ALREADY EXISTED can falsify prose written about it. A
-        # newly ADDED file cannot: no article can cite a line that did not exist.
-        # Renames (R) and deletions (D) very much can, so only "A" is dropped.
-        files = [parts[-1] for parts in status if parts[0][:1] != "A"]
-        if not files:
-            continue
-        tree = git(root, "ls-tree", "-r", sha, "--", rel_wiki).stdout.splitlines()
-        for line in tree:
-            if "\t" not in line:
-                continue
-            info, apath = line.split("\t", 1)
-            parts = info.split()
-            if len(parts) < 3 or parts[1] != "blob" or not apath.endswith(".md"):
-                continue
-            if "/archive/" in apath:
-                continue
-            atext = _blob_text(root, parts[2], blobs)
-            meta = parse_frontmatter(atext)
-            refs = meta.get("code_refs") or []
-            if not refs or meta.get("status") == "archived":
-                continue
-            if apath in touched:
-                continue  # the article moved with the code — this is C3 satisfied
-            # A code_ref only says "this article is ABOUT this area". What C3 protects
-            # is a CLAIM, and a claim lives in a Fact that names the file. So require
-            # both: the file is in code_refs AND some Fact in the article (as of this
-            # commit) cites it by name. Without the second half every TDD green step
-            # under a broad code_ref reads as a violation.
-            facts = facts_section(atext)
-            hits = [
-                f
-                for f in files
-                if f != apath and covered(f, refs) and Path(f).name in facts
-            ]
-            if hits:
-                extra = f" (+{len(hits) - 1} more)" if len(hits) > 1 else ""
-                findings.append(
-                    f"{sha[:9]}: {Path(apath).name} not updated, but the commit "
-                    f"touched its code_ref {hits[0]}{extra}"
-                )
-    return findings
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument(
         "checks",
         nargs="*",
         default=[],
-        help="sweep | facts | links | refs | citations | integrity | c3 "
-        "(default: all but c3, which needs --range)",
-    )
-    ap.add_argument(
-        "--range",
-        dest="rng",
-        default=None,
-        metavar="BASE..HEAD",
-        help="c3: commit range to check (required by, and only used by, the c3 check)",
+        help="sweep | facts | links | refs | citations | integrity (default: all)",
     )
     ap.add_argument("--wiki", default=None, help="wiki dir (default docs/scrum/wiki)")
     ap.add_argument(
@@ -510,11 +433,6 @@ def main() -> int:
         "--strict-citations",
         action="store_true",
         help="citations: unresolvable/unanchored citations count as findings (exit 1)",
-    )
-    ap.add_argument(
-        "--strict-c3",
-        action="store_true",
-        help="c3: catalogue-lag notes count as findings (exit 1)",
     )
     args = ap.parse_args()
 
@@ -558,16 +476,6 @@ def main() -> int:
             advisory = not args.strict_citations  # notes by default (A16)
         elif check == "integrity":
             found = check_integrity(wiki, articles)
-        elif check == "c3":
-            if not args.rng:
-                print(
-                    "yt_wiki: the c3 check requires --range BASE..HEAD", file=sys.stderr
-                )
-                return 4
-            found = check_c3(root, wiki, args.rng)
-            if found is None:
-                return 4  # setup failure, never a silent advisory pass
-            advisory = not args.strict_c3  # notes by default — see check_c3's docstring
         else:
             print(f"yt_wiki: unknown check '{check}'", file=sys.stderr)
             return 4

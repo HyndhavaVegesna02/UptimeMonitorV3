@@ -16,9 +16,9 @@ Someone (the PO, another human, a hotfix) pushed to main mid-sprint. Before the 
 
 PO accepts story B but rejects story A, and B's commits build on A's changes. Cherry-picking B alone will conflict or silently carry A's code. At review, before asking for verdicts, check inter-story commit dependencies (`git log --stat` overlap). If B depends on A, tell the PO *before* they decide: "B is built on A — reject both, accept both, or I rework B standalone next sprint." Never cherry-pick through a dependency silently.
 
-## 4. Cherry-picks invalidate wiki SHAs
+## 4. Cherry-picks invalidate wiki SHAs — RETIRED 2026-08-12
 
-Cherry-picked commits get **new SHAs on main**; if the sprint branch is then deleted, every `verified_sha` stamped during the sprint may point at a commit that no longer exists — and the staleness check (`git diff <sha>..HEAD`) errors out. At **sprint close**, after the merge: re-stamp every article verified this sprint with the resulting main commit. An unresolvable `verified_sha` is treated as `stale` (quarantine), never as verified.
+Obsolete: there is no stored `verified_sha` left to invalidate. The staleness baseline is derived from the article's own last commit, so a cherry-pick carries the article and its baseline together, and deleting the sprint branch strands nothing. No sprint-close re-stamp pass is needed. (Kept in place rather than renumbered — other files cite these edge cases by number.)
 
 ## 5. Scope explosion mid-story
 

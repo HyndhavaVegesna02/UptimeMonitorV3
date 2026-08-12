@@ -5,7 +5,16 @@ description: A complete Scrum-based development methodology where the human is P
 
 # YourTeam
 
-<!-- yourteam_version: 2.2.0 — the ratchet brake (PO-directed 2026-08-01). The retro now AUDITS
+<!-- yourteam_version: 2.3.0 — knowledge tiers + DERIVED staleness (PO-directed 2026-08-12). The
+     wiki's staleness baseline is no longer a stored `verified_sha` but the article's own last
+     commit, which makes the "self-reference bump" repair commit impossible by construction and
+     retires the c3 and short-sha checks that defended the field. Articles now carry a `tier`:
+     `map` (swept, cites live code) or `reference` (reasons and tombstones, no code_refs, no Facts,
+     never swept). New knowledge is ROUTED before it is written — a test, a CLAUDE.md line, a
+     reason, or a map article, in that order. Rationale: measured on this repo, the wiki was edited
+     1.6x more often than the code it described, 99 commits mentioned `verified_sha` and 8 existed
+     only to repair it; a Fact that cites file:line and can go stale is a test that hasn't been
+     written. 2.2.0 — the ratchet brake (PO-directed 2026-08-01). The retro now AUDITS
      the rules in force before proposing new ones; its default output is ZERO amendments; an item
      that hasn't fired in six sprints is proposed for DELETION (routing down the ladder is not
      deletion — it keeps the token cost). And the mid-sprint tooling freeze no longer blocks the
@@ -156,11 +165,12 @@ Inspect the *process*, not the product: blockers, rework loops, estimate misses,
 
 The wiki (`docs/scrum/wiki/`) is a map, never the territory — code is always ground truth. Full protocol, frontmatter schema, and the compile-pass checklist: read `references/wiki-protocol.md` whenever you create, update, verify, or consume wiki content. The invariants:
 
-- Every article's frontmatter carries `code_refs` (paths it describes) and `verified_sha` (commit at last verification). Facts cite `file:line`; synthesis is labeled as inference. Claims need addresses — that's what stops hallucinations laundering into "established" knowledge.
-- **Staleness is git arithmetic, not judgment:** `git diff <verified_sha>..HEAD -- <code_refs>` touches anything → `status: stale`. Run `python .claude/skills/yourteam/scripts/yt_wiki.py` (sweep + Facts-coverage lint + link lint, mechanized) at standup and before any dispatch that would consume the article.
+- **Route knowledge before writing it** — the enforcement ladder applied to knowledge, because a Fact citing `file:line` that can go stale is a test that hasn't been written: can it be a test/lint? → write the check. Load-bearing every session? → CLAUDE.md. A *reason* (why a decision was made, why code was killed)? → a `tier: reference` article. Only what's left is a `tier: map` article. Rows 1–3 cannot go stale by construction; keep the map tier small, because it is the only one with recurring cost.
+- Map articles carry `code_refs` (paths they describe); Facts cite `file:line`, synthesis is labeled inference. `reference` articles carry **no `code_refs` and no Facts** — mechanically checked, which is what makes their exemption honest rather than an escape hatch.
+- **Staleness is git arithmetic, not judgment, and the baseline is DERIVED:** the article's own last commit (`git log -1 -- <article>`); any `code_ref` touched after it → `status: stale`. There is no `verified_sha` — a stored stamp could never name its own commit, which is what produced the self-reference repair commits. Run `python .claude/skills/yourteam/scripts/yt_wiki.py` at standup, before any dispatch that would consume an article, and **after a story's last commit, never before**.
 - **Stale = quarantined:** readable, but its claims never enter a subagent brief. Worst case degrades to "no wiki" (explore manually) — never to confidently wrong.
-- **Forward blast radius at DoD:** a completing story's diff is matched against all `code_refs`; every hit must be updated or explicitly re-verified (bumping `verified_sha`) before the story passes.
-- **Sprint-end compile pass (blocks review):** fold the sprint's learnings into articles, rehabilitate stale ones, lint internal links (broken → repoint to archive tombstone or prune).
+- **Forward blast radius at DoD:** a completing story's diff is matched against every map article's `code_refs`; every hit must be updated or explicitly re-verified **within the story, with no false intermediate commit**, before the story passes. Touching the article is what moves its baseline — so editing a swept article IS re-verifying it.
+- **Sprint-end compile pass (blocks review):** route the sprint's learnings, fold what remains into articles, rehabilitate stale ones, lint internal links (broken → repoint to archive tombstone or prune). Report the map-tier count in the retro: growth every sprint means routing row 1 isn't being used.
 - **Deletion adds knowledge:** code deleted → dependent articles archived with a tombstone (sprint, story, reason). Stories that delete code must record why — that reason feeds the tombstone and stops future sprints re-making old mistakes.
 
 ## Bootstrap & Versioning (multi-project)

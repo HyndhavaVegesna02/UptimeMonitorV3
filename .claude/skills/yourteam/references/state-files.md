@@ -56,7 +56,9 @@ stories:
         output_tail: ""
         commit: 9f8e7d6
         at: 2026-06-10T14:33:00Z
-    blast_radius_resolved: true   # forward blast radius cleared at DoD
+    blast_radius_resolved: true   # forward blast radius cleared at DoD: every map
+                                  # article the diff hit was updated or re-verified
+                                  # within the story (no stamp — see wiki-protocol.md)
   - id: STORY-014
     points: 2
     board: blocked
