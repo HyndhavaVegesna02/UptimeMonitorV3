@@ -179,33 +179,63 @@ def _references_in_verdict_cell(verdict_cell: str) -> list[str]:
 
 
 def _assert_reference_count_matches_markers(row: AdjudicationRow) -> None:
-    """Per-row non-vacuity floor (quality review FIX 1.1): if `row`'s raw
-    `verdict_cell` contains the literal marker `ENFORCED-BY` at all, its
-    parsed `references` must be non-empty AND at least as many as the
-    number of `ENFORCED-BY` occurrences in the cell.
+    """Per-row non-vacuity floor (quality review FIX 1.1, strengthened at
+    round 2's MAJOR): if `row`'s raw `verdict_cell` contains the literal
+    marker `ENFORCED-BY` at all, its parsed `references` must be non-empty
+    AND at least `max(marker_count, py_count)`, where `marker_count` is the
+    number of `ENFORCED-BY` occurrences in the cell and `py_count` is the
+    number of `.py` occurrences.
 
     The global floor (`assert all_references` in the real-file test) only
     catches a TOTAL collapse to zero across the whole table -- a single row
-    whose references silently drop to zero (or whose ZR-8-style multi-
-    reference cell silently drops from 4 to 1) stays invisible to it, and
+    whose references silently drop to zero stays invisible to it, and
     because the shown-RED check filters on `row.references` too, that row
-    escapes BOTH checks at once and the guard stays green throughout. The
-    single most likely cause is the verdict marker written OUTSIDE its
-    backtick span -- this parser's grammar requires it INSIDE the span (the
-    house convention, `` `ENFORCED-BY path` ``) -- which is MORE natural
-    markdown than the convention it violates, so nothing else guards against
-    an author reasonably getting this wrong.
+    escapes BOTH checks at once and the guard stays green throughout.
+
+    Why `marker_count` alone is NOT enough (round 2 MAJOR, three
+    reproductions, all on ZR-8): `marker_count` only bounds references from
+    BELOW -- it catches a cell whose references fall below its OWN marker
+    count, but a multi-reference cell like ZR-8's (2 markers, 4 references)
+    has 2 SURPLUS references that silently absorb up to 2 lost ones with no
+    floor firing at all: dropping the backticks around one continuation
+    reference, rewriting one as a markdown link, or separating finding 2's
+    marker from its own reference (verbatim the shape the marker-outside-
+    span check above pins for ZR-7) all took ZR-8 from 4 references to 3
+    while staying under `marker_count == 2`, silently. `py_count` closes
+    this: the reference TEXT (a `.py` filename) stays in the cell as plain
+    prose even when the span around it is destroyed, so a lost reference is
+    still visible as a `.py` occurrence the marker count alone would miss.
+
+    Verified against every row of the real table before relying on this
+    (STORY-216 round 2): ZR-1 is 0 markers/0 `.py` (a contract name -- no
+    `.py` reference at all, so `py_count` correctly contributes nothing);
+    ZR-2..ZR-5 and ZR-7 are 1/1; ZR-8 is 2 markers/4 `.py` -- `py_count`,
+    not `marker_count`, is the one that must reach 4 there.
+
+    Stated limit, honestly: a cell claiming MORE references than the
+    stronger of these two counts can still lose the surplus silently --
+    e.g. a reference rewritten in a form containing no `.py` substring at
+    all (a bare contract name, or a path with no `.py` extension) alongside
+    surplus `.py`-bearing references would not move `py_count`. No row in
+    the real table has that shape today; if one is added, this floor's
+    limit applies to it specifically, not to the table as a whole.
     """
     marker_count = row.verdict_cell.count("ENFORCED-BY")
     if marker_count == 0:
         return
-    assert row.references and len(row.references) >= marker_count, (
+    py_count = row.verdict_cell.count(".py")
+    expected = max(marker_count, py_count)
+    assert row.references and len(row.references) >= expected, (
         f"{row.rule_id}: Verdict cell contains {marker_count} 'ENFORCED-BY' "
-        f"marker(s) but only {len(row.references)} reference(s) parsed out "
-        f"of it ({row.references!r}). Likely cause: the marker sits OUTSIDE "
-        f"its backtick code span -- this parser's grammar requires "
-        f"`` `ENFORCED-BY path` `` with the marker INSIDE the span. Fix the "
-        f"row's markdown to that convention; do not weaken this check."
+        f"marker(s) and {py_count} '.py' occurrence(s) (expected at least "
+        f"{expected} reference(s)) but only {len(row.references)} "
+        f"reference(s) parsed out of it ({row.references!r}). Likely cause: "
+        f"a reference lost its backtick code span (marker written OUTSIDE "
+        f"the span, a reference rewritten as a markdown link, or a marker "
+        f"separated from its own reference) -- this parser's grammar "
+        f"requires `` `ENFORCED-BY path` `` with the marker INSIDE the "
+        f"span. Fix the row's markdown to that convention; do not weaken "
+        f"this check."
     )
 
 
@@ -558,6 +588,115 @@ def test_per_row_floor_catches_a_lone_marker_span_with_reference_outside() -> No
         raise AssertionError(
             "parse_adjudication_table did not raise on a lone ENFORCED-BY "
             "marker span whose reference sits outside any span."
+        )
+
+
+#: ZR-8's real shape (two findings, two `ENFORCED-BY` spans, four references
+#: total -- see test_references_pins_zr8s_real_four_reference_two_finding_shape),
+#: used below to drive the per-row floor through the FULL pipeline
+#: (parse_adjudication_table), not just the standalone cell function, for the
+#: three multi-reference-cell edits quality review round 2 found (MAJOR).
+_ZR8_FOUR_REF_VERDICT_CELL = (
+    "Finding 1: `ENFORCED-BY backend/tests/test_a.py::test_b` (STORY-1, "
+    "sprint-1). Finding 2: `ENFORCED-BY backend/tests/test_c.py::test_d` "
+    "(AC4) + `backend/tests/test_e.py::test_f` + "
+    "`backend/tests/test_g.py::test_h` (STORY-2, sprint-1)"
+)
+
+
+def _fixture_with_zr8_verdict_cell(verdict_cell: str) -> str:
+    """`_FIXTURE_TABLE` with ZR-8's row replaced by one carrying
+    `verdict_cell` -- used to exercise the per-row floor's behaviour on a
+    row that already has SURPLUS references over its marker count, the
+    exact shape that let round 1's floor silently pass a real regression."""
+    return _FIXTURE_TABLE.replace(
+        "| ZR-8 | `ENFORCED-BY backend/tests/test_g.py::test_h` | Shown RED. |",
+        f"| ZR-8 | {verdict_cell} | Shown RED. |",
+    )
+
+
+def test_per_row_floor_accepts_zr8s_well_formed_four_reference_row() -> None:
+    """Control: the well-formed four-reference, two-finding ZR-8 shape must
+    NOT trip the per-row floor -- proves the strengthened signal isn't just
+    stricter, it is still correct on the real shape it must accept."""
+    parse_adjudication_table(_fixture_with_zr8_verdict_cell(_ZR8_FOUR_REF_VERDICT_CELL))
+
+
+def test_per_row_floor_catches_zr8_style_dropped_backticks_on_one_reference() -> None:
+    """Quality review round 2, MAJOR, edit 1 (coordinator's own reproduction):
+    ZR-8 has 2 `ENFORCED-BY` markers and 4 references -- the SURPLUS 2
+    continuation references cover the marker count, so dropping the
+    backticks around just ONE of them (the reference text stays in the cell
+    as plain prose, but is no longer a parseable code span) took the row
+    from 4 references to 3 while `marker_count` stayed at 2 -- 3 >= 2 passed
+    silently under round 1's floor. The strengthened signal
+    (`max(marker_count, '.py'-count)`) must catch it: the dropped
+    reference's `.py` text is still visible in the cell even though the span
+    is gone."""
+    broken_cell = (
+        "Finding 1: `ENFORCED-BY backend/tests/test_a.py::test_b` (STORY-1, "
+        "sprint-1). Finding 2: `ENFORCED-BY backend/tests/test_c.py::test_d` "
+        "(AC4) + backend/tests/test_e.py::test_f + "
+        "`backend/tests/test_g.py::test_h` (STORY-2, sprint-1)"
+    )
+    try:
+        parse_adjudication_table(_fixture_with_zr8_verdict_cell(broken_cell))
+    except AssertionError as exc:
+        assert "ZR-8" in str(exc)
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on ZR-8 with one "
+            "reference's backticks dropped -- coverage silently lost."
+        )
+
+
+def test_per_row_floor_catches_zr8_style_reference_rewritten_as_markdown_link() -> None:
+    """Quality review round 2, MAJOR, edit 2 (reviewer's reproduction): one
+    of ZR-8's continuation references rewritten as a markdown link
+    (`[text](url)`) instead of a backtick span -- not a code span at all, so
+    `_references_in_verdict_cell` cannot see it, while its `.py` text
+    remains in the cell (now possibly counted twice, in both the link text
+    and the URL -- the strengthened signal only gets MORE conservative)."""
+    broken_cell = (
+        "Finding 1: `ENFORCED-BY backend/tests/test_a.py::test_b` (STORY-1, "
+        "sprint-1). Finding 2: `ENFORCED-BY backend/tests/test_c.py::test_d` "
+        "(AC4) + [backend/tests/test_e.py::test_f](backend/tests/test_e.py) + "
+        "`backend/tests/test_g.py::test_h` (STORY-2, sprint-1)"
+    )
+    try:
+        parse_adjudication_table(_fixture_with_zr8_verdict_cell(broken_cell))
+    except AssertionError as exc:
+        assert "ZR-8" in str(exc)
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on ZR-8 with one "
+            "reference rewritten as a markdown link -- coverage silently lost."
+        )
+
+
+def test_per_row_floor_catches_zr8_style_marker_separated_from_its_reference() -> None:
+    """Quality review round 2, MAJOR, edit 3 -- the sharpest one: this is
+    VERBATIM the shape
+    `test_per_row_floor_catches_a_lone_marker_span_with_reference_outside`
+    pins for ZR-7 (a lone `` `ENFORCED-BY` `` span, its reference written
+    outside any span), but on ZR-8 the surplus continuation references
+    ABSORBED it under round 1's floor -- round 1's own pinned protection was
+    silently absent on the one row with the most to lose (4 of the guard's
+    10 real references, 40% of total coverage)."""
+    broken_cell = (
+        "Finding 1: `ENFORCED-BY backend/tests/test_a.py::test_b` (STORY-1, "
+        "sprint-1). Finding 2: `ENFORCED-BY` backend/tests/test_c.py::test_d "
+        "(AC4) + `backend/tests/test_e.py::test_f` + "
+        "`backend/tests/test_g.py::test_h` (STORY-2, sprint-1)"
+    )
+    try:
+        parse_adjudication_table(_fixture_with_zr8_verdict_cell(broken_cell))
+    except AssertionError as exc:
+        assert "ZR-8" in str(exc)
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on ZR-8 with finding 2's "
+            "marker separated from its own reference -- coverage silently lost."
         )
 
 
