@@ -416,11 +416,12 @@ stories:
   - id: STORY-207
     title: Land ZR-2's guard -- an AST test that vendor vocabulary never becomes an identifier inside core/
     points: 2
-    board: todo
+    board: in-progress
     pipeline: light      # 1-2 pts -> implementer + DoD gate + reality gate
     order: 2
     blocked_question: null
-    attempts: 0
+    attempts: 1
+    started_at_commit: d45f5d2   # dispatched 2026-08-12
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false
