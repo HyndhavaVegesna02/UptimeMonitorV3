@@ -8,8 +8,18 @@ than "citations are correct" (AC1):** for every citation whose path resolves
 from the repo root (a repo-relative path, not a bare filename), the cited
 file exists and is long enough to contain the cited line. The cited CONTENT
 is verified only for the minority of citations carrying a parenthesized
-excerpt anchor (`` `path:line` (`excerpt`) ``) -- 8 of 195 distinct citations
-repo-wide, per `citation_sweep.check_citation`. **A wrong-but-in-range line
+excerpt anchor (`` `path:line` (`excerpt`) ``) -- **13 of 198 distinct
+citations repo-wide carry one and get a content check; 8 pass and 5 fail**
+(the 5 are zone-rules.md's own anchor-mismatch baseline). Corrected
+2026-08-13 after quality review: the earlier "8 of 195" was wrong twice --
+195 was the BASE-COMMIT denominator, which this very story's edits to
+config-layer.md and zone-rules.md moved to 198, and 8 counted the PASSING
+subset while the sentence described the CHECKED set. "Distinct" means
+per-article dedupe summed across articles (`partition_citations` resets its
+`seen` set per article), NOT globally distinct -- which is 186, and stating
+the number without its method is how the first version rotted.
+`test_ac1_docstring_scope_numbers_are_current` re-derives all three live, so
+this sentence cannot go stale silently again. **A wrong-but-in-range line
 number PASSES.** The worked example that demonstrates this today:
 `scripts/seed_topology.py:44` (cited from `config-layer.md`'s own History,
 sprint-68 entry) is reported OK by this exact mechanism, even though the
@@ -82,6 +92,12 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # story deliberately does not enforce (content-anchor coverage is filed as a
 # sprint-71 follow-up, out of this story's 3 points) -- they are visible via
 # `tools/citation_sweep.py` directly, not hidden by this narrower gate.
+#
+# THE HEADLINE RATIO, stated so a green run cannot be misread: this ratchet
+# enforces 15 failures across 14 map-tier articles. Of the 129 raw, 113 are
+# ADVISORY (bare filename) and 1 sits in a `tier: reference` article that AC6
+# exempts. Green here means "no NEW resolvable-path drift", never "the wiki's
+# citations are correct".
 BASELINE: dict[str, dict] = {
     "api-five-file-convention.md": {
         "tier": "map",
@@ -297,7 +313,14 @@ def test_ac4_ac6_enforced_citation_count_matches_baseline_exactly() -> None:
                 + (
                     "new citation drift, fix it or file it"
                     if direction == "ABOVE"
-                    else "paid-down debt -- LOWER the baseline in this commit"
+                    else (
+                        "paid-down debt -- LOWER the baseline in this commit, OR "
+                        "the enforced set shrank for another reason (e.g. a "
+                        "classifier change demoting enforced citations to "
+                        "advisory). READ the list below before lowering: "
+                        "lowering it against the wrong cause bakes in a "
+                        "coverage loss"
+                    )
                 )
                 + ":\n    "
                 + "\n    ".join(enforced_fail)
@@ -336,4 +359,82 @@ def test_ac5d_control_wrong_but_in_range_line_stays_green() -> None:
     ok2, msg2 = sweep.check_citation(
         _REPO_ROOT, "scripts/seed_topology.py", out_of_range, None, None
     )
-    assert not ok2, f"expected an out-of-range line to FAIL, got: {msg}"
+    assert not ok2, f"expected an out-of-range line to FAIL, got: {msg2}"
+
+
+def test_ac1_docstring_scope_numbers_are_current() -> None:
+    """The module docstring's anchor-coverage numbers, re-derived live.
+
+    Added 2026-08-13 after quality review found the original "8 of 195" wrong
+    twice over: 195 was the base-commit denominator that THIS STORY'S OWN
+    edits moved to 198, and 8 counted the passing subset while the sentence
+    described the checked set. That is the failure class this whole story
+    exists to attack -- a number in prose that a later commit silently
+    invalidates -- so the fix is not a better number, it is a check.
+
+    Falsified by: any edit that changes the repo's citation population without
+    updating the docstring sentence above. That is the single observation this
+    test exists to catch.
+    """
+    import citation_sweep as sweep
+
+    total = anchored = anchored_ok = 0
+    for article in gate.wiki_articles(_REPO_ROOT):
+        seen: set[tuple[str, int, int | None]] = set()
+        for m in sweep.CITATION_RE.finditer(article.read_text(encoding="utf-8")):
+            path_str, l1, l2, _excerpt_full, anchor = m.groups()
+            key = (path_str, int(l1), int(l2) if l2 else None)
+            if key in seen:
+                continue
+            seen.add(key)
+            total += 1
+            if anchor:
+                anchored += 1
+                ok, _ = sweep.check_citation(
+                    _REPO_ROOT, path_str, int(l1), int(l2) if l2 else None, anchor
+                )
+                anchored_ok += 1 if ok else 0
+
+    assert (anchored, total) == (13, 198), (
+        f"the module docstring says 13 of 198 distinct citations carry an "
+        f"excerpt anchor; live measurement says {anchored} of {total}. Update "
+        f"the docstring sentence AND this assertion in the same commit."
+    )
+    assert anchored_ok == 8, (
+        f"the docstring says 8 of the {anchored} anchored citations pass; live "
+        f"measurement says {anchored_ok}."
+    )
+
+
+def test_ac2_classifier_keeps_its_teeth_when_the_debt_is_paid_to_zero() -> None:
+    """A known repo-relative citation must land in an ENFORCED bucket, never
+    advisory.
+
+    Added 2026-08-13 after quality review. Today the classifier is guarded
+    only as a side effect: three articles carry a nonzero baseline, so a
+    change demoting enforced citations to advisory reds the ratchet from
+    BELOW. That guard EVAPORATES the day the debt is paid to zero everywhere
+    -- exactly when someone would trust this gate most -- because
+    `test_ac2_partition_covers_every_extracted_citation` checks the partition
+    TOTAL and never the split.
+
+    Falsified by: a classifier change that routes a path containing `/` to
+    advisory. This test does not depend on any baseline being nonzero.
+    """
+    article = _REPO_ROOT / "docs" / "scrum" / "wiki" / "deployment-and-infra.md"
+    enforced_ok, enforced_fail, advisory_ok, advisory_fail = gate.partition_citations(
+        _REPO_ROOT, article
+    )
+
+    assert enforced_ok or enforced_fail, (
+        "deployment-and-infra.md's citations are all repo-relative paths, so at "
+        "least one must be ENFORCED. An empty enforced set here means the "
+        "path-resolvability classifier has stopped discriminating -- the whole "
+        "gate would then be advisory-only while still reporting green."
+    )
+    assert not advisory_ok and not advisory_fail, (
+        "deployment-and-infra.md carries no bare-filename citations today; "
+        f"got {len(advisory_ok) + len(advisory_fail)} advisory. If a bare "
+        "filename was legitimately added, move this pin to another "
+        "all-repo-relative article rather than relaxing it."
+    )
