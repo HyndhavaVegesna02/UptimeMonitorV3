@@ -3022,7 +3022,7 @@ stories:
     title: ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-220-zr1-forbidden-list-completeness-test.md
-    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC from sprint-69 plan verification, AC2/AC3/AC7 corrected at pre-lock plan verification   # SPLIT OUT of STORY-206 (where it was AC6) at sprint-69 PLAN VERIFICATION,
+    status: done   # PO-APPROVED at sprint-70 planning 2026-08-13; AC from sprint-69 plan verification, AC2/AC3/AC7 corrected at pre-lock plan verification   # SPLIT OUT of STORY-206 (where it was AC6) at sprint-69 PLAN VERIFICATION,
                     # 2026-08-05. Not dropped: carrying it inside STORY-206 makes that story a 5
                     # and sprint 69 a 13, against the PO pacing directive to sit near 9-11.
                     # DEPENDS ON STORY-206 -- the contract must exist before its completeness can

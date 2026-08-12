@@ -123,8 +123,40 @@ board:
   - id: STORY-220
     title: "ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test"
     points: 2
-    status: todo
+    status: done
     order: 2
+    commits: "12c85ea (AC1/AC2/AC5/AC6), bfc25dc (AC3/AC4), b44f298 (AC7), b131755 (format), 2547bf9 (bookkeeping)"
+    verdict: >-
+      ZR-1's completeness is now a TEST, not a sentence. New guard
+      backend/tests/test_zr1_forbidden_list_completeness.py asserts SET EQUALITY between the
+      contract's forbidden_modules and the ports discovered on disk. Suite 743 -> 749. The
+      "maintained by hand" sentence STORY-206 AC6 required is GONE from zone-rules.md (grep count 0).
+    reality_gate: >-
+      *** THE IMPLEMENTER'S TWO MUTATIONS BOTH LAND IN THE SAME ASSERTION BRANCH, AND IT DISCLOSED
+      THAT RATHER THAN LETTING "both directions" STAND. *** Removing an entry from the contract while
+      its file stays on disk produces the IDENTICAL "On disk but not in the contract" message as
+      adding a file -- so the second branch, "In the contract but not on disk", had never fired.
+      ORCHESTRATOR RE-PERFORMED ALL THREE against the real tree, tree clean after each:
+        A (AC3, re-performed): touch backend/src/core/ports/zzz_repository.py ->
+          1 failed, 5 passed; "On disk but not in the contract: ['src.core.ports.zzz_repository']",
+          second branch EMPTY. Reverted, 0 dirty lines.
+        B (THE BRANCH NEVER SHOWN RED BY THE STORY): add "src.core.ports.ghost_repository" to the
+          contract with no such file -> 1 failed, 5 passed; "In the contract but not on disk:
+          ['src.core.ports.ghost_repository']", FIRST branch empty. Reverted, 0 dirty lines.
+      Both branches of the equality assertion are now proven to fire, and to fire for the right
+      reason. This is why a docstring-recorded proof is not a proof: STORY-212 lands the fix.
+    orchestrator_edit: >-
+      The ZR-1 verdict cell's "shown RED both directions" clause was NARROWED by the orchestrator to
+      name all three mutations and to state which assertion branch each exercises. It was accurate
+      about what was performed but would have read as covering both branches. Under A18, touching the
+      article IS re-verifying it; ZR-1's Facts were re-read first, and
+      test_zone_rules_enforced_by_claims.py stays green (21 passed) -- the row was NOT edited to
+      satisfy the parser, which is the sprint-69 constraint.
+    gate: "8/8 green, fresh run after the last commit: pytest 749 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean (255 files), cfn-lint clean, npm test 363, build, lint."
+    flagged_for_orchestrator: >-
+      Pre-existing and NOT caused by this story: core-pipeline-and-availability.md,
+      deployment-and-infra.md and frontend-zone.md are all "not swept (status=stale)". Carried to the
+      sprint-end wiki compile pass, where stale articles must be rehabilitated or tombstoned.
     note: >-
       Depends on STORY-206, DONE in sprint 69. Closes the last hand-maintained prose crutch under a
       shipped guard. AC7 rewrites the ZR-1 row and DELETES STORY-206 AC6's "maintained by hand"
