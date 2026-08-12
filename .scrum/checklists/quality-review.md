@@ -52,16 +52,18 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
 
 - [ ] **Every evidence artifact in the diff must have been demonstrated FAILING.** The
       implementer-side rule is one item in `implementer.md`; this is the independent check.
-      **Three of the five mechanics are MECHANISED by `tools/evidence_check.py` (STORY-212,
-      2026-08-13) — confirm the story ran the matching subcommand and pasted its tail, never
-      accept a hand-written claim in its place:**
+      **Run the tool yourself against the story's diff — a pasted tail is the implementer's
+      evidence, not yours.** Three of the five mechanics are MECHANISED by `tools/evidence_check.py`
+      (STORY-212, 2026-08-13) — confirm the story ran the matching subcommand AND re-run it
+      yourself, never accept a hand-written claim or a pasted tail as a substitute for your own
+      execution:
       - `falsify`: an artifact that computes right numbers but PRINTS them, asserting nothing,
         and exits 0 regardless is a REPORT, not a gate. A polling timeout must FAIL, not continue.
       - `two-sided`: reject IDENTICAL sides — indistinguishable from "the thing under test does
         not matter", arguing AGAINST a correct fix. Check the MECHANISM the tool ran, not the
         printed numbers.
       - `mutate`: do not infer pinning from reading — zero RED outranks anything found by reading.
-        Confirm the tool's own scoped restore check (`git diff -- <target>`) ran clean.
+        Confirm the tool's own scoped restore check (`git status --porcelain -- <target>`) ran clean.
       **The remaining two stay judgment calls, unmechanised:** import provenance where that is the
       mechanism (confirm `two-sided --import-provenance-module`, or a direct `assert_import_root`
       call per STORY-187, ran per side — otherwise read the test body for genuine divergence); and
@@ -69,7 +71,11 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       vacuously.
       (Collapsed 2026-08-01 from A3, A4 and A7 — the reviewer-side halves of the six-amendment
       family in `implementer.md`; incidents in the sprint-63/64 `retro.md` — this is exactly how
-      STORY-176's critical was found. Mechanised at the SCRIPT rung by STORY-212, 2026-08-13.)
+      STORY-176's critical was found. Mechanised at the SCRIPT rung by STORY-212, 2026-08-13; that
+      same mechanisation cut the INDEPENDENCE clause below in STORY-212's original AC7 edit, and a
+      quality review that only confirmed a pasted tail would have missed the CRITICAL and two
+      MAJORs this fix round found by running the tool itself — restored in the STORY-212 fix round,
+      2026-08-13.)
 
 - [ ] **Recorded numbers and command output must be CURRENT, not merely real.** Re-run every
       command the story records and compare against the pasted output. A stale record — true when
