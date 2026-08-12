@@ -135,3 +135,36 @@ def test_load_settings_empty_dynamo_endpoint_url_resolves_to_none(
     monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "")
     settings = load_settings()
     assert settings.dynamo_endpoint_url is None
+
+
+def test_load_settings_resolves_defaults_from_the_class_attributes_themselves(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-218 AC1's invariant, pinned directly -- added 2026-08-13 after
+    quality review (m3) found nothing asserted it.
+
+    The story removed a DUPLICATION: each default literal used to be typed
+    twice, once as a dataclass field default and once as an
+    ``os.environ.get(VAR, "<literal>")`` fallback here. Every other test in
+    this file would stay GREEN if someone re-typed the literal back into
+    ``load_settings()`` with the same value -- the duplication would return
+    silently and only the NEXT rename would surface it, which is exactly the
+    drift this story exists to close.
+
+    This test fails on that re-introduction the moment the two copies differ,
+    because it asserts the resolved value IS the class attribute rather than
+    asserting it equals a literal spelled out a second time here (which would
+    make this test the third copy, and vacuous).
+    """
+    for var in (
+        AWS_REGION_VAR,
+        DYNAMO_OBSERVATIONS_TABLE_VAR,
+        DYNAMO_CONTROL_TABLE_VAR,
+    ):
+        monkeypatch.delenv(var, raising=False)
+
+    settings = load_settings()
+
+    assert settings.aws_region == Settings.aws_region
+    assert settings.dynamo_observations_table == Settings.dynamo_observations_table
+    assert settings.dynamo_control_table == Settings.dynamo_control_table

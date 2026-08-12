@@ -619,7 +619,7 @@ governs how much these codes may be trusted.
 - sprint-70 (STORY-218): RE-VERIFIED, no content change. The sweep flagged `harness.py` (a
   `code_ref`) for STORY-218's fix to `settings.py`'s duplicated `Settings` defaults
   ([[zone-rules]] ZR-3's `src`-internal blind spot): the AC1(b) table-name blocklist's
-  comment (`:755-768`, was `:755-761`) was corrected to say the "follows a future rename
+  comment (`:755-771`, was `:755-761`) was corrected to say the "follows a future rename
   automatically" claim is now unconditionally true, and `Settings.dynamo_observations_table`/
   `dynamo_control_table` shifted from `:763`/`:770` to `:773`/`:780`. No behaviour change —
   the blocklist reads the identical class attributes, only their line moved. No Fact in this

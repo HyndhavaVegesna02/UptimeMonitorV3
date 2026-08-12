@@ -223,9 +223,18 @@ python -m pytest backend/tests/demo_loop_gate/test_harness_assertions.py -q -k b
 `test_assert_ac1_preconditions_blocklist_fires_on_production_observations_table` (and
 its two siblings) still PASS unedited — the blocklist's right-hand side
 (`Settings.dynamo_observations_table`) and the resolved production value both read the
-SAME renamed class attribute, so **the blocklist follows the rename automatically**,
-no test edit required. This is the tautology-branch check, a different assertion
-branch than the value-mismatch AC4 fired above.
+SAME renamed class attribute, so no test edit is required.
+
+**CORRECTED 2026-08-13 after quality review (m2). This tail is a NO-REGRESSION
+OBSERVATION, not a second branch of the proof.** The blocklist tests read
+`Settings.<attr>` on BOTH sides (`test_harness_assertions.py:184`, `:196` against
+`harness.py:773`), so they pass identically under this rename **pre-fix as well** —
+which makes them non-discriminating about whether the fix worked. The evidence
+discipline rejects a two-sided proof whose sides came back identical, and that is
+what this is. The claim "the blocklist follows the rename automatically" is carried
+ENTIRELY by the first tail above (the resolved value followed the rename and the
+value assertion went RED). Recorded here because it is worth knowing the blocklist
+did not regress — not because it proves anything the first tail does not.
 
 Before this story (verified at HEAD 2026-08-04, unchanged fact restated, not
 re-measured against the pre-fix code in this run): the equivalent rename on the OLD
@@ -254,11 +263,21 @@ python -m pytest backend/tests/test_settings.py -q
 
 All nine `test_settings.py` tests go RED, including every AC3 empty-string test — with
 an `AttributeError`, a DIFFERENT failure class than AC4's `AssertionError` (a different
-branch: "the value read does not exist" vs. "the value read is wrong"). This proves
-the tests pin `load_settings()`'s live resolution through the single declaration, not
-a constant the tests also independently define — remove the one declaration and every
-test that depends on it stops passing, rather than silently continuing to agree with
-itself.
+branch: "the value read does not exist" vs. "the value read is wrong").
+
+**NARROWED 2026-08-13 after quality review (m1).** The "proves the tests pin the live
+resolution" claim is scoped to `test_app_settings_dynamodb_defaults`. It does NOT
+follow from this mutation for the five AC3 empty-string tests: `Settings.aws_region`
+is evaluated EAGERLY as a default argument, so deleting the class attribute raises
+`AttributeError` before any assertion runs — those five would go RED **regardless of
+what they assert**, which is precisely a non-discriminating observation.
+The property is nonetheless TRUE, and the quality reviewer proved it with the
+mutation that DOES discriminate: flipping each field's fallback from
+`os.environ.get(V, D)` to `os.environ.get(V) or D`, one field at a time, yields
+`1 failed, 8 passed` five times over — each flip reds exactly its own field's test and
+nothing else — and `5 failed, 4 passed` when all five are flipped together. THAT is
+the evidence for the AC3 five; this AttributeError tail is the evidence for the
+defaults test only.
 
 Reverted; `git diff backend/src/composition/settings.py` empty; full relevant suite
 (`test_settings.py`, `demo_loop_gate/test_harness_assertions.py`,
@@ -267,7 +286,7 @@ on.
 
 ### AC6 — `harness.py`'s STORY-203 comment corrected
 
-`tools/demo_loop_gate/harness.py:755-768` (was `:755-761`): the "follows a future
+`tools/demo_loop_gate/harness.py:755-771` (was `:755-761`): the "follows a future
 rename automatically" sentence now states explicitly that this was true only of the
 declared field default before STORY-218 — `load_settings()` never actually read it —
 and is unconditionally true now that the field default is canonical and
