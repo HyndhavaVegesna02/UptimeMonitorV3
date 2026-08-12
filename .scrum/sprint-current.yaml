@@ -1,6 +1,6 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 70
-status: active     # none | planning | active | review | closed | aborted | parked
+status: review     # none | planning | active | review | closed | aborted | parked
 goal: >-
   Every guard the audit shipped is complete and self-checking, and no claim in the catalogue outruns
   its citation. Sprint 69 gave all eight zone rules a terminal verdict; this sprint closes the
@@ -479,6 +479,26 @@ standing:
   device_guard: "Console-script shims blocked -- module form only (pytest, ruff, cfn-lint, lint-imports)."
   git_guard: "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
   window_check: "At every AGENT BOUNDARY, not per story. Pause with a committed handoff before the session limit bites."
+
+sprint_close:
+  gate_of_record: >-
+    8/8 GREEN at the final HEAD: pytest 800 passed / 0 SKIPPED under REQUIRE_DYNAMO=1, contracts
+    9 kept / 0 broken, ruff check + format clean, cfn-lint clean, npm test 363, build, lint.
+    Suite grew 743 -> 800 (+57).
+  wiki_compile_pass: >-
+    Sweep, facts, links, integrity ALL CLEAN. 14 map-tier articles, 3 reference -- THE MAP TIER DID
+    NOT GROW, the first flat sprint since tiers were introduced. New knowledge routed to three new
+    guard test modules and two checklist edits instead (routing row 1). OWED and filed, not carried
+    silently: three articles remain status:stale and unswept (core-pipeline-and-availability.md,
+    deployment-and-infra.md, frontend-zone.md), deliberately demoted at sprint-69 close (3303c6c) as
+    honestly unverified rather than left claiming currency.
+  epic_progress: "process-ratchet-brake 2/11 -> 7/11 done. Board regenerated: 143/185 stories closed."
+  retro_proposal: >-
+    ONE amendment proposed (A19, scratch work is fatal-on-cd and never defaults to the live tree),
+    at the AGENT DEFINITION rung. ZERO deletions -- no rule cleared A15's six-sprint bar that was not
+    already adjudicated. The sprint's dominant finding deliberately gets NO amendment: the mechanism
+    landed as CODE this sprint (STORY-212), and a sixth prose restatement is what the brake exists to
+    prevent. AWAITING PO APPROVAL -- not landed.
 
 retro_candidates:
   - id: RC-1

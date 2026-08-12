@@ -1,10 +1,10 @@
 # Backlog board
 
-**Snapshot at sprint-69, commit `df786be`, generated 2026-08-12.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
+**Snapshot at sprint-70, commit `8698dd4`, generated 2026-08-13.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
 
-**138/185 stories closed.** 47 open: 9 estimated (15 pts) + **38 unestimated**.
+**143/185 stories closed.** 42 open: 5 estimated (7 pts) + **37 unestimated**.
 
-> ⚠ Total work remaining is NOT computable: 38 of 47 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
+> ⚠ Total work remaining is NOT computable: 37 of 42 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
 
 ## Open work
 
@@ -18,7 +18,7 @@
 | **Frontend rebuild programme (3rd attempt line)** <br>`frontend-rebuild` | `..........` | 0/13 | 0/0 | 13 |
 | **Deferred by explicit PO decision (recorded, not forgotten)** <br>`deferred-by-po` | `####......` | 7/18 | 9/11 | 9 |
 | **Split out / created at sprint-65 refinement (2026-07-30)** <br>`sprint-65-splits` | `#########.` | 18/21 | 46/47 | 2 |
-| **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `##........` | 2/11 | 6/16 | 4 |
+| **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `######....` | 7/11 | 17/19 | 3 |
 
 ### Open stories by epic
 
@@ -87,13 +87,8 @@
 **Process: the ratchet brake (filed 2026-08-01, PO-directed)**
 
 - `draft` [STORY-211](docs/scrum/stories/STORY-211-plan-on-context-and-token-budget.md) — Plan sprints on context and token budget instead of story points · chore · **unestimated**
-- `draft` [STORY-212](docs/scrum/stories/STORY-212-evidence-check-script-rung.md) — Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper) · chore · **unestimated**
 - `draft` [STORY-213](docs/scrum/stories/STORY-213-pagination-test-isolation.md) — test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect · defect · 2 pts
 - `draft` STORY-214 _(no story file yet)_ — Extract the LastEvaluatedKey pagination loop into a shared helper — and rework the ZR-7 guard that would forbid it · chore · **unestimated**
-- `draft` [STORY-217](docs/scrum/stories/STORY-217-topology-write-port.md) — Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port · chore · 1 pts
-- `draft` [STORY-218](docs/scrum/stories/STORY-218-settings-defaults-declared-twice.md) — Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it · chore · 2 pts
-- `draft` [STORY-219](docs/scrum/stories/STORY-219-enforce-citation-resolution.md) — Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced · chore · 3 pts
-- `draft` [STORY-220](docs/scrum/stories/STORY-220-zr1-forbidden-list-completeness-test.md) — ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test · chore · 2 pts
 - `draft` [STORY-221](docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md) — The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions · defect · **unestimated**
 
 ## Complete
