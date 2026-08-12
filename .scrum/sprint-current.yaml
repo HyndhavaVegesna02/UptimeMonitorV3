@@ -320,8 +320,76 @@ board:
   - id: STORY-212
     title: "Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)"
     points: 3
-    status: todo
+    status: fix_round        # implemented at 17e4ed6; spec PASS; quality CRITICAL+6 MAJOR; fixing
     order: 5
+    commits_round_1: "0b1eecb, 8d4438e, d8d58af, b2539f9, 17e4ed6"
+    reviews:
+      spec: >-
+        PASS, all 8 AC met, zero gaps. Verified AC5's three demos reach different mechanisms, AC4's
+        restore is scoped to patch-derived targets, AC6 genuinely calls through to assert_import_root
+        (monkeypatch proof), and AC1's guard walks 128 real files. ALSO DISCLOSED AN INCIDENT AGAINST
+        ITSELF: a silently-failing `cd` in a scratch-repo reproduction wrote target.py and noop.patch
+        into the REPO ROOT. It refused to delete them (its constraints forbid tree modification) and
+        reported them instead. The orchestrator verified both files' contents and removed them; tree
+        clean, HEAD untouched.
+      quality: >-
+        FIX_REQUIRED -- 1 CRITICAL, 6 MAJOR, 10 MINOR. Probed the tool in-process against throwaway
+        git repos. THIS IS THE MOST VALUABLE REVIEW OF THE SPRINT.
+    the_critical: >-
+      *** THE EVIDENCE CHECKER HAS A FALSE-GREEN, WHICH INVERTS THE ONE PROPERTY IT EXISTS FOR. ***
+      tools/evidence_check.py:256-261 scans pytest stdout for a line whose SECOND whitespace token is
+      FAILED or ERROR. Pytest's collection banner is `____ ERROR collecting test_x.py ____` -- second
+      token `ERROR` -- so a collection failure is counted as a RED TEST. Probed end to end with the
+      most ordinary mutation there is (rename the symbol the test imports):
+        turned_red = True; message = "OK: mutation turned RED: ['_______________________']"; exit 0.
+      ZERO TESTS RAN and the tool blessed the proof. It is the SAME CLASS as the PASSED bug the
+      implementer found and fixed mid-build, one layer down -- and it is repo-realistic: zone-rules.md's
+      ZR-4 row records this exact collection-error trap. Compounding it, run_pytest_selectors DISCARDS
+      pytest's exit code (:288), which is the only signal separating "ran, nothing red" from "never
+      ran" (2/3/4/5). A selector naming a nonexistent file returns exit 4 with red=[] and the tool
+      reports "ZERO RED ... UNPINNED" -- a diagnosis it cannot justify, which is A12's own shape, in
+      the file this story just edited.
+    the_other_five_majors:
+      - >-
+        M2 NO BASELINE: check_mutate never runs the selectors BEFORE applying, so "turned RED" cannot
+        be distinguished from "was already red". Probed: a comment-only, behaviour-preserving patch on
+        an already-failing selector returns turned_red=True. This silently defeats the implementer's
+        own test_check_mutate_zero_red_is_a_failure in any tree with an unrelated red test.
+      - >-
+        M3 RESTORE BACKSTOP IS VACUOUS FOR CREATION PATCHES: `git diff -- <targets>` cannot see
+        UNTRACKED files, and a creation patch's target is untracked by construction. Probed: the tool
+        exits 0 claiming a clean restore while the created file is still on disk -- contradicting its
+        own docstring (":29 a failed or incomplete restore also exits non-zero, never a silent pass").
+        Fix: `git status --porcelain -- <targets>`.
+      - >-
+        M4 EMPTY --bad-input IS A VACUOUS PASS: it defaults to "", so an artifact that merely requires
+        an argument is reported "OK -- IS a gate" having been fed NO bad input at all. A vacuous pass
+        mode in the tool whose whole job is rejecting vacuous evidence. test_evidence_check.py:91 pins
+        this as CORRECT and must be flipped.
+      - >-
+        M5 THE AC1 GUARD MISSES THE SHAPE THIS REPO ACTUALLY USES: it matches only `tools`/`tools.*`,
+        but every real tools import here is BARE (`import evidence_check`, `from demo_engine import
+        store`) because conftest.py puts tools/ on sys.path -- INCLUDING evidence_check.py:82 itself.
+        Probed: the guard returns [] on all three bare offenders while both shapes import fine in a
+        real session. The accident it exists to catch -- green in CI, ModuleNotFoundError in the
+        production image -- is precisely the bare form.
+      - >-
+        *** M6 AC7 CUT A REVIEWER-SIDE RULE THE TOOL DOES NOT COVER. *** quality-review.md's
+        "Mutate a computational deliverable YOURSELF -- do not infer pinning from reading" (plus "the
+        independent check THAT IT ACTUALLY HAPPENED") was replaced by "confirm the story ran the
+        subcommand and pasted its tail". That converts an INDEPENDENT ACTION into CONFIRMATION OF THE
+        IMPLEMENTER'S ARTIFACT, and the tool is agnostic about who runs it -- so it is a rule cut
+        WITHOUT a mechanical replacement, the one thing AC7 must not do.
+        THIS REVIEW IS ITS OWN PROOF: had the reviewer only confirmed a pasted tail, the CRITICAL and
+        M2 and M3 would ALL have read as green tails.
+        The orchestrator checked this same diff earlier and passed it -- reading the preserved
+        judgment-call bullets and missing that INDEPENDENCE itself was the casualty. Recorded because
+        the orchestrator's own check was the weaker one.
+    orchestrator_note: >-
+      The sprint's whole thesis, demonstrated against the story that was supposed to end it: a proof
+      that reads stronger than it is. The tool would have blessed invalid proofs, and the checklist
+      edit would have removed the human who catches that. Fix round dispatched rather than shipped or
+      blocked -- the findings are precise and the fixes are small and well-specified.
     note: >-
       PO-DIRECTED into this sprint at the sprint-69 review (RC-1/RC-7 -- agent evidence died with the
       agent THREE times in one sprint). Runs LAST because AC7 amends the implementer and
