@@ -78,3 +78,60 @@ def test_app_settings_dynamodb_overrides(monkeypatch: pytest.MonkeyPatch):
     assert settings.dynamo_observations_table == "custom-obs"
     assert settings.dynamo_control_table == "custom-ctrl"
     assert settings.dynamo_endpoint_url == "http://localhost:8000"
+
+
+# STORY-218 AC2/AC3: the falsiness decision, made PER FIELD in
+# `load_settings()`'s own docstring, pinned here one case per field. An
+# explicitly-set EMPTY env var is NOT the same as an unset one --
+# `os.environ.get(VAR, default)` only substitutes `default` when the key is
+# ABSENT, never when it is falsy. Four of the five fields (`config_dir`,
+# `aws_region`, `dynamo_observations_table`, `dynamo_control_table`)
+# preserve the empty string verbatim rather than silently falling back to
+# their default -- deliberately, because for `config_dir` in particular
+# (CLAUDE.md's publish-guard section) silently promoting an emptied
+# `CONFIG_DIR` to `config/apps`'s REAL `statuspage_component_id` would be
+# far more dangerous than a loud downstream failure on an empty path. The
+# fifth, `dynamo_endpoint_url`, is the deliberate exception (`:52`'s `or
+# None`, unchanged by this story): empty is folded to `None`, the same as
+# unset, because `None` means "no local override, talk to real AWS" for
+# BOTH cases.
+
+
+def test_load_settings_empty_config_dir_is_preserved_verbatim(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("CONFIG_DIR", "")
+    settings = load_settings()
+    assert settings.config_dir == ""
+
+
+def test_load_settings_empty_aws_region_is_preserved_verbatim(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("AWS_REGION", "")
+    settings = load_settings()
+    assert settings.aws_region == ""
+
+
+def test_load_settings_empty_observations_table_is_preserved_verbatim(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("DYNAMO_OBSERVATIONS_TABLE", "")
+    settings = load_settings()
+    assert settings.dynamo_observations_table == ""
+
+
+def test_load_settings_empty_control_table_is_preserved_verbatim(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("DYNAMO_CONTROL_TABLE", "")
+    settings = load_settings()
+    assert settings.dynamo_control_table == ""
+
+
+def test_load_settings_empty_dynamo_endpoint_url_resolves_to_none(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "")
+    settings = load_settings()
+    assert settings.dynamo_endpoint_url is None
