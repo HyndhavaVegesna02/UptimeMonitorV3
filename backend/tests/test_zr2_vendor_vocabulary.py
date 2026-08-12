@@ -210,3 +210,56 @@ def test_core_has_no_vendor_vocabulary_leak() -> None:
         "attribute-docstring idiom) or the Provenance carve-out:\n"
         + "\n".join(str(h) for h in all_hits)
     )
+
+
+def test_compliant_prose_forms_are_not_flagged() -> None:
+    """AC2 -- both prose forms stay compliant, proven in the compliant
+    direction too. This is a real failure mode, not ceremony: an
+    over-triggering guard would flag the six citations ZR-2 already
+    adjudicates COMPLIANT and would have to be reverted rather than obeyed.
+
+    Discrimination proof, against the real cited files (not a synthetic
+    fixture): with the rule (6) exclusion turned OFF, the walk DOES flag
+    `signal.py`'s module docstring ("... heard of Dynatrace ...") and
+    `publication.py:66`'s attribute-docstring idiom ("... Statuspage publish
+    ..."). With the exclusion ON (the guard's real, default behaviour), both
+    go silent. The two sides differ, which is what proves the exclusion is
+    doing real work rather than the walk vacuously matching nothing to begin
+    with.
+    """
+    signal_path = _CORE_ROOT / "domain" / "signal.py"
+    publication_path = _CORE_ROOT / "domain" / "publication.py"
+
+    signal_tree = ast.parse(signal_path.read_text(encoding="utf-8"), filename=str(signal_path))
+    publication_tree = ast.parse(
+        publication_path.read_text(encoding="utf-8"), filename=str(publication_path)
+    )
+
+    naive_signal_hits = _find_vendor_vocabulary(
+        signal_tree, "signal.py", exclude_prose_constants=False
+    )
+    naive_publication_hits = _find_vendor_vocabulary(
+        publication_tree, "publication.py", exclude_prose_constants=False
+    )
+
+    assert any("dynatrace" in h.token.lower() for h in naive_signal_hits), (
+        "expected the naive (non-excluding) walk to flag signal.py's module "
+        f"docstring mentioning Dynatrace; got {naive_signal_hits!r} -- the "
+        "discrimination fixture itself is broken"
+    )
+    assert any(h.line == 66 and "statuspage" in h.token.lower() for h in naive_publication_hits), (
+        "expected the naive (non-excluding) walk to flag publication.py:66's "
+        f"attribute docstring mentioning Statuspage; got "
+        f"{naive_publication_hits!r} -- the discrimination fixture itself is broken"
+    )
+
+    real_signal_hits = _find_vendor_vocabulary(signal_tree, "signal.py")
+    real_publication_hits = _find_vendor_vocabulary(publication_tree, "publication.py")
+
+    assert not real_signal_hits, (
+        f"the real (exclusion-on) walk must not flag signal.py's prose: {real_signal_hits!r}"
+    )
+    assert not real_publication_hits, (
+        "the real (exclusion-on) walk must not flag publication.py's attribute-docstring "
+        f"idiom: {real_publication_hits!r}"
+    )
