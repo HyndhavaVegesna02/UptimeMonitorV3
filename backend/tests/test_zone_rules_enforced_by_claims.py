@@ -17,10 +17,13 @@ whose leading `ENFORCED-BY` marker sits INSIDE the backtick span, per the
 house convention (`` `ENFORCED-BY path` ``). A marker written OUTSIDE its
 span is more natural markdown than the convention it violates, and this
 parser does not widen its grammar to accept it; instead
-`_assert_reference_count_matches_markers` (the per-row floor) fails LOUDLY,
-naming the row, the moment a cell's `ENFORCED-BY` count and its parsed
-reference count disagree -- so that shape is caught, not silently
-misresolved, even though it is never a shape this parser accepts as valid.
+`_assert_reference_count_matches_markers` (the per-row floor) is a SEPARATE
+mechanism that fails LOUDLY, naming the row, when a cell's parsed reference
+count falls below `max(marker_count, '.py'-occurrence count)` (round 2:
+`marker_count` alone under-caught a multi-reference cell like ZR-8's, whose
+surplus references could silently absorb up to two lost ones). That floor
+has its own stated limit -- see its docstring -- so this shape is caught in
+the cases that floor covers, not universally guaranteed.
 
 Cites: docs/scrum/wiki/zone-rules.md, "## Adjudication" section (STORY-197
 AC6, this guard STORY-216).
@@ -77,22 +80,34 @@ def _split_row(row: str) -> list[str]:
 
 
 def _assert_uniform_cell_count(table_lines: list[str]) -> None:
-    """Standing invariant (quality review FIX 1.2): every table line must
-    split into the same number of cells as the header. A literal `|`
-    character inside any cell -- an unescaped pipe an author forgot to
-    escape, most plausibly in Detail-column prose -- breaks this without
-    touching any backtick span or `ENFORCED-BY` marker, and would otherwise
-    silently misalign every downstream cell index (a "Rule" read could
-    become Verdict text, or vice versa) rather than failing loudly.
+    """Standing invariant (quality review FIX 1.2, message corrected at
+    round 2 minor): every table line must split into the same number of
+    cells as the header. A literal `|` character inside any cell breaks
+    this without touching any backtick span or `ENFORCED-BY` marker, and
+    would otherwise silently misalign every downstream cell index (a "Rule"
+    read could become Verdict text, or vice versa) rather than failing
+    loudly.
+
+    Failing is CORRECT for both an author's unescaped pipe AND a
+    deliberately escaped one (`\\|`): this parser splits on the raw
+    character with `str.split("|")`, which does not understand markdown's
+    backslash-escape at all, so an escaped pipe still breaks column
+    alignment here exactly the same as an accidental one. There is no
+    remedy on the PARSER side for either case -- the cell must be REWORDED
+    to avoid a literal `|` character altogether (e.g. "and" instead of "|",
+    or a parenthetical instead of a table-style separator).
     """
     header_cell_count = len(_split_row(table_lines[0]))
     for line in table_lines:
         cell_count = len(_split_row(line))
         assert cell_count == header_cell_count, (
             f"Adjudication table row has {cell_count} cells but the header "
-            f"has {header_cell_count} -- a literal '|' inside a cell (e.g. "
-            f"an unescaped pipe in Detail-column prose) broke column "
-            f"alignment. Row: {line!r}"
+            f"has {header_cell_count} -- a literal '|' character inside a "
+            f"cell broke column alignment (this parser does not understand "
+            f"markdown's backslash-escape, so even a deliberately escaped "
+            f"'\\|' breaks it the same way an accidental one would). There "
+            f"is no parser-side fix: REWORD the cell to avoid a literal "
+            f"'|' character entirely. Row: {line!r}"
         )
 
 
@@ -219,6 +234,22 @@ def _assert_reference_count_matches_markers(row: AdjudicationRow) -> None:
     surplus `.py`-bearing references would not move `py_count`. No row in
     the real table has that shape today; if one is added, this floor's
     limit applies to it specifically, not to the table as a whole.
+
+    SECOND stated limit (round 2 minor): this entire floor is gated on
+    `marker_count > 0` -- it requires the LITERAL substring `ENFORCED-BY`
+    to appear in the cell at all. A marker TYPO (e.g. `ENFORCED_BY` with an
+    underscore, or any other misspelling) is not recognised as the marker
+    by anything in this module -- `marker_count` is silently 0, this
+    function returns immediately, `_references_in_verdict_cell` also
+    returns zero references for the same reason (its own gate is the same
+    literal check), and the row is invisible to both the per-row floor AND
+    (if it is the only ENFORCED-BY-claiming row) potentially the global
+    floor. Not mechanised here: there is no standing check that every row
+    carries a RECOGNISED verdict marker at all (as opposed to a correctly
+    placed one) -- ZR-6's `FIXED ... NO STANDING GUARD` legitimately
+    carries no marker, so such a check would need to distinguish "no marker
+    because none is claimed" from "no marker because of a typo," which nothing
+    in this file currently does.
     """
     marker_count = row.verdict_cell.count("ENFORCED-BY")
     if marker_count == 0:
@@ -790,9 +821,16 @@ def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
     at least one ENFORCED-BY reference must resolve, or this guard has gone
     silently vacuous -- the exact failure mode (sprint-67 MAJOR-1) it exists
     to end. That floor is GLOBAL; the per-row floor inside
-    `parse_adjudication_table` catches a single row's silent collapse to
-    zero (or a partial collapse, e.g. ZR-8's 4 references dropping to 1)
-    that the global floor alone would miss.
+    `parse_adjudication_table` (`_assert_reference_count_matches_markers`)
+    catches a single row's silent collapse -- to zero, or a PARTIAL one
+    (e.g. one of ZR-8's 4 references being lost) -- that the global floor
+    alone would miss, by comparing the parsed count against
+    `max(marker_count, '.py'-occurrence count)` rather than `marker_count`
+    alone (round 2: `marker_count` alone under-caught a multi-reference cell
+    whose surplus references could absorb a lost one silently). STATED
+    LIMIT of that floor: a reference rewritten into a form containing no
+    `.py` substring at all (e.g. a bare contract name) could still be lost
+    without moving `py_count` -- see that function's own docstring.
 
     AC6: a row failing under THIS specified grammar is fixed, never
     exempted -- there is no exemption list here on principle. But note the
