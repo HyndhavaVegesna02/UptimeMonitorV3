@@ -668,19 +668,109 @@ stories:
   - id: STORY-208
     title: Land ZR-4's guard -- extend test_zone_layout to assert the five-file api feature SHAPE
     points: 1
-    board: in-progress
+    board: done
     pipeline: light
     order: 4
     blocked_question: null
-    attempts: 1
+    attempts: 1          # one dispatch, no rework, no AC returned
     started_at_commit: 986a646   # dispatched 2026-08-12
+    commit_range: 94d0069..0d01a83   # computed from started_at_commit (RC-4's rung), 3 commits
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    guard: "backend/tests/test_zone_layout.py::test_zone_layout_agreements -- EXTENDED, not new"
+    suite_count_unchanged: >-
+      722 -> 722 BY DESIGN, and this is the AC5 evidence: the story extended an existing test rather
+      than adding new ones, so test_zone_layout.py still collects 6 tests. A rising count here would
+      have meant the guard was bolted on beside the existing assertions instead of inside them.
+    dod_evidence:   # FULL 8, at 0d01a83, ALL EIGHT FIRST ATTEMPT. Machine-emitted by yt_gate.py.
+                    # DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1 -> zero skips.
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "test_zone_layout.py ...... [ 98%] | test_zr5_config_dir_parity.py ..... [ 99%] | test_zr7_pagination_guard.py .. [100%] | ======================= 722 passed in 60.06s (0:01:00) ======================="
+        commit: 0d01a83
+        at: "2026-08-12T11:20:00+00:00"
+      - command: 'python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"'
+        exit_code: 0
+        output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        commit: 0d01a83
+        at: "2026-08-12T11:20:30+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 0d01a83
+        at: "2026-08-12T11:20:31+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "251 files already formatted"
+        commit: 0d01a83
+        at: "2026-08-12T11:20:32+00:00"
+      - command: 'python -c "from cfnlint.runner import main; main()" infra/stack.yaml'
+        exit_code: 0
+        output_tail: ""
+        commit: 0d01a83
+        at: "2026-08-12T11:20:33+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  88.09s"
+        commit: 0d01a83
+        at: "2026-08-12T11:20:40+00:00"
+        note: >-
+          Fourth consecutive full gate without STORY-221 firing. STILL does not retire GN-2's
+          measured 2-in-4 -- four clean runs on an idle machine is what a load-sensitive failure
+          looks like when the load is absent. Re-price against the measurement, not the streak.
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip 85.39 kB | built in 997ms"
+        commit: 0d01a83
+        at: "2026-08-12T11:22:00+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 0d01a83
+        at: "2026-08-12T11:22:10+00:00"
+    blast_radius_resolved: true   # zone-rules.md only. Its code_refs ALREADY contained
+                                  # backend/tests/test_zone_layout.py, so the guard file this row
+                                  # claims IS staleness-tracked -- unlike ZR-7's, which is RC-11.
+                                  # verified_sha 43cc15b; yt_wiki AFTER the last commit: CLEAN.
     reality_gate:
-      discrimination_proof: null   # AC4 BOTH directions: (a) rename approvals/validation.py --
-                                   # NOT models.py, which is a collection error, not a guard red;
-                                   # (b) add a sixth file. Both revert to an empty git diff.
+      # BOTH DIRECTIONS RE-PERFORMED BY THE ORCHESTRATOR, 2026-08-12. Evidence of record.
+      discrimination_proof:
+        ac4a_missing_file:
+          mutation: "git mv backend/src/api/v1/approvals/validation.py -> validation_renamed.py"
+          command: "python -m pytest backend/tests/test_zone_layout.py -q"
+          mutated_result: >-
+            "AssertionError: Feature 'approvals' does not match the five-file shape (ZR-4).
+            Expected: {controller.py, models.py, service.py, validation.py, __init__.py},
+            Actual: {..., validation_renamed.py, ...}. Difference: {validation.py,
+            validation_renamed.py}" -- 1 failed, 5 passed.
+          trap_avoided: >-
+            "1 failed, 5 passed" WITH NO COLLECTION ERROR is the whole point of the retargeting.
+            Renaming models.py instead would have raised ModuleNotFoundError across much of the
+            suite (two importers, plus test_zone_layout.py:12's `import src.api.v1` pulling all ten
+            routers) and the shape guard would never have executed -- a recorded "red" that was not
+            the guard firing. approvals/validation.py has zero importers, so the guard fired cleanly.
+          reverted_result: "tree clean, git status empty"
+        ac4b_extra_file:
+          mutation: "created backend/src/api/v1/approvals/helpers.py (throwaway)"
+          command: "python -m pytest backend/tests/test_zone_layout.py -q"
+          mutated_result: >-
+            "AssertionError: Feature 'approvals' does not match the five-file shape (ZR-4). ...
+            Actual: {..., helpers.py, ...}. Difference: {helpers.py}" -- 1 failed, 5 passed.
+          reverted_result: "6 passed in 1.87s"
+          git_diff_after_revert: empty   # `git diff --stat` and `git status --porcelain` both silent
+          proves: >-
+            SET EQUALITY, not a subset check. This is the direction that matters: a superset
+            assertion would have passed a sixth file silently, and AC1 exists because of that.
+      ac2_pycache_exclusion_is_exercised_not_hypothetical: >-
+        VERIFIED, and this is the check that would have been easy to fake: the directory
+        backend/src/api/v1/approvals/__pycache__ EXISTS in this tree right now, and the guard passes
+        anyway. So the *.py-only rule is exercised against the real condition, not merely asserted in
+        a comment. Without it this guard would be RED on any developer machine and GREEN in a clean
+        CI checkout -- a guard whose colour depends on whether tests have been run before.
+      ac3_ac8_read_not_assumed: >-
+        AC3: `_FIVE_FILE_SHAPE_EXCEPTIONS = {"health"}` is a literal enumerating exactly one entry,
+        with a comment citing health/controller.py's own docstring for why. NOT a "fewer than five is
+        fine" rule, which would have let silent drift through. AC8: `assert filesystem_features` runs
+        before any feature-based assertion, so an empty discovery cannot pass green.
 
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md -- a row may not claim a guard that does not exist
