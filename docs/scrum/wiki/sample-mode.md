@@ -1,7 +1,7 @@
 ---
 title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
 code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
-verified_sha: c34e193
+verified_sha: 13bbb07
 verified_sprint: sprint-69
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only because run.py and
@@ -506,3 +506,10 @@ produced ordinary data flowing through it.
   the sweep flagged this article STALE again: `pyproject.toml` (a `code_ref`) moved at `c34e193`
   (this same rework's maintenance-note fix, comment-only) after this article's verified_sha.
   Re-verified only; no Fact in this article changed. verified_sha bumped `8397da9` -> `c34e193`.
+- sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
+  article STALE a third time — `pyproject.toml` (a `code_ref`, present because `sample_mode` is one
+  of the `api-feature-independence` contract's member modules) moved at `13bbb07`. Comment-only
+  above `[tool.importlinter]` (module-form invocation + a `sys.path` warning — see
+  [[architecture-boundary]]); `api-feature-independence`'s `modules` list, and `sample_mode`'s
+  membership in it, are untouched. Re-verified only; no Fact in this article changed.
+  verified_sha bumped `c34e193` -> `13bbb07`.

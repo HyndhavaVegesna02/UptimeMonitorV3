@@ -1,7 +1,7 @@
 ---
 title: Dev setup and the Definition-of-Done gate
 code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: c34e193
+verified_sha: 13bbb07
 verified_sprint: sprint-69
 status: verified
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
@@ -361,3 +361,12 @@ status: verified
   and [[zone-rules]] for the substance). Comment-only, no contract count or command list changed;
   this article already carried the module-form invocation (`:78`), so no Fact here needed
   correcting. Re-verified only. verified_sha bumped `0769b0a` -> `c34e193`.
+- sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
+  article STALE a third time — `pyproject.toml` (a `code_ref`) moved at `13bbb07`. Comment-only,
+  above `[tool.importlinter]`: the bare `lint-imports` invocation was replaced with the module
+  form, and a warning added that the editable install resolves `src.*` to the main tree regardless
+  of launch directory. NEITHER changes anything here: the DoD command list, its counts (five
+  backend / eight total) and the nine-contract enumeration are untouched, and this article has
+  carried the module form since sprint-44. The setup Fact stands as written — the `sys.path`
+  consequence is recorded in [[architecture-boundary]], which owns that mechanism, rather than
+  duplicated here. Re-verified only. verified_sha bumped `c34e193` -> `13bbb07`.

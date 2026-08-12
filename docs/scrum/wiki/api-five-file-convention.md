@@ -1,7 +1,7 @@
 ---
 title: API Five-File Feature Convention (+ _shared)
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, backend/tests/test_publications_endpoint.py, pyproject.toml, backend/src/api/v1/_shared/__init__.py, backend/src/api/v1/_shared/errors.py, backend/src/api/v1/_shared/validation.py, backend/src/api/v1/_shared/middleware.py, backend/src/api/v1/_shared/windowing.py, backend/tests/test_shared_windowing.py, backend/tests/test_shared_errors.py]
-verified_sha: c34e193
+verified_sha: 13bbb07
 verified_sprint: sprint-69
 status: verified
 ---
@@ -171,3 +171,10 @@ status: verified
   contract structure changed. verified_sha bumped `f3319cb` -> `c34e193` (the `pyproject.toml`
   comment-fix commit) to reflect that `code_ref` moving; the sweep would otherwise flag this
   article STALE against it.
+- sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
+  article STALE a third time — `pyproject.toml` (a `code_ref`) moved at `13bbb07`. Comment-only
+  above `[tool.importlinter]` (module-form invocation + a `sys.path` warning — see
+  [[architecture-boundary]]). The two contracts this article is about,
+  `api-shared-no-feature-imports` and `api-feature-independence`, are byte-for-byte unchanged, as
+  is the 9 kept / 0 broken figure quoted in the `_shared`-fencing Fact. Re-verified only.
+  verified_sha bumped `c34e193` -> `13bbb07`.

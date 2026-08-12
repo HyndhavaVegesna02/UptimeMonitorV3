@@ -1,7 +1,7 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
 code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
-verified_sha: c34e193
+verified_sha: 13bbb07
 verified_sprint: sprint-69
 status: verified
 ---
@@ -384,3 +384,10 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   contract structure changed. verified_sha bumped `a192e17` -> `c34e193` (the `pyproject.toml`
   comment-fix commit) to reflect that `code_ref` moving; the sweep would otherwise flag this
   article STALE against it.
+- sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
+  article STALE a third time — `pyproject.toml` (a `code_ref`) moved at `13bbb07`. Two changes
+  there, and this article's Facts touch NEITHER: a comment-only rewrite of the `[tool.importlinter]`
+  header (module-form invocation + a `sys.path` warning — see [[architecture-boundary]]), and no
+  dependency, no `[project]` table and no contract structure altered. This article cites
+  `pyproject.toml` for dependency/config concerns and for the contract governing composition-zone
+  placement; both are unchanged. Re-verified only. verified_sha bumped `c34e193` -> `13bbb07`.

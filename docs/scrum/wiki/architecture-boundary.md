@@ -1,7 +1,7 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py, backend/src/core/ports/__init__.py]
-verified_sha: c34e193
+verified_sha: 13bbb07
 verified_sprint: sprint-69
 status: verified
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
@@ -18,6 +18,16 @@ status: verified
 - `src` is the importable top-level package; it physically lives at `backend/src` and is
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
+  **That editable install is a plain ABSOLUTE path entry, so `src.*` resolves to the MAIN tree
+  no matter where the interpreter is launched from** — a git worktree, a scratch copy, anywhere.
+  The installed `.pth` in the venv's `site-packages` contains one line, the absolute path of this
+  checkout's `backend/`. Consequence for any check that must analyse a tree OTHER than the main
+  one (a mutation in a scratch copy, a worktree gate run): force `PYTHONPATH=<that tree>/backend`,
+  or import-linter and pytest silently report on the main tree instead. Warned about in
+  `pyproject.toml` ("tool.importlinter")'s own header comment, and the dev-only provenance helper
+  assert_import_root exists to assert the resolved root rather than assume it (see
+  [[dev-setup-and-dod]]). This is not theoretical — it produced two wrong answers during
+  STORY-206's QM-5 re-verification before the linter run was pinned (sprint-69).
 - **Import boundary (dossier §4)** is enforced by import-linter, run via the module form
   `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
   (the `lint-imports` exe shim has been Device-Guard-blocked since 2026-07-12 — same check,
@@ -202,4 +212,16 @@ status: verified
   entry above) cite it as the file whose re-exports cause the package-import form to trip the
   contract, so it defines part of what this article now describes (`yt_wiki.py facts` flagged the
   citation as uncovered; added rather than removed the citation, since it is load-bearing).
-
+- sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
+  article STALE again — `pyproject.toml` (a `code_ref`) moved a THIRD time, at `13bbb07`, the
+  commit replacing ZR-1's false residue (2). The change there is comment-only and touches no
+  contract: the header above `[tool.importlinter]` dropped the bare `lint-imports` invocation (the
+  same falsehood quality review MAJOR-3 fixed in this article's Facts) for the module form, and
+  gained a warning that the editable install is a plain absolute `sys.path` entry. The contract
+  count, the nine contract names and `include_external_packages` are unchanged; the Facts above
+  already carried the module form, so nothing there needed correcting. NOT re-verified only: the
+  editable-install Fact GAINED the resolves-to-the-main-tree consequence, because this article owns
+  the `package-dir`/editable-install mechanism and that mechanism has a trap sharp enough to have
+  produced two wrong answers inside STORY-206 itself. Evidence read at re-verification, not
+  inferred: the venv's installed `.pth` is a single absolute line pointing at this checkout's
+  `backend/`. verified_sha bumped `c34e193` -> `13bbb07`.
