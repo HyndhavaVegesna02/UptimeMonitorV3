@@ -549,11 +549,12 @@ stories:
   - id: STORY-209
     title: Land ZR-5's guard -- a composition-root parity test for CONFIG_DIR resolution (code-level half only)
     points: 2
-    board: todo
+    board: in-progress
     pipeline: light
     order: 3             # highest-care mutations: they touch the two composition roots
     blocked_question: null
-    attempts: 0
+    attempts: 1
+    started_at_commit: 414da79   # dispatched 2026-08-12
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false
