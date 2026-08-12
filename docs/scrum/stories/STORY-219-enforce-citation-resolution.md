@@ -158,26 +158,26 @@ paths is the dominant class and the one `yt_wiki.py`'s own citations note indepe
 146 unchecked Facts — but it must say what it enforces. Content-anchor coverage is a separate,
 larger question and is filed as a follow-up, not smuggled in here. **Estimate stays 3.**
 
-- [ ] **AC1 — enforcement runs inside `python -m pytest`, not as a ninth DoD command**, and STATES
+- [x] **AC1 — enforcement runs inside `python -m pytest`, not as a ninth DoD command**, and STATES
       THE ENFORCED PROPERTY HONESTLY in the test's docstring: *the cited path resolves from the repo
       root, and the file is long enough to contain the cited line; the cited CONTENT is verified only
       for the minority of citations carrying a parenthesized excerpt anchor.* The docstring names the
       residual limit explicitly — **a wrong-but-in-range line number passes** — and cites
       `scripts/seed_topology.py:44` as the worked example that passes today. A docstring implying
       this check proves citations correct is not Done.
-- [ ] **AC2 — the enforced set is filtered on PATH RESOLVABILITY, not on line-number presence.**
+- [x] **AC2 — the enforced set is filtered on PATH RESOLVABILITY, not on line-number presence.**
       A citation whose path contains no `/` (a bare filename such as `server.py:66`) is reported in a
       separate advisory list; a citation with a repo-relative path is enforced. This is the filter
       that actually discriminates. The test asserts the two lists partition the extracted set, so a
       citation cannot fall out of both.
-- [ ] **AC3 — the baseline is committed DATA, not a number in prose**, one entry per article. **The
+- [x] **AC3 — the baseline is committed DATA, not a number in prose**, one entry per article. **The
       glob is named literally in the baseline file**: `docs/scrum/wiki/*.md`, top level only, 17
       articles — `docs/scrum/wiki/archive/` is OUT of scope and the file says so, because AC4 makes an
       absent article fail and the two archived articles would otherwise be a silent 19-vs-17 ambiguity.
-- [ ] **AC4 — the ratchet only goes down.** A count BELOW its baseline fails with an instruction to
+- [x] **AC4 — the ratchet only goes down.** A count BELOW its baseline fails with an instruction to
       lower the baseline in the same commit, so paid-down debt cannot silently refill. An article
       absent from the baseline file fails rather than defaulting to unlimited.
-- [ ] **AC5 — shown RED, with the near-miss control (A9).** (a) Add a citation using a FULL
+- [x] **AC5 — shown RED, with the near-miss control (A9).** (a) Add a citation using a FULL
       repo-relative path with a line number GREATER THAN THE FILE'S LENGTH to a zero-baseline article
       → RED. (b) Add one to a nonzero-baseline article, taking it above baseline → RED. (c) Delete a
       failing citation from a nonzero article without lowering the baseline → RED per AC4.
@@ -185,7 +185,7 @@ larger question and is filed as a follow-up, not smuggled in here. **Estimate st
       wrong-but-IN-RANGE line number stays **GREEN**, and that green is recorded next to (a)'s red.
       Without (d), `settings.py:20` (correct) and `settings.py:99999` (wrong) both FAIL identically
       for the same irrelevant reason — the path — and (a) proves nothing.
-- [ ] **AC6 — `tier: reference` articles are EXEMPT, read mechanically from frontmatter.** This is
+- [x] **AC6 — `tier: reference` articles are EXEMPT, read mechanically from frontmatter.** This is
       not an open choice: `references/wiki-protocol.md:21` already defines reference tier as
       "append-only, cites no live line", and `:56` says an article that wants to cite code IS a map
       article. `zone-rules-history.md`'s 15 failures are citations INTO HISTORY — claims about past
@@ -193,20 +193,60 @@ larger question and is filed as a follow-up, not smuggled in here. **Estimate st
       article goes RED on the next appended entry, forcing its author to move a baseline they did not
       set — the shape this sprint's ordering exists to prevent. The exemption is read from the `tier:`
       field, never a hand-listed filename, and the reason is recorded in the baseline file header.
-- [ ] **AC7 — the two known-real drifts are corrected, WITHOUT any claim about the baseline.**
+- [x] **AC7 — the two known-real drifts are corrected, WITHOUT any claim about the baseline.**
       `config-layer.md`'s `seed_dynamo.py:56` (real `:60`, `for sig in app.signals:`) and
       `vendor_health.py:97` (real `:106`, `for signal in app.signals:`). Both are genuinely stale and
       worth fixing. **Both report OK today** — `config-layer.md:271-272` uses an em-dash excerpt form
       that `CITATION_RE` does not read as an anchor — so fixing them moves the count by **zero**, and
       any AC requiring them to LOWER the baseline would be unsatisfiable. `config-layer.md`'s single
       real failure is `dispatch.py:44`, unrelated to either.
-- [ ] **AC8 — the 129 are not silently accepted, and a zero is not silently trusted.** The baseline
+- [x] **AC8 — the 129 are not silently accepted, and a zero is not silently trusted.** The baseline
       file header states that a nonzero entry is unpaid debt and names the four articles holding 123
       of it. It ALSO distinguishes the two kinds of zero: **seven of the eight zero-pins have no
       extracted citations at all** (vacuously clean), and only `deployment-and-infra.md` (10
       citations, all passing) is genuinely clean. A baseline that reads as an approval, or that lets
       an empty article look like a verified one, is not Done.
-- [ ] **AC9** — full 8/8 DoD gate green at the final HEAD, including the new test.
+- [x] **AC9** — full 8/8 DoD gate green at the final HEAD, including the new test.
+
+## History
+
+- sprint-70 (STORY-219): `tools/citation_gate.py` partitions `citation_sweep.py`'s extracted
+  citations into ENFORCED (repo-relative path) vs ADVISORY (bare filename) -- the first draft's
+  "filter on line-number presence" was a no-op (`CITATION_RE` mandates a line number; 129 of 129
+  raw failures carried one) and was corrected during plan verification before this story opened.
+  Re-measured at HEAD (`db76941`'s parent): raw sweep 129 (demo-engine.md 73, zone-rules.md 18,
+  core-pipeline-and-availability.md 17, zone-rules-history.md 15, the rest in ones/twos, eight at
+  zero) -- reconciled exactly against sprint-70 planning's own re-measurement. Of the 129, only 16
+  are ENFORCED (path contains `/`): demo-engine.md 8, zone-rules.md 6, dynatrace-adapter.md 1,
+  zone-rules-history.md 1 -- the last EXEMPT under AC6 (`tier: reference`, read live from
+  frontmatter by `gate.article_tier`, never a hand-listed name), leaving a 15-total committed
+  ratchet baseline across 14 map-tier articles (`backend/tests/test_citation_gate.py::BASELINE`).
+  `test_ac4_ac6_enforced_citation_count_matches_baseline_exactly` is an EQUALITY ratchet -- above
+  baseline is new drift, below is undeclared paid-down debt -- both fail, per AC4.
+  AC5 shown RED (all reverted, `git diff` empty after each; full tails recorded outside the repo):
+  (a) a full-path/out-of-range-line citation into `api-five-file-convention.md` (baseline 0) ->
+  RED, `ABOVE baseline`, the ONLY thing in this evidence set that exercises `check_citation`'s
+  line-count-short branch (zero real citations hit it today); (b) the same shape into
+  `zone-rules.md` (baseline 6) -> RED, the SAME `ABOVE` branch as (a), at a nonzero starting
+  baseline -- recorded as one branch proven at two starting conditions, not two independent
+  proofs; (c) fixing `zone-rules.md`'s `composition/app.py:224` (both occurrences) without
+  lowering its baseline -> RED, `BELOW baseline`, a genuinely distinct branch from (a)/(b); (d)
+  the control -- a full-path, wrong-but-in-range-line citation into the SAME article as (a)
+  (`api-five-file-convention.md`) -> stays GREEN, recorded side by side with (a)'s red.
+  AC7: `config-layer.md`'s `seed_dynamo.py:56`/`vendor_health.py:97` corrected to the real
+  `:60`/`:106` -- both reported OK before and after (line-count-only, no excerpt anchor), so
+  enforced count for that article stays 0; confirmed by re-running the full test module.
+  AC6 resolved by reading `tier:` from frontmatter mechanically at test time
+  (`gate.article_tier`), cross-checked against the baseline's own descriptive `tier` field by
+  `test_ac6_reference_tier_articles_are_read_from_frontmatter` -- exempts
+  `api-five-file-history.md`, `deployment-topology.md`, `zone-rules-history.md` today, derived,
+  not hand-listed.
+  Incidental: `tools/citation_gate.py:53`'s `str.find("\n---", 3)` start-offset literal collided
+  with `FreshnessConfig.stale_after_cycles=3` under ZR-3's sweep -- adjudicated INDEPENDENT in
+  `backend/tests/test_zr3_duplicate_declarations.py`.
+  DoD gate 8/8 at final HEAD: `python -m pytest` 761 passed / 0 skipped; import-linter 9 kept, 0
+  broken; ruff check/format clean; cfn-lint exit 0; frontend `npm test` 363 passed, `npm run
+  build`/`npm run lint` exit 0.
 
 ## Filed as follow-up, not done here
 
