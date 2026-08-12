@@ -132,6 +132,11 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "automatically' comment to what is now unconditionally true) -- the "
         "collision is unchanged, only its line moved.)"
     ),
+    ("tools/citation_gate.py", 53): (
+        "INDEPENDENT: text.find('\\n---', 3), the start-offset argument to "
+        "str.find (skip past the frontmatter's own opening '---' line) -- "
+        "unrelated to FreshnessConfig.stale_after_cycles. (STORY-219, sprint 70.)"
+    ),
     ("tools/demo_loop_gate/harness.py", 999): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
         "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
