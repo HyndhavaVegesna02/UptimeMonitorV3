@@ -157,9 +157,9 @@ def test_load_contract_forbidden_modules_reads_named_contract(tmp_path) -> None:
         'forbidden_modules = ["src.core.ports.a_repository"]\n',
         encoding="utf-8",
     )
-    assert _load_contract_forbidden_modules(pyproject, "inbound-adapters-dont-persist") == [
-        "src.core.ports.a_repository"
-    ]
+    assert _load_contract_forbidden_modules(
+        pyproject, "inbound-adapters-dont-persist"
+    ) == ["src.core.ports.a_repository"]
 
 
 def test_load_contract_forbidden_modules_raises_when_contract_not_found(
@@ -169,7 +169,9 @@ def test_load_contract_forbidden_modules_raises_when_contract_not_found(
     by name must fail loudly, never silently resolve to an empty list that
     would then pass a lower-bound check vacuously."""
     pyproject = tmp_path / "pyproject.toml"
-    pyproject.write_text("[[tool.importlinter.contracts]]\nname = \"unrelated\"\n", encoding="utf-8")
+    pyproject.write_text(
+        '[[tool.importlinter.contracts]]\nname = "unrelated"\n', encoding="utf-8"
+    )
     try:
         _load_contract_forbidden_modules(pyproject, "inbound-adapters-dont-persist")
     except AssertionError as exc:
@@ -203,9 +205,7 @@ def test_forbidden_modules_non_vacuity_floor() -> None:
     `_load_contract_forbidden_modules`) and discovery returned a
     plausibly-populated set. See `_NON_VACUITY_FLOOR`'s comment for why the
     floor is direction-free rather than pinned to today's count of 9."""
-    forbidden = _load_contract_forbidden_modules(
-        _PYPROJECT_PATH, _CONTRACT_NAME
-    )
+    forbidden = _load_contract_forbidden_modules(_PYPROJECT_PATH, _CONTRACT_NAME)
     assert len(forbidden) >= _NON_VACUITY_FLOOR, (
         f"{_CONTRACT_NAME}'s forbidden_modules has only {len(forbidden)} "
         f"entries (floor is {_NON_VACUITY_FLOOR}) -- suspiciously low; "
