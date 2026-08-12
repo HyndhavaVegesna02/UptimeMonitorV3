@@ -23,8 +23,11 @@ is mechanical, not accidental.
 
 from __future__ import annotations
 
+import ast
 import re
+import tomllib
 from dataclasses import dataclass
+from pathlib import Path
 
 _ADJUDICATION_HEADING = re.compile(r"^## Adjudication\b")
 _EXPECTED_RULE_IDS = {f"ZR-{n}" for n in range(1, 9)}
@@ -170,6 +173,99 @@ def parse_adjudication_table(markdown_text: str) -> list[AdjudicationRow]:
 
 
 # ---------------------------------------------------------------------------
+# Reference resolution (AC1's two reference kinds, AC2's AST test-name check).
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class ResolvedReference:
+    """The outcome of resolving one guard reference."""
+
+    reference: str
+    exists: bool
+    detail: str
+
+
+def _function_exists(path: Path, test_name: str) -> bool:
+    """AST-parse `path` and return True iff it defines a function (`def` or
+    `async def`, at any nesting level) named `test_name`.
+
+    AC2 residue, stated here and in the calling assertion's failure message:
+    this checks DEFINITION only. A test that exists but is skipped, xfailed,
+    or deselected still counts as present -- this guard has no opinion on
+    whether a named test currently RUNS, only on whether it still EXISTS. No
+    `pytest --collect-only` subprocess is run (a pytest run inside a pytest
+    run is slow and recursion-prone; settled at refinement).
+    """
+    tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+    return any(
+        isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef))
+        and node.name == test_name
+        for node in ast.walk(tree)
+    )
+
+
+def _is_path_like(token: str) -> bool:
+    """A reference is treated as a filesystem path if it contains a `/` or
+    ends in `.py`; otherwise it is treated as an import-linter contract name
+    (ZR-1's row: `inbound-adapters-dont-persist` has neither)."""
+    return "/" in token or token.endswith(".py")
+
+
+def _import_linter_contract_names(pyproject_path: Path) -> set[str]:
+    """Every `name` declared under `[[tool.importlinter.contracts]]` in
+    `pyproject_path` -- the set a non-path reference resolves against."""
+    with open(pyproject_path, "rb") as f:
+        config = tomllib.load(f)
+    contracts = config.get("tool", {}).get("importlinter", {}).get("contracts", [])
+    return {c["name"] for c in contracts if "name" in c}
+
+
+def resolve_reference(
+    reference: str, repo_root: Path, contract_names: set[str]
+) -> ResolvedReference:
+    """Resolve one guard reference (AC1's two kinds):
+    - `path::test_name` -- the path must exist AND AST-parsing it must find
+      a `FunctionDef`/`AsyncFunctionDef` named `test_name` (AC2).
+    - a bare path (no `::`, but `/`-bearing or `.py`-suffixed) -- the path
+      must exist.
+    - anything else -- resolved as an import-linter contract name against
+      `contract_names` (ZR-1's row).
+    """
+    if "::" in reference:
+        file_part, test_name = reference.split("::", 1)
+        path = repo_root / file_part
+        if not path.is_file():
+            return ResolvedReference(
+                reference, False, f"path does not exist: {file_part}"
+            )
+        if not _function_exists(path, test_name):
+            return ResolvedReference(
+                reference,
+                False,
+                f"path exists but defines no test function named "
+                f"'{test_name}': {file_part}",
+            )
+        return ResolvedReference(reference, True, "")
+
+    if _is_path_like(reference):
+        path = repo_root / reference
+        if not path.is_file():
+            return ResolvedReference(
+                reference, False, f"path does not exist: {reference}"
+            )
+        return ResolvedReference(reference, True, "")
+
+    if reference not in contract_names:
+        return ResolvedReference(
+            reference,
+            False,
+            f"no import-linter contract named '{reference}' in pyproject.toml",
+        )
+    return ResolvedReference(reference, True, "")
+
+
+# ---------------------------------------------------------------------------
 # Meta-tests: prove the parser itself, against synthetic fixtures, before it
 # is trusted against the real file (same discipline as
 # test_zr7_pagination_guard.py's "prove it fires against a throwaway file").
@@ -259,6 +355,78 @@ def test_references_reading_c_grammar_on_every_shape() -> None:
 
     # ZR-8 shape (single-finding form here): one ENFORCED-BY span.
     assert rows["ZR-8"].references == ("backend/tests/test_g.py::test_h",)
+
+
+def test_function_exists_finds_a_present_function_at_any_nesting_level(
+    tmp_path,
+) -> None:
+    module = tmp_path / "mod.py"
+    module.write_text(
+        "def test_top_level():\n    pass\n\n\n"
+        "class Foo:\n    def test_nested(self):\n        pass\n",
+        encoding="utf-8",
+    )
+    assert _function_exists(module, "test_top_level") is True
+    assert _function_exists(module, "test_nested") is True
+    assert _function_exists(module, "test_absent") is False
+
+
+def test_resolve_reference_path_with_test_name(tmp_path) -> None:
+    repo_root = tmp_path
+    test_file = repo_root / "backend" / "tests" / "test_real.py"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text("def test_present():\n    pass\n", encoding="utf-8")
+
+    ok = resolve_reference("backend/tests/test_real.py::test_present", repo_root, set())
+    assert ok.exists is True
+
+    missing_path = resolve_reference(
+        "backend/tests/does_not_exist.py::test_present", repo_root, set()
+    )
+    assert missing_path.exists is False
+
+    missing_test = resolve_reference(
+        "backend/tests/test_real.py::test_absent", repo_root, set()
+    )
+    assert missing_test.exists is False
+
+
+def test_resolve_reference_bare_path(tmp_path) -> None:
+    repo_root = tmp_path
+    test_file = repo_root / "backend" / "tests" / "test_bare_real.py"
+    test_file.parent.mkdir(parents=True)
+    test_file.write_text("x = 1\n", encoding="utf-8")
+
+    ok = resolve_reference("backend/tests/test_bare_real.py", repo_root, set())
+    assert ok.exists is True
+
+    missing = resolve_reference(
+        "backend/tests/does_not_exist_bare.py", repo_root, set()
+    )
+    assert missing.exists is False
+
+
+def test_resolve_reference_contract_name(tmp_path) -> None:
+    repo_root = tmp_path
+    contract_names = {"some-real-contract"}
+
+    ok = resolve_reference("some-real-contract", repo_root, contract_names)
+    assert ok.exists is True
+
+    missing = resolve_reference("no-such-contract", repo_root, contract_names)
+    assert missing.exists is False
+
+
+def test_import_linter_contract_names_reads_pyproject(tmp_path) -> None:
+    pyproject = tmp_path / "pyproject.toml"
+    pyproject.write_text(
+        "[[tool.importlinter.contracts]]\n"
+        'name = "contract-a"\n\n'
+        "[[tool.importlinter.contracts]]\n"
+        'name = "contract-b"\n',
+        encoding="utf-8",
+    )
+    assert _import_linter_contract_names(pyproject) == {"contract-a", "contract-b"}
 
 
 def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
