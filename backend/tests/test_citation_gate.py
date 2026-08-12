@@ -1,0 +1,337 @@
+"""Standing guard (STORY-219): wires `tools/citation_sweep.py`'s citation
+RESOLUTION into `python -m pytest` via a per-article ratchet baseline, instead
+of the tool sitting unused (filed against sprint-68's RC-2: five `file:line`
+citations went stale under a commit that never touched their content).
+
+**What this test proves, stated exactly because the honest scope is narrower
+than "citations are correct" (AC1):** for every citation whose path resolves
+from the repo root (a repo-relative path, not a bare filename), the cited
+file exists and is long enough to contain the cited line. The cited CONTENT
+is verified only for the minority of citations carrying a parenthesized
+excerpt anchor (`` `path:line` (`excerpt`) ``) -- 8 of 195 distinct citations
+repo-wide, per `citation_sweep.check_citation`. **A wrong-but-in-range line
+number PASSES.** The worked example that demonstrates this today:
+`scripts/seed_topology.py:44` (cited from `config-layer.md`'s own History,
+sprint-68 entry) is reported OK by this exact mechanism, even though the
+Fact it once supported has since moved to `:48` -- the tool cannot tell.
+Do not read a green run of this test as "the wiki's citations are correct";
+read it as "the wiki's *resolvable* citations point at real, long-enough
+files."
+
+**The filter that actually discriminates is PATH RESOLVABILITY, not the
+presence of a line number** (`tools/citation_gate.py::partition_citations`,
+AC2). `citation_sweep.CITATION_RE` makes the line number MANDATORY, so a
+"filter on citations carrying a line number" removes nothing -- measured:
+129 of 129 raw failures at this story's base commit carried one. A citation
+whose path contains no `/` (a bare filename such as `server.py:66`) is
+reported ADVISORY, never enforced; a citation with a repo-relative path
+(even an incomplete/wrong one, e.g. `adapters/inbound/dynatrace/query.py:83`
+missing its `backend/src/` prefix) is ENFORCED.
+
+`tools/citation_gate.py` derives `wiki_articles()`/`article_tier()`/
+`partition_citations()` by calling straight into `citation_sweep.CITATION_RE`
+and `citation_sweep.check_citation` -- this module is NOT a rewrite of the
+sweep, only a partition + ratchet wired on top of it.
+"""
+
+from __future__ import annotations
+
+from pathlib import Path
+
+import citation_gate as gate  # tools/ is on sys.path via backend/tests/conftest.py
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# ---------------------------------------------------------------------------
+# AC3/AC4/AC6/AC8 -- the committed per-article baseline.
+#
+# Glob is LITERAL: docs/scrum/wiki/*.md, top level only (`Path.glob`, non-
+# recursive) -- 17 articles. `docs/scrum/wiki/archive/` is a subdirectory and
+# is OUT of scope; this is stated here, not left as a 17-vs-19 ambiguity.
+#
+# Per article: {"tier": "map"|"reference", "baseline": int | None, "note": str}.
+#   - tier == "reference": AC6 EXEMPTS it from the ratchet -- read live from
+#     the article's OWN frontmatter at test time (`gate.article_tier`), never
+#     assumed from this table (the "tier" value below is descriptive, cross-
+#     checked against the live read by `test_ac6...`, not authoritative on
+#     its own). "baseline" is None and carries no enforcement. Two
+#     independent reasons pin this (`.claude/skills/yourteam/references/
+#     wiki-protocol.md:21` -- reference tier is "append-only, cites no live
+#     line" -- and `:56` -- an article wanting to cite code IS a map article):
+#     `zone-rules-history.md`'s citations are into HISTORY, claims about past
+#     state a tool resolving against HEAD cannot judge, and AC4's ratchet on
+#     an append-only article would go RED on the next appended entry, forcing
+#     its author to move a baseline they did not set.
+#   - tier == "map": "baseline" is the EXACT enforced-citation failure count
+#     (AC2's partition) this ratchet holds the article to. AC4 is an EQUALITY
+#     ratchet, not a ceiling: a count BELOW baseline fails too, so paid-down
+#     debt cannot silently refill un-noticed -- lowering it is a required same-
+#     commit edit, not a bonus.
+#   - "note" distinguishes AC8's two kinds of zero-pin: no citations extracted
+#     at all (vacuously clean) vs citations extracted and all of them pass
+#     (genuinely clean) vs an honest nonzero (unpaid debt).
+#
+# AC8 context (informational, NOT what is enforced below): the RAW sweep --
+# every citation `citation_sweep.py` reports, before AC2's path-resolvability
+# filter -- totals 129 at this story's base commit, four articles holding 123
+# of it (demo-engine.md 73, zone-rules.md 18, core-pipeline-and-availability.md
+# 17, zone-rules-history.md 15). Of the eight articles at raw-zero, SEVEN have
+# no extracted citations at all (vacuously clean) and only deployment-and-
+# infra.md (10 citations, all passing) is genuinely clean. The 129 are not
+# silently accepted: 113 of them are bare-filename ADVISORY citations this
+# story deliberately does not enforce (content-anchor coverage is filed as a
+# sprint-71 follow-up, out of this story's 3 points) -- they are visible via
+# `tools/citation_sweep.py` directly, not hidden by this narrower gate.
+BASELINE: dict[str, dict] = {
+    "api-five-file-convention.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "vacuously clean -- no citations extracted",
+    },
+    "api-five-file-history.md": {
+        "tier": "reference",
+        "baseline": None,
+        "note": "exempt (AC6) -- append-only History, no live-code claims",
+    },
+    "architecture-boundary.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "vacuously clean -- no citations extracted",
+    },
+    "canonical-types-and-ports.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": ("1 citation extracted, bare filename -- advisory only, 0 enforced"),
+    },
+    "config-layer.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": (
+            "genuinely clean on the enforced set -- 5 full-path citations, "
+            "all pass on line-count; the article's one raw failure "
+            "(`dispatch.py:44`) is a bare filename, advisory only (AC7)"
+        ),
+    },
+    "core-pipeline-and-availability.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": (
+            "17 citations extracted, all bare filenames -- advisory only, 0 enforced"
+        ),
+    },
+    "demo-engine.md": {
+        "tier": "map",
+        "baseline": 8,
+        "note": (
+            "unpaid debt -- 8 enforced failures, all a repo-relative path "
+            "missing its `backend/src/` prefix (e.g. "
+            "`adapters/inbound/dynatrace/query.py:83`); 65 more raw failures "
+            "are bare-filename advisory, not enforced here"
+        ),
+    },
+    "deployment-and-infra.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "genuinely clean -- 10 citations extracted, all passing",
+    },
+    "deployment-topology.md": {
+        "tier": "reference",
+        "baseline": None,
+        "note": "exempt (AC6) -- reference tier",
+    },
+    "dynatrace-adapter.md": {
+        "tier": "map",
+        "baseline": 1,
+        "note": (
+            "unpaid debt -- 1 enforced failure "
+            "(`composition/app.py:224`, missing `backend/src/` prefix)"
+        ),
+    },
+    "frontend-zone.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "vacuously clean -- no citations extracted",
+    },
+    "ingest-service-and-pull-loop.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": ("1 citation extracted, bare filename -- advisory only, 0 enforced"),
+    },
+    "persistence-adapters.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": ("1 citation extracted, bare filename -- advisory only, 0 enforced"),
+    },
+    "sample-mode.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "vacuously clean -- no citations extracted",
+    },
+    "statuspage-publish.md": {
+        "tier": "map",
+        "baseline": 0,
+        "note": "vacuously clean -- no citations extracted",
+    },
+    "zone-rules.md": {
+        "tier": "map",
+        "baseline": 6,
+        "note": (
+            "unpaid debt -- 6 enforced failures (5 anchor-mismatch, 1 path "
+            "missing its `backend/src/` prefix); 12 more raw failures are "
+            "bare-filename advisory, not enforced here"
+        ),
+    },
+    "zone-rules-history.md": {
+        "tier": "reference",
+        "baseline": None,
+        "note": (
+            "exempt (AC6) -- append-only History, citations into past state "
+            "a HEAD-resolving tool cannot judge"
+        ),
+    },
+}
+
+
+def test_ac3_glob_matches_exactly_the_committed_baseline_keys() -> None:
+    """The literal glob `docs/scrum/wiki/*.md` (top-level only) must name
+    exactly the 17 articles this baseline covers -- no more, no fewer. A
+    mismatch means either a new article landed with no baseline entry (AC4
+    would silently default it to unlimited if this test did not exist) or a
+    baseline entry survives for an article that is gone."""
+    found = {p.name for p in gate.wiki_articles(_REPO_ROOT)}
+    assert found == set(BASELINE), (
+        f"docs/scrum/wiki/*.md (top-level) found {sorted(found)}, "
+        f"baseline covers {sorted(BASELINE)} -- add/remove a BASELINE entry"
+    )
+    assert len(found) == 17, f"expected 17 top-level articles, found {len(found)}"
+
+
+def test_ac3_archive_directory_is_out_of_scope() -> None:
+    """`docs/scrum/wiki/archive/` must never appear in `wiki_articles()` --
+    the glob is non-recursive by construction, but this pins that behaviour
+    directly rather than trusting `Path.glob`'s semantics from memory."""
+    archive_dir = _REPO_ROOT / "docs" / "scrum" / "wiki" / "archive"
+    assert archive_dir.is_dir(), "fixture assumption: archive/ exists"
+    found = {p for p in gate.wiki_articles(_REPO_ROOT)}
+    assert not any("archive" in p.parts for p in found)
+
+
+def test_ac2_partition_covers_every_extracted_citation() -> None:
+    """For every article, the four partition_citations buckets
+    (enforced_ok, enforced_fail, advisory_ok, advisory_fail) must together
+    account for exactly the distinct (path, line-spec) pairs `citation_sweep`
+    itself extracts -- cross-checked against the sweep's own `sweep()` return
+    value, so the partition can never silently drop or double-count a
+    citation relative to the tool it wraps."""
+    import citation_sweep as sweep
+
+    wiki_dir = _REPO_ROOT / "docs" / "scrum" / "wiki"
+    for article in sorted(wiki_dir.glob("*.md")):
+        _failures, total_occurrences = sweep.sweep(article, _REPO_ROOT)
+        text = article.read_text(encoding="utf-8")
+        distinct = len(
+            {
+                (m.group(1), m.group(2), m.group(3))
+                for m in sweep.CITATION_RE.finditer(text)
+            }
+        )
+        enforced_ok, enforced_fail, advisory_ok, advisory_fail = (
+            gate.partition_citations(_REPO_ROOT, article)
+        )
+        partitioned_total = (
+            len(enforced_ok)
+            + len(enforced_fail)
+            + len(advisory_ok)
+            + len(advisory_fail)
+        )
+        assert partitioned_total == distinct, (
+            f"{article.name}: partition accounts for {partitioned_total} "
+            f"distinct citations, sweep extracted {distinct}"
+        )
+        assert total_occurrences >= distinct
+
+
+def test_ac6_reference_tier_articles_are_read_from_frontmatter() -> None:
+    """AC6's exemption is mechanical: for every article the glob finds,
+    `gate.article_tier` (a live frontmatter read) must agree with this
+    baseline's descriptive `"tier"` field -- so a future author cannot grant
+    an exemption by editing this table alone without also changing the
+    article's own frontmatter."""
+    for article in gate.wiki_articles(_REPO_ROOT):
+        live_tier = gate.article_tier(article)
+        expected_tier = BASELINE[article.name]["tier"]
+        assert live_tier == expected_tier, (
+            f"{article.name}: frontmatter tier is {live_tier!r}, baseline "
+            f"table says {expected_tier!r} -- one of the two is wrong"
+        )
+        if live_tier == "reference":
+            assert BASELINE[article.name]["baseline"] is None
+        else:
+            assert isinstance(BASELINE[article.name]["baseline"], int)
+
+
+def test_ac4_ac6_enforced_citation_count_matches_baseline_exactly() -> None:
+    """The ratchet (AC4): for every MAP-tier article (`tier: reference` is
+    exempt, decided live from frontmatter -- AC6, never from a hand-listed
+    filename), today's ENFORCED failure count must equal the committed
+    baseline EXACTLY. Above baseline is new drift; below baseline is paid-
+    down debt that must lower the baseline in the same commit (AC4) -- both
+    fail here, deliberately, so debt cannot silently refill. An article the
+    glob finds but this baseline does not cover fails via
+    `test_ac3_glob_matches_exactly_the_committed_baseline_keys` first.
+    """
+    mismatches = []
+    for article in gate.wiki_articles(_REPO_ROOT):
+        if gate.article_tier(article) == "reference":
+            continue  # AC6 -- exempt, read live from frontmatter.
+        entry = BASELINE[article.name]
+        _, enforced_fail, _, _ = gate.partition_citations(_REPO_ROOT, article)
+        actual = len(enforced_fail)
+        if actual != entry["baseline"]:
+            direction = "ABOVE" if actual > entry["baseline"] else "BELOW"
+            mismatches.append(
+                f"{article.name}: baseline={entry['baseline']}, actual={actual} "
+                f"({direction} baseline) -- "
+                + (
+                    "new citation drift, fix it or file it"
+                    if direction == "ABOVE"
+                    else "paid-down debt -- LOWER the baseline in this commit"
+                )
+                + ":\n    "
+                + "\n    ".join(enforced_fail)
+            )
+
+    assert not mismatches, "Citation ratchet mismatch(es):\n\n" + "\n\n".join(
+        mismatches
+    )
+
+
+def test_ac5d_control_wrong_but_in_range_line_stays_green() -> None:
+    """AC5(d) -- the control that makes AC5(a) mean anything. A full
+    repo-relative path with a WRONG but in-range line number is
+    indistinguishable, to this tool, from a correct one: both resolve and
+    both pass the line-count check (no excerpt anchor to catch the content
+    drift). Pinned directly against `citation_sweep.check_citation` -- the
+    function `partition_citations` calls, never re-implemented -- using
+    `scripts/seed_topology.py`, the story's own worked example."""
+    import citation_sweep as sweep
+
+    target = _REPO_ROOT / "scripts" / "seed_topology.py"
+    real_line_count = len(target.read_text(encoding="utf-8").splitlines())
+    assert real_line_count >= 44, "fixture assumption: file has >= 44 lines"
+
+    # `:44` is the story's own decisive example -- the real content moved to
+    # `:48` (config-layer.md's History), but `:44` is still a valid, in-range
+    # line, so this reports OK for the wrong reason.
+    ok, msg = sweep.check_citation(
+        _REPO_ROOT, "scripts/seed_topology.py", 44, None, None
+    )
+    assert ok, f"expected the wrong-but-in-range control to PASS, got: {msg}"
+
+    # And a line past the end of the file is the actual, detectable failure
+    # (AC5(a)'s shape) -- recorded here so the two are read side by side.
+    out_of_range = real_line_count + 1
+    ok2, msg2 = sweep.check_citation(
+        _REPO_ROOT, "scripts/seed_topology.py", out_of_range, None, None
+    )
+    assert not ok2, f"expected an out-of-range line to FAIL, got: {msg}"
