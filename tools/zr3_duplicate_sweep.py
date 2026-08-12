@@ -8,6 +8,17 @@ from `src` at runtime (ZR-3's own "import-edge is not the criterion, this-value-
 obtained-from-src is"). See `docs/scrum/sprints/2026-07-31-sprint-66/
 audit-api-composition-tools.md` §3 for the adjudicated results this sweep produced.
 
+**Structural blind spot, stated so a clean run is never misread as covering it
+(STORY-218 AC7):** `collect_src_declarations`/`collect_tools_literals` compare
+`backend/src/` against `tools/` ONLY — this sweep has no notion of a duplicate
+where BOTH declarations sit inside `backend/src/` itself. `settings.py` declaring a
+default twice (once as a dataclass field default, once re-typed as a
+`load_settings()` fallback literal) is exactly that shape and is invisible here by
+construction, not by omission -- widening this sweep to also compare `backend/src/`
+against itself is a separate, larger redesign (STORY-218's own "Not in scope"), out
+of scope for this module. A `0` collision count from this sweep says nothing about
+whether a `src`-internal duplicate exists.
+
 Scope, exactly as pinned by `zone-rules.md` ZR-3 (STORY-194 acceptance correction,
 2026-07-31):
 
