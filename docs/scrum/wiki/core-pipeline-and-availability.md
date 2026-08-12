@@ -1,9 +1,15 @@
 ---
 title: Zone 4 — the core pipeline (collapse + streak + anti-flap), the availability engine, and the skew flag
 code_refs: [backend/src/core/services/pipeline.py, backend/src/core/queries/availability.py, backend/src/core/services/skew.py, backend/src/core/services/decide.py, backend/src/composition/orchestrate.py, backend/tests/test_pipeline.py, backend/tests/test_streak.py, backend/tests/test_anti_flap.py, backend/tests/test_availability.py, backend/tests/test_skew.py, backend/tests/test_decide.py, backend/tests/test_orchestrate.py, backend/tests/test_orchestration_integration.py]
-verified_sha: 40e2a2c
+tier: map
 verified_sprint: sprint-62
-status: verified          # verified | stale | archived
+status: stale             # verified | stale | archived
+# DEMOTED 2026-08-12, not flagged by the sweep. Last read against code at sprint-62,
+# seven sprints ago. The tier pass had to touch every article's frontmatter, and under
+# the derived-baseline rule touching a `verified` article claims its Facts were re-read
+# — so an article nobody re-read is marked stale instead of laundered. Readable and
+# quarantined from briefs, which is the protocol's designed safe state, not a defect.
+# Rehabilitate or archive when a story next touches its code_refs.
 ---
 
 ## Facts (verified against code)

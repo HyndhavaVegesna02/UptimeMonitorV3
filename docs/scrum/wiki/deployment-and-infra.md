@@ -1,9 +1,15 @@
 ---
 title: Deployment â€” CloudFormation single-stack + container image
 code_refs: [infra/stack.yaml, Dockerfile, .dockerignore, scripts/create_tables.py]
-verified_sha: 7c53685
+tier: map
 verified_sprint: sprint-50
-status: verified
+status: stale
+# DEMOTED 2026-08-12, not flagged by the sweep. Last read against code at sprint-50,
+# nineteen sprints ago. The tier pass had to touch every article's frontmatter, and under
+# the derived-baseline rule touching a `verified` article claims its Facts were re-read
+# — so an article nobody re-read is marked stale instead of laundered. Readable and
+# quarantined from briefs, which is the protocol's designed safe state, not a defect.
+# Rehabilitate or archive when a story next touches infra/stack.yaml.
 ---
 
 ## Facts (verified against code)
