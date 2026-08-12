@@ -23,6 +23,47 @@ def discover_features(v1_dir: Path) -> set[str]:
     }
 
 
+#: ZR-4 (docs/scrum/wiki/zone-rules.md): the five files an api/v1 feature
+#: divides into.
+_FIVE_FILE_SHAPE = {
+    "__init__.py",
+    "controller.py",
+    "models.py",
+    "validation.py",
+    "service.py",
+}
+
+#: ZR-4's one documented exception. `health` ships only `__init__.py` +
+#: `controller.py` -- its own docstring
+#: (backend/src/api/v1/health/controller.py) says why: a static liveness
+#: stub with nothing to model, validate, or orchestrate, kept only to give
+#: the `api-feature-independence` import-linter contract a second feature so
+#: the contract is non-vacuous. This is a literal enumeration, never a
+#: "fewer than five is fine" rule -- that would let silent drift through.
+_FIVE_FILE_SHAPE_EXCEPTIONS = {"health"}
+
+
+def assert_feature_five_file_shape(feature: str, feature_dir: Path) -> None:
+    """Assert `feature_dir`'s Python-module set equals exactly the five-file
+    shape (ZR-4), set equality rather than a superset check.
+
+    Compares `*.py` files only. `__pycache__/` (and any other non-`.py`
+    entry) exists in every feature directory on any machine that has already
+    run the suite, so an unfiltered directory-entry comparison would be RED
+    on a developer machine and GREEN in a clean CI checkout -- a guard whose
+    colour depends on whether the suite has run before is worse than no
+    guard.
+
+    Cites: docs/scrum/wiki/zone-rules.md ZR-4.
+    """
+    actual_files = {p.name for p in feature_dir.iterdir() if p.suffix == ".py"}
+    assert actual_files == _FIVE_FILE_SHAPE, (
+        f"Feature '{feature}' does not match the five-file shape (ZR-4). "
+        f"Expected: {_FIVE_FILE_SHAPE}, Actual: {actual_files}. "
+        f"Difference: {_FIVE_FILE_SHAPE.symmetric_difference(actual_files)}"
+    )
+
+
 def assert_features_match(
     contract_features: set[str], filesystem_features: set[str]
 ) -> None:
@@ -156,6 +197,13 @@ def test_zone_layout_agreements() -> None:
     v1_dir = Path(src.api.v1.__file__).parent
     filesystem_features = discover_features(v1_dir)
 
+    # 4a. Non-vacuity floor (AC8): an empty iteration must not pass green --
+    # every assertion below this point is a no-op over an empty set.
+    assert filesystem_features, (
+        "discover_features returned no features; the feature-shape and "
+        "feature-set guards below would pass vacuously"
+    )
+
     # 5. Assert set equality
     assert_features_match(contract_features, filesystem_features)
 
@@ -172,6 +220,14 @@ def test_zone_layout_agreements() -> None:
 
         # Assert that each route of the feature router is registered under the correct path in OpenAPI
         assert_router_routes_registered(feature, feature_router, openapi_paths)
+
+    # 7. Assert the five-file SHAPE (ZR-4), not just the feature-name SET
+    # checked at step 5 -- every feature except the documented `health`
+    # exception.
+    for feature in filesystem_features:
+        if feature in _FIVE_FILE_SHAPE_EXCEPTIONS:
+            continue
+        assert_feature_five_file_shape(feature, v1_dir / feature)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
