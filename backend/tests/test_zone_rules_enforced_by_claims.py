@@ -11,14 +11,19 @@ green'") and went unread. This guard mechanises the part of the legend a
 human can silently skip: it resolves every reference a row claims and fails,
 naming the row, if the reference does not exist.
 
+Grammar limit, stated honestly (quality review FIX 1.4): "every reference"
+above means every reference this parser's grammar can SEE -- a code span
+whose leading `ENFORCED-BY` marker sits INSIDE the backtick span, per the
+house convention (`` `ENFORCED-BY path` ``). A marker written OUTSIDE its
+span is more natural markdown than the convention it violates, and this
+parser does not widen its grammar to accept it; instead
+`_assert_reference_count_matches_markers` (the per-row floor) fails LOUDLY,
+naming the row, the moment a cell's `ENFORCED-BY` count and its parsed
+reference count disagree -- so that shape is caught, not silently
+misresolved, even though it is never a shape this parser accepts as valid.
+
 Cites: docs/scrum/wiki/zone-rules.md, "## Adjudication" section (STORY-197
 AC6, this guard STORY-216).
-
-Built incrementally, table-scoping first: the extraction of the single
-Adjudication table's raw lines, proven against a synthetic fixture that
-deliberately includes ENFORCED-BY-bearing prose OUTSIDE the table (the
-legend above the heading, and a later "## History" section) to prove scope
-is mechanical, not accidental.
 """
 
 from __future__ import annotations
@@ -34,6 +39,10 @@ _ZONE_RULES_PATH = _REPO_ROOT / "docs" / "scrum" / "wiki" / "zone-rules.md"
 _PYPROJECT_PATH = _REPO_ROOT / "pyproject.toml"
 
 _ADJUDICATION_HEADING = re.compile(r"^## Adjudication\b")
+#: The rule ids the Adjudication table is expected to carry, one row each.
+#: If a NEW rule (e.g. ZR-9) is legitimately added to zone-rules.md, extend
+#: this set in the SAME commit as the row addition -- it is not itself the
+#: floor being enforced, only the expected shape that floor checks against.
 _EXPECTED_RULE_IDS = {f"ZR-{n}" for n in range(1, 9)}
 _VERDICT_MARKERS = ("ENFORCED-BY", "GUARDABLE-DEFERRED", "UNGUARDABLE")
 _CODE_SPAN = re.compile(r"`([^`]+)`")
@@ -601,18 +610,29 @@ def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
 
 
 def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
-    """STORY-216 AC1/AC2/AC6: every `ENFORCED-BY` reference in the REAL
-    Adjudication table (`docs/scrum/wiki/zone-rules.md`) resolves -- a path
-    reference exists on disk, a `path::test_name` reference's file ALSO
-    defines a function of that name (AST-checked, existence only -- a test
-    that is skipped/xfailed/deselected still counts as present here, see
-    `_function_exists`), and a non-path reference names a real import-linter
-    contract in `pyproject.toml`.
+    """STORY-216 AC1/AC2/AC6: every `ENFORCED-BY` reference THIS PARSER CAN
+    SEE in the REAL Adjudication table (`docs/scrum/wiki/zone-rules.md`)
+    resolves -- a path reference exists on disk, a `path::test_name`
+    reference's file ALSO defines a function of that name (AST-checked,
+    existence only -- a test that is skipped/xfailed/deselected still counts
+    as present here, see `_function_exists`), and a non-path reference names
+    a real import-linter contract in `pyproject.toml`.
+
+    Grammar limit (quality review FIX 1.4): "every reference" means every
+    reference matching this parser's grammar -- a code span whose leading
+    `ENFORCED-BY` marker sits INSIDE the backtick span (the house
+    convention). A marker written OUTSIDE its span is not resolved by this
+    function at all; it is instead caught, loudly, by the PER-ROW floor
+    below (`_assert_reference_count_matches_markers`, run inside
+    `parse_adjudication_table`), never silently misresolved.
 
     AC1's non-vacuity floor: all eight rule ids ZR-1..ZR-8 must be found, and
     at least one ENFORCED-BY reference must resolve, or this guard has gone
     silently vacuous -- the exact failure mode (sprint-67 MAJOR-1) it exists
-    to end.
+    to end. That floor is GLOBAL; the per-row floor inside
+    `parse_adjudication_table` catches a single row's silent collapse to
+    zero (or a partial collapse, e.g. ZR-8's 4 references dropping to 1)
+    that the global floor alone would miss.
 
     AC6: a row failing under THIS specified grammar is fixed, never
     exempted -- there is no exemption list here on principle. But note the
@@ -626,7 +646,10 @@ def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
     rule_ids = {row.rule_id for row in rows}
     assert rule_ids == _EXPECTED_RULE_IDS, (
         f"Expected all eight rule ids ZR-1..ZR-8, found {sorted(rule_ids)} -- "
-        f"the Adjudication table's row set has drifted."
+        f"the Adjudication table's row set has drifted. (If a NEW rule, e.g. "
+        f"ZR-9, was legitimately added to zone-rules.md, extend "
+        f"_EXPECTED_RULE_IDS in the SAME commit as the row addition -- this "
+        f"assertion is not itself evidence of a defect.)"
     )
 
     all_references = [
@@ -656,7 +679,11 @@ def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
         "reference or the code/contract it should point at. Per AC6: never "
         "add an exemption here, and never edit a row just to make this "
         "parser pass -- if you believe the row is genuinely correct and this "
-        "check is wrong, stop and say so instead of editing either.\n"
+        "check is wrong, stop and say so instead of editing either. NOTE the "
+        "limit of a `::test_name` failure specifically (AC2): it means the "
+        "named function no longer EXISTS (AST-checked) -- a test that "
+        "exists but is skipped, xfailed, or deselected would NOT fail here; "
+        "this check has no opinion on whether a test currently runs.\n"
         + "\n".join(failures)
     )
 
@@ -682,7 +709,9 @@ def test_every_enforced_by_row_records_a_shown_red_demonstration() -> None:
         "Row(s) claim ENFORCED-BY but their Detail column records no "
         "'shown RED' demonstration (the legend's own requirement -- a guard "
         "is not ENFORCED-BY until it has been shown RED, never merely 'is "
-        "green'). NOTE the limit of this check: it verifies the row RECORDS "
-        "a red demonstration, never that the demonstration actually "
+        "green'). Perform the mutation and record it; never satisfy this "
+        "check by adding the phrase 'shown RED' with no demonstration "
+        "behind it. NOTE the limit of this check: it verifies the row "
+        "RECORDS a red demonstration, never that the demonstration actually "
         "happened -- that half is not mechanically verifiable.\n" + "\n".join(missing)
     )
