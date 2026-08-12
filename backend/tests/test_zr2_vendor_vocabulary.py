@@ -195,7 +195,9 @@ def test_core_has_no_vendor_vocabulary_leak() -> None:
     `core/` at HEAD. Clean on arrival (STORY-207 planning's prototype scanned
     31 modules, 0 hits); AC5's mutation is the only way to see this RED."""
     modules = _discover_core_modules()
-    assert modules, "module discovery returned nothing -- see test_discovers_at_least_25_core_modules"
+    assert modules, (
+        "module discovery returned nothing -- see test_discovers_at_least_25_core_modules"
+    )
 
     all_hits: list[_Hit] = []
     for path in modules:
@@ -230,7 +232,9 @@ def test_compliant_prose_forms_are_not_flagged() -> None:
     signal_path = _CORE_ROOT / "domain" / "signal.py"
     publication_path = _CORE_ROOT / "domain" / "publication.py"
 
-    signal_tree = ast.parse(signal_path.read_text(encoding="utf-8"), filename=str(signal_path))
+    signal_tree = ast.parse(
+        signal_path.read_text(encoding="utf-8"), filename=str(signal_path)
+    )
     publication_tree = ast.parse(
         publication_path.read_text(encoding="utf-8"), filename=str(publication_path)
     )
@@ -247,7 +251,9 @@ def test_compliant_prose_forms_are_not_flagged() -> None:
         f"docstring mentioning Dynatrace; got {naive_signal_hits!r} -- the "
         "discrimination fixture itself is broken"
     )
-    assert any(h.line == 66 and "statuspage" in h.token.lower() for h in naive_publication_hits), (
+    assert any(
+        h.line == 66 and "statuspage" in h.token.lower() for h in naive_publication_hits
+    ), (
         "expected the naive (non-excluding) walk to flag publication.py:66's "
         f"attribute docstring mentioning Statuspage; got "
         f"{naive_publication_hits!r} -- the discrimination fixture itself is broken"
