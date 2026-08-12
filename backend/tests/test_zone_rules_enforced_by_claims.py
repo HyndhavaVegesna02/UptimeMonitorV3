@@ -29,6 +29,10 @@ import tomllib
 from dataclasses import dataclass
 from pathlib import Path
 
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_ZONE_RULES_PATH = _REPO_ROOT / "docs" / "scrum" / "wiki" / "zone-rules.md"
+_PYPROJECT_PATH = _REPO_ROOT / "pyproject.toml"
+
 _ADJUDICATION_HEADING = re.compile(r"^## Adjudication\b")
 _EXPECTED_RULE_IDS = {f"ZR-{n}" for n in range(1, 9)}
 _VERDICT_MARKERS = ("ENFORCED-BY", "GUARDABLE-DEFERRED", "UNGUARDABLE")
@@ -444,3 +448,98 @@ def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
             "parse_adjudication_table did not raise on a missing heading -- "
             "a moved/renamed table would silently parse as zero rows."
         )
+
+
+# ---------------------------------------------------------------------------
+# The real guard: run everything above against the REAL zone-rules.md and
+# the REAL pyproject.toml. AC1's non-vacuity floor + AC6 (a failing row is
+# fixed, never exempted, under THIS specified grammar).
+# ---------------------------------------------------------------------------
+
+
+def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
+    """STORY-216 AC1/AC2/AC6: every `ENFORCED-BY` reference in the REAL
+    Adjudication table (`docs/scrum/wiki/zone-rules.md`) resolves -- a path
+    reference exists on disk, a `path::test_name` reference's file ALSO
+    defines a function of that name (AST-checked, existence only -- a test
+    that is skipped/xfailed/deselected still counts as present here, see
+    `_function_exists`), and a non-path reference names a real import-linter
+    contract in `pyproject.toml`.
+
+    AC1's non-vacuity floor: all eight rule ids ZR-1..ZR-8 must be found, and
+    at least one ENFORCED-BY reference must resolve, or this guard has gone
+    silently vacuous -- the exact failure mode (sprint-67 MAJOR-1) it exists
+    to end.
+
+    AC6: a row failing under THIS specified grammar is fixed, never
+    exempted -- there is no exemption list here on principle. But note the
+    other half of AC6: "a failing row" means one failing THIS grammar. If a
+    row you believe is correct fails here, the grammar may be wrong -- stop
+    and say so rather than editing the row to satisfy the parser.
+    """
+    markdown_text = _ZONE_RULES_PATH.read_text(encoding="utf-8")
+    rows = parse_adjudication_table(markdown_text)
+
+    rule_ids = {row.rule_id for row in rows}
+    assert rule_ids == _EXPECTED_RULE_IDS, (
+        f"Expected all eight rule ids ZR-1..ZR-8, found {sorted(rule_ids)} -- "
+        f"the Adjudication table's row set has drifted."
+    )
+
+    all_references = [
+        (row.rule_id, reference) for row in rows for reference in row.references
+    ]
+    assert all_references, (
+        "Non-vacuity floor tripped (AC1): zero ENFORCED-BY references were "
+        "found across the whole Adjudication table. Either every rule "
+        "genuinely lost its guard (very unlikely) or this parser's table-"
+        "location or grammar broke silently -- exactly sprint-67's MAJOR-1, "
+        "reproduced inside the guard built to end it. Investigate before "
+        "trusting a green run."
+    )
+
+    contract_names = _import_linter_contract_names(_PYPROJECT_PATH)
+    failures = [
+        f"{rule_id}: `{reference}` -- {resolved.detail}"
+        for rule_id, reference in all_references
+        for resolved in [resolve_reference(reference, _REPO_ROOT, contract_names)]
+        if not resolved.exists
+    ]
+
+    assert not failures, (
+        "Adjudication table row(s) claim ENFORCED-BY a guard that does not "
+        "exist (STORY-216, closing sprint-67's MAJOR-1 -- ZR-6's row once "
+        "claimed a guard that reverting the fix proved false). Fix the "
+        "reference or the code/contract it should point at. Per AC6: never "
+        "add an exemption here, and never edit a row just to make this "
+        "parser pass -- if you believe the row is genuinely correct and this "
+        "check is wrong, stop and say so instead of editing either.\n"
+        + "\n".join(failures)
+    )
+
+
+def test_every_enforced_by_row_records_a_shown_red_demonstration() -> None:
+    """STORY-216 AC3 -- the honest half. "Has been shown RED" is prose in the
+    Detail column; this test can verify a row RECORDS a red demonstration
+    (the substring "shown red", case-insensitive), but it CANNOT verify the
+    demonstration actually happened. A green run here is never proof the
+    mutations were real -- nobody may read it that way.
+    """
+    markdown_text = _ZONE_RULES_PATH.read_text(encoding="utf-8")
+    rows = parse_adjudication_table(markdown_text)
+    enforced_rows = [row for row in rows if row.references]
+    assert enforced_rows, "Non-vacuity floor: no ENFORCED-BY rows found to check."
+
+    missing = [
+        row.rule_id
+        for row in enforced_rows
+        if "shown red" not in row.detail_cell.lower()
+    ]
+    assert not missing, (
+        "Row(s) claim ENFORCED-BY but their Detail column records no "
+        "'shown RED' demonstration (the legend's own requirement -- a guard "
+        "is not ENFORCED-BY until it has been shown RED, never merely 'is "
+        "green'). NOTE the limit of this check: it verifies the row RECORDS "
+        "a red demonstration, never that the demonstration actually "
+        "happened -- that half is not mechanically verifiable.\n" + "\n".join(missing)
+    )
