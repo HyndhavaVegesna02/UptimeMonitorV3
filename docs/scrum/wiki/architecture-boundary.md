@@ -1,9 +1,15 @@
 ---
 title: The architecture boundary — four zones + the two CI floors
 code_refs: [pyproject.toml, backend/src/core/__init__.py, backend/src/adapters/__init__.py, backend/src/composition/__init__.py, backend/src/api/__init__.py, backend/src/core/ports/__init__.py]
-verified_sha: 13bbb07
+tier: map
 verified_sprint: sprint-69
 status: verified
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0) — the baseline is derived from
+# this article's own last commit. Verified by re-reading the section that changed: the nine-
+# contract ENUMERATION was removed in favour of a pointer to `[tool.importlinter]`, because a
+# prose copy of a list the gate already enforces is a tier-1 claim written at tier 4. No
+# code_ref had moved since dd7f6aa (arithmetic: empty diff), and the two things the contracts
+# CANNOT state — the exact-module import rule and the three deliberate exclusions — were kept.
 # code_refs narrowed sprint-5 (retro): scoped to the boundary-DEFINING files — the import-linter
 # contracts (pyproject.toml), the FK-direction script + SPINE allowlist, and the four zone package
 # roots — NOT all of backend/src/. The article describes the BOUNDARY, which changes only when a
@@ -39,38 +45,28 @@ status: verified
   `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"`
   (the `lint-imports` exe shim has been Device-Guard-blocked since 2026-07-12 — same check,
   same contracts, module path instead of the blocked shim), configured in `pyproject.toml`
-  ("tool.importlinter") with nine contracts:
-  - `core-independence` (forbidden): `src.core` may not import `src.adapters`,
-    `src.composition`, `src.api`, `sqlalchemy`, `httpx`, or `boto3` (`pyproject.toml` ("core-independence")).
-  - `core-internal-layering` (layers): `src.core.queries` → `src.core.services` →
-    `src.core.ports` → `src.core.domain` (`pyproject.toml` ("core-internal-layering")).
-  - `adapters-independence` (independence): `src.adapters.{inbound,outbound,persistence}`
-    may not import one another (`pyproject.toml` ("adapters-independence")).
-  - `api-feature-independence` (independence): `src.api.v1.decisions`, `src.api.v1.health`,
-    `src.api.v1.components`, `src.api.v1.approvals`, `src.api.v1.maintenance`,
-    `src.api.v1.availability`, `src.api.v1.history`, `src.api.v1.publications`,
-    `src.api.v1.topology`, and `src.api.v1.sample_mode` may not import one another
-    (`pyproject.toml` ("api-feature-independence")).
-  - `api-outward-independence` (forbidden): `src.api` may not import `src.adapters`,
-    `src.composition`, `sqlalchemy`, `psycopg`, `httpx`, or `boto3` (`pyproject.toml` ("api-outward-independence")).
-  - `adapters-edge-only` (forbidden): `src.adapters` may not import `src.api` or
-    `src.composition` (`pyproject.toml` ("adapters-edge-only")).
-  - `api-shared-no-feature-imports` (forbidden): `src.api.v1._shared` may not import any of the
-    10 feature packages (`pyproject.toml` ("api-shared-no-feature-imports")).
-  - `src-no-tests` (forbidden): `src` may not import `tests` (`pyproject.toml` ("src-no-tests")).
-  - `inbound-adapters-dont-persist` (forbidden, STORY-206, ZR-1's guard — [[zone-rules]]):
-    `src.adapters.inbound` may not import any of the nine repository/watermark ports
-    (`src.core.ports.component_repository`, `maintenance_repository`, `observation_repository`,
-    `proposal_repository`, `publication_repository`, `rejected_observation_repository`,
-    `sample_mode_repository`, `signal_repository`, `watermark`) — deliberately excluding
-    `signal_ingest` (the core's documented front door, dossier §6/§8), `clock` and
-    `status_publisher` (neither is persistence) (`pyproject.toml` ("inbound-adapters-dont-persist")).
-    **An inbound adapter MUST import a port by its exact module**, e.g.
-    `from src.core.ports.signal_ingest import SignalIngestPort` — never the package form
-    `from src.core.ports import SignalIngestPort`. `backend/src/core/ports/__init__.py`
-    re-exports every port, and import-linter follows indirect chains by default, so the
-    package-level form transitively imports all nine forbidden modules at once and trips
-    this contract even for the front door (verified by mutation, STORY-206 rework).
+  ("tool.importlinter"). **The contracts are NOT restated here** (reduced 2026-08-12): the
+  runner's own `Contracts: N kept, 0 broken.` line is the count of record and
+  `[tool.importlinter]` in `pyproject.toml` is the authoritative list of names, sources and
+  forbidden sets. There were nine at sprint-69. A prose copy of that list is a *tier 1*
+  claim written at tier 4 — the contracts themselves fail the gate when violated and cannot
+  be silently wrong, whereas this article's copy of them could and repeatedly did: it drifted
+  on the contract COUNT three separate times (a "five"/"8" contradiction inside one bullet at
+  sprint-67, then 8 -> 9 at STORY-206). Read `pyproject.toml`, or run the gate command above.
+  - What the contracts cannot tell you, and so stays here: **an inbound adapter MUST import a
+    port by its exact module**, e.g. `from src.core.ports.signal_ingest import SignalIngestPort`
+    — never the package form `from src.core.ports import SignalIngestPort`.
+    `backend/src/core/ports/__init__.py` re-exports every port, and import-linter follows
+    indirect chains by default, so the package form transitively imports all nine forbidden
+    modules at once and trips `inbound-adapters-dont-persist` even when it names only the front
+    door (verified by mutation, STORY-206 rework: `Contracts: 8 kept, 1 broken`, reverted).
+    That is a rule about how to WRITE a compliant import, which a red/green contract states
+    only after you have already got it wrong. ZR-1's full derivation: [[zone-rules]].
+  - Also not derivable from the contract list: `signal_ingest`, `clock` and `status_publisher`
+    are deliberately EXCLUDED from `inbound-adapters-dont-persist` — the first is the core's
+    documented front door (dossier §6/§8), the other two are not persistence. A future
+    repository/persistence port must be appended to that contract in the same commit that adds
+    it, or it is invisible to the guard.
 - `include_external_packages = true` (`pyproject.toml` ("tool.importlinter")) is REQUIRED because the
   forbidden set names external packages (`sqlalchemy`, `httpx`); without it import-linter
   errors out.

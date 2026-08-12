@@ -1,12 +1,30 @@
 ---
 title: API Five-File Feature Convention (+ _shared)
 code_refs: [backend/src/api/v1/decisions/__init__.py, backend/src/api/v1/decisions/controller.py, backend/src/api/v1/decisions/models.py, backend/src/api/v1/decisions/validation.py, backend/src/api/v1/decisions/service.py, backend/src/api/v1/components/__init__.py, backend/src/api/v1/components/controller.py, backend/src/api/v1/components/models.py, backend/src/api/v1/components/validation.py, backend/src/api/v1/components/service.py, backend/src/api/v1/approvals/__init__.py, backend/src/api/v1/approvals/controller.py, backend/src/api/v1/approvals/models.py, backend/src/api/v1/approvals/validation.py, backend/src/api/v1/approvals/service.py, backend/src/api/v1/maintenance/__init__.py, backend/src/api/v1/maintenance/controller.py, backend/src/api/v1/maintenance/models.py, backend/src/api/v1/maintenance/validation.py, backend/src/api/v1/maintenance/service.py, backend/src/api/v1/availability/__init__.py, backend/src/api/v1/availability/controller.py, backend/src/api/v1/availability/models.py, backend/src/api/v1/availability/validation.py, backend/src/api/v1/availability/service.py, backend/src/api/v1/history/__init__.py, backend/src/api/v1/history/controller.py, backend/src/api/v1/history/models.py, backend/src/api/v1/history/validation.py, backend/src/api/v1/history/service.py, backend/src/api/v1/publications/__init__.py, backend/src/api/v1/publications/controller.py, backend/src/api/v1/publications/models.py, backend/src/api/v1/publications/validation.py, backend/src/api/v1/publications/service.py, backend/src/api/v1/topology/__init__.py, backend/src/api/v1/topology/controller.py, backend/src/api/v1/topology/models.py, backend/src/api/v1/topology/validation.py, backend/src/api/v1/topology/service.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/composition/app.py, backend/src/core/services/approval.py, backend/tests/test_approval.py, backend/tests/test_decisions.py, backend/tests/test_publications_endpoint.py, pyproject.toml, backend/src/api/v1/_shared/__init__.py, backend/src/api/v1/_shared/errors.py, backend/src/api/v1/_shared/validation.py, backend/src/api/v1/_shared/middleware.py, backend/src/api/v1/_shared/windowing.py, backend/tests/test_shared_windowing.py, backend/tests/test_shared_errors.py]
-verified_sha: 13bbb07
+tier: map
 verified_sprint: sprint-69
 status: verified
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0) — the baseline is derived from
+# this article's own last commit. No code_ref had moved since bef7a70 (arithmetic: empty diff).
+# Reduced in the same pass: the SET-EQUALITY half of the convention is pinned by eight standing
+# tests and is now cited rather than restated. The ROLE of each of the five files is NOT
+# test-enforced — set equality cannot see whether business logic leaked into controller.py — so
+# that half stays here as prose. Stated rather than glossed, because "the five-file convention
+# is tested" is true only of the shape, and a reader who over-trusted that would stop checking
+# the half nothing guards.
 ---
 
 ## Facts (verified against code)
+- **The five-file SHAPE is a standing test, not a convention to be remembered.** Each feature
+  asserts set equality on `{__init__, controller, models, validation, service}.py` for its own
+  directory — pattern:
+  `backend/tests/test_publications_endpoint.py::test_publications_module_five_file_shape`. Eight
+  features carry one as of sprint-69; the live count is
+  `grep -rc "def test_.*_module_five_file_shape" backend/tests/` rather than a number written
+  here, because a number here would drift and the grep cannot. A new feature ships its own shape
+  test in the same story (`.scrum/checklists/implementer.md`). So a missing or extra file fails
+  `pytest` — but set equality cannot see whether business logic leaked into `controller.py`, so
+  the ROLES below are the half that can still drift silently and are written out for that reason.
 - The five-file API convention (dossier §13) divides each endpoint feature directory (e.g. `api/v1/decisions/`, `api/v1/components/`, `api/v1/approvals/`, `api/v1/maintenance/`, `api/v1/availability/`, `api/v1/history/`, `api/v1/publications/`, `api/v1/topology/`, `api/v1/sample_mode/`) into exactly five modules:
   - `__init__.py`: Router re-export only (`api/v1/decisions/__init__.py`, `api/v1/components/__init__.py`, `api/v1/approvals/__init__.py`, `api/v1/maintenance/__init__.py`, `api/v1/availability/__init__.py`, `api/v1/history/__init__.py`, `api/v1/publications/__init__.py`, `api/v1/topology/__init__.py`).
   - `controller.py`: Exposes HTTP routes, parameters, and status codes with no business logic (`api/v1/decisions/controller.py::create_decision`, `api/v1/components/controller.py::list_components`, `api/v1/approvals/controller.py::list_open_proposals`, `api/v1/maintenance/controller.py::list_maintenance_windows`, `api/v1/maintenance/controller.py::schedule_maintenance_window`, `api/v1/availability/controller.py::get_availability`, `api/v1/availability/controller.py::get_component_availability`, `api/v1/history/controller.py::get_history`, `api/v1/publications/controller.py::list_publications`, `api/v1/topology/controller.py::get_topology`).
