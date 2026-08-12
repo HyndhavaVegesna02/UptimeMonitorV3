@@ -748,6 +748,27 @@ def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
 # ---------------------------------------------------------------------------
 
 
+def test_real_zr8_row_yields_exactly_four_references() -> None:
+    """Companion pin (quality review round 2, part 2): the existing ZR-8 pin
+    (`test_references_pins_zr8s_real_four_reference_two_finding_shape`) is
+    against a SYNTHETIC cell, not the real row -- genuinely non-vacuous, but
+    it does not pin the real row's count, which is exactly why the three
+    round-2 edits (dropped backticks, a markdown link, a separated marker)
+    were reproduced against the real file rather than caught by a permanent
+    test here first. This reads the REAL `zone-rules.md` and asserts ZR-8's
+    row yields exactly 4 references -- 40% of the guard's total real-table
+    coverage, pinned directly rather than only inferred from the synthetic
+    fixture matching the file's current wording."""
+    markdown_text = _ZONE_RULES_PATH.read_text(encoding="utf-8")
+    rows = {row.rule_id: row for row in parse_adjudication_table(markdown_text)}
+    assert len(rows["ZR-8"].references) == 4, (
+        f"ZR-8's real row yielded {len(rows['ZR-8'].references)} reference(s) "
+        f"({rows['ZR-8'].references!r}), expected exactly 4. This pin exists "
+        f"precisely because ZR-8's surplus references can silently absorb a "
+        f"lost one -- see _assert_reference_count_matches_markers."
+    )
+
+
 def test_every_enforced_by_reference_in_adjudication_table_resolves() -> None:
     """STORY-216 AC1/AC2/AC6: every `ENFORCED-BY` reference THIS PARSER CAN
     SEE in the REAL Adjudication table (`docs/scrum/wiki/zone-rules.md`)
