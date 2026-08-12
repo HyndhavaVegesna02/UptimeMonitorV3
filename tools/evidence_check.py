@@ -51,10 +51,15 @@ Placement: `tools/`, dev-only, never in the production image, same rule as
 import this module or anything else under `tools/`
 (`backend/tests/test_tools_isolation.py`, STORY-212 AC1).
 
-Command strings (`<artifact>`, `--left`, `--right`) are split with `shlex`
-(POSIX mode) -- use forward-slash paths, matching every other usage example
-in this repo's `tools/`; a literal Windows backslash path would be
-misinterpreted as a `shlex` escape sequence.
+Command strings (`<artifact>`, `--left`, `--right`) are split with
+`shlex.split(..., posix=False)` -- chosen over the POSIX default specifically
+because this project's own interpreter path (`sys.executable`) is a Windows
+backslash path, and POSIX-mode `shlex` treats a bare backslash as an escape
+character and silently eats it. Non-POSIX mode does not strip surrounding
+quotes from a token, so a spec containing an embedded space still needs to
+be a single argv element some other way (e.g. avoid the space, or invoke the
+underlying `check_*` function directly instead of the CLI) -- not supported
+by this CLI layer today.
 
 Usage::
 
@@ -224,7 +229,14 @@ def apply_patch(
     return subprocess.run(args, cwd=cwd, capture_output=True, text=True)
 
 
-_RESULT_RE_TOKENS = ("PASSED", "FAILED", "ERROR")
+#: The verbose-mode result words that mean RED. Deliberately excludes
+#: "PASSED" -- an earlier draft of this function used one combined tuple for
+#: "is this even a result line" and then, by the same membership check,
+#: accidentally counted every PASSED line as red too (caught by
+#: `test_check_mutate_zero_red_is_a_failure`: a comment-only, behaviour
+#: -preserving mutation reported RED regardless, which is exactly the wrong-
+#: -reason-red defect this story's own brief warns about).
+_RED_TOKENS = ("FAILED", "ERROR")
 
 
 def run_pytest_selectors(
@@ -244,7 +256,7 @@ def run_pytest_selectors(
     red: list[str] = []
     for line in result.stdout.splitlines():
         parts = line.split()
-        if len(parts) >= 2 and parts[1] in _RESULT_RE_TOKENS:
+        if len(parts) >= 2 and parts[1] in _RED_TOKENS:
             red.append(parts[0])
     return result.returncode, red, result.stdout
 
@@ -372,7 +384,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "falsify":
         cwd = Path(args.cwd).resolve() if args.cwd else None
         is_gate, message = check_falsify(
-            shlex.split(args.artifact), shlex.split(args.bad_input), cwd=cwd
+            shlex.split(args.artifact, posix=False),
+            shlex.split(args.bad_input, posix=False),
+            cwd=cwd,
         )
         print(message)
         return 0 if is_gate else 1
@@ -385,7 +399,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         else:
             differ, message = check_two_sided(
-                shlex.split(args.left), shlex.split(args.right), cwd=cwd
+                shlex.split(args.left, posix=False),
+                shlex.split(args.right, posix=False),
+                cwd=cwd,
             )
         print(message)
         return 0 if differ else 1
@@ -393,7 +409,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "mutate":
         repo_root = Path(args.repo_root).resolve() if args.repo_root else _REPO_ROOT
         turned_red, message = check_mutate(
-            Path(args.patch), shlex.split(args.tests), repo_root=repo_root
+            Path(args.patch), shlex.split(args.tests, posix=False), repo_root=repo_root
         )
         print(message)
         return 0 if turned_red else 1
