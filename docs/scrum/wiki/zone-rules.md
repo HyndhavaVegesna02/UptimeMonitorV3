@@ -1,7 +1,7 @@
 ---
 title: Zone-intent rule catalogue — the boundary rules the nine contracts cannot see
-code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py, backend/tests/test_live_secrets.py, backend/tests/test_demo_fleet_config.py, scripts/seed_topology.py, tools/zr3_duplicate_sweep.py]
-verified_sha: b8e22d2
+code_refs: [backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/core/services/ingest_service.py, backend/src/core/domain/signal.py, backend/src/core/ports/status_publisher.py, backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, tools/demo_engine/assumed_failure_codes.py, backend/src/core/domain/publication.py, backend/src/core/domain/component.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/__init__.py, backend/src/core/ports/signal_ingest.py, tools/demo_loop_gate/harness.py, tools/demo_loop_gate/env_matrix.py, backend/src/composition/settings.py, backend/src/composition/run.py, backend/src/composition/app.py, backend/tests/test_zone_layout.py, backend/src/api/v1/health/controller.py, backend/src/api/v1/decisions/__init__.py, backend/src/adapters/persistence/dynamo_observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/core/services/approval.py, backend/src/core/domain/proposal.py, backend/tests/test_approval.py, backend/src/core/ports/maintenance_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/core/ports/signal_repository.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/src/composition/vendor_health.py, backend/src/adapters/inbound/dynatrace/query.py, tools/demo_loop_gate/failure_path_reality_gate.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_vendor_health.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_zr3_duplicate_declarations.py, backend/tests/demo_loop_gate/test_harness_assertions.py, backend/tests/test_live_secrets.py, backend/tests/test_demo_fleet_config.py, scripts/seed_topology.py, tools/zr3_duplicate_sweep.py, backend/tests/test_zr2_vendor_vocabulary.py]
+verified_sha: PLACEHOLDER
 verified_sprint: sprint-69
 status: verified
 # code_refs deliberately NARROW (STORY-194, sprint-66): scoped to EXACTLY the
@@ -251,24 +251,50 @@ citations regardless of enforcement status; the row is the authoritative verdict
   `Statuspage`, `DynamoDB`, plus the class-name families `Dynamo*Repository` and
   `Statuspage*` (case-insensitive substring match). A future vendor integration adds
   its own tokens to this seed; it does not change the rule.
-- **Coverage verdict.** `GUARDABLE`, to a stated extent, via a pytest test that parses
-  every `core/` module with `ast` and asserts no detection-seed substring appears in:
-  (1) `FunctionDef`/`AsyncFunctionDef`/`ClassDef` names; (2) `arg` names (positional,
-  keyword-only, or otherwise); (3) `Name` nodes (identifier references, including type
-  annotations written as bare names); (4) `ast.Attribute.attr` (attribute names, e.g. a
-  hypothetical `.dynatrace_id`); (5) `ast.keyword.arg` (call-keyword names); (6)
-  `ast.Constant` string/number values that are NOT the sole value of an `ast.Expr`
-  statement (i.e. neither a real docstring nor the attribute-docstring idiom) —
-  covering assignment right-hand sides and dict keys/values. This walk covers the
-  rule's forbidden forms (identifier, attribute name, annotation/signature via `Name`/
-  `Attribute`/`arg` nodes, and stored/dict-key data values) while correctly excluding
-  both prose forms as compliant. **Residue this guard still cannot see, stated
-  plainly:** a vendor word inside a STRING annotation (e.g. `def f(x: "DynatraceRow")`,
-  which parses as an `ast.Constant`, not a `Name`, until something resolves the
-  forward reference) and a DYNAMICALLY CONSTRUCTED identifier (e.g.
-  `getattr(obj, "dynatrace_" + suffix)`, `globals()[f"..."]`) — neither is visible to
-  a static AST walk. `GUARDABLE` to this extent, with this residue: STORY-197 may not
-  adjudicate ZR-2 as fully guarded beyond it.
+- **Coverage verdict.** `ENFORCED-BY backend/tests/test_zr2_vendor_vocabulary.py`
+  (STORY-207) — a pytest test that parses every `core/` module with `ast` and asserts
+  no detection-seed substring appears in: (1) `FunctionDef`/`AsyncFunctionDef`/
+  `ClassDef` names; (2) `arg` names (positional, keyword-only, or otherwise); (3) `Name`
+  nodes (identifier references, including type annotations written as bare names);
+  (4) `ast.Attribute.attr` (attribute names, e.g. a hypothetical `.dynatrace_id`);
+  (5) `ast.keyword.arg` (call-keyword names); (6) `ast.Constant` string/number values
+  that are NOT the sole value of an `ast.Expr` statement (i.e. neither a real
+  docstring nor the attribute-docstring idiom) — covering assignment right-hand sides
+  and dict keys/values. This walk covers the rule's forbidden forms (identifier,
+  attribute name, annotation/signature via `Name`/`Attribute`/`arg` nodes, and
+  stored/dict-key data values) while correctly excluding both prose forms as
+  compliant — proven in the compliant direction too by
+  `test_compliant_prose_forms_are_not_flagged` (AC2), which shows the walk WOULD flag
+  `signal.py`'s module docstring and `publication.py:66`'s attribute docstring with
+  rule (6)'s exclusion disabled, and does not with it enabled. **Shown RED by
+  mutation (AC5, STORY-207):** adding `dynatrace_code: str` to
+  `backend/src/core/domain/component.py`'s `Component` model failed the guard naming
+  the file, the line, and the node class (`Name`); reverted, `git diff` empty.
+  **Residue this guard still cannot see — corrected here from an earlier, FALSE
+  statement.** An earlier draft of this residue paragraph named
+  `def f(x: "DynatraceRow")` and `getattr(obj, "dynatrace_" + suffix)` as escapes;
+  neither actually escapes the six-rule walk above — both surface as rule (6)
+  `Constant` string values (`'DynatraceRow'`, `'dynatrace_'`) and are caught, because
+  neither is the sole value of an `Expr` statement. That text was written against an
+  earlier, narrower walk (names/`arg`/`Name` only, before rule (6) existed) and was
+  carried forward into the six-rule verdict without being re-derived — caught at
+  STORY-207 plan verification (finding G8). **The TRUE residue:** this walk sees a
+  string annotation or a dynamically-built identifier's string argument only as an
+  opaque `ast.Constant` value, with no way to distinguish "this string names a type
+  forward-reference or a runtime-constructed identifier" from "this string is
+  comment-like prose" — and an identifier ASSEMBLED FROM FRAGMENTS carrying no whole
+  seed token in a single `Constant` (e.g. `"dyna" + "trace_id"`, or a seed token split
+  across an f-string's static and interpolated parts) is invisible to it, because no
+  single node this walk inspects ever holds the complete token. **The `Provenance`
+  carve-out (above) is NOT implemented by this walk** — `Provenance(system="dynatrace")`
+  written inside `core/` would be flagged by rule (6) as an unexempted `Constant`
+  argument; moot today because no such literal exists in `core/` and `Provenance`'s own
+  definition carries no vendor token, so a test asserting it unflagged would be
+  vacuous. The correct fix when that literal first appears is a narrow exemption for
+  `Constant` arguments to a `Provenance(...)` call, never a widening of the `Expr`-sole
+  exclusion and never deletion of the domain's one sanctioned vendor-data channel.
+  `ENFORCED-BY` to this extent, with this residue stated: **ZR-2 may not be described
+  anywhere as fully enforced.**
 
 #### ZR-3 — a module-level constant shared across the `tools/` -> `backend/src/` one-way boundary is declared once, in `backend/src/`, and imported by `tools/` — never re-declared
 
@@ -833,7 +859,7 @@ story will land it. `UNGUARDABLE` states the reason no mechanical rung can hold 
 | Rule | Verdict | Detail |
 | --- | --- | --- |
 | ZR-1 | `ENFORCED-BY inbound-adapters-dont-persist` | A ninth `lint-imports` contract (`pyproject.toml`, STORY-206) forbids `src.adapters.inbound` from importing any of the nine enumerated repository/watermark port modules, excluding the `signal_ingest` front door and `clock`/`status_publisher` (neither is persistence). **Shown RED**: temporarily adding `from src.core.ports.observation_repository import ObservationRepository` (an unused import) to `backend/src/adapters/inbound/dynatrace/adapter.py` tripped the import-boundary DoD command — exit 1, `inbound-adapters-dont-persist` BROKEN, naming the edge `src.adapters.inbound.dynatrace.adapter -> src.core.ports.observation_repository`; reverted, exit 0, `Contracts: 9 kept, 0 broken.`, `git diff` empty. **Residue, stated rather than hidden (two, not one):** (1) the `forbidden_modules` list's completeness — that a newly added persistence/repository port is appended to it in the SAME commit that adds the port — is maintained BY HAND until STORY-220 (sprint 70) lands the completeness test; a new port module added without updating this list is invisible to this guard. (2) **the front-door EXCLUSION binds only in the exact-module form.** `from src.core.ports.signal_ingest import SignalIngestPort` is KEPT; the package form `from src.core.ports import SignalIngestPort` is BROKEN today — not because the package form is forbidden, but because `core/ports/__init__.py` re-exports all nine forbidden modules, so the chain `adapter -> src.core.ports -> src.core.ports.<each>` exists. **That is a FALSE POSITIVE on the front door, and narrowing those re-exports would REMOVE it, not open a hole** — verified by mutation (STORY-206 rework, re-verified by the orchestrator 2026-08-06 in a scratch tree with `PYTHONPATH` pinned): with `__init__.py` narrowed to the three non-persistence ports, the package-form front-door import both imports cleanly and reports `9 kept, 0 broken`; and a forbidden port cannot be reached that way at all, because a name `__init__.py` does not import raises `ImportError` — dead code, not an escape. **The genuinely unguarded shape is a DYNAMIC re-export**: a PEP 562 `__getattr__` / `importlib` indirection in `__init__.py` resolves `ObservationRepository` at runtime while this contract reports `9 kept, 0 broken` — static analysis cannot follow it, so an inbound adapter could hold a repository port with a fully green gate. Nothing here guards that. Two measured qualifiers, so this is not read as more or less than it is: the dynamic hole requires the STATIC re-export of that port to be GONE (today's full `__init__.py` plus the same `__getattr__` still reports `8 kept, 1 broken` — there is something static left to follow); and narrowing is a real cleanup, not a free one, because eleven package-form import statements across `backend/src` and `backend/tests` name a repository symbol and would become `ImportError` (measured at sprint-69: api/dependencies, composition/app, composition/pull_loop, three core services, two api v1 services, tests/fakes, test_core_ports, test_ingest_service). Round-3 quality review reproduced every clause of this residue independently, in a scratch tree with `PYTHONPATH` pinned on the linter invocation itself. |
-| ZR-2 | `GUARDABLE-DEFERRED (STORY-207)` | AST walk specified above, with its residue stated (string annotations, dynamically built identifiers). Tree is CLEAN — mutation proof required. |
+| ZR-2 | `ENFORCED-BY backend/tests/test_zr2_vendor_vocabulary.py` | The six-rule AST walk specified above (STORY-207). **Shown RED by mutation**: adding `dynatrace_code: str` to `backend/src/core/domain/component.py`'s `Component` model failed the guard naming the file, the line, and the node class (`Name`); reverted, `git diff` empty. **Shown compliant-direction too (AC2)**: a discrimination test proves the walk WOULD flag `signal.py`'s module docstring and `publication.py:66`'s attribute docstring with rule (6)'s `Expr`-sole exclusion disabled, and does not with it enabled — an over-triggering guard would be reverted, not obeyed by editing compliant code. **Extent, not more — two residues stated, not hidden:** (1) the TRUE residue (corrected from an earlier false statement, see the Coverage verdict above) — a string annotation or a dynamically-constructed identifier is seen only as an opaque `Constant`, and an identifier assembled from fragments carrying no whole seed token in one `Constant` is invisible; (2) the `Provenance` carve-out is NOT implemented — a future `Provenance(system="…")` literal inside `core/` will false-positive under rule (6); moot today (no such literal exists), fix is a narrow `Provenance(...)`-call exemption, never a wider exclusion or deleting the carve-out. **ZR-2 is not fully enforced.** |
 | ZR-3 | `ENFORCED-BY backend/tests/test_zr3_duplicate_declarations.py` | Promotes the committed `tools/zr3_duplicate_sweep.py` to a standing test. **Shown RED** by injecting a new duplicate of `Settings.dynamo_observations_table`'s default into a non-excluded `tools/` module — reconfirmed by STORY-203 AC6's own re-introduce/revert mutation. **All four `MUST-IMPORT-FROM-SRC` entries this rule adjudicated are fixed as of STORY-203 (sprint-68); zero remain.** Green via a per-entry adjudication list, now entirely `INDEPENDENT` (9 entries) — a future genuine finding is still expected to be filed there, the same way these four were. |
 | ZR-4 | `GUARDABLE-DEFERRED (STORY-208)` | An extension to `backend/tests/test_zone_layout.py`, which today asserts feature-SET equality but not the five-file SHAPE. `health` is the one enumerated exception. |
 | ZR-5 | `GUARDABLE-DEFERRED (STORY-209)` for the code-level half; the operational half is `UNGUARDABLE` | A parity test can assert both roots resolve `CONFIG_DIR` only through `load_settings()`. It **cannot** guard the failure that actually caused the sprint-64 incident: the loop and the API are separate OS processes, each reading its own environment, and no single-process test sees across a process boundary. That half stays runbook discipline. |
