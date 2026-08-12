@@ -1,9 +1,18 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
 code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/src/core/services/approval.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
-verified_sha: 013f344
+tier: map
 verified_sprint: sprint-67
 status: verified
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0): the staleness baseline is now
+# this article's own last commit, derived by git, so there is no stamp to keep current.
+# WHAT THIS EDIT DID AND DID NOT VERIFY: it did not re-read these Facts against code. It
+# established, per-article, that NO code_ref has moved since this article's last commit
+# (`git diff <that commit>..HEAD -- <code_refs>` -> empty, and the sweep is CLEAN at HEAD),
+# so the verification earned at sprint 67 is not invalidated by anything since. That is
+# the same guarantee `status: verified` has always carried here; the frontmatter migration
+# adds no new claim. Articles nobody could make that statement for were demoted to `stale`
+# in the same pass, not laundered.
 ---
 
 ## Facts (verified against code)

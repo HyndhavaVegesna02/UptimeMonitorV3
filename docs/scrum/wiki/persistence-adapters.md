@@ -1,13 +1,22 @@
 ---
 title: Persistence adapters — the repository implementations
 code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py]
-verified_sha: d9a3f95
+tier: map
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only via conftest.py.
 # NOTE for a future story: RejectedObservationRepository is now written by the PULL LOOP as well as
 # by IngestService (STORY-190) -- the port and its Dynamo implementation are unchanged, so no Fact
 # here is wrong, but the set of callers has grown.
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0): the staleness baseline is now
+# this article's own last commit, derived by git, so there is no stamp to keep current.
+# WHAT THIS EDIT DID AND DID NOT VERIFY: it did not re-read these Facts against code. It
+# established, per-article, that NO code_ref has moved since this article's last commit
+# (`git diff <that commit>..HEAD -- <code_refs>` -> empty, and the sweep is CLEAN at HEAD),
+# so the verification earned at sprint 68 is not invalidated by anything since. That is
+# the same guarantee `status: verified` has always carried here; the frontmatter migration
+# adds no new claim. Articles nobody could make that statement for were demoted to `stale`
+# in the same pass, not laundered.
 ---
 
 ## Facts (verified against code)

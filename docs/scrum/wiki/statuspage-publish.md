@@ -1,7 +1,7 @@
 ---
 title: Statuspage publish adapter and best-effort publishing
 code_refs: [backend/src/adapters/outbound/statuspage/__init__.py, backend/src/adapters/outbound/statuspage/status_mapping.py, backend/src/adapters/outbound/statuspage/http_executor.py, backend/src/composition/publish_helper.py, backend/src/composition/run.py, backend/tests/test_statuspage_adapter.py, backend/tests/test_statuspage_http_executor.py, backend/tests/test_publish_helper.py, backend/tests/fixtures/statuspage/component_operational.json, backend/tests/fixtures/statuspage/component_degraded.json, backend/tests/test_run_live_loop.py, backend/tests/test_dynamo_publication_repository.py]
-verified_sha: d554227
+tier: map
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65) WITH ONE IMPORTANT ADDITION BELOW: STORY-191 fired the
@@ -9,6 +9,15 @@ status: verified
 # config-only guard held -- component status changed while the publications table stayed EMPTY
 # (RecordingPublisher exists only in the credentialed chain, so an empty table proves the
 # LoggingPublisher fallback was selected). See tools/demo_loop_gate/failure_path_reality_gate.py.
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0): the staleness baseline is now
+# this article's own last commit, derived by git, so there is no stamp to keep current.
+# WHAT THIS EDIT DID AND DID NOT VERIFY: it did not re-read these Facts against code. It
+# established, per-article, that NO code_ref has moved since this article's last commit
+# (`git diff <that commit>..HEAD -- <code_refs>` -> empty, and the sweep is CLEAN at HEAD),
+# so the verification earned at sprint 68 is not invalidated by anything since. That is
+# the same guarantee `status: verified` has always carried here; the frontmatter migration
+# adds no new claim. Articles nobody could make that statement for were demoted to `stale`
+# in the same pass, not laundered.
 ---
 
 ## Facts (verified against code)

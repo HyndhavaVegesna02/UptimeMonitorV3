@@ -1,7 +1,7 @@
 ---
 title: Zone 3 — the Dynatrace inbound adapter (DQL → canonical observations)
 code_refs: [backend/src/adapters/inbound/dynatrace/__init__.py, backend/src/adapters/inbound/dynatrace/_assembly.py, backend/src/adapters/inbound/dynatrace/adapter.py, backend/src/adapters/inbound/dynatrace/clickpath_normalizer.py, backend/src/adapters/inbound/dynatrace/dispatch.py, backend/src/adapters/inbound/dynatrace/health_mapping.py, backend/src/adapters/inbound/dynatrace/http_normalizer.py, backend/src/adapters/inbound/dynatrace/query.py, backend/src/adapters/inbound/dynatrace/grail_executor.py, backend/src/core/domain/signal.py, backend/tests/test_dynatrace_adapter.py, backend/tests/test_grail_executor.py, backend/tests/fixtures/dynatrace/clickpath_multi_location.json, backend/tests/fixtures/dynatrace/http_multi_location.json, backend/tests/fixtures/dynatrace/mixed_monitor_types.json, backend/tests/fixtures/dynatrace/unsupported_monitor_type.json, backend/tests/fixtures/dynatrace/grail_http_response.json, backend/tests/fixtures/dynatrace/grail_synthetic_events.json, backend/tests/fixtures/dynatrace/grail_dual_event_types.json, backend/tests/fixtures/dynatrace/grail_response_status_code_variants.json]
-verified_sha: bfa5f77
+tier: map
 verified_sprint: sprint-68
 status: verified
 # Re-verified 2026-07-30 (sprint-65, STORY-177/190 fix round). Facts REWRITTEN, not re-stamped:
@@ -12,6 +12,15 @@ status: verified
 # Re-verified 2026-07-30 (sprint-65 quality-review round). NEW Fact: normalize_rows_lenient now
 # catches ValueError, not three named classes -- a PRESENT-but-invalid field (unparsable timestamp,
 # null location) previously escaped and still stalled the signal.
+# tier: map, `verified_sha` dropped 2026-08-12 (yourteam 2.3.0): the staleness baseline is now
+# this article's own last commit, derived by git, so there is no stamp to keep current.
+# WHAT THIS EDIT DID AND DID NOT VERIFY: it did not re-read these Facts against code. It
+# established, per-article, that NO code_ref has moved since this article's last commit
+# (`git diff <that commit>..HEAD -- <code_refs>` -> empty, and the sweep is CLEAN at HEAD),
+# so the verification earned at sprint 68 is not invalidated by anything since. That is
+# the same guarantee `status: verified` has always carried here; the frontmatter migration
+# adds no new claim. Articles nobody could make that statement for were demoted to `stale`
+# in the same pass, not laundered.
 ---
 
 ## Facts (verified against code)
