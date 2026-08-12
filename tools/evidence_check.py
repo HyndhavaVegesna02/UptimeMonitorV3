@@ -14,7 +14,10 @@ exactly the three checks that are not bespoke at all:
 
 1. `falsify <artifact> --bad-input <spec>` -- run `<artifact>` (plus the
    `--bad-input` spec, appended to its argv) and assert it exits non-zero.
-   Exit 0 on bad input means the artifact is reported NOT A GATE.
+   Exit 0 on bad input means the artifact is reported NOT A GATE. `--bad-
+   input` is REQUIRED to be non-empty (MAJOR 4, sprint-70 fix round): an
+   artifact run with no bad input at all is reported NO BAD INPUT SUPPLIED,
+   never a vacuous "OK -- IS a gate".
 2. `two-sided --left <cmd> --right <cmd>` -- run both sides, record both
    outcomes (exit code + stdout), and FAIL (non-zero exit) when they are
    IDENTICAL, whatever the value. `--import-provenance-module <name>` wraps
@@ -107,8 +110,22 @@ class CommandRun:
 def run_command(command: Sequence[str], *, cwd: Path | None = None) -> CommandRun:
     """Run `command` and capture its full outcome. Never raises on a
     non-zero exit -- a non-zero exit is exactly the signal every subcommand
-    below needs to observe, not an error in this helper."""
-    result = subprocess.run(list(command), cwd=cwd, capture_output=True, text=True)
+    below needs to observe, not an error in this helper. Also never raises
+    on a command that cannot even be LAUNCHED (ALSO FIX, sprint-70 fix
+    round): a missing/unlaunchable binary previously raised
+    `FileNotFoundError` straight through every caller, a traceback instead
+    of a diagnosis, and inconsistent with `check_mutate`'s own OSError
+    handling around its pytest call -- folded into the same `CommandRun`
+    shape instead, exit code -1, the exception text in stderr."""
+    try:
+        result = subprocess.run(list(command), cwd=cwd, capture_output=True, text=True)
+    except OSError as exc:
+        return CommandRun(
+            command=list(command),
+            exit_code=-1,
+            stdout="",
+            stderr=f"{type(exc).__name__}: could not launch {list(command)!r}: {exc}",
+        )
     return CommandRun(
         command=list(command),
         exit_code=result.returncode,
@@ -126,7 +143,28 @@ def check_falsify(
     """Run `artifact` with `bad_input` appended to its argv and assert it
     exits non-zero. Returns `(is_gate, message)`: `is_gate` is True when the
     artifact correctly failed (exit code != 0), False when it is NOT A GATE
-    (exit 0 on deliberately bad input)."""
+    (exit 0 on deliberately bad input).
+
+    An empty `bad_input` is itself reported as NOT a demonstrated gate
+    (MAJOR 4, sprint-70 fix round): nothing bad was actually fed to the
+    artifact, so an artifact that exits non-zero for some OTHER reason (a
+    missing required argument, a crash on a bare invocation) would
+    otherwise be reported "OK -- IS a gate" having never been shown to
+    reject BAD input specifically -- a vacuous pass in the one tool whose
+    entire job is rejecting vacuous evidence. `bad_input=[]` is still a
+    valid, non-crashing CALL (the checklist's explicit empty-input
+    requirement); it just does not run the artifact at all, since there is
+    nothing to falsify with."""
+    if not list(bad_input):
+        rendered = " ".join(artifact)
+        return False, (
+            f"NO BAD INPUT SUPPLIED: `{rendered}` was never given a "
+            f"deliberately bad input to reject -- an artifact that exits "
+            f"non-zero for some OTHER reason (a missing required argument, "
+            f"a crash) proves nothing about whether it rejects BAD input "
+            f"specifically. Nothing was falsified; pass --bad-input (or a "
+            f"non-empty bad_input list)."
+        )
     run = run_command(list(artifact) + list(bad_input), cwd=cwd)
     rendered = " ".join(run.command)
     if run.exit_code != 0:
@@ -151,7 +189,15 @@ def check_two_sided(
     the value. Never compares exit code alone: two sides that both exit 0
     while printing different numbers must still be caught as DIFFERENT, and
     two sides that both exit 1 printing the identical message must still be
-    caught as IDENTICAL."""
+    caught as IDENTICAL.
+
+    Raw-stdout comparison is UNSAFE on nondeterministic output (ALSO FIX,
+    sprint-70 fix round): a difference caused by a duration, a timestamp, or
+    an absolute path that varies run-to-run is reported DIFFER exactly the
+    same as a difference caused by the behaviour actually under test -- this
+    function cannot tell the two apart. Confirm by reading the two stdouts
+    that the difference is the ONE YOU INTENDED, not noise, before trusting
+    a DIFFER result as evidence."""
     left_run = run_command(left, cwd=cwd)
     right_run = run_command(right, cwd=cwd)
     left_outcome = (left_run.exit_code, left_run.stdout.strip())
@@ -165,7 +211,10 @@ def check_two_sided(
         )
     return (
         True,
-        f"DIFFER -- valid two-sided proof. left={left_outcome!r} right={right_outcome!r}",
+        f"DIFFER -- valid two-sided proof IF this difference is the one you "
+        f"intended, not noise from nondeterministic output (a duration, a "
+        f"path, a timestamp) -- confirm by reading both stdouts. "
+        f"left={left_outcome!r} right={right_outcome!r}",
     )
 
 
@@ -218,10 +267,14 @@ def parse_patch_targets(patch_path: Path) -> list[str]:
         if not line.startswith("+++ "):
             continue
         raw = line[len("+++ ") :].strip()
-        # A real `git diff`/`git apply`-compatible patch always tabs or
-        # spaces off any trailing timestamp; splitting on whitespace and
-        # taking the first token is the same rule `git apply` itself uses.
-        raw = raw.split("\t")[0].split(" ")[0]
+        # A real `git diff`/`git apply`-compatible patch TAB-delimits any
+        # trailing timestamp -- never a space, which is a legal character
+        # inside the path itself. An additional `.split(" ")[0]` here (ALSO
+        # FIX, sprint-70 fix round) truncated any path with an embedded
+        # space at the first space, with no upside: the restore check then
+        # scopes `git diff`/`git status` at the wrong, truncated target,
+        # which reports empty regardless of the real file's state.
+        raw = raw.split("\t")[0]
         if raw == "/dev/null":
             continue
         if raw.startswith("b/"):
@@ -433,20 +486,43 @@ def _build_parser() -> argparse.ArgumentParser:
         "falsify", help="Assert an artifact exits non-zero on deliberately bad input."
     )
     p_falsify.add_argument(
-        "artifact", help="The artifact command, e.g. 'python tools/foo.py'."
+        "artifact",
+        help=(
+            "The artifact command, e.g. 'python tools/foo.py'. Split with "
+            "shlex (non-POSIX mode) -- a path/argument containing an "
+            "embedded SPACE is silently split into two argv tokens, no "
+            "error raised; avoid the space or call check_falsify directly."
+        ),
     )
     p_falsify.add_argument(
         "--bad-input",
         default="",
-        help="Extra argv appended to the artifact invocation.",
+        help=(
+            "Extra argv appended to the artifact invocation -- REQUIRED to "
+            "be non-empty (MAJOR 4, sprint-70 fix round): an empty spec "
+            "falsifies nothing and is reported NO BAD INPUT SUPPLIED, never "
+            "a vacuous 'OK -- IS a gate'. Same shlex embedded-space caveat "
+            "as `artifact` above."
+        ),
     )
     p_falsify.add_argument("--cwd", default=None)
 
     p_two_sided = sub.add_parser(
         "two-sided", help="Assert two sides of a proof produce different outcomes."
     )
-    p_two_sided.add_argument("--left", required=True)
-    p_two_sided.add_argument("--right", required=True)
+    p_two_sided.add_argument(
+        "--left",
+        required=True,
+        help=(
+            "The left-side command (or, with --import-provenance-module, a "
+            "root path). Same shlex embedded-space caveat as `falsify`'s "
+            "`artifact` -- a space inside the command silently splits into "
+            "two argv tokens."
+        ),
+    )
+    p_two_sided.add_argument(
+        "--right", required=True, help="The right-side command/root path -- see --left."
+    )
     p_two_sided.add_argument(
         "--import-provenance-module",
         default=None,

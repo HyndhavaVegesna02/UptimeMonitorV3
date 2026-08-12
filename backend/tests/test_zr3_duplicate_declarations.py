@@ -146,36 +146,38 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "str.find (skip past the frontmatter's own opening '---' line) -- "
         "unrelated to FreshnessConfig.stale_after_cycles. (STORY-219, sprint 70.)"
     ),
-    ("tools/evidence_check.py", 228): (
+    ("tools/evidence_check.py", 281): (
         "INDEPENDENT: raw[2:], slicing off the two-character 'b/' prefix from "
         "a unified-diff '+++ b/<path>' header -- unrelated to "
-        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70; re-keyed from "
-        ":219 to :228 by the sprint-70 STORY-212 fix round's own docstring "
-        "additions above this function, which displaced this pre-existing "
-        "collision without retiring it -- the collision is unchanged, only "
-        "its line moved.)"
+        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70; re-keyed "
+        ":219 -> :228 -> :281 across the sprint-70 STORY-212 fix round's own "
+        "docstring/help-string additions above this function, which "
+        "displaced this pre-existing collision twice without retiring it -- "
+        "the collision is unchanged, only its line moved.)"
     ),
-    ("tools/evidence_check.py", 259): (
+    ("tools/evidence_check.py", 312): (
         "INDEPENDENT: `_SELECTOR_DID_NOT_RUN_EXIT_CODES = (2, 3, 4, 5)`, the "
         "pytest exit codes meaning a selector run never produced a "
         "pass/fail verdict -- both 2 and 3 are coincidentally the exact "
         "values of FreshnessConfig.reentry_cycles/stale_after_cycles, "
         "unrelated to either. (STORY-212 sprint-70 FIX ROUND, 2026-08-13. "
-        "NOTE: this key was PREVIOUSLY adjudicated for a different, now-"
-        "relocated collision at this same coordinate -- `parts[1]`/`len(parts) "
-        ">= 2` on the pre-fix-round combined condition line -- which moved to "
-        ":301 below when that condition was reformatted across multiple "
-        "lines to add the node-id-shape guard; landing on the SAME line "
-        "number here is coincidence, not continuity, so this replaces rather "
-        "than extends the prior text.)"
+        "NOTE: this coordinate was PREVIOUSLY adjudicated (at :259, then "
+        ":312) for a DIFFERENT, now-relocated collision -- `parts[1]`/"
+        "`len(parts) >= 2` on the pre-fix-round combined condition line, "
+        "which moved to :354 below when that condition was reformatted "
+        "across multiple lines to add the node-id-shape guard; landing on "
+        "the same line number after the intervening help-string edits is "
+        "coincidence, not continuity, so this replaces rather than extends "
+        "the prior text.)"
     ),
-    ("tools/evidence_check.py", 301): (
+    ("tools/evidence_check.py", 354): (
         "INDEPENDENT: len(parts) >= 2, the minimum-token-count guard before "
         "indexing a pytest -v result line -- unrelated to "
         "FreshnessConfig.reentry_cycles. (STORY-212 sprint-70 fix round; "
-        "re-keyed from :259 by that same round's multi-line reformat of the "
-        "condition to add the node-id-shape guard, which displaced this "
-        "pre-existing collision without retiring it -- the collision is "
+        "re-keyed :259 -> :301 -> :354 across that same round's multi-line "
+        "reformat adding the node-id-shape guard, then its own help-string "
+        "additions further up the file, which displaced this pre-existing "
+        "collision twice without retiring it -- the collision is "
         "unchanged, only its line moved.)"
     ),
     ("tools/demo_loop_gate/harness.py", 999): (

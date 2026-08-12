@@ -105,6 +105,21 @@ def _write_script(tmp_path: Path, name: str, body: str) -> Path:
     return path
 
 
+# --- run_command --------------------------------------------------------
+
+
+def test_run_command_returns_diagnostic_outcome_for_unlaunchable_command():
+    """ALSO FIX (sprint-70 fix round): an unlaunchable command (a missing
+    binary) raised `FileNotFoundError` straight through `run_command` --
+    a traceback instead of a diagnosis, and inconsistent with
+    `check_mutate`'s own OSError handling around its pytest call. Must
+    return a `CommandRun` (never raise), with the failure recorded as a
+    non-zero exit code and a diagnostic in stderr."""
+    run = evidence_check.run_command(["_definitely_not_a_real_binary_xyz_"])
+    assert run.exit_code != 0
+    assert "_definitely_not_a_real_binary_xyz_" in run.stderr
+
+
 # --- AC2: falsify --------------------------------------------------------
 
 
@@ -128,12 +143,38 @@ def test_check_falsify_passes_when_artifact_correctly_fails_on_bad_input(tmp_pat
     assert "IS a gate" in message
 
 
-def test_check_falsify_empty_bad_input_is_a_valid_call(tmp_path):
-    """Explicit empty-input behaviour (checklist): `bad_input=[]` is a valid
-    call, not a crash -- the artifact still runs with no extra argv."""
+def test_check_falsify_empty_bad_input_is_not_a_demonstrated_gate(tmp_path):
+    """MAJOR 4 (sprint-70 fix round; FLIPS the pre-fix pinning of this exact
+    case, `is_gate is True`): an empty `bad_input` is a vacuous
+    falsification -- nothing bad was ever fed to the artifact, so even an
+    artifact that ALWAYS exits non-zero regardless of input must not be
+    reported as a demonstrated gate. `bad_input=[]` is still a valid,
+    non-crashing call (the checklist's explicit empty-input requirement) --
+    it just reports the honest "nothing was falsified" outcome instead of a
+    misleading "IS a gate"."""
     script = _write_script(tmp_path, "always_fail2.py", "import sys\nsys.exit(3)\n")
-    is_gate, _message = evidence_check.check_falsify([sys.executable, str(script)], [])
-    assert is_gate is True
+    is_gate, message = evidence_check.check_falsify([sys.executable, str(script)], [])
+    assert is_gate is False
+    assert "no bad input" in message.lower()
+
+
+def test_main_falsify_without_bad_input_is_not_a_demonstrated_gate(tmp_path, capsys):
+    """Reproduces the MAJOR 4 probe exactly, at the CLI layer: an artifact
+    that merely requires an argument (and so exits non-zero on ANY bare
+    invocation, deliberately-bad-input or not) must not be reported "OK --
+    IS a gate" when `--bad-input` was never supplied at all -- the CLI's
+    `--bad-input` defaults to `""`, which is exactly how this was reachable
+    with zero bad input ever supplied."""
+    script = _write_script(
+        tmp_path,
+        "requires_an_arg.py",
+        "import sys\nsys.exit(0 if len(sys.argv) > 1 else 2)\n",
+    )
+    exit_code = evidence_check.main(["falsify", f"{sys.executable} {script}"])
+    out = capsys.readouterr().out
+    assert exit_code == 1
+    assert "OK -- IS a gate" not in out
+    assert "no bad input" in out.lower()
 
 
 # --- AC3: two-sided (generic command mode) -------------------------------
@@ -505,6 +546,23 @@ def test_parse_patch_targets_reads_plus_plus_plus_header(tmp_path):
         encoding="utf-8",
     )
     assert evidence_check.parse_patch_targets(patch_path) == ["some/file.py"]
+
+
+def test_parse_patch_targets_handles_path_with_embedded_space(tmp_path):
+    """ALSO FIX (sprint-70 fix round): `.split(' ')[0]` truncated any path
+    containing a space at the FIRST space -- git only ever TAB-delimits a
+    trailing timestamp, never space-delimits the path itself, so the extra
+    space-split had no upside and only caused harm. A real-world `+++
+    b/<path>` header with a space in the path silently scoped the restore
+    check at the wrong (truncated) target, which `git diff -- <wrong
+    target>` then reports empty regardless -- a silently vacuous restore
+    check."""
+    patch_path = tmp_path / "spacey.patch"
+    patch_path.write_text(
+        "--- a/some/my file.py\n+++ b/some/my file.py\n@@ -1,1 +1,1 @@\n-x = 1\n+x = 2\n",
+        encoding="utf-8",
+    )
+    assert evidence_check.parse_patch_targets(patch_path) == ["some/my file.py"]
 
 
 def test_parse_patch_targets_empty_file_returns_empty_list(tmp_path):
