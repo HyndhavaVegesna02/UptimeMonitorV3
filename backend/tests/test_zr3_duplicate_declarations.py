@@ -29,8 +29,9 @@ blocklist-discrimination tests). AC4's fifth, cross-representation case
 (`store.py`'s `VENDOR_HEALTH_WINDOW`, invisible to this sweep's
 literal-equality comparison) was a DECISION, not a fix: its existing
 wire-contract justification is upheld and its entry below is `INDEPENDENT`,
-not `MUST-IMPORT-FROM-SRC`. **Current count: 9, all `INDEPENDENT`, zero
-`MUST-IMPORT-FROM-SRC` remain.**
+not `MUST-IMPORT-FROM-SRC`. **Current count: 10, all `INDEPENDENT`, zero
+`MUST-IMPORT-FROM-SRC` remain** (STORY-219, sprint 70, added the tenth --
+`tools/citation_gate.py:53`'s coincidental `str.find` start-offset literal).
 
 Why an adjudicated-exemption list, not a hard zero-tolerance assertion (the
 live-violation problem, STORY-197 AC5/C3): every entry below is `INDEPENDENT`
