@@ -767,6 +767,19 @@ citations regardless of enforcement status; the row is the authoritative verdict
   shared-module shape expires and a `TopologyRepository` port (option (a), rejected at
   STORY-205 refinement only because no core service touches this value today) becomes
   correct.
+  **Re-affirmed 2026-08-13 (STORY-217, sprint-70 planning).** Re-derived by PORT IMPORT
+  rather than the token grep the 2026-08-05 re-check used (that grep is retired: it
+  cannot see a write method mentioning neither `topology` nor `APP#`, and its own hit
+  count had already drifted from twelve to thirteen). Command run: `grep -rn "from
+  src.core.ports" backend/src/core/services/` — the three services that import
+  anything from `src.core.ports` (`approval.py`, `decide.py`, `ingest_service.py`)
+  import exactly seven ports between them (`ClockPort`, `ObservationRepository`,
+  `RejectedObservationRepository`, `SignalIngestPort`, `WatermarkRepository`,
+  `ProposalRepository`, `StatusPublisherPort`); a follow-up `grep -rln
+  "ComponentRepository\|SignalRepository" backend/src/core/services/` returns no
+  matches (exit 1). Neither topology port — `ComponentRepository` (write-capable via
+  `set_status`) nor `SignalRepository` (read-only) — is imported by any core service.
+  **The expiry condition has NOT fired. Option (b) stands until it does.**
 - **Finding 2 — FIXED at STORY-204 (sprint-68).** `composition/vendor_health.py` used to
   re-implement a fragment of `backend/src/adapters/inbound/dynatrace/query.py`'s
   `build_dql_query` query-building in its own `build_vendor_health_query`
