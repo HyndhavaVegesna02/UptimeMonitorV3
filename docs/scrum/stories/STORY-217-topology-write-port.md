@@ -102,7 +102,7 @@ positive, this story is **Blocked and re-estimated at 3+**, never silently conve
 
 ## Proposed Acceptance Criteria
 
-- [ ] **AC1 — the expiry condition is re-derived by PORT IMPORT, not by token grep.** The
+- [x] **AC1 — the expiry condition is re-derived by PORT IMPORT, not by token grep.** The
       2026-08-05 method (`grep -rn "topology\|APP#" backend/src/core/`) cannot decide the actual
       condition: a write method that mentions neither token is invisible to it, and at HEAD it
       returns 13 hits where this story records twelve. The derivation is instead:
@@ -112,14 +112,15 @@ positive, this story is **Blocked and re-estimated at 3+**, never silently conve
       topology port — `ComponentRepository` (its `set_status` is write-capable) or
       `SignalRepository`. Record every command and its full output in the story's History, with a
       **per-hit read/write verdict**, so two implementers cannot count differently.
-- [ ] **AC2 — if AC1 is negative, `zone-rules.md` ZR-8 Finding 1 gains a dated re-affirmation**
+- [x] **AC2 — if AC1 is negative, `zone-rules.md` ZR-8 Finding 1 gains a dated re-affirmation**
       alongside the existing expiry condition: the date, the command AC1 ran, and the sentence that
       option (b) stands until the trigger fires. The expiry condition text itself is not weakened or
       removed — it is what makes this re-checkable next time.
-- [ ] **AC3 — if AC1 is POSITIVE, no code is written.** The story is marked Blocked with the naming
+- [x] **AC3 — if AC1 is POSITIVE, no code is written.** The story is marked Blocked with the naming
       evidence, and option (a) is re-estimated at the next planning. A 1-point story may not grow a
-      new core-owned port inside a locked sprint.
-- [ ] **AC4 — no production behaviour changes.** `git diff <start>..HEAD -- backend/src/` is EMPTY
+      new core-owned port inside a locked sprint. *(Not triggered — AC1 came back negative; recorded
+      here so a reader can see the branch was checked, not skipped. See History.)*
+- [x] **AC4 — no production behaviour changes.** `git diff <start>..HEAD -- backend/src/` is EMPTY
       for this story. Asserted, not asserted-about.
 - [ ] **AC5 — no-regression check on the Adjudication table, which this story does NOT edit.**
       AC2 appends to ZR-8's BODY prose (`zone-rules.md:736-767`); the Adjudication row is at `:878`,
@@ -127,3 +128,119 @@ positive, this story is **Blocked and re-estimated at 3+**, never silently conve
       here — that is the point, and it is recorded as a no-regression check, **not** as evidence of
       anything this story did. It is explicitly NOT the reason this sprint is contract-sensitive.
 - [ ] **AC6** — full 8/8 DoD gate green at the final HEAD.
+
+---
+
+## History — 2026-08-13 (STORY-217 execution, sprint-70)
+
+### AC1 — port-import derivation (NOT the retired token grep)
+
+**Step (a) — what `backend/src/core/services/*` imports from `src.core.ports`.**
+
+Command:
+```
+grep -rn "from src.core.ports" backend/src/core/services/
+```
+Output:
+```
+backend/src/core/services/approval.py:17:from src.core.ports import ClockPort, ProposalRepository, StatusPublisherPort
+backend/src/core/services/decide.py:40:from src.core.ports import ProposalRepository, StatusPublisherPort
+backend/src/core/services/ingest_service.py:24:from src.core.ports import (
+```
+The third hit is a parenthesized multi-line import; its full block (confirmed with
+`grep -A6 "from src.core.ports import (" backend/src/core/services/ingest_service.py`):
+```
+from src.core.ports import (
+    ClockPort,
+    ObservationRepository,
+    RejectedObservationRepository,
+    SignalIngestPort,
+    WatermarkRepository,
+)
+```
+`skew.py`, `pipeline.py`, `__init__.py` (the remaining files under `core/services/`) were
+checked individually (`grep -n "ports" <file>`) and contain no port import — only docstring
+prose ("This module imports ONLY `src.core.*`...", "core.services — logic; calls ports,
+manipulates domain types.").
+
+**Step (b) — per-hit read/write classification, read from each port's own method
+signatures (`backend/src/core/ports/*.py`):**
+
+| # | Importing service file | Port imported | Method(s) on that port | Classification | Topology port? |
+| - | --- | --- | --- | --- | --- |
+| 1 | `approval.py:17` | `ClockPort` | `now()` | read-only | no |
+| 2 | `approval.py:17` | `ProposalRepository` | `create_open`, `get_open`, `resolve`, `record_approval_event`, `get`, `list_open` | write-capable | no |
+| 3 | `approval.py:17` | `StatusPublisherPort` | `publish()` | write-capable | no |
+| 4 | `decide.py:40` | `ProposalRepository` | (same as #2) | write-capable | no |
+| 5 | `decide.py:40` | `StatusPublisherPort` | (same as #3) | write-capable | no |
+| 6 | `ingest_service.py:24` | `ClockPort` | `now()` | read-only | no |
+| 7 | `ingest_service.py:24` | `ObservationRepository` | `save_new`, `in_window` | write-capable (`save_new`) | no |
+| 8 | `ingest_service.py:24` | `RejectedObservationRepository` | `save()` | write-capable | no |
+| 9 | `ingest_service.py:24` | `SignalIngestPort` | `ingest_observations()` | write-capable (persists + advances watermark) | no |
+| 10 | `ingest_service.py:24` | `WatermarkRepository` | `get`, `advance` | write-capable (`advance`) | no |
+
+Ten hits total, seven distinct ports (`ClockPort`, `ProposalRepository`,
+`StatusPublisherPort`, `ObservationRepository`, `RejectedObservationRepository`,
+`SignalIngestPort`, `WatermarkRepository`). **None of the ten hits is
+`ComponentRepository` or `SignalRepository`** — the only two ports `core/ports/__init__.py`
+exports whose subject matter is topology (`ComponentRepository` — `list_components`,
+`get`, and the write-capable `set_status`; `SignalRepository` — `list_signals`, `get`,
+both read-only, per its own docstring "Read-only: `SignalRepository` never writes").
+
+Confirmed with a direct negative search over the same file set:
+```
+grep -rln "ComponentRepository\|SignalRepository" backend/src/core/services/
+```
+Output: (none — command exits 1, no matching file)
+
+**Step (c) — the verdict.** The condition specified by AC1(c) — "some core service
+imports a write-capable topology port (`ComponentRepository` or `SignalRepository`)" —
+requires the import to exist at all first. It does not: zero of the ten hits name either
+topology port, in either direction (read or write). **The expiry condition has NOT
+fired.** This agrees with the 2026-08-05 re-check's conclusion, reached this time by a
+method that can see a write method regardless of naming, and is not vulnerable to the
+one blind spot that method had.
+
+**Re-derivation honesty note (checked, not asserted):** re-running the retired
+2026-08-05 method today (`grep -rn "topology\|APP#" backend/src/core/`) returns 19 hits,
+not the 13 the AC1 text (itself already a correction of the story's original "twelve")
+records — a second drift in the same direction, which is exactly why AC1 mandated
+abandoning that method rather than re-counting it. This number is recorded for
+context only; it played no part in the AC1(c) verdict above, which rests solely on the
+port-import derivation.
+
+### AC2 — done
+
+`docs/scrum/wiki/zone-rules.md` ZR-8 Finding 1 (the paragraph running `:736-769` at the
+time of this edit) gained a dated re-affirmation paragraph immediately after the existing
+"Expiry condition" sentence and before Finding 2 begins — the expiry condition text
+itself is untouched. The re-affirmation states the date, the two commands from AC1 step
+(a)/negative-search, the resulting port list, and "Option (b) stands until it does
+[fire]." Commit: `f012340`.
+
+### AC3 — not triggered
+
+AC1 came back negative, so AC3 (Blocked + re-estimate) does not apply. Recorded here so
+a reader can see the branch was checked, not skipped.
+
+### AC4 — verified, not asserted-about
+
+```
+git diff 3fbb418..HEAD -- backend/src/ | wc -l
+```
+Output: `0` (empty diff), checked immediately before the wiki commit and re-checked
+after every commit in this story, including the final one below.
+
+### AC5 — no-regression check, not evidence of this story's own work
+
+`backend/tests/test_zone_rules_enforced_by_claims.py` was run as part of the full `pytest`
+gate below and passed. AC2's edit is to ZR-8 Finding 1's body prose (`:736-769` region);
+the Adjudication table row this test actually pins is at `:878`, untouched by this story.
+A green result here shows this story did not regress that guard — it is not proof that
+AC2's wording is correct, because the test cannot see prose it doesn't check.
+
+### AC6 — DoD gate
+
+See the final gate run recorded in the implementer report for this story (fresh output,
+re-run after the last commit, `DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021`,
+`REQUIRE_DYNAMO=1`).
