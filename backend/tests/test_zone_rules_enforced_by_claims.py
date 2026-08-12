@@ -28,6 +28,8 @@ from dataclasses import dataclass
 
 _ADJUDICATION_HEADING = re.compile(r"^## Adjudication\b")
 _EXPECTED_RULE_IDS = {f"ZR-{n}" for n in range(1, 9)}
+_VERDICT_MARKERS = ("ENFORCED-BY", "GUARDABLE-DEFERRED", "UNGUARDABLE")
+_CODE_SPAN = re.compile(r"`([^`]+)`")
 
 
 @dataclass(frozen=True)
@@ -91,10 +93,51 @@ def _extract_table_lines(markdown_text: str) -> list[str]:
     return table_lines
 
 
+def _strip_leading_marker(span: str) -> str | None:
+    """If `span` begins with one of the known verdict markers, return the
+    remainder after the marker (possibly empty). Return `None` if `span`
+    carries no recognised marker prefix at all (a bare reference)."""
+    for marker in _VERDICT_MARKERS:
+        if span == marker:
+            return ""
+        if span.startswith(marker + " "):
+            return span[len(marker) + 1 :].strip()
+    return None
+
+
 def _references_in_verdict_cell(verdict_cell: str) -> list[str]:
-    """Placeholder -- the reference grammar (AC1) is added in the next TDD
-    step. For now every cell yields zero references."""
-    return []
+    """Extract every guard reference from a Verdict-column cell (AC1, reading
+    C -- the grammar pinned at plan verification). See this module's
+    docstring for the full rule set.
+
+    `ENFORCED-BY` marks the CELL, not each backtick span: a cell is only
+    scanned for references at all once at least one span in it begins with
+    the literal `ENFORCED-BY ` marker (marker INSIDE the span, per the house
+    convention). Once gated, every span in the cell is a candidate:
+      - a span equal to EXACTLY one of the known markers, with nothing else,
+        is a second verdict (ZR-5's own `UNGUARDABLE`), not a reference --
+        skipped.
+      - a span beginning with a marker + a space has the marker stripped;
+        the remainder is a reference.
+      - a span with no marker prefix at all is a bare reference, joined by
+        " + " to a prior one (ZR-8's finding-2 continuation spans).
+    """
+    spans = _CODE_SPAN.findall(verdict_cell)
+    gated = any(
+        span == "ENFORCED-BY" or span.startswith("ENFORCED-BY ") for span in spans
+    )
+    if not gated:
+        return []
+    references = []
+    for span in spans:
+        stripped = _strip_leading_marker(span)
+        if stripped is None:
+            references.append(span.strip())
+        elif stripped:
+            references.append(stripped)
+        # else: a lone marker with nothing after it -- a second verdict, not
+        # a reference. Skipped.
+    return references
 
 
 def parse_adjudication_table(markdown_text: str) -> list[AdjudicationRow]:
@@ -182,6 +225,40 @@ def test_split_row_drops_outer_pipes_and_strips_cells() -> None:
 def test_parse_adjudication_table_finds_all_eight_rule_ids() -> None:
     rows = parse_adjudication_table(_FIXTURE_TABLE)
     assert {row.rule_id for row in rows} == _EXPECTED_RULE_IDS
+
+
+def test_references_reading_c_grammar_on_every_shape() -> None:
+    """Reading C (AC1's pinned grammar), exercised against one synthetic
+    instance of each of the six real shapes."""
+    rows = {row.rule_id: row for row in parse_adjudication_table(_FIXTURE_TABLE)}
+
+    # ZR-1 shape: single ENFORCED-BY span, non-path token (contract name).
+    assert rows["ZR-1"].references == ("some-contract-name",)
+
+    # ZR-2 shape: single ENFORCED-BY span, path::test_name.
+    assert rows["ZR-2"].references == ("backend/tests/test_x.py::test_y",)
+
+    # ZR-3 shape: single ENFORCED-BY span, bare path (no ::test_name).
+    assert rows["ZR-3"].references == ("backend/tests/test_bare.py",)
+
+    # ZR-4 shape: ENFORCED-BY span + " + "-joined bare continuation span.
+    assert rows["ZR-4"].references == (
+        "backend/tests/test_a.py::test_b",
+        "backend/tests/test_c.py::test_d",
+    )
+
+    # ZR-5 shape: ENFORCED-BY span + a second, lone UNGUARDABLE verdict span
+    # (not a reference) + a parenthetical OUTSIDE the span (must not leak in).
+    assert rows["ZR-5"].references == ("backend/tests/test_e.py::test_f",)
+
+    # ZR-6 shape: no ENFORCED-BY anywhere in the cell -- zero references.
+    assert rows["ZR-6"].references == ()
+
+    # ZR-7 shape here: GUARDABLE-DEFERRED only, no ENFORCED-BY -- zero refs.
+    assert rows["ZR-7"].references == ()
+
+    # ZR-8 shape (single-finding form here): one ENFORCED-BY span.
+    assert rows["ZR-8"].references == ("backend/tests/test_g.py::test_h",)
 
 
 def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
