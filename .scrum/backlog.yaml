@@ -2987,7 +2987,7 @@ stories:
     title: Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-219-enforce-citation-resolution.md
-    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC9 authored then REWRITTEN at pre-lock plan verification (AC2 was a no-op, AC7 unsatisfiable)   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
+    status: done   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC9 authored then REWRITTEN at pre-lock plan verification (AC2 was a no-op, AC7 unsatisfiable)   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
                     # STORY-215's fix round surfaced the candidate and correctly said it was the
                     # orchestrator's call, not its own, rather than half-fixing 126 findings.
                     # THE EVIDENCE IS FIVE OCCURRENCES IN ONE SPRINT of a `file:line` citation made

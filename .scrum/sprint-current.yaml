@@ -231,8 +231,81 @@ board:
   - id: STORY-219
     title: "Wire tools/citation_sweep.py into the gate -- the capability exists and is unenforced"
     points: 3
-    status: todo
+    status: done
     order: 4
+    commits: "db76941, 55ec873, 1c10409, 80948e9, ebc23f1 (implementer) + 5c8e5f2 (review fixes)"
+    verdict: >-
+      Citation resolution is now ENFORCED inside pytest -- no ninth DoD command. tools/citation_gate.py
+      partitions by path resolvability; backend/tests/test_citation_gate.py carries a committed
+      per-article BASELINE and an equality ratchet. Suite 755 -> 763.
+    what_it_actually_enforces: >-
+      *** 15 of 129, AND THE STORY SAYS SO IN ITS OWN DOCSTRING. *** 113 raw failures are
+      bare-filename ADVISORY (AC2's path-resolvability partition), 1 sits in a tier:reference article
+      AC6 exempts. Content is checked only for the 13 of 198 distinct citations carrying an excerpt
+      anchor. A WRONG-BUT-IN-RANGE LINE NUMBER PASSES -- the story's own motivating occurrence,
+      scripts/seed_topology.py:44, is reported OK today and is named in the docstring as the worked
+      example. Do not let this be re-described later as "citations are checked".
+    reviews:
+      spec: >-
+        PASS, zero gaps, all 9 AC met. Re-derived EVERY count independently rather than trusting
+        prose. Confirmed AC6's exemption reads LIVE frontmatter (not the baseline's own tier field --
+        which would have re-created, one story later, exactly the hand-maintained-list defect
+        STORY-220 just killed). Disclosed that it did not re-run the 3 frontend commands (diff touches
+        no frontend files) instead of claiming 8/8.
+      quality: >-
+        FIX_REQUIRED -- 1 MAJOR, 11 MINOR. Ran NINE in-process probes (M1-M7, P1-P3) against swapped
+        module functions, modifying no repo file, so race-immunity with the concurrent spec reviewer
+        held by construction. Probes confirmed the ratchet is real and not self-measuring, and that
+        article_tier fails CLOSED on empty/absent/BOM/mis-cased frontmatter.
+    adjudication:
+      fixed:
+        - >-
+          *** MAJOR, and the sharpest finding of the sprint. *** The AC1 docstring -- whose ONLY job
+          is stating the enforced scope exactly -- said "8 of 195 distinct citations" carry an anchor.
+          Wrong twice: 195 was the BASE-COMMIT denominator that THIS STORY'S OWN edits to
+          config-layer.md and zone-rules.md moved to 198, and 8 counted the PASSING subset while the
+          sentence described the CHECKED set. Measured at HEAD: 13 of 198, 8 pass 5 fail.
+          THE FIX IS NOT A BETTER NUMBER, IT IS A CHECK --
+          test_ac1_docstring_scope_numbers_are_current re-derives all three live and reds on drift.
+          MUTATION-PROVEN BY THE ORCHESTRATOR: append one anchored citation to an article ->
+          "live measurement says 14 of 199". Reverted, 0 dirty lines.
+          THE DOCSTRING NOW ALSO STATES THE METHOD ("distinct" = per-article dedupe SUMMED, not
+          globally distinct, which is 186). The orchestrator's own first recount got 186 and
+          disagreed with the reviewer's 198 until the dedupe semantics were read -- stating a number
+          without its method is how the first version rotted, and it is the same defect as RC-1.
+        - "m1: assertion message interpolated `msg` not `msg2`, printing the PASSING call's message on the failing call."
+        - >-
+          m2: the BELOW-baseline message asserted its own cause ("paid-down debt -- LOWER the
+          baseline"). Probe P1 showed a classifier change demoting enforced->advisory emits that exact
+          instruction, and following it verbatim bakes in the coverage loss. It now names the
+          alternative and says to read the list first.
+        - >-
+          m4: nothing pinned the enforced/advisory SPLIT. The classifier's only teeth came from the
+          three nonzero baselines and would EVAPORATE once the debt is paid to zero -- exactly when
+          the gate would be trusted most. New test pins a known repo-relative citation into the
+          enforced bucket, independent of any baseline.
+        - "m11: the header now states the headline ratio (15 enforced of 129 raw) so green cannot be misread."
+      declined_and_filed:
+        - >-
+          m5 (bare literal `3` at citation_gate.py:53 should be `len(_FM_DELIM)`) -- the reviewer is
+          RIGHT that this would have avoided growing the permanent ZR-3 exemption list. Declined ONLY
+          because removing the literal cascades into deleting the ZR-3 adjudication entry and
+          re-editing zone-rules.md's 10->9 count in the same change, which is more re-verification
+          than a MINOR earns at the end of a sprint. FILED as a sprint-71 candidate; the adjudication
+          itself is honest and both reviewers confirmed it.
+        - >-
+          m3 (counting ratchet has per-article slack: a fix plus a new drift in the same commit is
+          invisible in the 3 nonzero articles) -- real and bounded (11 of 14 map articles have zero
+          slack). Filed with the content-anchor follow-up, where pinning failure IDENTITIES rather
+          than counts is the natural fix.
+        - "m6-m10 (NamedTuple return, TypedDict baseline, unclosed-frontmatter docstring line, main() docstring, one loose note): recorded, none load-bearing."
+    process_note: >-
+      COMMIT db76941 WAS NOT GREEN ON THE FULL SUITE. citation_gate.py:53's literal `3` collided with
+      the pre-existing ZR-3 duplicate-declaration guard; the implementer had run only the targeted
+      test file, caught it on the full run, and fixed it in the very next commit (1c10409). Final HEAD
+      is green. THE IMPLEMENTER DISCLOSED THIS UNPROMPTED -- it would otherwise be invisible. Carried
+      to the retro as a commit-discipline candidate, NOT a rejection.
+    gate: "8/8 green at 5c8e5f2 (full): pytest 763 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint. Wiki sweep CLEAN after the last commit."
     note: >-
       Highest blast radius: it changes what the DoD gate accepts. Runs AFTER all zone-rules.md edits.
       RE-SCOPED at plan verification and the scope limit is the point -- the tool enforces

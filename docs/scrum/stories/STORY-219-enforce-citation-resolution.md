@@ -2,10 +2,10 @@
 id: STORY-219
 title: Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced
 type: chore
-points: null
-status: draft
+points: 3
+status: done
 filed: 2026-08-05
-sprint: null
+sprint: 70
 ---
 
 ## Context
