@@ -105,3 +105,9 @@
       restatement, not a verification (2026-07-29; the anti-flap article mirrored `pipeline.py`'s
       own docstring, which WAS the defect, and survived from sprint-8 to sprint-62 because article
       and code AGREED: git arithmetic detects divergence, never shared error).
+
+- [ ] **Do not write a PROOF-LABEL you cannot falsify.** Before writing "proven", "verified",
+      "verified by mutation", "shown RED" or "confirmed" — in a docstring, a wiki Fact, a commit
+      message or a report — state the one observation that would prove it wrong. If you cannot name
+      one, write what you actually measured instead. (2026-08-12, sprint-69 retro, RC-12; mirrors
+      the quality-review checklist item. Four instances in sprint 69 across three authors.)

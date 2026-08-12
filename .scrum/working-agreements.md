@@ -523,3 +523,25 @@ A15 §2 it was made concrete rather than restated. Do NOT serialise the reviews.
 AC, but 45 notes over sprint 68 — it cannot tell a completing commit from a TDD step. Read
 `check_c3`'s docstring before trusting or dismissing a note. **STORY-219 is the half that reaches
 the other three.** Narrative: `docs/scrum/sprints/2026-08-03-sprint-68/retro.md`.
+
+**REDRAFTED 2026-08-12 (sprint-69 retro, PO-approved) — "same commit" is replaced by "same STORY,
+no false intermediate".** C3's literal same-commit reading is unsatisfiable in two OPPOSITE
+situations, both of which occurred in sprint 69:
+- *From below:* under strict per-step TDD commits, a wiki correction that cites code which does not
+  exist yet cannot share a commit with it. Three stories hit this; all three disclosed it; the
+  `verified_sha` self-reference dance appeared three times.
+- *From above:* a commit touching an amplifier `code_ref` (`pyproject.toml` is cited by five
+  articles) stales five articles it is not about, and cannot bump them without abandoning its own
+  subject.
+
+The rule, as it now reads:
+1. The wiki correction and the `verified_sha` bump land **within the story**, and **no intervening
+   commit may leave the repo asserting something false**.
+2. **`verified_sha` tracks the last commit that touched `code_refs` — it is NOT the article's own
+   commit**, so a self-reference is never required and a PLACEHOLDER dance is never correct.
+3. **Run `yt_wiki.py` AFTER the story's last commit.** A sweep measured before the final edit is not
+   evidence about the story. Sprint 69 opened with a committed "sweep CLEAN" line that was true when
+   run and false at HEAD, which is exactly this failure.
+
+Per A15 this REPLACES the earlier reading rather than restating it. Narrative: RC-9 and RC-10 in
+`docs/scrum/sprints/2026-08-05-sprint-69/retro.md`.

@@ -94,3 +94,30 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
       LastEvaluatedKey; remove this exemption, the fix has landed". A reviewer added a realistic
       warn-on-truncation stopgap that still read ONE page: the guard then instructed removal of the
       exemption covering a LIVE PRODUCTION DEFECT. Tests green, AC met, guard actively dangerous.)
+
+- [ ] **A claim carrying a PROOF-LABEL must name its falsifier.** Where any artifact you are
+      reviewing says "proven", "verified", "verified by mutation", "shown RED", "confirmed",
+      "decisive", or "evidence read at re-verification", it must state — in one clause — the single
+      observation that would falsify it. If no such observation can be named, the LABEL is wrong and
+      the claim must be downgraded to what was actually measured. This applies to wiki Facts, board
+      records, commit messages and diagnoses, not only to code. (2026-08-12, sprint-69 retro, RC-6 +
+      RC-12. FOUR instances in one sprint across THREE authors, two of them the orchestrator's:
+      QM-2's copied from-sha; QM-4's frontmatter mismatch; ZR-1's residue sentence, written wrong
+      TWICE under a "verified by mutation" stamp; and a Docker diagnosis called "DECISIVE" that
+      self-healed an hour later. Every one shares a shape — a chain of TRUE observations, a
+      conclusion one step beyond them, and a label that stops the next reader checking. The reality
+      gate forces this for GUARDS, because a mutation makes the claim executable; nothing forces it
+      for diagnoses, status claims or Facts. RC-6 is the same defect from the other side: a spec
+      re-review passed a FALSE residue as "consistent, no contradiction found" the same hour a
+      quality reviewer falsified it by mutation. CONSISTENCY IS NOT TRUTH.)
+
+- [ ] **A threshold assertion whose SLACK VARIES PER INPUT is not a floor for the inputs with
+      slack.** When a guard compares two counts derived from the same record (references vs markers,
+      rows vs expected ids, hits vs sites), a record with a surplus in one count MASKS a loss in the
+      other — and the guard stays green while its coverage silently shrinks. Ask which input has the
+      most slack and mutate THAT one. (2026-08-12, sprint-69 retro, RC-13 — tests-that-lie taxonomy.
+      STORY-216 produced this defect TWICE at different scopes: a GLOBAL floor let any single row
+      drop to zero coverage while green; the replacement PER-ROW floor was then absorbed on ZR-8,
+      the one multi-reference cell, at 40% of the guard's coverage. The second evasion was verbatim
+      the shape the guard's OWN test pinned — it fired on a single-reference row and was absorbed on
+      the multi-reference one. A reviewer caught it both times.)

@@ -1,6 +1,6 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 69
-status: active     # none | planning | active | review | closed | aborted | parked
+status: closed     # none | planning | active | review | closed | aborted | parked
 goal: >-
   Guard what is already clean. ZR-1, ZR-2, ZR-4 and ZR-5 have ZERO live violations -- which is why
   nothing would stop tomorrow's first one. Each gets a standing guard, and each guard must be SHOWN
@@ -13,6 +13,22 @@ started: 2026-08-05
 mode: in-process   # in-process | external | parallel-waves | debug | parked
 points_committed: 11
 plan: docs/scrum/sprints/2026-08-05-sprint-69/plan.md
+
+po_review:
+  date: 2026-08-12
+  verdict: >-
+    ALL FIVE STORIES ACCEPTED (11 of 11 points). All THREE retro proposals APPROVED and landed at
+    their named rungs. SPRINT 69 STAYS UNMERGED, re-confirming the standing directive -- sprints 66,
+    67, 68 and 69 are all off main.
+  amendments_landed:
+    - "A18 REDRAFTED in .scrum/working-agreements.md: 'same commit' -> 'same STORY, no false intermediate', verified_sha tracks the last code_ref commit (never a self-reference), and yt_wiki runs AFTER the story's last commit. Byte-neutral replacement per A15, not a restatement."
+    - "PROOF-LABEL rule landed in .scrum/checklists/quality-review.md AND implementer.md: a claim carrying a proof-label must name the single observation that would falsify it. RC-13's taxonomy entry landed alongside it -- a threshold whose slack varies per input is not a floor for the inputs with slack."
+    - "AGENT-DEFINITION rung, both reviewer defs (.claude/agents/yt-spec-reviewer.md, yt-quality-reviewer.md): (a) these limits are NOT liftable by a dispatch brief -- refuse and say so; (b) terminate only processes you started, by tracked id, never by name query."
+  deletions: "NONE. Reasons in retro.md section 1 -- no rule cleared A15's six-sprint bar that was not already adjudicated in the sprint-68 retro."
+  no_amendment_by_design:
+    - "RC-1/RC-7 (agent evidence dies with the agent, 3 occurrences): STORY-212 already exists. Prioritise it in sprint 70 rather than restating the lesson a fourth time."
+    - "RC-8 (the orchestrator's own commits are unreviewed): the practice changed mid-sprint and held twice. Re-raise only if it fails."
+    - "RC-11 (guard-file citations vs code_refs): a backlog story about one document, not a process rule."
 
 po_approval:
   date: 2026-08-05
