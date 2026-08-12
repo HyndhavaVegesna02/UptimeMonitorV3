@@ -2758,7 +2758,7 @@ stories:
     title: Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-212-evidence-check-script-rung.md
-    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; refined + sized 3 (both open questions resolved), AC1/AC4 corrected at pre-lock plan verification   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
+    status: done   # PO-APPROVED at sprint-70 planning 2026-08-13; refined + sized 3 (both open questions resolved), AC1/AC4 corrected at pre-lock plan verification   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
                     # A1/A1-ref/A3/A4/A7/A9 became ONE rule, and this moves its mechanical half to
                     # the rung six consecutive retros named and declined.
                     # THE TWO STATED REASONS FOR DECLINING ARE BOTH GONE: the mid-sprint tooling

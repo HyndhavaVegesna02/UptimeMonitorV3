@@ -320,8 +320,25 @@ board:
   - id: STORY-212
     title: "Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)"
     points: 3
-    status: fix_round        # implemented at 17e4ed6; spec PASS; quality CRITICAL+6 MAJOR; fixing
+    status: done
     order: 5
+    commits_round_2: "234dcd4 (CRITICAL+M2+M3), f2caad5 (M4+cheap fixes), 908a894 (M5), c1b28b0 (M6), 67acf41 (wiki)"
+    fix_round_outcome: >-
+      ALL SEVEN CLOSED. Suite 789 -> 800. THE CRITICAL WAS RE-PROVEN BY THE ORCHESTRATOR against the
+      real tool in a throwaway repo, not against its test suite: the SAME import-breaking mutation
+      that previously returned `OK: mutation turned RED: ['_______']` with exit 0 now returns
+      "SELECTOR DID NOT RUN (pytest exit 2) ... NOT a RED proof, and distinct from ZERO RED",
+      exit 1. The false-GREEN is closed.
+      M6's clause is restored and came back STRONGER than it was cut: "Run the tool yourself against
+      the story's diff -- a pasted tail is the implementer's evidence, not yours", plus "never accept
+      a hand-written claim or a pasted tail as a substitute for your own".
+      AC7 STILL HOLDS: implementer.md 115->109, quality-review.md back to its original 126 with
+      different content. Net 241 -> 235, still shorter, with independence intact -- which is the
+      outcome AC7 actually wanted and the line target alone would have missed.
+      THE FIX ROUND FOUND A GENUINE SECOND DEFECT while proving M2's baseline: running pytest twice
+      against the same files hit CPython's second-granularity .pyc mtime cache and silently reused
+      STALE BYTECODE -- a false result inside the proof mechanism itself. Fixed with
+      PYTHONDONTWRITEBYTECODE=1. Nobody was looking for that; the baseline check surfaced it.
     commits_round_1: "0b1eecb, 8d4438e, d8d58af, b2539f9, 17e4ed6"
     reviews:
       spec: >-

@@ -2,6 +2,10 @@
 id: STORY-212
 title: Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)
 type: chore
+points: 3
+status: done
+filed: 2026-08-01
+sprint: 70
 ---
 
 ## Context
