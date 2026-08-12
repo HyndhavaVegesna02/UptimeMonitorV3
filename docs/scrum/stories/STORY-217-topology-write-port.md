@@ -12,7 +12,7 @@ sprint: null
 
 **Filed by STORY-205's AC6, which required the residue of its own fix to be written down rather
 than quietly closed.** This story is that residue's ledger entry; the residue itself is stated in
-`docs/scrum/wiki/zone-rules.md` ZR-8 Finding 1 (`:671-678`) and carries an explicit expiry
+`docs/scrum/wiki/zone-rules.md` ZR-8 Finding 1 (`:736`; the expiry condition at `:767`) and carries an explicit expiry
 condition there.
 
 STORY-205 closed `ZR-8` Finding 1 by extracting the DynamoDB topology key schema into one module,
@@ -91,3 +91,39 @@ finds the trigger fired, this becomes option (a) and re-estimates at 3+.
 Deliberately NOT pulled into sprint 69: sprint 69 is the audit-closure guard set, and this story's
 correct outcome is a documentation re-affirmation with no guard in it. It belongs with the next
 batch, where its 1 point buys a dated re-check rather than diluting a themed sprint.
+
+---
+
+## Refinement, 2026-08-13 (sprint-70 planning) — **estimate 1, AC authored**
+
+The 2026-08-05 re-check answered the only open question: the expiry condition has **not** fired. AC
+below therefore describes a dated re-affirmation with no production code. If AC1 comes back
+positive, this story is **Blocked and re-estimated at 3+**, never silently converted mid-sprint.
+
+## Proposed Acceptance Criteria
+
+- [ ] **AC1 — the expiry condition is re-derived by PORT IMPORT, not by token grep.** The
+      2026-08-05 method (`grep -rn "topology\|APP#" backend/src/core/`) cannot decide the actual
+      condition: a write method that mentions neither token is invisible to it, and at HEAD it
+      returns 13 hits where this story records twelve. The derivation is instead:
+      (a) list what `backend/src/core/services/*` imports from `src.core.ports`;
+      (b) for each imported port, classify it read-only or write-capable from its own method
+      signatures; (c) the condition has FIRED only if some core service imports a write-capable
+      topology port — `ComponentRepository` (its `set_status` is write-capable) or
+      `SignalRepository`. Record every command and its full output in the story's History, with a
+      **per-hit read/write verdict**, so two implementers cannot count differently.
+- [ ] **AC2 — if AC1 is negative, `zone-rules.md` ZR-8 Finding 1 gains a dated re-affirmation**
+      alongside the existing expiry condition: the date, the command AC1 ran, and the sentence that
+      option (b) stands until the trigger fires. The expiry condition text itself is not weakened or
+      removed — it is what makes this re-checkable next time.
+- [ ] **AC3 — if AC1 is POSITIVE, no code is written.** The story is marked Blocked with the naming
+      evidence, and option (a) is re-estimated at the next planning. A 1-point story may not grow a
+      new core-owned port inside a locked sprint.
+- [ ] **AC4 — no production behaviour changes.** `git diff <start>..HEAD -- backend/src/` is EMPTY
+      for this story. Asserted, not asserted-about.
+- [ ] **AC5 — no-regression check on the Adjudication table, which this story does NOT edit.**
+      AC2 appends to ZR-8's BODY prose (`zone-rules.md:736-767`); the Adjudication row is at `:878`,
+      about 110 lines below. `test_zone_rules_enforced_by_claims.py` therefore passes with zero work
+      here — that is the point, and it is recorded as a no-regression check, **not** as evidence of
+      anything this story did. It is explicitly NOT the reason this sprint is contract-sensitive.
+- [ ] **AC6** — full 8/8 DoD gate green at the final HEAD.

@@ -49,10 +49,15 @@ contract's nine exactly:
       disk under `backend/src/core/ports/`, by a stated decidable rule: filename matching
       `*_repository.py`, plus the explicitly named `watermark.py`.
 - [ ] **AC2 — non-vacuity floor.** The test asserts the contract was found by name and that
-      discovery returned a non-empty set (≥ 9 at time of writing, not a hardcoded 9 — a new port is
-      supposed to raise it). A parse that finds nothing must go red, not green.
+      discovery returned a plausibly-populated set. **The floor is DIRECTION-FREE (≥ 5), not
+      "≥ 9 at time of writing"** — corrected 2026-08-13 at plan verification: nine is today's count,
+      and a floor of 9 breaks on the LEGITIMATE removal of a port. STORY-155 (remove `sample_mode`,
+      named in CLAUDE.md) deletes `sample_mode_repository.py`, taking the correct count to 8; a
+      ≥ 9 floor would go red on a correctly-updated contract. AC1's set EQUALITY is the real guard;
+      this floor exists only so a parse that finds nothing goes red instead of green.
 - [ ] **AC3 — shown RED (A9).** Add an empty `backend/src/core/ports/zzz_repository.py` without
-      touching `pyproject.toml`; the test fails **naming that module**; revert; green; `git diff`
+      touching `pyproject.toml`; the test fails **naming that module**, **and no other test changes
+      state** — so a collateral failure cannot be read as the proof; revert; green; `git diff`
       empty. Recorded verbatim in the board's `reality_gate` block.
 - [ ] **AC4 — shown RED in the other direction.** Remove one module from the contract's
       `forbidden_modules`; the test fails naming it; revert. This proves set equality rather than a
@@ -64,7 +69,12 @@ contract's nine exactly:
 - [ ] **AC6** — runs inside the existing `python -m pytest`. No ninth DoD command.
 - [ ] **AC7** — `zone-rules.md`'s ZR-1 row gains this test path alongside the contract name, and the
       sentence STORY-206 AC6 put there ("completeness is maintained by hand until STORY-220 lands")
-      is removed in the same commit. `verified_sha` bumped (A18 / C3).
+      is removed in the same commit. **The `verified_sha` clause is DELETED** (2026-08-13, plan
+      verification): the field was dropped from every wiki article on 2026-08-12 (`d9319d8`,
+      yourteam 2.3.0) and `grep -l "^verified_sha" docs/scrum/wiki/*.md` now matches nothing. Under
+      the redrafted A18 the baseline is derived from the article's own last commit, so **touching the
+      article IS re-verifying it** — there is nothing to bump. Re-read ZR-1's Facts before editing
+      the row, per A18 clause 2.
 
 ## Depends on
 

@@ -2758,7 +2758,7 @@ stories:
     title: Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-212-evidence-check-script-rung.md
-    status: draft   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
+    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; refined + sized 3 (both open questions resolved), AC1/AC4 corrected at pre-lock plan verification   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
                     # A1/A1-ref/A3/A4/A7/A9 became ONE rule, and this moves its mechanical half to
                     # the rung six consecutive retros named and declined.
                     # THE TWO STATED REASONS FOR DECLINING ARE BOTH GONE: the mid-sprint tooling
@@ -2774,10 +2774,15 @@ stories:
                     # DRAFT: needs refinement + estimate. Open question worth settling first —
                     # tools/ (project) vs the skill's scripts/ (generic); the checks are generic
                     # but `mutate` needs the project's test-selector syntax.
-    points: null
+    points: 3    # SIZED 2026-08-13 (sprint-70 refinement): eight AC, a new tool with three
+                 # subcommands, self-application under AC5, plus the two checklist amendments.
+                 # PO-directed into sprint 70 at the sprint-69 review (RC-1/RC-7): "prioritise it
+                 # rather than restating the lesson a fourth time." The open question -- tools/ vs
+                 # the skill's scripts/ -- is settled by AC6 reusing tools/import_provenance.py,
+                 # which is project-local: it lands in tools/.
     priority: 83
     type: chore
-    sprint: null
+    sprint: 70
 
   - id: STORY-213
     title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
@@ -2918,7 +2923,7 @@ stories:
     title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-217-topology-write-port.md
-    status: draft   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
+    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC6 authored, AC1 method + AC5 scope corrected at pre-lock plan verification   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
                     # fix to be written down rather than quietly closed. The implementer correctly
                     # declined to file it (`.scrum/` is orchestrator-owned) and FLAGGED the gap in
                     # its report instead of treating the AC as satisfied -- exactly the behaviour
@@ -2944,12 +2949,12 @@ stories:
     points: 1    # SIZED 2026-08-05 (sprint-69 planning): expiry condition has NOT fired -- no core service writes topology -- so the correct outcome is a dated re-affirmation, no code
     priority: 40
     type: chore
-    sprint: null
+    sprint: 70
   - id: STORY-218
     title: Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-218-settings-defaults-declared-twice.md
-    status: draft   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
+    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC8 authored, canonical shape pinned + 3 line citations corrected at pre-lock plan verification   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
                     # NARROWED A CLAIM THAT STORY MADE rather than finding a defect in it.
                     # VERIFIED INDEPENDENTLY BY THE ORCHESTRATOR at settings.py before filing:
                     # every default is declared TWICE -- as a dataclass field default (:19-21) AND
@@ -2977,12 +2982,12 @@ stories:
     points: 2    # SIZED 2026-08-05 (sprint-69 planning): re-verified exact at HEAD; the only real thinking is the per-field falsiness decision
     priority: 45    # above STORY-217: this one silently weakens a guard that ALREADY SHIPPED
     type: chore
-    sprint: null
+    sprint: 70
   - id: STORY-219
     title: Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-219-enforce-citation-resolution.md
-    status: draft   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
+    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC9 authored then REWRITTEN at pre-lock plan verification (AC2 was a no-op, AC7 unsatisfiable)   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
                     # STORY-215's fix round surfaced the candidate and correctly said it was the
                     # orchestrator's call, not its own, rather than half-fixing 126 findings.
                     # THE EVIDENCE IS FIVE OCCURRENCES IN ONE SPRINT of a `file:line` citation made
@@ -3012,12 +3017,12 @@ stories:
     priority: 70    # high: this is the mechanism RC-2 concluded is needed, and the evidence is five
                     # occurrences in a single sprint
     type: chore
-    sprint: null
+    sprint: 70
   - id: STORY-220
     title: ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-220-zr1-forbidden-list-completeness-test.md
-    status: draft   # SPLIT OUT of STORY-206 (where it was AC6) at sprint-69 PLAN VERIFICATION,
+    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC from sprint-69 plan verification, AC2/AC3/AC7 corrected at pre-lock plan verification   # SPLIT OUT of STORY-206 (where it was AC6) at sprint-69 PLAN VERIFICATION,
                     # 2026-08-05. Not dropped: carrying it inside STORY-206 makes that story a 5
                     # and sprint 69 a 13, against the PO pacing directive to sit near 9-11.
                     # DEPENDS ON STORY-206 -- the contract must exist before its completeness can
@@ -3034,7 +3039,7 @@ stories:
     points: 2
     priority: 76    # just below STORY-206 (77): same subject, must follow it
     type: chore
-    sprint: null
+    sprint: 70
   - id: STORY-221
     title: The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions
     epic: process-ratchet-brake

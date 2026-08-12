@@ -63,16 +63,25 @@ failures stop depending on an agent remembering a paragraph.
 
 - [ ] AC1: `tools/evidence_check.py` exists with the three subcommands, is
       importable and runnable via `python tools/evidence_check.py <cmd>`, and lives
-      outside `backend/src/` — nothing under `backend/src/` imports it (assert with
-      the existing zone/import discipline).
+      outside `backend/src/`. **The isolation is asserted by a NEW concrete test, because
+      no existing mechanism covers it** (corrected 2026-08-13 at plan verification: all
+      nine import-linter contracts are over `src.*`, `pyproject.toml` never names `tools`,
+      and the only `tools` reference in the suite is `conftest.py:37`, which ADDS it to
+      `sys.path`). The assertion: no file under `backend/src/` contains an import of
+      `tools` — a grep-shaped test in the style of the existing ZR guards, not a tenth
+      import-linter contract.
 - [ ] AC2: `falsify` exits non-zero when the artifact under test exits 0 on bad
       input, and zero when the artifact correctly fails. Both directions tested.
 - [ ] AC3: `two-sided` exits non-zero when both sides produce identical outcomes,
       including the case where both sides are correct-looking. Tested with a pair
       that genuinely differs (passes) and a pair that does not (fails).
 - [ ] AC4: `mutate` exits non-zero when zero tests go RED, restores the tree, and
-      asserts `git diff` is empty afterwards; a failure to restore is itself a
-      non-zero exit, never a silent pass.
+      asserts **`git diff -- <the mutated target>`** is empty afterwards; a failure to
+      restore is itself a non-zero exit, never a silent pass. **Scoped to the target, not
+      the whole tree** (corrected 2026-08-13 at plan verification): a whole-tree emptiness
+      check fails on any legitimately dirty sprint tree — including right now, with three
+      modified story files and an untracked sprint directory — so the tool would exit
+      non-zero on every correct run. The restore claim is about what `mutate` touched.
 - [ ] AC5: **The tool is subjected to its own rule.** Each of the three
       subcommands is fed deliberately bad input and shown to fail, and that
       demonstration is recorded on the board — per the checklist rule this story
@@ -85,18 +94,30 @@ failures stop depending on an agent remembering a paragraph.
       longer, as a result of this story.
 - [ ] AC8: Full 8/8 DoD gate green at the final HEAD.
 
-## Open Questions
+## Open Questions — BOTH RESOLVED at sprint-70 refinement (2026-08-13)
 
-- Should `mutate` take the mutation as a patch file, a sed expression, or a
-  declared target+value? A patch file is the most general and the most auditable;
-  decide at refinement.
-- Does this belong in `tools/` (project) or in the YourTeam skill's `scripts/`
-  (generic, reusable across projects)? The checks are project-generic in principle,
-  but `mutate` needs the project's test selector syntax. Likely: generic core in
-  the skill, project selector in config. Resolve before the estimate.
+1. **`mutate`'s mutation format: a PATCH FILE**, applied with `git apply` and reverted
+   with `git apply -R`. Chosen because it is the most auditable of the three (the mutation
+   is itself a reviewable artifact that can be committed alongside the red/green output
+   tails, which is the whole point of this story), and because revert-by-inverse-patch is
+   the only one of the three that cannot half-apply silently — `git apply` is atomic, where
+   a sed expression run twice is not. A declared target+value cannot express the multi-line
+   mutations this project's proofs actually use (STORY-216's three ZR-8 edits were all
+   multi-line). **This is the entire interface of subcommand 3**; it was unresolved in the
+   story, the backlog and the plan until plan verification flagged it.
+2. **It belongs in `tools/` (project-local).** Settled by AC6: the tool must reuse
+   `tools/import_provenance.py::assert_import_root`, which is project-local. Splitting a
+   generic core into the skill would either duplicate that helper or make the skill depend
+   on a project file, and the skill is project-generic by rule. If a second project ever
+   needs this, promote it then, with two real call sites to generalise from.
 
 ## History
 - 2026-08-01: drafted alongside the checklist collapse that removed ~85 lines of
   prose covering A1/A1-ref/A3/A4/A7/A9. The collapse kept the rule; this story
-  moves its mechanical half to the rung six retros said it belonged on. DRAFT —
-  needs refinement and an estimate before it may enter a sprint.
+  moves its mechanical half to the rung six retros said it belonged on.
+- 2026-08-13: **REFINED and SIZED 3 at sprint-70 planning.** Both open questions resolved
+  above. AC1 and AC4 corrected after pre-lock plan verification found AC1 named a mechanism
+  that does not exist and AC4 was infeasible as literally written. PO-directed into sprint 70
+  at the sprint-69 review (RC-1/RC-7 — agent evidence died with the agent three times in one
+  sprint): "prioritise it rather than restating the lesson a fourth time." **Definition of
+  Ready met: approved AC, estimate, no unresolved questions.**
