@@ -775,20 +775,163 @@ stories:
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md -- a row may not claim a guard that does not exist
     points: 3
-    board: in-progress
+    board: review        # implementation complete and self-verified; BOTH reviewers dispatched.
+                         # NOT done: the full gate cannot currently go green -- see gate_blocked below.
     pipeline: full
     order: 5             # FORCED LAST: its inputs are the four rows the stories above write
     blocked_question: null
     attempts: 1
     started_at_commit: 3263e17   # dispatched 2026-08-12; all four sibling rows now landed
+    commit_range: c14ea29..26cc422   # computed from started_at_commit (RC-4's rung)
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    guard: backend/tests/test_zone_rules_enforced_by_claims.py   # 12 tests, all green in isolation
+    anti_vacuity_evidence: >-
+      THE NUMBER THAT MATTERS MOST, and it is not one: 7 of 8 rows resolve at least one reference --
+      ZR-1(1, a CONTRACT NAME), ZR-2(1), ZR-3(1), ZR-4(1), ZR-5(1), ZR-7(1), ZR-8(4) -- for TEN
+      references resolved in total. ZR-6 resolves zero, CORRECTLY, because its verdict is
+      "FIXED ... NO STANDING GUARD" and it claims no guard at all. That distribution is the proof the
+      grammar is reading the real table rather than matching nothing: it spans both reference kinds,
+      the bare-path rows, the ::test_name rows, the two-verdict cell, and the four-reference cell.
+    gate_blocked:
+      status: >-
+        *** THE FULL 8-COMMAND GATE CANNOT GO GREEN ON THIS MACHINE RIGHT NOW, AND IT IS NOT THIS
+        STORY'S FAULT AND NOT CONTENTION. *** `python -m pytest` = 733 passed / 1 FAILED on
+        test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure. STORY-216 is therefore
+        NOT marked done: the DoD rule is mechanical and a nonzero exit is not a pass, no exceptions.
+      why_it_is_not_contention: >-
+        THE TWO-LIMB CONTENTION DISCOUNT DOES NOT APPLY, because limb 2 FAILS. Limb 1 holds
+        absolutely: `git diff sprint-69-start..HEAD -- backend/tests/test_dynamo_local.py
+        scripts/dynamo_local.py backend/tests/conftest.py` is EMPTY, untouched all sprint. But limb 2
+        -- "passes in isolation / with adequate resources" -- is FALSE: the file fails in isolation
+        (1 failed, 6 passed) and the single test fails alone, 5 times across two parties. It is
+        DETERMINISTIC right now, not load-sensitive. Discounting it as a flake would be exactly the
+        "learn to re-roll until green" failure mode GN-2 warns about, so it is not discounted.
+      root_cause_proven_outside_pytest: >-
+        DOCKER PORT PUBLISHING IS BROKEN MACHINE-WIDE FOR NEW CONTAINERS. Proven with no pytest
+        involved: (1) `docker run -d -P amazon/dynamodb-local` -> docker port reports host 32768,
+        NOT routable on 127.0.0.1 after 20s of polling; retried, 32769, also not routable.
+        (2) DECISIVE -- a NEW container with an EXPLICIT `-p 127.0.0.1:8099:8000` is ALSO not
+        routable, so this is not ephemeral-port allocation, it is the port proxy for any newly
+        published port. (3) CONTROL -- the pre-existing container uptime_dynamo_8021, started at
+        the beginning of this session, REMAINS reachable on 127.0.0.1:8021 throughout. So already
+        established proxies keep working while new ones do not.
+        (4) NOT the Windows/Hyper-V reserved-port issue: `netsh interface ipv4 show
+        excludedportrange protocol=tcp` lists 50000-50059 and 58047-58624 only; neither 8099 nor
+        32768/32769 falls in an excluded range.
+        All four diagnostic containers were removed; only uptime_dynamo_8021 remains.
+      why_this_test_cannot_pass_in_this_state: >-
+        The test explicitly does `monkeypatch.delenv("DYNAMO_ENDPOINT_URL")` to FORCE a container
+        spawn (it is testing resolve_dynamo's teardown-on-failure path), then resolve_dynamo picks
+        `_free_tcp_port()` and calls `wait_for_dynamo`, which times out after 30s. So the documented
+        STORY-179 workaround -- point DYNAMO_ENDPOINT_URL at a fixed-port container -- CANNOT help
+        this one test by construction: the test's whole purpose is to exercise the path that ignores
+        that variable.
+      it_passed_four_times_earlier_today: >-
+        AND THAT IS THE SHARPEST PART. The identical command went green in four consecutive full
+        gates earlier this session -- 714, 717, 722 and 722 passed, zero failures, at dd7f6aa,
+        ceae75b, c5f0188 and 0d01a83. So Docker's port publishing broke DURING this session, after
+        16:47 and before the STORY-216 gate. Nothing in the repo changed to cause it.
+      story_179_is_mis_scoped_and_under_priced: >-
+        STORY-179 is filed as "the ephemeral host port the fixture picks is mapped by Docker but not
+        always routable on Windows", with the workaround "set DYNAMO_ENDPOINT_URL to a fixed-port
+        container". BOTH HALVES ARE NOW KNOWN TOO NARROW: the fault is not specific to ephemeral
+        ports (explicit ports fail too), and the workaround cannot cover the one test that
+        deliberately bypasses the variable. Re-scope and re-price it at sprint-70 planning. This is
+        the second gate command this sprint found to be mis-filed (STORY-221 is the other, GN-2).
+      what_was_deliberately_NOT_done: >-
+        A Docker Desktop / daemon restart would very likely restore the port proxy and turn the gate
+        green. IT WAS NOT DONE, and that is a deliberate call, not an oversight: this machine is
+        currently running the PO's unrelated infrastructure as containers -- gateway-poc-litellm,
+        gateway-poc-langfuse-web, gateway-poc-presidio-analyzer, gateway-poc-presidio-anonymizer --
+        and restarting the daemon would interrupt all of them. Sprint autonomy covers decisions
+        inside the sprint; it does not extend to disrupting the PO's other running services. The
+        decision is the PO's and is surfaced at review.
+    dod_evidence:   # PARTIAL AND RED, recorded as measured. 7 of 8 exit 0; command 1 exits nonzero.
+                    # This is NOT the story's evidence of record -- STORY-216 stays in review until
+                    # `python -m pytest` exits 0. Nothing here is hand-transcribed.
+      - command: "python -m pytest"
+        exit_code: 1
+        output_tail: "1 failed, 733 passed in 69.77s -- FAILED backend/tests/test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure -- TimeoutError: DynamoDB Local at port 54253 did not become ready"
+        commit: 26cc422
+        at: "2026-08-12T12:05:00+00:00"
+        note: >-
+          Reproduced by the orchestrator independently at ports 54253 and again in isolation. See
+          gate_blocked above for the outside-pytest root cause. 733 passed is itself notable: it is
+          722 + this story's 12 new tests, minus the 1 failure.
+      - command: "python -m pytest backend/tests/test_zone_rules_enforced_by_claims.py"
+        exit_code: 0
+        output_tail: "12 passed in 0.28s"
+        commit: 26cc422
+        at: "2026-08-12T12:06:00+00:00"
+        note: >-
+          THE STORY'S OWN GUARD IS GREEN, verified by the orchestrator against the REAL zone-rules.md
+          and the REAL pyproject.toml -- not a fixture. Recorded separately because it is evidence
+          about the story, whereas the red above is evidence about the machine.
+      - command: 'python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"'
+        exit_code: 0
+        output_tail: "Contracts: 9 kept, 0 broken."
+        commit: 26cc422
+        at: "2026-08-12T12:06:30+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: 26cc422
+        at: "2026-08-12T12:06:31+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "252 files already formatted"
+        commit: 26cc422
+        at: "2026-08-12T12:06:32+00:00"
+      - command: 'python -c "from cfnlint.runner import main; main()" infra/stack.yaml'
+        exit_code: 0
+        output_tail: ""
+        commit: 26cc422
+        at: "2026-08-12T12:06:33+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
+        commit: 26cc422
+        at: "2026-08-12T12:06:40+00:00"
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "built in 953ms"
+        commit: 26cc422
+        at: "2026-08-12T12:08:00+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "(clean)"
+        commit: 26cc422
+        at: "2026-08-12T12:08:10+00:00"
+    blast_radius_resolved: true   # NO wiki article was permanently touched: the three AC4 mutations
+                                  # were applied to zone-rules.md and reverted BEFORE any commit, so
+                                  # no verified_sha moved and the self-reference seam did not recur a
+                                  # fourth time. yt_wiki AFTER the last commit: sweep/facts/links CLEAN.
     reality_gate:
-      discrimination_proof: null   # AC4, THREE mutations, one per resolution path: (a) nonexistent
-                                   # path; (b) existing path + nonexistent ::test_name (AC2's half,
-                                   # unproven in the original AC); (c) nonexistent import-linter
-                                   # contract name (AC1's second reference kind, for ZR-1's row).
+      # Implementer-reported; ORCHESTRATOR RE-VERIFICATION PENDING, and that is stated rather than
+      # implied. The 12-test guard was independently run green by the orchestrator against the real
+      # file; the three AC4 mutations have NOT yet been re-performed by a second party.
+      discrimination_proof:
+        ac4a_nonexistent_path:
+          mutation: "ZR-7's row -> `ENFORCED-BY backend/tests/test_zr7_pagination_guard_NONEXISTENT.py`"
+          mutated_result: >-
+            "AssertionError: ... ZR-7: `backend/tests/test_zr7_pagination_guard_NONEXISTENT.py` --
+            path does not exist" -- 1 failed.
+          reverted: "git status --porcelain empty"
+        ac4b_existing_path_nonexistent_test:
+          mutation: "ZR-2's row -> ::test_core_has_no_vendor_vocabulary_leak_NONEXISTENT"
+          mutated_result: >-
+            "AssertionError: ... ZR-2: ... -- path exists but defines no test function named
+            'test_core_has_no_vendor_vocabulary_leak_NONEXISTENT'" -- 1 failed. This is AC2's half,
+            which the ORIGINAL AC4 left unproven.
+          reverted: "git status --porcelain empty"
+        ac4c_nonexistent_contract_name:
+          mutation: "ZR-1's row -> `inbound-adapters-dont-persist-NONEXISTENT`"
+          mutated_result: >-
+            "AssertionError: ... ZR-1: `inbound-adapters-dont-persist-NONEXISTENT` -- no
+            import-linter contract named ... in pyproject.toml" -- 1 failed. AC1's SECOND reference
+            kind, the one that exists solely because ZR-1's guard is a contract and not a file.
+          reverted: "git status --porcelain empty"
+        orchestrator_reverification: PENDING
 
 # --- Standing facts. Carried into every dispatch; NOT sprint-69 state. --------
 standing:
