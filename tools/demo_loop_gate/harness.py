@@ -753,9 +753,19 @@ def _assert_ac1_preconditions(
     result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]
     assert result["dynamo_endpoint_url"], "AC1(b) FAILED: DYNAMO_ENDPOINT_URL unset"
     # STORY-203 AC1/AC2: the right-hand blocklist values are IMPORTED from
-    # `Settings`'s own defaults, never re-declared -- so this follows a future
-    # rename automatically. The LEFT-hand side stays `result[...]`, read from
-    # the REAL resolved `api_env` above: replacing it with the imported
+    # `Settings`'s own defaults, never re-declared. STORY-218 AC6: "follows a
+    # future rename automatically" is now UNCONDITIONALLY true -- before
+    # STORY-218, `Settings.dynamo_observations_table`/`dynamo_control_table`
+    # were dataclass field defaults `load_settings()` never actually read (it
+    # re-typed the same two literals as its own `os.environ.get(..., "...")`
+    # fallbacks), so renaming the LIVE default (`load_settings()`'s literal)
+    # while leaving these class attributes untouched left the full suite
+    # green with this blocklist guarding a name nothing resolved to.
+    # STORY-218 made the dataclass field default the single canonical
+    # declaration and `load_settings()` read it back via `Settings.<field>`,
+    # so the value this blocklist reads and the value production resolves
+    # can no longer drift apart. The LEFT-hand side stays `result[...]`, read
+    # from the REAL resolved `api_env` above: replacing it with the imported
     # constant too would turn this into a tautology disconnected from the
     # actual environment (see backend/tests/demo_loop_gate/
     # test_harness_assertions.py's blocklist-discrimination tests).

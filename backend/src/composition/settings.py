@@ -87,7 +87,7 @@ def load_settings() -> Settings:
     name). Two shapes were considered and rejected for this reason (AC1):
     a module-level ``_DEFAULTS`` mapping, and converging ``config_dir``'s
     own no-class-default shape onto the other four fields -- both remove
-    the class attribute `tools/demo_loop_gate/harness.py:763,770` depends
+    the class attribute `tools/demo_loop_gate/harness.py:773,780` depends
     on, which needs it to still exist AS A CLASS ATTRIBUTE.
     ``config_dir`` alone keeps its own literal fallback here: it has no
     class default to read (see the ``Settings`` docstring), by design.
