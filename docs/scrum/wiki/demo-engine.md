@@ -616,6 +616,16 @@ governs how much these codes may be trusted.
   `backend/tests/conftest.py` is now an explicit, reasoned decision, not a silent default. Net
   test count: 27 -> 29. Zero files under `backend/src/` changed (AC8). DoD gate 8/8. verified_sha
   -> 701bfab.
+- sprint-70 (STORY-218): RE-VERIFIED, no content change. The sweep flagged `harness.py` (a
+  `code_ref`) for STORY-218's fix to `settings.py`'s duplicated `Settings` defaults
+  ([[zone-rules]] ZR-3's `src`-internal blind spot): the AC1(b) table-name blocklist's
+  comment (`:755-768`, was `:755-761`) was corrected to say the "follows a future rename
+  automatically" claim is now unconditionally true, and `Settings.dynamo_observations_table`/
+  `dynamo_control_table` shifted from `:763`/`:770` to `:773`/`:780`. No behaviour change —
+  the blocklist reads the identical class attributes, only their line moved. No Fact in this
+  article cites a line number inside the changed span (checked directly: `grep -no
+  'harness\.py:7[0-9][0-9]'` against this file returns no hits in the 700s at all). `settings.py`
+  itself is not a `code_ref` of this article.
 - sprint-62 (STORY-148): created at the sprint-end compile pass, after the story shipped and was
   reality-gated. Deliberately deferred out of the story itself: the engine's Facts are only worth
   writing down once its wire shape survived a live probe, and the probe changed what was worth
