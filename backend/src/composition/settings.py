@@ -14,7 +14,43 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class Settings:
-    """Immutable app settings resolved from the environment."""
+    """Immutable app settings resolved from the environment.
+
+    Each field's dataclass default below is its ONE canonical declaration
+    (STORY-218 AC1) -- `load_settings()`, the only construction site, reads
+    it back via `Settings.<field>` instead of re-typing the literal, so
+    renaming a default here is a rename everywhere, including
+    `tools/demo_loop_gate/harness.py`'s table-name blocklist, which reads
+    `Settings.dynamo_observations_table`/`dynamo_control_table` as class
+    attributes -- the reason this shape is canonical and not the reverse
+    (see `load_settings()`'s docstring for the two forbidden alternatives).
+    `config_dir` alone has no default here: `CONFIG_DIR` is the entire
+    demo/live publish guard (CLAUDE.md), and its own fallback literal,
+    `"config/apps"`, must be visible at the one call site that resolves it
+    rather than promoted to a class attribute nothing else reads.
+
+    Falsiness (STORY-218 AC2), decided per field for an explicitly-set
+    EMPTY env var -- `os.environ.get(VAR, default)` only substitutes
+    `default` when the var is ABSENT, never when it is merely falsy, so
+    this is the current behaviour for four of the five fields, kept
+    deliberately rather than "fixed" to fall back on empty:
+    - `config_dir`: preserved verbatim. This is the risky one -- if an
+      explicitly-set empty `CONFIG_DIR=""` instead silently fell back to
+      `"config/apps"`, an operator who emptied the guard var (e.g. clearing
+      it in a script) would be silently redirected to `config/apps`'s REAL
+      `statuspage_component_id` rather than failing loudly downstream on an
+      empty path. Loud-and-empty is safer than silent-and-real.
+    - `aws_region`, `dynamo_observations_table`, `dynamo_control_table`:
+      preserved verbatim for the analogous reason -- an empty region or
+      table name fails loudly against AWS/DynamoDB rather than silently
+      substituting the production default.
+    - `dynamo_endpoint_url` is the one deliberate exception, unchanged by
+      this story: `load_settings()` folds BOTH "unset" and
+      explicitly-set-empty to `None` (`or None`), because `None` means "no
+      local override, talk to real AWS" for either case -- there is no
+      "loud empty path" hazard here the way there is for a table name or
+      `CONFIG_DIR`.
+    """
 
     config_dir: str
     aws_region: str = "us-east-1"
@@ -41,14 +77,30 @@ def load_settings() -> Settings:
 
     Reads config_dir from the ``CONFIG_DIR_VAR`` env var (currently
     ``"CONFIG_DIR"``), defaulting to ``"config/apps"``.
+
+    STORY-218 AC1: every fallback below reads the field's OWN dataclass
+    default off ``Settings`` rather than re-typing its literal a second
+    time, so the value production resolves and the value
+    ``Settings.<field>`` exposes as a class attribute can never drift
+    apart -- the exact drift this story fixes (before it, renaming one side
+    left the full suite green while `harness.py`'s blocklist guarded a dead
+    name). Two shapes were considered and rejected for this reason (AC1):
+    a module-level ``_DEFAULTS`` mapping, and converging ``config_dir``'s
+    own no-class-default shape onto the other four fields -- both remove
+    the class attribute `tools/demo_loop_gate/harness.py:763,770` depends
+    on, which needs it to still exist AS A CLASS ATTRIBUTE.
+    ``config_dir`` alone keeps its own literal fallback here: it has no
+    class default to read (see the ``Settings`` docstring), by design.
     """
     return Settings(
         config_dir=os.environ.get(CONFIG_DIR_VAR, "config/apps"),
-        aws_region=os.environ.get(AWS_REGION_VAR, "us-east-1"),
+        aws_region=os.environ.get(AWS_REGION_VAR, Settings.aws_region),
         dynamo_observations_table=os.environ.get(
-            DYNAMO_OBSERVATIONS_TABLE_VAR, "uptime-observations"
+            DYNAMO_OBSERVATIONS_TABLE_VAR, Settings.dynamo_observations_table
         ),
-        dynamo_control_table=os.environ.get(DYNAMO_CONTROL_TABLE_VAR, "uptime-control"),
+        dynamo_control_table=os.environ.get(
+            DYNAMO_CONTROL_TABLE_VAR, Settings.dynamo_control_table
+        ),
         dynamo_endpoint_url=os.environ.get(DYNAMO_ENDPOINT_URL_VAR) or None,
     )
 
