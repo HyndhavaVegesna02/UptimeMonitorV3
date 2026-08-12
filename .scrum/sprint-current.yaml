@@ -784,7 +784,10 @@ stories:
     started_at_commit: 3263e17   # dispatched 2026-08-12; all four sibling rows now landed
     commit_range: c14ea29..26cc422   # computed from started_at_commit (RC-4's rung)
     paused_at_commit: null
-    guard: backend/tests/test_zone_rules_enforced_by_claims.py   # 12 tests, all green in isolation
+    guard: backend/tests/test_zone_rules_enforced_by_claims.py   # 16 tests after fix round 1
+                         # (was annotated 12 here and left stale; the ROUND-2 REVIEWER caught my
+                         # board entry, not the code -- RC-8's exact shape, found by the one role
+                         # that happened to look. Measured: '16 passed in 0.43s'.)
     anti_vacuity_evidence: >-
       THE NUMBER THAT MATTERS MOST, and it is not one: 7 of 8 rows resolve at least one reference --
       ZR-1(1, a CONTRACT NAME), ZR-2(1), ZR-3(1), ZR-4(1), ZR-5(1), ZR-7(1), ZR-8(4) -- for TEN
@@ -792,12 +795,126 @@ stories:
       "FIXED ... NO STANDING GUARD" and it claims no guard at all. That distribution is the proof the
       grammar is reading the real table rather than matching nothing: it spans both reference kinds,
       the bare-path rows, the ::test_name rows, the two-verdict cell, and the four-reference cell.
+    spec_review:
+      verdict: FAIL
+      at: 2026-08-12
+      finding: >-
+        ONE narrow, correct gap. AC2 requires the skip/xfail/deselected residue stated in the
+        docstring AND in the assertion failure message. It was in two docstrings and in NONE of the
+        file's 18 asserts -- including the aggregating one that actually surfaces to a reader.
+        Verified by the orchestrator before acting: the AC3 sibling assertion DOES restate its own
+        limit inline ("NOTE the limit of this check"), proving the implementer knew the pattern and
+        applied it for AC3 only.
+      what_it_confirmed_positively: >-
+        Reading C implemented correctly and not a near-miss; Detail column, legend and History all
+        out of scope by construction; the verdict marker stripped from INSIDE the backtick span;
+        the non-vacuity floor fires on a renamed heading; and `git diff -- zone-rules.md` EMPTY, so
+        no adjudication row was edited to satisfy the parser. That last point is the specific damage
+        the original AC would have caused, and it did not happen.
+    quality_review:
+      verdict: FIX_REQUIRED
+      at: 2026-08-12
+      majors: 1
+      major: >-
+        *** NO PER-ROW NON-VACUITY FLOOR -- sprint-67's MAJOR-1 shape reproduced at ROW granularity
+        inside the guard built to end it. *** The only floor was global, so a single row dropping to
+        zero references left that row ENTIRELY unchecked while both tests stayed GREEN -- and because
+        the shown-RED test filters on rows that HAVE references, the row escaped that check too. Four
+        realistic edits proven, each taking coverage 10 -> 9 silently: marker outside the span; a
+        lone marker span with the reference outside it; an escaped pipe earlier in the verdict cell;
+        a markdown-link reference form. The first is the most likely of all, because putting the
+        marker outside the backticks is the MORE natural markdown and nothing mechanical enforced the
+        house convention the parser depends on.
+      independently_reproduced_by_orchestrator: >-
+        YES, before dispatching the fix. Moving ZR-7's marker outside its span took the count 10 -> 9
+        with ZR-7 at ZERO references and the guard still green. Provenance pinned on the probe.
+      what_it_praised_rather_than_padding: >-
+        It went BEYOND the guard and ran `pytest --collect-only` on all seven `path::test` node ids:
+        10 items collected, so every row's claim is true against real collection and not merely
+        against the AST. It also verified no duplication (nothing else in the repo parses this table;
+        yt_wiki.py has a citation regex, not a table parser) and named the aggregating failure
+        message as the model to KEEP. It explicitly declined to manufacture findings.
+    fix_round:
+      at: 2026-08-12
+      commits: 70b9244, 6b82d2c, 5aa1f2e, 5f54530
+      landed: >-
+        Per-row floor (verdict cell containing ENFORCED-BY must yield non-empty references AND
+        len(references) >= verdict_cell.count("ENFORCED-BY"), which also finally reads the previously
+        dead `verdict_cell` field); a standing header-vs-row cell-count invariant replacing an
+        authoring-time pipe spot check; a test pinning ZR-8's real four-reference two-finding shape;
+        AC2's residue added to the surfacing failure message; docstrings corrected where they claimed
+        "every reference a row claims" resolves; three minors.
+      implementer_judgement_call_endorsed: >-
+        Offered the choice of widening the grammar to accept a marker outside the span OR stating the
+        limit honestly, it chose to state the limit -- correctly reasoning that AC1 pins
+        marker-inside-span as the house grammar, so widening it would contradict the story's own
+        pinned spec. That is the right call and the right reason.
+      orchestrator_verification: >-
+        Reference count still EXACTLY 10 across the same 7 rows after the fix. The round-1 headline
+        edit now RAISES, with a message that names the row AND diagnoses the cause: "ZR-7: Verdict
+        cell contains 1 'ENFORCED-BY' marker(s) but only 0 reference(s) parsed out of it ... Likely
+        cause: the marker sits OUTSIDE its backtick...". And across the WHOLE story
+        `git diff c14ea29..HEAD -- docs/scrum/wiki/zone-rules.md` is EMPTY -- AC6 held end to end.
+    quality_re_review_round_2:
+      verdict: FIX_REQUIRED
+      at: 2026-08-12
+      majors: 1
+      dispatched_because: >-
+        The fix round added NEW code (two floors) that no reviewer had seen, and every review round
+        in this sprint had found something real. The base rate held.
+      closed_from_round_1: >-
+        ALL FOUR proven edits are now caught, verified against ZR-7's REAL row: marker outside the
+        span, lone marker span with the reference outside it, escaped pipe (caught by the new
+        cell-count invariant, "row has 4 cells but the header has 3"), and the markdown-link form in
+        every variant that actually loses coverage. The two link variants that stay green lose NO
+        coverage -- census stays 10/10 and the reference resolves -- so they are not a hole.
+      new_major: >-
+        *** THE FLOOR IS INEFFECTIVE ON MULTI-REFERENCE CELLS, AND THE PROSE ASSERTS OTHERWISE. ***
+        It keys on `len(references) >= verdict_cell.count("ENFORCED-BY")`, which only catches refs
+        BELOW the marker count. ZR-8 has 2 markers and 4 references -- 40% of the guard's total
+        coverage -- so it can silently lose up to two. THREE claim-preserving edits proven, each
+        taking the census 10 -> 9 with BOTH real-file tests GREEN: one reference rewritten as a
+        markdown link; one continuation reference's backticks dropped; finding-2's marker separated
+        from its own reference.
+        THE SHARPEST PART: that third shape is VERBATIM what the implementer's own
+        `test_per_row_floor_catches_a_lone_marker_span_with_reference_outside` pins. It FIRES on ZR-7
+        and is ABSORBED on ZR-8, because the surplus continuation refs cover the marker count -- so
+        the guard's protection silently depends on how many references a row happens to have.
+        AND THE DOCSTRING OVERCLAIMS: it says the floor fires "the moment a cell's ENFORCED-BY count
+        and its parsed reference count DISAGREE". It fires only when refs < markers; all three edits
+        DO disagree and are silent. The real-file test claims it catches "a partial collapse, e.g.
+        ZR-8's 4 references dropping to 1" -- true only below the marker count, while 4->3 and 4->2,
+        the likelier collapses, pass. Round 1's exact complaint, narrowed to one row.
+      independently_reproduced_by_orchestrator: >-
+        YES, provenance pinned to this tree before dispatching the fix: dropping the backticks around
+        one of ZR-8's continuation references gives census 9 with ZR-8 at 3 and NO floor firing.
+      also_verified_by_the_reviewer: >-
+        The cell-count invariant does NOT false-red on legitimate markdown (alignment-only
+        separators pass; a missing trailing pipe fails loud naming the row). The ZR-8 synthetic pin
+        is real rather than a restatement -- narrowing the bare-continuation rule or the marker strip
+        reds it. AC2's residue DOES now surface in the message that actually raises.
+      fix_dispatched_but_NOT_LANDED: >-
+        Dispatched with three parts (strengthen the signal to max(marker_count,
+        verdict_cell.count(".py")), which the reviewer verified holds for every current row including
+        ZR-1's contract-name row at 0/1 and ZR-8 at 4/4; ADD a companion pin on the REAL ZR-8 row
+        yielding exactly 4; and narrow the prose to what the check does, stating any residual limit
+        exactly). THE IMPLEMENTER WAS KILLED BY THE SESSION LIMIT BEFORE MAKING ANY COMMIT. Verified
+        at park: `git log 5f54530..HEAD` EMPTY and the guard file UNMODIFIED, so nothing was
+        half-applied and nothing needed discarding.
+      minors_also_dispatched:
+        - >-
+            _assert_uniform_cell_count diagnoses a DELIBERATELY ESCAPED pipe (backslash-pipe) as
+            'an unescaped pipe' and offers no remedy; failing is correct, the wording is not.
+        - "A marker typo (ENFORCED_BY) yields marker_count 0, so the floor returns early and coverage drops 10 -> 9 green. State the limit or check that every row carries a recognised verdict marker, allowing ZR-6's FIXED ... NO STANDING GUARD."
     gate_blocked:
       status: >-
-        *** THE FULL 8-COMMAND GATE CANNOT GO GREEN ON THIS MACHINE RIGHT NOW, AND IT IS NOT THIS
-        STORY'S FAULT AND NOT CONTENTION. *** `python -m pytest` = 733 passed / 1 FAILED on
-        test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure. STORY-216 is therefore
-        NOT marked done: the DoD rule is mechanical and a nonzero exit is not a pass, no exceptions.
+        RESOLVED 2026-08-12 WITHOUT INTERVENTION -- see the CORRECTION key below, which supersedes
+        this block. While the fault was active `python -m pytest` exited 1 (733 passed / 1 FAILED on
+        test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure) and STORY-216 was
+        correctly held out of `done`, because the DoD rule is mechanical and a nonzero exit is not a
+        pass. It was NOT discounted as a flake and NOT waved through; it was recorded red and the
+        story was left in review. The gate later ran 8/8 green at the same HEAD, and THAT run is the
+        evidence of record.
       why_it_is_not_contention: >-
         THE TWO-LIMB CONTENTION DISCOUNT DOES NOT APPLY, because limb 2 FAILS. Limb 1 holds
         absolutely: `git diff sprint-69-start..HEAD -- backend/tests/test_dynamo_local.py
@@ -806,7 +923,36 @@ stories:
         (1 failed, 6 passed) and the single test fails alone, 5 times across two parties. It is
         DETERMINISTIC right now, not load-sensitive. Discounting it as a flake would be exactly the
         "learn to re-roll until green" failure mode GN-2 warns about, so it is not discounted.
-      root_cause_proven_outside_pytest: >-
+      CORRECTION_2026_08_12_the_fault_self_healed_and_my_conclusion_overstated_it: >-
+        *** READ THIS BEFORE THE BLOCK BELOW. THE GATE IS NOW GREEN AND MY "root cause" CONCLUSION
+        WAS STATED MORE FIRMLY THAN THE EVIDENCE SUPPORTED. *** At 5f54530 the FULL 8-command gate
+        ran 8/8 GREEN -- 738 passed / 0 skipped under REQUIRE_DYNAMO=1 -- including the very test
+        that had failed five times. I then re-ran test_dynamo_local.py twice more: 7 passed, 7
+        passed. And both publishing forms now work: `-p 8096:8000` ROUTABLE and
+        `-p 127.0.0.1:8095:8000` ROUTABLE. NO DOCKER RESTART WAS PERFORMED. Nothing was done to the
+        daemon; it recovered on its own.
+        WHAT WAS TRUE: every individual measurement below was real when taken (ports 32768, 32769,
+        8099, 8098, 8097 each unroutable; uptime_dynamo_8021 reachable throughout; five test
+        failures across two parties). WHAT WAS WRONG: I labelled it "DOCKER PORT PUBLISHING IS
+        BROKEN MACHINE-WIDE FOR NEW CONTAINERS" and called the explicit-port failure "DECISIVE" for
+        that characterisation. It was not decisive -- it was consistent with a TRANSIENT,
+        INTERMITTENT fault, and the intermittent reading is the one that survived: port 8097 failed
+        roughly a minute before 8095 and 8096 both succeeded, and the gate's own fixture spawned a
+        container successfully at 17:46 while my standalone probes were still failing either side of
+        it. So newly published ports were INTERMITTENTLY unroutable for about an hour, not
+        deterministically broken.
+        THE MECHANISM REMAINS UNKNOWN AND IS NOT CHARACTERISED. Do not cite the block below as a
+        diagnosis; cite it as a log of measurements.
+        WHY THIS IS RECORDED RATHER THAN QUIETLY EDITED: it is the FOURTH instance in this sprint of
+        an unverified causal inference carried under a "proven" label (QM-2, QM-4, ZR-1 residue (2)
+        v1, QM-6) and the SECOND that was mine. The sprint's whole thesis is that a claim can be
+        internally coherent, evidence-backed at every individual step, and still overstate what was
+        established. Filed as RC-12.
+        NOTE ALSO: the PO authorised a Docker restart. It was NOT performed, because by the time the
+        authorisation arrived the gate was already green and a restart would have interrupted the
+        PO's unrelated gateway-poc containers for no benefit. Permission granted is not the same as
+        action required.
+      measurements_while_the_fault_was_active_NOT_a_diagnosis: >-
         DOCKER PORT PUBLISHING IS BROKEN MACHINE-WIDE FOR NEW CONTAINERS. Proven with no pytest
         involved: (1) `docker run -d -P amazon/dynamodb-local` -> docker port reports host 32768,
         NOT routable on 127.0.0.1 after 20s of polling; retried, 32769, also not routable.
@@ -846,70 +992,68 @@ stories:
         and restarting the daemon would interrupt all of them. Sprint autonomy covers decisions
         inside the sprint; it does not extend to disrupting the PO's other running services. The
         decision is the PO's and is surfaced at review.
-    dod_evidence:   # PARTIAL AND RED, recorded as measured. 7 of 8 exit 0; command 1 exits nonzero.
-                    # This is NOT the story's evidence of record -- STORY-216 stays in review until
-                    # `python -m pytest` exits 0. Nothing here is hand-transcribed.
+    dod_evidence:   # FULL 8, GREEN, at 5f54530 (the fix-round HEAD). Machine-emitted by yt_gate.py.
+                    # DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1 -> 738 passed with a
+                    # ZERO skip count, so the persistence floor really ran. 722 -> 738 is this
+                    # story's 16 tests.
+                    # THE HISTORY MATTERS AND IS NOT ERASED: an earlier run at 26cc422 exited 1 on
+                    # test_dynamo_local.py's teardown test, was NOT discounted as a flake, and the
+                    # story was held in review until a genuine green existed. See gate_blocked above
+                    # for that record and for the correction to my own over-firm diagnosis.
       - command: "python -m pytest"
-        exit_code: 1
-        output_tail: "1 failed, 733 passed in 69.77s -- FAILED backend/tests/test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure -- TimeoutError: DynamoDB Local at port 54253 did not become ready"
-        commit: 26cc422
-        at: "2026-08-12T12:05:00+00:00"
-        note: >-
-          Reproduced by the orchestrator independently at ports 54253 and again in isolation. See
-          gate_blocked above for the outside-pytest root cause. 733 passed is itself notable: it is
-          722 + this story's 12 new tests, minus the 1 failure.
-      - command: "python -m pytest backend/tests/test_zone_rules_enforced_by_claims.py"
         exit_code: 0
-        output_tail: "12 passed in 0.28s"
-        commit: 26cc422
-        at: "2026-08-12T12:06:00+00:00"
+        output_tail: "test_zone_layout.py ...... [ 96%] | test_zone_rules_enforced_by_claims.py ................ [ 98%] | test_zr2_vendor_vocabulary.py ... [ 98%] | test_zr5_config_dir_parity.py ..... [ 99%] | test_zr7_pagination_guard.py .. [100%] | ======================= 738 passed in 79.23s (0:01:19) ======================="
+        commit: 5f54530
+        at: "2026-08-12T12:20:00+00:00"
         note: >-
-          THE STORY'S OWN GUARD IS GREEN, verified by the orchestrator against the REAL zone-rules.md
-          and the REAL pyproject.toml -- not a fixture. Recorded separately because it is evidence
-          about the story, whereas the red above is evidence about the machine.
+          THE SAME COMMAND THAT EXITED 1 FIVE TIMES. Confirmed stable afterwards, not taken on one
+          reading: test_dynamo_local.py re-run twice more in isolation, 7 passed and 7 passed.
       - command: 'python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"'
         exit_code: 0
-        output_tail: "Contracts: 9 kept, 0 broken."
-        commit: 26cc422
-        at: "2026-08-12T12:06:30+00:00"
+        output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        commit: 5f54530
+        at: "2026-08-12T12:21:00+00:00"
       - command: "python -m ruff check ."
         exit_code: 0
         output_tail: "All checks passed!"
-        commit: 26cc422
-        at: "2026-08-12T12:06:31+00:00"
+        commit: 5f54530
+        at: "2026-08-12T12:21:01+00:00"
       - command: "python -m ruff format --check ."
         exit_code: 0
         output_tail: "252 files already formatted"
-        commit: 26cc422
-        at: "2026-08-12T12:06:32+00:00"
+        commit: 5f54530
+        at: "2026-08-12T12:21:02+00:00"
       - command: 'python -c "from cfnlint.runner import main; main()" infra/stack.yaml'
         exit_code: 0
         output_tail: ""
-        commit: 26cc422
-        at: "2026-08-12T12:06:33+00:00"
+        commit: 5f54530
+        at: "2026-08-12T12:21:03+00:00"
       - command: "npm test"
         exit_code: 0
-        output_tail: "Test Files 51 passed (51) | Tests 363 passed (363)"
-        commit: 26cc422
-        at: "2026-08-12T12:06:40+00:00"
+        output_tail: "> frontend@0.0.0 test | > vitest run | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  82.47s"
+        commit: 5f54530
+        at: "2026-08-12T12:21:10+00:00"
+        note: >-
+          Fifth consecutive full gate without STORY-221 firing. STILL not retired: the measured rate
+          was 2 red in 4 at one commit with zero frontend diff, and five clean runs on an idle
+          machine is what a load-sensitive failure looks like when the load is absent. Re-price at
+          sprint-70 planning against the measurement, never against this streak.
       - command: "npm run build"
         exit_code: 0
-        output_tail: "built in 953ms"
-        commit: 26cc422
-        at: "2026-08-12T12:08:00+00:00"
+        output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip 85.39 kB | built in 836ms"
+        commit: 5f54530
+        at: "2026-08-12T12:23:00+00:00"
       - command: "npm run lint"
         exit_code: 0
-        output_tail: "(clean)"
-        commit: 26cc422
-        at: "2026-08-12T12:08:10+00:00"
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: 5f54530
+        at: "2026-08-12T12:23:10+00:00"
     blast_radius_resolved: true   # NO wiki article was permanently touched: the three AC4 mutations
                                   # were applied to zone-rules.md and reverted BEFORE any commit, so
                                   # no verified_sha moved and the self-reference seam did not recur a
                                   # fourth time. yt_wiki AFTER the last commit: sweep/facts/links CLEAN.
     reality_gate:
-      # Implementer-reported; ORCHESTRATOR RE-VERIFICATION PENDING, and that is stated rather than
-      # implied. The 12-test guard was independently run green by the orchestrator against the real
-      # file; the three AC4 mutations have NOT yet been re-performed by a second party.
+      # Re-verified by TWO parties beyond the implementer -- see orchestrator_reverification below.
       discrimination_proof:
         ac4a_nonexistent_path:
           mutation: "ZR-7's row -> `ENFORCED-BY backend/tests/test_zr7_pagination_guard_NONEXISTENT.py`"
@@ -931,7 +1075,12 @@ stories:
             import-linter contract named ... in pyproject.toml" -- 1 failed. AC1's SECOND reference
             kind, the one that exists solely because ZR-1's guard is a contract and not a file.
           reverted: "git status --porcelain empty"
-        orchestrator_reverification: PENDING
+        orchestrator_reverification: >-
+          DISCHARGED, twice over. The SPEC REVIEWER independently reproduced all three AC4 mutations
+          in memory (never writing to disk, git status clean throughout) and got the same reds
+          naming the same rows. The ORCHESTRATOR separately re-derived the reference count off the
+          real table -- 10 across 7 of 8 rows, ZR-8 carrying four, ZR-6 correctly zero -- with the
+          guard module's provenance printed on the run so the result is provably about this tree.
 
 # --- Standing facts. Carried into every dispatch; NOT sprint-69 state. --------
 standing:
@@ -1166,6 +1315,46 @@ retro_candidates:
       when it changes. Candidate: either add the missing guard files to `code_refs` (accepting more
       staleness churn on this article) or state deliberately, once, that guard-file citations are
       exempt because STORY-216's check supersedes staleness for them. Do not leave it half-and-half.
+
+  - id: RC-12
+    raised: 2026-08-12 (orchestrator, gate diagnosis)
+    severity: medium
+    text: >-
+      THE ORCHESTRATOR OVERSTATED A DIAGNOSIS UNDER A "PROVEN" LABEL -- fourth instance of this
+      defect class in this sprint (QM-2, QM-4, ZR-1 residue (2) v1, QM-6) and the second that was
+      the orchestrator's own. Every measurement was real: five newly published container ports
+      unroutable, five test failures across two parties, the pre-existing container reachable
+      throughout. The CONCLUSION -- "DOCKER PORT PUBLISHING IS BROKEN MACHINE-WIDE FOR NEW
+      CONTAINERS", with the explicit-port failure called "DECISIVE" -- claimed a permanence the
+      evidence did not support. It self-healed with NO restart, and port 8097 failed about a minute
+      before 8095 and 8096 succeeded, so the surviving reading is an INTERMITTENT fault of unknown
+      mechanism. Corrected in place rather than quietly edited.
+      WHAT MAKES IT RETRO-WORTHY RATHER THAN JUST EMBARRASSING: the pattern is now measured at four
+      occurrences in one sprint across three different authors, which makes it a process property,
+      not a personal slip. Every instance shares one shape -- a chain of true observations, a
+      conclusion one step beyond them, and a label ("proven", "verified by mutation", "evidence read
+      at re-verification") that stops the next reader from checking. The reality gate catches this
+      for GUARDS because a mutation forces the claim to be executable. Nothing forces it for
+      DIAGNOSES and STATUS CLAIMS. Candidate rung: a checklist line requiring any claim carrying a
+      proof-label to state the single observation that would falsify it -- cheap, and all four
+      instances would have failed it.
+  - id: RC-13
+    raised: 2026-08-12 (STORY-216 round 2)
+    severity: medium
+    text: >-
+      A GUARD'S PROTECTION SILENTLY DEPENDED ON THE DATA IT WAS GUARDING. STORY-216's per-row floor
+      (refs >= marker count) fires on a single-reference row and is ABSORBED on a multi-reference
+      one, because surplus references cover the marker count. The identical evasion is caught on
+      ZR-7 and missed on ZR-8 -- and ZR-8 is 40% of the guard's coverage. The implementer's own test
+      pins that exact shape, which is what makes it instructive: a test can pin a behaviour on one
+      input while the behaviour does not hold on another input of the same document, and nothing in
+      the shape of the test reveals that.
+      GENERAL FORM WORTH A RULE: when a guard's assertion compares two counts derived from the same
+      cell/record, a row with a surplus in one count masks a loss in the other. Both this sprint's
+      MAJORs on this story are that pattern at different scopes (round 1: global floor masking a row;
+      round 2: row floor masking a reference). Candidate rung: the quality-review checklist's
+      tests-that-lie taxonomy gains an entry -- "a threshold assertion whose slack varies per input
+      is not a floor for the inputs with slack" -- since it was a reviewer, twice, that caught it.
 
 gate_notes:
   - story: STORY-206
