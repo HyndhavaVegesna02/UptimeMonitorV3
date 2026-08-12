@@ -549,21 +549,121 @@ stories:
   - id: STORY-209
     title: Land ZR-5's guard -- a composition-root parity test for CONFIG_DIR resolution (code-level half only)
     points: 2
-    board: in-progress
+    board: done
     pipeline: light
     order: 3             # highest-care mutations: they touch the two composition roots
     blocked_question: null
-    attempts: 1
+    attempts: 1          # one dispatch, no rework, no AC returned
     started_at_commit: 414da79   # dispatched 2026-08-12
+    commit_range: 18deae6..c5f0188   # computed from started_at_commit (RC-4's rung), 3 commits
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    guard: backend/tests/test_zr5_config_dir_parity.py   # 5 tests; suite 717 -> 722
+    publish_safety_honoured: >-
+      CONFIRMED. Both mutations were source-level only. `python -m src.composition.run` was never
+      invoked, by the implementer or the orchestrator, and no create_app() was constructed. The two
+      roots were edited, the guard test file alone was run, and each edit reverted to an empty diff
+      before the next. This was the sprint's highest-care story for exactly this reason.
+    dod_evidence:   # FULL 8, at c5f0188, ALL EIGHT FIRST ATTEMPT. Machine-emitted by yt_gate.py.
+                    # DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1, so "722 passed"
+                    # with a ZERO skip count means the persistence floor really ran.
+                    # 717 -> 722 is exactly this story's five new tests.
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 722 passed in 62.27s (0:01:02) ========================"
+        commit: c5f0188
+        at: "2026-08-12T11:00:00+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        commit: c5f0188
+        at: "2026-08-12T11:00:30+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: c5f0188
+        at: "2026-08-12T11:00:31+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "251 files already formatted"
+        commit: c5f0188
+        at: "2026-08-12T11:00:32+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: c5f0188
+        at: "2026-08-12T11:00:33+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  87.73s"
+        commit: c5f0188
+        at: "2026-08-12T11:00:40+00:00"
+        note: >-
+          Third consecutive full gate without STORY-221 firing. Still does NOT retire GN-2 -- three
+          clean runs on an idle machine is precisely the pattern a load-sensitive failure produces.
+          Re-price at sprint-70 planning against the measured 2-in-4, not against this streak.
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip: 85.39 kB | built in 1.03s"
+        commit: c5f0188
+        at: "2026-08-12T11:02:00+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: c5f0188
+        at: "2026-08-12T11:02:10+00:00"
+    blast_radius_resolved: true   # zone-rules.md only -- the article this story is about. Its
+                                  # code_refs gained the new guard file; verified_sha ecece70.
+                                  # yt_wiki run AFTER the last commit: sweep/facts/links CLEAN.
     reality_gate:
-      discrimination_proof: null   # AC4 + AC5: make create_app, then main, read
-                                   # os.environ.get("CONFIG_DIR", "config/apps") directly -> RED
-                                   # naming that root; revert each; git diff empty.
-                                   # NOTE: neither module imports `os` -- the mutation needs it
-                                   # added. A NameError is NOT the guard failing.
+      # BOTH MUTATIONS RE-PERFORMED BY THE ORCHESTRATOR in the main tree, 2026-08-12. This is the
+      # evidence of record. Source-level only; no process that ingests or publishes was ever started.
+      discrimination_proof:
+        ac4_app_py:
+          mutation: >-
+            backend/src/composition/app.py -- added `import os`, changed
+            `cfg_dir = config_dir or settings.config_dir` to
+            `cfg_dir = config_dir or os.environ.get("CONFIG_DIR", "config/apps")`.
+          command: "python -m pytest backend/tests/test_zr5_config_dir_parity.py -q"
+          mutated_result: >-
+            "AssertionError: composition/app.py::create_app reads CONFIG_DIR directly, bypassing
+            load_settings(): [\"literal 'CONFIG_DIR' at line 137\"]" -- 2 failed, 3 passed.
+          reverted_result: "5 passed in 0.07s"
+          git_diff_after_revert: empty
+        ac5_run_py:
+          mutation: >-
+            backend/src/composition/run.py -- added `import os`, changed
+            `config = load_config(settings.config_dir)` to
+            `config = load_config(os.environ.get("CONFIG_DIR", "config/apps"))`.
+          command: "python -m pytest backend/tests/test_zr5_config_dir_parity.py -q"
+          mutated_result: >-
+            "AssertionError: composition/run.py::main reads CONFIG_DIR directly, bypassing
+            load_settings(): [\"literal 'CONFIG_DIR' at line 186\"]" -- 1 failed, 4 passed.
+          reverted_result: "5 passed in 0.28s"
+          git_diff_after_revert: empty   # `git diff --stat` and `git status --short` both silent
+        asymmetry_proof: >-
+          THE POINT OF DOING BOTH, and it holds: the run.py mutation fails ONLY the run.py test
+          (1 failed, 4 passed) while the app.py mutation fails the app.py side. Each root is watched
+          independently, so the guard cannot be satisfied by watching one root -- which is the exact
+          asymmetry ZR-5 exists to prevent.
+        verdict: >-
+          Both mutations leave runtime behaviour identical today (no test monkeypatches
+          load_settings; test_asgi.py passes config_dir= explicitly, which wins either way). That is
+          precisely why prose never caught this shape and why only a mutation counts here.
+      observation_not_a_defect: >-
+        Under the app.py mutation, `test_create_app_config_dir_parameter_override_is_not_flagged`
+        ALSO failed ("the config_dir= parameter must not trip the CONFIG_DIR env-var guard"), which
+        is why that direction reports 2 failed rather than 1. Correct behaviour, not a defect -- the
+        test asserts the parameter override is not flagged, and a genuine env-var read in the same
+        function does trip the shared detector. Worth knowing before someone reads that second
+        failure as a false positive. The implementer reported the 2/3 split honestly rather than
+        rounding it to one.
+      ac3_limits_stated: >-
+        Both are in the guard's own docstring, verified by reading it: (a) the operational
+        two-process half is UNGUARDABLE by construction, harness.py is the only cover and it is
+        procedural, and the docstring says in terms that a green run "must not be read as 'the
+        sprint-64 incident cannot recur'"; (b) the code-level residue -- ZR-5 forbids TWO things and
+        this guard catches one, so a root rewritten to hardcode `load_config("config/apps")` passes
+        the whole AC2 walk, load_settings() clause included, undetected.
 
   - id: STORY-208
     title: Land ZR-4's guard -- extend test_zone_layout to assert the five-file api feature SHAPE
@@ -816,6 +916,21 @@ retro_candidates:
       from the other direction (a commit that touches an amplifier code_ref cannot bump the five
       articles it stales without leaving its own subject behind). A18 may need re-drafting rather
       than one more clarification bolted on -- A15 applies.
+
+  - id: RC-11
+    raised: 2026-08-12 (STORY-209, raised by the implementer)
+    severity: low
+    text: >-
+      ROW CITATIONS AND code_refs HAVE DRIFTED APART, AND ONLY THE NEW ROWS ARE CONSISTENT. ZR-7's
+      catalogue row cites `backend/tests/test_zr7_pagination_guard.py` as its guard, but that path is
+      NOT in zone-rules.md's `code_refs` -- whereas ZR-2's, ZR-3's and now ZR-5's guard files all
+      are. Pre-existing, correctly left untouched by this story, and worth a ruling rather than a
+      silent fix: a guard file that a row claims as its enforcement but that staleness does not track
+      is a row that can go quietly wrong when the guard is renamed or deleted. Note STORY-216 does
+      NOT close this -- 216 checks that the claimed guard EXISTS, not that the article is quarantined
+      when it changes. Candidate: either add the missing guard files to `code_refs` (accepting more
+      staleness churn on this article) or state deliberately, once, that guard-file citations are
+      exempt because STORY-216's check supersedes staleness for them. Do not leave it half-and-half.
 
 gate_notes:
   - story: STORY-206
