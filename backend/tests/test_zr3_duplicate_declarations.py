@@ -138,6 +138,16 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "str.find (skip past the frontmatter's own opening '---' line) -- "
         "unrelated to FreshnessConfig.stale_after_cycles. (STORY-219, sprint 70.)"
     ),
+    ("tools/evidence_check.py", 214): (
+        "INDEPENDENT: raw[2:], slicing off the two-character 'b/' prefix from "
+        "a unified-diff '+++ b/<path>' header -- unrelated to "
+        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70.)"
+    ),
+    ("tools/evidence_check.py", 247): (
+        "INDEPENDENT: parts[1], the second whitespace-split token of a "
+        "pytest -v result line (the PASSED/FAILED/ERROR word) -- unrelated to "
+        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70.)"
+    ),
     ("tools/demo_loop_gate/harness.py", 999): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
         "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
