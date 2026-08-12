@@ -122,12 +122,12 @@ positive, this story is **Blocked and re-estimated at 3+**, never silently conve
       here so a reader can see the branch was checked, not skipped. See History.)*
 - [x] **AC4 — no production behaviour changes.** `git diff <start>..HEAD -- backend/src/` is EMPTY
       for this story. Asserted, not asserted-about.
-- [ ] **AC5 — no-regression check on the Adjudication table, which this story does NOT edit.**
+- [x] **AC5 — no-regression check on the Adjudication table, which this story does NOT edit.**
       AC2 appends to ZR-8's BODY prose (`zone-rules.md:736-767`); the Adjudication row is at `:878`,
       about 110 lines below. `test_zone_rules_enforced_by_claims.py` therefore passes with zero work
       here — that is the point, and it is recorded as a no-regression check, **not** as evidence of
       anything this story did. It is explicitly NOT the reason this sprint is contract-sensitive.
-- [ ] **AC6** — full 8/8 DoD gate green at the final HEAD.
+- [x] **AC6** — full 8/8 DoD gate green at the final HEAD.
 
 ---
 
@@ -239,8 +239,20 @@ the Adjudication table row this test actually pins is at `:878`, untouched by th
 A green result here shows this story did not regress that guard — it is not proof that
 AC2's wording is correct, because the test cannot see prose it doesn't check.
 
-### AC6 — DoD gate
+### AC6 — DoD gate, fresh run after the last commit
 
-See the final gate run recorded in the implementer report for this story (fresh output,
-re-run after the last commit, `DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021`,
-`REQUIRE_DYNAMO=1`).
+`DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021`, `REQUIRE_DYNAMO=1` for every pytest
+invocation; all module-form entry points per CLAUDE.md's Device Guard note.
+
+| # | Command | Exit | Tail |
+| - | --- | --- | --- |
+| 1 | `python -m pytest` | 0 | `743 passed in 39.01s` (0 skipped — matches the sprint-70 plan's `a360e50` baseline) |
+| 2 | `python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"` | 0 | `Contracts: 9 kept, 0 broken.` |
+| 3 | `python -m ruff check .` | 0 | `All checks passed!` |
+| 4 | `python -m ruff format --check .` | 0 | `254 files already formatted` |
+| 5 | `python -c "from cfnlint.runner import main; main()" infra/stack.yaml` | 0 | (no findings; exit 0) |
+| 6 | `npm test` (from `frontend/`) | 0 | `Test Files  51 passed (51)` / `Tests  363 passed (363)` |
+| 7 | `npm run build` (from `frontend/`) | 0 | `built in 316ms` |
+| 8 | `npm run lint` (from `frontend/`) | 0 | (no findings; exit 0) |
+
+8/8 green.
