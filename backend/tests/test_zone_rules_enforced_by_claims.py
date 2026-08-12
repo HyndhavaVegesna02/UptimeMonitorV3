@@ -417,6 +417,28 @@ def test_references_reading_c_grammar_on_every_shape() -> None:
     assert rows["ZR-8"].references == ("backend/tests/test_g.py::test_h",)
 
 
+def test_references_pins_zr8s_real_four_reference_two_finding_shape() -> None:
+    """Quality review FIX 1.3: the main grammar test above only exercises
+    ZR-8 in its SINGLE-reference form. ZR-8's REAL cell is two findings, two
+    `ENFORCED-BY` spans, and two more bare, ` + `-joined continuation spans
+    attached to the second -- four references total. If a future grammar
+    change silently narrowed that to 1, 30% of the guard's real-table
+    coverage would vanish while staying green; this pins the shape directly,
+    independent of `zone-rules.md`'s current wording."""
+    cell = (
+        "Finding 1: `ENFORCED-BY backend/tests/test_a.py::test_b` (STORY-1, "
+        "sprint-1). Finding 2: `ENFORCED-BY backend/tests/test_c.py::test_d` "
+        "(AC4) + `backend/tests/test_e.py::test_f` + "
+        "`backend/tests/test_g.py::test_h` (STORY-2, sprint-1)"
+    )
+    assert _references_in_verdict_cell(cell) == [
+        "backend/tests/test_a.py::test_b",
+        "backend/tests/test_c.py::test_d",
+        "backend/tests/test_e.py::test_f",
+        "backend/tests/test_g.py::test_h",
+    ]
+
+
 def test_function_exists_finds_a_present_function_at_any_nesting_level(
     tmp_path,
 ) -> None:
