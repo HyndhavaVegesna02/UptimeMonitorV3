@@ -416,18 +416,135 @@ stories:
   - id: STORY-207
     title: Land ZR-2's guard -- an AST test that vendor vocabulary never becomes an identifier inside core/
     points: 2
-    board: in-progress
+    board: done
     pipeline: light      # 1-2 pts -> implementer + DoD gate + reality gate
     order: 2
     blocked_question: null
-    attempts: 1
+    attempts: 1          # one dispatch, no rework round; ONE AC miss returned and fixed by the
+                         # same agent (resumed from its transcript, not re-dispatched)
     started_at_commit: d45f5d2   # dispatched 2026-08-12
+    commit_range: 4e9ebe4..ceae75b   # computed FROM the board's started_at_commit, not hand-
+                                     # assembled: RC-4's candidate rung, applied here rather than
+                                     # waiting for retro approval. 7 implementer commits + the AC8 fix.
     paused_at_commit: null
-    dod_evidence: []
-    blast_radius_resolved: false
+    guard: backend/tests/test_zr2_vendor_vocabulary.py   # 3 tests; suite 714 -> 717
+    ac8_miss_returned:
+      found_by: orchestrator, at verification
+      text: >-
+        The Verdict cell landed as a BARE PATH (`ENFORCED-BY backend/tests/test_zr2_vendor_vocabulary.py`)
+        where AC8 explicitly specifies the `path.py::test_name` form. Both forms exist in this
+        corpus -- ZR-3 and ZR-7 use bare paths, ZR-8 uses `path::test_name` -- so the choice was
+        defensible, but the AC named one and it carries weight: the module holds THREE tests, so a
+        bare path only claims "some test in this file guards ZR-2", and STORY-216's AC4(b) mutation
+        is precisely "existing path + nonexistent ::test_name". A bare path leaves that half of 216
+        unexercisable from this row.
+      fixed: >-
+        ceae75b, by the same agent. It correctly went one step further than asked and updated the
+        Coverage-verdict bullet (:254) as well as the catalogue cell (:862), since ZR-8's precedent
+        in this same article keeps the two markers in the same form and fixing only one would have
+        left a fresh inconsistency. Detail cell untouched as instructed. verified_sha NOT bumped --
+        the edit touches no code_ref. Verified by the orchestrator: 2 lines changed, marker INSIDE
+        the backtick span (RC-2), and `test_core_has_no_vendor_vocabulary_leak` really exists at
+        test_zr2_vendor_vocabulary.py:193.
+    ac4_ac8_same_commit_deviation:
+      accepted: true
+      text: >-
+        AC4 and AC8 ask for the zone-rules correction and the verified_sha bump "in the same commit"
+        as the guard/row change. The implementer split them across its per-step TDD commits: guard
+        docstring at 3a7fc0f, zone-rules residue correction + row flip at f342d07, then two
+        verified_sha commits (4de67d2, 7530cb7) because a ruff-format pass touched a code_ref file
+        after the first bump. ACCEPTED, not waived: the rule exists to stop a doc ripple landing in
+        a LATER commit than the code it describes (the A18 defect class), the window here was one
+        commit wide and entirely inside the story, and the end state is correct and sweep-CLEAN. The
+        implementer disclosed it unprompted rather than papering over it. Its working-agreement
+        question is carried to the retro as RC-10.
+    dod_evidence:   # FULL 8, at ceae75b, ALL EIGHT FIRST ATTEMPT. Machine-emitted by yt_gate.py.
+                    # Run with DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1, so
+                    # "717 passed" with a ZERO skip count means the persistence floor really ran.
+                    # 714 -> 717 is exactly this story's three new tests.
+      - command: "python -m pytest"
+        exit_code: 0
+        output_tail: "backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 717 passed in 60.33s (0:01:00) ========================"
+        commit: ceae75b
+        at: "2026-08-12T10:35:20+00:00"
+      - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+        exit_code: 0
+        output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+        commit: ceae75b
+        at: "2026-08-12T10:36:21+00:00"
+      - command: "python -m ruff check ."
+        exit_code: 0
+        output_tail: "All checks passed!"
+        commit: ceae75b
+        at: "2026-08-12T10:36:22+00:00"
+      - command: "python -m ruff format --check ."
+        exit_code: 0
+        output_tail: "250 files already formatted"
+        commit: ceae75b
+        at: "2026-08-12T10:36:23+00:00"
+      - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+        exit_code: 0
+        output_tail: ""
+        commit: ceae75b
+        at: "2026-08-12T10:36:23+00:00"
+      - command: "npm test"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  93.88s"
+        commit: ceae75b
+        at: "2026-08-12T10:36:32+00:00"
+        note: >-
+          Passed first try, unmodified command, parallel. STORY-221 has now not fired in two
+          consecutive full gates -- which does NOT retire GN-2's measured 2-in-4 rate. Two clean
+          runs on an idle machine is consistent with a load-sensitive failure, not evidence against
+          it. The sprint-70 re-pricing stands.
+      - command: "npm run build"
+        exit_code: 0
+        output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip: 85.39 kB | built in 1.08s"
+        commit: ceae75b
+        at: "2026-08-12T10:38:09+00:00"
+      - command: "npm run lint"
+        exit_code: 0
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: ceae75b
+        at: "2026-08-12T10:38:22+00:00"
+    blast_radius_resolved: true   # zone-rules.md is the only article touched; it IS the article
+                                  # this story is about. verified_sha 05ccda0. yt_wiki run AFTER the
+                                  # last commit (RC-9's lesson, applied): sweep/facts/links CLEAN.
     reality_gate:
-      discrimination_proof: null   # AC5: add `dynatrace_code: str` to a core/domain model -> RED
-                                   # naming file/line/node class; revert; git diff empty.
+      # RE-PERFORMED BY THE ORCHESTRATOR in the main tree, 2026-08-12, and this is the evidence of
+      # record. The implementer's own proof agrees, but a shown-RED proof surviving only inside an
+      # agent's report is RC-1 / sprint-67's MAJOR-1, and this sprint has already paid for that once.
+      discrimination_proof:
+        mutation: >-
+          Inserted `dynatrace_code: str` as a field of `Component` in
+          backend/src/core/domain/component.py (after the `name: str` field).
+        command: "python -m pytest backend/tests/test_zr2_vendor_vocabulary.py -q"
+        mutated_result: >-
+          FAILED test_core_has_no_vendor_vocabulary_leak -- "AssertionError: ZR-2 violation(s) --
+          vendor vocabulary appears inside core/ outside its three compliant prose forms (# comment,
+          formal docstring, attribute-docstring idiom) or the Provenance carve-out:
+          backend/src/core/domain/component.py:32 [Name] 'dynatrace_code'". 1 failed, 2 passed.
+        reverted_result: "3 passed in 0.24s"
+        git_diff_after_revert: empty   # `git diff --stat` no output; `git status --short` no output
+        verdict: >-
+          The guard names the FILE, the LINE, the NODE CLASS and the offending TOKEN -- all four of
+          what AC5 requires. Line 32 here vs the implementer's 34 only because we inserted after
+          different fields; the guard is line-accurate either way.
+      compliant_direction_non_vacuity:   # AC2, independently checked
+        text: >-
+          AC2's discrimination is REAL, not ceremony: the test asserts that with rule (6)'s
+          `Expr`-sole exclusion turned OFF the walk DOES flag signal.py's module docstring and
+          publication.py:66's attribute docstring, and those assertions pass. So the exclusion is
+          demonstrably load-bearing rather than the walk vacuously matching nothing. This is the
+          check that would have caught an over-triggering guard -- which per ZR-2 must be REVERTED,
+          never obeyed by editing already-adjudicated-compliant code.
+      scope_checks:   # orchestrator, independent of the implementer's report
+        module_discovery: "31 modules across all five roots AC1 names: core/., domain, ports, queries, services"
+        non_vacuity_floor: ">= 25 asserted, 31 NOT hardcoded (AC9 satisfied; STORY-220 will add a module)"
+        seed_declared_once: >-
+          `_VENDOR_SEED_WORDS`/`_VENDOR_SEED_CLASS_FAMILIES` grep to exactly one file; nothing under
+          tools/ re-declares them; test_zr3_duplicate_declarations.py passes alongside the new guard
+          (5 passed together). AC6 satisfied without tripping ZR-3's own standing guard.
 
   - id: STORY-209
     title: Land ZR-5's guard -- a composition-root parity test for CONFIG_DIR resolution (code-level half only)
@@ -676,6 +793,28 @@ retro_candidates:
       simplest, a gate/pre-commit check that a commit touching an amplifier code_ref bumps every
       article citing it. Prose will not hold this: the orchestrator knew the rule and still shipped
       a stale-by-construction CLEAN claim.
+
+  - id: RC-10
+    raised: 2026-08-12 (STORY-207, raised by the implementer itself)
+    severity: medium
+    text: >-
+      TWO RULES THIS PROJECT HOLDS ARE IN TENSION, AND AN IMPLEMENTER HIT IT HONESTLY RATHER THAN
+      QUIETLY PICKING ONE. Strict TDD with "a commit after every green step" (the crash-recovery
+      mechanism) versus AC/A18's "correct the wiki and bump verified_sha in the SAME commit" as the
+      code change. When the wiki correction CITES code that does not exist until a later step, the
+      two cannot both be honoured: STORY-207 landed the guard docstring at 3a7fc0f and the
+      zone-rules residue correction at f342d07, then needed two more commits for verified_sha
+      because a ruff-format pass touched a code_ref in between. The end state was correct and
+      sweep-CLEAN, and the implementer disclosed the deviation unprompted.
+      WHAT NEEDS A RULING: whether A18's "same commit" means literally one commit, or "the same
+      story, with no intervening commit that leaves the repo asserting something false". The second
+      reading is what the rule is FOR -- it exists to stop a doc ripple landing later than the code
+      it describes and being forgotten. The first reading fights the commit cadence that makes
+      agent death survivable, and this sprint has lost two agents to session limits.
+      Note this is the SECOND time this exact seam has produced work: RC-9 is the same rule failing
+      from the other direction (a commit that touches an amplifier code_ref cannot bump the five
+      articles it stales without leaving its own subject behind). A18 may need re-drafting rather
+      than one more clarification bolted on -- A15 applies.
 
 gate_notes:
   - story: STORY-206
