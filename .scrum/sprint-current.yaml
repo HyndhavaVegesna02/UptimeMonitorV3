@@ -167,8 +167,57 @@ board:
   - id: STORY-218
     title: "Settings declares every default TWICE -- and the ZR-3 sweep is structurally blind to it"
     points: 2
-    status: todo
+    status: done
     order: 3
+    commits: "87a4773, c6bf836, c670566, be39b4c, 51a154c, fffd444, c236316 (implementer) + e1e0151 (review fixes)"
+    verdict: >-
+      Each default literal now appears ONCE in backend/src/ (grep-verified by the orchestrator and
+      again by both reviewers). The dataclass field default is canonical; load_settings() reads
+      Settings.<field>. Suite 749 -> 755.
+    reviews:
+      spec: "PASS, zero gaps. AC-to-test trace complete; all 8 gate commands independently re-run."
+      quality: >-
+        FIX_REQUIRED -- 1 MAJOR, 5 MINOR, 2 NIT. Reviewer performed its mutations IN-PROCESS via
+        pytest plugins written to the scratchpad, modifying no repo file -- so race-immunity with
+        the concurrent spec reviewer held by construction, not by luck.
+    the_forbidden_shapes_are_mechanically_guarded: >-
+      Found by the quality reviewer and worth carrying: deleting Settings.dynamo_observations_table
+      in-process (simulating either forbidden shape) reds all THREE blocklist tests with
+      AttributeError at harness.py:773. So AC1's prohibition is not docstring-only -- the existing
+      suite catches a future "tidy". Neither docstring says so.
+    adjudication:
+      fixed:
+        - >-
+          MAJOR: harness.py's corrected comment was cited :755-768 in demo-engine.md AND the story
+          file. The block runs :755-771 -- :768 truncates MID-SENTENCE at "replacing it with the
+          imported", so a reader following the citation reads the tautology caveat as a dangling
+          instruction. Verified at source before fixing. A wrong coordinate landed by the very commit
+          whose stated job was closing citation blast radius, into a tier:map status:verified article.
+        - >-
+          m1: AC5's "proves the tests pin the live path" NARROWED to the defaults test. The five AC3
+          tests red under `del Settings.aws_region` regardless of what they assert (eager default-arg
+          evaluation) -- non-discriminating. The property is true; the reviewer proved it with the
+          per-field fallback-shape flip that DOES discriminate (1 failed/8 passed, five times).
+        - >-
+          m2: AC4's second tail re-recorded as a NO-REGRESSION OBSERVATION, not a proof branch. Both
+          its sides read Settings.<attr>, so they pass identically PRE-FIX too. The claim is carried
+          entirely by the first tail.
+        - >-
+          m3: added test_load_settings_resolves_defaults_from_the_class_attributes_themselves.
+          MUTATION-PROVEN BY THE ORCHESTRATOR: re-introduce the duplication (re-type the literal into
+          load_settings) and then rename ONLY the class default -- the exact original defect restored
+          -- and the new test is the ONLY one that reds (1 failed, 9 passed). All nine others stayed
+          green, which is precisely why the hole was real. Reverted, 0 dirty lines.
+      declined:
+        - >-
+          m4 (falsiness rationale stated three times) and m5 (19-line docstring over an 11-line body):
+          both are real observations, and the reviewer itself noted m5 is consistent with the file's
+          existing STORY-202/215 style. Declining because trimming prose that documents a
+          publish-guard-adjacent decision, in the same sprint that is landing citation enforcement,
+          trades a small readability win for a real risk of losing the reasoning. Not a disagreement
+          on the merits -- a sequencing call.
+        - "Both NITs: existing-pattern objections the reviewer flagged as such."
+    gate: "8/8 green at e1e0151 (full, not --only): pytest 755 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint. Wiki sweep CLEAN after the last commit."
     note: >-
       The only story touching backend/src/ production code, and it touches the BOOT PATH OF BOTH
       composition roots (run.py::main and app.py::create_app's lifespan seed) -- a regression here is

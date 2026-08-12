@@ -2,10 +2,10 @@
 id: STORY-218
 title: Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it
 type: chore
-points: null
-status: draft
+points: 2
+status: done
 filed: 2026-08-04
-sprint: null
+sprint: 70
 ---
 
 ## Context

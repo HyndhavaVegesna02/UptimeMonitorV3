@@ -2954,7 +2954,7 @@ stories:
     title: Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-218-settings-defaults-declared-twice.md
-    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC8 authored, canonical shape pinned + 3 line citations corrected at pre-lock plan verification   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
+    status: done   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC8 authored, canonical shape pinned + 3 line citations corrected at pre-lock plan verification   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
                     # NARROWED A CLAIM THAT STORY MADE rather than finding a defect in it.
                     # VERIFIED INDEPENDENTLY BY THE ORCHESTRATOR at settings.py before filing:
                     # every default is declared TWICE -- as a dataclass field default (:19-21) AND
