@@ -61,7 +61,7 @@ failures stop depending on an agent remembering a paragraph.
 
 ## Acceptance Criteria
 
-- [ ] AC1: `tools/evidence_check.py` exists with the three subcommands, is
+- [x] AC1: `tools/evidence_check.py` exists with the three subcommands, is
       importable and runnable via `python tools/evidence_check.py <cmd>`, and lives
       outside `backend/src/`. **The isolation is asserted by a NEW concrete test, because
       no existing mechanism covers it** (corrected 2026-08-13 at plan verification: all
@@ -70,29 +70,61 @@ failures stop depending on an agent remembering a paragraph.
       `sys.path`). The assertion: no file under `backend/src/` contains an import of
       `tools` — a grep-shaped test in the style of the existing ZR guards, not a tenth
       import-linter contract.
-- [ ] AC2: `falsify` exits non-zero when the artifact under test exits 0 on bad
+      Landed: `backend/tests/test_tools_isolation.py::find_tools_imports` (AST-based, not
+      text grep — RC-1's `__pycache__`/count-drift concern does not apply) plus
+      `test_no_backend_src_file_imports_tools`, `test_find_tools_imports_detects_offender`,
+      `test_find_tools_imports_ignores_unrelated_imports`,
+      `test_find_tools_imports_empty_dir_returns_empty_list`.
+- [x] AC2: `falsify` exits non-zero when the artifact under test exits 0 on bad
       input, and zero when the artifact correctly fails. Both directions tested.
-- [ ] AC3: `two-sided` exits non-zero when both sides produce identical outcomes,
+      Landed: `check_falsify` in `tools/evidence_check.py`; both directions in
+      `backend/tests/test_evidence_check.py`
+      (`test_check_falsify_reports_not_a_gate_when_artifact_exits_zero_on_bad_input`,
+      `test_check_falsify_passes_when_artifact_correctly_fails_on_bad_input`); live CLI
+      demonstration recorded in the implementer report (AC5).
+- [x] AC3: `two-sided` exits non-zero when both sides produce identical outcomes,
       including the case where both sides are correct-looking. Tested with a pair
       that genuinely differs (passes) and a pair that does not (fails).
-- [ ] AC4: `mutate` exits non-zero when zero tests go RED, restores the tree, and
+      Landed: `check_two_sided` + `check_two_sided_import_provenance` (the
+      `assert_import_root` wrap, AC6); both directions and the "same exit code,
+      different stdout" / "different command, identical outcome" edge cases in
+      `backend/tests/test_evidence_check.py`.
+- [x] AC4: `mutate` exits non-zero when zero tests go RED, restores the tree, and
       asserts **`git diff -- <the mutated target>`** is empty afterwards; a failure to
       restore is itself a non-zero exit, never a silent pass. **Scoped to the target, not
       the whole tree** (corrected 2026-08-13 at plan verification): a whole-tree emptiness
       check fails on any legitimately dirty sprint tree — including right now, with three
       modified story files and an untracked sprint directory — so the tool would exit
       non-zero on every correct run. The restore claim is about what `mutate` touched.
-- [ ] AC5: **The tool is subjected to its own rule.** Each of the three
+      Landed: `check_mutate` (patch file, `git apply`/`git apply -R`, targets parsed from
+      the patch's own `+++ b/<path>` headers via `parse_patch_targets`). Writing the
+      zero-RED test surfaced a real bug — `run_pytest_selectors` counted "PASSED" as RED,
+      so a behaviour-preserving mutation reported a false red-for-the-wrong-reason; fixed
+      (narrowed to `FAILED`/`ERROR` only) before this AC could be marked done.
+- [x] AC5: **The tool is subjected to its own rule.** Each of the three
       subcommands is fed deliberately bad input and shown to fail, and that
       demonstration is recorded on the board — per the checklist rule this story
       is landing the mechanism for.
-- [ ] AC6: `assert_import_root` (`tools/import_provenance.py`, STORY-187) is
+      Demonstrated via the real CLI (`evidence_check.main`), one bad-input case per
+      subcommand, each hitting a genuinely different branch (not two demonstrations
+      collapsing into one, per STORY-220's own caution) — full tails and self-critique
+      in the implementer report.
+- [x] AC6: `assert_import_root` (`tools/import_provenance.py`, STORY-187) is
       reused, not reimplemented.
-- [ ] AC7: `.scrum/checklists/implementer.md` and
+      Landed: `check_two_sided_import_provenance` imports and calls
+      `assert_import_root`/`WrongImportRootError` directly; proven not reimplemented by
+      `test_check_two_sided_import_provenance_wraps_assert_import_root_not_reimplemented`
+      (monkeypatches the real function and observes its output surface unchanged).
+- [x] AC7: `.scrum/checklists/implementer.md` and
       `.scrum/checklists/quality-review.md` point at the tool for the mechanical
       half, and the prose shrinks accordingly — the checklist gets shorter, not
       longer, as a result of this story.
-- [ ] AC8: Full 8/8 DoD gate green at the final HEAD.
+      Landed: `implementer.md` 115 -> 109 lines, `quality-review.md` 126 -> 120 lines
+      (total 241 -> 229). Flagged to the orchestrator for verification since `.scrum/` is
+      orchestrator-owned.
+- [x] AC8: Full 8/8 DoD gate green at the final HEAD.
+      Verified: backend 5/5 (789 passed/0 skipped; 9 contracts kept; ruff clean;
+      cfn-lint exit 0) + frontend 3/3 (363 passed; build; lint) — see report for tails.
 
 ## Open Questions — BOTH RESOLVED at sprint-70 refinement (2026-08-13)
 
