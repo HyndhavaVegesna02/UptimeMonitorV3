@@ -83,7 +83,7 @@ docs/scrum/                      # human-readable — append-only history + livi
     └── archive/                 # tombstoned articles
 ```
 
-Status is a field, never a folder. Story files stay at one path forever; their journey lives in the YAML. History under `sprints/` is append-only and never linted for staleness — it describes the past. Only `wiki/` is living knowledge that must stay current.
+Status is a field, never a folder. Story files stay at one path forever; their journey lives in the YAML. **Grouping is a field too:** every entry carries `epic`, resolved against a top-level `epics:` slug→title map, and `docs/scrum/BOARD.md` is the generated view of it — regenerated once at sprint close by `scripts/yt_board.py`, never hand-edited. A folder tree cannot answer "how much is left" (it cannot sum points), so the answer is a computed board, not an arrangement of files. The board names its unestimated count instead of totalling it as zero. History under `sprints/` is append-only and never linted for staleness — it describes the past. Only `wiki/` is living knowledge that must stay current.
 
 Schemas for all state files: read `references/state-files.md` before creating or editing them. Templates are in `templates/`.
 

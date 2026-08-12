@@ -38,10 +38,39 @@ next_story_id: 222   # corrected 2026-08-05: was 213 while STORY-214..219 alread
                     # processes (single Dockerfile), split out of STORY-088 at sprint-49
                     # planning per PO directive.
                     # 081 = publication incident-id capture (split out of 066 at sprint-45 refinement; draft, blocked on a Statuspage design decision + live sample). 080 = dev_db CLI port-collision defect (sprint-44 gate contention). 079 = wiki Facts-coverage cleanup (pilot sprint 44, from yt_wiki.py facts lint first run). 078 = core/queries CQRS-lite move (proposal §8, PO-triggered sprint 43). 077 = sprint-42 review minors (zone-layout private-API coupling + decisions concurrency comment). 074-076 = API restructure now-phase (sprint 42; from docs/superpowers/specs/2026-07-10-api-restructure-design.md). 073 pre-existed when counter said 73 (sprint-41 filing missed the bump — fixed here). 072 = publication record-always + outcome (approve records independent of Statuspage publish; sprint 40; delivers STORY-066's outcome part). 071 = decision CheckViolation defect (approval_events.action 'approve' vs constraint 'approved'/'rejected'); sprint 39. 070 = live vendor-id drift health check (sprint-38 retro, from the stale-monitor-id hotfix); 068 = useAvailability.test.tsx parallelism false-red (sprint-38 STORY-058); 069 = sprint-38 redesign consolidation chore. 055-062 = Operator Dashboard redesign (sprint 38, frontend-only, adapt-to-real-data); 063-067 = redesign backend-gap follow-ups (drafts, deferred per PO 2026-07-07). 054 = flaky frontend DoD gate (CheckHistoryPage 1000-cap render times out under npm test parallelism; found at sprint-37 STORY-046 gate verification 2026-07-06); 053 = Sock Shop + failure shim + demo cadence (split from 017 at sprint-35 refinement); 052 = maintenance end-before-start 422 gap (found by the sprint-34 planning consumer-DTO check); 051 = DQL bare-string watermark stall (PO-reported 2026-07-04, hotfix-style on debug branch); 050 = live-loop transient-error resilience defect (observed 2026-07-03 during sprint-32's local stack run); 048/049 = sample-switch idea, PO 2026-07-03 (backend + dashboard toggle); 047 = STORY-045 review follow-up chore; 044-046 from the 2026-07-02 audit; 014b/014c + 015a-g + 016a-c are split-children
+epics:   # slug -> human title. Grouping axis for the generated board (2026-08-12);
+         # promoted from the comment banners below, which were invisible to tooling.
+  sprint-0-setup: Sprint 0 — Setup
+  zone-1-types-ports: Zone 1 — Canonical types + ports
+  zone-2-persistence: Zone 2 — Schema + migrations + repositories
+  zone-3-ingest: Zone 3 — Ingest adapter
+  zone-4-core-pipeline: Zone 4 — Core pipeline + availability
+  zone-5-proposal-publish: Zone 5 — Proposal lifecycle + publish
+  zone-6-api: Zone 6 — API
+  zone-7-frontend: Zone 7 — Frontend
+  zone-7-frontend-split: Zone 7 — Frontend split (STORY-015 → shell + six per-tab stories)
+  audit-2026-07-02: 2026-07-02 full-codebase audit output
+  sample-switch: Sample switch (PO idea, 2026-07-03 post-sprint-30 demo)
+  config-topology: Config / Topology / Orchestration (backend; pre-frontend)
+  integration-deployment: Integration + Deployment (live-credential / account gated)
+  operator-dashboard: Operator Dashboard redesign (Sprint 38; PO-approved 2026-07-07)
+  dashboard-gap-followups: Redesign backend-gap follow-ups (deferred out of sprint 38)
+  sprint-38-followups: Sprint-38 redesign follow-ups (found at review)
+  retro-chores: Chores (from retros)
+  api-restructure: API restructure "now" phase (2026-07-10 proposal)
+  aws-migration: AWS migration epic (PO decisions 2026-07-14; supersedes STORY-017)
+  sprint-62-fleet: Sprint 62 — fleet readiness foundation
+  deferred-future: Deferred / future work, filed at sprint-62 planning
+  frontend-rebuild: Frontend rebuild programme (3rd attempt line)
+  deferred-by-po: Deferred by explicit PO decision (recorded, not forgotten)
+  sprint-65-splits: Split out / created at sprint-65 refinement (2026-07-30)
+  process-ratchet-brake: 'Process: the ratchet brake (filed 2026-08-01, PO-directed)'
+
 stories:
   # ── Sprint 0 — Setup ─────────────────────────────────────────────
   - id: STORY-001
     title: Repo scaffold + four-zone structure
+    epic: sprint-0-setup
     file: docs/scrum/stories/STORY-001-repo-scaffold-four-zones.md
     status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 3
@@ -50,6 +79,7 @@ stories:
     sprint: 0
   - id: STORY-002
     title: CI contracts = the DoD floor
+    epic: sprint-0-setup
     file: docs/scrum/stories/STORY-002-ci-contracts-dod-floor.md
     status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 3
@@ -58,6 +88,7 @@ stories:
     sprint: 0
   - id: STORY-003
     title: Alembic + Neon two-connection setup
+    epic: sprint-0-setup
     file: docs/scrum/stories/STORY-003-alembic-neon-two-connection.md
     status: done            # accepted at Sprint 0 review (2026-06-23)
     points: 2
@@ -67,6 +98,7 @@ stories:
   # ── Zone 1 — Canonical types + ports ─────────────────────────────
   - id: STORY-004
     title: Canonical SignalObservation type
+    epic: zone-1-types-ports
     file: docs/scrum/stories/STORY-004-canonical-signal-observation.md
     status: done            # accepted at Sprint 1 review (2026-06-24)
     points: 3
@@ -75,6 +107,7 @@ stories:
     sprint: 1
   - id: STORY-005
     title: The core ports
+    epic: zone-1-types-ports
     file: docs/scrum/stories/STORY-005-core-ports.md
     status: done            # accepted at Sprint 1 review (2026-06-24)
     points: 3
@@ -84,6 +117,7 @@ stories:
   # ── Zone 2 — Schema + migrations + repositories ──────────────────
   - id: STORY-006
     title: Spine schema migration
+    epic: zone-2-persistence
     file: docs/scrum/stories/STORY-006-spine-schema-migration.md
     status: done            # accepted at Sprint 2 review (2026-06-24)
     points: 5
@@ -92,6 +126,7 @@ stories:
     sprint: 2
   - id: STORY-007
     title: Repository adapters behind the ports
+    epic: zone-2-persistence
     file: docs/scrum/stories/STORY-007-repository-adapters.md
     status: done            # accepted at Sprint 3 review (2026-06-25)
     points: 3
@@ -101,6 +136,7 @@ stories:
   # ── Zone 3 — Ingest adapter ──────────────────────────────────────
   - id: STORY-008
     title: Dynatrace adapter + DQL normalization
+    epic: zone-3-ingest
     file: docs/scrum/stories/STORY-008-dynatrace-adapter-dql.md
     status: done            # accepted at Sprint 4 review (2026-06-25)
     points: 5
@@ -109,6 +145,7 @@ stories:
     sprint: 4
   - id: STORY-009
     title: Pull loop with watermarks + validation gate
+    epic: zone-3-ingest
     file: docs/scrum/stories/STORY-009-pull-loop-watermarks.md
     status: done            # accepted at Sprint 5 review (2026-06-25)
     points: 5
@@ -118,6 +155,7 @@ stories:
   # ── Zone 4 — Core pipeline + availability ────────────────────────
   - id: STORY-010
     title: Core pipeline stages 1-2 — collapse + streak
+    epic: zone-4-core-pipeline
     file: docs/scrum/stories/STORY-010-core-pipeline-four-stage.md
     status: done    # accepted at Sprint 6 review (2026-06-25)
     points: 3
@@ -126,6 +164,7 @@ stories:
     sprint: 6
   - id: STORY-028
     title: Core pipeline stage 3 — anti-flap
+    epic: zone-4-core-pipeline
     file: docs/scrum/stories/STORY-028-pipeline-antiflap.md
     status: done    # accepted at Sprint 8 review (2026-06-26)
     points: 3
@@ -134,6 +173,7 @@ stories:
     sprint: 8
   - id: STORY-024
     title: Core pipeline stage 4 — decide
+    epic: zone-4-core-pipeline
     file: docs/scrum/stories/STORY-024-core-pipeline-antiflap-decide.md
     status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 3
@@ -142,6 +182,7 @@ stories:
     sprint: 10
   - id: STORY-011
     title: Availability calculator — two-grain math + group rollup
+    epic: zone-4-core-pipeline
     file: docs/scrum/stories/STORY-011-availability-calculator.md
     status: done    # accepted at Sprint 7 review (2026-06-25)
     points: 5
@@ -150,6 +191,7 @@ stories:
     sprint: 7
   - id: STORY-026
     title: Per-component skew flag (Tier-2)
+    epic: zone-4-core-pipeline
     file: docs/scrum/stories/STORY-026-skew-flag.md
     status: done    # accepted at Sprint 8 review (2026-06-26)
     points: 3
@@ -159,6 +201,7 @@ stories:
   # ── Zone 5 — Proposal lifecycle + publish ────────────────────────
   - id: STORY-012
     title: Proposal substrate - types + state machine + repository
+    epic: zone-5-proposal-publish
     file: docs/scrum/stories/STORY-012-proposal-lifecycle.md
     status: done    # accepted at Sprint 9 review (2026-06-26)
     points: 3
@@ -167,6 +210,7 @@ stories:
     sprint: 9
   - id: STORY-013
     title: Statuspage publish adapter + commit-first boundary
+    epic: zone-5-proposal-publish
     file: docs/scrum/stories/STORY-013-statuspage-publish-adapter.md
     status: done    # accepted at Sprint 9 review (2026-06-26)
     points: 3
@@ -176,6 +220,7 @@ stories:
   # ── Zone 6 — API ─────────────────────────────────────────────────
   - id: STORY-014
     title: Five-file API convention + 4th linter contract + decision exemplar
+    epic: zone-6-api
     file: docs/scrum/stories/STORY-014-five-file-api-modules.md
     status: done    # accepted at Sprint 12 review (2026-06-28)
     points: 5
@@ -184,6 +229,7 @@ stories:
     sprint: 12
   - id: STORY-014b
     title: API read endpoints — Dashboard (component statuses) + Approvals list
+    epic: zone-6-api
     file: docs/scrum/stories/STORY-014b-api-read-endpoints-six-tabs.md
     status: done    # accepted at Sprint 13 review (2026-06-28)
     points: 5
@@ -192,6 +238,7 @@ stories:
     sprint: 13
   - id: STORY-014c
     title: API read endpoints — Availability + Check History
+    epic: zone-6-api
     file: docs/scrum/stories/STORY-014c-api-read-endpoints-availability-history.md
     status: done    # accepted at Sprint 15 review (2026-06-28)
     points: 3
@@ -200,6 +247,7 @@ stories:
     sprint: 15
   - id: STORY-036
     title: Maintenance feature module — schedule + window state for the Maintenance tab
+    epic: zone-6-api
     file: docs/scrum/stories/STORY-036-maintenance-feature-module.md
     status: done    # accepted at Sprint 14 review (2026-06-28)
     points: 5
@@ -208,6 +256,7 @@ stories:
     sprint: 14
   - id: STORY-037
     title: Publications feature module — record Statuspage publish history for the Publications tab
+    epic: zone-6-api
     file: docs/scrum/stories/STORY-037-publications-feature-module.md
     status: done    # accepted at Sprint 19 review (2026-06-29)
     points: 5
@@ -217,6 +266,7 @@ stories:
   # ── Zone 7 — Frontend ────────────────────────────────────────────
   - id: STORY-015
     title: Dashboard shell + six tabs (redesigned)
+    epic: zone-7-frontend
     file: docs/scrum/stories/STORY-015-frontend-dashboard-six-tabs.md
     status: split   # was an 8 — SPLIT at refinement 2026-07-02 into 015a (shell) + 015b–015g (six tabs).
                     # 2nd split: the 1st (2026-06-29, DESIGN-airtable.md era) was reverted in 521764c.
@@ -228,6 +278,7 @@ stories:
   #    against DESIGN-linear.app.md as a guide-not-copy reference; dark+light themes) ──
   - id: STORY-015a
     title: Frontend shell — Vite/React/TS scaffold, six-tab nav, typed API client, Linear-guided theme system (dark+light), test harness
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015a-frontend-shell.md
     status: done    # accepted at Sprint 25 review (2026-07-02), 5/5. Built guided by DESIGN-linear.app.md; dark+light themes.
     points: 5
@@ -236,6 +287,7 @@ stories:
     sprint: 25
   - id: STORY-015b
     title: Dashboard tab — live component health at a glance
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015b-dashboard-tab.md
     status: done    # accepted at Sprint 26 review (2026-07-02), 3/3. First real tab; sets the per-tab pattern.
     points: 3
@@ -244,6 +296,7 @@ stories:
     sprint: 26
   - id: STORY-015c
     title: Approvals tab — pending proposals list + approve/reject
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015c-approvals-tab.md
     status: done    # accepted at Sprint 27 review (2026-07-02), 5/5. First mutating tab; shared useFetch<T> landed.
     points: 5
@@ -252,6 +305,7 @@ stories:
     sprint: 27
   - id: STORY-015d
     title: Availability tab — two-grain availability (component rollup + per-signal drill-down)
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015d-availability-tab.md
     status: done    # accepted at Sprint 32 review (2026-07-04), after a percent-scale fix loop caught at review prep
     points: 3
@@ -260,6 +314,7 @@ stories:
     sprint: 32
   - id: STORY-015e
     title: Check History tab — per-signal observation history
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015e-check-history-tab.md
     status: done    # accepted at Sprint 33 review (2026-07-04), first-pass clean
     points: 3
@@ -268,6 +323,7 @@ stories:
     sprint: 33
   - id: STORY-015f
     title: Maintenance tab — windows list + schedule form
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015f-maintenance-tab.md
     status: done    # accepted at Sprint 34 review (2026-07-06), first-pass clean; all six tabs now real. Minors -> STORY-052
     points: 3
@@ -276,6 +332,7 @@ stories:
     sprint: 34
   - id: STORY-015g
     title: Publications tab — Statuspage publish history
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-015g-publications-tab.md
     status: done    # accepted at Sprint 33 review (2026-07-04), first-pass clean
     points: 2
@@ -284,6 +341,7 @@ stories:
     sprint: 33
   - id: STORY-041
     title: Frontend pattern hardening — client error-wrapping, shared cx(), modular MSW handlers, catch-all route
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-041-frontend-pattern-hardening.md
     status: done    # accepted at Sprint 26 review (2026-07-02), 2/2. Hardened the shell before 015b.
     points: 2
@@ -292,6 +350,7 @@ stories:
     sprint: 26
   - id: STORY-042
     title: Serve the API over HTTP + documented end-to-end local dev stack
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-042-serve-api-locally-dev-stack.md
     status: done    # accepted at Sprint 28 review (2026-07-02), 3/3. API now HTTP-servable (uvicorn + asgi.py). AC5 = manual PO e2e.
     points: 3
@@ -300,6 +359,7 @@ stories:
     sprint: 28
   - id: STORY-043
     title: Defect — the live loop (and asgi app) never load the .env file; docs claim they do
+    epic: zone-7-frontend-split
     file: docs/scrum/stories/STORY-043-live-loop-dotenv-not-loaded.md
     status: done    # accepted at Sprint 36 review (2026-07-06) — .env recipe true at last; exported vars win; docs corrected
     points: 2
@@ -309,6 +369,7 @@ stories:
   # ── 2026-07-02 full-codebase audit output ─────────────────────────
   - id: STORY-045
     title: Defect — approved proposals go nowhere (no publish on approval; components.status never written back)
+    epic: audit-2026-07-02
     file: docs/scrum/stories/STORY-045-approve-publish-status-writeback.md
     status: done    # accepted at Sprint 29 review (2026-07-03), 5/5 — with follow-up chore STORY-047
     points: 5
@@ -317,6 +378,7 @@ stories:
     sprint: 29
   - id: STORY-047
     title: Chore — quality-review minors (STORY-045 publisher wiring + STORY-044 availability DTO)
+    epic: audit-2026-07-02
     file: docs/scrum/stories/STORY-047-publisher-wiring-minors.md
     status: done    # accepted at Sprint 36 review (2026-07-06) — all 5 minors applied incl. the write-back fallback fix
     points: 1
@@ -325,6 +387,7 @@ stories:
     sprint: 36      # LAST in the sprint-36 order — drops first if the PO-directed 6/5 over-commit bites
   - id: STORY-044
     title: Availability & topology API — component→signals enumeration + component-rollup availability + real intervals
+    epic: audit-2026-07-02
     file: docs/scrum/stories/STORY-044-availability-topology-api.md
     status: done    # accepted at Sprint 30 review (2026-07-03), 5/5 — minors folded into STORY-047; unblocks 015d + 015e
     points: 5
@@ -333,6 +396,7 @@ stories:
     sprint: 30
   - id: STORY-046
     title: Dashboard maintenance-state display — the maintenance badge is currently unreachable
+    epic: audit-2026-07-02
     file: docs/scrum/stories/STORY-046-dashboard-maintenance-state.md
     status: done    # accepted at Sprint 37 review (2026-07-06) — Dashboard overlays an "Under maintenance" badge alongside health via useMaintenanceWindows + deriveWindowState; frontend-only, graceful degradation
     points: 2
@@ -342,6 +406,7 @@ stories:
   # ── Sample switch (PO idea, 2026-07-03 post-sprint-30 demo) ───────
   - id: STORY-048
     title: Sample switch (backend) — persisted flag + toggle API + incoming signals recorded as DOWN while ON
+    epic: sample-switch
     file: docs/scrum/stories/STORY-048-sample-switch-simulate-down.md
     status: done    # accepted at Sprint 31 review (2026-07-03), 5/5 — TEMPORARY feature; removal recipe in wiki/sample-mode.md; cosmetic minor folded into STORY-047
     points: 5
@@ -350,6 +415,7 @@ stories:
     sprint: 31
   - id: STORY-049
     title: Sample switch (frontend) — Dashboard toggle wired to the sample-mode API
+    epic: sample-switch
     file: docs/scrum/stories/STORY-049-dashboard-sample-switch-toggle.md
     status: done    # accepted at Sprint 32 review (2026-07-04); TEMPORARY-feature removal inventory extended to the frontend seams
     points: 2
@@ -358,6 +424,7 @@ stories:
     sprint: 32
   - id: STORY-051
     title: Defect — DQL watermark bound compared as a bare string; ingestion silently stalls after the first cycle
+    epic: sample-switch
     file: docs/scrum/stories/STORY-051-dql-watermark-string-compare-stall.md
     status: done    # accepted at Sprint 34 review (2026-07-06) — fix live-verified twice; gate 498 passed
     points: 2
@@ -366,6 +433,7 @@ stories:
     sprint: 34
   - id: STORY-052
     title: Maintenance ordering 422 — clean edge message (raw Pydantic blob leaks today) + inline frontend mapping
+    epic: sample-switch
     file: docs/scrum/stories/STORY-052-maintenance-end-before-start-422.md
     status: done    # accepted at Sprint 37 review (2026-07-06) — clean edge 422 replaces the Pydantic blob; frontend maps it inline on ends_at; both sprint-34 minors folded in
     points: 1
@@ -374,6 +442,7 @@ stories:
     sprint: 37      # sprint-37 story 1 (backend edge validator + frontend inline mapping)
   - id: STORY-050
     title: Defect — a single transient Grail/network error crashes the whole live loop
+    epic: sample-switch
     file: docs/scrum/stories/STORY-050-live-loop-transient-error-resilience.md
     status: done    # accepted at Sprint 36 review (2026-07-06) — spec PASS / quality 0C-0M ('exemplary'); log-only per PO decision
     points: 3
@@ -383,6 +452,7 @@ stories:
   # ── Config / Topology / Orchestration (backend; pre-frontend) ────
   - id: STORY-040a
     title: Config layer — per-app config files + fail-fast loader + in-memory resolvers
+    epic: config-topology
     file: docs/scrum/stories/STORY-040a-config-layer-loader-resolvers.md
     status: done    # accepted at Sprint 16 review (2026-06-28)
     points: 5
@@ -391,6 +461,7 @@ stories:
     sprint: 16
   - id: STORY-040
     title: Topology seed + signal→component migration — Neon as the read model
+    epic: config-topology
     file: docs/scrum/stories/STORY-040-config-topology-boot-seeding.md
     status: done    # accepted at Sprint 18 review (2026-06-29)
     points: 5
@@ -399,6 +470,7 @@ stories:
     sprint: 18
   - id: STORY-016a
     title: Pipeline orchestration — run the core per cycle to produce proposals (fake-testable)
+    epic: config-topology
     file: docs/scrum/stories/STORY-016a-pipeline-orchestration.md
     status: done    # accepted at Sprint 17 review (2026-06-29)
     points: 5
@@ -408,6 +480,7 @@ stories:
   # ── Integration + Deployment (live-credential / account gated) ────
   - id: STORY-016
     title: First end-to-end thread (live demo)
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-016-first-end-to-end-thread.md
     status: done    # accepted at Sprint 20 review (2026-06-29) — both real Executors + live driver, 5/5
     points: 5       # rescoped from 3 to build BOTH real Executors + live driver (PO chose "build both now")
@@ -416,6 +489,7 @@ stories:
     sprint: 20
   - id: STORY-016b
     title: Live Dynatrace reconciliation — real Grail schema + async query, verified internally
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-016b-live-dynatrace-reconciliation.md
     status: done    # accepted at Sprint 21 review (2026-06-29), 5/5. AC6 live internal verification pending (manual).
     points: 5       # real data object + async poll + field remap + ns-timestamp + Dynatrace-only driver + internal verify
@@ -424,6 +498,7 @@ stories:
     sprint: 21
   - id: STORY-016c
     title: Live reconciliation — dispatch + query the canonical http_monitor_execution row
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-016c-canonical-http-monitor-execution.md
     status: done    # accepted at Sprint 22 review (2026-06-29), 3/3. AC6 live verification PASSED in-session.
     points: 3
@@ -432,6 +507,7 @@ stories:
     sprint: null
   - id: STORY-017
     title: Deployment topology
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-017-deployment-topology.md
     status: archived # SUPERSEDED by the AWS migration epic (STORY-082..090) — PO directive 2026-07-14: stack moves to S3+CloudFront / ECS Fargate+ALB / DynamoDB via CloudFormation, console-first. Decision-3's same-origin-/api intent survives as the CloudFront /api/* behavior (STORY-088); the console-runbook modality (decision 1) carries into STORY-088/089.
     points: 5
@@ -440,10 +516,12 @@ stories:
     sprint: null
   - id: STORY-053
     title: Failure shim for the existing Railway demo app + demo cadence tuning
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-053-sock-shop-railway-failure-shim.md
     status: archived # PO directive 2026-07-09: not required.
   - id: STORY-054
     title: Flaky frontend DoD gate — CheckHistoryPage 1000-cap render times out under npm test parallelism
+    epic: integration-deployment
     file: docs/scrum/stories/STORY-054-flaky-frontend-test-timeout.md
     status: done    # RESOLVED by STORY-060 (sprint 38): CheckHistory rebuilt with injectable render cap; flake gone. Accepted 2026-07-08.
     points: 2
@@ -463,6 +541,7 @@ stories:
   #   parallel). All 3+ get spec+quality reviewers; implementers Sonnet 5 / HIGH.
   - id: STORY-055
     title: Design-system foundation — Geist fonts, retuned tokens (both themes), 7-status palette, shadow token, icon set, restyled base components + shared Table/UptimeBar/SummaryCard/Timeline primitives
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-055-design-system-foundation.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
@@ -471,6 +550,7 @@ stories:
     sprint: 38
   - id: STORY-056
     title: App shell redesign — collapsible left icon sidebar, top bar (theme toggle + relocated sample-mode trigger), banner, Approvals count badge
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-056-app-shell-sidebar.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
@@ -479,6 +559,7 @@ stories:
     sprint: 38
   - id: STORY-057
     title: Dashboard redesign — summary stat cards + grouped expandable component rows + signal drill-down + uptime sparkline (adapt to real data)
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-057-dashboard-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
@@ -487,6 +568,7 @@ stories:
     sprint: 38
   - id: STORY-058
     title: Availability redesign — grid layout, segment bars + hatched completeness + legend, window toggle, per-signal drill-down
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-058-availability-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 3
@@ -495,6 +577,7 @@ stories:
     sprint: 38
   - id: STORY-059
     title: Approvals redesign — card layout with severity stripe, from→to pills, confirm flow, "Queue clear" empty state (adapt to real data)
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-059-approvals-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 5
@@ -503,6 +586,7 @@ stories:
     sprint: 38
   - id: STORY-060
     title: Check History redesign — filter toolbar (search + result + location), dense mono grid; resolve STORY-054 flaky render
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-060-check-history-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08); subsumed STORY-054
     points: 3
@@ -511,6 +595,7 @@ stories:
     sprint: 38
   - id: STORY-061
     title: Maintenance redesign — two-column form-card + windows list with state badges, inline 422 field mapping preserved
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-061-maintenance-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 3
@@ -519,6 +604,7 @@ stories:
     sprint: 38
   - id: STORY-062
     title: Publications redesign — vertical timeline layout (adapt to real data)
+    epic: operator-dashboard
     file: docs/scrum/stories/STORY-062-publications-redesign.md
     status: done    # accepted at Sprint 38 review (2026-07-08), merged to main
     points: 2
@@ -531,12 +617,14 @@ stories:
   #   + estimate before scheduling.
   - id: STORY-063
     title: Proposal enrichment — severity / reason / source / triggering-signals on ProposalDTO (Approvals cards)
+    epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-063-proposal-enrichment.md
     status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-059's omitted fields
     type: feature
     sprint: null
   - id: STORY-064
     title: Observation HTTP status code + check type on ObservationDTO (Check History columns)
+    epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-064-observation-code-type.md
     status: done    # accepted at Sprint 44 review (2026-07-13)
     points: 3
@@ -545,6 +633,7 @@ stories:
     sprint: 44
   - id: STORY-065
     title: Maintenance title field + DELETE endpoint (Maintenance form title + delete action)
+    epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-065-maintenance-title-delete.md
     status: done   # PO ACCEPT 2026-07-13 (sprint-45 review): spec PASS, quality APPROVE (after styling fix), DoD GREEN @f53819e, reality gate PASS (live wire). Merged to main.
     points: 3
@@ -553,6 +642,7 @@ stories:
     sprint: 45
   - id: STORY-066
     title: Publication author metadata (Publications timeline)
+    epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-066-publication-metadata.md
     status: done   # PO ACCEPT 2026-07-13 (sprint-45 review): spec PASS, quality APPROVE, DoD GREEN @f53819e, reality gate PASS (live wire author derivation). Merged to main.
     points: 3
@@ -561,6 +651,7 @@ stories:
     sprint: 45
   - id: STORY-067
     title: Component grouping + per-component uptime-bucket API (Dashboard groups + richer sparklines)
+    epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-067-component-grouping-uptime-buckets.md
     status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-057's single-group + omitted-segment adaptation
     type: feature
@@ -568,6 +659,7 @@ stories:
   # ── Sprint-38 redesign follow-ups (found at review; deferred out of sprint 38) ──
   - id: STORY-068
     title: Defect — useAvailability.test.tsx false-reds under npm test file-parallelism (uncaught exceptions under CPU contention)
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-068-useavailability-parallelism-flake.md
     status: done    # accepted at Sprint 41 review (2026-07-09); status was stale (antigravity)
     points: 2
@@ -576,6 +668,7 @@ stories:
     sprint: 41
   - id: STORY-069
     title: Chore — sprint-38 redesign consolidation minors (uptimeSegments dedup, stale docstrings, token/a11y nits)
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-069-redesign-consolidation-minors.md
     status: done    # accepted at Sprint 41 review (2026-07-09); status was stale (antigravity)
     points: 3
@@ -583,6 +676,7 @@ stories:
     sprint: 41
   - id: STORY-070
     title: Live vendor-id drift health check — surface a configured-but-empty Dynatrace monitor id loudly
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-070-vendor-id-drift-health-check.md
     status: done    # accepted at Sprint 41 review (2026-07-09); status was stale (antigravity)
                     # Dynatrace fine but ingested 0 rows silently for 30 days. Add a boot-time/periodic
@@ -593,6 +687,7 @@ stories:
     sprint: 41
   - id: STORY-073
     title: Defect — dev_db container-lifecycle tests (test_dev_db_cli.py + test_dev_db_fixture.py) flake under full-suite Docker contention
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-073-dev-db-lifecycle-tests-flaky.md
     status: done    # accepted at Sprint 43 review (2026-07-11)
                     # the self-container-spawning DB-lifecycle tests intermittently time out / RuntimeError
@@ -608,6 +703,7 @@ stories:
     sprint: 43
   - id: STORY-071
     title: Defect — approve/reject 500s (approval_events.action 'approve'/'reject' violates the ck_approval_events_action constraint 'approved'/'rejected')
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-071-decision-action-check-violation.md
     status: done    # accepted at Sprint 39 review (2026-07-08), merged to main
                     # Root cause: core/services/approval.py writes action="approve"/"reject" but the spine
@@ -618,6 +714,7 @@ stories:
     sprint: 39
   - id: STORY-072
     title: Publication outcome — record every approve publish attempt (succeeded/failed) independent of Statuspage publish + surface it in the Publications tab
+    epic: sprint-38-followups
     file: docs/scrum/stories/STORY-072-publication-outcome-record-always.md
     status: done    # accepted at Sprint 40 review (2026-07-08), merged to main
                     # RecordingPublisher records SUCCESSES ONLY -> no publication row. PO wants the record
@@ -630,6 +727,7 @@ stories:
   # ── Chores (from retros) ─────────────────────────────────────────
   - id: STORY-018
     title: Add .gitattributes to normalize line endings
+    epic: retro-chores
     file: docs/scrum/stories/STORY-018-gitattributes-line-endings.md
     status: done    # accepted at Sprint 2 review (2026-06-24)
     points: 1
@@ -638,6 +736,7 @@ stories:
     sprint: 2
   - id: STORY-019
     title: Shared throwaway-DB test harness (script + pytest fixture)
+    epic: retro-chores
     file: docs/scrum/stories/STORY-019-shared-throwaway-db-harness.md
     status: done    # accepted at Sprint 3 review (2026-06-25)
     points: 3
@@ -646,6 +745,7 @@ stories:
     sprint: 3
   - id: STORY-020
     title: Named malformed-DQL-row error in the Dynatrace normalizers
+    epic: retro-chores
     file: docs/scrum/stories/STORY-020-named-malformed-dql-row-error.md
     status: done    # accepted at Sprint 5 review (2026-06-25)
     points: 1
@@ -654,6 +754,7 @@ stories:
     sprint: 5
   - id: STORY-021
     title: Guard native_id interpolation in the DQL query builder
+    epic: retro-chores
     file: docs/scrum/stories/STORY-021-dql-native-id-injection-guard.md
     status: done    # accepted at Sprint 6 review (2026-06-25)
     points: 1
@@ -662,6 +763,7 @@ stories:
     sprint: 6
   - id: STORY-022
     title: Fail loud on a mixed-signal batch in the ingest service
+    epic: retro-chores
     file: docs/scrum/stories/STORY-022-ingest-mixed-signal-batch-guard.md
     status: done    # accepted at Sprint 6 review (2026-06-25)
     points: 1
@@ -670,6 +772,7 @@ stories:
     sprint: 6
   - id: STORY-023
     title: Clarify the double stop_event check in run_periodic
+    epic: retro-chores
     file: docs/scrum/stories/STORY-023-pull-loop-stop-check-comment.md
     status: done    # accepted at Sprint 6 review (2026-06-25)
     points: 1
@@ -678,6 +781,7 @@ stories:
     sprint: 6
   - id: STORY-025
     title: Enforce the Verdict maintenance<->health invariant at construction
+    epic: retro-chores
     file: docs/scrum/stories/STORY-025-verdict-maintenance-invariant.md
     status: done    # accepted at Sprint 7 review (2026-06-25)
     points: 1
@@ -686,6 +790,7 @@ stories:
     sprint: 7
   - id: STORY-027
     title: Hoist the lazy AvailabilityCalculator import in test_availability.py
+    epic: retro-chores
     file: docs/scrum/stories/STORY-027-test-availability-import-cleanup.md
     status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
@@ -694,6 +799,7 @@ stories:
     sprint: 10
   - id: STORY-029
     title: Audit frozen value/result types for unenforced coherence invariants
+    epic: retro-chores
     file: docs/scrum/stories/STORY-029-value-type-coherence-audit.md
     status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
@@ -702,6 +808,7 @@ stories:
     sprint: 10
   - id: STORY-030
     title: Make dev_db.py up idempotent against a leftover container
+    epic: retro-chores
     file: docs/scrum/stories/STORY-030-dev-db-up-idempotent.md
     status: done    # accepted at Sprint 10 review (2026-06-27)
     points: 1
@@ -710,6 +817,7 @@ stories:
     sprint: 10
   - id: STORY-031
     title: Sprint 9 review cleanups — test/fixture/style nits
+    epic: retro-chores
     file: docs/scrum/stories/STORY-031-sprint9-review-cleanups.md
     status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1
@@ -718,6 +826,7 @@ stories:
     sprint: 11
   - id: STORY-032
     title: decide.py quality minors — DRY, import style, opened.id guard, trailing blanks
+    epic: retro-chores
     file: docs/scrum/stories/STORY-032-decide-quality-minors.md
     status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 1
@@ -726,6 +835,7 @@ stories:
     sprint: 11
   - id: STORY-033
     title: Add ruff (format + import-sort) as a mechanical DoD gate
+    epic: retro-chores
     file: docs/scrum/stories/STORY-033-ruff-format-import-sort-dod.md
     status: done    # accepted at Sprint 11 review (2026-06-27)
     points: 2
@@ -734,6 +844,7 @@ stories:
     sprint: 11
   - id: STORY-034
     title: Rehabilitate the 7 reformat-stale wiki articles with symbol-based citations
+    epic: retro-chores
     file: docs/scrum/stories/STORY-034-wiki-symbol-citations-rehab.md
     status: done    # accepted at Sprint 12 review (2026-06-28)
     points: 2
@@ -742,6 +853,7 @@ stories:
     sprint: 12
   - id: STORY-035
     title: API minors — dispose the app engine on shutdown + migrate off the deprecated TestClient path
+    epic: retro-chores
     file: docs/scrum/stories/STORY-035-api-minors-engine-dispose-testclient.md
     status: done    # accepted at Sprint 13 review (2026-06-28)
     points: 2
@@ -750,6 +862,7 @@ stories:
     sprint: 13
   - id: STORY-038
     title: 5th import-linter contract — production src must not import tests
+    epic: retro-chores
     file: docs/scrum/stories/STORY-038-src-no-tests-import-contract.md
     status: done    # accepted at Sprint 14 review (2026-06-28)
     points: 1
@@ -758,6 +871,7 @@ stories:
     sprint: 14
   - id: STORY-039
     title: Isolate DB-gated tests so the suite is order/state-independent on a reused DB
+    epic: retro-chores
     file: docs/scrum/stories/STORY-039-db-test-isolation.md
     status: done    # accepted at Sprint 15 review (2026-06-28)
     points: 2
@@ -767,6 +881,7 @@ stories:
   # ── API restructure "now" phase (2026-07-10 proposal, docs/superpowers/specs/2026-07-10-api-restructure-design.md) ──
   - id: STORY-074
     title: API-zone enforcement — api-outward-independence + adapters-edge-only contracts + zone-layout meta-test
+    epic: api-restructure
     file: docs/scrum/stories/STORY-074-api-enforcement-contracts.md
     status: done    # accepted at Sprint 42 review (2026-07-10)
     points: 2
@@ -775,6 +890,7 @@ stories:
     sprint: 42
   - id: STORY-075
     title: api/v1/_shared foundation — central domain-exception→HTTP registry replacing per-feature mapping
+    epic: api-restructure
     file: docs/scrum/stories/STORY-075-api-shared-error-registry.md
     status: done    # accepted at Sprint 42 review (2026-07-10)
     points: 3
@@ -783,6 +899,7 @@ stories:
     sprint: 42
   - id: STORY-076
     title: One home for read-window policy — _shared/windowing.py consumed by availability + history
+    epic: api-restructure
     file: docs/scrum/stories/STORY-076-api-shared-windowing.md
     status: done    # accepted at Sprint 42 review (2026-07-10)
     points: 2
@@ -791,6 +908,7 @@ stories:
     sprint: 42
   - id: STORY-077
     title: Chore — sprint-42 review minors (zone-layout meta-test private-API coupling; decisions concurrency comment)
+    epic: api-restructure
     file: docs/scrum/stories/STORY-077-sprint42-review-minors.md
     status: done    # accepted at Sprint 43 review (2026-07-11)
     points: 2
@@ -799,6 +917,7 @@ stories:
     sprint: 43
   - id: STORY-078
     title: core/queries/ — move the availability read-model into a fenced 4th core subpackage (CQRS-lite, proposal §8)
+    epic: api-restructure
     file: docs/scrum/stories/STORY-078-core-queries-cqrs-lite.md
     status: done    # accepted at Sprint 43 review (2026-07-11)
     points: 3
@@ -807,6 +926,7 @@ stories:
     sprint: 43
   - id: STORY-079
     title: Wiki Facts-coverage cleanup — every cited file covered by code_refs
+    epic: api-restructure
     file: docs/scrum/stories/STORY-079-wiki-facts-coverage-cleanup.md
     status: done    # accepted at Sprint 44 review (2026-07-13)
     points: 2
@@ -815,6 +935,7 @@ stories:
     sprint: 44
   - id: STORY-080
     title: dev_db test harness — kill the standing full-gate false-red (free ports + unique names + contention hardening across the test_dev_db_* family)
+    epic: api-restructure
     file: docs/scrum/stories/STORY-080-dev-db-cli-port-collision.md
     status: done    # sprint-47: spec PASS (family 17/17 together) + quality FIX_REQUIRED_then_FIXED (bare-Exception MAJOR -> 987453b); PO accepted 2026-07-15 (accept-with-follow-up). Standing gate false-red resolved.
     points: 5
@@ -823,6 +944,7 @@ stories:
     sprint: 47
   - id: STORY-081
     title: Publication incident-id capture (Statuspage response → Publications timeline)
+    epic: api-restructure
     file: docs/scrum/stories/STORY-081-publication-incident-id.md
     status: draft   # split out of STORY-066 at sprint-45 refinement (2026-07-13); genuinely new + speculative (Statuspage response discarded today; flow never creates incidents). Blocked on a Statuspage design decision + live response sample; needs refinement + estimate.
     type: feature
@@ -839,6 +961,7 @@ stories:
   # 087 -> 088 -> 089 -> (later) 090.
   - id: STORY-082
     title: DynamoDB persistence foundation — table bootstrap, DynamoDB Local test fixture, settings/composition seam
+    epic: aws-migration
     file: docs/scrum/stories/STORY-082-dynamodb-persistence-foundation.md
     status: done    # sprint-46: spec PASS + quality PASS (MAJOR fixed 6c4a257); PO accepted 2026-07-15
     points: 5
@@ -847,6 +970,7 @@ stories:
     sprint: 46
   - id: STORY-083
     title: DynamoDB adapters — signals, components, watermarks, sample-mode
+    epic: aws-migration
     file: docs/scrum/stories/STORY-083-dynamodb-topology-adapters.md
     status: done    # sprint-46: spec PASS + quality APPROVE; PO accepted 2026-07-15
     points: 3
@@ -855,6 +979,7 @@ stories:
     sprint: 46
   - id: STORY-084
     title: DynamoDB observation adapter — idempotent ingest transaction + half-open window query
+    epic: aws-migration
     file: docs/scrum/stories/STORY-084-dynamodb-observation-adapter.md
     status: done    # sprint-47: spec PASS (7/7) + quality APPROVE; PO accepted 2026-07-15
     points: 5
@@ -863,6 +988,7 @@ stories:
     sprint: 47
   - id: STORY-085
     title: DynamoDB proposal adapter — open-slot uniqueness transaction, counter IDs, approval events
+    epic: aws-migration
     file: docs/scrum/stories/STORY-085-dynamodb-proposal-adapter.md
     status: done    # sprint-47: spec PASS (6/6) + quality FIX_REQUIRED_then_FIXED (dead-code handler MAJOR -> 45aa5a4); PO accepted 2026-07-15
     points: 5
@@ -871,6 +997,7 @@ stories:
     sprint: 47
   - id: STORY-086
     title: DynamoDB adapters — publications, maintenance windows, rejected observations + seed rewrite
+    epic: aws-migration
     file: docs/scrum/stories/STORY-086-dynamodb-publication-maintenance-seed.md
     status: done    # sprint-48: spec PASS (6/6 AC, 10 tests live vs DynamoDB-Local) + quality APPROVE; PO accepted 2026-07-15, merged 798804a. 2 minors -> follow-up chore.
     points: 5
@@ -879,6 +1006,7 @@ stories:
     sprint: 48
   - id: STORY-087
     title: Composition cutover to DynamoDB — retire Postgres, DoD amendment takes effect
+    epic: aws-migration
     file: docs/scrum/stories/STORY-087-dynamodb-cutover.md
     status: done    # sprint-49: spec FAIL_then_FIXED (AC2/AC4/AC5 review-tail) + quality FIX_REQUIRED_then_FIXED (asgi docstring, verified_sha de-launder); AC4 live-loop PROVEN (244 obs ingested, watermark advanced). PO accepted 2026-07-16, merged to main.
     points: 3
@@ -887,6 +1015,7 @@ stories:
     sprint: 49
   - id: STORY-088
     title: CloudFormation single-stack template + console deployment runbook
+    epic: aws-migration
     file: docs/scrum/stories/STORY-088-cloudformation-stack-runbook.md
     status: done    # sprint-49: spec FAIL_then_FIXED (AC4 runbook env vars) + quality APPROVE (0C/0M; IAM+SG+CloudFront+loop-singleton correct). PO accepted 2026-07-16, merged to main. cfn-lint now in the DoD.
     points: 5
@@ -895,6 +1024,7 @@ stories:
     sprint: 49
   - id: STORY-092
     title: Containerize both processes — single Dockerfile, CMD override per role
+    epic: aws-migration
     file: docs/scrum/stories/STORY-092-containerize-both-processes.md
     status: done    # sprint-49: spec FAIL_then_FIXED (AC3 .dockerignore excludes) + quality FIX_REQUIRED_then_FIXED (.dockerignore, CLAUDE.md port collision); reality gate PASS (docker build + import smoke). PO accepted 2026-07-16, merged to main.
     points: 2
@@ -903,6 +1033,7 @@ stories:
     sprint: 49
   - id: STORY-093
     title: Chore — sprint-49 review minors (container hardening, health grace, test hygiene)
+    epic: aws-migration
     file: docs/scrum/stories/STORY-093-sprint49-review-minors.md
     status: done    # sprint-50: all 4 AC; reality probe (layer CACHED, whoami=app, import smoke). PO accepted 2026-07-17, merged to main.
     points: 2
@@ -911,6 +1042,7 @@ stories:
     sprint: 50
   - id: STORY-089
     title: Live console deployment + end-to-end verification (PO-driven)
+    epic: aws-migration
     file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md
     status: done    # sprint-50: all 6 AC live-verified; system LIVE at https://d3ukiib1iqmbxb.cloudfront.net (stack kept running, c7n-keep). 3 live-found template defects fixed. PO accepted 2026-07-17 (accept-with-follow-up STORY-094), merged to main.
     points: 3
@@ -919,12 +1051,14 @@ stories:
     sprint: 50
   - id: STORY-090
     title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
+    epic: aws-migration
     file: docs/scrum/stories/STORY-090-cicd-github-actions.md
     status: draft   # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
     type: chore
     sprint: null
   - id: STORY-091
     title: Chore — sprint-47 review minors (proposal-event orphan guard, blocker-fixture return-code check, create_open dedup)
+    epic: aws-migration
     file: docs/scrum/stories/STORY-091-sprint47-review-minors.md
     status: done    # sprint-48: spec FAIL_then_FIXED (AC2 leak-free teardown -> b9d4a5c) + quality APPROVE; AC1 orphan-guard divergence confirmed a correction. PO accepted 2026-07-15, merged 798804a.
     points: 2
@@ -933,6 +1067,7 @@ stories:
     sprint: 48
   - id: STORY-094
     title: History endpoint — additive optional server-side `limit` cap (reframed from defect at refinement)
+    epic: aws-migration
     file: docs/scrum/stories/STORY-094-history-limit-param-ignored.md
     status: done    # sprint-51: all 4 AC; real-DynamoDB-Local test + isolated local-stack reality gate. PO accepted 2026-07-17, merged to main; live redeploy approved at review.
     points: 2
@@ -941,6 +1076,7 @@ stories:
     sprint: 51
   - id: STORY-095
     title: Playwright UI sweep — thorough browser verification of the deployed dashboard
+    epic: aws-migration
     file: docs/scrum/stories/STORY-095-playwright-ui-sweep.md
     status: done    # sprint-51: all 5 AC PASS vs the live system (six tabs both load modes, 0 console/API errors, mutations reversed, themes+390px); 1 finding -> STORY-096. PO accepted 2026-07-17, merged to main.
     points: 2
@@ -949,6 +1085,7 @@ stories:
     sprint: 51
   - id: STORY-096
     title: Sidebar keeps desktop width below ~768px — add a narrow-viewport breakpoint
+    epic: aws-migration
     file: docs/scrum/stories/STORY-096-sidebar-narrow-viewport.md
     status: superseded  # was draft (sprint-51 review, STORY-095 390px finding). SUPERSEDED
                     # 2026-07-28: it describes the sprint-38 frontend's sidebar, which the
@@ -967,6 +1104,7 @@ stories:
   # config-shape proposal, calculations walkthrough, decisions D1-D4/F1-F3, roadmap).
   - id: STORY-146
     title: Config authoring shape — nested monitors, declared locations, freshness block
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-146-config-nested-monitors-locations-freshness.md
     status: done    # sprint-62: spec PASS, quality FIX_REQUIRED -> all 5 majors fixed and
                     # independently re-verified; gate 8/8 at 81bf71a; reality gate PASS
@@ -981,6 +1119,7 @@ stories:
     sprint: 62
   - id: STORY-147
     title: Component group + description — config to ComponentDTO
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-147-component-group-description.md
     status: ready
     points: 2
@@ -994,6 +1133,7 @@ stories:
                  # satisfied on the sprint-62 branch, so nothing blocks it but the consumer.
   - id: STORY-148
     title: Grail demo engine part 1 — wire contract (rows, both query grammars, HTTP protocol)
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-148-grail-demo-engine.md
     status: done    # sprint-62: spec PASS 10/10, quality FIX_REQUIRED -> 2 majors fixed,
                     # 8 minors routed to STORY-180; gate 8/8 at 29430ff; reality gate PASS
@@ -1006,6 +1146,7 @@ stories:
     sprint: 62
   - id: STORY-176
     title: Grail demo engine part 2a - scenario player, demo fleet, time base, publish guard
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-176-demo-fleet-scenarios-and-loop-run.md
     status: done    # DONE sprint 63 at e514c1d, PO-ACCEPTED 2026-07-30. Spec PASS; quality
                     # FIX_REQUIRED (1 critical + 4 major) -> 11-commit fix round; scoped gate 5/5
@@ -1034,6 +1175,7 @@ stories:
     depends_on: [STORY-146, STORY-148]
   - id: STORY-182
     title: Grail demo engine part 2b - the real loop run against the demo fleet, and its two-sided gate
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md
     status: done    # sprint-64, PO-ACCEPTED 2026-07-30, AFTER ONE FIX ROUND. Round 1: spec FAIL +
                     # quality FIX_REQUIRED (4 majors) -- the harness REPORTED rather than ENFORCED
@@ -1077,6 +1219,7 @@ stories:
 
   - id: STORY-177
     title: Provisional Dynatrace failure-code mapping — unblock failure-path demos and tests
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-177-provisional-failure-code-mapping.md
     status: done    # sprint-65 story 3. PO ACCEPTED 2026-07-30, after one fix round.
                     # All ACs traced MET. AC2's single-source rule had to be FIXED (`degraded`
@@ -1096,6 +1239,7 @@ stories:
                     # STORY-150's breadth model and STORY-151's rollup from end-to-end verification.
   - id: STORY-149
     title: Anti-flap — require a streak for DEGRADED, symmetric with the DOWN ladder
+    epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-149-antiflap-degraded-streak-check.md
     status: done    # sprint-62: 1-pointer (no reviewer pair); scoped gate 5/5 at 1e025a8,
                     # full gate 8/8 at final HEAD; reality gate PASS 12/12 -- and 7/12 when
@@ -1109,6 +1253,7 @@ stories:
   # ── Deferred / future work, filed at sprint-62 planning (drafts) ──
   - id: STORY-150
     title: Anti-flap Phase 2 — breadth sets a severity ceiling, duration climbs to it (D1/D2)
+    epic: deferred-future
     file: null      # story file written at refinement
     status: draft   # ~5pts. Fixes the major_outage severity ceiling + the degraded semantic
                     # conflation. PREREQUISITE for real multi-location components.
@@ -1116,6 +1261,7 @@ stories:
     sprint: null
   - id: STORY-151
     title: Per-component decision rollup — one writer of a component's status (worst-of)
+    epic: deferred-future
     file: null
     status: draft   # ~5pts. Today each signal independently calls decide() for the shared
                     # component, so a healthy monitor OBSOLETEs a failing sibling's proposal
@@ -1125,6 +1271,7 @@ stories:
     sprint: null
   - id: STORY-152
     title: Completeness uses expected locations, not observed ones
+    epic: deferred-future
     file: null
     status: draft   # ~3pts. distinct_locations is COUNT(DISTINCT observed), so a fully-dark
                     # location leaves its own denominator and completeness reads ~100%.
@@ -1133,6 +1280,7 @@ stories:
     sprint: null
   - id: STORY-153
     title: Rejected proposal reopens on the next cycle — needs a suppression window (F1)
+    epic: deferred-future
     file: null
     status: draft   # ~3pts. CONFIRMED pre-existing defect: reject resolves to terminal
                     # REJECTED with no suppression, so get_open() returns None next cycle and
@@ -1141,6 +1289,7 @@ stories:
     sprint: null
   - id: STORY-154
     title: Map the real Dynatrace HTTP failure codes (blocked on trial renewal)
+    epic: deferred-future
     file: null
     status: draft   # ~3pts. map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise,
                     # so no live-path mapping produces DOWN or DEGRADED at all. BLOCKED: needs
@@ -1152,6 +1301,7 @@ stories:
     sprint: null
   - id: STORY-155
     title: Remove sample_mode (superseded by the demo engine)
+    epic: deferred-future
     file: null
     status: draft   # ~2pts. Removal inventory already written: docs/scrum/wiki/sample-mode.md
                     # (port + adapter + fake + API feature + the one seam line in run.py).
@@ -1180,6 +1330,7 @@ stories:
   #   ZERO backend divergence between main and sprint-61.
   - id: STORY-156
     title: Design system — Tailwind v4 theme from the reference, light + dark, contrast gate
+    epic: frontend-rebuild
     file: null
     status: draft   # First frontend story. Light tokens: --bg-main rgb(243,244,247), glass
                     # rgba(255,255,255,.66)+blur(12px), soft shadow, radii 1.5/1/0.5rem,
@@ -1198,6 +1349,7 @@ stories:
     sprint: null
   - id: STORY-157
     title: App shell — dark inset sidebar, topbar, routing, responsive at 390
+    epic: frontend-rebuild
     file: null
     status: draft   # The reference has NO responsive handling (fixed sidebar + horizontal
                     # body scroll at 390 — newui-08-dashboard-390.png); ours must collapse.
@@ -1210,6 +1362,7 @@ stories:
     sprint: null
   - id: STORY-158
     title: Dashboard page — hero, KPIs, component cards on real fleet-scale data
+    epic: frontend-rebuild
     file: null
     status: draft   # 3 of 4 KPIs are already free from existing endpoints; only fleet uptime
                     # needs aggregation, so do NOT block this on STORY-159 — use per-component
@@ -1218,6 +1371,7 @@ stories:
     sprint: null
   - id: STORY-159
     title: Fleet summary endpoint (B1) — worst-of status, bucket counts, fleet availability
+    epic: frontend-rebuild
     file: null
     status: draft   # ~5pts. One call for the hero + all four KPIs + the Availability footer.
                     # Also needs signals-healthy/total and a last-check instant (B5), which
@@ -1227,6 +1381,7 @@ stories:
     sprint: null
   - id: STORY-160
     title: Availability page — two-grain table, range tabs, completeness column
+    epic: frontend-rebuild
     file: null
     status: draft   # completeness_pct ALREADY exists on AvailabilityDTO (free). The 30-block
                     # uptime bars need STORY-161. Fix the reference's defects: meter bars that
@@ -1235,6 +1390,7 @@ stories:
     sprint: null
   - id: STORY-161
     title: Bucketed availability series (B3) — N per-bucket verdicts over a window
+    epic: frontend-rebuild
     file: null
     status: draft   # ~5pts. Powers sparklines, the 30-block bars and the 14-day fleet strip.
                     # Gaps must render as visible BREAKS, never zero-height bars that read as
@@ -1243,6 +1399,7 @@ stories:
     sprint: null
   - id: STORY-162
     title: Check History page — fleet-wide feed, filters, pagination, OUR result vocabulary
+    epic: frontend-rebuild
     file: null
     status: draft   # Tabs are All/Up/Degraded/Down (Health, signal.py:21-23) - NOT the
                     # reference's Success/Slow/Timeout/Failure. latency_ms and
@@ -1253,6 +1410,7 @@ stories:
     sprint: null
   - id: STORY-163
     title: Fleet history endpoint (B2) — optional signal_key, filters, offset, total count
+    epic: frontend-rebuild
     file: null
     status: draft   # ~5pts. /history currently REQUIRES signal_key (history/controller.py:22),
                     # so the design's core fleet-wide view is impossible in one call; and it
@@ -1263,6 +1421,7 @@ stories:
     sprint: null
   - id: STORY-164
     title: Approvals page — master/detail, reasoning + evidence, approve/reject
+    epic: frontend-rebuild
     file: null
     status: draft   # NO confidence % (the engine is threshold-based, not probabilistic - a
                     # fabricated number on an operator approval screen is worse than none).
@@ -1274,6 +1433,7 @@ stories:
     sprint: null
   - id: STORY-165
     title: Populate StatusProposal.reason at open time (B8)
+    epic: frontend-rebuild
     file: null
     status: draft   # ~2pts (cheaper than first scoped). The field ALREADY exists
                     # (core/domain/proposal.py:51) and the repository persists it; the gap is
@@ -1285,6 +1445,7 @@ stories:
     sprint: null
   - id: STORY-166
     title: Maintenance page — status tabs, window cards, schedule form
+    epic: frontend-rebuild
     file: null
     status: draft   # Single affected component per window (multi-component is STORY-170,
                     # dropped for now). Status tabs derived from window vs now.
@@ -1292,6 +1453,7 @@ stories:
     sprint: null
   - id: STORY-167
     title: Publications page — timeline of publish attempts
+    epic: frontend-rebuild
     file: null
     status: draft   # KEEP the `outcome` field (succeeded/failed) even though the reference has
                     # no visual for it - a failed Statuspage publish must stay visible.
@@ -1300,6 +1462,7 @@ stories:
     sprint: null
   - id: STORY-168
     title: Batch component availability (B6) — kill the dashboard/availability N+1
+    epic: frontend-rebuild
     file: null
     status: draft   # ~3pts. GET /availability/components?ids=... Only worth doing once the
                     # per-component fan-out measurably hurts at real fleet size.
@@ -1308,6 +1471,7 @@ stories:
   # ── Deferred by explicit PO decision (recorded, not forgotten) ──
   - id: STORY-169
     title: Publication headline + body — authored incident notes (B9)
+    epic: deferred-by-po
     file: null
     status: draft   # DEFERRED by PO 2026-07-28 to ~sprint 64. Real value for a status page,
                     # but it converts publications from "recorded status changes" into
@@ -1316,6 +1480,7 @@ stories:
     sprint: null
   - id: STORY-170
     title: Multi-component maintenance windows + publications (B10)
+    epic: deferred-by-po
     file: null
     status: draft   # DROPPED FOR NOW by PO 2026-07-28. ~5pts, the most expensive item, and it
                     # buys one visual (a second affected-component chip). Revisit when the
@@ -1324,6 +1489,7 @@ stories:
     sprint: null
   - id: STORY-171
     title: Real auth — replace the fixed `dashboard-operator` actor constant
+    epic: deferred-by-po
     file: null
     status: draft   # PO 2026-07-28: "for now let it be option a, but in near future we will
                     # have real auth". Deliberately NOT an operator-typed name in the interim:
@@ -1334,6 +1500,7 @@ stories:
     sprint: null
   - id: STORY-174
     title: Expose probe-location labels through the API (B7 consumption side)
+    epic: deferred-by-po
     file: null
     status: draft   # ~2pts. STORY-146 DECLARES the alias/native_id/label mapping in config;
                     # this is the consumption half. `ObservationDTO.location` is the RAW vendor
@@ -1349,6 +1516,7 @@ stories:
     sprint: null
   - id: STORY-175
     title: Fleet expansion — author the real multi-component topology
+    epic: deferred-by-po
     file: null
     status: draft   # BLOCKED on Dynatrace trial renewal (see STORY-154) and on real monitored
                     # endpoints existing. This is the work the pipeline-correctness stories are
@@ -1363,6 +1531,7 @@ stories:
     sprint: null
   - id: STORY-179
     title: dynamo_local picks an ephemeral port Docker maps but Windows won't route; readiness probe can't detect it
+    epic: deferred-by-po
     file: null
     status: draft   # ~2pts. TWO defects in scripts/dynamo_local.py, root-caused 2026-07-29 while
                     # running STORY-146's gate. Together they cost ~1h of sprint time and made a
@@ -1397,6 +1566,7 @@ stories:
     sprint: null
   - id: STORY-180
     title: Demo-engine polish - the eight non-blocking minors from STORY-148's quality review
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-180-demo-engine-polish.md
     status: done    # sprint-63, 2026-07-29: all 9 ACs; scoped DoD gate 5/5 at 2ed3b57 (574
                     # tests, +2 net); reality gate PASS on AC2 with a discrimination proof
@@ -1454,6 +1624,7 @@ stories:
     sprint: 63
   - id: STORY-181
     title: Retire stale references in code comments and docstrings (dead platforms, dead classes, dead story pointers)
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-181-retire-stale-code-references.md
     status: done    # DONE sprint 63 at 05245fd, PO-ACCEPTED 2026-07-30. All 16 sites (families
                     # A-D) plus one defect-driven rewording; comment-only, test count UNCHANGED at
@@ -1522,6 +1693,7 @@ stories:
     sprint: 63
   - id: STORY-178
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
+    epic: deferred-by-po
     file: null
     status: draft   # ~1pt. SKILL-level defect, found 2026-07-28 running STORY-146's gate.
                     # `yt_gate.py --only pytest,lint-imports,ruff-check,ruff-format` (comma form)
@@ -1556,6 +1728,7 @@ stories:
     sprint: null
   - id: STORY-173
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
+    epic: deferred-by-po
     file: null
     status: draft   # OBSERVED 2026-07-28 during the sprint-62 baseline gate, twice.
                     # Repro: start `yt_gate.py`, kill it mid-pytest (e.g. a 10-min tool
@@ -1573,6 +1746,7 @@ stories:
     sprint: null
   - id: STORY-172
     title: Per-location streak persistence — separate a regional outage from a flaky probe (F2)
+    epic: deferred-by-po
     file: null
     status: draft   # DEFERRED by PO 2026-07-28. Breadth (D1) is measured PER CYCLE, so it
                     # cannot distinguish one location failing for two hours (real, actionable)
@@ -1585,6 +1759,7 @@ stories:
     sprint: null
   - id: STORY-183
     title: Demo engine — bound the token cache by RETENTION, not by consume-on-first-poll
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-183-demo-engine-token-cache-retention.md
     status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (621 passed,
                     # 0 skipped, net +4). Reality gate PASS two-sided over REAL HTTP with the real
@@ -1630,6 +1805,7 @@ stories:
                     # concurrent signal loops STORY-182 starts.
   - id: STORY-184
     title: Move the demo scenario interval invariant onto SignalScenario itself
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-184-scenario-interval-invariant-on-the-type.md
     status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (628 passed,
                     # 0 skipped, +7). Reality gate PASS: the future row REPRODUCED at the parent
@@ -1676,6 +1852,7 @@ stories:
                     # invariant guards (the loader is not on it).
   - id: STORY-185
     title: Un-gate the unsafe side of the publish-safety proof from Docker
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-185-ungate-the-unsafe-side-of-the-publish-proof.md
     status: done    # sprint-65 story 5. PO ACCEPTED 2026-07-30. Both sides of the
                     # publish-safety proof pair now run un-gated without Docker.
@@ -1685,6 +1862,7 @@ stories:
     sprint: 65      # story 5 of 7. Was a sprint-64 candidate deliberately left out (gates nothing).
   - id: STORY-186
     title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
     status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
                     # pure accuracy/shape, gates nothing. Next candidate for sprint 65.
@@ -1762,6 +1940,7 @@ stories:
                     # If STORY-191 lands first, re-verify EVERY line citation before starting.
   - id: STORY-188
     title: Normalize the .scrum/checklists encoding — they are a live corruption landmine
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-188-normalize-checklist-encoding.md
     status: done    # sprint-65 story 1, orchestrator-executed. PO ACCEPTED 2026-07-30.
                     # 12 sites / 5 files repaired (the planning figure of 13 was a DOUBLE-COUNT:
@@ -1782,6 +1961,7 @@ stories:
                     # already fired once during STORY-187.
   - id: STORY-189
     title: Close the two doc/wiki gaps sprint 64 found but deliberately left
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
     status: ready   # REFINED 2026-07-30 at sprint-65 planning; all three findings RE-VERIFIED
                     # against the current tree with citations. All three are the same failure
@@ -1832,6 +2012,7 @@ stories:
                     # Also: 8 .py modules in tools/demo_loop_gate/, not 9.
   - id: STORY-187
     title: An import-provenance helper so a proof can prove WHICH code it ran
+    epic: deferred-by-po
     file: docs/scrum/stories/STORY-187-import-provenance-helper-for-proofs.md
     status: done    # sprint-64, PO-ACCEPTED 2026-07-30. All 7 ACs; scoped gate 4/4 (617 passed,
                     # 0 skipped, +3). Reality gate PASS on the REAL mechanism -- run inside an actual
@@ -1872,6 +2053,7 @@ stories:
   # -- Split out / created at sprint-65 refinement (2026-07-30) --
   - id: STORY-190
     title: One unmappable row stalls a signal forever — quarantine the row, keep the batch
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-190-partial-batch-resilience.md
     status: done    # sprint-65 story 2. PO ACCEPTED 2026-07-30, after one fix round.
                     # spec FAIL (AC3's stall test was TAUTOLOGICAL) + quality FIX_REQUIRED (the
@@ -1888,6 +2070,7 @@ stories:
                     # goes sideways, the mapping still ships.
   - id: STORY-191
     title: Drive a real DOWN through the loop — failure scenarios end to end on the demo fleet
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-191-failure-scenario-through-the-loop.md
     status: done    # sprint-65 story 4. PO ACCEPTED 2026-07-30, after one LARGE fix round --
                     # the delivery did not meet AC3 at all (no real loop run; the harness seam it
@@ -1930,6 +2113,7 @@ stories:
                     # a fix round blocks nothing else.
   - id: STORY-192
     title: The same encoding corruption exists in docs/scrum/wiki/ — 246 mojibake sequences across 6 files
+    epic: sprint-65-splits
     file: null
     status: draft   # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's wiki
                     # update. NOT pulled into sprint 65 -- scope is frozen and this is a THIRD,
@@ -1963,6 +2147,7 @@ stories:
     sprint: null
   - id: STORY-193
     title: Proposal formation is not reliably assertable in a loop run — the orchestrate window outruns past-anchored rows
+    epic: sprint-65-splits
     file: null
     status: draft   # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's
                     # fix round. NOT pulled into the sprint -- scope is frozen.
@@ -1999,6 +2184,7 @@ stories:
     sprint: null
   - id: STORY-194
     title: Zone-intent rule catalogue — write down the boundary rules the eight contracts cannot enforce
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-194-zone-intent-rule-catalogue.md
     status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
                     # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
@@ -2018,6 +2204,7 @@ stories:
     sprint: 66
   - id: STORY-195
     title: Audit the core and adapters zones against the rule catalogue
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-195-audit-core-and-adapters.md
     status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
                     # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
@@ -2031,6 +2218,7 @@ stories:
     sprint: 66
   - id: STORY-196
     title: Audit api + composition and the tools/ to src/ one-way boundary
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-196-audit-api-composition-tools-boundary.md
     status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
                     # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
@@ -2046,6 +2234,7 @@ stories:
     sprint: 66
   - id: STORY-197
     title: Land the mechanical guards the audit earned, and adjudicate every rule
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-197-land-the-guards-the-audit-earned.md
     status: done   # ACCEPTED at the Sprint 66 review 2026-07-31 (PO: "i accept"),
                     # velocity 11/11. Branch sprint-66 stays UNMERGED (standing directive).
@@ -2062,6 +2251,7 @@ stories:
     sprint: 66
   - id: STORY-198
     title: An adapter re-encodes a domain enum's value as a literal — dynamo_proposal_repository.py:286
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-198-fix-hardcoded-approved-literal.md
     status: superseded   # SUPERSEDED BY STORY-200 at sprint-67 planning (2026-08-02).
                     # NOT because it was done -- because it was NOT. The previous STORY-200 file
@@ -2101,6 +2291,7 @@ stories:
     sprint: null
   - id: STORY-199
     title: Paginate the five adapters/persistence/ methods (across four files) that silently truncate against an "all" port contract
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-199-paginate-persistence-list-methods.md
     status: done    # SPRINT 67, commits 1042048..a7a1b96. THE LIVE PRODUCTION DEFECT IS FIXED:
                     # is_under_maintenance no longer returns a silent False past the 1MB page, and
@@ -2143,6 +2334,7 @@ stories:
     sprint: null
   - id: STORY-200
     title: Give ProposalRepository.record_approval_event a domain-typed action parameter
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-200-proposal-port-domain-typed-action.md
     status: done    # SPRINT 67, commits 33b7ccd..9bccac8. Port typed to ProposalState, adapter
                     # compares by enum identity, .value explicit at both write sites -- persisted
@@ -2175,6 +2367,7 @@ stories:
     sprint: null
   - id: STORY-201
     title: Clickpath normalizer hygiene — use require_field for execution.outcome
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
     status: ready   # REFINED 2026-08-02 at sprint-67 planning; estimate confirmed at 1. Citations
                     # re-derived and hold; plan verification found NOTHING wrong with it -- the
@@ -2205,6 +2398,7 @@ stories:
     sprint: null
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-202-env-matrix-import-env-var-names.md
     status: done    # SPRINT 67, commits 6f872c3..37b09a0. Built by TWO implementers across an
                     # account session limit; the orchestrator preserved the first one's wiki prose
@@ -2270,6 +2464,7 @@ stories:
     sprint: null
   - id: STORY-203
     title: Batch the four MINOR ZR-3 duplications — tools/ should import shared literals from backend/src/
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-203-tools-import-shared-literals.md
     status: done    # SPRINT 68, commits e9cb8c8..37d20c0. PO-ACCEPTED 2026-08-05 *** WITH AC7
                     # ACCEPTED AS A FILED EXCEPTION -- AC7 REMAINS NOT_MET ON THE RECORD. *** The
@@ -2298,6 +2493,7 @@ stories:
     sprint: 68
   - id: STORY-204
     title: Reuse the adapter's DQL builder validation inside composition/vendor_health.py (GAP-2)
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-204-vendor-health-reuse-dql-validation.md
     status: done    # SPRINT 68, commits d38334b..c443d64 (implementation + THREE fix rounds).
                     # PO-ACCEPTED 2026-08-05 *** WITH AC7b ACCEPTED AS A FILED EXCEPTION -- AC7b
@@ -2325,6 +2521,7 @@ stories:
     sprint: 68
   - id: STORY-205
     title: composition/seed_dynamo.py must call the persistence adapters' key schema, not re-implement it
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-205-seed-dynamo-must-not-own-key-schema.md
     status: done    # SPRINT 68, commits 91ab0e5..f643081. PO-ACCEPTED 2026-08-05, ALL AC MET, no
                     # exception. The key schema now has ONE declaration --
@@ -2367,6 +2564,7 @@ stories:
     sprint: 68
   - id: STORY-206
     title: Land ZR-1's guard — an import-linter contract forbidding inbound adapters from importing repository ports
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-206-land-zr1-inbound-adapter-port-contract.md
     status: done   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
                     # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (AC5 stopping rule: guards landed for the two
@@ -2397,6 +2595,7 @@ stories:
     sprint: 69
   - id: STORY-207
     title: Land ZR-2's guard — an AST test that vendor vocabulary never becomes an identifier inside core/
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-207-land-zr2-vendor-vocabulary-ast-test.md
     status: done   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
                     # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean, mutation proof needed).
@@ -2418,6 +2617,7 @@ stories:
     sprint: 69
   - id: STORY-208
     title: Land ZR-4's guard — extend test_zone_layout to assert the five-file api feature SHAPE
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-208-land-zr4-five-file-feature-test.md
     status: done   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
                     # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred: tree is clean).
@@ -2438,6 +2638,7 @@ stories:
     sprint: 69
   - id: STORY-209
     title: Land ZR-5's guard — a composition-root parity test for CONFIG_DIR resolution (code-level half only)
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-209-land-zr5-composition-root-parity-test.md
     status: done   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
                     # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-07-31 by STORY-197 (deferred).
@@ -2462,6 +2663,7 @@ stories:
     sprint: 69
   - id: STORY-210
     title: Harden the DoD gate against the Application Control policy — remaining exe shims + a policy-block diagnostic
+    epic: sprint-65-splits
     file: docs/scrum/stories/STORY-210-device-guard-blocks-dod-commands.md
     status: done    # SPRINT 67, commits 347a199..a528e25. Spec PASS 8/8 AC; quality FIX_REQUIRED
                     # (1 MAJOR -- a vacuous assertion whose deletion-mutation left the suite green)
@@ -2529,6 +2731,7 @@ stories:
   # the DoD gate rather than in an ad-hoc edit.
   - id: STORY-211
     title: Plan sprints on context and token budget instead of story points
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-211-plan-on-context-and-token-budget.md
     status: draft   # FILED 2026-08-01, PO-deferred explicitly ("i will take it up later").
                     # Replaces fibonacci points + velocity.json with two MEASURED numbers:
@@ -2553,6 +2756,7 @@ stories:
 
   - id: STORY-212
     title: Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-212-evidence-check-script-rung.md
     status: draft   # FILED 2026-08-01. The code counterpart to the same day's checklist collapse:
                     # A1/A1-ref/A3/A4/A7/A9 became ONE rule, and this moves its mechanical half to
@@ -2577,6 +2781,7 @@ stories:
 
   - id: STORY-213
     title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
     status: draft   # FILED 2026-08-03 from STORY-199's QUALITY REVIEW, with reproduction evidence
                     # attached. NOT a defect in STORY-199's code, and the reviewer proved that
@@ -2609,6 +2814,7 @@ stories:
 
   - id: STORY-214
     title: Extract the LastEvaluatedKey pagination loop into a shared helper — and rework the ZR-7 guard that would forbid it
+    epic: process-ratchet-brake
     file: null
     status: draft   # FILED 2026-08-03 from STORY-199's quality review. Six near-identical copies of
                     # the same loop now live under adapters/persistence/ (five landed by STORY-199 +
@@ -2634,6 +2840,7 @@ stories:
 
   - id: STORY-215
     title: Close the remaining env-var-NAME drift - the two DYNATRACE_* names, plus the file that guards the publish guard
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-215-env-var-name-drift-remainder.md
     status: done    # SPRINT 68. PO-ACCEPTED 2026-08-05, ALL 8 AC MET, no exception -- spec review
                     # PASS outright. Nine <NAME>_VAR constants now in settings.py; the publish-guard
@@ -2674,6 +2881,7 @@ stories:
 
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md — a row may not claim a guard that does not exist
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-216-mechanise-enforced-by-claim.md
     status: done   # PO-APPROVED at sprint-69 planning 2026-08-05 (AC refined from
                     # zone-rules.md, then corrected at pre-lock plan verification)   # FILED 2026-08-03 at the sprint-67 retro, from STORY-200's quality review
@@ -2708,6 +2916,7 @@ stories:
     sprint: 69
   - id: STORY-217
     title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-217-topology-write-port.md
     status: draft   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
                     # fix to be written down rather than quietly closed. The implementer correctly
@@ -2738,6 +2947,7 @@ stories:
     sprint: null
   - id: STORY-218
     title: Settings declares every default TWICE — and the ZR-3 sweep is structurally blind to it
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-218-settings-defaults-declared-twice.md
     status: draft   # FILED 2026-08-04 by the orchestrator, from STORY-203's QUALITY REVIEW, which
                     # NARROWED A CLAIM THAT STORY MADE rather than finding a defect in it.
@@ -2770,6 +2980,7 @@ stories:
     sprint: null
   - id: STORY-219
     title: Wire tools/citation_sweep.py into the gate — the capability exists and is unenforced
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-219-enforce-citation-resolution.md
     status: draft   # FILED 2026-08-05 by the orchestrator at the sprint-68 wiki compile pass.
                     # STORY-215's fix round surfaced the candidate and correctly said it was the
@@ -2804,6 +3015,7 @@ stories:
     sprint: null
   - id: STORY-220
     title: ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-220-zr1-forbidden-list-completeness-test.md
     status: draft   # SPLIT OUT of STORY-206 (where it was AC6) at sprint-69 PLAN VERIFICATION,
                     # 2026-08-05. Not dropped: carrying it inside STORY-206 makes that story a 5
@@ -2825,6 +3037,7 @@ stories:
     sprint: null
   - id: STORY-221
     title: The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions
+    epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
     status: draft   # FILED 2026-08-06 during STORY-206's DoD gate, REQUIRED by the 2026-07-06
                     # agreement: "a gate that can flake is filed as a defect so the mechanical
