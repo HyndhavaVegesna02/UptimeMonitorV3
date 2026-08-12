@@ -40,20 +40,26 @@ permanent mutation test here** (matching the house convention in
 mutation is performed once against the real tree, observed, reverted, and the
 observation is recorded in prose -- not re-run automatically on every gate,
 since doing so would require checking in a broken contract or a stray port
-file permanently).
+file permanently). Full-suite baseline at this test's own addition: 749
+passed, 0 skipped.
 - AC3 (disk has an extra module the contract doesn't): temporarily added an
   empty `backend/src/core/ports/zzz_repository.py` without touching
-  `pyproject.toml`. `test_forbidden_modules_matches_discovered_persistence_ports_exactly`
-  failed, naming `src.core.ports.zzz_repository` as "On disk but not in the
-  contract"; no other test in the full suite changed state (743 -> 744, the
-  one new failure, zero new passes/skips elsewhere). Reverted; full suite
-  back to 743 passed, 0 skipped; `git diff` empty.
-- AC4 (contract has a module disk doesn't): temporarily removed
-  `"src.core.ports.watermark"` from `inbound-adapters-dont-persist`'s
-  `forbidden_modules` in `pyproject.toml`. The same test failed, naming
-  `src.core.ports.watermark` as "In the contract but not on disk"; reverted,
-  `git diff` empty. This is the SET-EQUALITY proof: a "contract subset of
-  disk" check alone would never have caught this removal.
+  `pyproject.toml`.
+  `test_forbidden_modules_matches_discovered_persistence_ports_exactly` failed,
+  naming `src.core.ports.zzz_repository` under "On disk but not in the
+  contract"; the full suite reported exactly `1 failed, 748 passed` --
+  748 + 1 == 749, so no other test changed state. Reverted; full suite back
+  to 749 passed, 0 skipped; `git diff` empty.
+- AC4 (contract names a module removed from it, still shown RED via the same
+  equality check): temporarily removed `"src.core.ports.watermark"` from
+  `inbound-adapters-dont-persist`'s `forbidden_modules` in `pyproject.toml`.
+  The same test failed, again naming `src.core.ports.watermark` -- now under
+  "On disk but not in the contract" (removing it from `declared` while it
+  stays on disk produces the identical shape as AC3's new-file case) -- `1
+  failed, 748 passed`. Reverted, `git diff` empty. This is the SET-EQUALITY
+  proof: a "contract subset of disk" check alone would never fire on a
+  REMOVAL from the contract (disk would still be a superset either way);
+  only checking BOTH directions catches it.
 
 **AC6.** This module runs inside the existing `python -m pytest` — no ninth
 DoD command.
