@@ -1,9 +1,20 @@
 ---
 title: Dev setup and the Definition-of-Done gate
-code_refs: [pyproject.toml, CLAUDE.md, .scrum/definition-of-done.md, backend/tests/conftest.py, .gitattributes, frontend/package.json, backend/src/composition/asgi.py, backend/src/composition/run.py]
-verified_sha: 13bbb07
 verified_sprint: sprint-69
-status: verified
+status: archived
+archived_sprint: sprint-69
+archived_reason: "Collapsed 2026-08-12 by the yourteam 2.3.0 tier pass, not by code deletion. Its
+  Facts were CLAUDE.md's content restated: the backend and frontend gate commands, running the app
+  locally, the throwaway DynamoDB Local recipe, and the green-pytest-hides-skipped-tests warning are
+  all in CLAUDE.md, and the gate itself (.scrum/definition-of-done.md, run by yt_gate.py) is what
+  ENFORCES them. Under the routing rule those are tiers 2 and 1; this article was a third copy that
+  could go silently wrong while the other two could not. It listed CLAUDE.md and
+  .scrum/definition-of-done.md among its own code_refs -- an article whose subject was
+  documentation, which is why it went STALE at 9dd86e6 the moment the DoD's blast-radius line was
+  reworded. Two Facts were NOT already in CLAUDE.md and were moved there in the same commit: the
+  .gitattributes LF-normalization gotcha and the [tool.ruff] exclude list. Nothing else was lost;
+  read CLAUDE.md for the live commands, and this file only for what the setup looked like at
+  sprint-69."
 # Re-stamped 2026-08-02 (sprint-67, STORY-210 quality-review fix round; commit 0084326). CLAUDE.md
 # and .scrum/definition-of-done.md both changed again, but neither change touches a Fact in this
 # article: CLAUDE.md gained one clarifying sentence distinguishing `ruff.exe` (preventive

@@ -267,6 +267,16 @@ exe), pytest, Docker (DynamoDB Local), Node 24 / npm 11, uvicorn (dev).
 `pyproject.toml` is the source of truth for versions — do not duplicate them here. No
 `psql` client and no SQL database is used.
 
+`[tool.ruff]` sets `exclude = [".agents", ".venv", "frontend"]`, so `ruff check .` /
+`ruff format --check .` do **not** scan the frontend (it has its own ESLint gate) — but they
+DO scan `.claude/`, which is not excluded.
+
+**Line endings are LF in the repo**, via `.gitattributes` (`* text=auto eol=lf` plus `binary`
+rules for `*.png/jpg/jpeg/gif/ico/pdf/woff/woff2`; STORY-018). The index blobs are already LF,
+so `git add --renormalize .` stages nothing: the CRLF a Windows checkout shows in the *working
+tree* comes from a global `core.autocrlf=true` at checkout time, not from repo content. The
+`CRLF will be replaced by LF` warning on `git add` is that conversion, not a problem to fix.
+
 ## Deployed topology (STORY-089)
 
 AWS **us-east-1**, account `065317679010`, CloudFormation stack `uptime-monitor` (from
