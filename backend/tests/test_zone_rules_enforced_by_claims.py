@@ -169,6 +169,37 @@ def _references_in_verdict_cell(verdict_cell: str) -> list[str]:
     return references
 
 
+def _assert_reference_count_matches_markers(row: AdjudicationRow) -> None:
+    """Per-row non-vacuity floor (quality review FIX 1.1): if `row`'s raw
+    `verdict_cell` contains the literal marker `ENFORCED-BY` at all, its
+    parsed `references` must be non-empty AND at least as many as the
+    number of `ENFORCED-BY` occurrences in the cell.
+
+    The global floor (`assert all_references` in the real-file test) only
+    catches a TOTAL collapse to zero across the whole table -- a single row
+    whose references silently drop to zero (or whose ZR-8-style multi-
+    reference cell silently drops from 4 to 1) stays invisible to it, and
+    because the shown-RED check filters on `row.references` too, that row
+    escapes BOTH checks at once and the guard stays green throughout. The
+    single most likely cause is the verdict marker written OUTSIDE its
+    backtick span -- this parser's grammar requires it INSIDE the span (the
+    house convention, `` `ENFORCED-BY path` ``) -- which is MORE natural
+    markdown than the convention it violates, so nothing else guards against
+    an author reasonably getting this wrong.
+    """
+    marker_count = row.verdict_cell.count("ENFORCED-BY")
+    if marker_count == 0:
+        return
+    assert row.references and len(row.references) >= marker_count, (
+        f"{row.rule_id}: Verdict cell contains {marker_count} 'ENFORCED-BY' "
+        f"marker(s) but only {len(row.references)} reference(s) parsed out "
+        f"of it ({row.references!r}). Likely cause: the marker sits OUTSIDE "
+        f"its backtick code span -- this parser's grammar requires "
+        f"`` `ENFORCED-BY path` `` with the marker INSIDE the span. Fix the "
+        f"row's markdown to that convention; do not weaken this check."
+    )
+
+
 def parse_adjudication_table(markdown_text: str) -> list[AdjudicationRow]:
     """Parse the Adjudication table into one `AdjudicationRow` per data row,
     in file order, applying AC1's reference grammar to each Verdict cell.
@@ -195,7 +226,9 @@ def parse_adjudication_table(markdown_text: str) -> list[AdjudicationRow]:
         verdict_cell = cells[verdict_idx]
         detail_cell = cells[detail_idx] if detail_idx is not None else ""
         references = tuple(_references_in_verdict_cell(verdict_cell))
-        rows.append(AdjudicationRow(rule_id, verdict_cell, detail_cell, references))
+        row = AdjudicationRow(rule_id, verdict_cell, detail_cell, references)
+        _assert_reference_count_matches_markers(row)
+        rows.append(row)
     return rows
 
 
@@ -454,6 +487,47 @@ def test_import_linter_contract_names_reads_pyproject(tmp_path) -> None:
         encoding="utf-8",
     )
     assert _import_linter_contract_names(pyproject) == {"contract-a", "contract-b"}
+
+
+def test_per_row_floor_catches_marker_written_outside_the_backtick_span() -> None:
+    """Quality review FIX 1.1, edit 1 -- the most natural markdown mistake:
+    writing `ENFORCED-BY \\`path\\`` with the marker OUTSIDE the span instead
+    of INSIDE it (the house convention this parser's grammar depends on).
+    `_references_in_verdict_cell` sees a plain, unmarked span and returns
+    zero references while the cell plainly claims a guard -- the per-row
+    floor must catch that, naming the row."""
+    broken = _FIXTURE_TABLE.replace(
+        "| ZR-7 | `GUARDABLE-DEFERRED` | Deferred, no reference yet. |",
+        "| ZR-7 | ENFORCED-BY `backend/tests/test_zr7.py` | Shown RED. |",
+    )
+    try:
+        parse_adjudication_table(broken)
+    except AssertionError as exc:
+        assert "ZR-7" in str(exc)
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on a marker written "
+            "outside its backtick span -- the row's claim silently vanished."
+        )
+
+
+def test_per_row_floor_catches_a_lone_marker_span_with_reference_outside() -> None:
+    """Quality review FIX 1.1, edit 2: a lone `` `ENFORCED-BY` `` span
+    (correctly recognised as a marker, not a reference) with its reference
+    written OUTSIDE any span at all. Zero references parse out, silently."""
+    broken = _FIXTURE_TABLE.replace(
+        "| ZR-7 | `GUARDABLE-DEFERRED` | Deferred, no reference yet. |",
+        "| ZR-7 | `ENFORCED-BY` backend/tests/test_zr7.py | Shown RED. |",
+    )
+    try:
+        parse_adjudication_table(broken)
+    except AssertionError as exc:
+        assert "ZR-7" in str(exc)
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on a lone ENFORCED-BY "
+            "marker span whose reference sits outside any span."
+        )
 
 
 def test_assert_uniform_cell_count_catches_a_stray_pipe_inside_a_cell() -> None:
