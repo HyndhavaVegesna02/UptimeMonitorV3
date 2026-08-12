@@ -19,11 +19,18 @@ status: verified
   exposed via `package-dir = {"" = "backend"}` (`pyproject.toml` ("tool.setuptools")). An editable
   install (`pip install -e ".[dev]"`) makes `import src.core` resolve.
   **That editable install is a plain ABSOLUTE path entry, so `src.*` resolves to the MAIN tree
-  no matter where the interpreter is launched from** — a git worktree, a scratch copy, anywhere.
-  The installed `.pth` in the venv's `site-packages` contains one line, the absolute path of this
-  checkout's `backend/`. Consequence for any check that must analyse a tree OTHER than the main
-  one (a mutation in a scratch copy, a worktree gate run): force `PYTHONPATH=<that tree>/backend`,
-  or import-linter and pytest silently report on the main tree instead. Warned about in
+  from any launch directory that does not itself contain a `src/` package** — a git worktree, a
+  scratch copy. The installed `.pth` in the venv's `site-packages` contains one line, the absolute
+  path of this checkout's `backend/`. The qualifier is load-bearing and was measured, not reasoned:
+  absoluteness is NOT what makes resolution launch-directory-independent — `sys.path[0]` is the
+  cwd/script directory and precedes the `.pth` entry, so a launch directory that DOES contain a
+  `src/` package shadows the main tree (verified: from a scratch `backend/` holding a stub
+  `src/__init__.py`, `import src` resolved to the scratch copy). Consequence for any check that must
+  analyse a tree OTHER than the main one (a mutation in a scratch copy, a worktree gate run): force
+  `PYTHONPATH=<that tree>/backend` and assert the resolved root rather than assume it. Import-linter
+  must run from the repo root, and `backend/tests` has no `__init__.py` so pytest's prepend mode
+  inserts `backend/tests` — which cannot shadow `src`. Both therefore really do report on the main
+  tree unless pinned. Warned about in
   `pyproject.toml` ("tool.importlinter")'s own header comment, and the dev-only provenance helper
   assert_import_root exists to assert the resolved root rather than assume it (see
   [[dev-setup-and-dod]]). This is not theoretical — it produced two wrong answers during
@@ -225,3 +232,21 @@ status: verified
   produced two wrong answers inside STORY-206 itself. Evidence read at re-verification, not
   inferred: the venv's installed `.pth` is a single absolute line pointing at this checkout's
   `backend/`. verified_sha bumped `c34e193` -> `13bbb07`.
+- sprint-69 (STORY-206, quality re-review round 3 MAJOR): **the Fact that entry just added
+  overstated its own evidence, and the entry stamped the overstatement as read.** It asserted
+  `src.*` resolves to the main tree "no matter where the interpreter is launched from — a git
+  worktree, a scratch copy, anywhere". The reviewer refuted it with one command and the
+  orchestrator reproduced it: from a scratch `backend/` containing a stub `src/__init__.py`,
+  `import src` resolves to the SCRATCH copy, because `sys.path[0]` is the cwd/script directory and
+  precedes the `.pth` entry. The one-line `.pth` — which is what was actually read — establishes
+  "plain absolute path entry" and nothing more; `sys.path` ORDER decides the rest, and it decides
+  it the other way. Note the correctly-scoped version was already in `pyproject.toml`'s comment
+  ("even when this runs from a worktree or a scratch copy"); only this article universalised it.
+  Fact narrowed to "from any launch directory that does not itself contain a `src/` package", with
+  the measurement recorded inline, and the reason absoluteness is not the operative property stated
+  so the claim cannot be re-broadened by someone re-deriving it. The pin-PYTHONPATH consequence is
+  unchanged and still correct — it now also records WHY import-linter and pytest are safe in
+  practice (repo-root invocation; `backend/tests` has no `__init__.py`, so its prepended path cannot
+  shadow `src`). Third instance in this story of an unverified causal inference carried under a
+  verification stamp (QM-2, QM-4, ZR-1 residue (2) v1 — and this one was the orchestrator's).
+  No `code_ref` moved; verified_sha stays `13bbb07`.

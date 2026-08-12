@@ -385,9 +385,9 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   comment-fix commit) to reflect that `code_ref` moving; the sweep would otherwise flag this
   article STALE against it.
 - sprint-69 (STORY-206, QM-5 fix / wiki sweep at resume 2026-08-12): the sweep flagged this
-  article STALE a third time — `pyproject.toml` (a `code_ref`) moved at `13bbb07`. Two changes
-  there, and this article's Facts touch NEITHER: a comment-only rewrite of the `[tool.importlinter]`
-  header (module-form invocation + a `sys.path` warning — see [[architecture-boundary]]), and no
-  dependency, no `[project]` table and no contract structure altered. This article cites
+  article STALE a third time — `pyproject.toml` (a `code_ref`) moved at `13bbb07`. The change there
+  is a comment-only rewrite of the `[tool.importlinter]` header (module-form invocation + a
+  `sys.path` warning — see [[architecture-boundary]]); no dependency, no `[project]` table and no
+  contract structure was altered, and this article's Facts touch none of it. This article cites
   `pyproject.toml` for dependency/config concerns and for the contract governing composition-zone
   placement; both are unchanged. Re-verified only. verified_sha bumped `c34e193` -> `13bbb07`.
