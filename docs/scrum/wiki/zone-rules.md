@@ -306,7 +306,9 @@ citations regardless of enforcement status; the row is the authoritative verdict
 - **Statement.** SCOPE, pinned (see the measurement below for why): a value DECLARED in
   `backend/src/` — in either of TWO declaration shapes, (i) a module-level named constant
   (an UPPER_CASE assignment target) or (ii) a **default on a settings/config field**
-  (e.g. `backend/src/composition/settings.py:21-22`) — whose value `tools/` also needs,
+  (e.g. `backend/src/composition/settings.py:57-58`, re-keyed from `:21-22` by
+  STORY-218's own `Settings`-docstring insertion, which displaced these two field
+  defaults without changing their declared status) — whose value `tools/` also needs,
   must be obtained by `tools/` importing the symbol or reading the config at runtime.
   `tools/` must never independently re-declare or hardcode a value equal to one of those,
   **whether it does so at module level or inside a function body**. This is about DECLARED
@@ -327,7 +329,9 @@ citations regardless of enforcement status; the row is the authoritative verdict
   second time.
 - **Fixed and guarded (STORY-203, sprint-68) — the last four `MUST-IMPORT-FROM-SRC`
   entries this rule adjudicated, zero remain.** `tools/demo_loop_gate/harness.py`'s
-  defensive blocklist (`:762-775` at HEAD — a fix-round edit named each assert's failure
+  defensive blocklist (`:772-785` at HEAD — re-keyed from `:762-775` by STORY-218's own
+  AC6 comment edit above these asserts, correcting the "follows a future rename
+  automatically" claim; before that, a fix-round edit named each assert's failure
   message, widening the span from `:761-768`; STORY-215's own `935cd70` added one more
   import line to `harness.py`'s import block, shifting this span a further +1, from the
   `:761-774` this article previously, and at the time correctly, recorded) now compares
@@ -412,7 +416,8 @@ citations regardless of enforcement status; the row is the authoritative verdict
   before building the sweep (orchestrator correction, STORY-194 acceptance 2026-07-31):**
   the narrow measurement counted ONLY shape (i) at module level on BOTH sides, and the
   `harness.py`/`settings.py` violation (fixed at STORY-203, sprint-68; see above) was
-  neither — `backend/src/composition/settings.py:21-22`
+  neither — `backend/src/composition/settings.py:57-58` (`:21-22` at the time of this
+  measurement; re-keyed by STORY-218, see the Statement above)
   is shape (ii) (a field default, not an UPPER_CASE module constant) and the `harness.py`
   side was a literal inside a FUNCTION BODY. So the 0 is an artifact of the first draft's
   too-narrow scope, NOT evidence that the tree is clean. Under the pinned scope as it now
