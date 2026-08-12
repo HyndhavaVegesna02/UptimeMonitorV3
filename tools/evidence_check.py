@@ -22,11 +22,19 @@ exactly the three checks that are not bespoke at all:
    reimplemented, AC6) instead of running a shell command per side: `--left`/
    `--right` are then read as ROOT paths, and the recorded "outcome" per side
    is the resolved file path (or the `WrongImportRootError` text).
-3. `mutate <patch> --tests <selector>` -- apply `<patch>` with `git apply`,
-   run the pytest selector(s), report which went RED, then ALWAYS attempt
-   `git apply -R` and assert `git diff -- <the files the patch names>` is
-   empty afterwards. Zero RED exits non-zero (UNPINNED); a failed or
-   incomplete restore also exits non-zero, never a silent pass.
+3. `mutate <patch> --tests <selector>` -- first run the pytest selector(s) on
+   the UNMUTATED pre-image and require them GREEN (sprint-70 fix round: an
+   already-red selector cannot be distinguished from "the mutation turned it
+   red", and would otherwise pass ANY mutation, comment-only ones included);
+   then apply `<patch>` with `git apply`, run the selector(s) again, report
+   which went RED, then ALWAYS attempt `git apply -R` and assert `git status
+   --porcelain -- <the files the patch names>` is empty afterwards (`git
+   status`, not `git diff` -- a CREATION patch's target is UNTRACKED by
+   construction and invisible to `git diff`). Zero RED exits non-zero
+   (UNPINNED); a selector run that never produced a real pass/fail verdict at
+   all (pytest exit 2/3/4/5 -- a collection error, an unknown selector path)
+   is its OWN distinct non-zero outcome, never folded into "zero RED"; a
+   failed or incomplete restore also exits non-zero, never a silent pass.
 
 **The mutation format is a patch file** (resolved open question, sprint-70
 refinement, 2026-08-13): `git apply`/`git apply -R` is the only one of the
@@ -72,6 +80,7 @@ Usage::
 from __future__ import annotations
 
 import argparse
+import os
 import shlex
 import subprocess
 import sys
@@ -238,6 +247,17 @@ def apply_patch(
 #: -reason-red defect this story's own brief warns about).
 _RED_TOKENS = ("FAILED", "ERROR")
 
+#: pytest exit codes documented by pytest itself that mean the selector run
+#: never produced a real pass/fail verdict at all: 2 = execution interrupted
+#: (a collection error is reported this way), 3 = internal error, 4 = usage
+#: error (e.g. a `--tests` selector naming a file that does not exist), 5 =
+#: no tests collected. Deliberately excludes 0 (all green) and 1 (something
+#: genuinely failed) -- those two are exactly what `red` above already
+#: distinguishes correctly (CRITICAL fix, sprint-70 fix round: a collection
+#: ERROR was previously indistinguishable from a real RED result, and the
+#: exit code that would have caught it was discarded entirely).
+_SELECTOR_DID_NOT_RUN_EXIT_CODES = (2, 3, 4, 5)
+
 
 def run_pytest_selectors(
     selectors: Sequence[str], *, cwd: Path
@@ -246,17 +266,42 @@ def run_pytest_selectors(
     `(exit_code, red_test_ids, stdout)`. `red_test_ids` is every test node id
     whose verbose-mode result line reads FAILED or ERROR -- module form,
     matching this repo's own blocked-shim convention
-    (`python -m pytest`, never the `pytest` exe)."""
+    (`python -m pytest`, never the `pytest` exe).
+
+    A result word alone is not enough: pytest's collection-error banner
+    (`____________ ERROR collecting test_x.py ____________`) also has
+    "ERROR" as its SECOND whitespace token, so `parts[0]` must additionally
+    look like a real node id (`path/to/test.py` or containing `::`) before
+    the line counts as red -- otherwise the banner's own dashes get
+    reported as a "red test id" (CRITICAL fix, sprint-70 fix round; probed
+    by renaming the symbol a test imports, producing an ImportError while
+    collecting).
+
+    Runs with `PYTHONDONTWRITEBYTECODE=1` (discovered via `check_mutate`'s
+    own MAJOR 2 baseline fix, sprint-70 fix round): `check_mutate` now calls
+    this twice against the SAME files -- once pre-mutation, once post -- and
+    CPython's default timestamp-based `.pyc` cache stores the source mtime
+    at SECOND resolution. A baseline compile followed by a same-second
+    mutation left the post-mutation run silently importing the STALE
+    pre-mutation bytecode (probed directly: a real `VALUE=1`->`VALUE=2`
+    mutation reported "1 passed", not "1 failed" -- the mutation never took
+    effect from the interpreter's point of view). Disabling bytecode writing
+    forces a fresh compile from source on every call, closing that window."""
     result = subprocess.run(
         [sys.executable, "-m", "pytest", *selectors, "-v"],
         cwd=cwd,
         capture_output=True,
         text=True,
+        env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
     )
     red: list[str] = []
     for line in result.stdout.splitlines():
         parts = line.split()
-        if len(parts) >= 2 and parts[1] in _RED_TOKENS:
+        if (
+            len(parts) >= 2
+            and parts[1] in _RED_TOKENS
+            and ("::" in parts[0] or parts[0].endswith(".py"))
+        ):
             red.append(parts[0])
     return result.returncode, red, result.stdout
 
@@ -265,9 +310,12 @@ def check_mutate(
     patch_path: Path, selectors: Sequence[str], *, repo_root: Path
 ) -> tuple[bool, str]:
     """Apply `patch_path`, run `selectors`, ALWAYS attempt to restore, and
-    return `(turned_red, message)`. `turned_red` is True only when: the patch
-    applied, at least one selected test went RED, AND the restore (`git
-    apply -R` + `git diff -- <patch's own targets>` empty) succeeded. A
+    return `(turned_red, message)`. `turned_red` is True only when: the
+    selector(s) were GREEN on the pre-image (the baseline check below), the
+    patch applied, at least one selected test went RED, the post-mutation
+    pytest run actually produced a verdict (never one of
+    `_SELECTOR_DID_NOT_RUN_EXIT_CODES`), AND the restore (`git apply -R` +
+    `git status --porcelain -- <patch's own targets>` empty) succeeded. A
     failure to restore is reported as a failure in its own right, never
     folded silently into a pass."""
     targets = parse_patch_targets(patch_path)
@@ -275,6 +323,23 @@ def check_mutate(
         return False, (
             f"Patch {patch_path} names no target file (no '+++ b/<path>' "
             f"header found) -- cannot scope a restore check to it."
+        )
+
+    # Baseline (MAJOR 2 fix, sprint-70 fix round): "turned RED" cannot be
+    # distinguished from "was already red" unless the selector(s) are known
+    # to be GREEN on the pre-image, before the mutation is applied at all. An
+    # already-failing selector would otherwise pass ANY mutation, including
+    # a purely comment-only, behaviour-preserving one.
+    baseline_exit, baseline_red, baseline_stdout = run_pytest_selectors(
+        selectors, cwd=repo_root
+    )
+    if baseline_exit != 0 or baseline_red:
+        return False, (
+            f"BASELINE NOT GREEN (pytest exit {baseline_exit}, red="
+            f"{baseline_red}) BEFORE {patch_path} was ever applied -- "
+            f"{list(selectors)!r} must pass on the pre-image, or a "
+            f"subsequent RED result cannot be attributed to this mutation.\n"
+            f"baseline stdout tail:\n{baseline_stdout[-2000:]}"
         )
 
     apply_result = apply_patch(patch_path, cwd=repo_root)
@@ -285,14 +350,14 @@ def check_mutate(
         )
 
     try:
-        _exit_code, red, stdout = run_pytest_selectors(selectors, cwd=repo_root)
+        exit_code, red, stdout = run_pytest_selectors(selectors, cwd=repo_root)
     except OSError as exc:
         revert_result = apply_patch(patch_path, cwd=repo_root, reverse=True)
         return False, (
             f"pytest run raised {exc!r} while the mutation was applied "
             f"(attempted revert, exit {revert_result.returncode}) -- verify "
-            f"`git diff -- {' '.join(targets)}` by hand before trusting the "
-            f"tree."
+            f"`git status --porcelain -- {' '.join(targets)}` by hand before "
+            f"trusting the tree."
         )
 
     revert_result = apply_patch(patch_path, cwd=repo_root, reverse=True)
@@ -303,23 +368,53 @@ def check_mutate(
             f"the tree may still carry the mutation; never a silent pass."
         )
 
-    diff_result = subprocess.run(
-        ["git", "diff", "--", *targets],
+    # MAJOR 3 fix (sprint-70 fix round): `git diff` cannot see UNTRACKED
+    # files, and a CREATION patch's target is untracked by construction --
+    # `git status --porcelain` sees untracked, staged AND unstaged changes,
+    # so it also catches a reverse-apply that REPORTS success (exit 0) while
+    # leaving a newly-created file on disk. Its own exit code is checked too
+    # (a fatal invocation, e.g. exit 128 outside a git repo, must not read as
+    # a clean restore either).
+    status_result = subprocess.run(
+        ["git", "status", "--porcelain", "--", *targets],
         cwd=repo_root,
         capture_output=True,
         text=True,
     )
-    if diff_result.stdout.strip():
+    if status_result.returncode != 0:
         return False, (
-            f"RESTORE INCOMPLETE: `git diff -- {' '.join(targets)}` is "
-            f"non-empty after reverting {patch_path}:\n{diff_result.stdout}"
+            f"RESTORE CHECK FAILED: `git status --porcelain -- "
+            f"{' '.join(targets)}` exited {status_result.returncode}: "
+            f"{status_result.stderr.strip()} -- cannot confirm a clean "
+            f"restore; never a silent pass."
+        )
+    if status_result.stdout.strip():
+        return False, (
+            f"RESTORE INCOMPLETE: `git status --porcelain -- "
+            f"{' '.join(targets)}` is non-empty after reverting "
+            f"{patch_path}:\n{status_result.stdout}"
+        )
+
+    # CRITICAL fix, second half (sprint-70 fix round): the post-mutation
+    # pytest run may never have produced a real pass/fail verdict at all --
+    # a collection error, an internal error, a usage error, or "no tests
+    # collected" -- which is NOT a RED proof and must not be folded into
+    # "ZERO RED" (that diagnosis means "ran clean, nothing was pinned";
+    # this one means "never ran to a verdict in the first place").
+    if exit_code in _SELECTOR_DID_NOT_RUN_EXIT_CODES:
+        return False, (
+            f"SELECTOR DID NOT RUN (pytest exit {exit_code}): "
+            f"{list(selectors)!r} never produced a pass/fail verdict under "
+            f"the mutation {patch_path} -- a collection error or an unknown "
+            f"selector path reads this way. NOT a RED proof, and distinct "
+            f"from ZERO RED.\nstdout tail:\n{stdout[-2000:]}"
         )
 
     if not red:
         return False, (
             f"ZERO RED: mutation {patch_path} applied, {list(selectors)!r} "
-            f"run, restored cleanly, but NOTHING went red -- UNPINNED.\n"
-            f"stdout tail:\n{stdout[-2000:]}"
+            f"run (pytest exit {exit_code}), restored cleanly, but NOTHING "
+            f"went red -- UNPINNED.\nstdout tail:\n{stdout[-2000:]}"
         )
     return True, f"OK: mutation turned RED: {red}"
 

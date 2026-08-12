@@ -45,6 +45,26 @@ def _init_repo(tmp_path: Path) -> Path:
     return repo
 
 
+def _init_repo_with_failing_test(tmp_path: Path) -> Path:
+    """Like `_init_repo`, but `test_value` is already RED at HEAD -- the
+    fixture MAJOR 2's baseline check exists to catch (a mutation applied on
+    top of an already-failing selector cannot be told apart from a genuine
+    RED proof)."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(["init", "-q"], repo)
+    _git(["config", "user.email", "test@example.com"], repo)
+    _git(["config", "user.name", "Test"], repo)
+    (repo / "target.py").write_text("VALUE = 1\n", encoding="utf-8")
+    (repo / "test_target.py").write_text(
+        "from target import VALUE\n\n\ndef test_value():\n    assert VALUE == 999\n",
+        encoding="utf-8",
+    )
+    _git(["add", "target.py", "test_target.py"], repo)
+    _git(["commit", "-q", "-m", "initial (already red)"], repo)
+    return repo
+
+
 def _make_patch(repo: Path, tmp_path: Path, new_content: str, name: str) -> Path:
     """Mutate `target.py` to `new_content`, capture the resulting `git diff`
     as a patch file, then reset `target.py` back to its committed state --
@@ -54,6 +74,26 @@ def _make_patch(repo: Path, tmp_path: Path, new_content: str, name: str) -> Path
     (repo / "target.py").write_text(new_content, encoding="utf-8")
     diff = _git(["diff"], repo).stdout
     _git(["checkout", "--", "target.py"], repo)
+    patch_path = tmp_path / name
+    patch_path.write_text(diff, encoding="utf-8")
+    return patch_path
+
+
+def _make_creation_patch(
+    repo: Path, tmp_path: Path, filename: str, content: str, name: str
+) -> Path:
+    """Like `_make_patch`, but for a NEW, currently-untracked file (a
+    CREATION patch) -- MAJOR 3's exact blind spot: `git diff -- <path>`
+    cannot see an untracked file at all, so a restore check built on it is
+    vacuous for exactly this patch shape. Stages just `filename` (never bulk
+    `-A`), diffs the staged addition, then unstages and deletes it so the
+    repo is back to its committed state before the patch is used."""
+    new_file = repo / filename
+    new_file.write_text(content, encoding="utf-8")
+    _git(["add", filename], repo)
+    diff = _git(["diff", "--cached"], repo).stdout
+    _git(["reset", "--", filename], repo)
+    new_file.unlink()
     patch_path = tmp_path / name
     patch_path.write_text(diff, encoding="utf-8")
     return patch_path
@@ -254,6 +294,85 @@ def test_check_mutate_rejects_patch_with_no_target(tmp_path):
     assert "names no target file" in message
 
 
+def test_check_mutate_collection_error_is_not_a_red_proof(tmp_path):
+    """CRITICAL (sprint-70 fix round): pytest's collection-error banner line
+    (`____________ ERROR collecting test_x.py ____________`) has "ERROR" as
+    its SECOND whitespace token, same as a genuine `path/to/test.py::test_fn
+    ERROR` result line -- the pre-fix scan could not tell them apart and
+    counted the banner's dashes as a "red test id". Probed exactly as
+    described: renaming the symbol a test imports (`VALUE` -> `VALUE2`)
+    produces an ImportError while collecting, pytest exits 2, and the old
+    scan reported `turned_red=True` with a red id made of underscores.
+    Fires: the node-id-shape guard on `parts[0]` in `run_pytest_selectors`
+    AND the new `_SELECTOR_DID_NOT_RUN_EXIT_CODES` branch in `check_mutate`.
+    Would NOT red for an unrelated reason: the baseline (MAJOR 2's fix) is
+    green before this patch is applied, since the pre-image `target.py`
+    still defines `VALUE` and the pre-image test passes."""
+    repo = _init_repo(tmp_path)
+    patch_path = _make_patch(repo, tmp_path, "VALUE2 = 1\n", "rename_symbol.patch")
+
+    turned_red, message = evidence_check.check_mutate(
+        patch_path, ["test_target.py"], repo_root=repo
+    )
+
+    assert turned_red is False
+    assert "SELECTOR DID NOT RUN" in message
+    assert "UNPINNED" not in message
+    assert _git(["diff", "--", "target.py"], repo).stdout == ""
+
+
+def test_check_mutate_nonexistent_selector_is_not_a_red_proof(tmp_path):
+    """CRITICAL, second half: `run_pytest_selectors` discarded pytest's own
+    exit code, so a `--tests` naming a nonexistent file returned `red=[]`
+    and a baseline-less `check_mutate` would have reported plain "ZERO RED
+    -- UNPINNED", a diagnosis it cannot justify (it never even ran the real
+    selector). With MAJOR 2's baseline check now in place, this exact case
+    surfaces one step earlier, at the baseline: pytest's exit 4 (usage
+    error: file not found) is inspected there first, and the tool refuses to
+    treat a nonexistent selector as a demonstrated mutation proof either
+    way. Fires: the `baseline_exit != 0` branch. Would NOT red for an
+    unrelated reason: `real_mutation.patch` is itself a genuine, applicable,
+    behaviour-changing patch -- only the selector name is wrong, isolating
+    the exit-code defect from the patch-application path."""
+    repo = _init_repo(tmp_path)
+    patch_path = _make_patch(repo, tmp_path, "VALUE = 2\n", "real_mutation.patch")
+
+    turned_red, message = evidence_check.check_mutate(
+        patch_path, ["no_such_selector.py"], repo_root=repo
+    )
+
+    assert turned_red is False
+    assert "UNPINNED" not in message
+    assert "BASELINE NOT GREEN" in message
+
+
+def test_check_mutate_baseline_not_green_is_not_a_red_proof(tmp_path):
+    """MAJOR 2 (sprint-70 fix round): without a baseline run, an
+    already-failing selector cannot be distinguished from "the mutation
+    turned it red" -- so a purely comment-only, behaviour-preserving patch
+    on top of an already-red selector would (pre-fix) still report
+    `turned_red=True`. Fires: the new baseline check at the top of
+    `check_mutate`, before `git apply` is ever invoked. Would NOT red for an
+    unrelated reason: the patch never gets applied at all (asserted via the
+    empty `git diff` below), so there is no path-application defect to
+    conflate this with."""
+    repo = _init_repo_with_failing_test(tmp_path)
+    patch_path = _make_patch(
+        repo,
+        tmp_path,
+        "VALUE = 1  # comment, no behaviour change\n",
+        "noop_on_red.patch",
+    )
+
+    turned_red, message = evidence_check.check_mutate(
+        patch_path, ["test_target.py"], repo_root=repo
+    )
+
+    assert turned_red is False
+    assert "BASELINE NOT GREEN" in message
+    assert _git(["diff"], repo).stdout == ""
+
+
 def test_check_mutate_reports_git_apply_failure(tmp_path):
     """A patch that cannot apply at all (context mismatch) fails loudly at
     the apply step -- never silently treated as zero RED."""
@@ -303,6 +422,47 @@ def test_check_mutate_reports_restore_failed_when_reverse_apply_errors(
     # The simulated failure means the real revert never ran -- clean up by hand.
     _git(["checkout", "--", "target.py"], repo)
     assert _git(["diff"], repo).stdout == ""
+
+
+def test_check_mutate_restore_incomplete_detected_for_creation_patch(
+    tmp_path, monkeypatch
+):
+    """MAJOR 3 (sprint-70 fix round): `git diff -- <target>` cannot see an
+    UNTRACKED file, and a CREATION patch's target is untracked by
+    construction -- probed by simulating a reverse-apply that REPORTS
+    success (exit 0) while leaving the newly-created file on disk. The old
+    `git diff`-based check would read this as a clean restore (exit 0,
+    claiming success); `git status --porcelain` sees the untracked leftover
+    and correctly reports RESTORE INCOMPLETE. Fires: the
+    `status_result.stdout.strip()` branch. Would NOT red for an unrelated
+    reason: the baseline run only touches `test_target.py`/`target.py`,
+    which the creation patch never mutates, so the baseline is green and the
+    fake reverse-apply is the sole cause of the non-clean restore."""
+    repo = _init_repo(tmp_path)
+    patch_path = _make_creation_patch(
+        repo, tmp_path, "new_module.py", "NEW = 1\n", "creation.patch"
+    )
+    real_apply_patch = evidence_check.apply_patch
+
+    def fake_apply_patch(patch_path_arg, *, cwd, reverse=False):
+        if reverse:
+            # Reports success but does NOT actually remove the created file.
+            return subprocess.CompletedProcess(
+                args=["git", "apply", "-R"], returncode=0, stdout="", stderr=""
+            )
+        return real_apply_patch(patch_path_arg, cwd=cwd, reverse=reverse)
+
+    monkeypatch.setattr(evidence_check, "apply_patch", fake_apply_patch)
+
+    turned_red, message = evidence_check.check_mutate(
+        patch_path, ["test_target.py"], repo_root=repo
+    )
+    assert turned_red is False
+    assert "RESTORE INCOMPLETE" in message
+
+    # The simulated failure means the real revert never ran -- clean up by hand.
+    (repo / "new_module.py").unlink()
+    assert _git(["status", "--porcelain"], repo).stdout == ""
 
 
 def test_check_mutate_reports_restore_incomplete_when_diff_still_dirty(

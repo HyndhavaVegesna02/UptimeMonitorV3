@@ -29,9 +29,17 @@ blocklist-discrimination tests). AC4's fifth, cross-representation case
 (`store.py`'s `VENDOR_HEALTH_WINDOW`, invisible to this sweep's
 literal-equality comparison) was a DECISION, not a fix: its existing
 wire-contract justification is upheld and its entry below is `INDEPENDENT`,
-not `MUST-IMPORT-FROM-SRC`. **Current count: 10, all `INDEPENDENT`, zero
-`MUST-IMPORT-FROM-SRC` remain** (STORY-219, sprint 70, added the tenth --
-`tools/citation_gate.py:53`'s coincidental `str.find` start-offset literal).
+not `MUST-IMPORT-FROM-SRC`. Count after STORY-203: 10, all `INDEPENDENT`, zero
+`MUST-IMPORT-FROM-SRC` remain -- STORY-219 (sprint 70) added the tenth
+(`tools/citation_gate.py:53`'s coincidental `str.find` start-offset literal);
+STORY-212 (sprint 70) added two more from the new `tools/evidence_check.py`
+(count: 12); STORY-212's sprint-70 FIX ROUND added one further net entry
+while re-keying two others (a docstring addition displaced `raw[2:]` from
+:219 to :228, and reformatting a combined condition across multiple lines
+both displaced its `len(parts) >= 2` literal from :259 to :301 AND put an
+unrelated new literal -- the `_SELECTOR_DID_NOT_RUN_EXIT_CODES` tuple -- at
+the now-vacant :259). **Current count: 13, all `INDEPENDENT`, zero
+`MUST-IMPORT-FROM-SRC` remain.**
 
 Why an adjudicated-exemption list, not a hard zero-tolerance assertion (the
 live-violation problem, STORY-197 AC5/C3): every entry below is `INDEPENDENT`
@@ -138,15 +146,37 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "str.find (skip past the frontmatter's own opening '---' line) -- "
         "unrelated to FreshnessConfig.stale_after_cycles. (STORY-219, sprint 70.)"
     ),
-    ("tools/evidence_check.py", 219): (
+    ("tools/evidence_check.py", 228): (
         "INDEPENDENT: raw[2:], slicing off the two-character 'b/' prefix from "
         "a unified-diff '+++ b/<path>' header -- unrelated to "
-        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70.)"
+        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70; re-keyed from "
+        ":219 to :228 by the sprint-70 STORY-212 fix round's own docstring "
+        "additions above this function, which displaced this pre-existing "
+        "collision without retiring it -- the collision is unchanged, only "
+        "its line moved.)"
     ),
     ("tools/evidence_check.py", 259): (
-        "INDEPENDENT: parts[1], the second whitespace-split token of a "
-        "pytest -v result line (the PASSED/FAILED/ERROR word) -- unrelated to "
-        "FreshnessConfig.reentry_cycles. (STORY-212, sprint 70.)"
+        "INDEPENDENT: `_SELECTOR_DID_NOT_RUN_EXIT_CODES = (2, 3, 4, 5)`, the "
+        "pytest exit codes meaning a selector run never produced a "
+        "pass/fail verdict -- both 2 and 3 are coincidentally the exact "
+        "values of FreshnessConfig.reentry_cycles/stale_after_cycles, "
+        "unrelated to either. (STORY-212 sprint-70 FIX ROUND, 2026-08-13. "
+        "NOTE: this key was PREVIOUSLY adjudicated for a different, now-"
+        "relocated collision at this same coordinate -- `parts[1]`/`len(parts) "
+        ">= 2` on the pre-fix-round combined condition line -- which moved to "
+        ":301 below when that condition was reformatted across multiple "
+        "lines to add the node-id-shape guard; landing on the SAME line "
+        "number here is coincidence, not continuity, so this replaces rather "
+        "than extends the prior text.)"
+    ),
+    ("tools/evidence_check.py", 301): (
+        "INDEPENDENT: len(parts) >= 2, the minimum-token-count guard before "
+        "indexing a pytest -v result line -- unrelated to "
+        "FreshnessConfig.reentry_cycles. (STORY-212 sprint-70 fix round; "
+        "re-keyed from :259 by that same round's multi-line reformat of the "
+        "condition to add the node-id-shape guard, which displaced this "
+        "pre-existing collision without retiring it -- the collision is "
+        "unchanged, only its line moved.)"
     ),
     ("tools/demo_loop_gate/harness.py", 999): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
