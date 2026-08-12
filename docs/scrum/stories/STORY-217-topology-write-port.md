@@ -2,10 +2,10 @@
 id: STORY-217
 title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
 type: chore
-points: null
-status: draft
+points: 1
+status: done
 filed: 2026-08-04
-sprint: null
+sprint: 70
 ---
 
 ## Context

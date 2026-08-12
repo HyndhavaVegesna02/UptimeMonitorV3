@@ -2923,7 +2923,7 @@ stories:
     title: Composition still writes to DynamoDB directly — decide whether topology seeding needs a real write port
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-217-topology-write-port.md
-    status: ready   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC6 authored, AC1 method + AC5 scope corrected at pre-lock plan verification   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
+    status: done   # PO-APPROVED at sprint-70 planning 2026-08-13; AC1-AC6 authored, AC1 method + AC5 scope corrected at pre-lock plan verification   # FILED 2026-08-04 BY STORY-205's AC6, which required the residue of its own
                     # fix to be written down rather than quietly closed. The implementer correctly
                     # declined to file it (`.scrum/` is orchestrator-owned) and FLAGGED the gap in
                     # its report instead of treating the AC as satisfied -- exactly the behaviour

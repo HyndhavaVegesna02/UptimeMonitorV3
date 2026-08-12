@@ -99,8 +99,19 @@ board:
   - id: STORY-217
     title: "Composition still writes to DynamoDB directly -- decide whether topology seeding needs a real write port"
     points: 1
-    status: todo
+    status: done
     order: 1
+    commits: "f012340 (AC2), 9e02326 (AC1/AC3/AC4), 01c9185 (AC5/AC6) -- on top of the lock commit 500f1e3"
+    verdict: >-
+      EXPIRY CONDITION HAS NOT FIRED, derived independently three times now (sprint-69 planning,
+      sprint-70 plan verification, and the implementer's port-import derivation) with the same
+      answer. Option (b) stands. No production code: AC4 verified by the ORCHESTRATOR, not just
+      self-reported -- `git diff 500f1e3..HEAD -- backend/src/` is 0 lines.
+    orchestrator_verified:
+      - "Tree clean at 01c9185; three story commits present, one per AC group."
+      - "git diff -- backend/src/ = 0 lines (AC4), re-run by the orchestrator."
+      - "grep -rln 'ComponentRepository|SignalRepository' backend/src/core/services/ -> no matches (exit 1), re-run by the orchestrator. AC1's verdict reproduces."
+    gate: "8/8 green, fresh run after the last commit: pytest 743 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint."
     note: >-
       ZR-8 Finding 1 residue. Expected outcome is a DATED RE-AFFIRMATION WITH NO CODE -- AC4 requires
       git diff over backend/src/ to be EMPTY. AC1 re-derives the expiry condition by PORT IMPORT, not
@@ -230,4 +241,27 @@ standing:
   git_guard: "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
   window_check: "At every AGENT BOUNDARY, not per story. Pause with a committed handoff before the session limit bites."
 
-retro_candidates: []
+retro_candidates:
+  - id: RC-1
+    raised: 2026-08-13 (STORY-217)
+    text: >-
+      *** A MEASUREMENT WHOSE VALUE DEPENDS ON BUILD ARTIFACTS IN THE WORKING TREE. *** The retired
+      token grep `grep -rn "topology\|APP#" backend/src/core/` has now produced THREE different
+      counts for the same command against the same source: TWELVE (sprint-69 planning), THIRTEEN
+      (sprint-70 plan verification), NINETEEN (the STORY-217 implementer, same day as the 13).
+      The implementer reported the 19 honestly and flagged it as a second drift rather than quietly
+      matching the brief -- correct behaviour, and the reason this is visible.
+      THE ORCHESTRATOR THEN ISOLATED THE CAUSE, and it is worse than drift:
+      `--exclude-dir=__pycache__` gives 13; SIX of the 19 hits are compiled `.pyc` artifacts. So the
+      number depends on whether anything happened to run recently. NEITHER agent was wrong; the
+      METHOD was, in a way none of the three measurements could reveal on its own.
+      WHY IT IS WORTH THE RETRO'S TIME rather than just a story note: STORY-217's AC1 retired this
+      grep for a DIFFERENT and weaker reason (it cannot see a write method lacking those tokens).
+      The real defect is that a recursive grep over a source tree silently includes build output,
+      and this project cites grep counts as evidence in story History, plan verification and
+      catalogue Facts. Ask whether the evidence conventions should require source-only globs
+      wherever a COUNT is the claim. Candidate rung: the implementer checklist, or a lint over
+      story/plan text that flags a bare `grep -r` used as a count.
+    scope_note: >-
+      STORY-217 itself is unaffected -- its verdict rests on the port-import derivation, which the
+      orchestrator re-ran independently and which returns no matches either way.
