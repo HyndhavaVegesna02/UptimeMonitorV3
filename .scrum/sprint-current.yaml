@@ -68,12 +68,13 @@ stories:
   - id: STORY-206
     title: Land ZR-1's guard -- an import-linter contract forbidding inbound adapters from importing repository ports
     points: 3
-    board: review        # todo | in-progress | blocked | review | done
-                         # BACK from review: quality review returned FIX_REQUIRED with 4 MAJORs,
-                         # all four independently confirmed by the orchestrator. Spec review had
-                         # PASSED (7/7 AC MET) -- the AC are met; what is wrong is that the story
-                         # left three documents asserting something demonstrably false. Re-work
-                         # dispatched; both reviews re-run after.
+    board: done          # todo | in-progress | blocked | review | done
+                         # DONE 2026-08-12 after THREE quality rounds. Round 1: FIX_REQUIRED, 4
+                         # MAJORs. Round 2: FIX_REQUIRED, 1 new MAJOR (QM-5, the false residue).
+                         # Round 3 (targeted, this session): the residue is SOUND -- all six of its
+                         # claims reproduced independently -- and the one MAJOR found was in the
+                         # ORCHESTRATOR'S OWN blast-radius commit, not the story's. Fixed, gate 8/8
+                         # re-run GREEN at dd7f6aa. Spec review PASSED at round 1 (7/7 AC MET).
     pipeline: full       # 3+ pts -> implementer + spec review || quality review
     order: 1             # widest ripple: the only story escaping backend/tests/
     blocked_question: null
@@ -86,68 +87,73 @@ stories:
                                     # substance of AC1/AC2/AC5. Two-dot semantics drop the left
                                     # endpoint. Now spans lock -> rework tail.
     rework_range: 8b805ae..550634c  # attempt 2: 12 implementer commits + 1 orchestrator tail
-    dod_evidence:   # FINAL, at 56491a8. All 8 exit 0. Two commands are ISOLATED RE-RUNS with
-                    # notes -- see gate_notes GN-2. Every entry machine-emitted by yt_gate.py.
+    round3_range: bef7a70..dd7f6aa  # 2026-08-12, orchestrator only: the blast-radius close and the
+                                    # round-3 MAJOR fix. No implementer was dispatched.
+    dod_evidence:   # FINAL, at dd7f6aa (2026-08-12). All 8 exit 0, ALL EIGHT ON THE FIRST ATTEMPT
+                    # -- no isolated re-runs, no contention discount, neither load-sensitive command
+                    # fired. Every entry machine-emitted by yt_gate.py. The 56491a8 block this
+                    # replaces needed two isolated re-runs; that history is preserved in gate_notes
+                    # GN-1/GN-2 and must not be read as describing this run.
+                    # Run with DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1, so
+                    # "714 passed" with a ZERO skip count means the persistence floor really ran.
       - command: "python -m pytest"
         exit_code: 0
-        output_tail: "======================= 714 passed in 189.45s (0:03:09) ======================="
-        commit: 56491a8
-        at: "2026-08-06T07:32:27+00:00"
+        output_tail: "backend\\tests\\test_zone_layout.py ......                                 [ 99%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ============================ 714 passed in 58.96s ============================="
+        commit: dd7f6aa
+        at: "2026-08-12T10:02:35+00:00"
         note: >-
-          ISOLATED RE-RUN. In the full-gate sequence this went RED on
-          test_dynamo_local.py::test_provide_dynamo_local_teardown_on_failure --
-          "TimeoutError: DynamoDB Local at port 55931 did not become ready". That is the DOCUMENTED
-          STORY-179 defect (CLAUDE.md: the ephemeral host port the fixture picks is mapped by
-          Docker but not always routable on Windows), surfacing under load. Contention proven, both
-          limbs: (1) `git diff sprint-69-start..HEAD -- backend/tests/test_dynamo_local.py
-          scripts/dynamo_local.py backend/tests/conftest.py` is EMPTY -- untouched all sprint; and
-          the only non-Markdown change since the previous green gate is a COMMENT block in
-          pyproject.toml (diff inspected line by line; no config key touched). (2) The file passes
-          in isolation: 7 passed. The spec reviewer independently hit the same defect this session.
+          58.96s against 189.45s for the same 714 tests at the previous gate -- a 3.2x spread on an
+          idle machine versus a loaded one. That is the measurement behind GN-2's contention finding,
+          and it is why STORY-179's ephemeral-port defect did not fire this time.
       - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
         exit_code: 0
         output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-        commit: 56491a8
-        at: "2026-08-06T07:26:00+00:00"
+        commit: dd7f6aa
+        at: "2026-08-12T10:03:37+00:00"
       - command: "python -m ruff check ."
         exit_code: 0
         output_tail: "All checks passed!"
-        commit: 56491a8
-        at: "2026-08-06T07:26:01+00:00"
+        commit: dd7f6aa
+        at: "2026-08-12T10:03:38+00:00"
       - command: "python -m ruff format --check ."
         exit_code: 0
         output_tail: "249 files already formatted"
-        commit: 56491a8
-        at: "2026-08-06T07:26:02+00:00"
+        commit: dd7f6aa
+        at: "2026-08-12T10:03:45+00:00"
       - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
         exit_code: 0
         output_tail: ""
-        commit: 56491a8
-        at: "2026-08-06T07:26:03+00:00"
+        commit: dd7f6aa
+        at: "2026-08-12T10:03:46+00:00"
       - command: "npm test"
         exit_code: 0
-        output_tail: "> vitest run | RUN  v4.1.9 | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  115.35s"
-        commit: 56491a8
-        at: "2026-08-06T07:44:29+00:00"
+        output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  81.72s"
+        commit: dd7f6aa
+        at: "2026-08-12T10:03:54+00:00"
         note: >-
-          ISOLATED RE-RUN, and READ GN-2 BEFORE TRUSTING THIS. The STORY-221 flake fired twice more
-          today, including once when run ALONE -- so the previous round's "passes alone" proof did
-          NOT hold this time. Limb 1 still holds absolutely (frontend diff since sprint-69-start is
-          EMPTY). Limb 2 was satisfied via the agreement's explicit "and/or serialized" clause:
-          `npm test -- --no-file-parallelism` passed 51 files / 363 tests, twice. This entry is one
-          further run of the UNMODIFIED command, machine-emitted, which passed.
+          PASSED FIRST TRY, unmodified command, parallel (81.72s). STORY-221 did not fire. This does
+          NOT retire GN-2: one green run is not evidence against a measured 2-in-4 failure rate, and
+          the re-pricing at sprint-70 planning still stands.
       - command: "npm run build"
         exit_code: 0
-        output_tail: "built in 1.05s"
-        commit: 56491a8
-        at: "2026-08-06T07:28:00+00:00"
+        output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip: 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip: 85.39 kB | built in 1.02s"
+        commit: dd7f6aa
+        at: "2026-08-12T10:05:21+00:00"
       - command: "npm run lint"
         exit_code: 0
-        output_tail: "> eslint ."
-        commit: 56491a8
-        at: "2026-08-06T07:46:50+00:00"
-    blast_radius_resolved: true   # AC7's five pyproject.toml-citing articles all updated or
-                                  # re-verified with bumped verified_sha (commits 729c866..51fa6a9)
+        output_tail: "> frontend@0.0.0 lint | > eslint ."
+        commit: dd7f6aa
+        at: "2026-08-12T10:05:33+00:00"
+    blast_radius_resolved: true   # NOW TRUE AT HEAD. It was recorded true at the park and was NOT:
+                                  # 13bbb07 (the QM-5 fix) touched pyproject.toml -- a code_ref of
+                                  # five articles -- AFTER those five were verified at c34e193, so
+                                  # this session's standup opened with the sweep reporting five
+                                  # STALE. 13bbb07's own message says "sweep CLEAN", true when run,
+                                  # false at HEAD. Closed at bef7a70 (verified_sha c34e193 ->
+                                  # 13bbb07 on all five; four re-verified only, architecture-boundary
+                                  # gained a Fact) and re-confirmed after dd7f6aa: sweep/facts/links
+                                  # all CLEAN. LESSON FOR EVERY REMAINING STORY: run yt_wiki AFTER
+                                  # the last commit, not before it.
     spec_review:
       verdict: PASS
       at: 2026-08-06
@@ -308,6 +314,77 @@ stories:
         REQUIRE_DYNAMO=1, "Contracts: 9 kept, 0 broken", npm test 51 files / 363 tests.
         Evidence block below replaced wholesale; the earlier contention note is preserved in
         gate_notes as process history.
+    quality_review_round_3:
+      verdict: FIX_REQUIRED
+      at: 2026-08-12
+      scope: >-
+        TARGETED, not a full re-review: two objects only. (A) ZR-1's residue (2) -- the sentence
+        written wrong TWICE, whose third version the orchestrator had authored and mutation-verified
+        itself, so it had never been read by a second party. (B) the orchestrator's own
+        blast-radius commit bef7a70.
+      object_a_result: >-
+        *** THE RESIDUE IS SOUND. THE 0-FOR-2 RUN IS OVER. *** All six load-bearing claims
+        reproduced INDEPENDENTLY: the exact-module front door KEPT (and the dependency count rose
+        432 -> 433, proving the edge was really added and the run was not vacuous); the package form
+        BROKEN on all nine with the two-hop chain printed by the tool itself; the false-positive
+        framing honest; narrowing to the three non-persistence ports REMOVES the false positive
+        (424 deps, 9 kept / 0 broken, adapter imports cleanly); a forbidden port via the package
+        form after narrowing is an ImportError; and the PEP 562 __getattr__/importlib DYNAMIC
+        re-export genuinely yields "9 kept, 0 broken" with the adapter HOLDING
+        src.core.ports.observation_repository at runtime. The reviewer went one step beyond the
+        sentence and closed the gap it left: after narrowing, the still-resolvable
+        `from src.core.ports import observation_repository` (module, not symbol) is seen by grimp as
+        a DIRECT edge and BREAKS -- so "cannot be reached that way at all" holds for every static
+        route. Method was correct: scratch tree outside the repo, PYTHONPATH pinned ON the linter
+        invocation in the same process as the provenance assertion, so the tree proven is the tree
+        analysed.
+      new_major:
+        id: QM-6
+        text: >-
+          *** THE MAJOR WAS IN THE ORCHESTRATOR'S OWN COMMIT, NOT THE STORY'S. *** bef7a70 added a
+          Fact to architecture-boundary.md claiming the editable install's absolute sys.path entry
+          makes `src.*` resolve to the MAIN tree "no matter where the interpreter is launched from
+          -- a git worktree, a scratch copy, anywhere". FALSE. Refuted by one command and
+          REPRODUCED BY THE ORCHESTRATOR before acceptance: from a scratch backend/ holding a stub
+          src/__init__.py, `import src` resolves to the SCRATCH copy, because sys.path[0] is the
+          cwd/script directory and precedes the .pth entry (measured: sys.path[0] == ''). The
+          one-line .pth that WAS read establishes "plain absolute path entry" and nothing further;
+          sys.path ORDER decides the rest and decides it the other way. Absoluteness was never the
+          operative property.
+          AND THE HISTORY ENTRY STAMPED IT "Evidence read at re-verification, not inferred" -- so
+          this is the THIRD instance in this one story of an unverified causal inference carried
+          under a verification stamp (QM-2, QM-4, ZR-1 residue (2) v1), and the first one the
+          orchestrator committed. One article over from where round 2 caught the last.
+          Galling detail: the correctly-scoped wording already existed in pyproject.toml's own
+          comment ("even when this runs from a worktree or a scratch copy"). Only the wiki
+          universalised it.
+        fixed_by: orchestrator, dd7f6aa
+        fix: >-
+          Fact narrowed to "from any launch directory that does not itself contain a `src/`
+          package", with the measurement inline AND the reason absoluteness is not the operative
+          property stated, so the claim cannot be re-broadened by someone re-deriving it from the
+          .pth. The pin-PYTHONPATH consequence is unchanged and now records why import-linter and
+          pytest are safe in practice: repo-root invocation, and backend/tests has no __init__.py so
+          its prepended path cannot shadow src. A fourth review round was NOT ordered -- the true
+          statement was dictated by the reviewer and the counterexample reproduced by the
+          orchestrator, so two parties already agree on the replacement text.
+      minors_taken:
+        - >-
+          MEASURED RATHER THAN COPIED. The reviewer estimated "~15 existing package-form imports"
+          would break if __init__.py were narrowed; the orchestrator counted ELEVEN import
+          STATEMENTS naming a repository symbol (api/dependencies, composition/app,
+          composition/pull_loop, core/services approval + decide + ingest_service, api/v1
+          availability + topology services, tests/fakes, test_core_ports, test_ingest_service) out
+          of 22 package-form statements total. Eleven is now in ZR-1's row, with the sites
+          enumerated, because a row read years from now by someone deciding whether to narrow
+          __init__.py must see that the cleanup is real but not free.
+        - >-
+          The dynamic hole requires the STATIC re-export of that port to be GONE: today's full
+          __init__.py PLUS the same __getattr__ still reports "8 kept, 1 broken". Derivable from
+          "static analysis cannot follow it", but now stated in four words rather than left implicit
+          in a sentence with a 0-for-2 history.
+        - "config-layer History said \"Two changes there ... NEITHER\" then listed one change. Reworded."
+      minor_declined: null
     # AC7 pre-declares it: pyproject.toml is a code_ref in FIVE wiki articles
     # (architecture-boundary, api-five-file-convention, config-layer,
     # dev-setup-and-dod, sample-mode). Expected, not a gate-time surprise.
@@ -547,6 +624,57 @@ retro_candidates:
       this is not a failure of its role -- it is a clean illustration of why the reality gate exists
       and why a doc-heavy story needs a mutation, not a cross-reference. Worth stating in the retro
       because the sprint's whole thesis is that documents can be internally coherent and wrong.
+
+  - id: RC-7
+    raised: 2026-08-12 (STORY-206 round 3)
+    severity: high
+    text: >-
+      *** RC-1 FIRED AGAIN, IN THE SAME STORY, WHILE BEING WRITTEN UP AS A RETRO CANDIDATE. *** The
+      round-3 quality reviewer was killed by the session limit mid-run and its entire partial
+      analysis was lost -- the second agent death in STORY-206 for exactly the reason RC-1 records.
+      TWO THINGS WORKED THIS TIME, and both should be the rule rather than this session's improvisation:
+      (1) the agent was RESUMED FROM ITS TRANSCRIPT rather than re-dispatched, so its completed work
+      was not redone; and (2) the resume brief ordered it to CHECKPOINT EACH FINDING TO A FILE
+      OUTSIDE THE REPO the moment the evidence existed, not at the end. It did, and the file
+      (`scratchpad/qr3-findings.md`) is why the verdict survived at all. RC-1 asked whether a
+      shown-RED proof should be committed as a file at the moment it is produced; this is a second,
+      independent data point saying yes, and it extends the answer: the rule should cover ANY
+      agent's evidence, not just mutation proofs, and the checkpoint target must be outside the
+      working tree so a read-only agent can honour it without violating its own contract.
+      Candidate rung: agent definition (all four yt-* roles that produce evidence), since a brief
+      can be forgotten and RC-3 shows a brief can be outranked.
+  - id: RC-8
+    raised: 2026-08-12 (STORY-206 round 3)
+    severity: high
+    text: >-
+      THE ORCHESTRATOR'S OWN COMMITS ARE THE ONE CLASS OF WORK NO ROLE REVIEWS. Round 3 found its
+      single MAJOR (QM-6) not in the story but in the orchestrator's blast-radius commit -- and the
+      only reason a reviewer was looking at it is that the orchestrator volunteered it as a second
+      review object. Count the pattern across this story: the orchestrator wrote the QM-5 fix (round
+      2's MAJOR was ITS predecessor's, but the replacement text was the orchestrator's), the 550634c
+      Facts-lint tail, the bef7a70 blast-radius close (QM-6), and the dd7f6aa fix for QM-6. Three of
+      those four were never in any reviewer's scope by default. The orchestrator is also the sole
+      writer of .scrum state, so its errors land in the record that everything else is judged
+      against. Note the mechanism that DID work: the defect was caught because the orchestrator
+      widened the brief to include its own diff. Candidate rung: role checklist -- when the
+      orchestrator commits anything other than board state during a story, that commit range joins
+      the story's review object. Cheap, and it would have caught QM-6 without the volunteering.
+  - id: RC-9
+    raised: 2026-08-12 (STORY-206 round 3)
+    severity: medium
+    text: >-
+      A18/C3 REQUIRES verified_sha TO BE BUMPED IN THE SAME COMMIT AS THE CODE_REF CHANGE, AND THAT
+      IS PRECISELY WHAT THE QM-5 FIX COULD NOT DO. 13bbb07 fixed a wiki article AND touched
+      pyproject.toml -- a code_ref of five OTHER articles -- so it staled five articles it was not
+      about, and its own "yt_wiki: sweep CLEAN" line was measured BEFORE that edit and shipped as
+      though it described the commit. The sweep then greeted the next session with five STALE
+      articles and a board saying blast_radius_resolved: true. This is not carelessness; it is the
+      pyproject.toml refs amplifier (5 articles) meeting a rule that assumes one commit touches one
+      article's subject. Candidate rung: SCRIPT -- have yt_wiki.py, when run with a commit range,
+      refuse to report CLEAN unless the sweep was computed against the range's LAST commit; or
+      simplest, a gate/pre-commit check that a commit touching an amplifier code_ref bumps every
+      article citing it. Prose will not hold this: the orchestrator knew the rule and still shipped
+      a stale-by-construction CLEAN claim.
 
 gate_notes:
   - story: STORY-206
