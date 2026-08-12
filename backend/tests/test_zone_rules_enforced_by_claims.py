@@ -53,16 +53,38 @@ def _split_row(row: str) -> list[str]:
     """Split a markdown table row into its cell texts (stripped), dropping
     the leading/trailing empty strings either side of the outer pipes.
 
-    Every row in the Adjudication table carries exactly one delimiter pipe
-    per cell boundary -- no cell contains a literal `|` character (confirmed
-    by a direct pipe-count-per-line spot check at STORY-216 authoring time),
-    so a naive split is exact here, not an approximation.
+    A naive split is exact only if no cell contains a literal `|` character.
+    That was true of the real table at STORY-216 authoring time (confirmed by
+    a one-off pipe-count spot check), but a spot check proves nothing about
+    the NEXT edit -- `_assert_uniform_cell_count` below is the STANDING
+    invariant that actually guards this on every run (quality review FIX
+    1.2), by comparing every row's cell count against the header's.
     """
     assert row.startswith("|") and row.rstrip().endswith("|"), (
         f"Not a pipe-delimited table row: {row!r}"
     )
     parts = row.split("|")
     return [cell.strip() for cell in parts[1:-1]]
+
+
+def _assert_uniform_cell_count(table_lines: list[str]) -> None:
+    """Standing invariant (quality review FIX 1.2): every table line must
+    split into the same number of cells as the header. A literal `|`
+    character inside any cell -- an unescaped pipe an author forgot to
+    escape, most plausibly in Detail-column prose -- breaks this without
+    touching any backtick span or `ENFORCED-BY` marker, and would otherwise
+    silently misalign every downstream cell index (a "Rule" read could
+    become Verdict text, or vice versa) rather than failing loudly.
+    """
+    header_cell_count = len(_split_row(table_lines[0]))
+    for line in table_lines:
+        cell_count = len(_split_row(line))
+        assert cell_count == header_cell_count, (
+            f"Adjudication table row has {cell_count} cells but the header "
+            f"has {header_cell_count} -- a literal '|' inside a cell (e.g. "
+            f"an unescaped pipe in Detail-column prose) broke column "
+            f"alignment. Row: {line!r}"
+        )
 
 
 def _extract_table_lines(markdown_text: str) -> list[str]:
@@ -156,6 +178,7 @@ def parse_adjudication_table(markdown_text: str) -> list[AdjudicationRow]:
         "Adjudication table has no data rows (only a header/separator row, "
         "or nothing at all) -- the heading or table structure has drifted."
     )
+    _assert_uniform_cell_count(table_lines)
     header_cells = [c.lower() for c in _split_row(table_lines[0])]
     assert "rule" in header_cells and "verdict" in header_cells, (
         f"Adjudication table header is missing an expected 'Rule'/'Verdict' "
@@ -431,6 +454,30 @@ def test_import_linter_contract_names_reads_pyproject(tmp_path) -> None:
         encoding="utf-8",
     )
     assert _import_linter_contract_names(pyproject) == {"contract-a", "contract-b"}
+
+
+def test_assert_uniform_cell_count_catches_a_stray_pipe_inside_a_cell() -> None:
+    """Quality review FIX 1.2: a literal '|' inside a cell (e.g. an
+    unescaped pipe an author forgot to escape) breaks column alignment
+    without touching any backtick span or ENFORCED-BY marker at all -- a
+    standing invariant on cell count catches it. This replaces the
+    authoring-time-only pipe-count spot check `_split_row`'s docstring used
+    to lean on: a spot check proves nothing about the NEXT edit."""
+    broken = _FIXTURE_TABLE.replace(
+        "| ZR-7 | `GUARDABLE-DEFERRED` | Deferred, no reference yet. |",
+        "| ZR-7 | `GUARDABLE-DEFERRED` | Deferred, with a stray | pipe. |",
+    )
+    try:
+        parse_adjudication_table(broken)
+    except AssertionError as exc:
+        message = str(exc)
+        assert "ZR-7" in message
+        assert "cells" in message
+    else:
+        raise AssertionError(
+            "parse_adjudication_table did not raise on a row with a stray "
+            "'|' inside a cell -- column alignment silently broke."
+        )
 
 
 def test_non_vacuity_floor_trips_on_a_heading_that_has_moved() -> None:
