@@ -107,8 +107,10 @@ BASELINE: dict[str, dict] = {
         "tier": "map",
         "baseline": 0,
         "note": (
-            "genuinely clean on the enforced set -- 5 full-path citations, "
-            "all pass on line-count; the article's one raw failure "
+            "genuinely clean on the enforced set -- every full-path citation "
+            "(including the two AC7 fixed `seed_dynamo.py`/`vendor_health.py` "
+            "lines, and the History prose naming their old, now-superseded "
+            "values) passes on line-count; the article's one raw failure "
             "(`dispatch.py:44`) is a bare filename, advisory only (AC7)"
         ),
     },

@@ -268,8 +268,8 @@ shift every other line in the file):
   `for sig in self.signals:` (duplicate signal_key check — NOT the deleted
   referential check, which was a separate loop over the same list)
 - `backend/src/composition/run.py:136` — `for signal in app.signals:`
-- `backend/src/composition/seed_dynamo.py:56` — `for sig in app.signals:`
-- `backend/src/composition/vendor_health.py:97` — `for signal in app.signals:`
+- `backend/src/composition/seed_dynamo.py:60` — `for sig in app.signals:`
+- `backend/src/composition/vendor_health.py:106` — `for signal in app.signals:`
 - `scripts/seed_topology.py:48` — `sum(len(app.signals) for app in config.apps)`
 
 `run.py` is unchanged by this story (verified — not in its diff) even though
@@ -400,3 +400,18 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   contract structure was altered, and this article's Facts touch none of it. This article cites
   `pyproject.toml` for dependency/config concerns and for the contract governing composition-zone
   placement; both are unchanged. Re-verified only. verified_sha bumped `c34e193` -> `13bbb07`.
+- sprint-70 (STORY-219, citation fix): the "Seven surviving readers of `app.signals`" Fact's two
+  remaining known-real drifts (flagged at this story's filing, deliberately not fixed by STORY-215's
+  round so it would not be half-done) are corrected: `backend/src/composition/seed_dynamo.py:56` ->
+  `:60` and `backend/src/composition/vendor_health.py:97` -> `:106` (both drifted under STORY-204/
+  STORY-205, before sprint 68 opened). **Both citations reported OK before this fix and report OK
+  after it** — `tools/citation_sweep.py`'s line-count-only check (no excerpt anchor at either site)
+  only verifies the cited file is long enough to contain the line, and 56/97 were already within
+  `seed_dynamo.py`'s 72 lines / `vendor_health.py`'s 142 lines — so this fix moves
+  `tools/citation_gate.py`'s enforced-failure count for this article by **zero** (STORY-219's own
+  AC7: fixing a wrong-but-in-range line cannot lower a baseline that never counted it as a failure).
+  The two lines are now the REAL loop lines (`for sig in app.signals:` / `for signal in
+  app.signals:`) rather than a stale approximation of them. This article's one genuine citation
+  failure, `` `dispatch.py:44` `` (a bare filename, unrelated to either fix), is untouched and stays
+  advisory-only under STORY-219's enforcement (it carries no `/`, so it is never ratcheted). Every
+  other Fact was re-read against `backend/src/composition/config.py`; none has moved since `13bbb07`.
