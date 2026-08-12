@@ -775,16 +775,16 @@ stories:
   - id: STORY-216
     title: Mechanise the ENFORCED-BY claim in zone-rules.md -- a row may not claim a guard that does not exist
     points: 3
-    board: review        # implementation complete and self-verified; BOTH reviewers dispatched.
-                         # NOT done: the full gate cannot currently go green -- see gate_blocked below.
+    board: done          # DONE 2026-08-12 after TWO review rounds and TWO fix rounds. Full gate
+                         # 8/8 GREEN at cf80f33: 743 passed / 0 skipped, Contracts 9 kept 0 broken.
     pipeline: full
     order: 5             # FORCED LAST: its inputs are the four rows the stories above write
     blocked_question: null
     attempts: 1
     started_at_commit: 3263e17   # dispatched 2026-08-12; all four sibling rows now landed
-    commit_range: c14ea29..26cc422   # computed from started_at_commit (RC-4's rung)
+    commit_range: c14ea29..cf80f33   # computed from started_at_commit (RC-4's rung)
     paused_at_commit: null
-    guard: backend/tests/test_zone_rules_enforced_by_claims.py   # 16 tests after fix round 1
+    guard: backend/tests/test_zone_rules_enforced_by_claims.py   # 21 tests at close (12 -> 16 -> 21)
                          # (was annotated 12 here and left stale; the ROUND-2 REVIEWER caught my
                          # board entry, not the code -- RC-8's exact shape, found by the one role
                          # that happened to look. Measured: '16 passed in 0.43s'.)
@@ -893,7 +893,7 @@ stories:
         separators pass; a missing trailing pipe fails loud naming the row). The ZR-8 synthetic pin
         is real rather than a restatement -- narrowing the bare-continuation rule or the marker strip
         reds it. AC2's residue DOES now surface in the message that actually raises.
-      fix_dispatched_but_NOT_LANDED: >-
+      fix_LANDED: >-
         Dispatched with three parts (strengthen the signal to max(marker_count,
         verdict_cell.count(".py")), which the reviewer verified holds for every current row including
         ZR-1's contract-name row at 0/1 and ZR-8 at 4/4; ADD a companion pin on the REAL ZR-8 row
@@ -906,6 +906,41 @@ stories:
             _assert_uniform_cell_count diagnoses a DELIBERATELY ESCAPED pipe (backslash-pipe) as
             'an unescaped pipe' and offers no remedy; failing is correct, the wording is not.
         - "A marker typo (ENFORCED_BY) yields marker_count 0, so the floor returns early and coverage drops 10 -> 9 green. State the limit or check that every row carries a recognised verdict marker, allowing ZR-6's FIXED ... NO STANDING GUARD."
+    fix_round_2:
+      at: 2026-08-12
+      commits: e75de7a, 32d9c18, cf80f33
+      note: >-
+        The first dispatch of this round was killed by the session limit before any commit (third
+        agent death this sprint). Resumed from transcript; nothing was lost because the tree was
+        verified empty at the park.
+      landed: >-
+        (1) the floor now requires len(references) >= max(marker_count, py_count) -- the signal works
+        because the reference TEXT survives in the cell even when its span becomes unparseable;
+        (2) `test_real_zr8_row_yields_exactly_four_references` reads the REAL file, closing the gap
+        that the previous ZR-8 pin was synthetic-only; (3) prose narrowed, with the RESIDUAL limit
+        now stated rather than papered over -- a reference rewritten with no `.py` substring at all
+        could still be lost silently, and no row today has that shape.
+      implementer_verified_the_signal_before_relying_on_it: >-
+        As instructed, and it is the right instinct: ZR-1 0/0 (a contract name contributes nothing
+        from `.py`, correctly), ZR-2..ZR-5 and ZR-7 1/1, ZR-8 2 markers / 4 `.py`. No row disagreed,
+        so no STOP was needed. Had one disagreed the instruction was to stop rather than tune the
+        heuristic to fit.
+      minor_2_deliberately_NOT_mechanised: >-
+        The marker-typo limit (`ENFORCED_BY` misspelled -> marker_count 0 -> silent skip) is STATED
+        in the docstring rather than checked, with a stated reason: nothing here can distinguish "no
+        marker claimed" (ZR-6, legitimate) from "no marker due to a typo". That is the correct call
+        and the correct shape -- a stated limit beats a check that would have to guess.
+      orchestrator_verification: >-
+        ALL THREE ZR-8 evasions re-tested by the orchestrator against the real table, provenance
+        pinned: dropped backticks -> RED "2 marker(s) and 4 '.py' occurrence(s) (expected at least
+        4...)"; markdown link -> RED (expected at least 5 -- the signal got MORE conservative, as
+        predicted); separated marker -> RED. Census still exactly 10 with ZR-8 at 4. All three
+        ORIGINAL AC4 mutations re-verified still RED on the table row.
+        SCOPE CONTROL, worth recording because it caught the orchestrator's own probe error: the
+        same `::test_name` edit applied to the COVERAGE-VERDICT PROSE (zone-rules.md:254) instead of
+        the table row leaves the guard GREEN with 0 unresolvable references -- which is CORRECT, that
+        prose is out of AC1's scope. A first probe hit the prose (string appears there first in the
+        file) and briefly looked like a regression. It was not; it was the scope rule working.
     gate_blocked:
       status: >-
         RESOLVED 2026-08-12 WITHOUT INTERVENTION -- see the CORRECTION key below, which supersedes
@@ -992,18 +1027,18 @@ stories:
         and restarting the daemon would interrupt all of them. Sprint autonomy covers decisions
         inside the sprint; it does not extend to disrupting the PO's other running services. The
         decision is the PO's and is surfaced at review.
-    dod_evidence:   # FULL 8, GREEN, at 5f54530 (the fix-round HEAD). Machine-emitted by yt_gate.py.
+    dod_evidence:   # FULL 8, GREEN, at cf80f33 (final HEAD). Machine-emitted by yt_gate.py.
                     # DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 REQUIRE_DYNAMO=1 -> 738 passed with a
-                    # ZERO skip count, so the persistence floor really ran. 722 -> 738 is this
-                    # story's 16 tests.
+                    # ZERO skip count, so the persistence floor really ran. 722 -> 743 is this
+                    # story's 21 tests.
                     # THE HISTORY MATTERS AND IS NOT ERASED: an earlier run at 26cc422 exited 1 on
                     # test_dynamo_local.py's teardown test, was NOT discounted as a flake, and the
                     # story was held in review until a genuine green existed. See gate_blocked above
                     # for that record and for the correction to my own over-firm diagnosis.
       - command: "python -m pytest"
         exit_code: 0
-        output_tail: "test_zone_layout.py ...... [ 96%] | test_zone_rules_enforced_by_claims.py ................ [ 98%] | test_zr2_vendor_vocabulary.py ... [ 98%] | test_zr5_config_dir_parity.py ..... [ 99%] | test_zr7_pagination_guard.py .. [100%] | ======================= 738 passed in 79.23s (0:01:19) ======================="
-        commit: 5f54530
+        output_tail: "test_zone_rules_enforced_by_claims.py .................... [ 98%] | test_zr2_vendor_vocabulary.py ... [ 98%] | test_zr3_duplicate_declarations.py .. [ 99%] | test_zr5_config_dir_parity.py ..... [ 99%] | test_zr7_pagination_guard.py .. [100%] | ============================ 743 passed in 50.66s ============================="
+        commit: cf80f33
         at: "2026-08-12T12:20:00+00:00"
         note: >-
           THE SAME COMMAND THAT EXITED 1 FIVE TIMES. Confirmed stable afterwards, not taken on one
@@ -1011,27 +1046,27 @@ stories:
       - command: 'python -c "from importlinter.cli import lint_imports_command; lint_imports_command()"'
         exit_code: 0
         output_tail: "Analyzed 151 files, 432 dependencies. | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:21:00+00:00"
       - command: "python -m ruff check ."
         exit_code: 0
         output_tail: "All checks passed!"
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:21:01+00:00"
       - command: "python -m ruff format --check ."
         exit_code: 0
         output_tail: "252 files already formatted"
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:21:02+00:00"
       - command: 'python -c "from cfnlint.runner import main; main()" infra/stack.yaml'
         exit_code: 0
         output_tail: ""
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:21:03+00:00"
       - command: "npm test"
         exit_code: 0
         output_tail: "> frontend@0.0.0 test | > vitest run | Test Files  51 passed (51) | Tests  363 passed (363) | Duration  82.47s"
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:21:10+00:00"
         note: >-
           Fifth consecutive full gate without STORY-221 firing. STILL not retired: the measured rate
@@ -1041,12 +1076,12 @@ stories:
       - command: "npm run build"
         exit_code: 0
         output_tail: "dist/assets/index-teVmGzHT.css 140.89 kB | gzip 76.31 kB | dist/assets/index-CS_W8toy.js 278.14 kB | gzip 85.39 kB | built in 836ms"
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:23:00+00:00"
       - command: "npm run lint"
         exit_code: 0
         output_tail: "> frontend@0.0.0 lint | > eslint ."
-        commit: 5f54530
+        commit: cf80f33
         at: "2026-08-12T12:23:10+00:00"
     blast_radius_resolved: true   # NO wiki article was permanently touched: the three AC4 mutations
                                   # were applied to zone-rules.md and reverted BEFORE any commit, so
