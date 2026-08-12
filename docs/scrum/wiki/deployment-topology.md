@@ -1,12 +1,25 @@
 ---
 title: Deployed topology â€” the live AWS instance (STORY-089)
-code_refs: [infra/stack.yaml, Dockerfile, docs/deploy-runbook.md]
-verified_sha: 7c53685
+tier: reference
 verified_sprint: sprint-50
-status: verified
+# tier: reference (2026-08-12) — and this article is why the tier exists. Everything below
+# is an OBSERVATION of a running deployment on a given day, not a claim about code: no
+# `git diff` over any code_ref can confirm or refute "the ALB target group was healthy",
+# so the staleness machinery never had purchase on it. Carrying `status: verified` was the
+# misleading part — it read as "checked against the repo" when nothing in the repo was ever
+# checked. Reference articles declare no code_refs and no Facts, so this one cannot claim
+# more than it knows. The live-state question belongs to the two `aws`/`curl` commands
+# below and to CLAUDE.md's "Deployed topology" section, which carries the current status.
 ---
 
-## Facts (verified live against the deployed stack, 2026-07-17)
+## Observed 2026-07-17 — the deployment as it was that day, NOT a current claim
+
+> **Superseded in part.** A re-check on 2026-07-29 got **503** from
+> `/api/v1/health` with expired AWS credentials, so the cause was never confirmed
+> (CLAUDE.md, "Deployed topology"). CloudFront answered, so the origin was unhealthy; the
+> likeliest cause is the 22:00 IST reaper stopping ECS tasks that lost their `c7n-keep=true`
+> tag. **Treat every "healthy"/"1 task" statement below as true on 2026-07-17 and unverified
+> since.** Re-run the Verify commands before relying on any of it.
 
 - **Stack:** CloudFormation stack `uptime-monitor` in **us-east-1**, account `065317679010`,
   created from `infra/stack.yaml` via the console runbook (`docs/deploy-runbook.md`);
