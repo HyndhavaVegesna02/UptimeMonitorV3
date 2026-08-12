@@ -37,40 +37,34 @@
 - [ ] **Any evidence artifact must be demonstrated FAILING before it is trusted.** Proof, gate,
       discrimination check, or a test that is a defect fix's primary evidence: before you report
       it, make it fail on purpose and record that it failed. A green result proves the code passes
-      the check; it never proves the check could detect the defect. Five mechanics, all of which
-      have shipped broken here at least once:
-      - **Exit code, not stdout.** The artifact ends in an explicit verdict and a NON-ZERO exit on
-        failure. Printing correct numbers while exiting 0 unconditionally is a report, not a gate,
-        and a reader of its stdout cannot tell the difference. A polling timeout is a FAILURE, never
-        partial evidence. The board records the EXIT CODE.
-      - **Two sides must DIFFER.** A two-sided or discrimination proof records both outcomes and
-        asserts they diverge. Identical outcomes is a FAILED proof whatever value appeared — "green
-        both sides" reads as "the thing under test does not matter", so the proof argues AGAINST a
-        correct fix.
-      - **Mutate a computational deliverable.** If the headline claim is arithmetic, spacing,
-        ordering, thresholds or windowing: mutate the computation, record which tests go RED,
-        restore, confirm `git diff` is empty. Zero RED means UNPINNED — at full coverage, and with
-        every AC traced to a test. Scoped to computational deliverables so it is not a tax on
-        every story.
-      - **Prove which tree ran.** For any check in a git worktree, call
-        `tools/import_provenance.py::assert_import_root` for the module under test, per side,
-        BEFORE reporting either score. This repo is installed EDITABLE — the `.pth` file is a plain
-        absolute `sys.path` entry to `backend`, so `src.*` resolves to the MAIN tree from inside any
-        worktree. Force `PYTHONPATH=<worktree>/backend` (it precedes that entry), or patch the main
-        tree in place and restore it with `git diff` verified empty.
-      - **Read back through the PRODUCTION interface.** If a proof sets up state, write it and read
-        it back through the same interface the system under test uses — never a parallel hand-rolled
-        one. A precondition that writes and re-reads its own wrong key passes VACUOUSLY and then
-        reports a working feature as broken.
-      Two smells to check your own test against before reporting: (a) does every fixture it
-      constructs actually reach the code under test — a fake that is built, never wired up, then
-      asserted on is asserting on a value the test itself supplied; (b) if you changed the guarded
-      behaviour to something plainly WRONG, would this test go red? If you cannot say yes, it is
-      decoration.
+      the check; it never proves the check could detect the defect.
+      **Three of the five mechanics are MECHANISED by `tools/evidence_check.py` (STORY-212,
+      2026-08-13) — run the matching subcommand and paste its exit code and tail; do not re-derive
+      the judgment by hand:**
+      - Exit code, not stdout: `python tools/evidence_check.py falsify <artifact> --bad-input
+        <spec>` — an artifact that exits 0 on bad input is reported NOT A GATE. A polling timeout
+        is a FAILURE, never partial evidence.
+      - Two sides must DIFFER: `python tools/evidence_check.py two-sided --left <cmd> --right
+        <cmd>` (`--import-provenance-module <name>` wraps `assert_import_root` per side) — FAILS on
+        IDENTICAL outcomes, whatever the value; "green both sides" argues AGAINST a correct fix.
+      - Mutate a computational deliverable: `python tools/evidence_check.py mutate <patch-file>
+        --tests <selector>` — the mutation is a `git apply`-able patch file, committed alongside
+        the tool's red/green tail; zero RED exits non-zero (UNPINNED).
+      **The remaining two stay judgment calls, unmechanised** — a script cannot decide whether a
+      proof was *meaningful* (STORY-212's own scope):
+      - Prove which tree ran: `tools/import_provenance.py::assert_import_root` per side, in any
+        git worktree, BEFORE reporting either score (this repo's editable install resolves `src.*`
+        to the MAIN tree from inside any worktree — force `PYTHONPATH=<worktree>/backend`).
+      - Read back through the PRODUCTION interface a proof's own state, never a parallel
+        hand-rolled one — a precondition that writes and re-reads its own wrong key passes
+        VACUOUSLY.
+      Two smells before reporting: (a) does every fixture actually reach the code under test; (b)
+      if you changed the guarded behaviour to something plainly WRONG, would this test go red? If
+      you cannot say yes, it is decoration.
       (Collapsed 2026-08-01 from SIX amendments — A1 sprint-62; A1-refinement, A3 and A4 sprint-63;
-      A7 sprint-64; A9 sprint-65 — which were six statements of one idea, each landed because the
-      previous one had not held. Incidents in each sprint's `retro.md`. The mechanical half of this
-      rule is STORY-212; six retros named the script rung and declined it.)
+      A7 sprint-64; A9 sprint-65 — six statements of one idea, each landed because the previous one
+      had not held. Incidents in each sprint's `retro.md`. Mechanised at the SCRIPT rung by
+      STORY-212, 2026-08-13 — six retros named that rung and declined it.)
 
 - [ ] **LAST STEP BEFORE YOU REPORT: re-run every command your story records, and paste the FRESH
       output.** Not the output you captured while working — the output as of the final commit. Every

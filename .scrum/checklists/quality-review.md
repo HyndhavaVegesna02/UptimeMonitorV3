@@ -51,31 +51,25 @@ When you suspect over-mocking: construct the real object / hit the real entrypoi
 ## Evidence discipline — audit the artifact, not its output
 
 - [ ] **Every evidence artifact in the diff must have been demonstrated FAILING.** The
-      implementer-side rule is one item in `implementer.md`; this is the independent check that it
-      actually happened. Verify each of the five mechanics that applies:
-      - **Exit path, not printed values.** An artifact that computes the right numbers, PRINTS
-        them, asserts nothing and exits 0 regardless is a REPORT, not a gate — and a reviewer
-        reading correct numbers out of stdout cannot tell the difference. Require: explicit verdict,
-        non-zero exit on failure, and recorded evidence it was fed deliberately bad input and failed.
-        A polling step that times out must FAIL, not continue with a flag set.
-      - **Reject any two-sided proof whose sides came back IDENTICAL.** That is inverted evidence,
-        not weak evidence: the result is indistinguishable from "the thing under test does not
-        matter", so the proof argues against a correct fix. Check the MECHANISM (import provenance,
-        attribute names, fixture skips), not just the numbers.
-      - **Mutate a computational deliverable yourself — do not infer pinning from reading.** A
-        green, fully AC-traced suite can leave its story's central arithmetic unpinned. Hardcode or
-        perturb the computation, run the story's tests, report which went RED. Zero RED is a
-        finding, and it outranks anything found by reading. Restore and confirm the tree is clean.
-      - **Import provenance where that is the mechanism:** confirm the proof actually called
-        `tools/import_provenance.py::assert_import_root` per side (STORY-187) rather than asserting
-        divergence without checking which tree ran. For every other mechanism the helper does not
-        apply — read the test body and confirm the sides could actually have diverged.
-      - **State set up through the production interface**, never a parallel hand-rolled one; a
-        precondition that writes and re-reads its own wrong key passes vacuously.
+      implementer-side rule is one item in `implementer.md`; this is the independent check.
+      **Three of the five mechanics are MECHANISED by `tools/evidence_check.py` (STORY-212,
+      2026-08-13) — confirm the story ran the matching subcommand and pasted its tail, never
+      accept a hand-written claim in its place:**
+      - `falsify`: an artifact that computes right numbers but PRINTS them, asserting nothing,
+        and exits 0 regardless is a REPORT, not a gate. A polling timeout must FAIL, not continue.
+      - `two-sided`: reject IDENTICAL sides — indistinguishable from "the thing under test does
+        not matter", arguing AGAINST a correct fix. Check the MECHANISM the tool ran, not the
+        printed numbers.
+      - `mutate`: do not infer pinning from reading — zero RED outranks anything found by reading.
+        Confirm the tool's own scoped restore check (`git diff -- <target>`) ran clean.
+      **The remaining two stay judgment calls, unmechanised:** import provenance where that is the
+      mechanism (confirm `two-sided --import-provenance-module`, or a direct `assert_import_root`
+      call per STORY-187, ran per side — otherwise read the test body for genuine divergence); and
+      state set up through the production interface, never a parallel hand-rolled one that passes
+      vacuously.
       (Collapsed 2026-08-01 from A3, A4 and A7 — the reviewer-side halves of the six-amendment
-      family described in `implementer.md`. Incidents in the sprint-63 and sprint-64 `retro.md`.
-      This is exactly how STORY-176's critical was found, and nothing else in the pipeline would
-      have found it.)
+      family in `implementer.md`; incidents in the sprint-63/64 `retro.md` — this is exactly how
+      STORY-176's critical was found. Mechanised at the SCRIPT rung by STORY-212, 2026-08-13.)
 
 - [ ] **Recorded numbers and command output must be CURRENT, not merely real.** Re-run every
       command the story records and compare against the pasted output. A stale record — true when
