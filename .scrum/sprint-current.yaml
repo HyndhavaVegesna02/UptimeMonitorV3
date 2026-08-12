@@ -668,11 +668,12 @@ stories:
   - id: STORY-208
     title: Land ZR-4's guard -- extend test_zone_layout to assert the five-file api feature SHAPE
     points: 1
-    board: todo
+    board: in-progress
     pipeline: light
     order: 4
     blocked_question: null
-    attempts: 0
+    attempts: 1
+    started_at_commit: 986a646   # dispatched 2026-08-12
     paused_at_commit: null
     dod_evidence: []
     blast_radius_resolved: false
