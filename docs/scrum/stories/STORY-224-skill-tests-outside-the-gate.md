@@ -81,33 +81,57 @@ is the implementer's.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (the self-test is a gate command)** — after the orchestrator adds the DoD line,
-      `yt_gate.py` discovers exactly **9** commands and the 9th invokes `yt_selftest.py`. Proven by
-      a full gate run recording **9/9**. The implementer does **not** edit `.scrum/`.
+- [ ] **AC1 (the self-test is a gate command, at a NAMED placement)** — the orchestrator appends a
+      **third section, `## Commands (skill self-test)`, AFTER the frontend section**, carrying one
+      command line in `yt_gate.py`'s parse shape (`- [ ] <label>: \`<command>\` -> exit 0`) and
+      **no `run from \`dir/\`` phrase**, so `section_cwd` stays empty and the command runs from the
+      repo root. `yt_gate.py` then discovers exactly **9** commands and the **9th** invokes
+      `yt_selftest.py`. Proven by a full gate run recording **9/9**. The implementer does **not**
+      edit `.scrum/`.
+      **The placement is named because it is the only one that satisfies both this AC and AC2**:
+      appending to `## Commands (backend)` makes the self-test command **6 of 9**, not the 9th, and
+      silently turns `CLAUDE.md`'s "Backend (5)" into six (pre-lock verification, 2026-08-14, run
+      through the real `yt_gate.parse_dod`).
 - [ ] **AC2 (invocation survives this machine's policy)** — the command uses interpreter form
       (`python .claude/skills/yourteam/scripts/yt_selftest.py` or the venv interpreter), never a
       console-script shim: three shims are already blocked by Windows Device Guard and the policy
       has widened twice mid-sprint unannounced (`CLAUDE.md` Key commands, STORY-210). It runs from
-      the **repo root**, matching how `yt_gate.py` invokes backend-section commands.
+      the **repo root** — which under AC1's placement is what an absent `run from` phrase gives
+      (`yt_gate.py:63, 298`).
 - [ ] **AC3 (*** the proof that matters ***: the GATE now catches what it could not)** — shown RED
       **at the gate, not at `yt_selftest`**. The defect is "the gate does not run it", so a proof
-      that only shows `yt_selftest` failing proves nothing new. Break one guarded invariant — e.g.
-      introduce a cp1252-mojibake sequence into a `.scrum/` file, or drop a rule from one
-      `.claude/agents/*.md` instance so template parity breaks — and show **the full gate exits
-      nonzero**, where the same mutation at the pre-story commit left the gate green. Do it in a
-      scratch clone (A19: every scratch `cd` written `cd X || exit 1`), and revert.
+      that only shows `yt_selftest` failing proves nothing new. In a scratch clone (A19: every
+      scratch `cd` written `cd X || exit 1`), break one guarded invariant — a cp1252-mojibake
+      sequence in a `.scrum/` file, or a rule dropped from one `.claude/agents/*.md` instance so
+      template parity breaks — and show the full gate exits nonzero, where the same mutation at the
+      pre-story commit left it green.
+      ***The mutation MUST BE COMMITTED in the scratch clone, and the evidence MUST name the
+      failing command's label and its exit code.*** `yt_gate.py` **exits 3 on a dirty tree before
+      running any command** (`yt_gate.py:427-437`), and A20 exempts only `.scrum/`
+      (`_ORCHESTRATOR_OWNED_PREFIXES`, `yt_gate.py:125`) — so an *uncommitted* mutation outside
+      `.scrum/` produces a nonzero exit that proves nothing about the ninth command. An exit 3 is
+      not this AC's RED; only a **command failure (exit 1) naming the self-test** is.
 - [ ] **AC4 (all 7 modules actually run, and a module silently dropping is caught)** — the report
       names each of the 7 modules with its test count, summing to the total (89 at refinement).
       Because `unittest` discovery fails **silently** when a module stops being discovered — an
       import error or a rename makes the count drop, not the run fail — `yt_selftest.py` gains an
       assertion that the discovered module count is **at least 7**. Shown RED by removing one
       module in a scratch clone.
-- [ ] **AC5 (the gate does not red on bookkeeping)** — the skill suite asserts about *this repo's*
-      content in places (`test_scrum_encoding`, `test_backlog_story_parity`), so it must not turn
-      routine board state into a gate failure. `test_backlog_story_parity` currently emits its
-      28-missing-story-file finding as an advisory **note** with exit 0; that stays advisory.
-      Proven both ways in a scratch clone: adding a fresh draft entry with no story file leaves
-      the gate **green**, while a genuine parity breach still fails it.
+- [ ] **AC5 (the gate does not red on bookkeeping — and the HARD assertions are the real exposure)**
+      — the skill suite asserts about *this repo's* content in places (`test_scrum_encoding`,
+      `test_backlog_story_parity`), so it must not turn routine board state into a gate failure.
+      Three proofs, in a scratch clone:
+      (a) the advisory stays advisory — `test_backlog_story_parity.py:144`'s missing-story-file
+          finding is a **note** with exit 0, and adding a fresh draft entry with no story file
+          leaves the gate **green**;
+      (b) a genuine parity breach still **fails** it;
+      (c) *** the two HARD assertions are exercised ***: `test_every_file_pointer_resolves`
+          (`test_backlog_story_parity.py:101`) and `test_no_orphan_story_files` (`:119`) are not
+          advisory — they fail. So a story file committed before its backlog entry, or a `file:`
+          pointer committed before the file it names, **reds the gate for an unrelated story**.
+          Prove both directions and state the working rule that follows: **a mid-sprint filing
+          lands its backlog entry and its story file in ONE commit.** Sprint 71 filed STORY-224
+          itself mid-sprint, so this is a live path, not a hypothetical.
 - [ ] **AC6 (runtime is recorded and bounded)** — measure the added wall-clock across ≥3 runs
       (4.84s at refinement). The gate runs many times per sprint, so if it exceeds ~15s the story
       **reports the number and flags it** rather than absorbing it.
@@ -116,15 +140,31 @@ is the implementer's.
       so 22 archived stories sit permanently in the "refinement should write one" advisory. Reuse
       `yt_board.py:68`'s `CLOSED_STATUSES` rather than declaring a second list. Shown RED: the
       advisory count drops by those entries.
-- [ ] **AC8 (ride-along: `next_story_id` is asserted)** — add a `yt_selftest` assertion that
-      `next_story_id > max(id)` across backlog stories. It has been stale three times.
-- [ ] **AC9 (the count of record moves 8 → 9, everywhere it is stated)** — `CLAUDE.md:194`
-      ("### The DoD gate — 8 commands") and its backend/frontend breakdown, plus
-      `.scrum/definition-of-done.md` (orchestrator). **Grep for other copies before committing**
-      (STORY-189's lesson, which found one). Known: `frontend-zone.md:21` and `:617` state the
-      five/three/eight breakdown, and that article is `status: stale` and **not swept** — touching
-      it would reset its staleness baseline without re-verifying 35 Facts, which the protocol
-      forbids. Leave it, and say in the report that it was left and why.
+- [ ] **AC8 (ride-along: `next_story_id` is asserted — and it is RED at HEAD)** — add a
+      `yt_selftest` assertion that `next_story_id > max(id)` across backlog stories. It has been
+      stale three times, **and it is stale right now**: measured 2026-08-14, `next_story_id: 225`
+      against a maximum id of `STORY-225`, so `225 > 225` is **False**.
+      ***Precondition, and it is the orchestrator's:*** because AC1 makes `yt_selftest` a gate
+      command, writing this assertion without fixing the data would red the gate for every story
+      after this one — and the only fix lives in `.scrum/backlog.yaml`, which the implementer may
+      not touch. **The orchestrator bumps `next_story_id` to 226 in the same commit as the DoD
+      line.** AC8's shown-RED is taken against the **pre-bump** state and recorded as such.
+- [ ] **AC9 (the count of record moves 8 → 9, everywhere it is stated — and NOT where it is
+      history)** — `CLAUDE.md:194` ("### The DoD gate — 8 commands") and its backend/frontend
+      breakdown, plus `.scrum/definition-of-done.md` (orchestrator). **Grep for other copies before
+      committing** (STORY-189's lesson, which found one). Three specific hazards, all measured at
+      pre-lock verification:
+      - ⛔ **`docs/scrum/wiki/demo-engine.md:617` and `:636` record historical "DoD gate 8/8"
+        evidence from past sprints. Those are FACTS ABOUT THE PAST and must NOT become 9/9.** A
+        literal grep-and-replace corrupts sprint history.
+      - `frontend-zone.md:21` and `:617` state the five/three/eight breakdown. That article is
+        `status: stale` and **not swept**; touching it would reset its staleness baseline without
+        re-verifying its Facts (14 top-level bullets in `## Facts`), which the protocol forbids.
+        **Leave it, and say in the report that it was left and why.**
+      - `CLAUDE.md:78` ("the five backend DoD commands never touch it") stays **correct** under
+        AC1's placement, because the self-test goes in its own section rather than the backend one.
+        Verify that is still true of whatever the DoD ends up saying; if the placement ever moves,
+        this line moves with it.
 - [ ] **AC10 (gate)** — the full **9-command** gate is green at the story's final HEAD, with pass
       counts recorded (a nonzero skip count is an incomplete gate, not a pass). Run the wiki sweep
       after the last commit and take what it returns.

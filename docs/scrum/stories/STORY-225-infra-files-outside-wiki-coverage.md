@@ -113,9 +113,12 @@ localized gap created by STORY-222 does not survive the measurement: the gap is 
 mostly predates that story.
 
 **The second refuted premise is "actively maintained."** `infra/stack.yaml` has **not been modified
-since the deployment sprints** — its entire history is 5 commits, the most recent being
-`c05fc57` (STORY-089), with **zero commits in the last 60 days**. `Dockerfile` has 2 commits, last
-`f6ed358` (STORY-093). cfn-lint does gate `stack.yaml` on every run, which is true and was the
+since the deployment sprints** — its entire history is 5 commits, the most recent being `c05fc57`
+(STORY-089), and **nothing has touched it since 2026-07-17, roughly four weeks**. `Dockerfile` has 2
+commits, last `f6ed358` (STORY-093). *(An earlier draft of this paragraph said "zero commits in the
+last 60 days"; pre-lock verification refuted it — all five commits fall inside a 60-day window,
+dated 2026-07-16/17. The claim is corrected, not quietly dropped: the file's whole history sits in
+that window, which is a point about how short its history is, not about recent activity.)* cfn-lint does gate `stack.yaml` on every run, which is true and was the
 story's strongest point — but "gated every run" and "actively maintained" are different claims, and
 only the first holds. With the stack decommissioned (2026-08-13) and no redeploy decision made,
 option (a)'s own test — *"check first whether anyone will maintain it; an unmaintained map article

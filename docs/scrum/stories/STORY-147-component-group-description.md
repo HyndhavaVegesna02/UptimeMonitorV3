@@ -2,14 +2,31 @@
 id: STORY-147
 title: Component group + description — config to ComponentDTO
 type: feature
+points: 3          # RE-ESTIMATED 2 -> 3 at sprint-72 pre-lock verification: the diff necessarily
+                   # reaches FIVE verified/map wiki articles, which A18 forces re-verified in-story.
+status: ready
+refined: 2026-07-28   # PO-approved at sprint-62 refinement; citations re-verified 2026-08-14
 ---
+
+> **DEFERRED OUT OF SPRINT 72 (2026-08-14) on its own re-measurement, not on priority.** Pre-lock
+> verification found the diff must touch `composition/config.py`, `composition/seed_dynamo.py`,
+> `core/domain/component.py`, `adapters/persistence/dynamo_component_repository.py`,
+> `api/v1/components/{models,service}.py`, `config/apps/httpcheck.yaml` and
+> `backend/tests/fakes.py` — whose `code_refs` span **five `verified`/`tier: map` articles**:
+> `config-layer.md` (417 lines), `zone-rules.md` (975), `canonical-types-and-ports.md` (312),
+> `persistence-adapters.md` (143), `api-five-file-convention.md` (82).
+> `.scrum/definition-of-done.md:110-114` requires each to be updated or re-verified **within the
+> story**. That is the largest wiki radius in the candidate set and it was priced at zero. **The
+> estimate is corrected to 3 here so it enters its next sprint honestly sized**, with the citation
+> table below already re-derived. Sprint-73 candidate.
 
 ## Context
 
 The PO-approved reference UI shows every component with a category chip
 (`COMMERCE` / `PLATFORM` / `DATA` / `DISCOVERY` / `MESSAGING`) and a one-line description
 ("Cart, payments and order placement"). Neither exists anywhere in the system: `ComponentDTO`
-carries only `id`, `name`, `status` (`backend/src/api/v1/components/models.py:12`).
+carries only `id`, `name`, `status` (`backend/src/api/v1/components/models.py:14-16`; `:12` is the
+`model_config` line).
 
 These are the two cheapest items in the whole UI gap analysis and they unblock visuals on
 every page (see `ui-backend-gap-analysis.md` §2.1/§2.2, item B4). Sequencing matters: whoever
@@ -69,17 +86,27 @@ real cards on screen to judge (PO discussion 2026-07-28).
 - [ ] **AC1** — `ComponentConfig` accepts optional `group` and `description`. A `group` that is
       not slug-safe after normalization, or a `description` longer than 80 characters, raises
       `InvalidComponentFieldError` (a `ConfigError`/`ValueError` subclass — the hierarchy
-      STORY-146 AC5 introduces) naming the offending component and field — never a bare
-      `ValueError`, and never silent truncation. **The check runs in `load_config` OUTSIDE the
-      `try/except (TypeError, ValueError)` at `config.py:343-357`**: verified by probe, a
-      `ValueError` subclass raised inside a pydantic `model_validator` is converted to
-      `ValidationError` (losing the subclass), which `config.py:356` then re-raises as a bare
-      `ValueError(f"Invalid config in {file}: …")`. A validator-based implementation cannot
-      satisfy this AC. The test asserts the specific class, not `ValueError`.
+      STORY-146 landed at `config.py:97-123`) naming the offending component and field — never a
+      bare `ValueError`, and never silent truncation. **The check runs in `load_config`
+      (`config.py:567`) OUTSIDE the `try/except (TypeError, ValueError)` at `config.py:650-651`**:
+      verified by probe, a `ValueError` subclass raised inside a pydantic `model_validator` is
+      converted to `ValidationError` (losing the subclass), which `config.py:651` then re-raises as
+      a bare `ValueError(f"Invalid config in {yaml_path.name}: …")`. A validator-based
+      implementation cannot satisfy this AC. The test asserts the specific class, not `ValueError`.
+      ⚠ **The citations `config.py:343-357` / `:356` that stood here until 2026-08-14 were stale in
+      the worst possible direction: `:343-357` is now `AppConfig`'s `mode="before"`
+      `model_validator` — the exact implementation this AC forbids — and `:356` is
+      `if not isinstance(data, dict): return data`.** Caught at pre-lock verification. Follow the
+      line numbers in this paragraph and the table above, not any others in this file.
 - [ ] **AC2** — `group` is normalized to a lowercase slug at load: `Commerce`, `COMMERCE`, and
       `commerce` all load as `commerce`. A test asserts all three inputs produce one value.
       Display-casing is the frontend's concern, not config's.
-- [ ] **AC3** — Both fields round-trip config → seed → repository → DTO, and
+- [ ] **AC3** — ⚠ *Implementation note from pre-lock verification: the round-trip is shaped as this
+      story assumes (`seed_dynamo.py:41-56` → `dynamo_component_repository.py:24-30` `_map_item` →
+      `ComponentsService.get_all_components` → `ComponentDTO`), but `_map_item` reads with **bracket
+      access** (`item["name"]`), so the two new fields must be read with `.get()` or every
+      already-seeded item raises `KeyError` on read-back.* Both fields round-trip config → seed →
+      repository → DTO, and
       `GET /api/v1/components` returns them. When absent they serialize as **`null`** — never
       `""` and never a placeholder like `"Uncategorized"`. A component with no `group` is a
       legitimate state (a newly added component exists before anyone categorizes it), and the

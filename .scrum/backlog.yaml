@@ -1208,7 +1208,28 @@ stories:
     epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-147-component-group-description.md
     status: ready
-    points: 2
+    points: 3       # RE-ESTIMATED 2 -> 3 at sprint-72 PRE-LOCK VERIFICATION (2026-08-14), and CUT
+                    # from that sprint on the same measurement. The diff necessarily touches
+                    # composition/config.py, composition/seed_dynamo.py, core/domain/component.py,
+                    # adapters/persistence/dynamo_component_repository.py,
+                    # api/v1/components/{models,service}.py, config/apps/httpcheck.yaml and
+                    # backend/tests/fakes.py -- whose code_refs span FIVE verified/map articles
+                    # (config-layer 417 lines, zone-rules 975, canonical-types-and-ports 312,
+                    # persistence-adapters 143, api-five-file-convention 82). definition-of-done.md
+                    # :110-114 forces each updated or re-verified WITHIN the story. That was the
+                    # largest wiki radius in the sprint-72 candidate set, priced at zero, on the
+                    # smallest estimate.
+                    # ALSO FIXED at that verification: AC1 cited config.py:343-357 for "outside the
+                    # try/except", but :343-357 is now AppConfig's mode="before" model_validator --
+                    # THE EXACT IMPLEMENTATION AC1 FORBIDS. Real try/except is :650-651. Citations
+                    # re-derived in the story file; STORY-146's ConfigError hierarchy (config.py
+                    # :97-123) is landed, so the dependency is discharged.
+                    # IMPLEMENTATION NOTE for whoever picks it up: dynamo_component_repository.py
+                    # :24-30 `_map_item` uses BRACKET access, so the new fields need .get() or
+                    # already-seeded items raise KeyError on read-back. AC4 confirmed structurally
+                    # safe: the Statuspage payload is built only from change.status and the id map
+                    # (adapters/outbound/statuspage/__init__.py:54).
+                    # Sprint-73 candidate, already re-verified.
     priority: 53
     type: feature
     sprint: null # RE-DEFERRED 2026-07-29 (PO): its sprint-63 tag rested on "the frontend lands
@@ -3649,9 +3670,13 @@ stories:
                     #      2 repo-root, infra/ and config/ 1 each). So it is repo-wide and mostly
                     #      PREDATES STORY-222 -- "a localized gap 222 created" does not survive.
                     #   2. "actively maintained" does NOT hold: infra/stack.yaml has FIVE commits
-                    #      total, the last being c05fc57 (STORY-089), and ZERO in the last 60 days.
-                    #      Dockerfile has 2, last f6ed358. "Gated every run" is true and is a
-                    #      different claim.
+                    #      total, the last being c05fc57 (STORY-089), and NOTHING has touched it
+                    #      since 2026-07-17 (~4 weeks). Dockerfile has 2, last f6ed358. "Gated
+                    #      every run" is true and is a different claim.
+                    #      (Pre-lock verification refuted a first draft of this line that said
+                    #      "zero commits in 60 days" -- all five are dated 2026-07-16/17, inside
+                    #      that window. Corrected, not dropped: the point is the shortness of the
+                    #      history, not recent activity.)
                     # With the stack decommissioned and no redeploy decision, option (a)'s own test
                     # -- "check whether anyone will maintain it; an unmaintained map article is
                     # worse than an honest gap" -- currently answers NO. The real question is a

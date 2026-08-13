@@ -79,8 +79,10 @@ STORY-213 at 0-in-12).
 
 Contained and small, which is why this is a 3 and not an 8:
 
-- `userEvent.setup()` is called with **default options** at 20 sites across the frontend suite;
-  the default inserts an awaited `setTimeout` between **every keystroke**.
+- `userEvent.setup()` is called with **default options** at **66 sites across 20 files** in the
+  frontend suite — none passing options. The default (`setup/setup.js:24`, `delay: 0`) inserts an
+  awaited macrotask between **every keystroke**: `keyboard/index.js` runs
+  `for (actions) { await wait.wait(this.config); … }`.
 - `user.type()` on a `datetime-local` field types the full `'2026-07-09T09:00'` literal — **16
   keystrokes, so 16 awaited macrotasks per field** — at
   `frontend/src/pages/MaintenancePage.test.tsx:286, 287, 332, 333, 366, 367, 399, 400, 437, 438`:
@@ -106,13 +108,26 @@ Under contention, 32 real macrotask yields per test plus MSW round-trips is what
       test names and assertions, and wall-clock. **An honest negative is an acceptable result and
       does not block the story** — if the rate is 0/8, say so plainly and proceed; do not
       manufacture a failure. What is NOT acceptable is an unmeasured "it flakes".
-- [ ] **AC2 (the fix is at the test's own seam)** — the change alters **how input is delivered**,
-      not how long the runner waits. Concretely, the diff must NOT: raise any `findBy*`/`waitFor`
-      timeout, pin `--no-file-parallelism` in the `test` script, or add a retry. Those are named
-      because each hides the defect rather than removing it, and the serialized option costs a
-      measured ~2× wall-clock (205s vs 93s). **If the implementer concludes one of these is the
-      only viable fix, the story BLOCKS for a PO decision** rather than silently taking the broad
-      option.
+- [ ] **AC2 (the fix is at the test's own seam — prohibited by EFFECT, not by location)** — the
+      change alters **how input is delivered**, not how long the runner waits and not how much of
+      the suite runs at once. The diff must NOT, **by any route**:
+      - raise any `findBy*`/`waitFor` timeout (per-call, or via `configure({asyncUtilTimeout})`);
+      - **reduce or disable file/worker parallelism anywhere** — not in `package.json`'s `test`
+        script, not as a CLI flag, and **not in `frontend/vite.config.ts`** via
+        `test.fileParallelism`, `test.pool`, or
+        `test.poolOptions.*.{singleFork,singleThread,maxForks,maxThreads}`. `vite.config.ts`
+        currently declares **no pool settings at all** (`test: {environment, globals, setupFiles,
+        css}`), so adding one there would serialize the suite identically to the flag while
+        satisfying a location-scoped prohibition. Named explicitly because pre-lock verification
+        found exactly that loophole;
+      - add a retry.
+      Each hides the defect rather than removing it, and the serialized option costs a measured
+      ~2× wall-clock (205s vs 93s). **If the implementer concludes one of these is the only viable
+      fix, the story BLOCKS for a PO decision** rather than silently taking the broad option.
+      **Two fixes are known viable and violate none of the above** (verified at pre-lock against
+      the installed `@testing-library/user-event`: `utils/misc/wait.js` returns immediately when
+      `typeof delay !== 'number'`): `userEvent.setup({ delay: null })`, which removes all 16 waits
+      per field, and `fireEvent.change`. So this AC does not block the story by construction.
 - [ ] **AC3 (the tests still assert what they claimed — mutation-proven)** — this is the
       tests-that-lie guard, and it is the AC that matters most. With the fix in place, break the
       product path each affected test claims to pin — e.g. neutralise `MaintenancePage`'s inline
@@ -127,9 +142,13 @@ Under contention, 32 real macrotask yields per test plus MSW round-trips is what
 - [ ] **AC5 (determinism is not bought with wall-clock)** — record `npm test` total wall-clock
       before and after. A material regression (say >20%) means the fix serialized something and
       must be reported as such, not absorbed silently.
-- [ ] **AC6 (no product behaviour change)** — `git diff` touches no file under `frontend/src/`
-      other than test files and test setup. If a product file genuinely must change, it is named
-      with its reason in the report; "Not in scope" below still governs.
+- [ ] **AC6 (no product behaviour change, and the diff check reaches the config files too)** —
+      `git diff` touches no file under `frontend/src/` other than test files and test setup, **and
+      no `frontend/` root config file** (`vite.config.ts`, `package.json`, `tsconfig*.json`). The
+      second half is not decoration: scoping this check to `frontend/src/` alone would let AC2's
+      prohibited serialization land in `vite.config.ts` unseen by both ACs. If a product or config
+      file genuinely must change, it is named with its reason in the report; "Not in scope" below
+      still governs.
 - [ ] **AC7 (gate)** — the DoD commands the diff can affect exit 0, `npm test` among them, at the
       story's final HEAD. Run the wiki sweep after the last commit and take what it returns; do
       **not** pre-declare a blast radius (`plan-verification.md:19`). For information only, not as

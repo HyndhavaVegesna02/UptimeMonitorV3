@@ -81,9 +81,16 @@ Docker who sets `DYNAMO_ENDPOINT_URL` at a remote endpoint must be unaffected.
       break the gate mid-run; (c) no broad `docker rm -f` and no wildcard prune appears in the
       diff. AC2(a) and AC2(b) are shown RED against a naive prefix-only reaper.
 - [ ] **AC3 (it runs in BOTH configurations)** — the reap executes with `DYNAMO_ENDPOINT_URL` set
-      **and** unset. Proven by a test that calls `resolve_dynamo(env={"DYNAMO_ENDPOINT_URL": ...})`
-      with an injected reaper and asserts it was invoked, plus the unset case. This AC exists
-      because the gate only ever runs the first of those two.
+      **and** unset. Proven by a test that calls `resolve_dynamo` with an injected reaper and
+      asserts it was invoked in both cases. This AC exists because the gate only ever runs the
+      first of those two.
+      **The injection seam must be added and named**: `resolve_dynamo` today is
+      `resolve_dynamo(*, env, docker_available, spawn_container)`
+      (`scripts/dynamo_local.py:319-323`) and has **no reaper parameter**. Follow the existing
+      convention of the three it already has — a keyword-only `Callable | None = None` that falls
+      back to the module-level implementation when omitted, so production callers are unchanged
+      and only tests inject. State the parameter name, its default and its contract in the
+      docstring.
 - [ ] **AC4 (it degrades to a no-op, never a failure)** — Docker absent, `docker` slow or erroring,
       or a container that refuses removal must leave the run proceeding normally with at most a
       note. Proven by injecting a failing/absent docker callable. The reaper must not add a
@@ -93,6 +100,15 @@ Docker who sets `DYNAMO_ENDPOINT_URL` at a remote endpoint must be unaffected.
       liveness cannot be determined for a given container, the conservative branch is taken: it is
       **left alone**. A named test covers the undetermined case. If an age bound is used instead of
       or alongside PID liveness, the bound is justified and tested at both edges.
+      **Two Windows traps, both measured at pre-lock verification (2026-08-14) on throwaway
+      processes — do not re-derive them, and do not assume the POSIX shapes:**
+      1. `os.kill(pid, 0)` does **not** terminate the process (`signal 9` does), and on a dead or
+         nonexistent PID it raises a bare **`OSError` with `winerror == 87`, NOT
+         `ProcessLookupError`**. A reaper catching only `ProcessLookupError` therefore **raises**,
+         violating AC4. Branch on `winerror`, and test it.
+      2. A still-open process handle makes a **dead** PID read as **alive**. That is a reason to
+         keep the conservative branch, and an argument for pairing liveness with an age bound
+         against PID recycling.
 - [ ] **AC6 (the story leaks nothing itself)** — `docker ps -a` verified before and after the
       story's own test runs; no container matching either pattern survives. Normal-exit teardown
       still removes the fixture's container (existing behaviour unbroken).
