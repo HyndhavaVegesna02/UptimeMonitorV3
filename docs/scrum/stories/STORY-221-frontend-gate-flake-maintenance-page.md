@@ -2,8 +2,9 @@
 id: STORY-221
 title: The frontend gate can false-red under parallel file execution — MaintenancePage inline-422 assertions
 type: defect
-points: null
-status: draft
+points: 3
+status: ready
+refined: 2026-08-14   # sprint-72 planning; AC written from the measurements below. PENDING PO lock.
 filed: 2026-08-06
 sprint: null
 ---
@@ -45,19 +46,16 @@ prominent note, machine-emitted rather than hand-transcribed.
 
 ## Why this is worth fixing rather than remembering
 
-The full-gate run executes `npm test` **after** `python -m pytest` (714 tests, ~91s) and alongside
+The full-gate run executes `npm test` **after** `python -m pytest` (now 816 tests) and alongside
 whatever else the machine is doing; run alone it passes. So the failure is a function of load, not
 of code — which means **the standing gate can go red on correct work at any time**, and every
 occurrence costs a diagnose-and-re-run cycle plus the risk that someone discounts a *real* red by
 pattern-matching to this one. That second risk is the expensive one.
 
-This is a distinct defect from the known backend flake (STORY-213, 1-in-11 `list_components`
-pagination). Two independent flakes in one gate is the thing to notice.
+## MEASURED HIT RATE — 2026-08-06 (the filing measurement)
 
-## MEASURED HIT RATE — 2026-08-06, later the same day (read this before estimating)
-
-The filing above described this as an occasional false-red. **Four more runs of the UNMODIFIED gate
-command at a single commit (`56491a8`), with zero frontend diff for the whole sprint, went:**
+**Four runs of the UNMODIFIED gate command at a single commit (`56491a8`), with zero frontend diff
+for the whole sprint, went:**
 
 | run | mode | result |
 | --- | --- | --- |
@@ -67,43 +65,98 @@ command at a single commit (`56491a8`), with zero frontend diff for the whole sp
 | 4 | parallel, run alone | PASS |
 | — | `--no-file-parallelism` ×2 | PASS, PASS (301s and 205s vs ~115s parallel) |
 
-**That is 2 red in 4, not a rare flake** — and note run 3 failed *alone*, which breaks the
-"passes in isolation" limb that discounted the first occurrence. The serialized limb is what held.
-Different assertions failed on different runs, so this is a load/timing sensitivity across the file,
-not one brittle test.
+**That is 2 red in 4** — and run 3 failed *alone*, which breaks the "passes in isolation" limb that
+discounted the first occurrence. The serialized limb is what held. Different assertions failed on
+different runs, so this is a load/timing sensitivity across the file, not one brittle test.
 
-For comparison, the other known flake (STORY-213) is 1-in-11.
+**Not observed across sprint 71's gate runs** (three full runs, plus per-story `--only` runs, all
+green on `npm test`). That does not clear it — a 2-in-4 that then goes 0-in-3 is consistent with
+load, which is the hypothesis — but it does mean **the baseline must be re-measured before the fix,
+not assumed** (AC1). This project has twice found a flake had already evaporated (STORY-178,
+STORY-213 at 0-in-12).
 
-**Why that changes the priority, not just the number.** A standing gate command at roughly a coin
-flip stops being a mechanical floor and becomes something people re-roll — which is precisely how a
-*real* red eventually gets waved through. The 2026-07-06 contention protocol is designed to be an
-exception; at this rate it becomes the routine path, and the protocol's own warning about
-discounting reds turns from a safeguard into a habit.
+## The seam — measured at sprint-72 planning (2026-08-14)
 
-**Also observed the same day:** `python -m pytest` went red once in the same sequence on the
-documented STORY-179 ephemeral-port defect. **Two of the eight gate commands are currently
-load-sensitive on this machine.** Whether STORY-179 and this story should be fixed together — they
-share a "the gate is not trustworthy under load" root — is a planning question worth asking.
+Contained and small, which is why this is a 3 and not an 8:
 
-## Refinement should settle
+- `userEvent.setup()` is called with **default options** at 20 sites across the frontend suite;
+  the default inserts an awaited `setTimeout` between **every keystroke**.
+- `user.type()` on a `datetime-local` field types the full `'2026-07-09T09:00'` literal — **16
+  keystrokes, so 16 awaited macrotasks per field** — at
+  `frontend/src/pages/MaintenancePage.test.tsx:286, 287, 332, 333, 366, 367, 399, 400, 437, 438`:
+  **10 call sites across 5 tests, all in this one file.** No other test file in the suite types a
+  `datetime-local` value (`grep` over `frontend/src`).
+- The two `datetime-local` inputs exist only in `frontend/src/pages/MaintenancePage.tsx:167, 191`.
+- The assertions that fail are `findBy*` calls with the **default 5000 ms** timeout.
+- `beforeEach` calls `vi.setSystemTime(NOW)` **without** `vi.useFakeTimers()`
+  (`MaintenancePage.test.tsx:44-51`) — deliberate and documented: MSW's fetch handling needs real
+  timers. So the per-keystroke waits are **real** waits competing with 50 other jsdom environments.
+- Suite-wide environment cost dominates either way: `environment 105.65s` serialized vs
+  `environment 308.88s` parallel, against `tests 36.79s`.
 
-1. **Is it the `datetime-local` typing specifically?** `user.type()` on a `datetime-local` input is
-   a known source of timing sensitivity. Check whether the affected assertions can use
-   `fireEvent.change` / direct value set, or `await user.type(...)` with an explicit `waitFor` on
-   the field value before submitting — a fix at the test's own seam rather than at the runner's.
-2. **Or is it the suite-wide `environment` cost?** The serialized run reported
-   `environment 105.65s` against `tests 36.79s`; the parallel run reported `environment 308.88s`.
-   jsdom environment setup dominates either way, which points at per-file environment churn as the
-   real contention source — possibly fixable with `environmentMatchGlobs` or a shared setup.
-3. **Decide the enforcement shape.** Options: fix the assertions (narrow, preferred); pin
-   `--no-file-parallelism` in the `test` script (broad, costs ~2× wall-clock — 205s vs 93s
-   measured, so it is NOT free); or raise the specific `findBy*` timeout (weakest — it hides
-   rather than fixes).
-4. **Reproduce it deliberately first.** Do not fix what has not been made to fail on demand: run
-   the full gate sequence (not `npm test` alone) several times and record the hit rate, the way
-   STORY-213's 1-in-11 was measured. A fix with no measured before/after is not a fix.
+Under contention, 32 real macrotask yields per test plus MSW round-trips is what has to fit inside
+5000 ms — and sometimes does not.
+
+## Acceptance Criteria
+
+- [ ] **AC1 (a measured BEFORE, at this sprint's HEAD)** — before any fix, `npm test` is run
+      **≥ 8 times in the shape the gate runs it** (i.e. following `python -m pytest`, not alone —
+      the filing's run 1 failed inside the full gate), with a verified-empty
+      `git diff --stat <sprint-72-start>..HEAD -- frontend/`. Record per-run pass/fail, the failing
+      test names and assertions, and wall-clock. **An honest negative is an acceptable result and
+      does not block the story** — if the rate is 0/8, say so plainly and proceed; do not
+      manufacture a failure. What is NOT acceptable is an unmeasured "it flakes".
+- [ ] **AC2 (the fix is at the test's own seam)** — the change alters **how input is delivered**,
+      not how long the runner waits. Concretely, the diff must NOT: raise any `findBy*`/`waitFor`
+      timeout, pin `--no-file-parallelism` in the `test` script, or add a retry. Those are named
+      because each hides the defect rather than removing it, and the serialized option costs a
+      measured ~2× wall-clock (205s vs 93s). **If the implementer concludes one of these is the
+      only viable fix, the story BLOCKS for a PO decision** rather than silently taking the broad
+      option.
+- [ ] **AC3 (the tests still assert what they claimed — mutation-proven)** — this is the
+      tests-that-lie guard, and it is the AC that matters most. With the fix in place, break the
+      product path each affected test claims to pin — e.g. neutralise `MaintenancePage`'s inline
+      field-error rendering — and confirm **every one of the 5 affected tests still fails**. A
+      faster input path that also stops detecting a broken 422 render is a worse outcome than the
+      flake. Revert the mutation; state the before/after in the report.
+- [ ] **AC4 (a measured AFTER, same shape and at least the same N as AC1)** — re-run under the
+      same load shape, ≥ the AC1 run count, and record the two rates side by side. If AC1 returned
+      an honest negative, say explicitly that the after-measurement cannot be compared to it and
+      that the fix rests on the seam analysis alone — **do not present an uncomparable pair as a
+      before/after**.
+- [ ] **AC5 (determinism is not bought with wall-clock)** — record `npm test` total wall-clock
+      before and after. A material regression (say >20%) means the fix serialized something and
+      must be reported as such, not absorbed silently.
+- [ ] **AC6 (no product behaviour change)** — `git diff` touches no file under `frontend/src/`
+      other than test files and test setup. If a product file genuinely must change, it is named
+      with its reason in the report; "Not in scope" below still governs.
+- [ ] **AC7 (gate)** — the DoD commands the diff can affect exit 0, `npm test` among them, at the
+      story's final HEAD. Run the wiki sweep after the last commit and take what it returns; do
+      **not** pre-declare a blast radius (`plan-verification.md:19`). For information only, not as
+      a prediction: `MaintenancePage.test.tsx` is in no article's `code_refs`, and
+      `MaintenancePage.tsx` / `vite.config.ts` / `package.json` are `code_refs` of
+      `frontend-zone.md`, which is currently `status: stale` and therefore not swept.
+
+## Open Questions
+
+None. The three refinement questions in the filing are settled above: the `datetime-local` typing
+path is the measured seam; the jsdom environment cost is real but is the suite's shape, not this
+story's scope; and the enforcement shape is fixed by AC2 (narrow, at the test seam).
 
 ## Not in scope
 
-Any change to `MaintenancePage` product behaviour. STORY-213 (the backend pagination flake).
-Changing the DoD command list.
+Any change to `MaintenancePage` product behaviour. The suite-wide jsdom environment cost
+(`environmentMatchGlobs`, shared setup, pool tuning) — that is a separate optimisation story and
+would change every test file. STORY-213 (the backend pagination flake, now measured 0-in-12).
+Changing the DoD command list — STORY-224 owns that this sprint.
+
+## History
+
+- 2026-08-06: filed from STORY-206's gate red. Measured 2-in-4 the same day.
+- 2026-08-14: **refined at sprint-72 planning, estimated 3.** The seam was measured (10 `user.type`
+  calls on `datetime-local` across 5 tests, all in one file; 16 awaited macrotasks per field;
+  default 5000 ms `findBy` timeout), which is what makes a narrow fix credible and bounds the
+  estimate. AC1/AC4 require a measured before and after in the gate's own load shape, with an
+  honest negative explicitly permitted — sprint 71 saw two flakes evaporate before their fix.
+  AC3 was added because a faster input path is exactly the kind of change that can silently stop
+  asserting; the risk here is not "does it still pass" but "does it still fail when it should".

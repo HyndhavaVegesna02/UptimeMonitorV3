@@ -9,17 +9,35 @@ refined: 2026-07-30   # PO-approved `ready` at the sprint-64 refinement ("approv
                       # caught as a Definition-of-Ready failure. Recorded here, not re-approved.
 ---
 
-> **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved — sprint-66 candidate.**
-> Not only for sizing: this story's AC2 parametrises the very `test_scenario.py` rejection tests and
-> AC4 refactors the `load_scenario_file` per-block validation that **STORY-191 extends**, while
-> STORY-191 AC2 requires those same tests to pass **unmodified**. Running both in one sprint is a
-> guaranteed conflict.
+> **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.** The conflict that caused
+> the cut is **DISCHARGED**: STORY-191 and STORY-184 both landed (sprint 65 / sprint 66), so
+> nothing else is extending these files.
 >
-> **Two corrections to fold in when this is next refined:** (1) this story says *seven* loader
-> rejection tests — there are **9 functions / 11 collected cases** at
-> `backend/tests/demo_engine/test_scenario.py:334, 351, 374, 388, 403, 417, 438, 453, 467`;
-> (2) its cited range `test_scenario.py:295-405` is **already stale** — the block is now `329-467`.
-> If STORY-191 lands first, re-verify every line citation in this story before starting it.
+> ## *** CITATIONS RE-VERIFIED 2026-08-14 at sprint-72 planning — the body below is stale, this table is not ***
+>
+> The story's own cut-note demanded this before any dispatch. Every citation in the body was
+> re-derived at HEAD `fa5507d`. **Use these, not the line numbers written inline below.**
+>
+> | Body says | Actually, at `fa5507d` |
+> | --- | --- |
+> | `scenario.py:57` (`load_scenario_file` is ~90 lines) | **`tools/demo_engine/scenario.py:116`** |
+> | `scenario.py:84-87` (`{path!r}`) | **`scenario.py:121`**; the "filename-prefixed convention" docstring is **`scenario.py:173`** |
+> | `test_scenario.py:295-405`, **seven** rejection tests | **nine** functions at **`test_scenario.py:331, 340, 366, 380, 394, 408, 423, 444, 458`** (file is 469 lines) |
+> | `test_scenario.py:180` (recomputes the `(max_threshold + 2) * interval` formula) | **`test_scenario.py:259, 269, 272`** |
+> | `test_scenario.py:283` (`import yaml` mid-body) | **`test_scenario.py:347`** |
+> | `demo-engine.md:231` ("rather than the rows") | **`docs/scrum/wiki/demo-engine.md:352`** |
+> | `test_scenario_coverage.py:235` (same claim) | **not present** — the claim survives only in the wiki article above; the file is 295 lines |
+> | `test_scenario_coverage.py:73-76` ("a port signature change would be caught here too") | **`test_scenario_coverage.py:74`** |
+> | `test_scenario_coverage.py:107` (coherence test vs docstring) | docstring claim is **`test_scenario_coverage.py:5`** |
+> | `test_scenario_coverage.py:79 / :94 / :56` (`saved`, "above", `rejected_repo_result`) | **`:79, :82` / `:94` / `:59`** — all still live |
+>
+> **Two scope changes fall out of that re-verification, and they are why this stays a 1:**
+>
+> 1. **The `CLAUDE.md:142` item is DISCHARGED.** The `interval_seconds` / "land in the future"
+>    sentence **no longer exists anywhere in `CLAUDE.md`** (grep, 2026-08-14) — STORY-184 removed
+>    it, exactly as this story predicted it might. Do not re-add it; do not go looking for it.
+> 2. **The `dev-setup-and-dod.md:237` item needs a decision, not an edit.** That article now lives
+>    in **`docs/scrum/wiki/archive/`**. The protocol treats `archive/` as history. See AC1a.
 
 ## Context
 
@@ -103,10 +121,19 @@ only — no file under `backend/src/`.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (every wrong claim above is corrected, and each correction is checked against the code)**
-      — the four items under "Wrong claims". A behavioural wiki Fact that changes cites the test that
-      pins it (working agreement A2).
-- [ ] **AC2 (the rejection tests pin reasons)** — the seven cases become a parametrised table
+- [ ] **AC1 (every LIVE wrong claim above is corrected, and each correction is checked against the
+      code)** — the items under "Wrong claims" **that the 2026-08-14 re-verification left standing**:
+      the `demo-engine.md:352` mechanism claim and the `test_scenario_coverage.py:74` signature
+      claim. The `CLAUDE.md` item is discharged and must not be re-opened. A behavioural wiki Fact
+      that changes cites the test that pins it (working agreement A2).
+- [ ] **AC1a (the archived article is a decision, recorded — not a silent skip)** — the
+      `dev-setup-and-dod.md:237` item targets a file now in `docs/scrum/wiki/archive/`. Either
+      correct it and say why an archived tombstone was edited, or leave it and say why. State which,
+      in one sentence, in the report. Editing `docs/scrum/wiki/` proper is what the sweep watches;
+      `archive/` is history and is not swept — that asymmetry is the reason this needs a sentence
+      rather than a judgement call made in silence.
+- [ ] **AC2 (the rejection tests pin reasons)** — the **nine** loader rejection tests
+      (`test_scenario.py:331, 340, 366, 380, 394, 408, 423, 444, 458`) become a parametrised table
       asserting a message fragment identifying the **specific** rejection, not just the signal key,
       and the `interval_seconds: true` case is added. A wrong-reason rejection must now fail.
 - [ ] **AC3 (the coherence test's home matches its docstring)** — either the module docstring stops

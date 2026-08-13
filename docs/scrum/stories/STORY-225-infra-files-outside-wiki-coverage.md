@@ -89,6 +89,44 @@ of the three-state invariant.
    `code_refs`?") is cheap and would size the real problem. Do that first; the answer may be
    larger than these four and may change the shape.
 
+## *** THE SWEEP THIS STORY DEMANDED WAS RUN (2026-08-14, sprint-72 planning) — and it refutes two of the story's own premises ***
+
+Refinement question 4 said: *"Check for other unhooked-but-gated files before choosing — this story
+found four by accident... A systematic sweep is cheap and would size the real problem. Do that
+first; the answer may be larger than these four and may change the shape."* It was run at HEAD
+`fa5507d`, over every tracked file under `backend/`, `infra/`, `scripts/`, `tools/`, `config/` plus
+`pyproject.toml`/`Dockerfile`/`.dockerignore`, against the `code_refs` of all 17 wiki articles.
+
+**281 files. 213 appear in some article's `code_refs`. 68 do not.**
+
+| Where the 68 sit | Count |
+| --- | --: |
+| `backend/tests/` (incl. `demo_loop_gate/`, `demo_engine/`) | **42** |
+| `tools/` (incl. `ui-sweep/`, `demo_engine/`) | 9 |
+| `backend/src/**` (nine separate zones, one file each) | 9 |
+| `scripts/` | 2 |
+| repo root (`Dockerfile`, `.dockerignore`) | 2 |
+| `infra/`, `config/` | 2 |
+
+**So the four files in the table above are 4 of 68, not the problem.** The premise that this is a
+localized gap created by STORY-222 does not survive the measurement: the gap is repo-wide and
+mostly predates that story.
+
+**The second refuted premise is "actively maintained."** `infra/stack.yaml` has **not been modified
+since the deployment sprints** — its entire history is 5 commits, the most recent being
+`c05fc57` (STORY-089), with **zero commits in the last 60 days**. `Dockerfile` has 2 commits, last
+`f6ed358` (STORY-093). cfn-lint does gate `stack.yaml` on every run, which is true and was the
+story's strongest point — but "gated every run" and "actively maintained" are different claims, and
+only the first holds. With the stack decommissioned (2026-08-13) and no redeploy decision made,
+option (a)'s own test — *"check first whether anyone will maintain it; an unmaintained map article
+is worse than an honest gap"* — currently answers **no**.
+
+**Consequence for planning: this story is NOT ready, and it is a different story than filed.** The
+real question is a policy one — *what does `code_refs` coverage mean when 68 gated files have none,
+and is that a defect or the intended state?* — and it wants the sweep above as its input, not four
+files as its subject. Deliberately left out of sprint 72 and re-scoped here rather than sized on a
+premise the measurement had already refuted.
+
 ## Not in scope
 
 Re-litigating STORY-222's tier decision — it was correct for the article as a whole and was

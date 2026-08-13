@@ -1957,7 +1957,20 @@ stories:
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-173-dynamo-container-leak.md   # written 2026-08-13; re-verified -- conftest.py still has NO reaping logic
-    status: draft   # OBSERVED 2026-07-28 during the sprint-62 baseline gate, twice.
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. PENDING PO LOCK.
+                    # The placement question is SETTLED BY MEASUREMENT, not preference:
+                    # resolve_dynamo returns at scripts/dynamo_local.py:335-337 when
+                    # DYNAMO_ENDPOINT_URL is set -- WHICH IS THE GATE'S OWN CONFIGURATION -- so a
+                    # reaper placed after that short-circuit would be dead code exactly where it is
+                    # needed. It reaps BEFORE the short-circuit. That is STORY-179's AC8 trap
+                    # (a URL-set run stays green through total breakage) caught at planning this
+                    # time rather than at review.
+                    # AC2 carries the weight: the three NEGATIVES (live-PID container untouched,
+                    # non-matching name NEVER removed, no broad `rm -f`) are shown-RED requirements.
+                    # The gate's own long-lived container `uptime_dynamo_8021` sits OUTSIDE the
+                    # fixture pattern, so an over-broad reaper would destroy it mid-run.
+                    # ORIGINAL FILING BELOW.
+                    # OBSERVED 2026-07-28 during the sprint-62 baseline gate, twice.
                     # Repro: start `yt_gate.py`, kill it mid-pytest (e.g. a 10-min tool
                     # timeout). The session-scoped `dynamo_local` fixture
                     # (backend/tests/conftest.py) leaves its container running
@@ -1969,6 +1982,8 @@ stories:
                     # containers matching its own name pattern whose owning PID is dead, at
                     # session start — a SCRIPT-level fix, not a prose warning. Same family as
                     # STORY-080 (dev_db CLI port collision, sprint-44 gate contention).
+    points: 2       # ESTIMATED 2026-08-14 at sprint-72 planning. The reap itself is small; the
+                    # weight is AC2's three negatives, not the happy path.
     type: defect
     sprint: null
   - id: STORY-172
@@ -3418,7 +3433,23 @@ stories:
     title: The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
-    status: draft   # FILED 2026-08-06 during STORY-206's DoD gate, REQUIRED by the 2026-07-06
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. PENDING PO LOCK.
+                    # THE SEAM WAS MEASURED, which is what bounds the estimate: `user.type()` on a
+                    # datetime-local field types 16 chars, and userEvent.setup()'s default inserts
+                    # an AWAITED macrotask between every keystroke -- 32 real yields per test, plus
+                    # MSW round-trips, all inside a default 5000ms findBy timeout, while 50 other
+                    # jsdom environments compete. CONTAINED: 10 such call sites across 5 tests, ALL
+                    # in MaintenancePage.test.tsx (:286,287,332,333,366,367,399,400,437,438); no
+                    # other test file in the suite types a datetime-local value.
+                    # AC2 FORBIDS the three hiding fixes (raise a timeout, pin
+                    # --no-file-parallelism, add a retry) and BLOCKS for a PO decision if one turns
+                    # out to be the only option. AC3 is the one that matters: mutation-prove the 5
+                    # affected tests STILL FAIL when the 422 render breaks -- a faster input path
+                    # that quietly stops asserting is worse than the flake.
+                    # RISK CARRIED INTO THE SPRINT: it went 0-in-3 across sprint 71's full gate
+                    # runs. AC1 permits an HONEST NEGATIVE and does not let it block.
+                    # ORIGINAL FILING BELOW.
+                    # FILED 2026-08-06 during STORY-206's DoD gate, REQUIRED by the 2026-07-06
                     # agreement: "a gate that can flake is filed as a defect so the mechanical
                     # floor stays trustworthy -- a flaky gate is never left as the standing gate."
                     # `npm test` exited 1 with 2 failures in MaintenancePage.test.tsx (inline-422
@@ -3430,8 +3461,9 @@ stories:
                     # (1-in-11, list_components pagination). Two is the thing to notice.
                     # REFINEMENT TRAP: pinning --no-file-parallelism is NOT free -- measured
                     # 205s serialized vs 93s parallel.
-    points: null    # unestimated -- refinement must first reproduce it on demand and measure a
-                    # hit rate, the way STORY-213's 1-in-11 was measured
+    points: 3       # ESTIMATED 2026-08-14 at sprint-72 planning. Held at 3 by the containment
+                    # above; AC1/AC4 (measured before and after, in the gate's own load shape) and
+                    # AC3 (mutation proof) are what it buys, not the edit itself.
     priority: 60    # above the tooling backlog: it can make a CORRECT story look red, and it
                     # trains people to discount reds
     type: defect
@@ -3543,7 +3575,27 @@ stories:
     title: An entire second test suite exists and the DoD gate does not run it — 7 skill-level modules, including the two guards that have already caught real defects
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
-    status: draft   # FILED 2026-08-13 by the sprint-71 PRE-LOCK PLAN VERIFIER, while checking a
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 10 AC written. PENDING PO LOCK.
+                    # *** SHAPE DECIDED ON MEASURED BLAST RADIUS, and it is not close. ***
+                    #   (a) 9th DoD command -> edits .scrum/definition-of-done.md + CLAUDE.md, both
+                    #       in NO article's code_refs. RADIUS ZERO.
+                    #   (b) extend testpaths  -> edits pyproject.toml, a code_ref in FOUR VERIFIED
+                    #       map articles, each of which A18 forces re-verified in-story.
+                    #   (c) mirror repo-scope guards -> leaves test_template_parity (the A19
+                    #       catcher, the more valuable one) outside the gate.
+                    # (a) CHOSEN. yt_selftest measured at HEAD fa5507d: 89 tests, 4.84s, exit 0,
+                    # stdlib-only (no tooling-freeze problem).
+                    # THE .scrum/ EDIT IS THE ORCHESTRATOR'S, NOT THE IMPLEMENTER'S -- STORY-222
+                    # AC7 precedent; subagents never write .scrum/, including via git stash.
+                    # AC3 IS THE PROOF THAT MATTERS: shown RED **at the gate**, not at yt_selftest.
+                    # The defect is "the gate does not run it", so a yt_selftest red proves nothing.
+                    # AC7/AC8 fold in the two owed one-liners (CLOSED_STATUSES reuse at
+                    # test_backlog_story_parity.py:155; a next_story_id assertion) -- they live in
+                    # the files this story already opens, so they ride along rather than becoming
+                    # stories.
+                    # CONSEQUENCE TO EXPECT: gate evidence reads 9/9 after this lands, not 8/8.
+                    # ORIGINAL FILING BELOW.
+                    # FILED 2026-08-13 by the sprint-71 PRE-LOCK PLAN VERIFIER, while checking a
                     # STORY-192 claim about where a new encoding guard should live. The claim was
                     # false, and the reason is bigger than the story that raised it.
                     # MEASURED: pyproject.toml:29 sets testpaths = ["backend/tests"], and
@@ -3567,8 +3619,10 @@ stories:
                     # architecture-boundary, config-layer, sample-mode) -- staling all four in-story
                     # under A18. Measure that before choosing option (b). See the story file for the
                     # three shapes and the refinement bias.
-    points: null    # unestimated -- refinement must pick the shape AND measure the pyproject.toml
-                    # blast radius, plus confirm the skill suite passes standalone and time it
+    points: 3       # ESTIMATED 2026-08-14 at sprint-72 planning. The code change is small (one DoD
+                    # line, a discovery assertion, two one-liner fixes); the estimate is carried by
+                    # AC3 (gate-level shown RED in a scratch clone) and AC5 (the gate must not red
+                    # on routine board bookkeeping, proven BOTH ways).
     priority: 15    # high: it is the mechanical floor failing to be mechanical
     type: defect
     sprint: null
@@ -3584,10 +3638,26 @@ stories:
                     #   .dockerignore              -> NO article
                     #   scripts/create_tables.py   -> NO article
                     #   (scripts/seed_topology.py  -> zone-rules.md, still hooked)
-                    # infra/stack.yaml is NOT dormant: 16KB, actively maintained, and CFN-LINT RUNS
-                    # IT AS ONE OF THE EIGHT DoD GATE COMMANDS ON EVERY RUN. A file in no code_refs
-                    # has ZERO forward blast radius -- change it however you like and no article is
-                    # ever flagged, because no article claims to describe it.
+                    # infra/stack.yaml is 16KB and CFN-LINT RUNS IT AS ONE OF THE EIGHT DoD GATE
+                    # COMMANDS ON EVERY RUN. A file in no code_refs has ZERO forward blast radius --
+                    # change it however you like and no article is ever flagged, because no article
+                    # claims to describe it.
+                    # *** 2026-08-14 (sprint-72 planning): THE SWEEP THIS STORY DEMANDED WAS RUN,
+                    # AND IT REFUTES TWO OF THE STORY'S OWN PREMISES. NOT sized; NOT in sprint 72.
+                    #   1. The gap is 68 UNHOOKED FILES of 281 gated ones, not the 4 named here
+                    #      (42 in backend/tests/, 9 in tools/, 9 across backend/src/, 2 scripts/,
+                    #      2 repo-root, infra/ and config/ 1 each). So it is repo-wide and mostly
+                    #      PREDATES STORY-222 -- "a localized gap 222 created" does not survive.
+                    #   2. "actively maintained" does NOT hold: infra/stack.yaml has FIVE commits
+                    #      total, the last being c05fc57 (STORY-089), and ZERO in the last 60 days.
+                    #      Dockerfile has 2, last f6ed358. "Gated every run" is true and is a
+                    #      different claim.
+                    # With the stack decommissioned and no redeploy decision, option (a)'s own test
+                    # -- "check whether anyone will maintain it; an unmaintained map article is
+                    # worse than an honest gap" -- currently answers NO. The real question is a
+                    # POLICY one (what does code_refs coverage mean when 68 gated files have none?)
+                    # and it wants that sweep as its input, not four files as its subject.
+                    # Re-scoped in the story file. ***
                     # A REAL LOSS, NOT THEORETICAL: before STORY-222 these files carried ten
                     # ENFORCED citations at baseline: 0 -- pinned and clean. That pin is gone.
                     # THE TENSION TO RESOLVE: the article described TWO things -- what the TEMPLATE

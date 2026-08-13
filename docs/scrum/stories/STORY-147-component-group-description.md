@@ -23,12 +23,32 @@ Add two optional fields to a component's config declaration and carry them throu
 existing vertical slice to the HTTP surface:
 
 ```
-ComponentConfig (composition/config.py:57)
-  → seed_dynamo.py:42  (persist on the COMPONENT# item)
-  → Component          (core/domain/component.py:22)
-  → Dynamo component repository (read back)
-  → ComponentDTO       (api/v1/components/models.py:12)
+ComponentConfig      → seed (persist on the COMPONENT# item)
+  → Component        → Dynamo component repository (read back)
+  → ComponentDTO     → GET /api/v1/components
 ```
+
+### *** CITATIONS RE-VERIFIED 2026-08-14 at sprint-72 planning (HEAD `fa5507d`) ***
+
+This story was written at sprint-62 planning and STORY-146 has since reshaped `config.py`. **Use
+this table; the line numbers written elsewhere in this file are from 2026-07-28.**
+
+| Written in this story | Actually, at `fa5507d` |
+| --- | --- |
+| `ComponentConfig` at `composition/config.py:57` | **`backend/src/composition/config.py:180`** (`model_config = ConfigDict(frozen=True)`, `id`/`name`/`monitors`) |
+| the `try/except (TypeError, ValueError)` at `config.py:343-357` | **`load_config` is `config.py:567`; the `except (TypeError, ValueError)` → bare `ValueError(f"Invalid config in {yaml_path.name}: …")` is `config.py:650-651`** |
+| `seed_dynamo.py:42` | **`backend/src/composition/seed_dynamo.py:41-56`** — the components `update_item` with `if_not_exists` on status |
+| `Component` at `core/domain/component.py:22` | **unchanged — `:22`** ✔ |
+| `ComponentDTO` at `api/v1/components/models.py:9-16` | **unchanged — `:9-16`, and the file is exactly 16 lines** ✔ |
+
+**AC1's pattern is no longer novel — it is now the established idiom in this file, which is what
+retires the risk that sank this story's first draft.** `config.py:589-594` documents it in prose:
+*"The last four checks run OUTSIDE the `except (TypeError, ValueError)` block below, so their named
+subclasses (all `ConfigError`) survive to the caller — a pydantic `model_validator` cannot do this
+(probed twice, independently)."* The `ConfigError` hierarchy AC1 depends on exists at
+`config.py:97-123` (`ConfigError`, plus `FlatSignalsRejectedError`, `UndeclaredLocationAliasError`,
+`InvalidFreshnessError`, `DuplicateAppIdError`). **STORY-146 is `done`**, so AC1's stated dependency
+is discharged; add `InvalidComponentFieldError` alongside those.
 
 Normal dependency direction; no boundary risk.
 
