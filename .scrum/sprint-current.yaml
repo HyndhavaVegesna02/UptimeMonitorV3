@@ -1,6 +1,6 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 71
-status: review     # none | planning | active | review | closed | aborted | parked
+status: closed     # none | planning | active | review | closed | aborted | parked
 goal: >-
   Every check the DoD gate runs, and every document a session loads, is either true or visibly
   stale. Nothing in the floor reports a result it did not measure.
@@ -13,6 +13,50 @@ plan: docs/scrum/sprints/2026-08-13-sprint-71/plan.md
 branched_from: >-
   sprint-70 HEAD 7a82104 ("sprint 71 v2: RE-PLANNED after verification returned RE-PLAN").
   Sprints 66-71 ALL STAY UNMERGED; nothing touches main.
+
+po_review:
+  date: 2026-08-14
+  verdict: "accept all 5, approve A20"
+  accepted: "STORY-222 (3), STORY-179 (3), STORY-213 (2), STORY-201 (1), STORY-189 (1) = 10/10"
+  amendment_approved: >-
+    A20 -- the gate ignores orchestrator-owned paths when judging tree cleanliness.
+    LANDED at the SCRIPT rung in .claude/skills/yourteam/scripts/yt_gate.py: tree_state() now
+    returns a THIRD list, and modified `.scrum/` paths are reported individually as
+    "orchestrator-owned ... NOT gating" instead of refusing. Every other modified tracked file
+    still refuses, unchanged.
+    GUARDED by OrchestratorOwnedPathsTests in scripts/tests/test_yt_gate.py, SHOWN RED against the
+    pre-A20 behaviour (mutating _ORCHESTRATOR_OWNED_PREFIXES to () fails 3 of 5). The 2 that stay
+    green are the teeth-tests asserting the NEGATIVE -- a path outside `.scrum/` still gates, and
+    lookalikes (`.scrumtools/`, `docs/.scrum/`, `scrum/`) are not owned -- which is exactly why
+    they hold in both worlds and why they matter: without them, "ignore .scrum/" could widen to
+    "ignore everything" unnoticed.
+    Renames are judged on the DESTINATION; `UU` conflicts on a `.scrum/` path are informational too.
+    NO template drift risk: yt_gate.py exists in one place only, and template parity covers
+    agents/hooks/checklists, not scripts -- checked, per A19's lesson.
+  a20_shipped_a_bug: >-
+    *** A20'S OWN GUARD SHIPPED WITH THIS SPRINT'S DOMINANT DEFECT, caught by RUNNING the gate for
+    real rather than trusting its unit tests. Recorded, not tidied away. ***
+    The first implementation sliced the porcelain line at a fixed offset (line[3:]). But git()
+    calls .strip() on the WHOLE output, so the FIRST status line of a run loses its leading space:
+    " M .scrum/x" arrives as "M .scrum/x", the slice ate the leading ".", and .scrum/ stopped
+    matching -- the gate refused on an orchestrator-owned path, which is precisely what A20 exists
+    to prevent. Five unit tests were GREEN; every one fed idealised 3-char prefixes the real
+    wrapper never produces, pinning my mental model of the input rather than the input.
+    It surfaced only because the first live run had THREE dirty files, so the .scrum/ line was not
+    first and kept its space. The second had only .scrum/ dirty -- the bug needed exactly the case
+    A20 was built for in order to appear.
+    FIXED at 2b456e0's follow-up: split on whitespace, plus a test driving tree_state end-to-end
+    through a real temporary git repo. BOTH new tests shown RED against the shipped slice.
+    VERIFIED LIVE END-TO-END: with only .scrum/sprint-current.yaml modified, the gate now exits 0,
+    reports "1 orchestrator-owned path(s) modified, NOT gating", and runs 8/8 -- 816 passed,
+    contracts 9 kept / 0 broken.
+  stash_disposal: >-
+    PO chose "drop it with capture" for the abandoned 2026-07-14 STORY-017 stash. Captured to
+    docs/scrum/sprints/2026-08-13-sprint-71/stash-story-017-phase0-spike.captured.patch.md (full
+    4-file diff + metadata + supersession reasoning), verified complete, then dropped. Recorded on
+    STORY-017's archived backlog entry. Every hunk was verified superseded first: install_cors is
+    ACTIVELY UNWANTED, cors_allowed_origins patches the POSTGRES-era Settings class, boto3 is
+    already at pyproject.toml:16. It was based on a commit whose parent is "supersede STORY-017".
 
 lock_record:
   locked: 2026-08-13

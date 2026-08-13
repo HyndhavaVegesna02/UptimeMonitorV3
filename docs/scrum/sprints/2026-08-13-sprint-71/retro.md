@@ -99,6 +99,29 @@ points. Definition of Ready exists to prevent exactly that.
 **No amendment: the mechanism caught it before lock, which is what it is for.** Recorded because the
 failure was mine and the board should say so — the same disposition as sprint 70's AC7 miss.
 
+## 3a. Postscript — A20's own guard shipped with the dominant defect
+
+**Written after landing A20, and left here rather than tidied away.**
+
+A20's first implementation sliced the porcelain status line at a fixed offset
+(`line[3:]`). But `git()` calls `.strip()` on the whole output, so the **first** status line of a
+run loses its leading space — ` M .scrum/x` arrives as `M .scrum/x`, the slice ate the leading `.`,
+and `.scrum/` silently stopped matching. **The gate refused on an orchestrator-owned path: exactly
+what A20 exists to prevent.**
+
+Five unit tests were green. Every one of them fed idealised three-character porcelain prefixes
+**that the real wrapper never produces.** They pinned my mental model of the input, not the input.
+
+It surfaced only because the first live run had three dirty files, so the `.scrum/` line was not
+first and kept its leading space — A20 looked correct. The second run had only `.scrum/` dirty,
+making it the first line. **The bug needed exactly the case A20 was built for in order to appear.**
+
+This is §2's finding — a proof aimed at the wrong target — committed by the orchestrator, minutes
+after writing §2. It is also the clearest argument that §2 needs no amendment: no prose rule would
+have caught it, and what did catch it was **running the thing for real instead of trusting its
+tests**. The fix adds a test that drives `tree_state` end-to-end through a real temporary git repo,
+both tests shown RED against the shipped slice.
+
 ## 4. Estimates
 
 All five landed at their estimate. Four needed fix rounds, but every one was triggered by a defect
