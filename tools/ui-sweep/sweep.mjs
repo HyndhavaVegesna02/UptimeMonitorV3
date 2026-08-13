@@ -62,7 +62,11 @@ function attachCapture(page, evidence) {
 }
 
 function newEvidence() {
-  return { consoleErrors: [], failedRequests: [], pageErrors: [] }
+  // baseUrl is recorded per-evidence-file so an artifact says which host it
+  // describes -- BASE_URL is environment-dependent (UI_SWEEP_BASE_URL or the
+  // local-dev-server default), not the fixed CloudFront domain this tool
+  // originally hard-coded (STORY-222).
+  return { baseUrl: BASE_URL, consoleErrors: [], failedRequests: [], pageErrors: [] }
 }
 
 function writeEvidence(name, evidence) {
@@ -311,6 +315,7 @@ async function main() {
     console.error(`Usage: node sweep.mjs <${Object.keys(PHASES).join('|')}>`)
     process.exit(1)
   }
+  console.log(`ui-sweep: BASE_URL=${BASE_URL} phase=${phase}`)
   const browser = await chromium.launch({ headless: true })
   try {
     await fn(browser)
