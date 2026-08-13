@@ -123,6 +123,56 @@ def _fake_docker_run(cmd, **kwargs):
     return subprocess.CompletedProcess(cmd, 0, "container_id\n", "")
 
 
+def test_docker_port_mapping_raises_runtime_error_on_malformed_output(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 fix round, MINOR 1: a `docker port` output with no `:` (e.g.
+    "no mapping found") made `int(port_str)` raise a bare `ValueError` --
+    inconsistent with the contextual `RuntimeError`s raised beside it, and
+    with none of their diagnostic naming.
+    """
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "port"]:
+            return subprocess.CompletedProcess(cmd, 0, "no mapping found\n", "")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="malformed_output_container"):
+        dynamo_local._docker_port_mapping("malformed_output_container")
+
+
+def test_start_container_cleans_up_on_malformed_port_mapping(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 fix round, MINOR 1: `start_container`'s mismatch branch
+    (`:147`) calls `stop_container`, but a malformed `docker port` output
+    propagated straight out of `_docker_port_mapping` without that cleanup,
+    leaving the container running.
+    """
+    rm_calls = []
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "rm"]:
+            rm_calls.append(cmd)
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[:2] == ["docker", "run"]:
+            return _fake_docker_run(cmd, **kwargs)
+        if cmd[:2] == ["docker", "port"]:
+            return subprocess.CompletedProcess(cmd, 0, "no mapping found\n", "")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError):
+        dynamo_local.start_container("fake_container_malformed_mapping")
+
+    # One `docker rm` up front (the pre-emptive cleanup at the top of
+    # start_container) plus one AFTER the malformed mapping is discovered.
+    assert len(rm_calls) >= 2, f"expected a cleanup rm after failure, got {rm_calls}"
+
+
 def test_start_container_raises_on_port_mapping_mismatch(
     monkeypatch: pytest.MonkeyPatch,
 ):

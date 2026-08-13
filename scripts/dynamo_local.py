@@ -98,7 +98,17 @@ def _docker_port_mapping(name: str, container_port: int = 8000) -> int:
     # One line per bound address family, e.g. "0.0.0.0:18007\n[::]:18007\n".
     first_line = output.splitlines()[0]
     _, _, port_str = first_line.rpartition(":")
-    return int(port_str)
+    try:
+        return int(port_str)
+    except ValueError as exc:
+        # STORY-179 fix round, MINOR 1: a bare `ValueError` here (measured:
+        # "invalid literal for int() ... 'no mapping found'") was
+        # inconsistent with the contextual `RuntimeError`s raised beside it
+        # and named neither the container nor the raw output.
+        raise RuntimeError(
+            f"docker port lookup for container {name!r} returned "
+            f"unparseable output: {output!r}"
+        ) from exc
 
 
 def _is_bind_failure(docker_output: str) -> bool:
@@ -167,7 +177,14 @@ def start_container(name: str) -> int:
                 )
             continue
 
-        actual_port = _docker_port_mapping(name)
+        try:
+            actual_port = _docker_port_mapping(name)
+        except RuntimeError:
+            # STORY-179 fix round, MINOR 1: the mismatch branch below cleans
+            # up via `stop_container`; a `_docker_port_mapping` failure
+            # (e.g. malformed output) did not, leaving the container running.
+            stop_container(name)
+            raise
         if actual_port != candidate:
             stop_container(name)
             raise RuntimeError(
