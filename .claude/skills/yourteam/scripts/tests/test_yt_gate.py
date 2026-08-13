@@ -297,6 +297,59 @@ class OrchestratorOwnedPathsTests(unittest.TestCase):
         """`UU` is a conflict, not a code change — same reasoning applies."""
         self.assertTrue(yt_gate.is_orchestrator_owned("UU .scrum/backlog.yaml"))
 
+    def test_leading_space_stripped_by_git_wrapper_is_still_matched(self):
+        """*** THE ONE THAT WOULD HAVE CAUGHT THE REAL BUG. ***
+
+        `git()` does `.strip()` on the WHOLE output, so the FIRST status line of a
+        run arrives without its leading space: ` M .scrum/x` becomes `M .scrum/x`.
+        A20 shipped with a `line[3:]` slice, which then ate the leading `.` and
+        stopped matching — invisible to every other test here, because they all fed
+        idealised 3-char prefixes the real wrapper never produces.
+
+        Falsified by: reintroducing a fixed-offset slice in `_status_path`.
+        """
+        for line in (
+            "M .scrum/sprint-current.yaml",  # leading space stripped (first line)
+            " M .scrum/sprint-current.yaml",  # leading space intact (later line)
+            "MM .scrum/backlog.yaml",
+            "?? .scrum/new.yaml",
+        ):
+            with self.subTest(line=line):
+                self.assertTrue(yt_gate.is_orchestrator_owned(line), repr(line))
+
+    def test_tree_state_against_a_real_git_repo(self):
+        """End-to-end through the real `git()` wrapper, not synthetic strings.
+
+        The unit tests above pin the parser; this pins the whole path, including
+        the `.strip()` that broke it.
+        """
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            run = lambda *a: subprocess.run(  # noqa: E731
+                ["git", *a], cwd=root, capture_output=True, text=True, check=True
+            )
+            run("init", "-q")
+            run("config", "user.email", "t@t")
+            run("config", "user.name", "t")
+            (root / ".scrum").mkdir()
+            (root / ".scrum" / "board.yaml").write_text("a: 1\n", encoding="utf-8")
+            (root / "code.py").write_text("x = 1\n", encoding="utf-8")
+            run("add", "-A")
+            run("commit", "-qm", "init")
+
+            # Only the orchestrator-owned file is modified -> must NOT gate.
+            (root / ".scrum" / "board.yaml").write_text("a: 2\n", encoding="utf-8")
+            dirty, _, owned = yt_gate.tree_state(root)
+            self.assertEqual(dirty, [], f"orchestrator-owned path gated: {owned}")
+            self.assertEqual(len(owned), 1, owned)
+
+            # A real code file is modified too -> must gate, owned still split out.
+            (root / "code.py").write_text("x = 2\n", encoding="utf-8")
+            dirty, _, owned = yt_gate.tree_state(root)
+            self.assertEqual(len(dirty), 1, dirty)
+            self.assertIn("code.py", dirty[0])
+            self.assertEqual(len(owned), 1, owned)
+
     @staticmethod
     def _partition(status_lines):
         untracked = [ln for ln in status_lines if ln.startswith("??")]

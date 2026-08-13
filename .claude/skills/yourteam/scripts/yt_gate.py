@@ -131,8 +131,17 @@ def _status_path(line: str) -> str:
     Porcelain v1 is `XY <path>`, with a rename as `XY <old> -> <new>`; the
     destination is what matters. Quoted paths (non-ASCII, spaces) keep their
     quotes — harmless here, since we only prefix-match a known ASCII directory.
+
+    *** DO NOT slice at a fixed offset. *** `git()` calls `.strip()` on the whole
+    output, so the FIRST line of a run loses its leading space: ` M .scrum/x`
+    arrives as `M .scrum/x`. A `line[3:]` slice then eats the leading `.` and
+    `.scrum/x` silently stops matching — which is precisely the bug this function
+    shipped with, caught only by running the gate for real against a tree dirtied
+    by exactly one `.scrum/` file. Split on whitespace instead; the status code is
+    always a 1-2 char non-space token.
     """
-    path = line[3:] if len(line) > 3 else ""
+    parts = line.strip().split(None, 1)
+    path = parts[1] if len(parts) > 1 else ""
     if " -> " in path:
         path = path.split(" -> ", 1)[1]
     return path.strip().strip('"').replace("\\", "/")
