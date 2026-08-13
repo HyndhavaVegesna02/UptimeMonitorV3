@@ -70,17 +70,49 @@ docstring describe the current, narrower truth and cite STORY-152 as the story t
 
 ## Acceptance Criteria
 
-- [ ] **AC1** — `demo-engine.md`'s `code_refs` include every file under `tools/demo_loop_gate/` and
-      its tests. `verified_sha` is bumped only after the article's Facts are actually checked against
-      those files — a re-stamp without a read is exactly what the protocol forbids.
+> **⚑ RE-SCOPED 2026-08-13 (equilibrium pass + sprint-71 planning). THREE GAPS → TWO.**
+> **AC1 IS ALREADY SATISFIED — do not redo it.** `demo-engine.md`'s `code_refs` now list all nine
+> `tools/demo_loop_gate/` files (verified: `ls tools/demo_loop_gate/` returns exactly those nine).
+> A later sprint's blast-radius work closed it. AC1's *mechanism* is also doubly obsolete:
+> `verified_sha` was retired by wiki-protocol 2.3.0 and the baseline is now derived from the
+> article's own last commit.
+> **Both remaining citations had drifted** and are corrected in AC3/AC4 below.
+
+- [x] **AC1** — ~~`demo-engine.md`'s `code_refs` include every file under `tools/demo_loop_gate/`~~
+      **Already satisfied before this story starts.** Confirm with `ls` and record the check; make no
+      edit to `demo-engine.md`. **Touching it would reset its derived staleness baseline for nothing** —
+      the precise error this project spent sprint 70 learning to avoid.
 - [ ] **AC2** — `python .claude/skills/yourteam/scripts/yt_wiki.py` passes all four checks (sweep,
-      Facts coverage, link lint) after the change.
+      Facts coverage, link lint, integrity) after the change.
 - [ ] **AC3** — `vendor_health.py`'s docstring states what the code does: a healthy id logs at INFO,
       and the loud WARNING is reserved for drift and probe failure. The preserved intent stays; the
       false absolute goes.
-- [ ] **AC4** — `availability/models.py`'s **`gap_verdicts`** (`:36-37`) docstring describes the current
-      observed-locations behaviour and its limitation, and names **STORY-152** as the story that
-      changes it. No behavioural change, no test change beyond docstring assertions if any exist.
+      ⚑ **The claim is at `:77`, not `:85-86` as filed** — the citation drifted; re-derive before editing.
+- [ ] **AC4** — `availability/models.py`'s docstring describes the current observed-locations
+      behaviour and its limitation, and names **STORY-152** as the story that changes it. No
+      behavioural change, no test change beyond docstring assertions if any exist.
+      ⚑ **The full path is `backend/src/api/v1/availability/models.py`; `missing_cycles` is at `:37`,
+      `completeness_pct` at `:25`, `distinct_locations` at `:39`.** The filed citation
+      `availability/models.py:36-37` does not resolve from the repo root — it is itself an instance
+      of the defect class STORY-223 exists to fix.
+- [ ] **AC7** — ⚑ **Both docstring edits are LINE-COUNT NEUTRAL.** Replace text in place; do not add
+      or remove lines in either file.
+      **Why this is an AC and not a style note:** `zone-rules.md:751` cites
+      `backend/src/composition/vendor_health.py:70-133`, and AC3's edit at `:77` sits **inside that
+      range**. A line-count change drifts the end bound and pushes this 1-pointer into the STORY-219
+      citation ratchet. Held neutral, no citation in any article moves.
+      Verify with `git diff --stat` — insertions must equal deletions for both files.
+- [ ] **AC8** — ⚑ **The three articles this story stales are closed with a `## History` line each,
+      not a re-verification sweep.** Any diff to a `code_ref` flags the article, so AC3/AC4 will flag
+      `ingest-service-and-pull-loop.md` + `zone-rules.md` (via `vendor_health.py`) and
+      `api-five-file-convention.md` (via `availability/models.py`). **Measured at planning: the
+      exposure is small** — `api-five-file-convention.md` has exactly ONE Fact citing the file and it
+      is symbol-cited (`::AvailabilityDTO`), and the `vendor_health.py` Facts in the other two are
+      almost entirely symbol-based (`::check_vendor_id_health`, `::_extract_count`). Read the Facts
+      that cite the two changed files, confirm they still hold, append the History line. **Do not
+      re-verify these articles wholesale** — that is a different and much larger job.
+      ⚑ **Explicitly re-check `zone-rules.md:751`'s `:70-133` bound still lands correctly** after the
+      edit; it is the one line-numbered citation in the blast radius.
 - [ ] **AC5** — No production behaviour changes anywhere in this story. The diff is docstrings and
       wiki frontmatter only; `git diff` shows no change to any executable statement.
 - [ ] **AC6** — The five backend DoD gate commands exit 0 with pass/skip counts recorded

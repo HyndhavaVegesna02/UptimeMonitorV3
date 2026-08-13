@@ -1,643 +1,195 @@
-# YourTeam active sprint board. No active sprint when status: none.
-sprint: 70
-status: closed     # none | planning | active | review | closed | aborted | parked
+# YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
+sprint: 71
+status: active     # none | planning | active | review | closed | aborted | parked
 goal: >-
-  Every guard the audit shipped is complete and self-checking, and no claim in the catalogue outruns
-  its citation. Sprint 69 gave all eight zone rules a terminal verdict; this sprint closes the
-  RESIDUE those verdicts left behind -- the two places where a shipped guard still rests on a
-  sentence a human must remember (ZR-1's prose maintenance note, ZR-3's src-internal blind spot),
-  the ZR-8 Finding 1 re-affirmation, and the one place where the catalogue's own file:line citations
-  are unenforced. It also lands the evidence-artifact rule at the SCRIPT rung, PO-directed at the
-  sprint-69 review. At close, process-ratchet-brake drops from 9 open to 4, and no ZR
-  finding-residue remains except ZR-7's pagination extraction (STORY-214, deferred with reasons).
-branch: sprint-70
-start_tag: sprint-70-start
+  Every check the DoD gate runs, and every document a session loads, is either true or visibly
+  stale. Nothing in the floor reports a result it did not measure.
+branch: sprint-71
+start_tag: sprint-71-start
 started: 2026-08-13
-mode: in-process   # in-process | external | parallel-waves | debug | parked
-points_committed: 11
-plan: docs/scrum/sprints/2026-08-13-sprint-70/plan.md
+mode: in-process   # implementer + spec reviewer + quality reviewer per story (PO-decided 2026-08-13)
+points_committed: 10
+plan: docs/scrum/sprints/2026-08-13-sprint-71/plan.md
 branched_from: >-
-  sprint-69 HEAD (a360e50), NOT main. Sprints 66, 67, 68 and 69 all remain unmerged by standing PO
-  directive; sprint 70 continues that chain.
+  sprint-70 HEAD 7a82104 ("sprint 71 v2: RE-PLANNED after verification returned RE-PLAN").
+  Sprints 66-71 ALL STAY UNMERGED; nothing touches main.
 
-po_review:
-  date: 2026-08-13
-  verdict: >-
-    "accept all 5, approve A19" -- ALL FIVE STORIES ACCEPTED (11 of 11 points). The ONE proposed
-    amendment APPROVED and landed at its named rung. ZERO deletions, as proposed.
-    SPRINT 70 STAYS UNMERGED, continuing the standing directive -- sprints 66, 67, 68, 69 and 70
-    are all off main.
-  amendments_landed:
+lock_record:
+  locked: 2026-08-13
+  po_instruction: "fix AC7 and re-check 189's estimate and lock as planned"
+  plan_verification: >-
+    RAN AND RETURNED **RE-PLAN** against v1 -- 3 CRITICAL, 8 MAJOR. v2 is the re-plan. The three
+    findings that reshaped it: (1) 9 of 11 committed points had NO acceptance criteria
+    (STORY-179/173/192 were points:null, status:draft, 12 open questions) -- they were written in
+    FILING shape during the equilibrium pass and put into a sprint unrefined; (2) STORY-192's
+    ~2->~4 rested on a VOID premise, its articles' baseline having already been reset by d9319d8
+    (2026-08-12) with an empty code_ref diff; (3) STORY-173's 3 PRE-DECLARED a wiki blast radius,
+    which plan-verification.md:19 forbids. Two ordering rationales were refuted and REMOVED rather
+    than rewritten. A first verifier dispatch died on the session limit having done no work; this
+    is the second.
+  pre_lock_fixes:
+    - "STORY-222 AC7 reassigned to the ORCHESTRATOR: it edits .scrum/backlog.yaml:1069, and .scrum/
+       is orchestrator-owned -- subagents never write it. The implementer must not touch that file."
     - >-
-      A19 landed at the AGENT DEFINITION rung in all THREE definitions -- .claude/agents/
-      yt-spec-reviewer.md, yt-quality-reviewer.md (after each file's existing "never modify the
-      tree" clause, because this incident wrote into the tree WITHOUT violating that rule -- the
-      write went through a shell redirect, not a git command) and yt-implementer.md (as item 6 of
-      "How you work", renumbered 6-13). Two mechanical clauses: every scratch `cd` written
-      `cd <path> || exit 1`, and no reliance on a `--repo-root`-style default that points at the
-      working tree. Falsified by: any stray file appearing in the repo root from agent scratch work.
-  deletions: >-
-    NONE, as proposed. No rule cleared A15's six-sprint bar that was not already adjudicated in the
-    sprint-68 and sprint-69 retros. Every rule in force FIRED this sprint -- A9 five times, A17
-    three times, A18 four times, the PROOF-LABEL rule three times, and the not-liftable-by-brief
-    clause once (a reviewer refused to delete junk files it had itself created, and reported them).
-  no_amendment_by_design: >-
-    THE SPRINT'S DOMINANT FINDING -- five stories, five proofs that read stronger than they were --
-    was deliberately NOT written as an amendment, and the PO approved that call. The mechanism
-    landed as CODE this sprint: tools/evidence_check.py plus the restored reviewer-independence
-    clause ("a pasted tail is the implementer's evidence, not yours"). A sixth prose restatement of
-    one idea is exactly what the ratchet brake was installed to prevent. If this recurs, the
-    question is whether the TOOL reached the case -- not whether the prose needs strengthening.
-
-po_approval:
-  date: 2026-08-13
-  decision: >-
-    "approve and lock it" -- the recommended 11-point shape, chosen from three offered. The
-    alternatives declined were (a) a pure audit closeout swapping STORY-212 for STORY-214, and
-    (b) an 8-point audit-only sprint leaving headroom to re-scope STORY-179 and re-price the two
-    gate flakes.
-  consequence_accepted: >-
-    STORY-214 -- the LAST remaining ZR finding-residue (ZR-7's six duplicated pagination loops) --
-    does not close this sprint. It is not Definition-of-Ready: it has no story file at all. The
-    risk it carries is latent, not realised: STORY-199's reviewer diffed all five copies against
-    the reference character by character and found zero divergence.
-
-# ---------------------------------------------------------------------------
-# PRE-LOCK PLAN VERIFICATION -- yt-plan-verifier, verdict GAPS, 20 findings, ALL
-# closed in the story files and plan.md BEFORE the PO saw the plan. Full narrative:
-# plan.md "Plan verification". The two that would have cost real time:
-#   F1  STORY-219's AC2 was a NO-OP. It claimed that enforcing only line-numbered
-#       citations would quarantine citation_sweep.py's three documented
-#       false-positive classes. CITATION_RE (:41-44) makes `:(\d+)` MANDATORY, so a
-#       citation without a line number is never extracted at all -- 129 of 129
-#       failures carry one. The filter removed NOTHING, and Risk 1 asserted it as
-#       the mitigation. An implementer would have written it, measured no change,
-#       and been redesigning the story mid-sprint against a locked estimate.
-#       AC2 now filters on PATH RESOLVABILITY, which is what discriminates: 124 of
-#       the 129 are bare filenames that DO carry line numbers.
-#   F4  STORY-219's AC7 was UNSATISFIABLE. It required fixing two known-real drifts
-#       to LOWER config-layer.md's baseline. Both report OK today -- the em-dash
-#       excerpt form at config-layer.md:271-272 is not read as an anchor -- so the
-#       fix moves the count by ZERO. The AC could never have passed.
-# The remaining 18, closed: STORY-217's ZR-8 citation was 100 lines stale after the
-# 2026-08-12 wiki split (:671-678 -> :736) and its AC1 used a token grep that cannot
-# decide its own condition; STORY-218 carried THREE wrong line citations inside the
-# sprint about citation accuracy, and its "converge on config_dir's shape" note would
-# have removed the class attribute harness.py:763 depends on, making its own AC4
-# unsatisfiable; STORY-220 AC7 required bumping verified_sha, deleted repo-wide the
-# day before (d9319d8), and its ">= 9" floor would go red on STORY-155's legitimate
-# port removal; STORY-212 was NOT Definition-of-Ready.
-verification:
-  verdict: GAPS
-  findings: 20
-  all_closed_before_po_saw_plan: true
-  passed_unchanged:
-    - "STORY-219's 129-failure measurement reproduced exactly: 73/18/17/15/2/1/1/1/1, eight articles at zero."
-    - >-
-      STORY-220's discovery rule reproduces pyproject.toml:134-144 entry for entry -- 9 modules from
-      (*_repository.py + watermark.py); the three excluded (clock.py, signal_ingest.py,
-      status_publisher.py) match neither rule.
-    - >-
-      *** STORY-217's expiry condition has NOT fired, so the sprint is NOT oversized. *** No core
-      service imports ComponentRepository or SignalRepository (grep "from src.core.ports"
-      backend/src/core/services/ -> approval.py:17, decide.py:40, ingest_service.py:24 only);
-      "set_status|component_repo|signal_repo" across core/services/ -> EMPTY.
-    - "Execution order 217 -> 220 -> 218 -> 219 -> 212 independently confirmed correct."
-  order_rationale_corrected: >-
-    The plan reached the right order for a partly wrong reason. STORY-218 is NOT "independent of the
-    wiki chain": it edits settings.py (cited by line at zone-rules.md:309,:415 and
-    zone-rules-history.md:518,:532,:564), harness.py (zone-rules.md:517,:913 + five in the history
-    file), and test_settings.py:30 -- which carries one of only EIGHT anchor-checked citations
-    repo-wide. It must precede STORY-219 because it shifts lines in three line-cited files.
-    Separately, the sprint's third contract-sensitivity justification was WITHDRAWN: STORY-217 AC2
-    appends to ZR-8's BODY at :736-767, not to the Adjudication row at :878.
-
-# ---------------------------------------------------------------------------
-# THE BINDING SEQUENCING CONSTRAINT -- read before reordering anything.
-# Three stories edit docs/scrum/wiki/zone-rules.md, and STORY-219 FREEZES that file's
-# citation count into a committed baseline. If 219 ran first, STORY-217 and STORY-220
-# would each move the count and fail 219's own ratchet -- each then forced to lower a
-# baseline it did not author, which is exactly the "edit the guard to satisfy the
-# change" shape sprint 69's AC6 forbade. ALL zone-rules.md edits land before the
-# baseline is measured. STORY-212 runs LAST for the opposite reason: its AC7 amends
-# .scrum/checklists/implementer.md and quality-review.md, and landing that mid-sprint
-# would change the rules under this sprint's own remaining stories.
-# ---------------------------------------------------------------------------
+      STORY-189 estimate RE-CHECKED and HELD at 1, but only because AC7/AC8 were added. Measured
+      exposure: api-five-file-convention.md has ONE Fact citing availability/models.py and it is
+      SYMBOL-cited; the vendor_health.py Facts in the other two articles are almost all symbol-based;
+      but zone-rules.md:751 cites `backend/src/composition/vendor_health.py:70-133` and AC3's edit at
+      :77 IS INSIDE THAT RANGE. New AC7 forces both docstring edits LINE-COUNT NEUTRAL (insertions ==
+      deletions), so no citation moves. Without it this is a 3, not a 1.
+  housekeeping_done:
+    - "Stale worktree .claude/worktrees/yourteam-skill-analysis-a29bf1 REMOVED (git worktree remove
+       + prune). Verified safe twice: clean tree, 0 tracked files, HEAD 2f31ec9 reachable from 6
+       branches. It was polluting recursive searches."
+    - "Container uptime_dynamo_8021 restarted and PROVEN ANSWERING: boto3 list_tables() returned in
+       0.66s -- against the 25s timeout that motivated STORY-179."
 
 board:
-  - id: STORY-217
-    title: "Composition still writes to DynamoDB directly -- decide whether topology seeding needs a real write port"
-    points: 1
-    status: done
+  - id: STORY-222
+    title: Record the AWS stack decommission
+    points: 3
     order: 1
-    commits: "f012340 (AC2), 9e02326 (AC1/AC3/AC4), 01c9185 (AC5/AC6) -- on top of the lock commit 500f1e3"
-    verdict: >-
-      EXPIRY CONDITION HAS NOT FIRED, derived independently three times now (sprint-69 planning,
-      sprint-70 plan verification, and the implementer's port-import derivation) with the same
-      answer. Option (b) stands. No production code: AC4 verified by the ORCHESTRATOR, not just
-      self-reported -- `git diff 500f1e3..HEAD -- backend/src/` is 0 lines.
-    orchestrator_verified:
-      - "Tree clean at 01c9185; three story commits present, one per AC group."
-      - "git diff -- backend/src/ = 0 lines (AC4), re-run by the orchestrator."
-      - "grep -rln 'ComponentRepository|SignalRepository' backend/src/core/services/ -> no matches (exit 1), re-run by the orchestrator. AC1's verdict reproduces."
-    gate: "8/8 green, fresh run after the last commit: pytest 743 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint."
+    status: todo
+    file: docs/scrum/stories/STORY-222-record-stack-decommission.md
     note: >-
-      ZR-8 Finding 1 residue. Expected outcome is a DATED RE-AFFIRMATION WITH NO CODE -- AC4 requires
-      git diff over backend/src/ to be EMPTY. AC1 re-derives the expiry condition by PORT IMPORT, not
-      by the old token grep (which cannot see a write method lacking those tokens, and returns 13 hits
-      at HEAD where the story records twelve). If AC1 comes back POSITIVE, AC3 says the story is
-      BLOCKED and re-estimated at 3+ -- a 1-point story may not grow a new core-owned port inside a
-      locked sprint. Edits zone-rules.md :736 (Finding 1) / :767 (expiry condition).
-
-  - id: STORY-220
-    title: "ZR-1's forbidden-module list is maintained by a prose note -- make its completeness a test"
-    points: 2
-    status: done
+      Re-scoped 2->3 at verification: three missing surfaces, one EXECUTABLE
+      (tools/ui-sweep/sweep.mjs:23 hard-codes the dead CloudFront URL) plus CLAUDE.md:144-145's
+      Stack table. AC2 carries two clauses THE TOOL CANNOT ENFORCE -- remove the `status:` line
+      (map-only) and keep the file in the main wiki dir -- proven necessary by a scratch wiki where
+      tier:reference + status:stale passed integrity exit 0, silently leaving AC10 unmet.
+      AC7 is an ORCHESTRATOR action (see lock_record).
+  - id: STORY-179
+    title: dynamo_local port allocation + readiness probe
+    points: 3
     order: 2
-    commits: "12c85ea (AC1/AC2/AC5/AC6), bfc25dc (AC3/AC4), b44f298 (AC7), b131755 (format), 2547bf9 (bookkeeping)"
-    verdict: >-
-      ZR-1's completeness is now a TEST, not a sentence. New guard
-      backend/tests/test_zr1_forbidden_list_completeness.py asserts SET EQUALITY between the
-      contract's forbidden_modules and the ports discovered on disk. Suite 743 -> 749. The
-      "maintained by hand" sentence STORY-206 AC6 required is GONE from zone-rules.md (grep count 0).
-    reality_gate: >-
-      *** THE IMPLEMENTER'S TWO MUTATIONS BOTH LAND IN THE SAME ASSERTION BRANCH, AND IT DISCLOSED
-      THAT RATHER THAN LETTING "both directions" STAND. *** Removing an entry from the contract while
-      its file stays on disk produces the IDENTICAL "On disk but not in the contract" message as
-      adding a file -- so the second branch, "In the contract but not on disk", had never fired.
-      ORCHESTRATOR RE-PERFORMED ALL THREE against the real tree, tree clean after each:
-        A (AC3, re-performed): touch backend/src/core/ports/zzz_repository.py ->
-          1 failed, 5 passed; "On disk but not in the contract: ['src.core.ports.zzz_repository']",
-          second branch EMPTY. Reverted, 0 dirty lines.
-        B (THE BRANCH NEVER SHOWN RED BY THE STORY): add "src.core.ports.ghost_repository" to the
-          contract with no such file -> 1 failed, 5 passed; "In the contract but not on disk:
-          ['src.core.ports.ghost_repository']", FIRST branch empty. Reverted, 0 dirty lines.
-      Both branches of the equality assertion are now proven to fire, and to fire for the right
-      reason. This is why a docstring-recorded proof is not a proof: STORY-212 lands the fix.
-    orchestrator_edit: >-
-      The ZR-1 verdict cell's "shown RED both directions" clause was NARROWED by the orchestrator to
-      name all three mutations and to state which assertion branch each exercises. It was accurate
-      about what was performed but would have read as covering both branches. Under A18, touching the
-      article IS re-verifying it; ZR-1's Facts were re-read first, and
-      test_zone_rules_enforced_by_claims.py stays green (21 passed) -- the row was NOT edited to
-      satisfy the parser, which is the sprint-69 constraint.
-    gate: "8/8 green, fresh run after the last commit: pytest 749 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean (255 files), cfn-lint clean, npm test 363, build, lint."
-    flagged_for_orchestrator: >-
-      Pre-existing and NOT caused by this story: core-pipeline-and-availability.md,
-      deployment-and-infra.md and frontend-zone.md are all "not swept (status=stale)". Carried to the
-      sprint-end wiki compile pass, where stale articles must be rehabilitated or tombstoned.
+    status: todo
+    file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md
     note: >-
-      Depends on STORY-206, DONE in sprint 69. Closes the last hand-maintained prose crutch under a
-      shipped guard. AC7 rewrites the ZR-1 row and DELETES STORY-206 AC6's "maintained by hand"
-      sentence -- so this is the second story to touch zone-rules.md, still before 219 measures.
-      The verified_sha clause in AC7 is DELETED (field dropped repo-wide 2026-08-12, d9319d8):
-      under redrafted A18, touching the article IS re-verifying it.
-
-  - id: STORY-218
-    title: "Settings declares every default TWICE -- and the ZR-3 sweep is structurally blind to it"
+      REFINED at this planning: 8 AC, four open questions settled. KEY FINDING -- the shown-RED does
+      NOT need a WinNAT-reserved port (unreproducible, would block the story by construction); any
+      plain TCP listener that accepts and never answers proves the probe defect deterministically.
+      *** AC8 IS THE ONE NOT TO SKIP: with DYNAMO_ENDPOINT_URL set, resolve_dynamo short-circuits at
+      dynamo_local.py:113-115 and NONE of the changed functions is called, so a gate-env-only run
+      stays green through total breakage. BOTH configurations required. ***
+  - id: STORY-213
+    title: Self-diagnosing pagination assertion
     points: 2
-    status: done
     order: 3
-    commits: "87a4773, c6bf836, c670566, be39b4c, 51a154c, fffd444, c236316 (implementer) + e1e0151 (review fixes)"
-    verdict: >-
-      Each default literal now appears ONCE in backend/src/ (grep-verified by the orchestrator and
-      again by both reviewers). The dataclass field default is canonical; load_settings() reads
-      Settings.<field>. Suite 749 -> 755.
-    reviews:
-      spec: "PASS, zero gaps. AC-to-test trace complete; all 8 gate commands independently re-run."
-      quality: >-
-        FIX_REQUIRED -- 1 MAJOR, 5 MINOR, 2 NIT. Reviewer performed its mutations IN-PROCESS via
-        pytest plugins written to the scratchpad, modifying no repo file -- so race-immunity with
-        the concurrent spec reviewer held by construction, not by luck.
-    the_forbidden_shapes_are_mechanically_guarded: >-
-      Found by the quality reviewer and worth carrying: deleting Settings.dynamo_observations_table
-      in-process (simulating either forbidden shape) reds all THREE blocklist tests with
-      AttributeError at harness.py:773. So AC1's prohibition is not docstring-only -- the existing
-      suite catches a future "tidy". Neither docstring says so.
-    adjudication:
-      fixed:
-        - >-
-          MAJOR: harness.py's corrected comment was cited :755-768 in demo-engine.md AND the story
-          file. The block runs :755-771 -- :768 truncates MID-SENTENCE at "replacing it with the
-          imported", so a reader following the citation reads the tautology caveat as a dangling
-          instruction. Verified at source before fixing. A wrong coordinate landed by the very commit
-          whose stated job was closing citation blast radius, into a tier:map status:verified article.
-        - >-
-          m1: AC5's "proves the tests pin the live path" NARROWED to the defaults test. The five AC3
-          tests red under `del Settings.aws_region` regardless of what they assert (eager default-arg
-          evaluation) -- non-discriminating. The property is true; the reviewer proved it with the
-          per-field fallback-shape flip that DOES discriminate (1 failed/8 passed, five times).
-        - >-
-          m2: AC4's second tail re-recorded as a NO-REGRESSION OBSERVATION, not a proof branch. Both
-          its sides read Settings.<attr>, so they pass identically PRE-FIX too. The claim is carried
-          entirely by the first tail.
-        - >-
-          m3: added test_load_settings_resolves_defaults_from_the_class_attributes_themselves.
-          MUTATION-PROVEN BY THE ORCHESTRATOR: re-introduce the duplication (re-type the literal into
-          load_settings) and then rename ONLY the class default -- the exact original defect restored
-          -- and the new test is the ONLY one that reds (1 failed, 9 passed). All nine others stayed
-          green, which is precisely why the hole was real. Reverted, 0 dirty lines.
-      declined:
-        - >-
-          m4 (falsiness rationale stated three times) and m5 (19-line docstring over an 11-line body):
-          both are real observations, and the reviewer itself noted m5 is consistent with the file's
-          existing STORY-202/215 style. Declining because trimming prose that documents a
-          publish-guard-adjacent decision, in the same sprint that is landing citation enforcement,
-          trades a small readability win for a real risk of losing the reasoning. Not a disagreement
-          on the merits -- a sequencing call.
-        - "Both NITs: existing-pattern objections the reviewer flagged as such."
-    gate: "8/8 green at e1e0151 (full, not --only): pytest 755 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint. Wiki sweep CLEAN after the last commit."
+    status: todo
+    file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
     note: >-
-      The only story touching backend/src/ production code, and it touches the BOOT PATH OF BOTH
-      composition roots (run.py::main and app.py::create_app's lifespan seed) -- a regression here is
-      a startup regression in two processes. AC1 PINS the canonical shape: keep the dataclass field
-      default, have load_settings() read Settings.<field>. The _DEFAULTS-mapping and
-      "converge on config_dir's no-class-default shape" options are FORBIDDEN, because
-      harness.py:763/:770 read those fields AS CLASS ATTRIBUTES and either shape raises AttributeError
-      there, making AC4 unsatisfiable. AC2 covers all FIVE fields by name; config_dir is the hazard --
-      CONFIG_DIR is the entire publish guard.
-
-  - id: STORY-219
-    title: "Wire tools/citation_sweep.py into the gate -- the capability exists and is unenforced"
-    points: 3
-    status: done
+      Was ALREADY refined (6 AC, points 2) and mis-statused draft; promoted at verification. It had
+      been deferred out of v1 on grounds ITS OWN REFINEMENT FORBIDS ("non-reproduction must not block
+      the story -- 35 runs already failed to reproduce it"). MUST FOLLOW STORY-179: its AC3 probes
+      the clean_dynamo_tables fixture that 179 changes, and both may touch conftest.py.
+  - id: STORY-201
+    title: Clickpath normalizer -- use require_field for execution.outcome
+    points: 1
     order: 4
-    commits: "db76941, 55ec873, 1c10409, 80948e9, ebc23f1 (implementer) + 5c8e5f2 (review fixes)"
-    verdict: >-
-      Citation resolution is now ENFORCED inside pytest -- no ninth DoD command. tools/citation_gate.py
-      partitions by path resolvability; backend/tests/test_citation_gate.py carries a committed
-      per-article BASELINE and an equality ratchet. Suite 755 -> 763.
-    what_it_actually_enforces: >-
-      *** 15 of 129, AND THE STORY SAYS SO IN ITS OWN DOCSTRING. *** 113 raw failures are
-      bare-filename ADVISORY (AC2's path-resolvability partition), 1 sits in a tier:reference article
-      AC6 exempts. Content is checked only for the 13 of 198 distinct citations carrying an excerpt
-      anchor. A WRONG-BUT-IN-RANGE LINE NUMBER PASSES -- the story's own motivating occurrence,
-      scripts/seed_topology.py:44, is reported OK today and is named in the docstring as the worked
-      example. Do not let this be re-described later as "citations are checked".
-    reviews:
-      spec: >-
-        PASS, zero gaps, all 9 AC met. Re-derived EVERY count independently rather than trusting
-        prose. Confirmed AC6's exemption reads LIVE frontmatter (not the baseline's own tier field --
-        which would have re-created, one story later, exactly the hand-maintained-list defect
-        STORY-220 just killed). Disclosed that it did not re-run the 3 frontend commands (diff touches
-        no frontend files) instead of claiming 8/8.
-      quality: >-
-        FIX_REQUIRED -- 1 MAJOR, 11 MINOR. Ran NINE in-process probes (M1-M7, P1-P3) against swapped
-        module functions, modifying no repo file, so race-immunity with the concurrent spec reviewer
-        held by construction. Probes confirmed the ratchet is real and not self-measuring, and that
-        article_tier fails CLOSED on empty/absent/BOM/mis-cased frontmatter.
-    adjudication:
-      fixed:
-        - >-
-          *** MAJOR, and the sharpest finding of the sprint. *** The AC1 docstring -- whose ONLY job
-          is stating the enforced scope exactly -- said "8 of 195 distinct citations" carry an anchor.
-          Wrong twice: 195 was the BASE-COMMIT denominator that THIS STORY'S OWN edits to
-          config-layer.md and zone-rules.md moved to 198, and 8 counted the PASSING subset while the
-          sentence described the CHECKED set. Measured at HEAD: 13 of 198, 8 pass 5 fail.
-          THE FIX IS NOT A BETTER NUMBER, IT IS A CHECK --
-          test_ac1_docstring_scope_numbers_are_current re-derives all three live and reds on drift.
-          MUTATION-PROVEN BY THE ORCHESTRATOR: append one anchored citation to an article ->
-          "live measurement says 14 of 199". Reverted, 0 dirty lines.
-          THE DOCSTRING NOW ALSO STATES THE METHOD ("distinct" = per-article dedupe SUMMED, not
-          globally distinct, which is 186). The orchestrator's own first recount got 186 and
-          disagreed with the reviewer's 198 until the dedupe semantics were read -- stating a number
-          without its method is how the first version rotted, and it is the same defect as RC-1.
-        - "m1: assertion message interpolated `msg` not `msg2`, printing the PASSING call's message on the failing call."
-        - >-
-          m2: the BELOW-baseline message asserted its own cause ("paid-down debt -- LOWER the
-          baseline"). Probe P1 showed a classifier change demoting enforced->advisory emits that exact
-          instruction, and following it verbatim bakes in the coverage loss. It now names the
-          alternative and says to read the list first.
-        - >-
-          m4: nothing pinned the enforced/advisory SPLIT. The classifier's only teeth came from the
-          three nonzero baselines and would EVAPORATE once the debt is paid to zero -- exactly when
-          the gate would be trusted most. New test pins a known repo-relative citation into the
-          enforced bucket, independent of any baseline.
-        - "m11: the header now states the headline ratio (15 enforced of 129 raw) so green cannot be misread."
-      declined_and_filed:
-        - >-
-          m5 (bare literal `3` at citation_gate.py:53 should be `len(_FM_DELIM)`) -- the reviewer is
-          RIGHT that this would have avoided growing the permanent ZR-3 exemption list. Declined ONLY
-          because removing the literal cascades into deleting the ZR-3 adjudication entry and
-          re-editing zone-rules.md's 10->9 count in the same change, which is more re-verification
-          than a MINOR earns at the end of a sprint. FILED as a sprint-71 candidate; the adjudication
-          itself is honest and both reviewers confirmed it.
-        - >-
-          m3 (counting ratchet has per-article slack: a fix plus a new drift in the same commit is
-          invisible in the 3 nonzero articles) -- real and bounded (11 of 14 map articles have zero
-          slack). Filed with the content-anchor follow-up, where pinning failure IDENTITIES rather
-          than counts is the natural fix.
-        - "m6-m10 (NamedTuple return, TypedDict baseline, unclosed-frontmatter docstring line, main() docstring, one loose note): recorded, none load-bearing."
-    process_note: >-
-      COMMIT db76941 WAS NOT GREEN ON THE FULL SUITE. citation_gate.py:53's literal `3` collided with
-      the pre-existing ZR-3 duplicate-declaration guard; the implementer had run only the targeted
-      test file, caught it on the full run, and fixed it in the very next commit (1c10409). Final HEAD
-      is green. THE IMPLEMENTER DISCLOSED THIS UNPROMPTED -- it would otherwise be invisible. Carried
-      to the retro as a commit-discipline candidate, NOT a rejection.
-    gate: "8/8 green at 5c8e5f2 (full): pytest 763 passed / 0 skipped, contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363, build, lint. Wiki sweep CLEAN after the last commit."
+    status: todo
+    file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
     note: >-
-      Highest blast radius: it changes what the DoD gate accepts. Runs AFTER all zone-rules.md edits.
-      RE-SCOPED at plan verification and the scope limit is the point -- the tool enforces
-      "path resolves + file long enough"; CONTENT is checked only for the 8 of 195 citations carrying
-      a parenthesized anchor, so A WRONG-BUT-IN-RANGE LINE NUMBER PASSES. The story's own motivating
-      occurrence (v), scripts/seed_topology.py:44, is reported OK today. AC1 requires the test's
-      docstring to SAY that. What keeps the story green is the AC3/AC4 per-article ratchet, NOT AC2.
-      AC6 exempts tier:reference mechanically (wiki-protocol.md:21/:56 already define it as citing no
-      live line; and a ratchet on an append-only article reds on the next appended entry).
-      Content-anchor coverage is a sprint-71 follow-up, deliberately NOT smuggled in at 3 points.
-
-  - id: STORY-212
-    title: "Land the evidence-artifact rule at the SCRIPT rung (mutation + provenance helper)"
-    points: 3
-    status: done
+      Fully independent: touches only adapters/inbound/dynatrace/, blast radius dynatrace-adapter.md
+      alone. Carries an explicit SCOPE LIMIT -- the quarantine-net claim cannot be shown end-to-end
+      (clickpath is absent from _NORMALIZERS) and must be reported as an INFERENCE, not "verified".
+  - id: STORY-189
+    title: Close the two doc/wiki gaps sprint 64 left
+    points: 1
     order: 5
-    commits_round_2: "234dcd4 (CRITICAL+M2+M3), f2caad5 (M4+cheap fixes), 908a894 (M5), c1b28b0 (M6), 67acf41 (wiki)"
-    fix_round_outcome: >-
-      ALL SEVEN CLOSED. Suite 789 -> 800. THE CRITICAL WAS RE-PROVEN BY THE ORCHESTRATOR against the
-      real tool in a throwaway repo, not against its test suite: the SAME import-breaking mutation
-      that previously returned `OK: mutation turned RED: ['_______']` with exit 0 now returns
-      "SELECTOR DID NOT RUN (pytest exit 2) ... NOT a RED proof, and distinct from ZERO RED",
-      exit 1. The false-GREEN is closed.
-      M6's clause is restored and came back STRONGER than it was cut: "Run the tool yourself against
-      the story's diff -- a pasted tail is the implementer's evidence, not yours", plus "never accept
-      a hand-written claim or a pasted tail as a substitute for your own".
-      AC7 STILL HOLDS: implementer.md 115->109, quality-review.md back to its original 126 with
-      different content. Net 241 -> 235, still shorter, with independence intact -- which is the
-      outcome AC7 actually wanted and the line target alone would have missed.
-      THE FIX ROUND FOUND A GENUINE SECOND DEFECT while proving M2's baseline: running pytest twice
-      against the same files hit CPython's second-granularity .pyc mtime cache and silently reused
-      STALE BYTECODE -- a false result inside the proof mechanism itself. Fixed with
-      PYTHONDONTWRITEBYTECODE=1. Nobody was looking for that; the baseline check surfaced it.
-    commits_round_1: "0b1eecb, 8d4438e, d8d58af, b2539f9, 17e4ed6"
-    reviews:
-      spec: >-
-        PASS, all 8 AC met, zero gaps. Verified AC5's three demos reach different mechanisms, AC4's
-        restore is scoped to patch-derived targets, AC6 genuinely calls through to assert_import_root
-        (monkeypatch proof), and AC1's guard walks 128 real files. ALSO DISCLOSED AN INCIDENT AGAINST
-        ITSELF: a silently-failing `cd` in a scratch-repo reproduction wrote target.py and noop.patch
-        into the REPO ROOT. It refused to delete them (its constraints forbid tree modification) and
-        reported them instead. The orchestrator verified both files' contents and removed them; tree
-        clean, HEAD untouched.
-      quality: >-
-        FIX_REQUIRED -- 1 CRITICAL, 6 MAJOR, 10 MINOR. Probed the tool in-process against throwaway
-        git repos. THIS IS THE MOST VALUABLE REVIEW OF THE SPRINT.
-    the_critical: >-
-      *** THE EVIDENCE CHECKER HAS A FALSE-GREEN, WHICH INVERTS THE ONE PROPERTY IT EXISTS FOR. ***
-      tools/evidence_check.py:256-261 scans pytest stdout for a line whose SECOND whitespace token is
-      FAILED or ERROR. Pytest's collection banner is `____ ERROR collecting test_x.py ____` -- second
-      token `ERROR` -- so a collection failure is counted as a RED TEST. Probed end to end with the
-      most ordinary mutation there is (rename the symbol the test imports):
-        turned_red = True; message = "OK: mutation turned RED: ['_______________________']"; exit 0.
-      ZERO TESTS RAN and the tool blessed the proof. It is the SAME CLASS as the PASSED bug the
-      implementer found and fixed mid-build, one layer down -- and it is repo-realistic: zone-rules.md's
-      ZR-4 row records this exact collection-error trap. Compounding it, run_pytest_selectors DISCARDS
-      pytest's exit code (:288), which is the only signal separating "ran, nothing red" from "never
-      ran" (2/3/4/5). A selector naming a nonexistent file returns exit 4 with red=[] and the tool
-      reports "ZERO RED ... UNPINNED" -- a diagnosis it cannot justify, which is A12's own shape, in
-      the file this story just edited.
-    the_other_five_majors:
-      - >-
-        M2 NO BASELINE: check_mutate never runs the selectors BEFORE applying, so "turned RED" cannot
-        be distinguished from "was already red". Probed: a comment-only, behaviour-preserving patch on
-        an already-failing selector returns turned_red=True. This silently defeats the implementer's
-        own test_check_mutate_zero_red_is_a_failure in any tree with an unrelated red test.
-      - >-
-        M3 RESTORE BACKSTOP IS VACUOUS FOR CREATION PATCHES: `git diff -- <targets>` cannot see
-        UNTRACKED files, and a creation patch's target is untracked by construction. Probed: the tool
-        exits 0 claiming a clean restore while the created file is still on disk -- contradicting its
-        own docstring (":29 a failed or incomplete restore also exits non-zero, never a silent pass").
-        Fix: `git status --porcelain -- <targets>`.
-      - >-
-        M4 EMPTY --bad-input IS A VACUOUS PASS: it defaults to "", so an artifact that merely requires
-        an argument is reported "OK -- IS a gate" having been fed NO bad input at all. A vacuous pass
-        mode in the tool whose whole job is rejecting vacuous evidence. test_evidence_check.py:91 pins
-        this as CORRECT and must be flipped.
-      - >-
-        M5 THE AC1 GUARD MISSES THE SHAPE THIS REPO ACTUALLY USES: it matches only `tools`/`tools.*`,
-        but every real tools import here is BARE (`import evidence_check`, `from demo_engine import
-        store`) because conftest.py puts tools/ on sys.path -- INCLUDING evidence_check.py:82 itself.
-        Probed: the guard returns [] on all three bare offenders while both shapes import fine in a
-        real session. The accident it exists to catch -- green in CI, ModuleNotFoundError in the
-        production image -- is precisely the bare form.
-      - >-
-        *** M6 AC7 CUT A REVIEWER-SIDE RULE THE TOOL DOES NOT COVER. *** quality-review.md's
-        "Mutate a computational deliverable YOURSELF -- do not infer pinning from reading" (plus "the
-        independent check THAT IT ACTUALLY HAPPENED") was replaced by "confirm the story ran the
-        subcommand and pasted its tail". That converts an INDEPENDENT ACTION into CONFIRMATION OF THE
-        IMPLEMENTER'S ARTIFACT, and the tool is agnostic about who runs it -- so it is a rule cut
-        WITHOUT a mechanical replacement, the one thing AC7 must not do.
-        THIS REVIEW IS ITS OWN PROOF: had the reviewer only confirmed a pasted tail, the CRITICAL and
-        M2 and M3 would ALL have read as green tails.
-        The orchestrator checked this same diff earlier and passed it -- reading the preserved
-        judgment-call bullets and missing that INDEPENDENCE itself was the casualty. Recorded because
-        the orchestrator's own check was the weaker one.
-    orchestrator_note: >-
-      The sprint's whole thesis, demonstrated against the story that was supposed to end it: a proof
-      that reads stronger than it is. The tool would have blessed invalid proofs, and the checklist
-      edit would have removed the human who catches that. Fix round dispatched rather than shipped or
-      blocked -- the findings are precise and the fixes are small and well-specified.
+    status: todo
+    file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
     note: >-
-      PO-DIRECTED into this sprint at the sprint-69 review (RC-1/RC-7 -- agent evidence died with the
-      agent THREE times in one sprint). Runs LAST because AC7 amends the implementer and
-      quality-review checklists. Refined at this planning: mutate takes a PATCH FILE (git apply /
-      git apply -R -- the only option that cannot half-apply silently, and the only one expressing the
-      multi-line mutations this project's proofs use); it lands in tools/, settled by AC6's reuse of
-      the project-local import_provenance.py::assert_import_root. AC1 needs a NEW concrete test --
-      no existing mechanism covers tools/ (all nine contracts are over src.*). AC4's restore check is
-      scoped to `git diff -- <target>`, never the whole tree.
+      *** DECLARED FIRST-TO-DROP. *** Re-scoped 3 findings -> 2: AC1 is ALREADY SATISFIED
+      (demo-engine.md's code_refs now list all nine tools/demo_loop_gate/ files) and MUST NOT be
+      redone -- touching that article would reset its derived baseline for nothing. Both remaining
+      citations had drifted and are corrected in AC3/AC4. New AC7 (line-count neutral) is what holds
+      the estimate at 1.
 
-# --- Deferred with reasons, so nobody re-litigates them mid-sprint -----------
+execution_order: >-
+  222 -> 179 -> 213 -> 201 -> 189. ONLY ONE CONSTRAINT IS REAL AND IT IS 179 -> 213 (213's AC3
+  probes the fixture 179 changes; both may touch conftest.py and its two articles). 222 goes first
+  because it converts deployment-and-infra.md to a tombstone and discharges one of the three stale
+  articles. 201 and 189 are genuinely independent and are ordered by size, not dependency.
+  *** v1's "not negotiable" 179-before-173 rationale was REFUTED and REMOVED: _free_tcp_port()
+  (:39-45) and unique_container_name() (:48-50) take no shared input. Do not resurrect it. ***
+
+parallelism_ruling: >-
+  Analysed before lock at PO request. FILE AND WIKI FOOTPRINTS ARE DISJOINT except 179/213 (both
+  reach conftest.py -> demo-engine.md + persistence-adapters.md). But the REAL serializer is the
+  GATE, not the files: `python -m pytest` runs the whole suite, so two implementers committing to
+  one branch means each one's gate observes the other's half-finished work, and "green at my commit"
+  -- the acceptance evidence -- stops meaning anything. Worse, STORY-179 CHANGES THE HARNESS every
+  other story gates on. A parallel shape (222 || 201 || 189 in worktrees, then 179 alone, then 213)
+  would save roughly one wave out of five steps while requiring a NEW integration-gate semantics the
+  DoD does not describe. DECIDED: run sequentially. 5 of the 10 points are serial regardless.
+
 deferred:
-  STORY-214: >-
-    Extract the pagination loop, rework the ZR-7 guard (~3). THE LAST ZR FINDING-RESIDUE. Not here
-    because it has NO STORY FILE at all -- not Definition-of-Ready. Also trapped: extracting the
-    helper turns all six compliant call sites RED, forcing the guard rework into the same change.
-    Risk is latent, not realised (all five copies diffed character by character, zero divergence).
-    Write the story file at sprint-71 refinement, size 3. IT MUST NOT SHARE A SPRINT WITH ANY STORY
-    ADDING A NEW PERSISTENCE CALL SITE, or the guard rework and the new site mask each other.
-    Sprint 70 adds none.
-  STORY-211: "Plan on context/token budget. PO-deferred explicitly (\"i will take it up later\"). Unchanged."
-  STORY-213: >-
-    The 1-in-11 pagination flake (2). Did not fire in sprint 68 OR sprint 69. Re-price against the
-    MEASURED 1-in-11, never against the quiet streak. Still filed, not scheduled.
-  STORY-221: >-
-    Frontend gate flake, unestimated. Refinement must first reproduce on demand and measure a hit
-    rate, the way STORY-213's was. Pinning --no-file-parallelism is NOT free: 205s serialized vs 93s.
-  STORY-179: >-
-    MIS-SCOPED, flagged at sprint-69 park. Its documented workaround (point DYNAMO_ENDPOINT_URL at a
-    fixed-port container) CANNOT help test_provide_dynamo_local_teardown_on_failure, which
-    deliberately unsets that variable to force a container spawn. Re-scope before ever scheduling.
-  content_anchor_coverage: >-
-    NEW, filed at this planning from STORY-219's re-scope. Only 8 of 195 wiki citations carry the
-    parenthesized excerpt anchor the tool needs to check content, which is why a wrong-but-in-range
-    line passes. Raising that coverage is a wiki-wide style change across 17 articles plus a decision
-    about the em-dash excerpt form already in use at config-layer.md:271-272. It is the REAL fix for
-    the drift class STORY-219 was filed against, and it is bigger than STORY-219. File at sprint-71.
+  - {id: STORY-192, reason: "NOT READY. Count corrected 218 -> 293; re-baseline premise VOID; its guard-placement choice is a false choice pending STORY-224. Re-refine first."}
+  - {id: STORY-173, reason: "NOT READY -- 4 open questions incl. where the reaper is invoked relative to resolve_dynamo's env short-circuit, and the reap match-pattern."}
+  - {id: STORY-224, reason: "Filed BY this verification; unestimated. The obvious fix edits pyproject.toml, an amplifier code_ref in 4 articles."}
+  - {id: STORY-186, reason: "CAPACITY ONLY. ready at 1pt. Not a judgement about its value."}
+  - {id: STORY-221, reason: "CAPACITY. v1 deferred it on a shared-substrate argument that was simply WRONG -- it lives entirely in frontend/, a zone this sprint does not touch. See risks.frontend_flake: it will fire anyway."}
 
-# --- Gate preconditions -----------------------------------------------------
+risks:
+  gate_env_hides_179: >-
+    STORY-179 modifies the harness the gate runs on, AND the gate env hides it. With
+    DYNAMO_ENDPOINT_URL set, resolve_dynamo returns at dynamo_local.py:113-115 and none of the
+    changed functions is called; REQUIRE_DYNAMO is inert too (conftest.py:52-86 is only reached when
+    plan.source == "skip"). Mitigation is AC8: gate green in BOTH configs.
+  frontend_flake: >-
+    *** STORY-221's flake WILL fire this sprint. *** Measured 2 RED IN 4 at 56491a8 with zero
+    frontend diff, including one failure run ALONE (which breaks the "passes in isolation" limb).
+    npm test is gate command 6 of 8 and this sprint runs the full gate 5+ times.
+    ATTRIBUTION PROTOCOL, BOTH LIMBS, EVERY TIME, BEFORE ANY RED IS DISCOUNTED:
+      (a) confirm `git diff --stat sprint-71-start..HEAD -- frontend/` is EMPTY
+      (b) re-run serialized: `npm test -- --no-file-parallelism` (~205s vs ~93s)
+    Record the discount on the board. NEVER discount silently.
+  no_predeclared_blast_radius: >-
+    plan-verification.md:19 -- AC must not pre-declare wiki blast radius; the mechanical sweep is
+    the sole decider. Run it after EACH story's last commit and take what it returns.
+  reverify_at_dispatch: >-
+    This session found STORY-178 and STORY-189(a) ALREADY FIXED, then the verifier refuted two of
+    v1's own price justifications. The gap between planning and dispatch is where claims die.
+    RE-VERIFY EVERY STORY AGAINST THE LIVE TREE AT DISPATCH.
+
 gate:
-  baseline_verified: >-
-    GREEN at a360e50, measured during plan verification (not asserted): pytest 743 passed / 0 SKIPPED
-    (65.9s), import-linter 9 kept / 0 broken, ruff check clean, ruff format --check 254 files already
-    formatted. Frontend 3 + cfn-lint not run at planning; the full 8/8 at the final HEAD is the
-    evidence of record.
-  required_env: >-
-    DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 and REQUIRE_DYNAMO=1 on EVERY gate run. Container
-    uptime_dynamo_8021 was up 7h at lock. A wrong endpoint under REQUIRE_DYNAMO=1 ERRORS rather than
-    skips -- it looks like a code red and is a setup error. A nonzero SKIP count is an incomplete
-    gate, not a pass.
-  scoping: >-
-    Per-story gates MAY be --only scoped mid-sprint. The FULL 8/8 gate at the final HEAD is mandatory
-    and is the evidence of record. NOTE STORY-178: yt_gate.py exits 0 when --only matches nothing --
-    a false green on the floor. Check the command list it actually ran.
+  commands: "8, per .scrum/definition-of-done.md, all must exit 0, run via yt_gate.py"
+  env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 and REQUIRE_DYNAMO=1 on EVERY run"
+  skip_rule: "A nonzero SKIP count is an incomplete gate, NOT a pass."
+  known_defect: "STORY-178 is CLOSED (verified fixed 2026-08-13) -- yt_gate now exits 4 when --only matches nothing, and strips ANSI before slicing the tail."
+  baseline: >-
+    bfec505/7a82104: yt_selftest exit 0, ruff clean (260 files), yt_wiki sweep/facts/links/integrity
+    CLEAN exit 0 with the citation advisory at 146. Sprint-70 final gate 8/8, 800 passed / 0 skipped.
 
-# --- Standing constraints carried into this sprint --------------------------
 standing:
   publish_safety: >-
     NEVER run `python -m src.composition.run` -- decide publishes recoveries with NO human gate, to
-    the LIVE public Statuspage. If create_app() is constructed, PIN CONFIG_DIR=config/demo. Verified
-    at lock: config/demo/ declares no statuspage_component_id, so the config-only guard is intact.
-  agent_evidence: >-
-    CHECKPOINT AGENT EVIDENCE OUTSIDE THE REPO, to the session scratchpad. Three agents died mid-task
-    in sprint 69; the two told to checkpoint lost nothing. This is what STORY-212 is landing at the
-    script rung -- until it does, the prose rule is all there is.
-  import_root: >-
-    The editable install is a plain absolute sys.path entry: src.* resolves to the MAIN tree from a
-    worktree or scratch copy unless the launch dir contains a src/ package. Pin PYTHONPATH on the
-    command and assert the resolved root.
+    the LIVE public Statuspage. If create_app() is constructed, PIN CONFIG_DIR=config/demo.
   fleet_sequencing: >-
     *** STORY-175 (author the real multi-component topology) CANNOT ENTER A SPRINT BEFORE STORY-151
-    AND STORY-152 HAVE LANDED. *** Recorded 2026-08-13 at the equilibrium refinement pass, as a
-    STANDING constraint rather than a story note, because it will be the first thing wanted the
-    moment Dynatrace access arrives -- which is exactly when it is easiest to skip.
-    WHY: `decide` publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py), and today each
-    signal calls decide() INDEPENDENTLY for a shared component -- so a healthy monitor OBSOLETEs a
-    failing sibling's proposal and posts a recovery. With real Statuspage credentials (inbound) and
-    a fleet larger than one, that is a FALSE ALL-CLEAR ON THE PUBLIC PAGE. STORY-152 rides with it:
-    completeness counts OBSERVED locations, so a fully dark location reads ~100% -- a monitoring
-    system claiming full coverage while blind.
-    STORY-150 is NOT part of this gate: it encodes a severity POLICY the inbound core requirements
-    may rewrite, so it waits on the requirements, not merely on the vendor.
+    AND STORY-152 HAVE LANDED. *** decide publishes recoveries with no human gate and each signal
+    calls decide() INDEPENDENTLY for a shared component -- so on a fleet larger than one, a healthy
+    monitor OBSOLETEs a failing sibling's proposal and posts a FALSE ALL-CLEAR to the public page.
+    STORY-152 rides with it (completeness counts OBSERVED locations, so a dark location reads ~100%).
+    STORY-150 is NOT part of this gate -- it encodes a severity POLICY the inbound core requirements
+    may rewrite.
   vendor_access_first_move: >-
     WHEN DYNATRACE ACCESS LANDS, STORY-154 RUNS FIRST AND ALONE, BEFORE ANYTHING ELSE TOUCHES
-    INGEST. PROVISIONAL_STATUS_MAPPING's two pairs -- ("1","UNHEALTHY")->DOWN and
-    ("2","DEGRADED")->DEGRADED -- have NEVER BEEN OBSERVED; they are assumptions (STORY-177). Until
-    they hold real observed codes, every downstream claim about DOWN/DEGRADED carries an asterisk,
-    and an unrecognised code RAISES and quarantines the row.
+    INGEST. PROVISIONAL_STATUS_MAPPING's two pairs have NEVER BEEN OBSERVED; they are assumptions.
+  agent_evidence: "CHECKPOINT AGENT EVIDENCE OUTSIDE THE REPO, to the session scratchpad, AS YOU GO."
+  a19: "Every scratch `cd` is written `cd X || exit 1`. No tool relies on a --repo-root default pointing at the working tree."
+  import_root: >-
+    The editable install is a plain absolute sys.path entry: src.* resolves to the MAIN tree from any
+    worktree or scratch copy. Pin PYTHONPATH on the command and assert the resolved root.
   device_guard: "Console-script shims blocked -- module form only (pytest, ruff, cfn-lint, lint-imports)."
   git_guard: "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
+  scrum_ownership: ".scrum/ is orchestrator-owned; subagents NEVER write it."
   window_check: "At every AGENT BOUNDARY, not per story. Pause with a committed handoff before the session limit bites."
 
-sprint_close:
-  gate_of_record: >-
-    8/8 GREEN at the final HEAD: pytest 800 passed / 0 SKIPPED under REQUIRE_DYNAMO=1, contracts
-    9 kept / 0 broken, ruff check + format clean, cfn-lint clean, npm test 363, build, lint.
-    Suite grew 743 -> 800 (+57).
-  wiki_compile_pass: >-
-    Sweep, facts, links, integrity ALL CLEAN. 14 map-tier articles, 3 reference -- THE MAP TIER DID
-    NOT GROW, the first flat sprint since tiers were introduced. New knowledge routed to three new
-    guard test modules and two checklist edits instead (routing row 1). OWED and filed, not carried
-    silently: three articles remain status:stale and unswept (core-pipeline-and-availability.md,
-    deployment-and-infra.md, frontend-zone.md), deliberately demoted at sprint-69 close (3303c6c) as
-    honestly unverified rather than left claiming currency.
-  epic_progress: "process-ratchet-brake 2/11 -> 7/11 done. Board regenerated: 143/185 stories closed."
-  retro_proposal: >-
-    ONE amendment proposed (A19, scratch work is fatal-on-cd and never defaults to the live tree),
-    at the AGENT DEFINITION rung. ZERO deletions -- no rule cleared A15's six-sprint bar that was not
-    already adjudicated. The sprint's dominant finding deliberately gets NO amendment: the mechanism
-    landed as CODE this sprint (STORY-212), and a sixth prose restatement is what the brake exists to
-    prevent. AWAITING PO APPROVAL -- not landed.
-
-refinement_2026_08_13:
-  what: >-
-    EQUILIBRIUM REFINEMENT PASS, run after sprint-70 close on PO request ("i want my codebase to
-    reach equilibrium state -- filter what can be neglected, what must be complete"). NOT a sprint.
-    No code changed. Backlog statuses, story files, and this file only.
-  definition_used: >-
-    Equilibrium is NOT an empty backlog. It is: (1) nothing in the repo LIES -- gates, docs and
-    counts are trustworthy, which matters precisely because at equilibrium nobody is watching;
-    (2) nothing is HALF-LANDED -- no dead code, no placeholder waiting on a decision that will never
-    come; (3) everything remaining is a RECORDED CHOICE, not an unpaid debt. Most of the value was
-    in archiving with reasons, not in building.
-  result: "42 open -> 22 open. 185 -> 187 stories (STORY-222, STORY-223 filed). 165 closed."
-  po_decisions:
-    - "STORY-214 CLOSED as accepted duplication -- reason recorded on the entry, do not re-litigate."
-    - "Frontend rebuild programme (STORY-156..168, 13 stories) ARCHIVED. Five of them are BACKEND
-       endpoints and return by a status change when the fleet grows; expect STORY-168 (N+1) first."
-    - "STORY-147 pulled in (2 pts, ready)."
-    - "STORY-155 (remove sample_mode) EXPLICITLY DEFERRED: 'dont remove the sample mode yet. ill
-       tell you when to do.' NOT archived -- do not schedule it without an explicit PO instruction."
-  two_stories_were_already_done:
-    - >-
-      STORY-178 ARCHIVED -- BOTH defects already fixed, verified by RUNNING it: `--only` with a csv
-      now exits 4 (the false green would have exited 0), and yt_gate.py:136 strips ANSI/C0 before
-      slicing the tail. This had been ranked the WORST item in the backlog. Residue not re-filed:
-      the message still says "check the DoD file format" when the cause may be a bad --only filter.
-    - >-
-      STORY-189 finding (a) DROPPED -- demo-engine.md's code_refs now list all nine
-      tools/demo_loop_gate/ files. (b) and (c) survive but BOTH citations drifted; re-derive before
-      dispatch. Story shrinks 3 findings -> 2.
-  lesson: >-
-    Two of the highest-priority items were stale in the same way STORY-219 was filed against. The
-    pass verified every tier-1 item against the live tree before writing it up; that check is what
-    saved two stories' worth of re-doing done work. Re-verify before dispatch, always.
-  wiki_protocol_2_3_0_impact:
-    - "STORY-192 RE-MEASURED 246/6 files -> 218/5 (dev-setup-and-dod.md moved to wiki/archive/)."
-    - >-
-      STORY-192 RE-PRICED ~2 -> ~4. THE COLLISION: 2.3.0 derives the staleness baseline from the
-      article's own last commit and states 'editing a swept article IS re-verifying it'. THREE of
-      its five files are tier=map + status=verified, so a pure encoding repair would re-baseline
-      them with no Fact re-read. The story now repairs AND genuinely re-verifies those three.
-    - >-
-      NEW STORY-223: `facts: CLEAN` and `146 Fact citations never checked` are printed by the SAME
-      yt_wiki run, which exits 0. Sprint-70 prose recorded the clean line without the qualifier.
-      Concentrated: api-five-file-convention.md 59 + frontend-zone.md 35 = 64%. Routing row 1 says
-      the deliverable is a LINT PROMOTED TO ENFORCING, not a prose pass -- and it must REUSE
-      STORY-219's ratchet machinery, not build a second citation gate.
-    - >-
-      AMPLIFIER code_refs are a sprint-71 PLANNING COST: composition/run.py, core/ports/__init__.py
-      and pyproject.toml are each a code_ref in FOUR articles; touching any one quarantines all four.
-  next_ceremony: >-
-    Sprint-71 planning off the phase-0 set (trust the floor): STORY-179 + STORY-173 (same fixture),
-    STORY-213, STORY-221, STORY-192, STORY-222. STORY-178 is gone from that list -- already fixed.
-  environment_note: >-
-    Container uptime_dynamo_8021 is EXITED as of this pass. Restart it before any gate run, or
-    REQUIRE_DYNAMO=1 will ERROR (which looks like a code red and is a setup error).
-  two_one_line_skill_fixes_owed: >-
-    NOT DONE HERE -- the approved plan was refinement only, no code. Both are one-liners in the
-    skill and should RIDE ALONG with any sprint-71 story rather than earn stories of their own
-    (four 1-pointers of ceremony is what STORY-186 exists to avoid).
-    (1) *** CREATED BY THIS PASS: *** test_backlog_story_parity.py:155 filters on
-    `status != "done"` instead of the full closed set {done, superseded, archived, split}. So the
-    22 stories archived here -- 20 of which have file: null and will NEVER need a story file --
-    now sit permanently in the advisory "28 not-done backlog entries have no story file
-    (refinement should write one)". The advisory is now mostly wrong and will stay wrong. Fix is
-    one expression; yt_board.py:68 already defines CLOSED_STATUSES to reuse.
-    (2) LONG-OWED, flagged in backlog.yaml's own header comment: a yt_selftest assertion
-    `next_story_id > max(id in stories)`. The field has now gone stale THREE times. STORY-212
-    landed the script rung and closed without it.
-
-retro_candidates:
-  - id: RC-1
-    raised: 2026-08-13 (STORY-217)
-    text: >-
-      *** A MEASUREMENT WHOSE VALUE DEPENDS ON BUILD ARTIFACTS IN THE WORKING TREE. *** The retired
-      token grep `grep -rn "topology\|APP#" backend/src/core/` has now produced THREE different
-      counts for the same command against the same source: TWELVE (sprint-69 planning), THIRTEEN
-      (sprint-70 plan verification), NINETEEN (the STORY-217 implementer, same day as the 13).
-      The implementer reported the 19 honestly and flagged it as a second drift rather than quietly
-      matching the brief -- correct behaviour, and the reason this is visible.
-      THE ORCHESTRATOR THEN ISOLATED THE CAUSE, and it is worse than drift:
-      `--exclude-dir=__pycache__` gives 13; SIX of the 19 hits are compiled `.pyc` artifacts. So the
-      number depends on whether anything happened to run recently. NEITHER agent was wrong; the
-      METHOD was, in a way none of the three measurements could reveal on its own.
-      WHY IT IS WORTH THE RETRO'S TIME rather than just a story note: STORY-217's AC1 retired this
-      grep for a DIFFERENT and weaker reason (it cannot see a write method lacking those tokens).
-      The real defect is that a recursive grep over a source tree silently includes build output,
-      and this project cites grep counts as evidence in story History, plan verification and
-      catalogue Facts. Ask whether the evidence conventions should require source-only globs
-      wherever a COUNT is the claim. Candidate rung: the implementer checklist, or a lint over
-      story/plan text that flags a bare `grep -r` used as a count.
-    scope_note: >-
-      STORY-217 itself is unaffected -- its verdict rests on the port-import derivation, which the
-      orchestrator re-ran independently and which returns no matches either way.
+owed_one_liners: >-
+  Two one-line skill fixes, to RIDE ALONG with any story rather than earn their own:
+  (1) test_backlog_story_parity.py:155 filters on status != "done" instead of the full closed set,
+  so the 22 stories archived on 2026-08-13 sit permanently in a "refinement should write one"
+  advisory. Reuse yt_board.py:68 CLOSED_STATUSES.
+  (2) a yt_selftest assertion `next_story_id > max(id in stories)`. The field has gone stale THREE
+  times; STORY-179's entry was ALSO found carrying no points key at all, only a "~2pts" comment.

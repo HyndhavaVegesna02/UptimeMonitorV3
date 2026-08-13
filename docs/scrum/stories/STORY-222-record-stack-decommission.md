@@ -87,7 +87,11 @@ halves are true and both belong in the record.
    Fargate**" and "static build served by **CloudFront**". AC1 covers only the "Deployed topology"
    section, so without this the same file still claims a live AWS deployment two sections away.
 7. ⚑ **`.scrum/backlog.yaml:1069`** — STORY-089's note "system LIVE at https://d3ukiib1iqmbxb…" is
-   dated as past.
+   dated as past. **ORCHESTRATOR ACTION, NOT IMPLEMENTER WORK.** `.scrum/` is orchestrator-owned and
+   subagents never write it (standing constraint); that line also sits inside STORY-089's entry, and
+   the orchestrator is editing this same file for board state throughout the sprint. The
+   implementer must **not** touch it. The orchestrator applies it at story close and records it in
+   the story's board entry.
 8. `docs/deploy-runbook.md` is checked and corrected if it *claims* a live stack. Note it is a
    *procedure* document; describing how to deploy is not the same as asserting something is
    running. Judgement call at implementation — say which way it went and why.

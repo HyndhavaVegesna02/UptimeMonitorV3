@@ -784,7 +784,23 @@ stories:
     epic: retro-chores
     file: docs/scrum/stories/STORY-022-ingest-mixed-signal-batch-guard.md
     status: done    # accepted at Sprint 6 review (2026-06-25)
-    points: 1
+    points: 1       # ESTIMATE RE-CHECKED AND HELD 2026-08-13 before sprint-71 lock, because a
+                    # 1-pointer that stales THREE wiki articles is the shape that historically
+                    # overruns here. MEASURED, the exposure is small:
+                    #   api-five-file-convention.md -- exactly ONE Fact cites availability/models.py
+                    #     and it is SYMBOL-cited (::AvailabilityDTO), immune to line shifts
+                    #   ingest-service-and-pull-loop.md -- ~7 Facts cite vendor_health.py, nearly all
+                    #     symbol-based (::check_vendor_id_health, ::_extract_count)
+                    #   zone-rules.md -- ~8 Facts, and ONE carries explicit line numbers:
+                    #     `backend/src/composition/vendor_health.py:70-133` at :751. *** AC3's edit
+                    #     at :77 sits INSIDE that range. ***
+                    # SO THE ESTIMATE HOLDS ONLY BECAUSE OF NEW AC7: both docstring edits must be
+                    # LINE-COUNT NEUTRAL (insertions == deletions, verified by git diff --stat).
+                    # Held neutral, no citation moves and AC8 reduces to one `## History` line per
+                    # article. Allowed to change line counts, the :70-133 bound drifts and this
+                    # becomes citation-ratchet work -- a 3, not a 1.
+                    # AC1 is ALREADY SATISFIED and must not be redone: touching demo-engine.md would
+                    # reset its derived staleness baseline for nothing.
     priority: 21
     type: chore
     sprint: 6
