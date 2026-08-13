@@ -2,7 +2,7 @@
   "name": "ui-sweep",
   "private": true,
   "version": "1.0.0",
-  "description": "STORY-095 throwaway Playwright harness — sweeps the LIVE deployed dashboard (https://d3ukiib1iqmbxb.cloudfront.net) for evidence, never shipped/imported by the app itself.",
+  "description": "STORY-095 throwaway Playwright harness — sweeps a deployed dashboard for evidence, never shipped/imported by the app itself. Base URL is configurable via UI_SWEEP_BASE_URL (default: the local frontend dev server, http://localhost:5173); the AWS deployment it originally targeted was decommissioned 2026-08-13 (STORY-222).",
   "type": "module",
   "scripts": {
     "sweep": "node sweep.mjs"

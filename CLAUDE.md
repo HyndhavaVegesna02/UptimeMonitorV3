@@ -148,6 +148,12 @@ contract: `docs/scrum/wiki/demo-engine.md`.
 | monitored app  | Whatever `config/apps/*.yaml` declares — today one HTTP check (`httpcheck.yaml`) |
 | publish target | Statuspage — a fixed core target (not swappable in V3 scope)           |
 
+> The backend/frontend rows above are the **target architecture** (dossier §3) that
+> `infra/stack.yaml` builds to, not a claim that AWS is currently running it — the concrete
+> deployment built to this design was **decommissioned on 2026-08-13** (see "Deployed
+> topology" below). There is currently no live AWS environment; dev/CI runs entirely against
+> DynamoDB Local and the Vite dev server.
+
 ## Key commands
 
 Run from the repo root with the virtualenv active (or call `.venv/Scripts/python.exe`
@@ -277,30 +283,33 @@ so `git add --renormalize .` stages nothing: the CRLF a Windows checkout shows i
 tree* comes from a global `core.autocrlf=true` at checkout time, not from repo content. The
 `CRLF will be replaced by LF` warning on `git add` is that conversion, not a problem to fix.
 
-## Deployed topology (STORY-089)
+## Deployed topology (STORY-089) — DECOMMISSIONED 2026-08-13
 
-AWS **us-east-1**, account `065317679010`, CloudFormation stack `uptime-monitor` (from
-`infra/stack.yaml`). Procedure: `docs/deploy-runbook.md`. Full detail:
-`docs/scrum/wiki/deployment-topology.md`.
+**The AWS stack was decommissioned by PO decision on 2026-08-13.** There is no live AWS
+environment: no ECS services, ALB, CloudFront distribution, or DynamoDB tables are running,
+and the CloudFormation stack `uptime-monitor` was torn down. This section is now **history** —
+what was deployed, and that it worked, until the decommission — not something to re-verify
+against a live URL.
 
-- **Public URL:** `https://d3ukiib1iqmbxb.cloudfront.net` (SPA + same-origin `/api/*`)
-- **ECS cluster:** `uptime-monitor-cluster` — services `uptime-monitor-api` (behind the
+**What was deployed (historical, AWS us-east-1, account `065317679010`):**
+
+- **Public URL (past):** `https://d3ukiib1iqmbxb.cloudfront.net` (SPA + same-origin `/api/*`)
+- **ECS cluster (past):** `uptime-monitor-cluster` — services `uptime-monitor-api` (behind the
   ALB) + `uptime-monitor-loop` (singleton)
-- **Secrets** live ONLY in Secrets Manager: `uptime-monitor-dynatrace-secrets`,
-  `uptime-monitor-statuspage-secrets`. Plain env vars (`AWS_REGION`, both table names)
-  are injected by the task definitions.
+- **Secrets (past):** lived ONLY in Secrets Manager: `uptime-monitor-dynatrace-secrets`,
+  `uptime-monitor-statuspage-secrets`. Plain env vars (`AWS_REGION`, both table names) were
+  injected by the task definitions.
+- **Status at decommission:** last verified healthy 2026-07-17; a 2026-07-29 re-check got a
+  503 from `/api/v1/health` with expired AWS credentials, so that particular cause was never
+  confirmed (likeliest: the 22:00 IST reaper stopping ECS tasks that lost their
+  `c7n-keep=true` tag) — moot now that the stack no longer exists.
 
-**Status: last verified healthy 2026-07-17. Re-checked 2026-07-29 —
-`/api/v1/health` returned 503 and AWS credentials were expired, so the cause is
-unconfirmed.** CloudFront answers, so the origin is unhealthy; the likeliest cause is
-the 22:00 IST reaper stopping ECS tasks that lost their `c7n-keep=true` tag.
-**Re-verify before trusting anything in this section:**
+Full detail of the deployed instance (now historical): `docs/scrum/wiki/deployment-topology.md`.
+The CloudFormation template + Dockerfile that built it, and the redeploy procedure:
+`docs/deploy-runbook.md` and `docs/scrum/wiki/deployment-and-infra.md` (also a tombstone as of
+this decommission, STORY-222). A redeploy decision is out of scope for this story — STORY-090
+(CI/CD) stays archived on the same "no live stack" fact.
 
-```
-curl https://d3ukiib1iqmbxb.cloudfront.net/api/v1/health          # expect 200
-aws ecs describe-services --cluster uptime-monitor-cluster \
-  --services uptime-monitor-api uptime-monitor-loop               # expect both 1/1
-```
-
-Company account rules (region lock us-east-1, `c7n-keep=true` tagging against the
-reaper): `docs/deploy-runbook.md` Prerequisites.
+Company account rules that applied while live (region lock us-east-1, `c7n-keep=true` tagging
+against the reaper): `docs/deploy-runbook.md` Prerequisites — still correct for any future
+redeploy.

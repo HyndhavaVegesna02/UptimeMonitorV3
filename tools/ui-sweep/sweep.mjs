@@ -1,8 +1,7 @@
-// STORY-095 — throwaway Playwright harness sweeping the LIVE deployed
-// dashboard (https://d3ukiib1iqmbxb.cloudfront.net) for evidence. Never
-// imported by the shipped app; lives only under tools/ui-sweep/. Run one
-// phase at a time via `node sweep.mjs <phase>` so a failure in one phase
-// never forces a re-run of the others:
+// STORY-095 — throwaway Playwright harness sweeping a deployed dashboard for
+// evidence. Never imported by the shipped app; lives only under
+// tools/ui-sweep/. Run one phase at a time via `node sweep.mjs <phase>` so a
+// failure in one phase never forces a re-run of the others:
 //   node sweep.mjs tabs        -- AC1/AC2: six tabs, SPA-nav + deep-load
 //   node sweep.mjs theme       -- AC4: dark/light + 390px viewport
 //   node sweep.mjs sample-on   -- AC3 step: toggle sample mode ON, screenshot
@@ -13,6 +12,15 @@
 // Each phase writes screenshots + a JSON evidence log (console errors,
 // failed /api/* responses) under docs/scrum/sprints/2026-07-17-sprint-51/ui-sweep/.
 // findings.md is authored by hand from this raw evidence, not generated here.
+//
+// STORY-222 (2026-08-13): originally hard-coded BASE_URL to the live
+// CloudFront deployment (https://d3ukiib1iqmbxb.cloudfront.net), which was
+// decommissioned by PO decision on 2026-08-13 (see CLAUDE.md, "Deployed
+// topology"). Now configurable via UI_SWEEP_BASE_URL, defaulting to the local
+// frontend dev server (`npm run dev` from frontend/) so this tool stays
+// runnable without ever pointing at a dead — or, worse, a future unrelated —
+// host by default. The maint-create/maint-delete phases mutate server-side
+// state, so a safe local default matters, not just a correct one.
 
 import { chromium } from 'playwright'
 import { mkdirSync, writeFileSync } from 'node:fs'
@@ -20,7 +28,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const BASE_URL = 'https://d3ukiib1iqmbxb.cloudfront.net'
+const BASE_URL = process.env.UI_SWEEP_BASE_URL || 'http://localhost:5173'
 const OUT_DIR = path.resolve(
   __dirname,
   '../../docs/scrum/sprints/2026-07-17-sprint-51/ui-sweep',
