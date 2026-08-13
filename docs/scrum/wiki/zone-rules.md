@@ -30,6 +30,14 @@ status: verified
 # article cites in that file -- test_build_vendor_health_dql_rejects_
 # native_id_with_dql_breaking_char (ZR-8 Finding 2) -- is untouched and still
 # exists at the cited name. No Fact in this article changed.
+# sprint-71 (STORY-189): re-verified after this article's code_ref
+# `composition/vendor_health.py` changed -- a false "logs nothing" docstring
+# absolute corrected to state the code's actual behaviour (logs at INFO),
+# line-count neutral. The ZR-8 Finding 2 citations here
+# (`check_vendor_id_health`/`_extract_count`, `vendor_health.py:70-133`) are
+# symbol- and range-based and untouched; the :70-133 bound still lands on the
+# same two lines (def at :70, the warning branch's closing paren at :133) --
+# confirmed after the edit. No Fact in this article changed.
 ---
 
 ## Purpose
