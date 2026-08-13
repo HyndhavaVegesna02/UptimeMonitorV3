@@ -113,7 +113,7 @@ board:
     title: dynamo_local port allocation + readiness probe
     points: 3
     order: 2
-    status: implemented_awaiting_review   # *** NOT done. Reviewers NOT yet dispatched. ***
+    status: done   # after a fix round closing 2 CRITICALs + 2 MAJORs + 7 MINORs
     file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md
     commits: "8dac223 (AC1), 7db3dbf (AC4/AC5), e1ffe17 (AC2/AC3/AC6), 37a7c37 (AC7)"
     orchestrator_verified: >-
@@ -141,11 +141,54 @@ board:
       wait_for_dynamo(), with the old probe measured returning green in 0.02s against a listener
       answering a generic non-DynamoDB 200 OK.
       *** CLAIMED, NOT YET INDEPENDENTLY RE-RUN -- that is the reviewers' job. ***
-    ac8_both_configs_claimed: >-
-      Config 1 (URL set): 805 passed in 47.51s. Config 2 (URL UNSET, Docker up -- the real spawn
-      path): 805 passed in 80.12s. Both at 37a7c37, both 0 skipped.
-      *** THE ORCHESTRATOR RE-RAN CONFIG 1 ONLY. Config 2 is unverified by anyone but the
-      implementer, and it is the config that matters for this story. Reviewers must re-run it. ***
+    fix_round: "00b2966, 8087e0f (CRITICALs); 716a85c, 6be387b (MAJORs); 3e0e685, 3b09a54, b905cde, c1c5a73 (MINORs)"
+    spec_review: >-
+      **FAIL.** 6 of 8 AC met, both shown-REDs independently reproduced against reconstructed
+      pre-fix code (AC1 "port 54206 >= 49152"; AC4 old probe "returned green in 0.013s"). AC5
+      PARTIAL and AC8 NOT_MET on one reproduced defect -- see CRITICAL 1 below.
+      *** THE FINDING SURFACED ONLY IN AC8 CONFIG 2, THE CONFIG ONLY A REVIEWER RAN. *** The
+      implementer ran it once and got green; the reviewer ran it four times and got 1 red. Had the
+      single run been trusted, this shipped.
+    quality_review: >-
+      **FIX_REQUIRED, 2 CRITICALs.** Everything measured, not reasoned.
+      CRITICAL 1 -- wait_for_dynamo's boto3 client had NO botocore Config, so botocore defaults
+      (60s connect, 60s read, legacy retries) bounded each call while the deadline was only checked
+      BETWEEN calls. Measured at a 3.0s budget: *** 626.24s against a silent peer -- 209x over ***,
+      46.00s against a closed port, and the story's own test flaked 2-of-6 at HEAD. With the
+      production default of 30s a mapped-but-dead port hangs the fixture for MINUTES -- the exact
+      "healthy suite looks hung" symptom this story exists to remove, reinstated BY THE FIX.
+      CRITICAL 2 -- *** THE SHOWN-RED WAS REAL BUT PINNED THE WRONG FUNCTION. *** AC1's test asserts
+      on _free_tcp_port(), which after the diff is reached ONLY from resolve_dynamo's test-injection
+      branch. The container's port comes from start_container -> _candidate_ports(), which NO test
+      constrained. Proven: reverting start_container to ephemeral ports -- defect 1 verbatim -- left
+      the file GREEN, 12 passed, ZERO RED. The one test with the opportunity spent it on
+      `assert isinstance(port, int)`, vacuous by construction.
+      MAJOR 1 -- AC5's message claimed "the port is mapped, not dead-on-arrival" verbatim against a
+      port where NOTHING was listening; the probe cannot distinguish the two cases.
+      MAJOR 2 -- the retry loop retried ANY non-zero docker exit: measured 20 `docker run` + 21
+      `docker rm` on a daemon-down error, then blamed port exhaustion.
+      Clean bills: every commit green on its own tree (checked per-commit via git archive), no
+      container leaks, no dead code.
+    the_finding_worth_keeping: >-
+      *** BOTOCORE'S FORGIVINGNESS UNDERMINED THIS FIX TWICE, FROM TWO DIRECTIONS. ***
+      (1) Lenient JSON parsing lets a bare "200 OK" satisfy client.list_tables() WITHOUT raising --
+      so AC4 as written ("issue a real ListTables call") would still have green-lit a non-DynamoDB
+      responder. The implementer found this MID-IMPLEMENTATION and disclosed it unprompted. Both
+      reviewers confirmed it by mutation in both directions: neutralise the `TableNames` check ->
+      GREEN in 0.88s; keep it -> RED in 3.15s. LOAD-BEARING, not decoration.
+      (2) Default timeouts let one call exceed the caller's budget 209x -- found by the reviewers.
+      Same shape twice: the library is more forgiving than the code assumes, and the probe inherits
+      the forgiveness. AC4 being insufficient was a SYMPTOM, not the whole gap.
+    orchestrator_verified: >-
+      Verified at final HEAD c1c5a73, not accepted on report. CONFIG 1 gate: 8/8 PASS, 809 passed /
+      0 skipped, contracts 9 kept / 0 broken. CONFIG 2 (DYNAMO_ENDPOINT_URL unset, Docker up) run
+      TWICE independently: 809 passed both times. `docker ps -a` shows no uptime_dynamo_pytest_*
+      residue. Spot-checked both CRITICAL fixes in the code: Config(connect_timeout=1.0,
+      read_timeout=1.0, retries max_attempts=1) at dynamo_local.py:258-259, and the range assertion
+      on the REAL path at test_dynamo_local.py:273-276.
+      The fix round's own CRITICAL 2 proof was the reviewer's mutation run in reverse: mutating
+      start_container to ephemeral allocation now yields "requested port 50073 outside the fixed
+      range 18000-18099" -- the pin reds under the mutation it exists to catch.
     note: >-
       REFINED at this planning: 8 AC, four open questions settled. KEY FINDING -- the shown-RED does
       NOT need a WinNAT-reserved port (unreproducible, would block the story by construction); any
