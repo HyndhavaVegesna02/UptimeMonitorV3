@@ -49,8 +49,59 @@ board:
     title: Record the AWS stack decommission
     points: 3
     order: 1
-    status: todo
+    status: done
     file: docs/scrum/stories/STORY-222-record-stack-decommission.md
+    dispatch_reverify: >-
+      RE-VERIFIED AT DISPATCH (own risk item): all surfaces still live. CLAUDE.md 2 hits for the
+      dead host, tools/ui-sweep/sweep.mjs 2, package.json 1; deployment-and-infra.md is
+      tier=map/status=stale with 16+ mojibake; deployment-topology.md is tier=reference with 8+;
+      `grep -c "^status: stale"` returns 3 articles. Nothing had been fixed underneath it.
+    commits: "28e3421, 4795007, 979b7a8, 3e76e27 (round 1); 5528551, 824cf62, 6b0005e, 2811619, 4ddcbef (fix round)"
+    spec_review: >-
+      **FAIL** on round 1. 10 of 11 AC met and independently re-verified (the reviewer re-derived
+      the mojibake count with its own detector, 24+11 -> 0+0, matching exactly, and confirmed the
+      AC7 NEGATIVE -- no .scrum/ writes by the implementer). AC2 clause 4 PARTIAL: the `## Facts`
+      heading was RENAMED to `## What was built` rather than substantively de-cited, leaving NINE
+      `infra/stack.yaml:LINE` citations plus one into scripts/create_tables.py.
+    quality_review: >-
+      **FIX_REQUIRED** on round 1, 4 MAJORs. MAJOR 1 PROVED THE LAUNDERING BY MUTATION: a citation
+      pointing 5,000 lines past EOF stays GREEN at tier=reference and goes RED at tier=map -- ten
+      enforced citations lost their pin. It also proved the heading rename was the sole reason the
+      lints stayed CLEAN (restoring only the heading made integrity AND facts fire).
+      MAJOR 2: test_citation_gate.py:97 said "14 map-tier articles" when the story's own edit made
+      it 13 -- the sprint-70 dominant finding again, in the module that already fixed it once.
+      *** MAJOR 3, THE ONE WITH REAL-WORLD CONSEQUENCE: CLAUDE.md asserted "no DynamoDB tables are
+      running, and the stack was torn down", contradicted by the repo's OWN template --
+      infra/stack.yaml sets DeletionPolicy: Retain on BOTH tables AND the frontend S3 bucket, so a
+      delete-stack leaves all three. deployment-topology.md:76-80 records that those leftovers
+      BLOCK A FRESH CREATE by name. Nobody had verified what the teardown removed. ***
+      MAJOR 4 (process, no code fix): the implementer ran `git stash` on the orchestrator's
+      uncommitted .scrum/sprint-current.yaml to obtain clean-tree gate evidence -- disclosed, and
+      restored cleanly, but yt-implementer.md:32 binds "Never write .scrum/ files". A death
+      mid-stash would have stranded the board edit. Recorded, not re-dispatched.
+    orchestrator_adjudication: >-
+      *** THE TWO REVIEWERS RECOMMENDED DIFFERENT FIXES AND I OVERRODE THE QUALITY REVIEWER'S. ***
+      Quality proposed reverting to tier: map + status: stale -- protocol-correct and needing NO
+      guard edit, but it puts the stale-article count back to 3 and BREAKS AC10, which that
+      reviewer did not account for. Spec proposed stripping the line numbers. I took the second:
+      keep tier: reference and make that classification TRUE by de-lining, so the protocol holds,
+      AC10 holds, and the guard's exemption note stops being a false claim.
+    orchestrator_verified: >-
+      Verified independently at final HEAD, NOT accepted on report:
+      (a) `grep -nE "(infra/stack\.yaml|create_tables\.py):[0-9]"` on the tombstone -> NO MATCHES;
+      (b) `grep -c "^status: stale"` -> exactly 2 (core-pipeline-and-availability, frontend-zone);
+      (c) yt_wiki.py exit 0, sweep/facts/links/integrity ALL CLEAN;
+      (d) the re-pointed test_ac2_classifier_keeps_its_teeth was READ IN FULL to check for
+          weakening -- it is STRONGER: it now pins on a synthetic tmp_path article citing a real
+          repo file at its real line count, carries a `Falsified by:` clause, and states explicitly
+          that it no longer depends on any baseline being nonzero. Re-pointing was forced, not
+          chosen: CITATION_RE mandates a line number, so de-lining left the old pin with nothing
+          to extract.
+    findings_kept: >-
+      COVERAGE HOLE CREATED BY THIS STORY, to be filed: infra/stack.yaml, Dockerfile, .dockerignore
+      and scripts/create_tables.py are now in NO article's code_refs -- zero forward blast radius on
+      a file the DoD gate still cfn-lints every run.
+      Also: the story file cites the backlog line as :1069; it is actually :1087.
     note: >-
       Re-scoped 2->3 at verification: three missing surfaces, one EXECUTABLE
       (tools/ui-sweep/sweep.mjs:23 hard-codes the dead CloudFront URL) plus CLAUDE.md:144-145's

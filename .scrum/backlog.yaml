@@ -1084,7 +1084,20 @@ stories:
     title: Live console deployment + end-to-end verification (PO-driven)
     epic: aws-migration
     file: docs/scrum/stories/STORY-089-console-deployment-live-verification.md
-    status: done    # sprint-50: all 6 AC live-verified; system LIVE at https://d3ukiib1iqmbxb.cloudfront.net (stack kept running, c7n-keep). 3 live-found template defects fixed. PO accepted 2026-07-17 (accept-with-follow-up STORY-094), merged to main.
+    status: done    # sprint-50: all 6 AC live-verified; system was LIVE at
+                    # https://d3ukiib1iqmbxb.cloudfront.net (stack kept running, c7n-keep). 3
+                    # live-found template defects fixed. PO accepted 2026-07-17
+                    # (accept-with-follow-up STORY-094), merged to main.
+                    # *** PAST TENSE AS OF 2026-08-13: the PO brought the stack DOWN. That URL no
+                    # longer resolves. Dated here by the ORCHESTRATOR as STORY-222's AC7 -- the
+                    # only AC of that story not given to the implementer, because .scrum/ is
+                    # orchestrator-owned and subagents never write it.
+                    # CAVEAT WORTH CARRYING: infra/stack.yaml sets DeletionPolicy: Retain on both
+                    # DynamoDB tables AND the frontend S3 bucket, so a delete-stack leaves all
+                    # three behind -- and deployment-topology.md records that those leftovers
+                    # BLOCK a fresh create by name. What the teardown actually removed is
+                    # UNVERIFIED. See CLAUDE.md's Deployed topology section, which now hedges this
+                    # rather than asserting it.
     points: 3
     priority: 48
     type: chore
