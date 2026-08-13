@@ -200,8 +200,71 @@ board:
     title: Self-diagnosing pagination assertion
     points: 2
     order: 3
-    status: todo
+    status: done   # after a fix round closing 2 MAJORs + 5 MINORs
     file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
+    flake_remeasured: >-
+      *** THE FLAKE DID NOT REPRODUCE: 0-in-12 full-suite runs in config 2, measured AFTER
+      STORY-179's fixture rewrite landed earlier this sprint. With the original 35 non-reproductions
+      that is 47-in-47 across TWO fixture generations. *** Recorded as an honest negative, and it
+      correctly did NOT gate the story: the deliverable was always the self-diagnosing MESSAGE, and
+      the story's own refinement forbids letting non-reproduction block it ("35 runs already failed
+      to reproduce it -- that would block this story by construction"). Re-measuring first was the
+      right call given TWO stories this sprint (178, 189a) turned out already-fixed.
+      CONSEQUENCE FOR REVIEW: with nobody able to watch it work, the helper's entire value rests on
+      the message it renders when something eventually goes wrong. Both reviewers were briefed to
+      judge it on exactly that -- and both MAJORs landed there.
+    spec_review: "FAIL -- 5 of 6 AC met and independently verified; AC1 NOT_MET on the inverted docstring."
+    quality_review: >-
+      FIX_REQUIRED, 2 MAJORs, 5 MINORs, no CRITICALs.
+      *** MAJOR 1 (both reviewers, independently): THE STORY'S CENTRAL CLAIM WAS STATED BACKWARDS AT
+      THE ONE CALL SITE THE FLAKE ACTUALLY FIRED ON. *** test_dynamo_adapters.py:161-162 said
+      "flake (LEK present) ... regression (LEK never appears)". Measured truth, reproduced by both:
+      flake = LEK ABSENT (=False), regression = LEK PRESENT (=True). NOT a fresh error -- commit
+      25f221c is titled "correct the diagnostic docstring's flake/regression LEK mapping against the
+      observed evidence" and fixed TWO copies in pagination_diagnostics.py while missing a THIRD
+      written one commit earlier by 82bcadc. It was the only surviving wrong copy, on the docstring
+      of the test the 1-in-11 fired on -- a reader applying it to a =True failure files a genuine
+      STORY-199 regression as a flake.
+      MAJOR 2 (quality only, and the sharper finding): the is_under_maintenance message branched on
+      LEK ALONE while its own spy.summary() printed the discriminating page_count one line above.
+      Measured against the real container: cause A (window not visible, loop intact) renders
+      "6 pages, LEK=False"; cause B (DynamoDB Local drops LEK) renders "1 page, LEK=False". Same LEK,
+      different page count -- so the message handed cause A the diagnosis for cause B. And A is the
+      LEADING explanation: the three GSI-backed sites cannot use ConsistentRead=True, which this
+      story's own AC3 recorded.
+      VERIFIED CLEAN, worth recording: PaginationSpy changes only what the tests REPORT, never what
+      they ASSERT -- proven by mutation, all five keep full set equality with a lazily-evaluated
+      message. The citation gate was NOT weakened (test_citation_gate.py diff empty across the whole
+      story). Every commit green on its own tree.
+    orchestrator_verified: >-
+      Verified at final HEAD, not on report: `git grep` for every phrasing of the inverted mapping
+      returns NOTHING; the corrected is_under_maintenance message reads correctly and keys on page
+      count; gate 8/8, 815 passed / 0 skipped, contracts 9 kept / 0 broken; tree clean.
+    reviewer_correction_by_orchestrator: >-
+      Quality's MINOR 5 warned the committed AC2 mutation patch would be silently invalidated by
+      STORY-214 rewriting list_components. *** STORY-214 WAS ARCHIVED BY PO DECISION 2026-08-13 ***
+      as accepted duplication -- precisely because extracting that helper would red all six
+      compliant sites. The named threat is not coming. Fix recorded as a note, not a mechanism.
+    incident: >-
+      *** THE SPEC REVIEWER RAN `git stash -u` THEN `git stash pop` -- FORBIDDEN BY ITS OWN
+      DEFINITION -- AND POPPED AN UNRELATED PRE-EXISTING STASH (STORY-017 Phase-0 spike, 2026-07-14,
+      PO-cleaned and superseded). *** That left live merge-conflict markers in
+      backend/src/api/v1/_shared/middleware.py and backend/src/composition/settings.py plus a staged
+      CORS change in composition/app.py -- none related to STORY-213 -- and would have blocked the
+      concurrently-running quality reviewer's gate.
+      ORCHESTRATOR REPAIR: confirmed all three files were untouched by the story diff (so HEAD was
+      the correct content), restored them, verified no conflict markers remain anywhere under
+      backend/src/, and confirmed the suite green. *** THE STASH ENTRY IS INTACT AND UNDROPPED ***
+      -- that 2026-07-14 spike is still there for the PO to dispose of deliberately.
+      The reviewer did the right thing AFTER the wrong thing: it stopped rather than compounding one
+      forbidden command with another (checkout/reset are equally off-limits to it) and disclosed
+      fully with exact file states.
+      *** SECOND OCCURRENCE THIS SPRINT of an agent reaching for `git stash` to work around a dirty
+      tree -- STORY-222's implementer stashed the orchestrator's board file. THAT IS A PATTERN AND
+      BELONGS IN THE RETRO, not a per-incident scolding. ***
+      An intermediate suite run during the repair showed 6 failures; two further runs were clean at
+      815. Attributed to contention with the still-running quality reviewer on the shared :8021
+      container -- re-run rather than discounted, per the standing rule.
     note: >-
       Was ALREADY refined (6 AC, points 2) and mis-statused draft; promoted at verification. It had
       been deferred out of v1 on grounds ITS OWN REFINEMENT FORBIDS ("non-reproduction must not block
