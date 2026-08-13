@@ -24,6 +24,12 @@ status: verified
 # `docs/scrum/wiki/api-five-file-convention.md` is referenced by wiki link syntax,
 # never as a code_ref (it is docs, and `check_facts` already skips
 # `docs/scrum/` paths as cross-references, not code citations).
+# sprint-71 (STORY-201): re-verified after this article's code_ref
+# `backend/tests/test_dynatrace_adapter.py` changed (a new clickpath
+# require_field test, unrelated to any ZR rule). Confirmed the one line this
+# article cites in that file -- test_build_vendor_health_dql_rejects_
+# native_id_with_dql_breaking_char (ZR-8 Finding 2) -- is untouched and still
+# exists at the cited name. No Fact in this article changed.
 ---
 
 ## Purpose
