@@ -519,6 +519,23 @@ stories:
     epic: integration-deployment
     file: docs/scrum/stories/STORY-017-deployment-topology.md
     status: archived # SUPERSEDED by the AWS migration epic (STORY-082..090) — PO directive 2026-07-14: stack moves to S3+CloudFront / ECS Fargate+ALB / DynamoDB via CloudFormation, console-first. Decision-3's same-origin-/api intent survives as the CloudFront /api/* behavior (STORY-088); the console-runbook modality (decision 1) carries into STORY-088/089.
+                    # *** ITS ABANDONED PHASE-0 STASH WAS DROPPED 2026-08-14 (PO decision at
+                    # sprint-71 review), CAPTURED FIRST at
+                    # docs/scrum/sprints/2026-08-13-sprint-71/stash-story-017-phase0-spike.captured.patch.md
+                    # It held CORS middleware + cors_allowed_origins + boto3 + Dockerfile bits.
+                    # EVERY HUNK VERIFIED SUPERSEDED before dropping, not assumed:
+                    #   - install_cors is ACTIVELY UNWANTED -- middleware.py now documents why CORS
+                    #     is not needed (Vite proxy in dev, same-origin behind CloudFront in prod).
+                    #   - cors_allowed_origins CANNOT APPLY -- it patches a Settings class carrying
+                    #     `database_url`, the POSTGRES-era class. Today's is DynamoDB.
+                    #   - boto3 is already at pyproject.toml:16.
+                    # It was based on a commit whose PARENT is "supersede STORY-017, ready
+                    # STORY-082..089" -- obsolete the day it was stashed.
+                    # WHY DROPPED RATHER THAN KEPT: a stash is not archival storage. Local-only,
+                    # never pushed, invisible to git log and unreachable from any branch -- so it can
+                    # vanish silently on a fresh clone AND ambush someone who did not know it was
+                    # there. It did exactly that on 2026-08-13: a reviewer's `git stash pop` landed
+                    # it as merge conflicts across three backend/src/ files mid-sprint.
     points: 5
     priority: 17
     type: chore
