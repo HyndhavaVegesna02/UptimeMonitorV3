@@ -174,14 +174,28 @@ def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
     saved the hour this defect cost, not a bare `TimeoutError`.
     """
     import boto3
+    from botocore.config import Config
     from botocore.exceptions import BotoCoreError, ClientError
 
+    # STORY-179 fix round, CRITICAL 1: `deadline` below is only consulted
+    # BETWEEN calls -- a single `list_tables()` call is otherwise bounded by
+    # botocore's own defaults (60s connect, 60s read, up to 10 legacy
+    # DynamoDB retries), so one call can overrun `timeout_seconds` by up to
+    # two orders of magnitude (measured: a silent peer that accepts and never
+    # answers made the unbounded client take 626.24s against a 3.0s budget).
+    # Pinning connect/read to ~1s and disabling botocore's own retries (the
+    # `while` loop below is this function's own bounded retry) keeps every
+    # single call's worst case close to `timeout_seconds`, which is the
+    # entire point of a caller-controlled timeout.
     client = boto3.client(
         "dynamodb",
         region_name="us-east-1",
         endpoint_url=f"http://127.0.0.1:{port}",
         aws_access_key_id="test",
         aws_secret_access_key="test",
+        config=Config(
+            connect_timeout=1.0, read_timeout=1.0, retries={"max_attempts": 1}
+        ),
     )
 
     deadline = time.monotonic() + timeout_seconds

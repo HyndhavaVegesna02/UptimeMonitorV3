@@ -78,12 +78,19 @@ def test_wait_for_dynamo_rejects_a_non_dynamo_answer():
     server_thread = threading.Thread(target=serve_forever, daemon=True)
     server_thread.start()
 
+    timeout_seconds = 3.0
     try:
         start = time.monotonic()
         with pytest.raises(TimeoutError, match=str(port)):
-            dynamo_local.wait_for_dynamo(port, timeout_seconds=3.0)
+            dynamo_local.wait_for_dynamo(port, timeout_seconds=timeout_seconds)
         elapsed = time.monotonic() - start
-        assert elapsed < 10.0, f"probe should fail fast, took {elapsed}s"
+        # STORY-179 fix round, CRITICAL 1: `elapsed < 10.0` pinned nothing --
+        # it passed even at 9.5s against a 3.0s budget. Bound it proportional
+        # to the budget actually requested instead.
+        budget = timeout_seconds + 3.0
+        assert elapsed < budget, (
+            f"probe should fail fast, took {elapsed}s (budget {budget}s)"
+        )
     finally:
         listener.close()
 
