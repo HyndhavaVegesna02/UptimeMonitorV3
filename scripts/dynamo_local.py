@@ -101,6 +101,22 @@ def _docker_port_mapping(name: str, container_port: int = 8000) -> int:
     return int(port_str)
 
 
+def _is_bind_failure(docker_output: str) -> bool:
+    """True iff `docker run`'s failure output is shaped like a port-bind
+    conflict, not some other reason `docker run` can exit non-zero (a dead
+    daemon, a failed image pull, a disk error, ...).
+
+    STORY-179 fix round, MAJOR 2: the retry loop previously caught EVERY
+    non-zero exit and retried, so a daemon-down error was retried
+    `_MAX_BIND_ATTEMPTS` times and then reported as "could not bind ... to
+    any port in the fixed range" -- a false diagnosis for a failure that had
+    nothing to do with the port range. Only the bind case should retry;
+    everything else should surface immediately with Docker's own message.
+    """
+    lowered = docker_output.lower()
+    return "already allocated" in lowered or "bind for" in lowered
+
+
 def start_container(name: str) -> int:
     """Start a throwaway `amazon/dynamodb-local` container, verified bound.
 
@@ -112,7 +128,10 @@ def start_container(name: str) -> int:
     had. A port already in use causes a bounded retry within the range
     (`_MAX_BIND_ATTEMPTS`); a mismatched mapping is an error naming both
     ports; exhausting the range raises naming the range and the attempt
-    count. Returns the actual, verified host port.
+    count. Returns the actual, verified host port. A non-bind `docker run`
+    failure (daemon down, image pull failure, ...) re-raises immediately
+    with Docker's own output, rather than being retried and misreported as
+    a bind-range exhaustion (fix round MAJOR 2).
     """
     subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
 
@@ -140,6 +159,12 @@ def start_container(name: str) -> int:
         if result.returncode != 0:
             last_error = (result.stdout + result.stderr).strip()
             subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+            if not _is_bind_failure(last_error):
+                raise RuntimeError(
+                    f"docker run failed for container {name!r} on attempt "
+                    f"{attempts} for a reason unrelated to port binding: "
+                    f"{last_error}"
+                )
             continue
 
         actual_port = _docker_port_mapping(name)

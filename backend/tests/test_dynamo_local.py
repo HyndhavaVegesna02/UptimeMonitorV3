@@ -223,6 +223,40 @@ def test_start_container_raises_after_exhausting_retry_budget(
     assert len(run_attempts) == dynamo_local._MAX_BIND_ATTEMPTS
 
 
+def test_start_container_reraises_non_bind_docker_failure_immediately(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 fix round, MAJOR 2: the retry loop caught EVERY non-zero
+    `docker run` exit and retried, so a daemon-down/image-pull/disk error
+    was retried `_MAX_BIND_ATTEMPTS` times and then reported as a false
+    "could not bind ... to any port in the fixed range" diagnosis. A
+    non-bind failure must re-raise immediately, on the FIRST attempt, with
+    the docker output -- never the bind-exhaustion message.
+    """
+    run_attempts = []
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "rm"]:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[:2] == ["docker", "run"]:
+            run_attempts.append(cmd)
+            return subprocess.CompletedProcess(
+                cmd,
+                1,
+                "",
+                "Cannot connect to the Docker daemon at unix:///var/run/docker.sock",
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="daemon") as excinfo:
+        dynamo_local.start_container("fake_container_non_bind_failure")
+
+    assert "any port in the fixed range" not in str(excinfo.value)
+    assert len(run_attempts) == 1
+
+
 def test_resolve_dynamo_uses_external_endpoint(monkeypatch: pytest.MonkeyPatch):
     monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "http://aws-dynamo:8000")
     plan = dynamo_local.resolve_dynamo()
