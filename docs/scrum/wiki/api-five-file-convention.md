@@ -12,6 +12,11 @@ status: verified
 # that half stays here as prose. Stated rather than glossed, because "the five-file convention
 # is tested" is true only of the shape, and a reader who over-trusted that would stop checking
 # the half nothing guards.
+# sprint-71 (STORY-189): re-verified after this article's code_ref
+# `api/v1/availability/models.py` changed -- `gap_verdicts`'s docstring corrected from
+# "expected-but-missing" (false: the denominator is OBSERVED locations, not expected; STORY-152
+# widens this) to describe the current behaviour, line-count neutral. The one Fact citing this
+# file is symbol-cited (`::AvailabilityDTO`) and does not restate the corrected claim -- unaffected.
 ---
 
 ## Facts (verified against code)
