@@ -686,7 +686,12 @@ citations regardless of enforcement status; the row is the authoritative verdict
   `PaginationSpy` (`backend/tests/pagination_diagnostics.py`) so a failure reports the observed page
   count and whether `LastEvaluatedKey` was still present when the loop exited, not just the bare
   `True`/`False` mismatch. The `assert True` this Fact cites is unchanged; only the failure message
-  changed. Full detail: [[persistence-adapters]].
+  changed. A fix-round pass further keyed the message on page count, not LEK alone: `LastEvaluatedKey=True`
+  is this repository's own loop stopping early (a regression); `=False` with exactly one page read is
+  DynamoDB Local under-reporting that page's boundary; `=False` with more than one page read means the
+  loop ran to exhaustion and the target component's window was never visible on the wire at all (GSI
+  lag or a lost write, not a pagination defect) — the three causes render identically on `LastEvaluatedKey`
+  alone but not on `page_count` too. Full detail: [[persistence-adapters]].
 - **Why the nine `lint-imports` contracts pass it.** Import-linter checks import
   edges; it has no concept of "did this adapter loop over `LastEvaluatedKey`" or "does
   this docstring's completeness promise hold" — that is runtime pagination behavior
