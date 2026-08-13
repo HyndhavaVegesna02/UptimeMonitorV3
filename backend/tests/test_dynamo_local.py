@@ -20,7 +20,7 @@ def test_import_exists():
     assert dynamo_local is not None
 
 
-def test_free_tcp_port_stays_outside_windows_dynamic_range():
+def test_candidate_port_for_test_injection_stays_outside_windows_dynamic_range():
     """STORY-179 AC1: the allocated port must never land in Windows' WinNAT
     dynamic range (>= 49152), where Docker's mapping is displayed by
     `docker ps` but never actually routes -- container `Up`, every request
@@ -28,11 +28,12 @@ def test_free_tcp_port_stays_outside_windows_dynamic_range():
 
     Sampled 5x rather than once: measured live on this machine, the OS
     hands out ports from that exact range on every call (e.g. 57634..57643),
-    so a single sample already reds against the current `_free_tcp_port()`,
+    so a single sample already reds against the pre-fix `_free_tcp_port()`
+    (renamed `_candidate_port_for_test_injection` in the fix round, MINOR 5),
     but 5 removes any doubt about a lucky draw.
     """
     for _ in range(5):
-        port = dynamo_local._free_tcp_port()
+        port = dynamo_local._candidate_port_for_test_injection()
         assert port < 49152, (
             f"port {port} is inside Windows' WinNAT-reserved dynamic range "
             "(>= 49152); Docker's mapping for it may never route"

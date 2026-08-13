@@ -43,13 +43,26 @@ def docker_available() -> bool:
 # creates a mapping, `docker ps` still displays it as `Up`, but it never
 # routes -- every request just hangs.
 #
+# Verified clear on this machine (fix round, 2026-08-13):
+#   netsh interface ipv4 show excludedportrange protocol=tcp
+# returned exclusions only in 50000-50059 and the 52680-53228 span -- nothing
+# overlapping 18000-18099. WinNAT's exclusions are re-derived at boot from
+# whatever is currently reserved, so this is a point-in-time observation, not
+# a permanent guarantee; re-run the command above if this range ever needs
+# re-justifying.
+#
 # STORY-173 (separate story, NOT in this sprint): a container leaked by a
 # dead PID -- e.g. a killed pytest run that never reached its finalizer --
 # holds its port slot in this fixed range until 173's reaper lands. That is
-# a known, accepted limitation of shipping 179 without 173: the range is
-# small enough that a handful of leaks could exhaust it.
+# a known, accepted limitation of shipping 179 without 173: N leaked slots
+# cost N/100 of the range; exhaustion needs >= _MAX_BIND_ATTEMPTS (20) held
+# simultaneously, not "a handful".
 _PORT_RANGE_START = 18000
 _PORT_RANGE_END = 18100  # exclusive
+# 20 of 100 slots: a compromise between tolerating _MAX_BIND_ATTEMPTS-1
+# simultaneous in-use/leaked ports (STORY-173's known limitation above) and
+# not spending more than 20 subprocess round-trips retrying a range that is,
+# in practice, almost always immediately available on a dev/CI box.
 _MAX_BIND_ATTEMPTS = 20
 
 
@@ -63,16 +76,18 @@ def _candidate_ports() -> Iterator[int]:
     yield from ports[:_MAX_BIND_ATTEMPTS]
 
 
-def _free_tcp_port() -> int:
+def _candidate_port_for_test_injection() -> int:
     """A single candidate host port drawn from the fixed range above.
 
-    Previously bound `("127.0.0.1", 0)` to ask the OS for an ephemeral port,
-    then closed the socket and handed the bare number to `docker run` -- the
-    port was unowned in the gap between close and bind (a race), AND on
-    Windows it landed in WinNAT's reserved dynamic range (see `_PORT_RANGE_START`
-    above). `start_container()`'s bind-retry loop plus its `docker port`
-    read-back (AC2/AC3) is the backstop for whatever race still slips through
-    a single candidate picked here.
+    STORY-179 fix round, MINOR 5: this was named `_free_tcp_port()`, which
+    overstates what it does -- it does not verify anything is free, it just
+    draws one candidate from `_candidate_ports()`. `start_container()` (the
+    real path) has never called this directly; it calls `_candidate_ports()`
+    itself and lets Docker perform the actual bind, with `docker port`
+    read-back as the verification (AC2/AC3). This function's only remaining
+    caller is `resolve_dynamo`'s `spawn_container`-injected branch, which
+    exists for test doubles that need a port number without spawning a real
+    container -- hence the name.
     """
     return next(_candidate_ports())
 
@@ -337,7 +352,7 @@ def resolve_dynamo(
             stop_container(name)
             raise
     else:
-        port = _free_tcp_port()
+        port = _candidate_port_for_test_injection()
         spawn_container(name, port)
 
     return DynamoPlan(
