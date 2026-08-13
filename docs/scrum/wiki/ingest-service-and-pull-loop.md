@@ -405,3 +405,8 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   reverse that decision — and would make this article the SIXTH citing a file already over the
   refs-amplifier threshold. The Fact now links to [[architecture-boundary]] for the contract set
   instead. Facts lint re-run: CLEAN.
+- sprint-71 (STORY-189): re-verified after this article's code_ref `composition/vendor_health.py`
+  changed — its docstring's false "a healthy id logs nothing" absolute was corrected to state
+  what the code does (logs at INFO); line-count neutral, no code changed. The Fact above (line
+  199, "a healthy id logs only INFO") already stated this correctly before the fix and is
+  unaffected. No Fact in this article changed.
