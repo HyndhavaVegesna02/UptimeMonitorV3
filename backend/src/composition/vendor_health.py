@@ -74,8 +74,8 @@ def check_vendor_id_health(*, config: Config, executor: Executor) -> None:
     `adapters/inbound/dynatrace/query.py::build_vendor_health_dql` through the
     injected `Executor` seam. A 0-row/0-count result logs a PROMINENT WARNING
     naming the monitor id and signal key -- the drift this story exists to
-    catch. A healthy id logs nothing (kept quiet; the loud signal is reserved
-    for the failure case, AC1).
+    catch. A healthy id logs at INFO (quiet by comparison; the loud WARNING is
+    reserved for the failure case, AC1).
 
     NOT fail-fast for the EXECUTOR: a probe that raises (HTTP failure,
     malformed response, vendor timeout) is caught and logged as its own
