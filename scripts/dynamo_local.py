@@ -175,7 +175,12 @@ def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
     """
     import boto3
     from botocore.config import Config
-    from botocore.exceptions import BotoCoreError, ClientError
+    from botocore.exceptions import (
+        BotoCoreError,
+        ClientError,
+        ConnectTimeoutError,
+        EndpointConnectionError,
+    )
 
     # STORY-179 fix round, CRITICAL 1: `deadline` below is only consulted
     # BETWEEN calls -- a single `list_tables()` call is otherwise bounded by
@@ -198,10 +203,22 @@ def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
         ),
     )
 
+    # STORY-179 fix round, MAJOR 1: the probe cannot distinguish "connected
+    # but got a non-DynamoDB response" from "connection refused" -- it only
+    # sees whatever exception botocore raised on the last attempt. Track it
+    # so the timeout message states what was actually observed instead of
+    # asserting a diagnosis ("mapped, not dead-on-arrival") the check has no
+    # basis for when nothing ever accepted a connection (measured: a closed
+    # port raises `ConnectTimeoutError`/`EndpointConnectionError`, never
+    # anything implying a live peer).
+    last_exception: Exception | None = None
+    connection_was_established = False
+
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         try:
             response = client.list_tables()
+            connection_was_established = True
             # botocore's JSON-protocol parsing is lenient about a 200 whose
             # body isn't actually AWS JSON (measured live: it returns an
             # empty, exception-free result rather than raising) -- so a
@@ -210,15 +227,30 @@ def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
             # response carries is what actually pins "the service answers".
             if "TableNames" in response:
                 return
-        except (BotoCoreError, ClientError, OSError):
-            pass
+        except (BotoCoreError, ClientError, OSError) as exc:
+            last_exception = exc
+            # `ConnectionClosedError`/`ReadTimeoutError`/`ClientError` all
+            # imply a TCP connection was actually accepted; a connect
+            # failure (e.g. `ConnectTimeoutError`) never gets this far.
+            if not isinstance(exc, ConnectTimeoutError | EndpointConnectionError):
+                connection_was_established = True
         time.sleep(0.1)
 
+    if connection_was_established:
+        raise TimeoutError(
+            f"DynamoDB Local port {port} was mapped and accepted a "
+            f"connection, but never returned a valid ListTables response "
+            f"within {timeout_seconds}s -- the port is mapped, not "
+            "dead-on-arrival, but the service behind it never answered "
+            f"(STORY-179). Last error: {last_exception!r}"
+        )
+
     raise TimeoutError(
-        f"DynamoDB Local port {port} was mapped but never answered a "
-        f"ListTables call within {timeout_seconds}s -- the port is mapped, "
-        "not dead-on-arrival, but the service behind it never responded "
-        "(STORY-179)."
+        f"DynamoDB Local port {port} never accepted a successful connection "
+        f"within {timeout_seconds}s -- this observation cannot distinguish "
+        "'nothing is listening' from 'something dropped the connection', so "
+        f"no mapped-vs-dead-on-arrival diagnosis is claimed (STORY-179). "
+        f"Last error: {last_exception!r}"
     )
 
 

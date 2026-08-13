@@ -95,6 +95,30 @@ def test_wait_for_dynamo_rejects_a_non_dynamo_answer():
         listener.close()
 
 
+def test_wait_for_dynamo_does_not_claim_mapped_when_nothing_ever_listened():
+    """STORY-179 fix round, MAJOR 1: the timeout message named "mapped but
+    never answered -- the port is mapped, not dead-on-arrival" UNCONDITIONALLY,
+    even when the probe never received so much as a TCP accept (measured: a
+    closed port raises `ConnectTimeoutError`, never a connection). That
+    over-claims a diagnosis the probe cannot support. Against a genuinely
+    closed port, the message must NOT rule out "nothing is listening".
+    """
+    # A closed port: bind then immediately close, so nothing is listening.
+    probe_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    probe_socket.bind(("127.0.0.1", 0))
+    closed_port = probe_socket.getsockname()[1]
+    probe_socket.close()
+
+    with pytest.raises(TimeoutError, match=str(closed_port)) as excinfo:
+        dynamo_local.wait_for_dynamo(closed_port, timeout_seconds=2.0)
+
+    message = str(excinfo.value)
+    assert "not dead-on-arrival" not in message, (
+        f"message rules out dead-on-arrival against a port nothing was "
+        f"listening on: {message!r}"
+    )
+
+
 def _fake_docker_run(cmd, **kwargs):
     return subprocess.CompletedProcess(cmd, 0, "container_id\n", "")
 
