@@ -2,11 +2,16 @@
 id: STORY-222
 title: Record the AWS stack decommission — CLAUDE.md and two wiki articles describe infrastructure that no longer exists
 type: chore
-points: 2
+points: 3
 status: ready
 filed: 2026-08-13
+refined: 2026-08-13
 sprint: null
 ---
+
+> **Re-scoped at sprint-71 plan verification (2026-08-13).** Three surfaces were missing — one of
+> them **executable** — and AC2 as originally written passed `integrity` while leaving AC6
+> unsatisfied. Priced 2 → 3. The corrections are marked ⚑ below.
 
 ## Context
 
@@ -60,14 +65,38 @@ halves are true and both belong in the record.
 2. `wiki/deployment-and-infra.md` is converted to a **tombstone**: `tier: reference`,
    `code_refs` removed, `## Facts` section removed, carrying `archived_reason` naming the
    decommission and its date. `yt_wiki.py integrity` passes on the result.
+   ⚑ **The `status:` line is REMOVED** — the protocol declares it map-only. ⚑ **The file STAYS in
+   `docs/scrum/wiki/`, not `wiki/archive/`.** Both are load-bearing and neither is caught by the
+   tool: verification built a scratch wiki with `tier: reference` **and `status: stale` retained**
+   and got `sweep CLEAN / integrity CLEAN / exit 0` — because `check_sweep` short-circuits on
+   `tier == "reference"` at `yt_wiki.py:170-174` *before reading status*, and `check_integrity:366`
+   flags only `status == "archived"`. Building literally to the old AC2 left three stale articles,
+   silently failing AC7. Conversely, setting `status: archived` in place **fails** the gate.
 3. `wiki/deployment-topology.md` is updated consistently and remains `tier: reference`.
-4. `docs/deploy-runbook.md` is checked and corrected if it claims a live stack. (Verify at
-   implementation — it was not audited during the refinement pass.)
-5. Any internal wiki link pointing at the converted article still resolves (`yt_wiki.py` link lint
+4. ⚑ **Both deployment articles are free of cp1252 round-trip sequences at the final commit.**
+   AC2's `## Facts` removal clears only 17 of `deployment-and-infra.md`'s 24 as a side effect; 7
+   survive outside it, and **all 11 in `deployment-topology.md` survive**, including its own
+   mojibake title (`Deployed topology â€" the live AWS instance`). Without this AC the ordering
+   claim against STORY-192 is false and both stories end up editing these two files.
+5. ⚑ **`tools/ui-sweep/` no longer points at the dead stack.** `sweep.mjs:23` hard-codes
+   `BASE_URL = 'https://d3ukiib1iqmbxb.cloudfront.net'` and `package.json:5` describes sweeping
+   "the LIVE deployed dashboard". **This is the highest-value surface in the story because it is
+   executable, not prose** — a runnable tool aimed at a decommissioned host. Either point it at a
+   configurable/local base URL or mark the tool decommissioned; do not leave the literal.
+6. ⚑ **`CLAUDE.md:144-145` (the Stack table) is corrected too** — it asserts "FastAPI on **AWS ECS
+   Fargate**" and "static build served by **CloudFront**". AC1 covers only the "Deployed topology"
+   section, so without this the same file still claims a live AWS deployment two sections away.
+7. ⚑ **`.scrum/backlog.yaml:1069`** — STORY-089's note "system LIVE at https://d3ukiib1iqmbxb…" is
+   dated as past.
+8. `docs/deploy-runbook.md` is checked and corrected if it *claims* a live stack. Note it is a
+   *procedure* document; describing how to deploy is not the same as asserting something is
+   running. Judgement call at implementation — say which way it went and why.
+9. Any internal wiki link pointing at the converted article still resolves (`yt_wiki.py` link lint
    CLEAN).
-6. The three stale articles are now two: `core-pipeline-and-availability.md` and
-   `frontend-zone.md`. Say so wherever the count is recorded, so the next sprint does not re-derive it.
-7. The full wiki compile pass (`sweep`/`facts`/`links`/`integrity`) exits 0 at the final commit.
+10. The three stale articles are now two: `core-pipeline-and-availability.md` and
+    `frontend-zone.md`. **Verify mechanically** — `grep -c "^status: stale" docs/scrum/wiki/*.md`
+    returns 2, not 3 — rather than by reading AC2 and assuming.
+11. The full wiki compile pass (`sweep`/`facts`/`links`/`integrity`) exits 0 at the final commit.
 
 ## Baseline note (wiki-protocol 2.3.0)
 
@@ -78,9 +107,12 @@ a false claim. Do not generalise this exemption.
 
 ## Side effect worth sequencing on
 
-Repairing (b) and (c) resolves **24 of the 218 mojibake sequences** in STORY-192's scope (16 + 8).
-Run this **before** STORY-192, or accept the overlap — but do not let both stories edit these two
-files.
+⚑ **Corrected 2026-08-13.** AC4 makes this story clear **35 sequences** (24 in
+`deployment-and-infra.md` + 11 in `deployment-topology.md`) out of a corrected repo-wide total of
+**293**, not the 24-of-218 originally claimed. Both figures were wrong: 218 counted em- and en-dash
+only, missing arrows (57), section signs (15) and others of the identical cp1252 round-trip class.
+With AC4 in place this story genuinely removes both files from STORY-192's scope. Without it, it
+does not — which was the finding.
 
 ## Not in scope
 

@@ -1,130 +1,139 @@
 # Sprint 71 — plan
 
-**Branch:** `sprint-71` off `sprint-70` HEAD `38d628f` · **Committed:** 11 points · **Mode:** in-process
-**Status: DRAFT — awaiting PO approval. Not locked.**
+**Branch:** `sprint-71` off `sprint-70` HEAD `bfec505` · **Committed:** 10 points · **Mode:** in-process
+**Status: v2 — RE-PLANNED after pre-lock verification returned RE-PLAN. Awaiting PO lock.**
 
 ## Goal
 
 > Every check the DoD gate runs, and every document a session loads, is either true or visibly
 > stale. Nothing in the floor reports a result it did not measure.
 
-This is the **phase-0** set from the 2026-08-13 equilibrium pass: the work that is
-**requirement-independent**. Real core requirements are inbound and may reshape the core; none of
-them can invalidate a gate that lies about having run, a fixture that green-lights a dead
-container, or a document describing infrastructure that no longer exists.
+The **phase-0**, requirement-independent set. Real core requirements are inbound and may reshape
+the core; none of them can invalidate a fixture that green-lights a dead container, a gate command
+whose failure message is indistinguishable from a real defect, or a document describing
+infrastructure that no longer exists.
 
-## Scope — 4 stories, 11 points
+## What v1 got wrong
 
-| # | Story | Pts | What it closes |
+The pre-lock verifier returned **RE-PLAN**: 3 CRITICAL, 8 MAJOR. The three that reshaped this plan:
+
+1. **9 of 11 committed points had no acceptance criteria.** STORY-179/173/192 were all
+   `points: null`, `status: draft`, with 12 open refinement questions. They were written in
+   *filing* shape during the equilibrium pass and put into a sprint without being refined.
+   Definition of Ready exists to prevent exactly this.
+2. **STORY-192's `~2 → ~4` rested on a void premise** — the three articles' staleness baseline was
+   already reset to `d9319d8` (2026-08-12, a bulk migration that re-read zero Facts), and the diff
+   over their `code_refs` is empty. The re-pricing was discretionary, not protocol-forced.
+3. **STORY-173's `3` pre-declared a wiki blast radius**, which `plan-verification.md:19` forbids —
+   the radius depends on an implementation choice the story defers.
+
+Two ordering rationales were also refuted outright and have been removed, not rewritten.
+
+## Scope — 5 stories, 10 points
+
+| # | Story | Pts | State |
 | --: | --- | --: | --- |
-| 1 | **STORY-222** — record the stack decommission | 2 | `CLAUDE.md` + 2 wiki articles describe a stack that was brought down 2026-08-13 |
-| 2 | **STORY-179** — dynamo_local port + readiness probe | 2 | A probe that proves connectability but not that the service answers |
-| 3 | **STORY-173** — killed pytest leaks its container | 3 | Next run stalls 20 min with no diagnosis |
-| 4 | **STORY-192** — wiki mojibake + re-verify | 4 | 218 corrupted sequences the encoding guard passes clean |
+| 1 | **STORY-222** — record the stack decommission | 3 | `ready`, re-scoped + AC corrected |
+| 2 | **STORY-179** — dynamo_local port + readiness probe | 3 | `ready`, **refined at this planning** — 8 AC |
+| 3 | **STORY-213** — self-diagnosing pagination assertion | 2 | `ready`, 6 AC (was already refined) |
+| 4 | **STORY-201** — clickpath `require_field` hygiene | 1 | `ready` |
+| 5 | **STORY-189** — two doc/wiki gaps | 1 | `ready`, re-scoped 3 findings → 2 |
 
-**STORY-192 is the DECLARED first-to-drop** if the sprint runs hot. It is last in the order, its
-re-verification half is the sprint's largest unknown, and dropping it costs no other story.
+Velocity: sprints 67–70 accepted **10, 11, 11, 11**. This commits 10 — all of it genuinely Ready.
 
-Velocity baseline: sprints 67–70 accepted **10, 11, 11, 11**. This commits 11.
+**STORY-189 is the declared first-to-drop.** It is the smallest, last in order, and blocks nothing.
 
-## Execution order, and why it is not negotiable
+## Execution order
 
-**222 → 179 → 173 → 192**
+**222 → 179 → 213 → 201 → 189**
 
-1. **222 first.** It is docs-only with zero gate risk, and it **tombstones the two deployment
-   articles that STORY-192 would otherwise also edit** (`deployment-and-infra.md`,
-   `deployment-topology.md` — 24 of 192's 218 sequences). Running it second would put two stories
-   in the same two files.
-2. **179 before 173.** Both touch the DynamoDB Local container lifecycle. 179 may change the port
-   strategy and therefore the container **name pattern**, which is precisely what 173's reaper
-   matches on. Reversed, 173's reaper is written against a pattern 179 then changes.
-3. **192 last.** It depends on 222 (above), and it is the drop candidate — the tail is where a
-   drop costs least.
+Only one ordering constraint is real, and it is weak: **222 before anything that touches the wiki**,
+because it converts `deployment-and-infra.md` to a tombstone and discharges one of the three stale
+articles. The rest is priority order, not dependency. **v1's "not negotiable" framing was wrong**
+and is dropped:
 
-## Deferred, with reasons
+- ~~179 before 173~~ — refuted. `_free_tcp_port()` (`:39-45`) and `unique_container_name()`
+  (`:48-50`) take no shared input and are called independently at `:123-124`. 173 is not in this
+  sprint regardless.
+- ~~222 before 192~~ — 192 is not in this sprint. STORY-222's new AC4 now genuinely clears both
+  deployment articles of mojibake, which is what that ordering was supposed to achieve and didn't.
 
-- **STORY-213 (backend flake, 2) and STORY-221 (frontend flake)** — deliberately held for sprint 72,
-  *together*. **STORY-179 and STORY-173 both modify the container lifecycle STORY-213 runs on.**
-  Measuring a 1-in-11 hit rate against a substrate being changed in the same sprint produces
-  numbers that mean nothing. Measure both flakes **after** this sprint lands, on a stable fixture.
-  They pair naturally — one backend, one frontend, both "the gate false-reds," both requiring a
-  measured hit rate before and after. *Do not assume 179 fixes 213* (its hypothesis is a lost write,
-  a different mechanism); re-measure and let the number decide, the way STORY-178 was decided.
-- **STORY-186 / 189 / 201** — three 1-pointers, `ready`, pure accuracy. They gate nothing and make
-  natural sprint-72 filler alongside the flakes. STORY-189 must have its (b)/(c) citations
-  re-derived first (both drifted; see the refinement pass).
-- **STORY-223** — unestimated by design: refinement must first settle whether it rehabilitates the
-  two `status: stale` articles or excludes them. That decision separates a ~3 from a ~8.
-- Everything `blocked` (150, 154, 172, 175) — gated on the vendor or on the inbound requirements.
+## Deferred — with honest reasons this time
 
-## Pre-sprint housekeeping — **PO-APPROVED 2026-08-13**
+- **STORY-192** — not Ready, and re-priced on findings (count is **293, not 218**; the re-baseline
+  premise is void; its guard-placement choice is a false choice pending STORY-224). Re-refine first.
+- **STORY-173** — not Ready; 4 open refinement questions, including where the reaper is invoked
+  relative to `resolve_dynamo`'s env short-circuit, and the reap match-pattern.
+- **STORY-224** — filed *by* this verification (see below); unestimated.
+- **STORY-186** — `ready` at 1pt, cut purely for **capacity**. Not a judgement about its value.
+- **STORY-221** — capacity, not substrate. v1 deferred it on a shared-substrate argument that was
+  simply wrong: it lives entirely in `frontend/`, a zone this sprint does not touch. **But see
+  Risk 2 — it will fire during this sprint anyway.**
 
-A **stale git worktree** sits at `.claude/worktrees/yourteam-skill-analysis-a29bf1` — 12 MB, from
-2026-08-01, detached at `2f31ec9`.
+## Filed by this verification
 
-**Verified safe to remove:** working tree is clean, and `2f31ec9` is reachable from five branches
-(`sprint-66`…`sprint-69`, `process/ratchet-brake-from-sprint-66`), so it holds **zero unique work**.
-
-**Why it matters beyond disk:** it is a full second copy of `backend/`, `docs/scrum/wiki/`, and
-`.scrum/`, and it **pollutes recursive searches**. It was found during this planning session by a
-`grep -rln` that returned 8 hits from the worktree and 2 from the real tree. That is exactly the
-RC-1 defect class from sprint 70 — a count contaminated by a directory nobody remembered — and it
-will corrupt any measurement STORY-192 or STORY-223 takes.
-
-Proposed: `git worktree remove` at sprint start, recorded in the plan rather than made a story.
+**STORY-224 — an entire second test suite exists and the DoD gate does not run it.**
+`testpaths = ["backend/tests"]`; `pytest --collect-only` returns 800 tests, **zero from `.claude/`**.
+The 7 modules under `.claude/skills/yourteam/scripts/tests/` run only when someone invokes
+`yt_selftest` — a habit, not a floor. Two of them have already caught real defects by luck:
+`test_template_parity` caught A19 silently reverting, and `test_scrum_encoding` is STORY-188's
+guard. Same class as STORY-178, except these never run at all. Unestimated; the obvious fix
+(extending `testpaths`) edits `pyproject.toml`, an amplifier `code_ref` in four articles.
 
 ## Risks
 
-1. **This sprint modifies the test harness the DoD gate itself runs on.** Stories 2 and 3 both
-   change `dynamo_local` behaviour, so every gate run during them is exercising the thing under
-   change. **Mitigation:** establish the green baseline against a *fixed-port* container
-   (`DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021`, `REQUIRE_DYNAMO=1`) before story 2 starts, and
-   re-run it unchanged after story 3. A red during 2–3 must be attributed before it is believed.
-2. **STORY-192's re-verification is the sprint's largest unknown** — **67 Facts across 1068 lines**
-   (`sample-mode.md` 23 / `ingest-service-and-pull-loop.md` 28 / `statuspage-publish.md` 16), each
-   to be read against the code it cites. This is why 192 is priced 4 and declared first-to-drop.
-3. **STORY-173 carries a two-article wiki blast radius.** `backend/tests/conftest.py` is a
-   `code_ref` in **`demo-engine.md` and `persistence-adapters.md`, both `verified`** — so under
-   A18 the story must update or genuinely re-verify both, in-story. This is why it is 3, not 2.
-   (`scripts/dynamo_local.py` is a `code_ref` in **no** article, so STORY-179 has zero blast radius.)
-4. **Environment:** container `uptime_dynamo_8021` is currently **exited**. Restart it before
-   anything, or `REQUIRE_DYNAMO=1` will ERROR — which reads as a code red and is a setup error.
-5. **Two of these stories were nearly filed stale.** The refinement pass found STORY-178 already
-   fixed and STORY-189(a) already fixed. Every story here was re-verified against the live tree on
-   2026-08-13 — but **re-verify again at dispatch**; the gap between planning and dispatch is where
-   the last two died.
+1. **STORY-179 modifies the harness the gate itself runs on — and the gate env HIDES it.**
+   With `DYNAMO_ENDPOINT_URL` set, `resolve_dynamo` short-circuits at `dynamo_local.py:113-115`
+   and **none** of the functions STORY-179 changes is ever called; `REQUIRE_DYNAMO` is inert too
+   (`conftest.py:52-86` is only reached when `plan.source == "skip"`). A URL-set baseline stays
+   green through total breakage. **Mitigation: STORY-179's AC8 requires the gate green in BOTH
+   configurations** — URL set, and URL unset with Docker up. v1's single-config mitigation proved
+   nothing; this is the correction.
+2. **STORY-221's flake will fire during this sprint.** Measured **2 red in 4** at `56491a8` with
+   zero frontend diff — including one failure when run *alone*, which breaks the "passes in
+   isolation" limb. `npm test` is gate command 6 of 8, and this sprint runs the full gate at least
+   6 times. **Attribution protocol before any red is believed:** (a) confirm an empty
+   `git diff sprint-71-start..HEAD -- frontend/`, (b) re-run serialized
+   (`--no-file-parallelism`; ~205s vs ~93s). Both limbs, every time. Record the discount on the
+   board — never silently.
+3. **Do not pre-declare wiki blast radius** (`plan-verification.md:19`). Run the sweep after each
+   story's last commit and take whatever it returns. `backend/tests/conftest.py` *is* a `code_ref`
+   in `demo-engine.md` and `persistence-adapters.md` (both `verified`), so if STORY-179's AC5
+   surfaces through the fixture, that radius is real — but it is not assumed here, and it is not
+   priced in.
+4. **Environment:** container `uptime_dynamo_8021` is **exited**. Restart it before anything, or
+   `REQUIRE_DYNAMO=1` errors in a way that reads as a code red.
+5. **Re-verify each story at dispatch.** This session found STORY-178 and STORY-189(a) already
+   fixed, and the verifier then found two of v1's own price justifications refuted by measurement.
+   The gap between planning and dispatch is where claims die.
+
+## Pre-sprint housekeeping — PO-APPROVED
+
+Remove the stale worktree `.claude/worktrees/yourteam-skill-analysis-a29bf1` (12 MB, 2026-08-01,
+detached at `2f31ec9`). **Verified safe twice**: clean tree, 0 tracked files, ignored via
+`.git/info/exclude:12`, and `2f31ec9` reachable from **6** branches (the plan previously said 5 —
+conservative in the safe direction). It pollutes recursive searches and will corrupt any
+measurement STORY-192 or STORY-223 takes.
+
+## Execution shape — PO-DECIDED
+
+**Full YourTeam loop:** implementer + spec reviewer + quality reviewer per story. The PO
+re-confirmed dispatch on 2026-08-13, resolving this session's "no subagents unless requested"
+constraint against the standing 2026-08-03 authority.
+
+Standing constraints on every brief: **never run `python -m src.composition.run`** (`decide`
+publishes recoveries with NO human gate to the LIVE Statuspage); pin `CONFIG_DIR=config/demo` if
+`create_app()` is constructed; Device-Guard shims are module-form only; **A19** — every scratch
+`cd` written `cd X || exit 1`; checkpoint evidence outside the repo; `.scrum/` is orchestrator-owned;
+sprints 66–71 all stay **UNMERGED**.
 
 ## Verified green baseline
 
-Sprint 70 final HEAD: **8/8 gate green — 800 passed / 0 skipped** under `REQUIRE_DYNAMO=1`,
-contracts 9 kept / 0 broken, ruff clean, cfn-lint clean, npm test 363 / build / lint.
-Post-refinement HEAD `38d628f`: `yt_selftest` OK, ruff clean (260 files), `yt_wiki` exit 0 with the
-citation advisory unchanged at 146.
+`bfec505`: `yt_selftest` OK, ruff clean (260 files), `yt_wiki` sweep/facts/links/integrity CLEAN
+exit 0 with the citation advisory at **146**. Sprint-70 final gate: 8/8, **800 passed / 0 skipped**
+under `REQUIRE_DYNAMO=1`, contracts 9 kept / 0 broken.
 
 ## Definition of Done
 
-Unchanged — `.scrum/definition-of-done.md`, 8 commands, all exit 0, run via `yt_gate.py`.
-A nonzero skip count is an incomplete gate, not a pass.
-
-## Execution shape — **PO-DECIDED 2026-08-13: FULL YOURTEAM LOOP**
-
-The PO re-confirmed subagent dispatch for this sprint: **implementer + spec reviewer + quality
-reviewer per story**, as sprints 66–70 ran. This resolves the session-level "no subagents unless
-requested" constraint against the standing 2026-08-03 authority — **requested, explicitly, here.**
-
-The reason it mattered enough to ask: **sprint 70's own review recorded that the orchestrator's
-self-check was the weaker one.** I reviewed STORY-212's AC7 checklist diff, confirmed every
-mechanic was preserved, and passed it; the quality reviewer found that reviewer *independence*
-was the casualty. Three of this sprint's four stories turn on a proof — two shown-RED mutations
-and one 67-Fact re-verification — and "I checked it myself" is the weakest available evidence for
-exactly that shape of claim.
-
-Standing constraints that ride on every brief (unchanged from sprint 70):
-- **NEVER run `python -m src.composition.run`** — `decide` publishes recoveries with NO human gate
-  to the LIVE public Statuspage. If `create_app()` is constructed, **PIN `CONFIG_DIR=config/demo`**.
-- Console-script shims are Device-Guard blocked — **module form only**.
-- Checkpoint agent evidence **outside the repo**, to the session scratchpad.
-- **A19:** every scratch `cd` is written `cd X || exit 1`, and no tool relies on a `--repo-root`
-  default pointing at the working tree.
-- `.scrum/` is orchestrator-owned; subagents never write it.
-- Sprints 66–71 all stay **UNMERGED**. Nothing touches `main`.
+Unchanged — `.scrum/definition-of-done.md`, 8 commands, all exit 0 via `yt_gate.py`. A nonzero skip
+count is an incomplete gate, not a pass.

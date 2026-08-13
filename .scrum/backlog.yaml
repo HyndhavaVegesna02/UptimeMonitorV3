@@ -3,7 +3,9 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 224   # bumped 2026-08-13 AT THE MOMENT OF CONSUMPTION: the equilibrium refinement
+next_story_id: 225   # bumped again 2026-08-13 AT THE MOMENT OF CONSUMPTION: 224 (skill tests
+                    # outside the gate), filed by the sprint-71 pre-lock plan verifier.
+                    # Earlier the same day: the equilibrium refinement
                     # pass filed 222 (record the stack decommission) and 223 (wiki citation
                     # resolution). THIRD recorded staleness avoided by bumping in the same edit that
                     # consumes the ids -- which is the only discipline that has ever worked here.
@@ -1659,7 +1661,23 @@ stories:
     title: dynamo_local picks an ephemeral port Docker maps but Windows won't route; readiness probe can't detect it
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md   # written 2026-08-13; both defects RE-VERIFIED live at the pass
-    status: draft   # ~2pts. TWO defects in scripts/dynamo_local.py, root-caused 2026-07-29 while
+    status: ready   # *** REFINED 2026-08-13 at sprint-71 planning: 8 AC written, SIZED 3, all four
+                    # open questions settled in the story file. THE KEY REFINEMENT FINDING:
+                    # the shown-RED does NOT require reproducing a WinNAT-reserved port (which is
+                    # not reliably achievable and would have blocked the story by construction).
+                    # The probe defect is proven with ANY plain TCP listener that accepts and never
+                    # answers DynamoDB -- deterministic and machine-independent. The allocation half
+                    # is proven as a PROPERTY (chosen port < 49152), which reds against the current
+                    # _free_tcp_port().
+                    # AC8 exists because plan verification proved the gate env HIDES this story:
+                    # with DYNAMO_ENDPOINT_URL set, resolve_dynamo short-circuits at
+                    # dynamo_local.py:113-115 and NONE of the changed functions is called. Green in
+                    # that config alone is worthless. Both configs required.
+                    # DECOUPLED FROM STORY-173: verification refuted the assumed name-pattern
+                    # coupling (_free_tcp_port :39-45 and unique_container_name :48-50 share no
+                    # input). The REAL coupling is the reverse -- a leaked container holds a slot in
+                    # this story's fixed range -- and AC6 records that as a shipped limitation.
+                    # ~2pts. TWO defects in scripts/dynamo_local.py, root-caused 2026-07-29 while
                     # running STORY-146's gate. Together they cost ~1h of sprint time and made a
                     # healthy test suite look hung.
                     # (1) PORT ALLOCATION IS RACY AND WINDOWS-HOSTILE. _free_tcp_port() (:39-45)
@@ -1687,6 +1705,14 @@ stories:
                     # RELATED: STORY-173 (killed runs leak containers) - re-confirmed here; two
                     #     leaked containers needed manual `docker rm -f`. Same fixture, so likely
                     #     one story's worth of work if taken together.
+                    # ^ SUPERSEDED 2026-08-13: they are NOT one story's work. Plan verification
+                    #   refuted the coupling -- see the refinement note at the top of this entry.
+    points: 3       # SIZED 2026-08-13 at sprint-71 refinement. NOTE: this entry previously carried
+                    # NO `points` key at all -- only a "~2pts" note buried in a comment, which no
+                    # tool reads. It was caught by post-refinement validation, not by reading the
+                    # file. Same shape as next_story_id: a number kept in prose is not a number.
+                    # 3 covers TWO independent defects, each with its own shown-RED, plus AC8's
+                    # two-configuration gate requirement (the gate env hides this story entirely).
     type: defect
     priority: 11
     sprint: null
@@ -2285,7 +2311,60 @@ stories:
     title: Mojibake in docs/scrum/wiki/ — 218 corrupted sequences across 5 articles, and the encoding guard passes them clean
     epic: sprint-65-splits
     file: docs/scrum/stories/STORY-192-wiki-mojibake-repair.md   # written 2026-08-13; title re-measured 246/6 -> 218/5
-    status: draft   # *** RE-MEASURED AND RE-SCOPED 2026-08-13 (equilibrium pass). The filed
+    status: draft   # *** CORRECTED AGAIN 2026-08-13 BY THE SPRINT-71 PLAN VERIFIER. READ THIS
+                    # BEFORE THE EQUILIBRIUM-PASS BLOCK BELOW, WHICH IS WRONG IN TWO PLACES. ***
+                    #
+                    # (A) THE COUNT IS 293, NOT 218. The 218 below counts EM- AND EN-DASH ONLY.
+                    #     A full cp1252 round-trip detector finds: sample-mode 142,
+                    #     ingest-service-and-pull-loop 80, statuspage-publish 36,
+                    #     deployment-and-infra 24, deployment-topology 11 = 293 in the live wiki.
+                    #     The extra 75 are arrows (57), section signs (15), and a few others --
+                    #     the IDENTICAL defect class, invisible to the same guard. `Â§` is visible
+                    #     in ingest-service-and-pull-loop.md's own title line.
+                    #     PLUS: wiki/archive/dev-setup-and-dod.md 50, and
+                    #     docs/scrum/sprints/2026-07-16-sprint-50/plan.md 47 -- the latter matters
+                    #     because the fix direction says the guard is "generalised to cover
+                    #     docs/scrum/", which would go RED on append-only history the protocol
+                    #     declares EXEMPT (wiki-protocol.md:125). The guard needs a stated
+                    #     exclusion rule for docs/scrum/sprints/ and stories/ as an AC.
+                    #
+                    # (B) *** THE ~2 -> ~4 RE-PRICING BELOW IS NOT PROTOCOL-FORCED. THE PREMISE IS
+                    #     VOID. *** The claim was that repairing a tier=map + status=verified
+                    #     article silently re-baselines it, destroying a sprint-68/69 verification
+                    #     date. MEASURED, that date was ALREADY DESTROYED:
+                    #       git log -1 -- <each of the three articles>  ->  all baseline d9319d83
+                    #       d9319d83 = "wiki: tier 8 articles map, drop the dead verified_sha"
+                    #                  (2026-08-12, a BULK FRONTMATTER MIGRATION that re-read
+                    #                   ZERO Facts)
+                    #       git diff d9319d83..HEAD -- <their code_refs>  ->  EMPTY for all three
+                    #     So the baseline was reset to "now" a sprint ago by a commit that verified
+                    #     nothing, and the code_ref diff is empty either way -- moving the baseline
+                    #     from 2026-08-12 to 2026-08-13 falsifies NOTHING the sweep can detect.
+                    #     (The tool/prose check came back CLEAN, for the record: yt_wiki.py:144-156
+                    #     + :195-201 do implement the derived baseline exactly as wiki-protocol.md
+                    #     :60-71 describes. The premise fails on history, not on implementation.)
+                    #     CONSEQUENCE: the +2 is a DISCRETIONARY knowledge investment. Price it as
+                    #     one, or split the re-verification into its own story -- do not sell it to
+                    #     the PO as an obligation. The honest residual duty is ONE `## History` line
+                    #     per article recording that the edit was encoding-only, which A18 clause 2
+                    #     explicitly sanctions (working-agreements.md:550).
+                    #
+                    # (C) THE PLACEMENT CHOICE IN THE STORY IS A FALSE CHOICE. Both options offered
+                    #     (test_scrum_encoding.py, yt_wiki.py) are SKILL-LEVEL and executed by NO
+                    #     DoD command -- testpaths = ["backend/tests"], 800 collected, 0 from
+                    #     .claude/. That is now STORY-224. This story must either depend on 224 or
+                    #     state its placement conditionally; it must NOT smuggle the fix in by
+                    #     editing pyproject.toml, which is an amplifier code_ref in FOUR articles.
+                    #
+                    # (D) 67 Facts / 1068 lines is EXACT for top-level bullets, but the real
+                    #     re-verification driver is 101 DISTINCT FILE CITATIONS (39/40/22), of which
+                    #     sample-mode.md's 13 do not resolve from the repo root. Pricing on 67
+                    #     understates the read count by ~50%.
+                    #
+                    # DEFERRED OUT OF SPRINT 71 on these findings; re-refine before it enters a
+                    # sprint. Everything below predates them.
+                    # ---- equilibrium-pass block, superseded in the two places named above ----
+                    # *** RE-MEASURED AND RE-SCOPED 2026-08-13 (equilibrium pass). The filed
                     # measurement is STALE and the wiki-protocol change (yourteam 2.3.0) adds a
                     # constraint the story as written would VIOLATE. Read this block before the
                     # 2026-07-30 one below it.
@@ -3007,7 +3086,16 @@ stories:
     title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
-    status: draft   # FILED 2026-08-03 from STORY-199's QUALITY REVIEW, with reproduction evidence
+    status: ready   # *** PROMOTED draft -> ready 2026-08-13 at sprint-71 plan verification. It was
+                    # ALREADY READY and mis-statused: six written AC and points: 2. It had been
+                    # DEFERRED out of sprint 71 on the grounds that STORY-179/173 change the fixture
+                    # substrate -- a reason THIS STORY'S OWN REFINEMENT FORBIDS: "Non-reproduction
+                    # must not block the story... an earlier draft required reproducing the failure
+                    # first. That would block this story BY CONSTRUCTION -- 35 runs already failed
+                    # to reproduce it." AC1/AC2/AC4 are assertion-message work with zero fixture
+                    # dependency; only AC3 probes the fixture and is satisfiable by a recorded
+                    # negative result. Pulled into sprint 71.
+                    # FILED 2026-08-03 from STORY-199's QUALITY REVIEW, with reproduction evidence
                     # attached. NOT a defect in STORY-199's code, and the reviewer proved that
                     # before filing: the production loop was mutation-verified correct, and the
                     # ZR-7 guard independently confirms all six compliant call sites.
@@ -3330,7 +3418,16 @@ stories:
                     # baseline. That is harmless HERE AND ONLY HERE, because the article is being
                     # converted to tier: reference -- never swept, so no verification claim is left
                     # to falsify. Contrast STORY-192, where the same edit would be a false claim.
-    points: 2       # docs + one tombstone conversion; no code, no gate risk
+    points: 3       # RE-PRICED 2 -> 3 at sprint-71 plan verification: three surfaces were missing,
+                    # one of them EXECUTABLE (tools/ui-sweep/sweep.mjs:23 hard-codes the dead
+                    # CloudFront URL), plus CLAUDE.md:144-145's Stack table and backlog.yaml:1069.
+                    # AC2 also gained two clauses the TOOL CANNOT ENFORCE -- remove the `status:`
+                    # line (map-only) and keep the file in the main wiki dir -- proven necessary by
+                    # a scratch wiki where tier:reference + status:stale passed integrity, exit 0,
+                    # leaving the "three stale become two" AC silently unmet.
+                    # AC4 (mojibake-free) was added because without it 18+ sequences survive in the
+                    # two files and STORY-192 must edit them anyway -- which is the collision the
+                    # 222-before-192 ordering exists to prevent.
     priority: 20    # high: it is wrong in the file every session reads
     type: chore
     sprint: null
@@ -3384,5 +3481,38 @@ stories:
     points: null    # unestimated -- refinement must settle the stale-article question above first,
                     # which is what separates a ~3 from a ~8
     priority: 45
+    type: defect
+    sprint: null
+  - id: STORY-224
+    title: An entire second test suite exists and the DoD gate does not run it — 7 skill-level modules, including the two guards that have already caught real defects
+    epic: process-ratchet-brake
+    file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
+    status: draft   # FILED 2026-08-13 by the sprint-71 PRE-LOCK PLAN VERIFIER, while checking a
+                    # STORY-192 claim about where a new encoding guard should live. The claim was
+                    # false, and the reason is bigger than the story that raised it.
+                    # MEASURED: pyproject.toml:29 sets testpaths = ["backend/tests"], and
+                    # `python -m pytest --collect-only -q` collects 800 tests, ZERO from .claude/.
+                    # The 8 DoD commands do not include yt_selftest.py. So the 7 modules under
+                    # .claude/skills/yourteam/scripts/tests/ are executed ONLY when a human or an
+                    # orchestrator remembers to run yt_selftest -- a habit, not a floor.
+                    # *** WHY IT IS NOT A FILING-CABINET PROBLEM: TWO OF THEM HAVE ALREADY CAUGHT
+                    # REAL DEFECTS, BOTH TIMES BY LUCK. *** test_template_parity.py caught A19 being
+                    # landed in the three .claude/agents/ instances but NOT the skill templates they
+                    # re-sync from -- left alone, A19 would have silently REVERTED at the next
+                    # standup, a rule that appears to exist and never fires. And
+                    # test_scrum_encoding.py is STORY-188's guard, the only thing standing against a
+                    # recurrence of the .scrum/ mojibake class.
+                    # SAME CLASS AS STORY-178 (yt_gate exiting 0 having run nothing); the difference
+                    # is that 178 ran and answered wrongly, while these do not run at all.
+                    # ALSO: it makes STORY-192's stated placement choice a FALSE CHOICE -- both of
+                    # its options (test_scrum_encoding.py, yt_wiki.py) are outside the gate.
+                    # THE TRAP IN THE OBVIOUS FIX: extending testpaths edits pyproject.toml, which
+                    # is an amplifier code_ref in FOUR articles (api-five-file-convention,
+                    # architecture-boundary, config-layer, sample-mode) -- staling all four in-story
+                    # under A18. Measure that before choosing option (b). See the story file for the
+                    # three shapes and the refinement bias.
+    points: null    # unestimated -- refinement must pick the shape AND measure the pyproject.toml
+                    # blast radius, plus confirm the skill suite passes standalone and time it
+    priority: 15    # high: it is the mechanical floor failing to be mechanical
     type: defect
     sprint: null
