@@ -1,6 +1,6 @@
 # YourTeam active sprint board. No active sprint when status: none.
 sprint: 70
-status: review     # none | planning | active | review | closed | aborted | parked
+status: closed     # none | planning | active | review | closed | aborted | parked
 goal: >-
   Every guard the audit shipped is complete and self-checking, and no claim in the catalogue outruns
   its citation. Sprint 69 gave all eight zone rules a terminal verdict; this sprint closes the
@@ -19,6 +19,35 @@ plan: docs/scrum/sprints/2026-08-13-sprint-70/plan.md
 branched_from: >-
   sprint-69 HEAD (a360e50), NOT main. Sprints 66, 67, 68 and 69 all remain unmerged by standing PO
   directive; sprint 70 continues that chain.
+
+po_review:
+  date: 2026-08-13
+  verdict: >-
+    "accept all 5, approve A19" -- ALL FIVE STORIES ACCEPTED (11 of 11 points). The ONE proposed
+    amendment APPROVED and landed at its named rung. ZERO deletions, as proposed.
+    SPRINT 70 STAYS UNMERGED, continuing the standing directive -- sprints 66, 67, 68, 69 and 70
+    are all off main.
+  amendments_landed:
+    - >-
+      A19 landed at the AGENT DEFINITION rung in all THREE definitions -- .claude/agents/
+      yt-spec-reviewer.md, yt-quality-reviewer.md (after each file's existing "never modify the
+      tree" clause, because this incident wrote into the tree WITHOUT violating that rule -- the
+      write went through a shell redirect, not a git command) and yt-implementer.md (as item 6 of
+      "How you work", renumbered 6-13). Two mechanical clauses: every scratch `cd` written
+      `cd <path> || exit 1`, and no reliance on a `--repo-root`-style default that points at the
+      working tree. Falsified by: any stray file appearing in the repo root from agent scratch work.
+  deletions: >-
+    NONE, as proposed. No rule cleared A15's six-sprint bar that was not already adjudicated in the
+    sprint-68 and sprint-69 retros. Every rule in force FIRED this sprint -- A9 five times, A17
+    three times, A18 four times, the PROOF-LABEL rule three times, and the not-liftable-by-brief
+    clause once (a reviewer refused to delete junk files it had itself created, and reported them).
+  no_amendment_by_design: >-
+    THE SPRINT'S DOMINANT FINDING -- five stories, five proofs that read stronger than they were --
+    was deliberately NOT written as an amendment, and the PO approved that call. The mechanism
+    landed as CODE this sprint: tools/evidence_check.py plus the restored reviewer-independence
+    clause ("a pasted tail is the implementer's evidence, not yours"). A sixth prose restatement of
+    one idea is exactly what the ratchet brake was installed to prevent. If this recurs, the
+    question is whether the TOOL reached the case -- not whether the prose needs strengthening.
 
 po_approval:
   date: 2026-08-13
