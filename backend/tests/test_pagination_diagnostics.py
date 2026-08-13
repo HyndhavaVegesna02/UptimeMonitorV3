@@ -59,8 +59,6 @@ def test_pagination_spy_last_evaluated_key_present_true_when_last_page_carries_o
 
 def test_pagination_spy_last_evaluated_key_present_none_when_nothing_recorded():
     table = _FakeTable([])
-    with PaginationSpy(table):
-        pass
     with PaginationSpy(table) as spy:
         pass
     assert spy.page_count == 0
