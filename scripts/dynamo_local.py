@@ -82,28 +82,81 @@ def unique_container_name(prefix: str = "uptime_dynamo_pytest") -> str:
     return f"{prefix}_{os.getpid()}_{uuid.uuid4().hex[:8]}"
 
 
-def start_container(name: str, host_port: int) -> None:
-    """Start a throwaway `amazon/dynamodb-local` container."""
-    subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+def _docker_port_mapping(name: str, container_port: int = 8000) -> int:
+    """Read back the host port Docker actually bound for `container_port`."""
     result = subprocess.run(
-        [
-            "docker",
-            "run",
-            "-d",
-            "--name",
-            name,
-            "-p",
-            f"{host_port}:8000",
-            "amazon/dynamodb-local",
-            "-jar",
-            "DynamoDBLocal.jar",
-            "-inMemory",
-        ],
+        ["docker", "port", name, f"{container_port}/tcp"],
         capture_output=True,
         text=True,
     )
-    if result.returncode != 0:
-        raise RuntimeError(f"docker run failed: {result.stdout}{result.stderr}")
+    output = result.stdout.strip()
+    if result.returncode != 0 or not output:
+        raise RuntimeError(
+            f"docker port lookup failed for container {name!r}: "
+            f"{result.stdout}{result.stderr}"
+        )
+    # One line per bound address family, e.g. "0.0.0.0:18007\n[::]:18007\n".
+    first_line = output.splitlines()[0]
+    _, _, port_str = first_line.rpartition(":")
+    return int(port_str)
+
+
+def start_container(name: str) -> int:
+    """Start a throwaway `amazon/dynamodb-local` container, verified bound.
+
+    STORY-179 AC2/AC3, decision 1: request a port from the fixed range
+    (`_candidate_ports`), let Docker perform the actual bind, then read the
+    mapping back with `docker port` and confirm it matches what was
+    requested -- Docker owns the bind, so there is no unowned gap between
+    picking a port and handing it over the way the old `_free_tcp_port()`
+    had. A port already in use causes a bounded retry within the range
+    (`_MAX_BIND_ATTEMPTS`); a mismatched mapping is an error naming both
+    ports; exhausting the range raises naming the range and the attempt
+    count. Returns the actual, verified host port.
+    """
+    subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+
+    attempts = 0
+    last_error = "no attempts made"
+    for candidate in _candidate_ports():
+        attempts += 1
+        result = subprocess.run(
+            [
+                "docker",
+                "run",
+                "-d",
+                "--name",
+                name,
+                "-p",
+                f"{candidate}:8000",
+                "amazon/dynamodb-local",
+                "-jar",
+                "DynamoDBLocal.jar",
+                "-inMemory",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            last_error = (result.stdout + result.stderr).strip()
+            subprocess.run(["docker", "rm", "-f", name], capture_output=True, text=True)
+            continue
+
+        actual_port = _docker_port_mapping(name)
+        if actual_port != candidate:
+            stop_container(name)
+            raise RuntimeError(
+                f"docker port mapping mismatch for container {name!r}: "
+                f"requested host port {candidate}, but docker reports "
+                f"{actual_port} bound"
+            )
+        return actual_port
+
+    raise RuntimeError(
+        f"could not bind DynamoDB Local container {name!r} to any port in "
+        f"the fixed range {_PORT_RANGE_START}-{_PORT_RANGE_END - 1} after "
+        f"{attempts} attempts; last docker error: {last_error}"
+    )
 
 
 def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
@@ -187,16 +240,16 @@ def resolve_dynamo(
         return DynamoPlan(source="skip", endpoint_url=None)
 
     name = unique_container_name()
-    port = _free_tcp_port()
 
     if spawn_container is None:
         try:
-            start_container(name, port)
+            port = start_container(name)
             wait_for_dynamo(port)
         except BaseException:
             stop_container(name)
             raise
     else:
+        port = _free_tcp_port()
         spawn_container(name, port)
 
     return DynamoPlan(

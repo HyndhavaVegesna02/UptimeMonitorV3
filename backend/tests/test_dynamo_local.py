@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import socket
+import subprocess
 import sys
 import threading
 import time
@@ -85,6 +86,94 @@ def test_wait_for_dynamo_rejects_a_non_dynamo_answer():
         assert elapsed < 10.0, f"probe should fail fast, took {elapsed}s"
     finally:
         listener.close()
+
+
+def _fake_docker_run(cmd, **kwargs):
+    return subprocess.CompletedProcess(cmd, 0, "container_id\n", "")
+
+
+def test_start_container_raises_on_port_mapping_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 AC2: the mapping is verified via `docker port`, not assumed.
+    A mismatch between the requested port and what Docker actually bound is
+    an error naming both.
+    """
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "rm"]:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[:2] == ["docker", "run"]:
+            return _fake_docker_run(cmd, **kwargs)
+        if cmd[:2] == ["docker", "port"]:
+            # Docker reports a port that does NOT match what was requested.
+            return subprocess.CompletedProcess(cmd, 0, "0.0.0.0:1\n", "")
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="mismatch"):
+        dynamo_local.start_container("fake_container_ac2")
+
+
+def test_start_container_retries_on_bind_failure_then_succeeds(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 AC3: a port already in use causes a retry within the range,
+    not an immediate failure.
+    """
+    run_attempts = []
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "rm"]:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[:2] == ["docker", "run"]:
+            run_attempts.append(cmd)
+            if len(run_attempts) < 3:
+                return subprocess.CompletedProcess(
+                    cmd, 1, "", "Bind for 0.0.0.0:X failed: port is already allocated"
+                )
+            return _fake_docker_run(cmd, **kwargs)
+        if cmd[:2] == ["docker", "port"]:
+            # Report back whatever port the last successful `docker run` requested.
+            requested = run_attempts[-1][run_attempts[-1].index("-p") + 1]
+            requested_port = requested.split(":")[0]
+            return subprocess.CompletedProcess(
+                cmd, 0, f"0.0.0.0:{requested_port}\n", ""
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    port = dynamo_local.start_container("fake_container_ac3_retry")
+    assert isinstance(port, int)
+    assert len(run_attempts) == 3
+
+
+def test_start_container_raises_after_exhausting_retry_budget(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-179 AC3: bind failure that never clears is bounded, and
+    exhaustion raises a message naming the range and the attempt count.
+    """
+    run_attempts = []
+
+    def fake_run(cmd, **kwargs):
+        if cmd[:2] == ["docker", "rm"]:
+            return subprocess.CompletedProcess(cmd, 0, "", "")
+        if cmd[:2] == ["docker", "run"]:
+            run_attempts.append(cmd)
+            return subprocess.CompletedProcess(
+                cmd, 1, "", "Bind for 0.0.0.0:X failed: port is already allocated"
+            )
+        raise AssertionError(f"unexpected command: {cmd}")
+
+    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+
+    with pytest.raises(RuntimeError, match="attempts"):
+        dynamo_local.start_container("fake_container_ac3_exhaust")
+
+    assert len(run_attempts) == dynamo_local._MAX_BIND_ATTEMPTS
 
 
 def test_resolve_dynamo_uses_external_endpoint(monkeypatch: pytest.MonkeyPatch):
