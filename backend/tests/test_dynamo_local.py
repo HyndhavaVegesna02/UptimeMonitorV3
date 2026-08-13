@@ -153,7 +153,23 @@ def test_start_container_retries_on_bind_failure_then_succeeds(
     monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
 
     port = dynamo_local.start_container("fake_container_ac3_retry")
-    assert isinstance(port, int)
+    # STORY-179 fix round, CRITICAL 2: `isinstance(port, int)` is vacuous --
+    # `_docker_port_mapping` returns `int(port_str)` by construction, so this
+    # can never be false. Pin the actual AC1 property instead: every port
+    # `start_container` asked Docker to bind came from the fixed range, not
+    # wherever Docker (or the OS) felt like putting it.
+    for attempt in run_attempts:
+        requested = attempt[attempt.index("-p") + 1]
+        requested_port = int(requested.split(":")[0])
+        assert (
+            dynamo_local._PORT_RANGE_START
+            <= requested_port
+            < dynamo_local._PORT_RANGE_END
+        ), (
+            f"requested port {requested_port} outside the fixed range "
+            f"{dynamo_local._PORT_RANGE_START}-{dynamo_local._PORT_RANGE_END - 1}"
+        )
+    assert dynamo_local._PORT_RANGE_START <= port < dynamo_local._PORT_RANGE_END
     assert len(run_attempts) == 3
 
 
