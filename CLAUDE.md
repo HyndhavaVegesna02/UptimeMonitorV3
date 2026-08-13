@@ -285,11 +285,20 @@ tree* comes from a global `core.autocrlf=true` at checkout time, not from repo c
 
 ## Deployed topology (STORY-089) — DECOMMISSIONED 2026-08-13
 
-**The AWS stack was decommissioned by PO decision on 2026-08-13.** There is no live AWS
-environment: no ECS services, ALB, CloudFront distribution, or DynamoDB tables are running,
-and the CloudFormation stack `uptime-monitor` was torn down. This section is now **history** —
-what was deployed, and that it worked, until the decommission — not something to re-verify
-against a live URL.
+**The AWS stack was brought down by PO decision on 2026-08-13** (`aws cloudformation
+delete-stack --stack-name uptime-monitor`, or equivalent). This section is now **history** —
+what was deployed, and its last known status before the decommission — not something to
+re-verify against a live URL.
+
+**Nobody has verified what the teardown actually removed.** `infra/stack.yaml` sets
+`DeletionPolicy: Retain` on the `ObservationsTable` and `ControlTable` DynamoDB tables and on
+the `FrontendBucket` S3 bucket, so a `delete-stack` leaves all three behind by design — and
+`docs/scrum/wiki/deployment-topology.md` records that exactly this kind of Retain leftover has
+blocked a fresh `create-stack` by name before. **Verify and clear those three resources before
+any redeploy**, or a `create-stack` will fail on existing names. Everything else in this
+section (ECS services, ALB, CloudFront distribution) has no `DeletionPolicy: Retain` and should
+have gone with the stack, but that too is unverified — confirm with the AWS Console or CLI
+before trusting it either way.
 
 **What was deployed (historical, AWS us-east-1, account `065317679010`):**
 
@@ -299,16 +308,17 @@ against a live URL.
 - **Secrets (past):** lived ONLY in Secrets Manager: `uptime-monitor-dynatrace-secrets`,
   `uptime-monitor-statuspage-secrets`. Plain env vars (`AWS_REGION`, both table names) were
   injected by the task definitions.
-- **Status at decommission:** last verified healthy 2026-07-17; a 2026-07-29 re-check got a
-  503 from `/api/v1/health` with expired AWS credentials, so that particular cause was never
+- **Status before decommission:** last verified healthy 2026-07-17; a 2026-07-29 re-check got a
+  503 from `/api/v1/health` with expired AWS credentials, so the cause of that 503 was never
   confirmed (likeliest: the 22:00 IST reaper stopping ECS tasks that lost their
-  `c7n-keep=true` tag) — moot now that the stack no longer exists.
+  `c7n-keep=true` tag) — that particular question is moot now that the stack was brought down,
+  but it means the environment's *last confirmed-good* state is 2026-07-17, not 2026-07-29.
 
 Full detail of the deployed instance (now historical): `docs/scrum/wiki/deployment-topology.md`.
 The CloudFormation template + Dockerfile that built it, and the redeploy procedure:
 `docs/deploy-runbook.md` and `docs/scrum/wiki/deployment-and-infra.md` (also a tombstone as of
-this decommission, STORY-222). A redeploy decision is out of scope for this story — STORY-090
-(CI/CD) stays archived on the same "no live stack" fact.
+this decommission, STORY-222). A redeploy decision has not been made; STORY-090 (CI/CD) stays
+archived on the same "no live stack" fact.
 
 Company account rules that applied while live (region lock us-east-1, `c7n-keep=true` tagging
 against the reaper): `docs/deploy-runbook.md` Prerequisites — still correct for any future
