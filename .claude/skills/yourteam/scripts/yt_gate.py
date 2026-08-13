@@ -12,6 +12,11 @@ Rules this script enforces by construction:
   * The gate refuses a dirty tree (working agreement 2026-06-29: a gate
     result only counts at a clean, committed HEAD). --allow-dirty overrides
     for diagnostic runs; such runs are NOT valid DoD evidence.
+    EXCEPTION (A20, sprint-71 retro): modified ORCHESTRATOR-OWNED paths
+    (`.scrum/`) are reported but never gate. They are read by no gate
+    command, so they cannot change a result — while the orchestrator edits
+    them continuously, including while an agent runs. Refusing on them
+    bought nothing and left agents with no sanctioned move.
   * A contention false-red is proven, not assumed (working agreement
     2026-07-06): re-run the failing unit with --only in isolation; if it
     passes AND its diff since the sprint cut is empty, record the isolated
@@ -108,12 +113,49 @@ def git(root: Path, *args: str) -> str:
     return out.stdout.strip()
 
 
-def tree_state(root: Path) -> tuple[list[str], list[str]]:
-    """Return (dirty_lines, untracked_lines) from git status --porcelain."""
+#: Paths owned by the orchestrator, not by any agent, and read by NO gate command.
+#: A20 (sprint-71 retro): their state cannot affect a gate result, so refusing on
+#: them bought nothing — while the orchestrator edits them CONTINUOUSLY, including
+#: while an agent runs. That combination left an agent needing clean-tree evidence
+#: with no sanctioned move, and TWO agents in one sprint independently reached for
+#: `git stash` to escape it. One stashed the orchestrator's board file; the other
+#: popped an unrelated 2026-07-14 stash and left merge-conflict markers across three
+#: `backend/src/` files mid-sprint. Neither was careless — they were boxed in.
+#: This removes the incentive; the "never write .scrum/" prohibition stays.
+_ORCHESTRATOR_OWNED_PREFIXES = (".scrum/",)
+
+
+def _status_path(line: str) -> str:
+    """The path from a `git status --porcelain` line, normalised to forward slashes.
+
+    Porcelain v1 is `XY <path>`, with a rename as `XY <old> -> <new>`; the
+    destination is what matters. Quoted paths (non-ASCII, spaces) keep their
+    quotes — harmless here, since we only prefix-match a known ASCII directory.
+    """
+    path = line[3:] if len(line) > 3 else ""
+    if " -> " in path:
+        path = path.split(" -> ", 1)[1]
+    return path.strip().strip('"').replace("\\", "/")
+
+
+def is_orchestrator_owned(line: str) -> bool:
+    """True if this status line names a path the orchestrator owns (A20)."""
+    return _status_path(line).startswith(_ORCHESTRATOR_OWNED_PREFIXES)
+
+
+def tree_state(root: Path) -> tuple[list[str], list[str], list[str]]:
+    """Return (dirty_lines, untracked_lines, orchestrator_owned_lines).
+
+    A20: modified ORCHESTRATOR-OWNED paths are split out of `dirty` and reported
+    separately rather than refused. They are read by no gate command, so they
+    cannot change a result. Every other modified tracked file still refuses.
+    """
     lines = [ln for ln in git(root, "status", "--porcelain").splitlines() if ln.strip()]
     untracked = [ln for ln in lines if ln.startswith("??")]
-    dirty = [ln for ln in lines if not ln.startswith("??")]
-    return dirty, untracked
+    tracked = [ln for ln in lines if not ln.startswith("??")]
+    owned = [ln for ln in tracked if is_orchestrator_owned(ln)]
+    dirty = [ln for ln in tracked if not is_orchestrator_owned(ln)]
+    return dirty, untracked, owned
 
 
 def _is_banner(line: str) -> bool:
@@ -357,12 +399,22 @@ def main() -> int:
             print(f"{c['label']}: {c['command']}{loc}")
         return 0
 
-    dirty, untracked = tree_state(root)
+    dirty, untracked, owned = tree_state(root)
     if untracked:
         print(
             f"yt_gate: WARNING {len(untracked)} untracked file(s) present (not gating)",
             file=sys.stderr,
         )
+    if owned:
+        # A20: informational, never gating. Named individually so the run's
+        # evidence records exactly what was modified and by whom it is owned.
+        print(
+            f"yt_gate: {len(owned)} orchestrator-owned path(s) modified, NOT gating "
+            "(read by no gate command — see A20):",
+            file=sys.stderr,
+        )
+        for ln in owned:
+            print(f"yt_gate:   orchestrator-owned: {ln}", file=sys.stderr)
     if dirty:
         for ln in dirty:
             print(f"yt_gate: dirty: {ln}", file=sys.stderr)

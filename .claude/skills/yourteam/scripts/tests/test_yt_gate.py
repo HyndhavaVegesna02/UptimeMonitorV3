@@ -247,5 +247,64 @@ class PolicyBlockGateIntegrationTests(unittest.TestCase):
         self.assertNotIn("POLICY BLOCK", combined)
 
 
+class OrchestratorOwnedPathsTests(unittest.TestCase):
+    """A20 (sprint-71 retro): `.scrum/` is reported, never gated on.
+
+    Filed because TWO agents in one sprint independently reached for `git stash`
+    to escape a tree the orchestrator had dirtied with a file no gate command
+    reads. One stashed the orchestrator's board file; the other popped an
+    unrelated 2026-07-14 stash and left merge-conflict markers across three
+    `backend/src/` files mid-sprint. The prohibition on writing `.scrum/` stays;
+    this removes the reason to violate it.
+
+    Falsified by: a gate run refusing on a modified `.scrum/` path, or passing
+    on a modified path outside it.
+    """
+
+    def test_scrum_paths_are_split_out_of_dirty(self):
+        dirty, untracked, owned = self._partition(
+            [
+                " M .scrum/sprint-current.yaml",
+                " M backend/src/composition/app.py",
+                "?? notes.txt",
+            ]
+        )
+        self.assertEqual(owned, [" M .scrum/sprint-current.yaml"])
+        self.assertEqual(dirty, [" M backend/src/composition/app.py"])
+        self.assertEqual(untracked, ["?? notes.txt"])
+
+    def test_a_path_outside_scrum_still_gates(self):
+        """The teeth. Without this, 'ignore .scrum/' could widen to 'ignore everything'."""
+        dirty, _, owned = self._partition([" M backend/tests/conftest.py"])
+        self.assertEqual(owned, [])
+        self.assertEqual(dirty, [" M backend/tests/conftest.py"])
+
+    def test_lookalike_prefixes_are_not_treated_as_owned(self):
+        """`.scrumtools/` and `docs/.scrum/` are NOT `.scrum/`."""
+        for line in (" M .scrumtools/x.py", " M docs/.scrum/x.yaml", " M scrum/x.yaml"):
+            with self.subTest(line=line):
+                self.assertFalse(yt_gate.is_orchestrator_owned(line), line)
+
+    def test_renames_are_judged_on_the_destination(self):
+        self.assertTrue(
+            yt_gate.is_orchestrator_owned("R  docs/old.md -> .scrum/backlog.yaml")
+        )
+        self.assertFalse(
+            yt_gate.is_orchestrator_owned("R  .scrum/old.yaml -> backend/src/x.py")
+        )
+
+    def test_unmerged_scrum_path_is_still_only_informational(self):
+        """`UU` is a conflict, not a code change — same reasoning applies."""
+        self.assertTrue(yt_gate.is_orchestrator_owned("UU .scrum/backlog.yaml"))
+
+    @staticmethod
+    def _partition(status_lines):
+        untracked = [ln for ln in status_lines if ln.startswith("??")]
+        tracked = [ln for ln in status_lines if not ln.startswith("??")]
+        owned = [ln for ln in tracked if yt_gate.is_orchestrator_owned(ln)]
+        dirty = [ln for ln in tracked if not yt_gate.is_orchestrator_owned(ln)]
+        return dirty, untracked, owned
+
+
 if __name__ == "__main__":
     unittest.main()
