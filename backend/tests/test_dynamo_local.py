@@ -6,6 +6,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -138,7 +139,14 @@ def test_docker_port_mapping_raises_runtime_error_on_malformed_output(
             return subprocess.CompletedProcess(cmd, 0, "no mapping found\n", "")
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     with pytest.raises(RuntimeError, match="malformed_output_container"):
         dynamo_local._docker_port_mapping("malformed_output_container")
@@ -164,7 +172,14 @@ def test_start_container_cleans_up_on_malformed_port_mapping(
             return subprocess.CompletedProcess(cmd, 0, "no mapping found\n", "")
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     with pytest.raises(RuntimeError):
         dynamo_local.start_container("fake_container_malformed_mapping")
@@ -192,7 +207,14 @@ def test_start_container_raises_on_port_mapping_mismatch(
             return subprocess.CompletedProcess(cmd, 0, "0.0.0.0:1\n", "")
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     with pytest.raises(RuntimeError, match="mismatch"):
         dynamo_local.start_container("fake_container_ac2")
@@ -225,7 +247,14 @@ def test_start_container_retries_on_bind_failure_then_succeeds(
             )
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     port = dynamo_local.start_container("fake_container_ac3_retry")
     # STORY-179 fix round, CRITICAL 2: `isinstance(port, int)` is vacuous --
@@ -266,7 +295,14 @@ def test_start_container_raises_after_exhausting_retry_budget(
             )
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     with pytest.raises(RuntimeError, match="attempts"):
         dynamo_local.start_container("fake_container_ac3_exhaust")
@@ -299,7 +335,14 @@ def test_start_container_reraises_non_bind_docker_failure_immediately(
             )
         raise AssertionError(f"unexpected command: {cmd}")
 
-    monkeypatch.setattr(dynamo_local.subprocess, "run", fake_run)
+    # STORY-179 fix round, MINOR 6: `dynamo_local.subprocess` IS the real
+    # stdlib `subprocess` module -- mutating its `run` attribute in place
+    # would patch `subprocess.run` process-wide (every other importer of
+    # `subprocess`, including `dynamo_local.docker_available`'s own calls
+    # from other tests running concurrently). Rebinding the module-level
+    # NAME `subprocess` inside `dynamo_local`'s namespace to a narrow fake
+    # only affects code that looks it up via `dynamo_local.subprocess`.
+    monkeypatch.setattr(dynamo_local, "subprocess", SimpleNamespace(run=fake_run))
 
     with pytest.raises(RuntimeError, match="daemon") as excinfo:
         dynamo_local.start_container("fake_container_non_bind_failure")
