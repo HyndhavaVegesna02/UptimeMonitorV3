@@ -224,6 +224,22 @@ def test_clickpath_normalizer_can_attach_raw_ref_without_core_reading_steps():
     assert obs.raw_ref == "s3://raw/evt-clickpath-journey-001.json"
 
 
+def test_clickpath_normalizer_raises_malformed_for_missing_execution_outcome():
+    """STORY-201: `execution.outcome` must go through `require_field`, not a bare
+    subscript -- a missing field must raise `MalformedDqlRowError`, never `KeyError`."""
+    from src.adapters.inbound.dynatrace._assembly import MalformedDqlRowError
+    from src.adapters.inbound.dynatrace.clickpath_normalizer import (
+        normalize_clickpath_row,
+    )
+
+    rows = _load("clickpath_multi_location.json")["records"]
+    row = _enrich_clickpath(rows[0])
+    del row["execution.outcome"]
+
+    with pytest.raises(MalformedDqlRowError, match="execution.outcome"):
+        normalize_clickpath_row(row, signal_key="sockshop-purchase")
+
+
 # --- normalizer dispatch (routes DQL rows to their correct normalizer) --
 
 

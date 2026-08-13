@@ -10,7 +10,10 @@ The raw row (steps included) is what an archived `raw_ref` would point at;
 the core never reads it.
 """
 
-from src.adapters.inbound.dynatrace._assembly import assemble_observation
+from src.adapters.inbound.dynatrace._assembly import (
+    assemble_observation,
+    require_field,
+)
 from src.adapters.inbound.dynatrace.health_mapping import map_execution_outcome
 from src.core.domain import SignalObservation
 
@@ -36,7 +39,7 @@ def normalize_clickpath_row(
     return assemble_observation(
         row,
         signal_key=signal_key,
-        health=map_execution_outcome(row["execution.outcome"]),
+        health=map_execution_outcome(require_field(row, "execution.outcome")),
         native_kind=NATIVE_KIND,
         raw_ref=raw_ref,
     )
