@@ -505,6 +505,25 @@ standing:
     The editable install is a plain absolute sys.path entry: src.* resolves to the MAIN tree from a
     worktree or scratch copy unless the launch dir contains a src/ package. Pin PYTHONPATH on the
     command and assert the resolved root.
+  fleet_sequencing: >-
+    *** STORY-175 (author the real multi-component topology) CANNOT ENTER A SPRINT BEFORE STORY-151
+    AND STORY-152 HAVE LANDED. *** Recorded 2026-08-13 at the equilibrium refinement pass, as a
+    STANDING constraint rather than a story note, because it will be the first thing wanted the
+    moment Dynatrace access arrives -- which is exactly when it is easiest to skip.
+    WHY: `decide` publishes RECOVERIES WITH NO HUMAN GATE (core/services/decide.py), and today each
+    signal calls decide() INDEPENDENTLY for a shared component -- so a healthy monitor OBSOLETEs a
+    failing sibling's proposal and posts a recovery. With real Statuspage credentials (inbound) and
+    a fleet larger than one, that is a FALSE ALL-CLEAR ON THE PUBLIC PAGE. STORY-152 rides with it:
+    completeness counts OBSERVED locations, so a fully dark location reads ~100% -- a monitoring
+    system claiming full coverage while blind.
+    STORY-150 is NOT part of this gate: it encodes a severity POLICY the inbound core requirements
+    may rewrite, so it waits on the requirements, not merely on the vendor.
+  vendor_access_first_move: >-
+    WHEN DYNATRACE ACCESS LANDS, STORY-154 RUNS FIRST AND ALONE, BEFORE ANYTHING ELSE TOUCHES
+    INGEST. PROVISIONAL_STATUS_MAPPING's two pairs -- ("1","UNHEALTHY")->DOWN and
+    ("2","DEGRADED")->DEGRADED -- have NEVER BEEN OBSERVED; they are assumptions (STORY-177). Until
+    they hold real observed codes, every downstream claim about DOWN/DEGRADED carries an asterisk,
+    and an unrecognised code RAISES and quarantines the row.
   device_guard: "Console-script shims blocked -- module form only (pytest, ruff, cfn-lint, lint-imports)."
   git_guard: "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
   window_check: "At every AGENT BOUNDARY, not per story. Pause with a committed handoff before the session limit bites."
@@ -528,6 +547,75 @@ sprint_close:
     already adjudicated. The sprint's dominant finding deliberately gets NO amendment: the mechanism
     landed as CODE this sprint (STORY-212), and a sixth prose restatement is what the brake exists to
     prevent. AWAITING PO APPROVAL -- not landed.
+
+refinement_2026_08_13:
+  what: >-
+    EQUILIBRIUM REFINEMENT PASS, run after sprint-70 close on PO request ("i want my codebase to
+    reach equilibrium state -- filter what can be neglected, what must be complete"). NOT a sprint.
+    No code changed. Backlog statuses, story files, and this file only.
+  definition_used: >-
+    Equilibrium is NOT an empty backlog. It is: (1) nothing in the repo LIES -- gates, docs and
+    counts are trustworthy, which matters precisely because at equilibrium nobody is watching;
+    (2) nothing is HALF-LANDED -- no dead code, no placeholder waiting on a decision that will never
+    come; (3) everything remaining is a RECORDED CHOICE, not an unpaid debt. Most of the value was
+    in archiving with reasons, not in building.
+  result: "42 open -> 22 open. 185 -> 187 stories (STORY-222, STORY-223 filed). 165 closed."
+  po_decisions:
+    - "STORY-214 CLOSED as accepted duplication -- reason recorded on the entry, do not re-litigate."
+    - "Frontend rebuild programme (STORY-156..168, 13 stories) ARCHIVED. Five of them are BACKEND
+       endpoints and return by a status change when the fleet grows; expect STORY-168 (N+1) first."
+    - "STORY-147 pulled in (2 pts, ready)."
+    - "STORY-155 (remove sample_mode) EXPLICITLY DEFERRED: 'dont remove the sample mode yet. ill
+       tell you when to do.' NOT archived -- do not schedule it without an explicit PO instruction."
+  two_stories_were_already_done:
+    - >-
+      STORY-178 ARCHIVED -- BOTH defects already fixed, verified by RUNNING it: `--only` with a csv
+      now exits 4 (the false green would have exited 0), and yt_gate.py:136 strips ANSI/C0 before
+      slicing the tail. This had been ranked the WORST item in the backlog. Residue not re-filed:
+      the message still says "check the DoD file format" when the cause may be a bad --only filter.
+    - >-
+      STORY-189 finding (a) DROPPED -- demo-engine.md's code_refs now list all nine
+      tools/demo_loop_gate/ files. (b) and (c) survive but BOTH citations drifted; re-derive before
+      dispatch. Story shrinks 3 findings -> 2.
+  lesson: >-
+    Two of the highest-priority items were stale in the same way STORY-219 was filed against. The
+    pass verified every tier-1 item against the live tree before writing it up; that check is what
+    saved two stories' worth of re-doing done work. Re-verify before dispatch, always.
+  wiki_protocol_2_3_0_impact:
+    - "STORY-192 RE-MEASURED 246/6 files -> 218/5 (dev-setup-and-dod.md moved to wiki/archive/)."
+    - >-
+      STORY-192 RE-PRICED ~2 -> ~4. THE COLLISION: 2.3.0 derives the staleness baseline from the
+      article's own last commit and states 'editing a swept article IS re-verifying it'. THREE of
+      its five files are tier=map + status=verified, so a pure encoding repair would re-baseline
+      them with no Fact re-read. The story now repairs AND genuinely re-verifies those three.
+    - >-
+      NEW STORY-223: `facts: CLEAN` and `146 Fact citations never checked` are printed by the SAME
+      yt_wiki run, which exits 0. Sprint-70 prose recorded the clean line without the qualifier.
+      Concentrated: api-five-file-convention.md 59 + frontend-zone.md 35 = 64%. Routing row 1 says
+      the deliverable is a LINT PROMOTED TO ENFORCING, not a prose pass -- and it must REUSE
+      STORY-219's ratchet machinery, not build a second citation gate.
+    - >-
+      AMPLIFIER code_refs are a sprint-71 PLANNING COST: composition/run.py, core/ports/__init__.py
+      and pyproject.toml are each a code_ref in FOUR articles; touching any one quarantines all four.
+  next_ceremony: >-
+    Sprint-71 planning off the phase-0 set (trust the floor): STORY-179 + STORY-173 (same fixture),
+    STORY-213, STORY-221, STORY-192, STORY-222. STORY-178 is gone from that list -- already fixed.
+  environment_note: >-
+    Container uptime_dynamo_8021 is EXITED as of this pass. Restart it before any gate run, or
+    REQUIRE_DYNAMO=1 will ERROR (which looks like a code red and is a setup error).
+  two_one_line_skill_fixes_owed: >-
+    NOT DONE HERE -- the approved plan was refinement only, no code. Both are one-liners in the
+    skill and should RIDE ALONG with any sprint-71 story rather than earn stories of their own
+    (four 1-pointers of ceremony is what STORY-186 exists to avoid).
+    (1) *** CREATED BY THIS PASS: *** test_backlog_story_parity.py:155 filters on
+    `status != "done"` instead of the full closed set {done, superseded, archived, split}. So the
+    22 stories archived here -- 20 of which have file: null and will NEVER need a story file --
+    now sit permanently in the advisory "28 not-done backlog entries have no story file
+    (refinement should write one)". The advisory is now mostly wrong and will stay wrong. Fix is
+    one expression; yt_board.py:68 already defines CLOSED_STATUSES to reuse.
+    (2) LONG-OWED, flagged in backlog.yaml's own header comment: a yt_selftest assertion
+    `next_story_id > max(id in stories)`. The field has now gone stale THREE times. STORY-212
+    landed the script rung and closed without it.
 
 retro_candidates:
   - id: RC-1

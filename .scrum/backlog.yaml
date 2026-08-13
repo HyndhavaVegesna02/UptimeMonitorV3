@@ -3,7 +3,14 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 222   # corrected 2026-08-05: was 213 while STORY-214..219 already existed  # 211-212 CONSUMED 2026-08-01 (process ratchet-brake: budget planning, the
+next_story_id: 224   # bumped 2026-08-13 AT THE MOMENT OF CONSUMPTION: the equilibrium refinement
+                    # pass filed 222 (record the stack decommission) and 223 (wiki citation
+                    # resolution). THIRD recorded staleness avoided by bumping in the same edit that
+                    # consumes the ids -- which is the only discipline that has ever worked here.
+                    # THE PERMANENT FIX IS STILL UNBUILT and is now a one-liner worth taking: a
+                    # yt_selftest assertion `next_story_id > max(id in stories)`. STORY-212 landed
+                    # the script rung and closed WITHOUT it, so it needs its own filing.
+                    # corrected 2026-08-05: was 213 while STORY-214..219 already existed  # 211-212 CONSUMED 2026-08-01 (process ratchet-brake: budget planning, the
                     # evidence-check script rung).
                     # *** THIS FIELD WENT STALE AGAIN IMMEDIATELY. *** It was corrected to 198 on
                     # 2026-07-31, and sprint-66 then filed 198-210 the SAME DAY without bumping it,
@@ -619,7 +626,12 @@ stories:
     title: Proposal enrichment — severity / reason / source / triggering-signals on ProposalDTO (Approvals cards)
     epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-063-proposal-enrichment.md
-    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-059's omitted fields
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). Enrichment whose only consumer was
+                    # STORY-059's Approvals card, and the UI programme that wanted it is archived.
+                    # NOTE the overlap if it ever returns: the `reason` half is STORY-165 (also
+                    # archived), which is the cheaper and more load-bearing piece -- an operator
+                    # cannot tell a regional outage from a flaky probe without it.
+                    # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-059's omitted fields
     type: feature
     sprint: null
   - id: STORY-064
@@ -653,7 +665,11 @@ stories:
     title: Component grouping + per-component uptime-bucket API (Dashboard groups + richer sparklines)
     epic: dashboard-gap-followups
     file: docs/scrum/stories/STORY-067-component-grouping-uptime-buckets.md
-    status: draft   # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-057's single-group + omitted-segment adaptation
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). Two halves, both superseded:
+                    # component GROUPING is delivered by STORY-147 (pulled into the next sprint by
+                    # PO decision 2026-08-13), and the uptime-BUCKET API is STORY-161, archived with
+                    # the frontend programme. Nothing distinct is left in this entry.
+                    # filed 2026-07-07 from the redesign data-gap analysis; feeds STORY-057's single-group + omitted-segment adaptation
     type: feature
     sprint: null
   # ── Sprint-38 redesign follow-ups (found at review; deferred out of sprint 38) ──
@@ -946,7 +962,13 @@ stories:
     title: Publication incident-id capture (Statuspage response → Publications timeline)
     epic: api-restructure
     file: docs/scrum/stories/STORY-081-publication-incident-id.md
-    status: draft   # split out of STORY-066 at sprint-45 refinement (2026-07-13); genuinely new + speculative (Statuspage response discarded today; flow never creates incidents). Blocked on a Statuspage design decision + live response sample; needs refinement + estimate.
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). Self-described speculative, and it
+                    # stays speculative even once Statuspage access lands: the flow never creates
+                    # incidents, so there is no incident id to capture. It needs a PRODUCT decision
+                    # ("should publishes open Statuspage incidents?") before it is an engineering
+                    # story at all -- and that decision is exactly what the inbound core
+                    # requirements may settle. Re-open from the requirements, not from this entry.
+                    # split out of STORY-066 at sprint-45 refinement (2026-07-13); genuinely new + speculative (Statuspage response discarded today; flow never creates incidents). Blocked on a Statuspage design decision + live response sample; needs refinement + estimate.
     type: feature
     sprint: null
 
@@ -1053,7 +1075,13 @@ stories:
     title: CI/CD stage 2 — GitHub Actions pipelines + OIDC deploy role
     epic: aws-migration
     file: docs/scrum/stories/STORY-090-cicd-github-actions.md
-    status: draft   # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). *** THE STACK IS DECOMMISSIONED ***
+                    # -- the PO brought it down on 2026-08-13, so there is nothing for a deploy
+                    # pipeline to deploy TO. A CI/CD story against absent infrastructure cannot be
+                    # written, let alone estimated. Re-open only with a redeploy decision, and see
+                    # STORY-222, which records the decommission in CLAUDE.md and the wiki.
+                    # The AWS epic reads 14/15 for this reason: it was DELIVERED, then retired.
+                    # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
     type: chore
     sprint: null
   - id: STORY-091
@@ -1255,7 +1283,15 @@ stories:
     title: Anti-flap Phase 2 — breadth sets a severity ceiling, duration climbs to it (D1/D2)
     epic: deferred-future
     file: null      # story file written at refinement
-    status: draft   # ~5pts. Fixes the major_outage severity ceiling + the degraded semantic
+    status: blocked # RE-STATUSED 2026-08-13: `blocked` ON THE INBOUND CORE REQUIREMENTS, and this
+                    # is a DELIBERATE SPLIT from its siblings STORY-151/152. Those two are
+                    # CORRECTNESS -- right under any requirements -- so they stay schedulable.
+                    # This one encodes a severity POLICY (breadth sets a ceiling, duration climbs
+                    # to it). A policy is exactly the kind of thing real core requirements rewrite,
+                    # so building it first risks building it twice.
+                    # STILL A PREREQUISITE for real multi-location components -- it just waits for
+                    # the requirements rather than only for the vendor.
+                    # ~5pts. Fixes the major_outage severity ceiling + the degraded semantic
                     # conflation. PREREQUISITE for real multi-location components.
     type: feature
     sprint: null
@@ -1263,7 +1299,14 @@ stories:
     title: Per-component decision rollup — one writer of a component's status (worst-of)
     epic: deferred-future
     file: null
-    status: draft   # ~5pts. Today each signal independently calls decide() for the shared
+    status: draft   # *** HARD PREREQUISITE FOR STORY-175 (fleet expansion) -- recorded 2026-08-13.
+                    # 175 MUST NOT enter a sprint until this has landed. See 175 for the full
+                    # rationale; the short form is that decide() publishes recoveries with NO human
+                    # gate, so on a fleet >1 this defect posts a FALSE ALL-CLEAR to the LIVE page.
+                    # KEPT `draft` DELIBERATELY, not `blocked`: worst-of rollup is correct under ANY
+                    # requirements, so unlike STORY-150 it does not wait on the inbound core
+                    # requirements. It is schedulable the moment it is refined.
+                    # ~5pts. Today each signal independently calls decide() for the shared
                     # component, so a healthy monitor OBSOLETEs a failing sibling's proposal
                     # and publishes a recovery. PREREQUISITE for multi-monitor components.
                     # PO chose per-component loop (option B) + worst-of + freshness exclusion.
@@ -1273,7 +1316,16 @@ stories:
     title: Completeness uses expected locations, not observed ones
     epic: deferred-future
     file: null
-    status: draft   # ~3pts. distinct_locations is COUNT(DISTINCT observed), so a fully-dark
+    status: draft   # *** HARD PREREQUISITE FOR STORY-175 (fleet expansion) -- recorded 2026-08-13,
+                    # alongside STORY-151. A monitoring system that reports ~100% completeness while
+                    # a location is fully dark is failing at the one thing it exists to do.
+                    # KEPT `draft`, not `blocked`: correct under ANY requirements (see STORY-151).
+                    # NOTE it can already bite the CURRENT single component, which has multiple
+                    # locations -- this is not purely fleet-gated.
+                    # DOCS COUNTERPART: STORY-189(c) corrects the prose that describes
+                    # missing_cycles as expected-but-missing; that is docs only and does NOT fix
+                    # this behaviour.
+                    # ~3pts. distinct_locations is COUNT(DISTINCT observed), so a fully-dark
                     # location leaves its own denominator and completeness reads ~100%.
                     # Consumes STORY-146's expected_locations declaration.
     type: defect
@@ -1291,7 +1343,17 @@ stories:
     title: Map the real Dynatrace HTTP failure codes (blocked on trial renewal)
     epic: deferred-future
     file: null
-    status: draft   # ~3pts. map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise,
+    status: blocked # RE-STATUSED 2026-08-13: `blocked`, not `draft` -- a story gated on a VENDOR
+                    # RELATIONSHIP must not read the same as one merely awaiting refinement.
+                    # *** UNBLOCKS SOON: the PO reported 2026-08-13 that Dynatrace access is coming.
+                    # WHEN IT LANDS, THIS RUNS FIRST AND ALONE, BEFORE ANYTHING ELSE TOUCHES INGEST.
+                    # WHY FIRST: PROVISIONAL_STATUS_MAPPING's two pairs -- ("1","UNHEALTHY")->DOWN
+                    # and ("2","DEGRADED")->DEGRADED -- have NEVER BEEN OBSERVED. They are
+                    # assumptions (STORY-177). Until they are replaced with real observed codes,
+                    # every downstream claim about DOWN/DEGRADED carries an asterisk, and an
+                    # unrecognised code RAISES, quarantining the row. Nothing below ingest is
+                    # verifiable until this constant holds real values.
+                    # ~3pts. map_synthetic_status maps only "0"/"HEALTHY" and raises otherwise,
                     # so no live-path mapping produces DOWN or DEGRADED at all. BLOCKED: needs
                     # a live tenant to observe the real codes. Unblocks re-verifying every
                     # assumption STORY-148 bakes in. See STORY-177 — the PROVISIONAL mapping
@@ -1303,7 +1365,21 @@ stories:
     title: Remove sample_mode (superseded by the demo engine)
     epic: deferred-future
     file: null
-    status: draft   # ~2pts. Removal inventory already written: docs/scrum/wiki/sample-mode.md
+    status: draft   # *** EXPLICITLY DEFERRED BY THE PO 2026-08-13: "dont remove the sample mode
+                    # yet. ill tell you when to do." NOT archived -- this is a live intention with
+                    # a held trigger, and the distinction is the point of the equilibrium pass.
+                    # DO NOT SCHEDULE IT WITHOUT AN EXPLICIT PO INSTRUCTION.
+                    # CONSEQUENCE, RECORDED SO THE COST IS VISIBLE: docs/scrum/wiki/sample-mode.md
+                    # stays a LIVE `tier: map` / `status: verified` article, and it is the worst
+                    # article in the wiki -- 110 mojibake sequences (50% of STORY-192's whole scope,
+                    # re-measured 2026-08-13) plus 13 Fact citations that do not resolve from the
+                    # repo root. Had this story run, that article would have become an archive
+                    # tombstone and half of STORY-192 would have evaporated. It does not, so
+                    # STORY-192 carries it. See STORY-192 and STORY-223.
+                    # WHEN IT EVENTUALLY RUNS: under wiki-protocol 2.3.0 the article becomes a
+                    # `tier: reference` tombstone -- which means STRIPPING its code_refs and its
+                    # `## Facts` section, not just moving the file.
+                    # ~2pts. Removal inventory already written: docs/scrum/wiki/sample-mode.md
                     # (port + adapter + fake + API feature + the one seam line in run.py).
     type: chore
     sprint: null
@@ -1328,11 +1404,27 @@ stories:
   #   sibling, no JSX) — api/client.ts, api/types.ts, api/statusMapping.ts, lib/useFetch.ts,
   #   lib/fetchDedup.ts, the MSW harness, ~20 pure helpers. Verified salvageable: there is
   #   ZERO backend divergence between main and sprint-61.
+  # *** THE ENTIRE PROGRAMME (156-168) WAS ARCHIVED BY PO DECISION 2026-08-13. ***
+  # REASON: a working six-tab operator SPA ALREADY EXISTS on main -- STORY-015a..015g built it
+  # and STORY-055..062 redesigned it, all PO-accepted and merged. This line is the THIRD re-skin
+  # attempt (the epic title says so); the two before it were rejected. Nothing is broken, so the
+  # programme is a visual preference, not a capability gap -- and 13 open drafts made the board
+  # read as though a third of the product was missing.
+  # DECIDED IN THE SAME BREATH AS: real core requirements are inbound (PO 2026-08-13), which may
+  # reshape the UI entirely. Building against the current reference now risks building it twice.
+  # NOT DELETED, AND THIS MATTERS: five of the thirteen are BACKEND endpoints, not pages --
+  # 159 (fleet summary), 161 (bucketed series), 163 (fleet history), 165 (proposal reason),
+  # 168 (batch availability). They carry value independent of any visual language and return by a
+  # status change when the fleet grows. *** EXPECT STORY-168 BACK FIRST: *** it kills the
+  # dashboard/availability N+1, which is invisible at one component and painful at thirty.
+  # The expensive artifact SURVIVES archiving: the reference capture
+  # (docs/scrum/sprints/2026-07-28-sprint-62/newui-0{1..8}-*.png) and ui-backend-gap-analysis.md
+  # stay on disk, so re-opening this line costs a status change, not a re-analysis.
   - id: STORY-156
     title: Design system — Tailwind v4 theme from the reference, light + dark, contrast gate
     epic: frontend-rebuild
     file: null
-    status: draft   # First frontend story. Light tokens: --bg-main rgb(243,244,247), glass
+    status: archived  # ARCHIVED 2026-08-13 (see programme banner above). First frontend story. Light tokens: --bg-main rgb(243,244,247), glass
                     # rgba(255,255,255,.66)+blur(12px), soft shadow, radii 1.5/1/0.5rem,
                     # Manrope + JetBrains Mono, teal->amber->orange->rose 4-status ramp.
                     # DARK MODE IS IN SCOPE: the reference ships a working dark theme (see
@@ -1351,7 +1443,7 @@ stories:
     title: App shell — dark inset sidebar, topbar, routing, responsive at 390
     epic: frontend-rebuild
     file: null
-    status: draft   # The reference has NO responsive handling (fixed sidebar + horizontal
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). The reference has NO responsive handling (fixed sidebar + horizontal
                     # body scroll at 390 — newui-08-dashboard-390.png); ours must collapse.
                     # No fake user avatar (no auth exists); reserve a topbar-right region for
                     # the future user menu. Nav badge counts from /approvals + /maintenance.
@@ -1364,7 +1456,7 @@ stories:
     title: Dashboard page — hero, KPIs, component cards on real fleet-scale data
     epic: frontend-rebuild
     file: null
-    status: draft   # 3 of 4 KPIs are already free from existing endpoints; only fleet uptime
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). 3 of 4 KPIs are already free from existing endpoints; only fleet uptime
                     # needs aggregation, so do NOT block this on STORY-159 — use per-component
                     # calls and add the summary endpoint when the N+1 actually hurts.
     type: feature
@@ -1373,7 +1465,7 @@ stories:
     title: Fleet summary endpoint (B1) — worst-of status, bucket counts, fleet availability
     epic: frontend-rebuild
     file: null
-    status: draft   # ~5pts. One call for the hero + all four KPIs + the Availability footer.
+    status: archived  # ARCHIVED 2026-08-13 -- BACKEND, returns with the fleet (banner above). ~5pts. One call for the hero + all four KPIs + the Availability footer.
                     # Also needs signals-healthy/total and a last-check instant (B5), which
                     # converges with the per-signal latest-outcome state STORY-151 must persist
                     # for worst-of — build once, serve both.
@@ -1383,7 +1475,7 @@ stories:
     title: Availability page — two-grain table, range tabs, completeness column
     epic: frontend-rebuild
     file: null
-    status: draft   # completeness_pct ALREADY exists on AvailabilityDTO (free). The 30-block
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). completeness_pct ALREADY exists on AvailabilityDTO (free). The 30-block
                     # uptime bars need STORY-161. Fix the reference's defects: meter bars that
                     # ignore their value, and a "30D" header while the 24h tab is active.
     type: feature
@@ -1392,7 +1484,7 @@ stories:
     title: Bucketed availability series (B3) — N per-bucket verdicts over a window
     epic: frontend-rebuild
     file: null
-    status: draft   # ~5pts. Powers sparklines, the 30-block bars and the 14-day fleet strip.
+    status: archived  # ARCHIVED 2026-08-13 -- BACKEND, returns with the fleet (banner above). ~5pts. Powers sparklines, the 30-block bars and the 14-day fleet strip.
                     # Gaps must render as visible BREAKS, never zero-height bars that read as
                     # healthy (decision D1/§3a).
     type: feature
@@ -1401,7 +1493,7 @@ stories:
     title: Check History page — fleet-wide feed, filters, pagination, OUR result vocabulary
     epic: frontend-rebuild
     file: null
-    status: draft   # Tabs are All/Up/Degraded/Down (Health, signal.py:21-23) - NOT the
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). Tabs are All/Up/Degraded/Down (Health, signal.py:21-23) - NOT the
                     # reference's Success/Slow/Timeout/Failure. latency_ms and
                     # response_status_code stay as COLUMNS but never manufacture categories.
                     # Degraded/Down tabs sit empty until STORY-154 maps the failure codes;
@@ -1412,7 +1504,7 @@ stories:
     title: Fleet history endpoint (B2) — optional signal_key, filters, offset, total count
     epic: frontend-rebuild
     file: null
-    status: draft   # ~5pts. /history currently REQUIRES signal_key (history/controller.py:22),
+    status: archived  # ARCHIVED 2026-08-13 -- BACKEND, returns with the fleet (banner above). ~5pts. /history currently REQUIRES signal_key (history/controller.py:22),
                     # so the design's core fleet-wide view is impossible in one call; and it
                     # returns a bare list with no count, so "97 observations - page 1 of 4"
                     # cannot be rendered. Envelope {items, total, offset, limit}.
@@ -1423,7 +1515,7 @@ stories:
     title: Approvals page — master/detail, reasoning + evidence, approve/reject
     epic: frontend-rebuild
     file: null
-    status: draft   # NO confidence % (the engine is threshold-based, not probabilistic - a
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). NO confidence % (the engine is threshold-based, not probabilistic - a
                     # fabricated number on an operator approval screen is worse than none).
                     # actor stays the fixed `dashboard-operator` constant until STORY-171.
                     # Needs STORY-165: the reasoning text is LOAD-BEARING for decision D2
@@ -1435,7 +1527,7 @@ stories:
     title: Populate StatusProposal.reason at open time (B8)
     epic: frontend-rebuild
     file: null
-    status: draft   # ~2pts (cheaper than first scoped). The field ALREADY exists
+    status: archived  # ARCHIVED 2026-08-13 -- BACKEND, returns with the fleet (banner above). ~2pts (cheaper than first scoped). The field ALREADY exists
                     # (core/domain/proposal.py:51) and the repository persists it; the gap is
                     # that _open_proposal (decide.py:176-184) takes no reason param, so it is
                     # populated on resolve but always None for the OPEN proposals the page
@@ -1447,7 +1539,7 @@ stories:
     title: Maintenance page — status tabs, window cards, schedule form
     epic: frontend-rebuild
     file: null
-    status: draft   # Single affected component per window (multi-component is STORY-170,
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). Single affected component per window (multi-component is STORY-170,
                     # dropped for now). Status tabs derived from window vs now.
     type: feature
     sprint: null
@@ -1455,7 +1547,7 @@ stories:
     title: Publications page — timeline of publish attempts
     epic: frontend-rebuild
     file: null
-    status: draft   # KEEP the `outcome` field (succeeded/failed) even though the reference has
+    status: archived  # ARCHIVED 2026-08-13 (programme banner above). KEEP the `outcome` field (succeeded/failed) even though the reference has
                     # no visual for it - a failed Statuspage publish must stay visible.
                     # Headline/body prose is STORY-169 (deferred).
     type: feature
@@ -1464,7 +1556,7 @@ stories:
     title: Batch component availability (B6) — kill the dashboard/availability N+1
     epic: frontend-rebuild
     file: null
-    status: draft   # ~3pts. GET /availability/components?ids=... Only worth doing once the
+    status: archived  # ARCHIVED 2026-08-13 -- BACKEND, *** EXPECT THIS ONE BACK FIRST *** (banner above). ~3pts. GET /availability/components?ids=... Only worth doing once the
                     # per-component fan-out measurably hurts at real fleet size.
     type: chore
     sprint: null
@@ -1473,7 +1565,11 @@ stories:
     title: Publication headline + body — authored incident notes (B9)
     epic: deferred-by-po
     file: null
-    status: draft   # DEFERRED by PO 2026-07-28 to ~sprint 64. Real value for a status page,
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). The 2026-07-28 note already named the
+                    # reason to decline it and that reason has only strengthened: it is a PRODUCT
+                    # EXPANSION, and real core requirements are inbound. If authored incident notes
+                    # are wanted, they should arrive as a requirement, not as a UI-gap follow-up.
+                    # DEFERRED by PO 2026-07-28 to ~sprint 64. Real value for a status page,
                     # but it converts publications from "recorded status changes" into
                     # "authored incident notes" - a product expansion, not a UI adaptation.
     type: feature
@@ -1482,7 +1578,11 @@ stories:
     title: Multi-component maintenance windows + publications (B10)
     epic: deferred-by-po
     file: null
-    status: draft   # DROPPED FOR NOW by PO 2026-07-28. ~5pts, the most expensive item, and it
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass) -- formalising a drop the PO already
+                    # made on 2026-07-28. Its own revisit trigger ("when the fleet is large enough
+                    # that genuinely shared windows occur") is an OBSERVATION to make, not a
+                    # prediction, and the fleet is still one component. Re-open on the observation.
+                    # DROPPED FOR NOW by PO 2026-07-28. ~5pts, the most expensive item, and it
                     # buys one visual (a second affected-component chip). Revisit when the
                     # fleet is large enough that genuinely shared windows occur.
     type: feature
@@ -1491,7 +1591,13 @@ stories:
     title: Real auth — replace the fixed `dashboard-operator` actor constant
     epic: deferred-by-po
     file: null
-    status: draft   # PO 2026-07-28: "for now let it be option a, but in near future we will
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). BLOCKED ON A DECISION THAT DOES NOT
+                    # EXIST: there is no identity provider chosen, and refinement cannot invent one.
+                    # The interim state is deliberately honest rather than merely unfinished -- the
+                    # fixed `dashboard-operator` constant does NOT claim to know who acted, which is
+                    # the right failure mode for an audit trail. One swap point exists, so the cost
+                    # of re-opening is small. Re-open WITH the IdP decision.
+                    # PO 2026-07-28: "for now let it be option a, but in near future we will
                     # have real auth". Deliberately NOT an operator-typed name in the interim:
                     # an unverified name in an audit trail claims knowledge the system lacks,
                     # which is worse than an honest placeholder. One swap point exists.
@@ -1502,7 +1608,13 @@ stories:
     title: Expose probe-location labels through the API (B7 consumption side)
     epic: deferred-by-po
     file: null
-    status: draft   # ~2pts. STORY-146 DECLARES the alias/native_id/label mapping in config;
+    status: draft   # KEPT OPEN 2026-08-13 (equilibrium pass) even though its named consumers
+                    # (STORY-162/163) were archived with the frontend programme -- because the
+                    # EXISTING six-tab SPA on main shows this too. With real Dynatrace data an
+                    # operator reads `SYNTHETIC_LOCATION-000000000000005C` instead of
+                    # "US East (Virginia)", so this becomes real UX debt the moment access lands,
+                    # independent of any rebuild. Returns with the fleet.
+                    # ~2pts. STORY-146 DECLARES the alias/native_id/label mapping in config;
                     # this is the consumption half. `ObservationDTO.location` is the RAW vendor
                     # entity id (history/models.py) — the real wire value is
                     # SYNTHETIC_LOCATION-000000000000005C
@@ -1518,7 +1630,21 @@ stories:
     title: Fleet expansion — author the real multi-component topology
     epic: deferred-by-po
     file: null
-    status: draft   # BLOCKED on Dynatrace trial renewal (see STORY-154) and on real monitored
+    status: blocked # RE-STATUSED 2026-08-13: `blocked`, not `draft` (the prose already said so;
+                    # now the FIELD does, so the board shows it).
+                    # *** HARD SEQUENCING CONSTRAINT, NON-NEGOTIABLE, RECORDED 2026-08-13 ***
+                    # THIS STORY CANNOT ENTER A SPRINT BEFORE STORY-151 AND STORY-152 HAVE LANDED.
+                    # WHY: `decide` publishes RECOVERIES WITH NO HUMAN GATE
+                    # (core/services/decide.py), and today each signal calls decide()
+                    # INDEPENDENTLY for a shared component -- so a healthy monitor OBSOLETEs a
+                    # failing sibling's proposal and posts a recovery. With real Statuspage
+                    # credentials (inbound) and a fleet larger than one, that is a FALSE ALL-CLEAR
+                    # ON THE PUBLIC PAGE. STORY-152 belongs with it: completeness counts OBSERVED
+                    # locations, so a fully dark location reads ~100% -- a monitoring system
+                    # claiming full coverage while blind.
+                    # This is the fun part and it will be the first thing wanted once access lands.
+                    # That is exactly why the constraint is written down rather than remembered.
+                    # BLOCKED on Dynatrace trial renewal (see STORY-154) and on real monitored
                     # endpoints existing. This is the work the pipeline-correctness stories are
                     # prerequisites FOR: PO confirmed 2026-07-28 that the lone http-check
                     # component is temporary and "many more components will come along sooner".
@@ -1532,7 +1658,7 @@ stories:
   - id: STORY-179
     title: dynamo_local picks an ephemeral port Docker maps but Windows won't route; readiness probe can't detect it
     epic: deferred-by-po
-    file: null
+    file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md   # written 2026-08-13; both defects RE-VERIFIED live at the pass
     status: draft   # ~2pts. TWO defects in scripts/dynamo_local.py, root-caused 2026-07-29 while
                     # running STORY-146's gate. Together they cost ~1h of sprint time and made a
                     # healthy test suite look hung.
@@ -1695,7 +1821,26 @@ stories:
     title: yt_gate.py exits 0 when --only matches nothing (false green on the DoD floor)
     epic: deferred-by-po
     file: null
-    status: draft   # ~1pt. SKILL-level defect, found 2026-07-28 running STORY-146's gate.
+    status: archived  # *** ALREADY FIXED -- VERIFIED 2026-08-13 AT THE EQUILIBRIUM PASS, BY RUNNING
+                    # IT, NOT BY READING IT. Both defects are closed; archived as done-by-another-
+                    # story rather than left open claiming a false green still exists.
+                    # DEFECT 1 (the false green) -- FIXED. yt_gate.py:347-352 now returns **4** when
+                    #   the command list is empty. Live proof at the pass:
+                    #     $ python .claude/skills/yourteam/scripts/yt_gate.py \
+                    #         --only "pytest,lint-imports,ruff-check" --list
+                    #     yt_gate: no gate commands parsed (check the DoD file format)
+                    #     EXIT: 4          <-- the defect would have exited 0
+                    # DEFECT 2 (ANSI escapes corrupting the emitted YAML) -- FIXED. yt_gate.py:136
+                    #   defines _ANSI_ESCAPE and :156-161 strips ANSI + C0 control characters,
+                    #   deliberately BEFORE slicing the tail ("escape sequences are multi-byte, so
+                    #   trimming first can leave a half sequence"). The hand-stripping the backlog
+                    #   recorded as a standing manual step is no longer needed.
+                    # RESIDUE, DELIBERATELY NOT RE-FILED AS A STORY: the message still reads "check
+                    #   the DoD file format", which blames the DoD file for what may have been a bad
+                    #   --only filter. That is a DIAGNOSTIC nicety now, not a false green -- the
+                    #   exit code is honest. If it ever costs someone time, file it fresh.
+                    # ---- original filing, kept for history ----
+                    # ~1pt. SKILL-level defect, found 2026-07-28 running STORY-146's gate.
                     # `yt_gate.py --only pytest,lint-imports,ruff-check,ruff-format` (comma form)
                     # matched NO commands -- --only is a REPEATABLE SUBSTRING flag, not a csv --
                     # and the runner printed "no gate commands parsed (check the DoD file format)"
@@ -1729,7 +1874,7 @@ stories:
   - id: STORY-173
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
     epic: deferred-by-po
-    file: null
+    file: docs/scrum/stories/STORY-173-dynamo-container-leak.md   # written 2026-08-13; re-verified -- conftest.py still has NO reaping logic
     status: draft   # OBSERVED 2026-07-28 during the sprint-62 baseline gate, twice.
                     # Repro: start `yt_gate.py`, kill it mid-pytest (e.g. a 10-min tool
                     # timeout). The session-scoped `dynamo_local` fixture
@@ -1748,7 +1893,13 @@ stories:
     title: Per-location streak persistence — separate a regional outage from a flaky probe (F2)
     epic: deferred-by-po
     file: null
-    status: draft   # DEFERRED by PO 2026-07-28. Breadth (D1) is measured PER CYCLE, so it
+    status: blocked # RE-STATUSED 2026-08-13: `blocked` on an OBSERVATION, which is the honest
+                    # reading of its own build condition. The story already tells you to neglect it
+                    # -- "BUILD ONLY IF minority-failure proposals prove noisy once real
+                    # multi-location monitors are live -- an observation to make, not predict."
+                    # That observation becomes POSSIBLE when Dynatrace access lands and the fleet
+                    # grows, and not before. Re-open on the observation, never on the prediction.
+                    # DEFERRED by PO 2026-07-28. Breadth (D1) is measured PER CYCLE, so it
                     # cannot distinguish one location failing for two hours (real, actionable)
                     # from locations flickering in and out (noise). Per-(signal,location)
                     # streaks would separate decision D2's two worlds automatically instead of
@@ -1963,7 +2114,26 @@ stories:
     title: Close the two doc/wiki gaps sprint 64 found but deliberately left
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
-    status: ready   # REFINED 2026-07-30 at sprint-65 planning; all three findings RE-VERIFIED
+    status: ready   # *** RE-SCOPED 2026-08-13: THREE FINDINGS -> TWO. Re-verified against the live
+                    # tree during the equilibrium pass, prompted by the wiki-protocol change
+                    # (yourteam 2.3.0, 9dd86e6).
+                    # (a) IS ALREADY FIXED -- DROP IT. demo-engine.md's code_refs now list all NINE
+                    #     tools/demo_loop_gate/ files (verified: `ls tools/demo_loop_gate/` returns
+                    #     exactly those nine). A later sprint's blast-radius work closed it. Note
+                    #     that (a)'s STATED MECHANISM is also obsolete twice over: staleness is no
+                    #     longer `git diff verified_sha..HEAD` -- 2.3.0 retired verified_sha and
+                    #     derives the baseline from the article's own last commit.
+                    # (b) STILL LIVE, CITATION DRIFTED: the false absolute is at vendor_health.py:77,
+                    #     NOT :85-86. Re-derive before dispatch.
+                    # (c) STILL LIVE, LINE CORRECT, PATH UNRESOLVABLE: it is
+                    #     backend/src/api/v1/availability/models.py:37 (missing_cycles), with
+                    #     completeness_pct at :25 and distinct_locations at :39. The filed citation
+                    #     `availability/models.py:37` is itself one of the 146 unresolvable Fact
+                    #     citations STORY-223 exists to fix -- the story carries an instance of the
+                    #     defect class it documents.
+                    # NET: still ~1pt, but do NOT dispatch it against the citations as filed.
+                    # ---- original refinement note, kept for history ----
+                    # REFINED 2026-07-30 at sprint-65 planning; all three findings RE-VERIFIED
                     # against the current tree with citations. All three are the same failure
                     # mode -- prose claiming more than the code delivers:
                     #  (a) demo-engine.md code_refs omit ALL of tools/demo_loop_gate/ (9 files
@@ -2112,10 +2282,51 @@ stories:
                     # and external mode historically ships ~1 MAJOR per 3-pt story. Sequenced last so
                     # a fix round blocks nothing else.
   - id: STORY-192
-    title: The same encoding corruption exists in docs/scrum/wiki/ — 246 mojibake sequences across 6 files
+    title: Mojibake in docs/scrum/wiki/ — 218 corrupted sequences across 5 articles, and the encoding guard passes them clean
     epic: sprint-65-splits
-    file: null
-    status: draft   # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's wiki
+    file: docs/scrum/stories/STORY-192-wiki-mojibake-repair.md   # written 2026-08-13; title re-measured 246/6 -> 218/5
+    status: draft   # *** RE-MEASURED AND RE-SCOPED 2026-08-13 (equilibrium pass). The filed
+                    # measurement is STALE and the wiki-protocol change (yourteam 2.3.0) adds a
+                    # constraint the story as written would VIOLATE. Read this block before the
+                    # 2026-07-30 one below it.
+                    #
+                    # (1) RE-MEASURED: 246 across 6 files -> *** 218 across 5 ***.
+                    #     sample-mode.md                    110   tier=map    status=verified
+                    #     ingest-service-and-pull-loop.md    57   tier=map    status=verified  (was 55)
+                    #     statuspage-publish.md              27   tier=map    status=verified
+                    #     deployment-and-infra.md            16   tier=map    status=stale
+                    #     deployment-topology.md              8   tier=reference (never swept)
+                    #     dev-setup-and-dod.md              ---   MOVED TO wiki/archive/ (was 30)
+                    #     Reconciles exactly: 246 - 30 (archived) + 2 (ingest grew) = 218.
+                    #
+                    # (2) *** THE COLLISION, AND THE REASON THIS IS NO LONGER A ~2pt ENCODING FIX. ***
+                    #     wiki-protocol 2.3.0 derives the staleness baseline from the ARTICLE'S OWN
+                    #     LAST COMMIT, and says so explicitly: "an edit resets the baseline whether
+                    #     or not the Facts were re-read. So EDITING A SWEPT ARTICLE IS RE-VERIFYING
+                    #     IT -- if you are not re-verifying, do not touch it."
+                    #     THREE of the five files are tier=map + status=verified (sample-mode,
+                    #     ingest-service-and-pull-loop, statuspage-publish). A pure encoding repair
+                    #     would RE-BASELINE all three WITHOUT A SINGLE FACT BEING RE-READ, silently
+                    #     converting "verified in sprint-68" into "verified now". That is precisely
+                    #     the failure mode 2.3.0's own text warns about, and it is the sprint-70
+                    #     dominant finding (a claim outrunning its observation) in a new place.
+                    #     RESOLUTION: this story REPAIRS *and* GENUINELY RE-VERIFIES those three.
+                    #     The other two need no such care -- deployment-topology.md is
+                    #     tier=reference (never swept) and deployment-and-infra.md is already stale.
+                    #
+                    # (3) SCOPE INTERACTIONS:
+                    #     - STORY-155 (remove sample_mode) is PO-DEFERRED, so sample-mode.md stays
+                    #       live and its 110 sequences (50% of this story) stay in scope.
+                    #     - STORY-222 tombstones deployment-and-infra.md + deployment-topology.md,
+                    #       resolving 24 of the 218 as a side effect. Sequence 222 FIRST or accept
+                    #       the overlap; do not let both stories edit the same two files.
+                    #     - The archived dev-setup-and-dod.md: decide at refinement whether archived
+                    #       tombstones are in scope at all (the protocol treats archive/ as history).
+                    #
+                    # RE-PRICED: ~2 -> ~4. The encoding repair is still mechanical; the
+                    # re-verification of three map articles is not.
+                    # ---- original filing note, kept for history ----
+                    # FILED 2026-07-30 mid-sprint-65 by the orchestrator, during STORY-191's wiki
                     # update. NOT pulled into sprint 65 -- scope is frozen and this is a THIRD,
                     # separate surface. Goes to the backlog per the mid-sprint rule.
                     # THIS IS THE SAME DEFECT CLASS AS STORY-188, one level up. STORY-188 repaired
@@ -2733,7 +2944,15 @@ stories:
     title: Plan sprints on context and token budget instead of story points
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-211-plan-on-context-and-token-budget.md
-    status: draft   # FILED 2026-08-01, PO-deferred explicitly ("i will take it up later").
+    status: archived  # ARCHIVED 2026-08-13 (equilibrium pass). Process improvement on a process that
+                    # is WORKING: sprints 66-70 each landed 11/11 at estimate on the points system
+                    # this would replace. Re-planning the planning system is the ratchet A15 exists
+                    # to brake, and the PO deferred it explicitly once already.
+                    # ONE PIECE IS WORTH SALVAGING SEPARATELY if it ever bites: AC1's measurement of
+                    # the FIXED PREFIX (the 2026-07-15 audit found ~125k cached tokens re-written per
+                    # dispatch from inherited MCP tool schemas alone). That is a measurement, not a
+                    # methodology change, and does not need this story to happen.
+                    # FILED 2026-08-01, PO-deferred explicitly ("i will take it up later").
                     # Replaces fibonacci points + velocity.json with two MEASURED numbers:
                     # dispatches (cost) and brief load (feasibility), with capacity expressed
                     # against the session budget the Window Check already reads.
@@ -2821,7 +3040,18 @@ stories:
     title: Extract the LastEvaluatedKey pagination loop into a shared helper — and rework the ZR-7 guard that would forbid it
     epic: process-ratchet-brake
     file: null
-    status: draft   # FILED 2026-08-03 from STORY-199's quality review. Six near-identical copies of
+    status: archived  # *** CLOSED BY PO DECISION 2026-08-13 AS ACCEPTED DUPLICATION. ***
+                    # THE REASON, RECORDED SO IT IS NOT RE-LITIGATED: six copies PROVEN identical by
+                    # a mechanical guard is ALREADY a stable state. The reviewer diffed all five
+                    # against the reference character by character and found no divergence, so the
+                    # risk is latent, not realised -- and the ZR-7 guard re-proves it every run.
+                    # Extracting the helper would trade that proven-stable duplication for a rework
+                    # of the guard's DETECTION and its EXEMPTION MODEL in the same change (the guard
+                    # decides compliance LEXICALLY, so all six compliant sites flip RED). That is
+                    # ~3 points of churn plus new risk, to remove a duplication that has caused zero
+                    # defects. The audit filed it; the audit is not owed obedience.
+                    # RE-OPEN ONLY IF the copies actually diverge -- which the guard would catch.
+                    # FILED 2026-08-03 from STORY-199's quality review. Six near-identical copies of
                     # the same loop now live under adapters/persistence/ (five landed by STORY-199 +
                     # the original dynamo_observation_repository.py::in_window it copied). The
                     # reviewer diffed all five against the reference CHARACTER BY CHARACTER and found
@@ -3060,5 +3290,99 @@ stories:
                     # hit rate, the way STORY-213's 1-in-11 was measured
     priority: 60    # above the tooling backlog: it can make a CORRECT story look red, and it
                     # trains people to discount reds
+    type: defect
+    sprint: null
+
+  # ── Filed 2026-08-13 at the equilibrium refinement pass ──────────
+  - id: STORY-222
+    title: Record the AWS stack decommission — CLAUDE.md and the two deployment wiki articles describe infrastructure that no longer exists
+    epic: aws-migration
+    file: docs/scrum/stories/STORY-222-record-stack-decommission.md
+    status: ready   # FILED 2026-08-13 during the equilibrium refinement pass. The PO brought the
+                    # AWS stack DOWN on 2026-08-13. Three documents still describe it as live, and
+                    # CLAUDE.md is the highest-read document in the project -- every session loads
+                    # it and every subagent brief inherits it. This is the single largest false
+                    # claim in the repo, and it is the "repo lies to you" class the whole pass is
+                    # organised around.
+                    # SURFACES:
+                    #  (a) CLAUDE.md "Deployed topology (STORY-089)" -- names a public CloudFront
+                    #      URL, cluster uptime-monitor-cluster, services uptime-monitor-api and
+                    #      uptime-monitor-loop, two Secrets Manager secrets, and instructs the
+                    #      reader to "Re-verify before trusting anything in this section" with two
+                    #      commands that cannot now succeed.
+                    #  (b) docs/scrum/wiki/deployment-and-infra.md -- tier=map, status=stale. Under
+                    #      wiki-protocol 2.3.0 the right end state is a TOMBSTONE as
+                    #      tier: reference, which means STRIPPING code_refs AND the `## Facts`
+                    #      section (integrity enforces both) -- not merely editing the prose.
+                    #      This also discharges one of the three stale articles quarantined at
+                    #      sprint-69 close (3303c6c); the other two are STORY-223's problem.
+                    #  (c) docs/scrum/wiki/deployment-topology.md -- ALREADY tier=reference and
+                    #      never swept, so it is free to edit with no baseline consequence.
+                    # *** DATE THE DECOMMISSION, DO NOT DELETE THE HISTORY. *** A future redeploy
+                    # needs to know what existed and why it came down. The protocol is explicit
+                    # that deletion should ADD knowledge: a tombstone carrying the reason is the
+                    # archetypal tier: reference content.
+                    # SIDE EFFECT, worth sequencing on: repairing (b) and (c) resolves 24 of the
+                    # 218 mojibake sequences in STORY-192's scope (16 + 8). Run this BEFORE 192, or
+                    # accept the overlap -- but do not let both stories edit the same two files.
+                    # ALSO CLOSES: STORY-090 was archived on this same fact (no stack to deploy to).
+                    # BASELINE NOTE (wiki-protocol 2.3.0): editing (b) resets its derived staleness
+                    # baseline. That is harmless HERE AND ONLY HERE, because the article is being
+                    # converted to tier: reference -- never swept, so no verification claim is left
+                    # to falsify. Contrast STORY-192, where the same edit would be a false claim.
+    points: 2       # docs + one tombstone conversion; no code, no gate risk
+    priority: 20    # high: it is wrong in the file every session reads
+    type: chore
+    sprint: null
+  - id: STORY-223
+    title: Wiki Fact citations that do not resolve from the repo root — 146 across 11 articles, silently skipped by the Facts lint
+    epic: process-ratchet-brake
+    file: docs/scrum/stories/STORY-223-wiki-citation-resolution.md
+    status: draft   # FILED 2026-08-13 during the equilibrium refinement pass, from a live run of
+                    # `python .claude/skills/yourteam/scripts/yt_wiki.py`.
+                    # *** THE SHAPE: `== facts: CLEAN ==` AND `146 Fact citation(s) across 11
+                    # article(s) were never checked by the Facts lint` ARE PRINTED BY THE SAME RUN,
+                    # WHICH EXITS 0. *** The tool is honest about it -- its own message says "A
+                    # `facts: CLEAN` line does not cover them -- that gap is what this check exists
+                    # to make visible" -- but sprint-70's review.md and retro.md recorded "facts:
+                    # CLEAN" WITHOUT the qualifier. That is sprint 70's dominant finding (a claim
+                    # reading stronger than the observation behind it) reproduced in the wiki
+                    # tooling, and it is why this is a story rather than a note.
+                    # CAUSE: citations are written relative to a source root rather than the repo
+                    # root -- `composition/run.py` instead of `backend/src/composition/run.py`,
+                    # `api/client.ts` instead of `frontend/src/api/client.ts`. The Facts lint cannot
+                    # resolve them, so it SKIPS them rather than failing.
+                    # CONCENTRATED, WHICH MAKES IT TRACTABLE -- two articles are 64% of the total:
+                    #   api-five-file-convention.md        59
+                    #   frontend-zone.md                   35   (also status=stale)
+                    #   sample-mode.md                     13   (also 110 mojibake -- STORY-192)
+                    #   ingest-service-and-pull-loop.md     9
+                    #   zone-rules.md                       7   + 16 bare `:NNN`, no filename at all
+                    #   core-pipeline-and-availability.md   6   (also status=stale)
+                    #   canonical-types-and-ports.md        5
+                    #   dynatrace-adapter.md                4
+                    #   statuspage-publish.md               4
+                    #   architecture-boundary.md            3
+                    #   demo-engine.md                      1   + 5 bare `:NNN`
+                    # *** ROUTING (wiki-protocol 2.3.0, row 1): THE DELIVERABLE IS A LINT PROMOTED
+                    # FROM ADVISORY TO ENFORCING, NOT A PROSE PASS. *** Fixing 146 citations by hand
+                    # without closing the hole reproduces the debt on the next article written.
+                    # Expect a per-article ratchet, the way STORY-219 did it for the pytest-side
+                    # citation gate -- and REUSE that machinery rather than building a second one.
+                    # THIS IS THE REAL SIZE OF the "content-anchor coverage" follow-up filed at
+                    # sprint-70 review (only 13 of 198 citations carry an excerpt anchor). Same
+                    # defect family: 219 enforced that a cited path RESOLVES; this enforces that the
+                    # WIKI's paths resolve at all; anchors are the third and largest step.
+                    # SEQUENCING: two of the eleven articles are status=stale (frontend-zone.md,
+                    # core-pipeline-and-availability.md) and are NOT SWEPT, so their 41 citations
+                    # sit behind a quarantine. Decide at refinement whether this story rehabilitates
+                    # them or whether the enforcing lint simply excludes stale articles until they
+                    # are rehabilitated. Do NOT rehabilitate frontend-zone by re-verifying 35 Facts
+                    # as a side quest -- that is its own story.
+                    # The THIRD stale article, deployment-and-infra.md, is discharged by STORY-222
+                    # (tombstoned as tier: reference).
+    points: null    # unestimated -- refinement must settle the stale-article question above first,
+                    # which is what separates a ~3 from a ~8
+    priority: 45
     type: defect
     sprint: null
