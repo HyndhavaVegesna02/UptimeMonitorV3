@@ -11,6 +11,7 @@ from src.core.domain.maintenance import (
     MaintenanceWindow,
     MaintenanceWindowNotFoundError,
 )
+from tests.pagination_diagnostics import PaginationSpy
 
 
 def test_dynamo_maintenance_repository_create_list_delete(dynamo_resource):
@@ -66,7 +67,13 @@ def test_dynamo_maintenance_repository_create_list_delete(dynamo_resource):
 
 def test_dynamo_maintenance_repository_list_windows_paginates(dynamo_resource):
     """STORY-199 AC2: forcing a small page size must not truncate list_windows
-    against maintenance_repository.py's 'retrieve all' contract."""
+    against maintenance_repository.py's 'retrieve all' contract.
+
+    STORY-213 AC4: same self-diagnosing treatment as
+    test_dynamo_component_repository_list_components_paginates (AC1) --
+    on failure the assertion reports the observed page count, the
+    component ids actually returned, and whether a LastEvaluatedKey was
+    present when the loop exited."""
     settings = load_settings()
     repo = DynamoMaintenanceRepository(dynamo_resource, settings.dynamo_control_table)
 
@@ -81,8 +88,14 @@ def test_dynamo_maintenance_repository_list_windows_paginates(dynamo_resource):
 
     repo._limit = 2
 
-    windows = repo.list_windows()
-    assert {w.component_id for w in windows} == {f"comp-page-{i}" for i in range(10)}
+    with PaginationSpy(repo._table) as spy:
+        windows = repo.list_windows()
+
+    expected_component_ids = {f"comp-page-{i}" for i in range(10)}
+    actual_component_ids = {w.component_id for w in windows}
+    assert actual_component_ids == expected_component_ids, spy.diagnostic(
+        expected_component_ids, actual_component_ids
+    )
 
 
 def test_dynamo_maintenance_repository_is_under_maintenance_boundaries(dynamo_resource):
@@ -164,7 +177,16 @@ def test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_force
 
     repo._limit = 1
 
-    assert repo.is_under_maintenance("target-comp", at) is True
+    with PaginationSpy(repo._table) as spy:
+        result = repo.is_under_maintenance("target-comp", at)
+
+    assert result is True, (
+        f"is_under_maintenance returned {result} (expected True) -- "
+        f"{spy.summary()}. LastEvaluatedKey=False means DynamoDB Local itself "
+        f"under-reported (the target-comp page truly ran out); LastEvaluatedKey"
+        f"=True means the (broken) loop stopped despite the server saying more "
+        f"pages remained -- see PaginationSpy.diagnostic's docstring."
+    )
 
 
 def test_dynamo_maintenance_repository_empty(dynamo_resource):

@@ -88,7 +88,7 @@ class PaginationSpy:
             f"loop exited={self.last_evaluated_key_present}"
         )
 
-    def diagnostic(self, expected: Iterable[str], actual: Iterable[str]) -> str:
+    def diagnostic(self, expected: Iterable[Any], actual: Iterable[Any]) -> str:
         """Render observed page count, actual ids, the missing/extra sets
         against `expected`, and whether a LastEvaluatedKey was present when
         the loop exited -- the two shapes below are CONFIRMED, not merely

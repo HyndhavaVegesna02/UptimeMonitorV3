@@ -11,6 +11,7 @@ from src.core.domain.proposal import (
     StatusProposal,
 )
 from src.core.domain.status import ComponentStatus
+from tests.pagination_diagnostics import PaginationSpy
 
 
 def test_dynamo_proposal_repository_create_open_enforces_one_open_per_component(
@@ -125,7 +126,13 @@ def test_dynamo_proposal_repository_get_open_and_get_and_list_open(dynamo_resour
 def test_dynamo_proposal_repository_list_open_paginates(dynamo_resource):
     """STORY-199 AC2: forcing a small page size must not truncate list_open
     against proposal_repository.py's 'retrieve all OPEN status proposals'
-    contract."""
+    contract.
+
+    STORY-213 AC4: same self-diagnosing treatment as
+    test_dynamo_component_repository_list_components_paginates (AC1) -- on
+    failure the assertion reports the observed page count, the proposal ids
+    actually returned, and whether a LastEvaluatedKey was present when the
+    loop exited."""
     settings = load_settings()
     repo = DynamoProposalRepository(dynamo_resource, settings.dynamo_control_table)
 
@@ -144,8 +151,12 @@ def test_dynamo_proposal_repository_list_open_paginates(dynamo_resource):
 
     repo._limit = 2
 
-    open_proposals = repo.list_open()
-    assert {p.id for p in open_proposals} == set(saved_ids)
+    with PaginationSpy(repo._table) as spy:
+        open_proposals = repo.list_open()
+
+    expected_ids = set(saved_ids)
+    actual_ids = {p.id for p in open_proposals}
+    assert actual_ids == expected_ids, spy.diagnostic(expected_ids, actual_ids)
 
 
 def test_dynamo_proposal_repository_resolve_guard_and_atomicity(dynamo_resource):
