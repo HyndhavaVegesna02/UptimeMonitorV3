@@ -1,6 +1,6 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 71
-status: active     # none | planning | active | review | closed | aborted | parked
+status: review     # none | planning | active | review | closed | aborted | parked
 goal: >-
   Every check the DoD gate runs, and every document a session loads, is either true or visibly
   stale. Nothing in the floor reports a result it did not measure.
@@ -296,8 +296,23 @@ board:
     title: Close the two doc/wiki gaps sprint 64 left
     points: 1
     order: 5
-    status: todo
+    status: done   # last story; one self-caught fix commit
     file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
+    note_done: >-
+      AC1 correctly NOT REDONE -- already satisfied; touching demo-engine.md would have reset its
+      staleness baseline for nothing. AC7's line-count-neutral constraint HELD (3 insertions, 3
+      deletions), so no citation moved and the estimate stayed at 1.
+      *** STORY-213'S LESSON APPLIED FORWARD, AND IT FOUND ONE: *** the implementer grepped for
+      other copies of each false statement before committing, and found core/queries/availability.py
+      :71 carrying the same "expected-but-missing" phrase -- traced the computation, confirmed the
+      limitation genuinely applies there too, did NOT fix it (outside AC4's scope, would blow the
+      1-point sizing), and reported it. Filed.
+      SMALL VINDICATION: its own fix commit was forced by STORY-219's citation ratchet, which caught
+      a wiki History note adding a bare-filename citation (188 -> 189). The guard working.
+      Also reported: the brief's own `zone-rules.md:751` citation is STALE (now :812) -- a live
+      instance of the STORY-223 defect class.
+      Orchestrator verified: line-count neutrality, demo-engine.md untouched, only docstring string
+      literals changed, gate 8/8 816 passed / 0 skipped.
     note: >-
       *** DECLARED FIRST-TO-DROP. *** Re-scoped 3 findings -> 2: AC1 is ALREADY SATISFIED
       (demo-engine.md's code_refs now list all nine tools/demo_loop_gate/ files) and MUST NOT be

@@ -1700,7 +1700,7 @@ stories:
     title: dynamo_local picks an ephemeral port Docker maps but Windows won't route; readiness probe can't detect it
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md   # written 2026-08-13; both defects RE-VERIFIED live at the pass
-    status: ready   # *** REFINED 2026-08-13 at sprint-71 planning: 8 AC written, SIZED 3, all four
+    status: done    # sprint 71, accepted 2026-08-14. Prior: ready   # *** REFINED 2026-08-13 at sprint-71 planning: 8 AC written, SIZED 3, all four
                     # open questions settled in the story file. THE KEY REFINEMENT FINDING:
                     # the shown-RED does NOT require reproducing a WinNAT-reserved port (which is
                     # not reliably achievable and would have blocked the story by construction).
@@ -1754,7 +1754,7 @@ stories:
                     # two-configuration gate requirement (the gate env hides this story entirely).
     type: defect
     priority: 11
-    sprint: null
+    sprint: 71
   - id: STORY-180
     title: Demo-engine polish - the eight non-blocking minors from STORY-148's quality review
     epic: deferred-by-po
@@ -2179,7 +2179,7 @@ stories:
     title: Close the two doc/wiki gaps sprint 64 found but deliberately left
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
-    status: ready   # *** RE-SCOPED 2026-08-13: THREE FINDINGS -> TWO. Re-verified against the live
+    status: done    # sprint 71, accepted 2026-08-14. Prior: ready   # *** RE-SCOPED 2026-08-13: THREE FINDINGS -> TWO. Re-verified against the live
                     # tree during the equilibrium pass, prompted by the wiki-protocol change
                     # (yourteam 2.3.0, 9dd86e6).
                     # (a) IS ALREADY FIXED -- DROP IT. demo-engine.md's code_refs now list all NINE
@@ -2233,7 +2233,7 @@ stories:
     points: 1
     priority: 63
     type: chore
-    sprint: null    # CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.
+    sprint: 71
                     # Finding 1 rewrites demo-engine.md frontmatter, which STORY-191 AC10 also
                     # rewrites; deferring removes the collision entirely. Sprint-66 candidate.
                     # TWO CORRECTIONS FOUND AT VERIFICATION, ALREADY FOLDED INTO THE STORY FILE:
@@ -2698,7 +2698,7 @@ stories:
     title: Clickpath normalizer hygiene — use require_field for execution.outcome
     epic: sprint-65-splits
     file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
-    status: ready   # REFINED 2026-08-02 at sprint-67 planning; estimate confirmed at 1. Citations
+    status: done    # sprint 71, accepted 2026-08-14. Prior: ready   # REFINED 2026-08-02 at sprint-67 planning; estimate confirmed at 1. Citations
                     # re-derived and hold; plan verification found NOTHING wrong with it -- the
                     # only story of the five that came back clean.
                     # WAS IN SPRINT 67, DROPPED POST-LOCK to hold the committed 11 points when
@@ -2724,7 +2724,7 @@ stories:
     points: 1
     priority: 72
     type: chore
-    sprint: null
+    sprint: 71
   - id: STORY-202
     title: env_matrix.py must import ALL SEVEN child env-var NAMES from settings.py, not re-declare them
     epic: sprint-65-splits
@@ -3125,7 +3125,7 @@ stories:
     title: test_dynamo_component_repository_list_components_paginates fails intermittently — the message reads as a pagination defect
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
-    status: ready   # *** PROMOTED draft -> ready 2026-08-13 at sprint-71 plan verification. It was
+    status: done    # sprint 71, accepted 2026-08-14. Prior: ready   # *** PROMOTED draft -> ready 2026-08-13 at sprint-71 plan verification. It was
                     # ALREADY READY and mis-statused: six written AC and points: 2. It had been
                     # DEFERRED out of sprint 71 on the grounds that STORY-179/173 change the fixture
                     # substrate -- a reason THIS STORY'S OWN REFINEMENT FORBIDS: "Non-reproduction
@@ -3161,7 +3161,7 @@ stories:
     points: 2
     priority: 60
     type: defect
-    sprint: null
+    sprint: 71
 
   - id: STORY-214
     title: Extract the LastEvaluatedKey pagination loop into a shared helper — and rework the ZR-7 guard that would forbid it
@@ -3425,7 +3425,7 @@ stories:
     title: Record the AWS stack decommission — CLAUDE.md and the two deployment wiki articles describe infrastructure that no longer exists
     epic: aws-migration
     file: docs/scrum/stories/STORY-222-record-stack-decommission.md
-    status: ready   # FILED 2026-08-13 during the equilibrium refinement pass. The PO brought the
+    status: done    # sprint 71, accepted 2026-08-14. Prior: ready   # FILED 2026-08-13 during the equilibrium refinement pass. The PO brought the
                     # AWS stack DOWN on 2026-08-13. Three documents still describe it as live, and
                     # CLAUDE.md is the highest-read document in the project -- every session loads
                     # it and every subagent brief inherits it. This is the single largest false
@@ -3469,7 +3469,7 @@ stories:
                     # 222-before-192 ordering exists to prevent.
     priority: 20    # high: it is wrong in the file every session reads
     type: chore
-    sprint: null
+    sprint: 71
   - id: STORY-223
     title: Wiki Fact citations that do not resolve from the repo root — 146 across 11 articles, silently skipped by the Facts lint
     epic: process-ratchet-brake
