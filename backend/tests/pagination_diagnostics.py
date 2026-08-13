@@ -24,10 +24,10 @@ instead reads `... =True` -- the server correctly says more rows exist and
 the (broken) code never asks for them. `False` points upstream, at
 DynamoDB Local under-reporting; `True` points at this repository's own loop.
 
-`PaginationSpy` wraps a boto3 `Table`'s `query`/`scan` method and records
-every raw response so `.diagnostic()`/`.summary()` can render that answer
-without re-instrumenting the failure by hand. It is deliberately dumb: it
-does not interpret the responses beyond counting pages and checking for
+`PaginationSpy` wraps a boto3 `Table`'s `query` method and records every raw
+response so `.diagnostic()`/`.summary()` can render that answer without
+re-instrumenting the failure by hand. It is deliberately dumb: it does not
+interpret the responses beyond counting pages and checking for
 `LastEvaluatedKey` on the last one recorded -- the interpretation belongs to
 the reader of the assertion message, not to this helper.
 """
@@ -37,16 +37,18 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
+_METHOD_NAME = "query"
+
 
 class PaginationSpy:
-    """Records every response from one table method call (default `query`)
-    for later diagnostic rendering. Restores the original method on
-    `__exit__`, including when the wrapped call raises."""
+    """Records every response from one table's `query()` call for later
+    diagnostic rendering. Restores the original method on `__exit__`,
+    including when the wrapped call raises."""
 
-    def __init__(self, table: Any, method_name: str = "query") -> None:
+    def __init__(self, table: Any) -> None:
         self._table = table
-        self._method_name = method_name
-        self._original = getattr(table, method_name)
+        self._original = getattr(table, _METHOD_NAME)
+        self._had_instance_attr = _METHOD_NAME in vars(table)
         self.responses: list[dict] = []
 
     def __enter__(self) -> "PaginationSpy":
@@ -58,15 +60,18 @@ class PaginationSpy:
             responses.append(response)
             return response
 
-        setattr(self._table, self._method_name, _spied)
+        setattr(self._table, _METHOD_NAME, _spied)
         return self
 
     def __exit__(self, *exc_info: Any) -> None:
-        setattr(self._table, self._method_name, self._original)
+        if self._had_instance_attr:
+            setattr(self._table, _METHOD_NAME, self._original)
+        else:
+            delattr(self._table, _METHOD_NAME)
 
     @property
     def page_count(self) -> int:
-        """How many `query`/`scan` calls were recorded."""
+        """How many `query` calls were recorded."""
         return len(self.responses)
 
     @property
