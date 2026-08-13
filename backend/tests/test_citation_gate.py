@@ -17,7 +17,13 @@ config-layer.md and zone-rules.md moved to 198, and 8 counted the PASSING
 subset while the sentence described the CHECKED set. "Distinct" means
 per-article dedupe summed across articles (`partition_citations` resets its
 `seen` set per article), NOT globally distinct -- which is 186, and stating
-the number without its method is how the first version rotted.
+the number without its method is how the first version rotted. Re-corrected
+2026-08-13 (STORY-222 fix round): `deployment-and-infra.md`'s 10 citations
+were de-lined when that article became a decommission tombstone (its
+`file:line` claims into `infra/stack.yaml`/`scripts/create_tables.py` were
+no longer checkable at `tier: reference`), dropping the distinct total from
+198 to 188 -- the anchored count (13) and the anchored-passing count (8) are
+unaffected, none of those 10 carried an excerpt anchor.
 `test_ac1_docstring_scope_numbers_are_current` re-derives all three live, so
 this sentence cannot go stale silently again. **A wrong-but-in-range line
 number PASSES.** The worked example that demonstrates this today:
@@ -83,21 +89,30 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 #
 # AC8 context (informational, NOT what is enforced below): the RAW sweep --
 # every citation `citation_sweep.py` reports, before AC2's path-resolvability
-# filter -- totals 129 at this story's base commit, four articles holding 123
-# of it (demo-engine.md 73, zone-rules.md 18, core-pipeline-and-availability.md
-# 17, zone-rules-history.md 15). Of the eight articles at raw-zero, SEVEN have
-# no extracted citations at all (vacuously clean) and only deployment-and-
-# infra.md (10 citations, all passing) is genuinely clean. The 129 are not
-# silently accepted: 113 of them are bare-filename ADVISORY citations this
-# story deliberately does not enforce (content-anchor coverage is filed as a
-# sprint-71 follow-up, out of this story's 3 points) -- they are visible via
-# `tools/citation_sweep.py` directly, not hidden by this narrower gate.
+# filter -- totals 129 at this story's (STORY-219) base commit, four articles
+# holding 123 of it (demo-engine.md 73, zone-rules.md 18,
+# core-pipeline-and-availability.md 17, zone-rules-history.md 15). Of the
+# eight articles at raw-zero, SEVEN have no extracted citations at all
+# (vacuously clean); deployment-and-infra.md (10 citations, all passing) was
+# the eighth, "genuinely clean" one -- but STORY-222 (2026-08-13) converted it
+# to `tier: reference` as a decommission tombstone and de-lined its 10
+# citations (they no longer carry a line number at all, so `CITATION_RE` no
+# longer extracts them; see the module docstring's 198->188 correction
+# above). It is EXEMPT today (AC6, read live from frontmatter), not
+# "genuinely clean" -- there is nothing left for AC2's partition to count.
+# The 129 raw at STORY-219's base are not silently accepted: 113 of them are
+# bare-filename ADVISORY citations this story deliberately does not enforce
+# (content-anchor coverage is filed as a sprint-71 follow-up, out of this
+# story's 3 points) -- they are visible via `tools/citation_sweep.py`
+# directly, not hidden by this narrower gate.
 #
 # THE HEADLINE RATIO, stated so a green run cannot be misread: this ratchet
-# enforces 15 failures across 14 map-tier articles. Of the 129 raw, 113 are
-# ADVISORY (bare filename) and 1 sits in a `tier: reference` article that AC6
-# exempts. Green here means "no NEW resolvable-path drift", never "the wiki's
-# citations are correct".
+# enforces 15 failures across 13 map-tier articles (`test_ac1_docstring_scope_
+# numbers_are_current` re-derives both numbers live, so this cannot go stale
+# silently). Of the 129 raw at STORY-219's base, 113 are ADVISORY (bare
+# filename) and 1 sits in a `tier: reference` article that AC6 exempts. Green
+# here means "no NEW resolvable-path drift", never "the wiki's citations are
+# correct".
 BASELINE: dict[str, dict] = {
     "api-five-file-convention.md": {
         "tier": "map",
@@ -152,9 +167,18 @@ BASELINE: dict[str, dict] = {
         "baseline": None,
         "note": (
             "exempt (AC6) -- converted to tier: reference as a decommission "
-            "tombstone (STORY-222, 2026-08-13); its 10 citations are unchanged "
-            "content and still all pass, but the ratchet no longer enforces "
-            "them since a reference article makes no live-code claims"
+            "tombstone (STORY-222, 2026-08-13). Its 10 `file:line` citations "
+            "into infra/stack.yaml and scripts/create_tables.py were de-lined "
+            "in the same story's fix round: at tier: reference the article "
+            "makes no live-code claim, so a line number pointing at a file "
+            "that is still gated and could drift out from under it was a "
+            "false checkable claim, not a harmless one -- restoring the "
+            "'## Facts' heading in a scratch copy re-triggers the integrity/ "
+            "facts lints, proving the tier is honest now, not just declared. "
+            "The bare filenames remain as navigation; CITATION_RE requires a "
+            "line number, so none of the 10 are extracted as citations at "
+            "all anymore -- there is nothing for this ratchet to enforce or "
+            "exempt"
         ),
     },
     "deployment-topology.md": {
@@ -377,9 +401,14 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     exists to attack -- a number in prose that a later commit silently
     invalidates -- so the fix is not a better number, it is a check.
 
-    Falsified by: any edit that changes the repo's citation population without
-    updating the docstring sentence above. That is the single observation this
-    test exists to catch.
+    Extended 2026-08-13 (STORY-222 fix round) to also re-derive the two
+    headline-ratio numbers ("15 failures across 13 map-tier articles") that a
+    MAJOR from this same fix round found stale in a bare docstring sentence
+    nothing asserted against -- the exact failure class this test already
+    exists to attack, just not yet applied to those two numbers.
+
+    Falsified by: any edit that changes the repo's citation population, or a
+    wiki article's tier, without updating the docstring sentences above.
     """
     import citation_sweep as sweep
 
@@ -400,8 +429,8 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
                 )
                 anchored_ok += 1 if ok else 0
 
-    assert (anchored, total) == (13, 198), (
-        f"the module docstring says 13 of 198 distinct citations carry an "
+    assert (anchored, total) == (13, 188), (
+        f"the module docstring says 13 of 188 distinct citations carry an "
         f"excerpt anchor; live measurement says {anchored} of {total}. Update "
         f"the docstring sentence AND this assertion in the same commit."
     )
@@ -410,8 +439,26 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
         f"measurement says {anchored_ok}."
     )
 
+    map_tier_count = 0
+    total_enforced_fail = 0
+    for article in gate.wiki_articles(_REPO_ROOT):
+        if gate.article_tier(article) != "map":
+            continue
+        map_tier_count += 1
+        _, enforced_fail, _, _ = gate.partition_citations(_REPO_ROOT, article)
+        total_enforced_fail += len(enforced_fail)
 
-def test_ac2_classifier_keeps_its_teeth_when_the_debt_is_paid_to_zero() -> None:
+    assert (total_enforced_fail, map_tier_count) == (15, 13), (
+        f"the headline ratio says 15 failures across 13 map-tier articles; "
+        f"live measurement says {total_enforced_fail} failures across "
+        f"{map_tier_count} map-tier articles. Update the headline-ratio "
+        f"comment above BASELINE AND this assertion in the same commit."
+    )
+
+
+def test_ac2_classifier_keeps_its_teeth_when_the_debt_is_paid_to_zero(
+    tmp_path: Path,
+) -> None:
     """A known repo-relative citation must land in an ENFORCED bucket, never
     advisory.
 
@@ -423,23 +470,38 @@ def test_ac2_classifier_keeps_its_teeth_when_the_debt_is_paid_to_zero() -> None:
     `test_ac2_partition_covers_every_extracted_citation` checks the partition
     TOTAL and never the split.
 
+    Re-pointed 2026-08-13 (STORY-222 fix round): this originally pinned on
+    `deployment-and-infra.md`, which at the time carried 10 all-repo-relative,
+    all-passing citations and no advisory ones. The same fix round de-lined
+    those 10 citations (the article became a decommission tombstone at
+    `tier: reference`, where a `file:line` claim into still-live code was no
+    longer honest) -- `CITATION_RE` mandates a line number, so none of the 10
+    are extracted at all anymore, and the article has nothing left to pin on.
+    A synthetic fixture citing a real, long-enough repo file removes the
+    dependency on any wiki article's *content* staying a certain shape --
+    exactly the kind of drift that broke the original pin.
+
     Falsified by: a classifier change that routes a path containing `/` to
     advisory. This test does not depend on any baseline being nonzero.
     """
-    article = _REPO_ROOT / "docs" / "scrum" / "wiki" / "deployment-and-infra.md"
+    real_path = "scripts/create_tables.py"
+    real_line_count = len(
+        (_REPO_ROOT / real_path).read_text(encoding="utf-8").splitlines()
+    )
+    article = tmp_path / "synthetic-control.md"
+    article.write_text(f"See `{real_path}:{real_line_count}`.\n", encoding="utf-8")
+
     enforced_ok, enforced_fail, advisory_ok, advisory_fail = gate.partition_citations(
         _REPO_ROOT, article
     )
 
     assert enforced_ok or enforced_fail, (
-        "deployment-and-infra.md's citations are all repo-relative paths, so at "
-        "least one must be ENFORCED. An empty enforced set here means the "
-        "path-resolvability classifier has stopped discriminating -- the whole "
-        "gate would then be advisory-only while still reporting green."
+        "a repo-relative path (contains '/') must land in an ENFORCED bucket. "
+        "An empty enforced set here means the path-resolvability classifier "
+        "has stopped discriminating -- the whole gate would then be "
+        "advisory-only while still reporting green."
     )
     assert not advisory_ok and not advisory_fail, (
-        "deployment-and-infra.md carries no bare-filename citations today; "
-        f"got {len(advisory_ok) + len(advisory_fail)} advisory. If a bare "
-        "filename was legitimately added, move this pin to another "
-        "all-repo-relative article rather than relaxing it."
+        "a repo-relative path must never be classified as advisory; got "
+        f"{len(advisory_ok) + len(advisory_fail)} advisory."
     )
