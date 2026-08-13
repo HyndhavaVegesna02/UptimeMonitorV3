@@ -3545,3 +3545,33 @@ stories:
     priority: 15    # high: it is the mechanical floor failing to be mechanical
     type: defect
     sprint: null
+  - id: STORY-225
+    title: The deployment/infra files are in no article's code_refs — infra/stack.yaml is gated every run but hooked by no wiki article
+    epic: process-ratchet-brake
+    file: docs/scrum/stories/STORY-225-infra-files-outside-wiki-coverage.md
+    status: draft   # FILED 2026-08-13 by the STORY-222 quality reviewer, and CREATED BY STORY-222.
+                    # Converting deployment-and-infra.md to a tier:reference tombstone stripped its
+                    # code_refs -- which were the ONLY wiki hooks these files had. VERIFIED at HEAD:
+                    #   infra/stack.yaml           -> NO article
+                    #   Dockerfile                 -> NO article
+                    #   .dockerignore              -> NO article
+                    #   scripts/create_tables.py   -> NO article
+                    #   (scripts/seed_topology.py  -> zone-rules.md, still hooked)
+                    # infra/stack.yaml is NOT dormant: 16KB, actively maintained, and CFN-LINT RUNS
+                    # IT AS ONE OF THE EIGHT DoD GATE COMMANDS ON EVERY RUN. A file in no code_refs
+                    # has ZERO forward blast radius -- change it however you like and no article is
+                    # ever flagged, because no article claims to describe it.
+                    # A REAL LOSS, NOT THEORETICAL: before STORY-222 these files carried ten
+                    # ENFORCED citations at baseline: 0 -- pinned and clean. That pin is gone.
+                    # THE TENSION TO RESOLVE: the article described TWO things -- what the TEMPLATE
+                    # declares (still live, still gated, map-tier by definition) and what was
+                    # DEPLOYED (dead 2026-08-13, tombstone content). STORY-222 correctly classified
+                    # the whole by the second; the first went with it.
+                    # REFINEMENT MUST FIRST run a systematic sweep -- "which gated paths are in no
+                    # code_refs?" -- because these four were found BY ACCIDENT while reviewing
+                    # something else. The real answer may be larger and may change the shape.
+                    # DO NOT re-litigate STORY-222's tier decision; it was correct and reviewed twice.
+    points: null    # unestimated -- size after the sweep above, not before
+    priority: 40
+    type: defect
+    sprint: null

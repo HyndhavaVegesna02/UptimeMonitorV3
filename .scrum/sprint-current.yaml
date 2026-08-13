@@ -113,8 +113,39 @@ board:
     title: dynamo_local port allocation + readiness probe
     points: 3
     order: 2
-    status: todo
+    status: implemented_awaiting_review   # *** NOT done. Reviewers NOT yet dispatched. ***
     file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md
+    commits: "8dac223 (AC1), 7db3dbf (AC4/AC5), e1ffe17 (AC2/AC3/AC6), 37a7c37 (AC7)"
+    orchestrator_verified: >-
+      Reality gate run by the orchestrator at final HEAD 37a7c37, not accepted on report:
+      8/8 PASS, 805 passed / 0 SKIPPED, contracts 9 kept / 0 broken. Implementation spot-checked:
+      _PORT_RANGE_START/END = 18000-18100 exist (dynamo_local.py:51-52), the STORY-173 limitation
+      comment is at the range declaration site (:46-49) as AC6 requires, and wait_for_dynamo does a
+      real list_tables() (:190) AND checks for the TableNames key (:197).
+    implementer_finding_worth_keeping: >-
+      *** THE FIX ALMOST SHIPPED WITH THE ORIGINAL DEFECT INSIDE IT. *** Mid-implementation the
+      implementer discovered that botocore's LENIENT JSON-protocol parsing lets a bare "200 OK"
+      satisfy a plain `client.list_tables()` call WITHOUT raising. So "call ListTables instead of
+      GET /" -- the fix as written in AC4 and in the story's fix direction -- would still have
+      green-lit a non-DynamoDB responder, which is defect 2 all over again one layer down. The
+      `TableNames`-key check at :197 is what actually pins "the service answers". Disclosed
+      unprompted. This is the sprint's best finding so far and belongs in the review narrative.
+    ac7_honest_negative: >-
+      The WinNAT hang did NOT reproduce today on either old or new code (old: 800 passed + 5
+      expected new-API-shape failures in 77.29s; fixed: 805 in 79.99s). The implementer recorded
+      that plainly rather than manufacturing a dramatic before/after -- consistent with refinement
+      decision 2, which is exactly why the shown-REDs were designed NOT to depend on reproducing it.
+    shown_red_claimed: >-
+      AC1: "port 61867 is inside Windows' WinNAT-reserved dynamic range (>= 49152)" against the
+      unmodified _free_tcp_port(). AC4/AC5: "DID NOT RAISE TimeoutError" against the unmodified
+      wait_for_dynamo(), with the old probe measured returning green in 0.02s against a listener
+      answering a generic non-DynamoDB 200 OK.
+      *** CLAIMED, NOT YET INDEPENDENTLY RE-RUN -- that is the reviewers' job. ***
+    ac8_both_configs_claimed: >-
+      Config 1 (URL set): 805 passed in 47.51s. Config 2 (URL UNSET, Docker up -- the real spawn
+      path): 805 passed in 80.12s. Both at 37a7c37, both 0 skipped.
+      *** THE ORCHESTRATOR RE-RAN CONFIG 1 ONLY. Config 2 is unverified by anyone but the
+      implementer, and it is the config that matters for this story. Reviewers must re-run it. ***
     note: >-
       REFINED at this planning: 8 AC, four open questions settled. KEY FINDING -- the shown-RED does
       NOT need a WinNAT-reserved port (unreproducible, would block the story by construction); any
