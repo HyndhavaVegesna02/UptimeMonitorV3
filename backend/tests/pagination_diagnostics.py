@@ -101,7 +101,15 @@ class PaginationSpy:
         honoring `Limit`) instead reads `... present when loop exited=True`
         with the SAME non-empty `missing` -- the server correctly says more
         rows exist and the (broken) code ignores it. A `missing` set with
-        LEK=False points upstream (DynamoDB Local under-reported); LEK=True
+        LEK=False points upstream, but "upstream" is two different causes
+        that `page_count` distinguishes: `page_count == 1` means DynamoDB
+        Local under-reported that single page's boundary; `page_count > 1`
+        means the loop ran to exhaustion and the missing rows were never
+        visible on the wire at all (e.g. GSI lag or a lost write). Flattening
+        both to "DynamoDB Local under-reported" is more defensible here than
+        for a bare boolean caller (`missing` already shows the reader which
+        rows never arrived, alongside `page_count`), but the two causes are
+        still distinct -- say so rather than leave it implicit. LEK=True
         points at this repository's own loop."""
         expected_set = set(expected)
         actual_set = set(actual)

@@ -182,10 +182,14 @@ def test_dynamo_maintenance_repository_is_under_maintenance_paginates_past_force
 
     assert result is True, (
         f"is_under_maintenance returned {result} (expected True) -- "
-        f"{spy.summary()}. LastEvaluatedKey=False means DynamoDB Local itself "
-        f"under-reported (the target-comp page truly ran out); LastEvaluatedKey"
-        f"=True means the (broken) loop stopped despite the server saying more "
-        f"pages remained -- see PaginationSpy.diagnostic's docstring."
+        f"{spy.summary()}. LastEvaluatedKey=True means the (broken) loop "
+        f"stopped despite the server saying more pages remained (a real "
+        f"regression); LastEvaluatedKey=False with more than one page read "
+        f"means the loop ran to exhaustion and the target-comp window was "
+        f"never visible on the wire at all (GSI lag / a lost write -- not a "
+        f"pagination defect); LastEvaluatedKey=False with exactly one page "
+        f"read means DynamoDB Local itself under-reported that single page's "
+        f"boundary -- see PaginationSpy.diagnostic's docstring."
     )
 
 
