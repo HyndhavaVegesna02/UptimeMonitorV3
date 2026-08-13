@@ -224,6 +224,17 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   `success→UP`/`failure→DOWN`/`partial→DEGRADED`, raises `UnknownVendorOutcomeError`) is still used by
   `clickpath_normalizer` against the old `execution.outcome` field. Browser clickpath is out of the
   live HTTP scope (not in the live dispatch registry), so this path is retained but not exercised live.
+- **STORY-201:** `normalize_clickpath_row` (`clickpath_normalizer.py::normalize_clickpath_row`) now
+  reads `execution.outcome` via the shared `require_field` (`_assembly.py::require_field`), matching
+  `http_normalizer.py`'s `result.status.code`/`result.status.message` pattern — a missing field raises
+  the named `MalformedDqlRowError` (a `ValueError` subclass) instead of a bare `KeyError`. Pinned by
+  `test_dynatrace_adapter.py::test_clickpath_normalizer_raises_malformed_for_missing_execution_outcome`.
+  **This closes only the direct-call path.** `normalize_clickpath_row` is still not reachable through
+  `dispatch.py`'s `_NORMALIZERS` (see above — clickpath's real `event.type` is unknown and unregistered),
+  so the claim that a malformed clickpath row would now be caught by `normalize_rows_lenient`'s
+  `except ValueError` net is an INFERENCE from the type relationship
+  (`MalformedDqlRowError` < `ValueError`), not an end-to-end demonstration — no clickpath row can reach
+  that dispatch path today to prove it directly.
 
 ### Tests + fixtures
 - `backend/tests/test_dynatrace_adapter.py` (33 tests) runs entirely off committed JSON fixtures
@@ -349,3 +360,10 @@ contained here; `lint-imports` proves the core stays untouched (see [[architectu
   not a private NAME. No file in this article's `code_refs` changed in this pass (prose-only
   correction); `verified_sha` is bumped below to this fix round's landing commit anyway, since the
   correction is itself the re-verification this article needed.
+- sprint-71 (STORY-201): `clickpath_normalizer.py` bypassed `require_field` for `execution.outcome`,
+  reading `row["execution.outcome"]` directly and raising a bare `KeyError` on a missing field
+  instead of the named `MalformedDqlRowError`, against the article's own documented policy. Fixed to
+  match `http_normalizer.py`'s pattern; added the Fact above, including the scope limit (the
+  quarantine-net claim is an inference from `MalformedDqlRowError < ValueError`, not demonstrated,
+  because clickpath is still unreachable through `dispatch.py::_NORMALIZERS`). No other Fact
+  changed.
