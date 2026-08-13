@@ -274,8 +274,20 @@ board:
     title: Clickpath normalizer -- use require_field for execution.outcome
     points: 1
     order: 4
-    status: todo
+    status: done   # first-pass clean, no fix round
     file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
+    note_done: >-
+      Shown RED as a bare `KeyError: 'execution.outcome'`, then GREEN as MalformedDqlRowError.
+      1-pointer, so implementer + gates per the skill's scaling rule -- no reviewer pair.
+      SCOPE LIMIT HONOURED AND REPORTED AS AN INFERENCE, not as verified: normalize_clickpath_row
+      is still unreachable in production (dispatch.py's _NORMALIZERS maps only
+      "http_monitor_execution"), so the quarantine-net claim rests solely on the type relationship
+      MalformedDqlRowError < ValueError. The implementer did NOT manufacture an artificial route to
+      make it look end-to-end proven -- which is the "proof that reads stronger than it is" shape
+      this sprint hit four times.
+      Wiki blast radius closed in-story: dynatrace-adapter.md (new Fact + the inference stated) and
+      zone-rules.md (re-verified; its cited ZR-8 line untouched).
+      Orchestrator verified: gate 8/8, 816 passed / 0 skipped, tree clean.
     note: >-
       Fully independent: touches only adapters/inbound/dynatrace/, blast radius dynatrace-adapter.md
       alone. Carries an explicit SCOPE LIMIT -- the quarantine-net claim cannot be shown end-to-end
