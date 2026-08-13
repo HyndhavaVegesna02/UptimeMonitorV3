@@ -140,6 +140,14 @@ none of sprint 68's work. It is real, it is small, and it waits.
 Extracting the shared pagination loop (STORY-214). Changing any adapter's pagination behaviour.
 Fixing STORY-179's ephemeral-port defect.
 
+**Risk note (fix round, 2026-08-14):** the committed mutation patch
+(`docs/scrum/stories/STORY-213-ac2-mutation-remove-lek-loop.patch`) is a textual diff against
+`list_components` as it exists today; it will silently stop applying if that method is ever rewritten
+(e.g. by extracting the shared pagination loop). **STORY-214, the story that would have done exactly
+that, was archived by PO decision on 2026-08-13** as accepted duplication, so this is a recorded
+dependent risk, not an active one — a future reader reviving that refactor should know the patch
+needs regenerating.
+
 ## History
 
 - 2026-08-13: **Flake re-measured BEFORE any implementation, per this story's own dispatch brief** —
