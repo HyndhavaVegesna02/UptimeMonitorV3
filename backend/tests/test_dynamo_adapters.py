@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pytest
 from src.composition.settings import load_settings
 from src.core.domain.status import ComponentStatus
 from src.core.domain.topology import Signal
@@ -233,7 +234,7 @@ def test_dynamo_component_repository_list_components_paginates_diagnostic_messag
 
     try:
         assert actual_ids == expected_ids, spy.diagnostic(expected_ids, actual_ids)
-        raise AssertionError(
+        pytest.fail(
             "the forced truncation did not reproduce a failure -- "
             "list_components read past the tampered first page, so this "
             "proof did not exercise what it claims to"
