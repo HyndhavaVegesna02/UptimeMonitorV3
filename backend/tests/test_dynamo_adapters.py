@@ -158,10 +158,10 @@ def test_dynamo_component_repository_list_components_paginates(dynamo_resource):
     is self-diagnosing (PaginationSpy, backend/tests/pagination_diagnostics.py):
     on failure it reports the observed page count, the ids actually returned,
     and whether a LastEvaluatedKey was present when the loop exited, so a
-    reader can tell a flake (LEK present -- more pages were claimed available
-    but the loop stopped anyway) from a real regression (LEK never appears)
-    at a glance instead of re-instrumenting the failure by hand. Proven by
-    forced truncation in
+    reader can tell a flake from a real regression at a glance instead of
+    re-instrumenting the failure by hand -- see PaginationSpy.diagnostic's
+    docstring for which LEK value means which; it is not restated here to
+    avoid a second, driftable copy. Proven by forced truncation in
     test_dynamo_component_repository_list_components_paginates_diagnostic_message_on_forced_truncation
     below (backend/tests/test_dynamo_adapters.py)."""
     from src.adapters.persistence.dynamo_component_repository import (
