@@ -34,7 +34,7 @@ class AvailabilityDTO(BaseModel):
     """Count of verdicts with under_maintenance=True — excluded from both sides."""
 
     gap_verdicts: int
-    """Count of expected-but-missing cycles — excluded from the denominator."""
+    """Count of missing cycles at reported locations only (STORY-152 widens this)."""
 
     distinct_locations: int
     """COUNT(DISTINCT location) observed in the window."""
