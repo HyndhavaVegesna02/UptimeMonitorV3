@@ -11,10 +11,18 @@ had just fixed, at the exact call site the failure hit. The fix here is not
 to the pagination loop (mutation-verified correct, STORY-197's ZR-7 guard
 independently confirms all six compliant call sites) but to the MESSAGE: a
 reader hitting this failure should be able to tell, from the assertion
-output alone, whether they are looking at an early-stop flake (a
-`LastEvaluatedKey` was still present when the loop exited -- more pages were
-claimed available but the loop stopped anyway) or a real regression (no
-`LastEvaluatedKey` ever appears, or the loop logic itself is wrong).
+output alone, whether they are looking at an early-stop flake or a real
+regression.
+
+Both shapes are CONFIRMED (not merely plausible) by STORY-213's own AC1/AC2
+evidence, and they are OPPOSITE signatures: the hypothesised DynamoDB Local
+flake (a genuinely absent `LastEvaluatedKey` handed to an unmodified,
+correct loop) reads `LastEvaluatedKey present when loop exited=False` --
+the server said "no more" and the loop correctly believed it. Mutating away
+the loop itself (STORY-199's own regression, still honoring `Limit`)
+instead reads `... =True` -- the server correctly says more rows exist and
+the (broken) code never asks for them. `False` points upstream, at
+DynamoDB Local under-reporting; `True` points at this repository's own loop.
 
 `PaginationSpy` wraps a boto3 `Table`'s `query`/`scan` method and records
 every raw response so `.diagnostic()`/`.summary()` can render that answer
@@ -83,10 +91,18 @@ class PaginationSpy:
     def diagnostic(self, expected: Iterable[str], actual: Iterable[str]) -> str:
         """Render observed page count, actual ids, the missing/extra sets
         against `expected`, and whether a LastEvaluatedKey was present when
-        the loop exited. An early-stop flake shows up as LEK-present=True
-        with a non-empty `missing`; a real regression more plausibly shows
-        LEK-present=False from the first page, or a `missing` set that
-        doesn't shrink between runs."""
+        the loop exited -- the two shapes below are CONFIRMED, not merely
+        plausible (STORY-213 AC1/AC2 evidence): forcing DynamoDB Local's
+        hypothesised flake (a genuinely absent LastEvaluatedKey handed to an
+        UNMODIFIED, correct loop) reads `1 page(s) read; ... present when
+        loop exited=False` with a non-empty `missing`
+        (test_dynamo_component_repository_list_components_paginates_diagnostic_message_on_forced_truncation);
+        mutating away the loop itself (STORY-199's own regression, still
+        honoring `Limit`) instead reads `... present when loop exited=True`
+        with the SAME non-empty `missing` -- the server correctly says more
+        rows exist and the (broken) code ignores it. A `missing` set with
+        LEK=False points upstream (DynamoDB Local under-reported); LEK=True
+        points at this repository's own loop."""
         expected_set = set(expected)
         actual_set = set(actual)
         missing = sorted(expected_set - actual_set)

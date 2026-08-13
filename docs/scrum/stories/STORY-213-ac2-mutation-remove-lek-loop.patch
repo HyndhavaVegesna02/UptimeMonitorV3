@@ -1,0 +1,32 @@
+diff --git a/backend/src/adapters/persistence/dynamo_component_repository.py b/backend/src/adapters/persistence/dynamo_component_repository.py
+index b97961c..73ea09e 100644
+--- a/backend/src/adapters/persistence/dynamo_component_repository.py
++++ b/backend/src/adapters/persistence/dynamo_component_repository.py
+@@ -30,22 +30,12 @@ class DynamoComponentRepository(ComponentRepository):
+         )
+ 
+     def list_components(self) -> list[Component]:
+-        items = []
+-        exclusive_start_key = None
++        kwargs = {"KeyConditionExpression": component_query_condition()}
++        if self._limit is not None:
++            kwargs["Limit"] = self._limit
+ 
+-        while True:
+-            kwargs = {"KeyConditionExpression": component_query_condition()}
+-            if exclusive_start_key:
+-                kwargs["ExclusiveStartKey"] = exclusive_start_key
+-            if self._limit is not None:
+-                kwargs["Limit"] = self._limit
+-
+-            response = self._table.query(**kwargs)
+-            items.extend(response.get("Items", []))
+-
+-            exclusive_start_key = response.get("LastEvaluatedKey")
+-            if not exclusive_start_key:
+-                break
++        response = self._table.query(**kwargs)
++        items = response.get("Items", [])
+ 
+         return [self._map_item(item) for item in items]
+ 
