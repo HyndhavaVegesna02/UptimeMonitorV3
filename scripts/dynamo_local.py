@@ -6,7 +6,6 @@ Centralizes DynamoDB Local container lifecycle for test fixtures.
 
 from __future__ import annotations
 
-import http.client
 import os
 import random
 import subprocess
@@ -108,18 +107,52 @@ def start_container(name: str, host_port: int) -> None:
 
 
 def wait_for_dynamo(port: int, timeout_seconds: float = 30.0) -> None:
-    """Poll the DynamoDB Local HTTP endpoint until ready or timeout."""
+    """Poll DynamoDB Local until it answers a real `ListTables` call.
+
+    STORY-179 AC4: a bare `GET /` (the previous probe) returns on ANY
+    response -- it proves the peer accepted a TCP connect and sent SOMETHING
+    back, never that the peer is DynamoDB. Docker's own port-forwarding proxy
+    can accept a connect for a mapping that never reaches the container, so
+    that probe green-lights a dead container. This issues a real DynamoDB
+    API call instead: only an actual DynamoDB Local response can satisfy it.
+
+    STORY-179 AC5: on timeout the error names the port and states plainly
+    that it was mapped but never answered -- the diagnosis that would have
+    saved the hour this defect cost, not a bare `TimeoutError`.
+    """
+    import boto3
+    from botocore.exceptions import BotoCoreError, ClientError
+
+    client = boto3.client(
+        "dynamodb",
+        region_name="us-east-1",
+        endpoint_url=f"http://127.0.0.1:{port}",
+        aws_access_key_id="test",
+        aws_secret_access_key="test",
+    )
+
     deadline = time.monotonic() + timeout_seconds
     while time.monotonic() < deadline:
         try:
-            conn = http.client.HTTPConnection("127.0.0.1", port, timeout=1.0)
-            conn.request("GET", "/")
-            res = conn.getresponse()
-            res.read()
-            return
-        except Exception:
-            time.sleep(0.1)
-    raise TimeoutError(f"DynamoDB Local at port {port} did not become ready")
+            response = client.list_tables()
+            # botocore's JSON-protocol parsing is lenient about a 200 whose
+            # body isn't actually AWS JSON (measured live: it returns an
+            # empty, exception-free result rather than raising) -- so a
+            # non-DynamoDB peer that merely answers "200 OK" can otherwise
+            # pass this call. Requiring the one key every real ListTables
+            # response carries is what actually pins "the service answers".
+            if "TableNames" in response:
+                return
+        except (BotoCoreError, ClientError, OSError):
+            pass
+        time.sleep(0.1)
+
+    raise TimeoutError(
+        f"DynamoDB Local port {port} was mapped but never answered a "
+        f"ListTables call within {timeout_seconds}s -- the port is mapped, "
+        "not dead-on-arrival, but the service behind it never responded "
+        "(STORY-179)."
+    )
 
 
 def stop_container(name: str) -> None:

@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import socket
 import sys
+import threading
+import time
 from pathlib import Path
 
 import pytest
@@ -33,6 +36,55 @@ def test_free_tcp_port_stays_outside_windows_dynamic_range():
             f"port {port} is inside Windows' WinNAT-reserved dynamic range "
             "(>= 49152); Docker's mapping for it may never route"
         )
+
+
+def test_wait_for_dynamo_rejects_a_non_dynamo_answer():
+    """STORY-179 AC4/AC5: `wait_for_dynamo` must prove the service ANSWERS a
+    real DynamoDB call, not merely that something accepted the TCP connect
+    and sent SOME bytes back.
+
+    Stands up a plain TCP listener that accepts every connection and always
+    replies with a generic, valid-looking HTTP 200 -- never a DynamoDB
+    response. Measured live against the CURRENT (pre-fix) probe: it read
+    that response's bytes and returned immediately -- green, in 0.02s --
+    which is exactly defect 2 (`GET /`, "returns on ANY response"). The
+    fixed probe must fail within its timeout and name the port in the
+    message (AC5's diagnosis).
+    """
+    listener = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    listener.bind(("127.0.0.1", 0))
+    listener.listen(5)
+    port = listener.getsockname()[1]
+
+    generic_response = (
+        b"HTTP/1.1 200 OK\r\nContent-Length: 2\r\nConnection: close\r\n\r\nOK"
+    )
+
+    def serve_forever():
+        while True:
+            try:
+                conn, _ = listener.accept()
+            except OSError:
+                return
+            try:
+                conn.recv(4096)
+                conn.sendall(generic_response)
+            except OSError:
+                pass
+            finally:
+                conn.close()
+
+    server_thread = threading.Thread(target=serve_forever, daemon=True)
+    server_thread.start()
+
+    try:
+        start = time.monotonic()
+        with pytest.raises(TimeoutError, match=str(port)):
+            dynamo_local.wait_for_dynamo(port, timeout_seconds=3.0)
+        elapsed = time.monotonic() - start
+        assert elapsed < 10.0, f"probe should fail fast, took {elapsed}s"
+    finally:
+        listener.close()
 
 
 def test_resolve_dynamo_uses_external_endpoint(monkeypatch: pytest.MonkeyPatch):
