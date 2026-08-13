@@ -141,3 +141,43 @@ functions this story changes is called, so a URL-set-only run stays green throug
 
 Any change to what the tests assert. The DoD command list. STORY-173's container leak (separate
 story; see decision 3). STORY-213's pagination flake — a different symptom, distinct cause.
+
+## History
+
+- 2026-08-13: implemented. `_free_tcp_port()` now draws from a fixed, non-ephemeral range
+  (`_PORT_RANGE_START`/`_PORT_RANGE_END` = 18000–18099, `scripts/dynamo_local.py`), pinned by
+  `test_free_tcp_port_stays_outside_windows_dynamic_range`, shown RED against the pre-fix function
+  (measured: port 61867, an OS-assigned ephemeral port, always >= 49152 on this machine — samples
+  57634..57643 and 61867 across two separate runs). `start_container()` now requests a port from
+  that range, lets `docker run` perform the actual bind, reads the mapping back via `docker port`,
+  and verifies it matches (AC2) with a bounded (`_MAX_BIND_ATTEMPTS = 20`), retrying bind-failure
+  loop (AC3) — both pinned by mocked-subprocess tests
+  (`test_start_container_raises_on_port_mapping_mismatch`,
+  `test_start_container_retries_on_bind_failure_then_succeeds`,
+  `test_start_container_raises_after_exhausting_retry_budget`). `wait_for_dynamo()` now issues a
+  real `ListTables` call via boto3 and additionally checks the response actually carries a
+  `TableNames` key (botocore's JSON-protocol parsing turned out to be lenient enough that a bare
+  "200 OK" with no DynamoDB body still parses as an empty success — discovered while writing the
+  AC4 test, so the probe checks the one key every real response carries, not just call-succeeded).
+  Pinned by `test_wait_for_dynamo_rejects_a_non_dynamo_answer`, shown RED against the pre-fix probe
+  (measured: a plain TCP listener that accepts and replies with a generic non-DynamoDB HTTP 200
+  made the old probe return green in 0.02s). AC6's limitation comment lives at the `_PORT_RANGE_*`
+  declaration site in `scripts/dynamo_local.py`.
+
+  **AC7 — re-baselined, honestly.** The story's own discovery evidence above (25s timeout vs
+  0.90s fixed-port; 539 tests in 22.46s vs a 241.52s inflated baseline) stands as the ORIGINAL
+  measurement of the defect's cost and is not re-derived here — the refinement decision already
+  established that reproducing a WinNAT-reserved port on demand is not reliable, and that held
+  again today: two direct `resolve_dynamo()` timing probes and two full-suite runs (old code vs
+  fixed code, `DYNAMO_ENDPOINT_URL` unset, Docker up) all completed in single-digit-to-80s range
+  with NO hang on either side (old: 800 passed + 5 expected new-API failures in 77.29s; fixed: 805
+  passed in 79.99s). So this specific rerun shows no wall-clock regression from the fix, and it
+  does NOT reproduce the hang either direction — consistent with the defect being real but
+  intermittent, not a claim that the fix made things faster today. What IS newly verified: the gate
+  env (`DYNAMO_ENDPOINT_URL` set to the manually-started fixed-port container, `REQUIRE_DYNAMO=1`)
+  runs the full suite in 49.93s at 805 passed / 0 skipped — consistent with the CORRECTED baseline
+  the story argues for, not the inflated one, and the fix removes the failure mode (unowned port
+  race + a probe that cannot detect a mapped-but-dead port) that produced the original 241.52s
+  regardless of whether any single rerun happens to hit it.
+
+  Quality/spec review pending.
