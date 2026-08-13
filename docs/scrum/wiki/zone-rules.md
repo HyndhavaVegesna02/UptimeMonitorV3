@@ -34,10 +34,11 @@ status: verified
 # `composition/vendor_health.py` changed -- a false "logs nothing" docstring
 # absolute corrected to state the code's actual behaviour (logs at INFO),
 # line-count neutral. The ZR-8 Finding 2 citations here
-# (`check_vendor_id_health`/`_extract_count`, `vendor_health.py:70-133`) are
-# symbol- and range-based and untouched; the :70-133 bound still lands on the
-# same two lines (def at :70, the warning branch's closing paren at :133) --
-# confirmed after the edit. No Fact in this article changed.
+# (`check_vendor_id_health`/`_extract_count`, and the
+# `backend/src/composition/vendor_health.py:70-133` range cited below) are
+# symbol- and range-based and untouched; that :70-133 bound still lands on
+# the same two lines (def at :70, the warning branch's closing paren at
+# :133) -- confirmed after the edit. No Fact in this article changed.
 ---
 
 ## Purpose
