@@ -1112,6 +1112,16 @@ stories:
                     # written, let alone estimated. Re-open only with a redeploy decision, and see
                     # STORY-222, which records the decommission in CLAUDE.md and the wiki.
                     # The AWS epic reads 14/15 for this reason: it was DELIVERED, then retired.
+                    # *** IF THE STACK IS EVER RE-CREATED, SETTLE THIS FIRST: infra/stack.yaml sets
+                    # DeletionPolicy: Retain on ObservationsTable, ControlTable AND FrontendBucket.
+                    # A delete-stack therefore leaves all three ORPHANED -- surviving the stack,
+                    # untracked by CloudFormation, and BLOCKING a fresh create-stack by name
+                    # (deployment-topology.md records that happening before). The 2026-08-13
+                    # teardown was VERIFIED CLEAN against the live account the same day -- stack
+                    # gone, both tables gone, bucket gone, cluster gone -- so the hazard did NOT
+                    # land that time. But the policy is still in the template and the next
+                    # deploy/teardown cycle recreates it. Decide whether Retain is what is actually
+                    # wanted on those three, or a default nobody chose. ***
                     # deliberately thin placeholder (PO: "UI first, CI/CD later"); refine after STORY-089 acceptance
     type: chore
     sprint: null

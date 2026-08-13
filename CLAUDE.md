@@ -290,15 +290,28 @@ delete-stack --stack-name uptime-monitor`, or equivalent). This section is now *
 what was deployed, and its last known status before the decommission — not something to
 re-verify against a live URL.
 
-**Nobody has verified what the teardown actually removed.** `infra/stack.yaml` sets
-`DeletionPolicy: Retain` on the `ObservationsTable` and `ControlTable` DynamoDB tables and on
-the `FrontendBucket` S3 bucket, so a `delete-stack` leaves all three behind by design — and
-`docs/scrum/wiki/deployment-topology.md` records that exactly this kind of Retain leftover has
-blocked a fresh `create-stack` by name before. **Verify and clear those three resources before
-any redeploy**, or a `create-stack` will fail on existing names. Everything else in this
-section (ECS services, ALB, CloudFront distribution) has no `DeletionPolicy: Retain` and should
-have gone with the stack, but that too is unverified — confirm with the AWS Console or CLI
-before trusting it either way.
+**The teardown was VERIFIED COMPLETE on 2026-08-13 — nothing survived, and there is nothing to
+clean up before a redeploy.** Checked against the live account (`sts get-caller-identity` →
+`065317679010`):
+
+| Checked | Result |
+| --- | --- |
+| `cloudformation describe-stacks --stack-name uptime-monitor` | `ValidationError: does not exist` |
+| `dynamodb list-tables` | neither `uptime-monitor-observations` nor `uptime-monitor-control` present |
+| `s3 ls` | no `uptime-monitor-frontend-065317679010` bucket |
+| `ecs list-clusters` | no `uptime-monitor-cluster` |
+| DNS for the CloudFront domain | does not resolve (a *disabled* distribution still would) |
+
+This was worth checking rather than assuming, because **`infra/stack.yaml` sets
+`DeletionPolicy: Retain` on `ObservationsTable`, `ControlTable` and `FrontendBucket`** — so a
+`delete-stack` leaves those three behind *by design*, and `docs/scrum/wiki/deployment-topology.md`
+records that exactly this kind of Retain leftover has blocked a fresh `create-stack` by name
+before. They were cleared anyway (by hand or by the account reaper), so that hazard did not land
+this time.
+
+⚠ **The `Retain` policy is still in the template**, so a future deploy-then-teardown cycle
+recreates the hazard. Decide whether `Retain` is actually wanted on those three resources before
+the stack is ever re-created.
 
 **What was deployed (historical, AWS us-east-1, account `065317679010`):**
 
