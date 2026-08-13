@@ -148,9 +148,14 @@ BASELINE: dict[str, dict] = {
         ),
     },
     "deployment-and-infra.md": {
-        "tier": "map",
-        "baseline": 0,
-        "note": "genuinely clean -- 10 citations extracted, all passing",
+        "tier": "reference",
+        "baseline": None,
+        "note": (
+            "exempt (AC6) -- converted to tier: reference as a decommission "
+            "tombstone (STORY-222, 2026-08-13); its 10 citations are unchanged "
+            "content and still all pass, but the ratchet no longer enforces "
+            "them since a reference article makes no live-code claims"
+        ),
     },
     "deployment-topology.md": {
         "tier": "reference",
