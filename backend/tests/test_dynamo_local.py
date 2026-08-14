@@ -621,6 +621,88 @@ def test_naive_prefix_only_reaper_fails_both_ac2_negatives():
         assert gate_container not in removed
 
 
+def test_reap_is_noop_when_docker_unavailable():
+    """STORY-173 AC4: Docker absent must leave the run proceeding normally
+    -- no exception, empty result, and (implicitly) no material delay since
+    nothing beyond the availability check runs.
+    """
+    calls = []
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: False,
+        list_containers=lambda: calls.append("listed") or [],
+    )
+    assert plan == []
+    assert calls == [], "must not even attempt to list containers when Docker is absent"
+
+
+def test_reap_degrades_to_noop_when_docker_available_check_raises():
+    """STORY-173 AC4: `docker` slow/erroring must not propagate -- the
+    failure is swallowed, not surfaced as an exception the caller must
+    handle."""
+
+    def raising_docker_available():
+        raise TimeoutError("docker daemon did not respond")
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=raising_docker_available,
+    )
+    assert plan == []
+
+
+def test_reap_degrades_to_noop_when_list_containers_raises():
+    """STORY-173 AC4: a `docker ps` failure must not propagate."""
+
+    def raising_list_containers():
+        raise RuntimeError("docker ps failed")
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=raising_list_containers,
+    )
+    assert plan == []
+
+
+def test_reap_degrades_to_noop_when_removal_refuses():
+    """STORY-173 AC4: a container that refuses removal must not fail the
+    run -- the run proceeds, and the container that could not be removed is
+    simply absent from the result."""
+
+    def refusing_remove(name):
+        raise RuntimeError("docker rm refused: container in use")
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=lambda: ["uptime_dynamo_pytest_1_aaaaaaaa"],
+        pid_is_alive=lambda pid: False,
+        remove_container=refusing_remove,
+    )
+    assert plan == []
+
+
+def test_reap_measured_cost_when_docker_present():
+    """STORY-173 AC4: 'record the measured cost when Docker is present.'
+    Runs the REAL docker_available()/list_containers() path (no injection
+    for those two) against this machine's real Docker -- the same path
+    `resolve_dynamo` takes in production -- and records the wall time.
+    Not a hard pass/fail budget (this is a measurement, not a regression
+    gate over an external tool's latency); printed so it is visible in
+    verbose test output and the story report.
+    """
+    if not dynamo_local.docker_available():
+        pytest.skip("Docker not available on this machine")
+
+    start = time.monotonic()
+    dynamo_local.reap_dead_pytest_containers()
+    elapsed = time.monotonic() - start
+
+    print(f"\nSTORY-173 AC4 measured cost (Docker present): {elapsed:.3f}s")
+    # A single `docker ps -a --filter` call should be well under a second on
+    # a healthy daemon; this is a generous ceiling, not a tight budget.
+    assert elapsed < 10.0, (
+        f"reap took {elapsed:.3f}s against Docker -- unexpectedly slow"
+    )
+
+
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
     # Retrieve the control table (using default name)
     table = dynamo_resource.Table("uptime-control")
