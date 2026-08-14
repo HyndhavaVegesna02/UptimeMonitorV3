@@ -90,6 +90,43 @@ def load_backlog(root: Path):
     return stories
 
 
+def load_next_story_id(root: Path):
+    """Return the backlog's `next_story_id`, or None when it cannot be read.
+
+    Same PyYAML-with-fallback shape as `load_backlog` -- this suite stays
+    stdlib-only-capable.
+    """
+    path = root / ".scrum" / "backlog.yaml"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8", errors="replace")
+    try:
+        import yaml  # type: ignore
+
+        data = yaml.safe_load(text)
+        if isinstance(data, dict) and isinstance(data.get("next_story_id"), int):
+            return data["next_story_id"]
+    except Exception:
+        pass
+    m = re.search(r"^next_story_id:\s*(\d+)", text, re.MULTILINE)
+    return int(m.group(1)) if m else None
+
+
+def max_filed_story_id(stories: list) -> int:
+    """The highest numeric id across `stories`, parsed by NUMERIC PREFIX.
+
+    AC8 trap: thirteen filed ids carry a non-numeric suffix (STORY-014b,
+    015a..015g, 040a, 016a..016c). `STORY_ID_RE` matches only the leading
+    digits, so a suffixed id contributes its numeric prefix and never raises.
+    """
+    ids = []
+    for s in stories:
+        m = STORY_ID_RE.match(str(s.get("id", "")))
+        if m:
+            ids.append(int(m.group(1)))
+    return max(ids) if ids else 0
+
+
 def entries_missing_file(stories: list) -> list:
     """Backlog entries with no `file:` pointer, excluding the CLOSED set.
 
@@ -204,6 +241,53 @@ class ClosedSetAdvisoryTests(unittest.TestCase):
                 {"archived", "superseded", "split", "done"}
             )
         )
+
+
+class NextStoryIdCounterTests(unittest.TestCase):
+    """AC8 (STORY-224): `next_story_id` must stay ahead of every filed id.
+
+    TRAP (pre-lock verification): thirteen ids are NOT purely numeric --
+    STORY-014b, 014c, 015a..015g, 040a, 016a..016c. `int(sid.split("-")[1])`
+    raises ValueError on the first of them, reddening the gate for a reason
+    that has nothing to do with the counter. `max_filed_story_id` parses with
+    `STORY_ID_RE`'s numeric-PREFIX match instead, and this suite pins a
+    suffixed id explicitly so that trap cannot silently return.
+    """
+
+    def setUp(self) -> None:
+        self.root = project_root()
+        if self.root is None:
+            self.skipTest("no .scrum/ directory found")
+        self.stories = load_backlog(self.root)
+        if self.stories is None:
+            self.skipTest("no .scrum/backlog.yaml to check")
+        self.next_id = load_next_story_id(self.root)
+        if self.next_id is None:
+            self.skipTest("no next_story_id in .scrum/backlog.yaml")
+
+    def test_next_story_id_exceeds_every_filed_numeric_id(self) -> None:
+        max_id = max_filed_story_id(self.stories)
+        self.assertGreater(
+            self.next_id,
+            max_id,
+            f"next_story_id ({self.next_id}) does not exceed the max filed id "
+            f"({max_id}) -- the next filing would collide with an existing story.",
+        )
+
+    def test_suffixed_id_parses_by_numeric_prefix_without_raising(self) -> None:
+        """The trap: a naive int(sid.split('-')[1]) raises on 'STORY-014b'."""
+        max_id = max_filed_story_id(
+            [
+                {"id": "STORY-014b"},
+                {"id": "STORY-015g"},
+                {"id": "STORY-040a"},
+                {"id": "STORY-099"},
+            ]
+        )
+        self.assertEqual(max_id, 99)
+
+    def test_empty_story_list_has_max_id_zero(self) -> None:
+        self.assertEqual(max_filed_story_id([]), 0)
 
 
 if __name__ == "__main__":
