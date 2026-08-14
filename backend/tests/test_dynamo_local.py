@@ -703,6 +703,135 @@ def test_reap_measured_cost_when_docker_present():
     )
 
 
+def test_pid_is_alive_true_for_a_running_process():
+    """STORY-173 AC5: a genuinely running process reads as alive."""
+    proc = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(5)"])
+    try:
+        assert dynamo_local._pid_is_alive(proc.pid) is True
+    finally:
+        proc.kill()
+        proc.wait(timeout=10)
+
+
+def test_pid_is_alive_false_for_a_pid_this_process_never_held_a_handle_to():
+    """STORY-173 AC5: dead-PID detection as it actually happens during a
+    reap. The child is spawned and waited on by a SEPARATE helper process,
+    which prints back its pid -- this test process never holds any handle
+    to it, exactly mirroring the reaper's real code path (pytest run N+1
+    never spawned run N's leaked container's PID; it only knows the number
+    from the container's name).
+
+    Deliberately NOT `subprocess.Popen(...); proc.wait(); check(proc.pid)`
+    in THIS process: measured live while writing this test, that shape
+    reads as alive even though `tasklist` confirms the child is gone from
+    the process table -- see the next test, which pins that behaviour
+    instead of treating it as a bug. Spawning through a helper avoids that
+    same-process artifact entirely.
+    """
+    helper = subprocess.run(
+        [
+            sys.executable,
+            "-c",
+            "import subprocess, sys; "
+            "p = subprocess.Popen([sys.executable, '-c', 'pass']); "
+            "p.wait(); print(p.pid)",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    dead_pid = int(helper.stdout.strip())
+    assert dynamo_local._pid_is_alive(dead_pid) is False
+
+
+def test_pid_is_alive_reads_alive_while_this_process_still_holds_the_handle():
+    """STORY-173 AC5, the measured Windows trap pinned directly rather than
+    just cited: if the CALLING process itself still holds the `Popen`
+    handle to a child it spawned, that child reads as alive even after it
+    has genuinely exited -- confirmed independently via `tasklist`, which
+    shows it gone from the OS process table. `os.kill` raises no exception
+    here, so `_pid_is_alive` cannot distinguish this from a real live
+    process by construction; that is exactly why AC5's conservative branch
+    exists and why an age bound (not attempted here -- out of this story's
+    scope) is the documented mitigation, not a liveness refinement.
+
+    Not the reaper's real code path (see the previous test) -- recorded
+    here as an honest limitation, not swept under the conservative branch.
+    """
+    proc = subprocess.Popen([sys.executable, "-c", "pass"])
+    proc.wait(timeout=10)
+    tasklist = subprocess.run(
+        ["tasklist", "/FI", f"PID eq {proc.pid}"], capture_output=True, text=True
+    )
+    assert str(proc.pid) not in tasklist.stdout, (
+        "sanity check: the OS process table must show the child gone"
+    )
+    assert dynamo_local._pid_is_alive(proc.pid) is True, (
+        "measured Windows behaviour (STORY-173 pre-lock verification, "
+        "2026-08-14): a still-open handle from the SAME process that "
+        "spawned the child makes a dead PID read as alive"
+    )
+
+
+def test_pid_is_alive_false_on_windows_bare_oserror_winerror_87(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-173 AC5, measured pre-lock verification 2026-08-14 on this
+    machine: a dead/nonexistent pid raises a bare `OSError` with
+    `winerror == 87`, NOT `ProcessLookupError` -- the POSIX shape. A
+    reaper that caught only `ProcessLookupError` would let this propagate
+    and violate AC4. Faking via a rebound `os` namespace (not a global
+    `os.kill` patch) for the same reason `subprocess` is rebound elsewhere
+    in this file: it must not affect other code sharing the real module.
+    """
+
+    class FakeWinError87(OSError):
+        winerror = 87
+
+    def fake_kill(pid, sig):
+        raise FakeWinError87()
+
+    monkeypatch.setattr(dynamo_local, "os", SimpleNamespace(kill=fake_kill))
+
+    assert dynamo_local._pid_is_alive(4) is False
+
+
+def test_pid_is_alive_none_when_liveness_undetermined(monkeypatch: pytest.MonkeyPatch):
+    """STORY-173 AC5: when liveness cannot be determined (e.g. an OSError
+    that is neither ProcessLookupError nor winerror 87 -- a permission
+    failure probing a process owned by someone else), the conservative
+    branch is None, meaning "leave it alone", never a guess at either
+    True or False.
+    """
+
+    def fake_kill(pid, sig):
+        raise PermissionError("simulated undetermined liveness")
+
+    monkeypatch.setattr(dynamo_local, "os", SimpleNamespace(kill=fake_kill))
+
+    assert dynamo_local._pid_is_alive(4) is None
+
+
+def test_reap_leaves_undetermined_liveness_container_alone():
+    """STORY-173 AC5: the conservative branch is exercised end-to-end
+    through the reaper, not just at `_pid_is_alive` -- an undetermined
+    (`None`) liveness result must NOT be removed, same as a confirmed-alive
+    one.
+    """
+    name = "uptime_dynamo_pytest_1_aaaaaaaa"
+    removed = []
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=lambda: [name],
+        pid_is_alive=lambda pid: None,
+        remove_container=lambda n: removed.append(n),
+    )
+
+    assert removed == []
+    assert plan == []
+
+
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
     # Retrieve the control table (using default name)
     table = dynamo_resource.Table("uptime-control")
