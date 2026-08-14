@@ -100,7 +100,13 @@ class MainExitCodeTests(unittest.TestCase):
     """
 
     def _scratch_script(self, module_count: int) -> Path:
-        root = Path(tempfile.mkdtemp())
+        # MINOR, STORY-224 fix round (quality reviewer): `tempfile.mkdtemp()`
+        # has no matching cleanup and leaked 2 directories per run (measured
+        # 78 -> 80) -- on a suite that now runs on EVERY gate. `addCleanup`
+        # ties removal to the test's own lifecycle, success or failure.
+        tmpdir = tempfile.TemporaryDirectory()
+        self.addCleanup(tmpdir.cleanup)
+        root = Path(tmpdir.name)
         shutil.copy(YT_SELFTEST_PATH, root / "yt_selftest.py")
         tests_dir = root / "tests"
         tests_dir.mkdir()
