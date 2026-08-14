@@ -33,10 +33,13 @@ the kind of gap a mechanical check should catch instead of a human.
 from __future__ import annotations
 
 import re
+import sys
 import unittest
 from pathlib import Path
 
 SKILL = Path(__file__).resolve().parents[2]  # .../skills/yourteam
+sys.path.insert(0, str(SKILL / "scripts"))
+import yt_board  # noqa: E402
 
 STORY_ID_RE = re.compile(r"^STORY-(\d+)", re.IGNORECASE)
 
@@ -85,6 +88,23 @@ def load_backlog(root: Path):
     if current:
         stories.append(current)
     return stories
+
+
+def entries_missing_file(stories: list) -> list:
+    """Backlog entries with no `file:` pointer, excluding the CLOSED set.
+
+    AC7 (STORY-224): this previously filtered on `status != "done"`, so 22+
+    archived/superseded/split entries -- CLOSED per `yt_board.CLOSED_STATUSES`,
+    just not literally "done" -- sat in the "refinement should write one"
+    advisory forever. Reuses `yt_board.py`'s existing closed set rather than
+    declaring a second list.
+    """
+    return [
+        str(s.get("id"))
+        for s in stories
+        if not s.get("file")
+        and str(s.get("status", "")).strip() not in yt_board.CLOSED_STATUSES
+    ]
 
 
 class BacklogStoryParityTest(unittest.TestCase):
@@ -149,11 +169,7 @@ class BacklogStoryParityTest(unittest.TestCase):
         lives only in a YAML comment — so the count is printed and the test
         always passes.
         """
-        missing = [
-            str(s.get("id"))
-            for s in self.stories
-            if not s.get("file") and str(s.get("status", "")).strip() != "done"
-        ]
+        missing = entries_missing_file(self.stories)
         if missing:
             print(
                 f"\n  note: {len(missing)} not-done backlog entr"
@@ -163,6 +179,31 @@ class BacklogStoryParityTest(unittest.TestCase):
                 + (" ..." if len(missing) > 12 else "")
             )
         self.assertTrue(True)
+
+
+class ClosedSetAdvisoryTests(unittest.TestCase):
+    """AC7 (STORY-224): the advisory's filter uses the FULL closed set.
+
+    Falsified by: an archived/superseded/split entry with no `file:` pointer
+    still appearing in `entries_missing_file`'s output.
+    """
+
+    def test_archived_entry_with_no_file_is_excluded(self) -> None:
+        stories = [
+            {"id": "STORY-001", "status": "archived", "file": None},
+            {"id": "STORY-002", "status": "superseded", "file": None},
+            {"id": "STORY-003", "status": "split", "file": None},
+            {"id": "STORY-004", "status": "done", "file": None},
+            {"id": "STORY-005", "status": "draft", "file": None},
+        ]
+        self.assertEqual(entries_missing_file(stories), ["STORY-005"])
+
+    def test_reuses_yt_board_closed_statuses_not_a_second_list(self) -> None:
+        self.assertTrue(
+            yt_board.CLOSED_STATUSES.issuperset(
+                {"archived", "superseded", "split", "done"}
+            )
+        )
 
 
 if __name__ == "__main__":
