@@ -98,6 +98,23 @@
 # scope for STORY-210; do not read this note as "the exposure is closed" or as "no shim-free form
 # exists" -- both were caught as inferences-as-measurements during sprint-67 planning.
 
+## Commands (skill self-test)
+- [ ] Skill self-test suite: `python .claude/skills/yourteam/scripts/yt_selftest.py` -> exit 0
+      (2026-08-14, STORY-224: seven `.claude/skills/yourteam/scripts/tests/` modules --
+       including the template-parity and `.scrum/` mojibake-encoding guards, both of which had
+       already caught real defects by luck of a human remembering to run `yt_selftest.py` by
+       hand -- now gate every story instead of running only when someone remembers. Interpreter
+       form, never a console-script shim, matching the rest of this file's invocations (this
+       machine's Windows Device Guard / Application Control policy has already widened twice
+       mid-sprint unannounced, STORY-210). This section's heading carries no `run from` phrase,
+       which is what runs the command from the REPO ROOT: `yt_gate.py` derives `section_cwd`
+       from that phrase (`yt_gate.py:63,298`), so its absence means `cwd` stays empty and the
+       command runs at `root`, not inside `frontend/` (appending it to `## Commands (backend)`
+       above would run it from the same place but count as the 6th backend command, not the
+       9th overall, silently turning `CLAUDE.md`'s "Backend (5)" into six).
+       Blast radius: this file and `yt_gate.py` are in NO wiki article's `code_refs` -- measured
+       zero at STORY-224 refinement, 2026-08-14.)
+
 ## Standing rules (mechanically checked where possible)
 - [ ] Every acceptance criterion has at least one test exercising it.
 - [ ] Core-zone stories (zones 1–4) are tested with in-memory canonical fixtures —

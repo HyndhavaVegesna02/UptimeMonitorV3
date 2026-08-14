@@ -191,7 +191,7 @@ plain absolute `sys.path` entry**, so `src.*` resolves to the MAIN tree from ins
 any git worktree — force `PYTHONPATH=<worktree>/backend` when a check must run the
 worktree's code (`tools/import_provenance.py::assert_import_root`).
 
-### The DoD gate — 8 commands, all must exit 0
+### The DoD gate — 9 commands, all must exit 0
 
 `.scrum/definition-of-done.md` is authoritative; the runner is
 `python .claude/skills/yourteam/scripts/yt_gate.py`.
@@ -200,6 +200,9 @@ worktree's code (`tools/import_provenance.py::assert_import_root`).
   `python -m ruff check .`, `python -m ruff format --check .`, and cfn-lint via
   `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
 - **Frontend (3, from `frontend/`):** `npm test`, `npm run build`, `npm run lint`
+- **Skill self-test (1):** `python .claude/skills/yourteam/scripts/yt_selftest.py` — runs the
+  seven `.claude/skills/yourteam/scripts/tests/` modules that gate the skill's own enforcement
+  scripts (STORY-224, sprint 72). Runs from the repo root, not `frontend/`.
 
 `lint-imports` enforces nine zone contracts (STORY-206 added `inbound-adapters-dont-persist`,
 ZR-1's guard); `ruff` covers style, import sorting and formatting; `cfn-lint` validates the
