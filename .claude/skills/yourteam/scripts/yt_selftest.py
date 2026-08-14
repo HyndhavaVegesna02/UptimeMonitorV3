@@ -17,6 +17,33 @@ import sys
 import unittest
 from pathlib import Path
 
+#: STORY-224 AC4: `unittest` discovery fails SILENTLY when a module stops
+#: being discovered -- an import error surfaces as a loud synthetic failing
+#: test, but a rename or a file falling outside the `test_*.py` glob makes
+#: the count drop with no error at all. Once this script is a gate command
+#: (AC1), that silent drop must fail the RUN, not just change what the next
+#: standup happens to see. 7 is the module count at STORY-224 refinement.
+MIN_TEST_MODULES = 7
+
+
+def _module_names(suite: unittest.TestSuite) -> set[str]:
+    """Unique `__module__` names of every test case inside a (nested) suite."""
+    names: set[str] = set()
+    for item in suite:
+        if isinstance(item, unittest.TestSuite):
+            names |= _module_names(item)
+        else:
+            names.add(type(item).__module__)
+    return names
+
+
+def discovered_test_modules(tests_dir: Path) -> set[str]:
+    """Names of the test modules `unittest` discovery finds under `tests_dir`."""
+    suite = unittest.defaultTestLoader.discover(
+        start_dir=str(tests_dir), pattern="test_*.py"
+    )
+    return _module_names(suite)
+
 
 def main() -> int:
     for stream in (sys.stdout, sys.stderr):
@@ -30,6 +57,16 @@ def main() -> int:
     suite = unittest.defaultTestLoader.discover(
         start_dir=str(tests_dir), pattern="test_*.py"
     )
+    modules = _module_names(suite)
+    if len(modules) < MIN_TEST_MODULES:
+        print(
+            f"yt_selftest: only {len(modules)} test module(s) discovered under "
+            f"{tests_dir} (expected at least {MIN_TEST_MODULES}) -- discovery "
+            "drops silently on a rename or a file falling outside the "
+            f"`test_*.py` pattern. Discovered: {sorted(modules)}",
+            file=sys.stderr,
+        )
+        return 1
     result = unittest.TextTestRunner(verbosity=verbosity).run(suite)
     return 0 if result.wasSuccessful() else 1
 

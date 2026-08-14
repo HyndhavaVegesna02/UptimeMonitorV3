@@ -1,0 +1,126 @@
+"""Self-tests for yt_selftest.py -- AC4 (STORY-224).
+
+`unittest.defaultTestLoader.discover` fails SILENTLY when a module stops
+being discovered: an import error surfaces as a loud synthetic failing test,
+but a rename or a file falling outside the `test_*.py` glob makes the
+discovered-module count drop with no error at all. `yt_selftest.py` gains a
+floor on that count so a silent drop fails the RUN, not just quietly changes
+what the next standup happens to see.
+
+Falsified by: a module dropping out of discovery (renamed, or removed) and
+`yt_selftest.py` still exiting 0.
+"""
+
+from __future__ import annotations
+
+import itertools
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import yt_selftest  # noqa: E402
+
+YT_SELFTEST_PATH = Path(__file__).resolve().parents[1] / "yt_selftest.py"
+REAL_TESTS_DIR = Path(__file__).resolve().parent
+
+#: `unittest.discover` caches imported module NAMES process-wide, so two
+#: separate tempdirs each holding a `test_m0.py` collide the second time
+#: (`ImportError: 'test_m0' module incorrectly imported from ...`). Every
+#: synthetic module gets a globally-unique name to avoid that -- an artifact
+#: of running discovery repeatedly in one process, not of the code under test.
+_UNIQUE = itertools.count()
+
+
+def _write_passing_module(tests_dir: Path, prefix: str) -> str:
+    name = f"test_{prefix}_{next(_UNIQUE)}"
+    (tests_dir / f"{name}.py").write_text(
+        "import unittest\n\n\n"
+        "class T(unittest.TestCase):\n"
+        "    def test_x(self) -> None:\n"
+        "        self.assertTrue(True)\n",
+        encoding="utf-8",
+    )
+    return name
+
+
+class ModuleDiscoveryFunctionsTests(unittest.TestCase):
+    """Unit-level pin, decoupled from a subprocess."""
+
+    def test_real_tests_dir_has_at_least_the_stated_floor(self) -> None:
+        modules = yt_selftest.discovered_test_modules(REAL_TESTS_DIR)
+        self.assertGreaterEqual(
+            len(modules), yt_selftest.MIN_TEST_MODULES, sorted(modules)
+        )
+
+    def test_seven_synthetic_modules_are_all_discovered(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            tests_dir = Path(td)
+            (tests_dir / "__init__.py").write_text("", encoding="utf-8")
+            for _ in range(7):
+                _write_passing_module(tests_dir, "m")
+            modules = yt_selftest.discovered_test_modules(tests_dir)
+            self.assertEqual(len(modules), 7, sorted(modules))
+
+    def test_a_module_renamed_out_of_the_pattern_silently_drops_the_count(self) -> None:
+        """This IS the defect AC4 guards -- discovery itself never errors."""
+        with tempfile.TemporaryDirectory() as td:
+            tests_dir = Path(td)
+            (tests_dir / "__init__.py").write_text("", encoding="utf-8")
+            names = [_write_passing_module(tests_dir, "m") for _ in range(7)]
+            self.assertEqual(len(yt_selftest.discovered_test_modules(tests_dir)), 7)
+
+            last = names[-1]
+            # Renamed OUT of the `test_*.py` glob -- a real "no longer discovered",
+            # not just a differently-named module that discovery still finds.
+            (tests_dir / f"{last}.py").rename(tests_dir / "dropped_not_a_test_file.py")
+            self.assertEqual(len(yt_selftest.discovered_test_modules(tests_dir)), 6)
+
+
+class MainExitCodeTests(unittest.TestCase):
+    """End-to-end through the real script, as a subprocess.
+
+    `yt_selftest.py` resolves its `tests/` directory off its own `__file__`,
+    so a copy of the script alongside a scratch `tests/` directory exercises
+    the real `main()` unmodified, no CLI override needed in production code.
+    """
+
+    def _scratch_script(self, module_count: int) -> Path:
+        root = Path(tempfile.mkdtemp())
+        shutil.copy(YT_SELFTEST_PATH, root / "yt_selftest.py")
+        tests_dir = root / "tests"
+        tests_dir.mkdir()
+        (tests_dir / "__init__.py").write_text("", encoding="utf-8")
+        for i in range(module_count):
+            _write_passing_module(tests_dir, f"m{i}")
+        return root / "yt_selftest.py"
+
+    def test_at_the_floor_passes_and_exits_0(self) -> None:
+        script = self._scratch_script(7)
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=script.parent,
+            capture_output=True,
+            text=True,
+        )
+        self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
+
+    def test_one_module_short_of_the_floor_exits_nonzero_and_says_why(self) -> None:
+        """AC4 shown RED: a silent drop must fail the RUN, not just note it."""
+        script = self._scratch_script(6)
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=script.parent,
+            capture_output=True,
+            text=True,
+        )
+        combined = proc.stdout + proc.stderr
+        self.assertNotEqual(proc.returncode, 0, combined)
+        self.assertIn("6 test module", combined)
+
+
+if __name__ == "__main__":
+    unittest.main()
