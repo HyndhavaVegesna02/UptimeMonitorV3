@@ -248,6 +248,35 @@ baseline:
     A nonzero SKIP count is an incomplete gate, not a pass. A full gate run at sprint-72-start is
     required BEFORE STORY-224 or STORY-173 lands, so a later red has something to be compared to.
 
+baseline_gate_at_lock:
+  # THE BASELINE OF RECORD for this sprint. Risk 4: two of four stories change the harness the gate
+  # itself runs on, so a later red needs this to be compared against. Run on the LOCK COMMIT, after
+  # the branch and tag existed. Not a story gate -- no story had been dispatched.
+  commit: bb480d1
+  ran: "2026-08-14T06:04-06:06Z"
+  env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, REQUIRE_DYNAMO=1"
+  result: "8/8 PASS, gate exit 0"
+  commands:
+    - "python -m pytest -> 816 passed in 62.27s, 0 SKIPPED"
+    - "import-linter -> 151 files, 432 dependencies, contracts 9 kept / 0 broken"
+    - "ruff check . -> All checks passed!"
+    - "ruff format --check . -> 262 files already formatted"
+    - "cfn-lint infra/stack.yaml -> clean, no output"
+    - "npm test -> 51 files / 363 tests passed, 56.45s"
+    - "npm run build -> built in 697ms"
+    - "npm run lint -> clean"
+  observation_for_story_221: >-
+    *** npm test PASSED, and that is itself the first data point: 0-in-1 today, so the flake is now
+    0-in-4 across sprint 71's runs plus this one. *** But the DURATION moved: 56.45s inside the
+    gate against 37.02s measured standalone at cc88d78 the day before -- the same suite, 52%
+    slower, which is exactly the load shape STORY-221 says the flake needs. Carry BOTH numbers into
+    the brief: the story must measure in the gate's load shape (AC1/AC4 already require this), and
+    it must NOT read this green as evidence the defect is absent. It is one sample.
+  drift_vs_verification_baseline: >-
+    pytest 816 passed both times (62.27s here vs 50.12s at cc88d78 -- same load-shape effect).
+    Everything else identical. No behavioural drift between cc88d78 and bb480d1, as expected: the
+    only changes are .scrum/ state and docs.
+
 gate:
   runner: "python .claude/skills/yourteam/scripts/yt_gate.py"
   commands_at_lock: 8
