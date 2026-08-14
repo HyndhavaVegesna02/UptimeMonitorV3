@@ -319,6 +319,54 @@ board:
       definition-of-done.md; the new section is correctly formed as `## Commands (skill self-test)`
       AFTER the frontend block with NO "run from" phrase in the heading -- which is the CRITICAL
       that pre-lock verification caught.
+    quality_review: >-
+      **FIX_REQUIRED -- 1 CRITICAL, 3 MAJOR, 8 MINOR.** Every finding proved by MUTATION in a
+      scratch harness (a full copy of the skill + .scrum/ + docs/scrum/, plus a scratch git repo);
+      the live tree was never touched, verified empty `git status`.
+      *** THE CRITICAL IS THE BEST FINDING OF THE SPRINT AND IT IS AN INTERACTION BETWEEN TWO OF
+      THIS PROJECT'S OWN AMENDMENTS. *** A20 (landed sprint 71) exempts `.scrum/` from yt_gate's
+      dirty-tree refusal, and yt_gate.py:114-124 states the JUSTIFICATION in a comment: those paths
+      are "read by NO gate command" and "their state cannot affect a gate result". STORY-224 just
+      added a gate command that DOES read `.scrum/` -- test_backlog_story_parity.py:149,258 reads
+      backlog.yaml and test_scrum_encoding.py:70,92 walks all of `.scrum/`. A20's premise is now
+      FALSE.
+      DEMONSTRATED END-TO-END, not argued: at scratch commit 775227b an ordinary mid-sprint filing
+      reds the 9th command (exit 1). Removing that entry in the WORKING TREE ONLY -- uncommitted --
+      makes yt_gate print "1 orchestrator-owned path(s) modified, NOT gating", skip the refusal, and
+      emit `exit_code: 0` evidence STAMPED `commit: 775227b`. *** A GREEN DOD EVIDENCE FRAGMENT AT A
+      COMMIT WHOSE HEAD IS RED -- taxonomy member 5, produced by the gate runner itself, with no
+      warning that anything was skipped. *** The inverse is equally live: an orchestrator's
+      uncommitted `.scrum/` edit now reds any agent's gate for a reason unrelated to that agent's
+      code -- and A20 exists precisely because the orchestrator edits those files continuously,
+      INCLUDING while an agent runs.
+      BOTH HORNS NAMED BY THE REVIEWER: narrowing _ORCHESTRATOR_OWNED_PREFIXES restores soundness
+      but re-creates the exit-3 box A20 was written to remove. Two in-repo comments now assert the
+      opposite of reality and must move with whatever fix is chosen: yt_gate.py:114 and
+      test_scrum_encoding.py:8.
+      MAJOR 1 -- MIN_TEST_MODULES = 7 against 8 real modules (this story added the 8th). Proven:
+      renaming test_yt_selftest.py out of the glob drops 5 tests -- including every test of the AC4
+      mechanism itself -- and still exits 0. Only a SECOND removal reds. So the guard is green for
+      exactly the first silent drop it was written to catch, and
+      test_real_tests_dir_has_at_least_the_stated_floor can never catch the drift because it asserts
+      `>=` the constant.
+      MAJOR 2 -- the new DoD note (:103) and CLAUDE.md:202-203 both say "seven modules"; there are
+      EIGHT, invalidated by this story's own commit 141083c.
+      MAJOR 3 -- zone-rules.md:907, and the reviewer DISAGREES NARROWLY with the implementer's
+      restraint: A18 guards against an edit implying a re-verification you did not do, but this
+      count was falsified BY THIS STORY, the sweep is CLEAN at HEAD, and a dated count correction
+      (the pattern definition-of-done.md:56-58 already uses) claims nothing about the article's 44
+      code_refs.
+      WHAT IT VERIFIED AS SOUND, so the fix round does not re-litigate it: the command really reds
+      at EXIT 1 (mutating yt_gate.py's CMD_RE -> exit 1, and through the runner exit 1 with
+      exit_code: 1 in the evidence, not exit 3); AC4's floor is genuinely pinned (MIN=0 or deleting
+      the block both red); AC7's reuse is real (yt_board.CLOSED_STATUSES IMPORTED, not copied) and
+      correctly scoped -- the 18 dropped are `archived` ONLY, the 10 retained are 6 draft + 4
+      blocked, so nothing real is hidden; 6.5-7.0s wall, deterministic across 5 runs; 9 commands
+      with the new one at root; the DoD note's yt_gate.py:63,298 citations are accurate.
+      MINOR worth acting on: test_reuses_yt_board_closed_statuses_not_a_second_list stays GREEN when
+      the reuse is replaced by a copied literal (verified by mutation) -- the name promises a
+      property nothing pins; and test_yt_selftest.py:92 leaks 2 temp dirs per gate run (measured
+      78 -> 80), now on every run forever.
     open_finding_zone_rules_907: >-
       *** A `verified` MAP ARTICLE NOW CONTAINS A FALSE STATEMENT, AND THE SWEEP CANNOT SEE IT. ***
       zone-rules.md:907 says ENFORCED-BY means a guard "runs inside the existing EIGHT DoD
