@@ -70,17 +70,17 @@ Docker who sets `DYNAMO_ENDPOINT_URL` at a remote endpoint must be unaffected.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (dead-PID containers are reaped at session start)** — a container matching the
+- [x] **AC1 (dead-PID containers are reaped at session start)** — a container matching the
       fixture's own pattern whose embedded PID is no longer alive is removed before the run
       proceeds. Shown RED against current code.
-- [ ] **AC2 (*** the control, and it is the half that matters ***: it never reaps too much)** — a
+- [x] **AC2 (*** the control, and it is the half that matters ***: it never reaps too much)** — a
       reaper that removes too much is worse than none. Three negatives, each with its own test:
       (a) a pattern-matching container whose PID is **alive** is NOT removed; (b) a container that
       does not match the pattern is NEVER removed — named explicitly because the gate's own
       long-lived container is `uptime_dynamo_8021`, outside the pattern, and destroying it would
       break the gate mid-run; (c) no broad `docker rm -f` and no wildcard prune appears in the
       diff. AC2(a) and AC2(b) are shown RED against a naive prefix-only reaper.
-- [ ] **AC3 (it runs in BOTH configurations)** — the reap executes with `DYNAMO_ENDPOINT_URL` set
+- [x] **AC3 (it runs in BOTH configurations)** — the reap executes with `DYNAMO_ENDPOINT_URL` set
       **and** unset. Proven by a test that calls `resolve_dynamo` with an injected reaper and
       asserts it was invoked in both cases. This AC exists because the gate only ever runs the
       first of those two.
@@ -91,11 +91,11 @@ Docker who sets `DYNAMO_ENDPOINT_URL` at a remote endpoint must be unaffected.
       back to the module-level implementation when omitted, so production callers are unchanged
       and only tests inject. State the parameter name, its default and its contract in the
       docstring.
-- [ ] **AC4 (it degrades to a no-op, never a failure)** — Docker absent, `docker` slow or erroring,
+- [x] **AC4 (it degrades to a no-op, never a failure)** — Docker absent, `docker` slow or erroring,
       or a container that refuses removal must leave the run proceeding normally with at most a
       note. Proven by injecting a failing/absent docker callable. The reaper must not add a
       material delay to a Docker-less run — record the measured cost when Docker is present.
-- [ ] **AC5 (PID liveness is decided on Windows, and undetermined means DO NOT reap)** — the
+- [x] **AC5 (PID liveness is decided on Windows, and undetermined means DO NOT reap)** — the
       liveness check is specified and tested on Windows, where the defect was observed. If
       liveness cannot be determined for a given container, the conservative branch is taken: it is
       **left alone**. A named test covers the undetermined case. If an age bound is used instead of
@@ -109,10 +109,10 @@ Docker who sets `DYNAMO_ENDPOINT_URL` at a remote endpoint must be unaffected.
       2. A still-open process handle makes a **dead** PID read as **alive**. That is a reason to
          keep the conservative branch, and an argument for pairing liveness with an age bound
          against PID recycling.
-- [ ] **AC6 (the story leaks nothing itself)** — `docker ps -a` verified before and after the
+- [x] **AC6 (the story leaks nothing itself)** — `docker ps -a` verified before and after the
       story's own test runs; no container matching either pattern survives. Normal-exit teardown
       still removes the fixture's container (existing behaviour unbroken).
-- [ ] **AC7 (gate)** — the DoD commands the diff can affect exit 0 at the story's final HEAD, with
+- [x] **AC7 (gate)** — the DoD commands the diff can affect exit 0 at the story's final HEAD, with
       pass/skip counts recorded, and the run repeated in **both** `DYNAMO_ENDPOINT_URL`
       configurations for the reasons in AC3. Run the wiki sweep after the last commit and take
       what it returns; do **not** pre-declare a blast radius. For information only:
@@ -143,3 +143,41 @@ tests assert. Reaping containers this fixture did not create.
   `DYNAMO_ENDPOINT_URL` is set, which is the gate's own configuration, so a reaper placed after it
   would be dead code exactly where it is needed — STORY-179's AC8 lesson applied forward. The
   estimate sits at 2 because the reap itself is small and the weight is in AC2's three negatives.
+- 2026-08-15: **Implemented.** `reap_dead_pytest_containers(*, docker_available, list_containers,
+  pid_is_alive, remove_container)` and `_pid_is_alive(pid)` land in `scripts/dynamo_local.py`.
+  `resolve_dynamo` gains a `reap` keyword-only param (default `reap_dead_pytest_containers`),
+  called unconditionally as its first action — before the `DYNAMO_ENDPOINT_URL` short-circuit
+  (AC3, proven invoked in both configurations). Matching is a full-string regex
+  (`_PYTEST_CONTAINER_NAME_RE`) against `unique_container_name()`'s exact shape, never a
+  prefix/substring — AC2(b)'s guard against touching `uptime_dynamo_8021`. A container is removed
+  only when `pid_is_alive` returns `False`; `True` or `None` (undetermined) leaves it alone (AC5).
+  The whole function is wrapped so Docker absence/errors and a refused removal degrade to a no-op,
+  never a raise (AC4); measured cost against a real Docker daemon (this machine): **~0.1s** for a
+  single `docker ps -a --filter` round trip.
+  **AC1 was shown RED against current code first** (`AttributeError: module 'dynamo_local' has no
+  attribute 'reap_dead_pytest_containers'`) before any production code existed.
+  **AC2(a)/(b) were shown RED against a naive prefix-only reaper**, defined only inside the test
+  module (never shipped): it removed BOTH a live-PID container and the gate's own
+  `uptime_dynamo_8021`, which the real implementation's exact-match + confirmed-dead-only design
+  does not.
+  **AC4 and AC5 were each mutation-proofed**: the try/except scaffolding was stripped
+  (3/5 AC4 tests went RED), and the Windows `winerror == 87` branch was reduced to a POSIX-only
+  `except ProcessLookupError` (3/6 AC5 tests went RED); both mutations were reverted with `git diff`
+  verified empty before committing the real implementation.
+  **AC5's Windows facts were independently re-confirmed, and one nuance was added beyond the
+  brief**: a dead/never-existed PID reliably raises `OSError(winerror=87)`, but a PID whose
+  process WAS spawned and waited on by the SAME process doing the liveness check still reads
+  alive after exit (`tasklist` confirms it is gone from the OS process table; `os.kill` raises
+  nothing) — an artifact of that process's own retained handle, not of the reap's real code path
+  (the reaper never holds a handle to the PID it is checking; a PID checked from an unrelated
+  process correctly reads dead). Both shapes are pinned as separate named tests rather than only
+  cited.
+  **AC6 end-to-end**: a genuine container was spawned by a separate helper process and left
+  running (no mock), then removed by the real `reap_dead_pytest_containers()` from this process —
+  the story's own reproduction, reproduced and fixed against real Docker, not stand-ins.
+  `docker ps -a` carried no `uptime_dynamo_pytest_*` container before or after any test run in
+  this story, and the gate's own `uptime_dynamo_8021` stayed `Up` throughout.
+  The stale STORY-179 comment at `dynamo_local.py:41-61` (which named STORY-173 as "NOT in this
+  sprint" and described the leaked-port-slot exposure as a standing limitation) was updated to
+  state the reaper narrows — but, by AC5's own conservative design, does not zero out — that
+  exposure.
