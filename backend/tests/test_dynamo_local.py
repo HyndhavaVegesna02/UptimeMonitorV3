@@ -452,6 +452,29 @@ def test_provide_dynamo_local_teardown_on_failure(monkeypatch: pytest.MonkeyPatc
     assert leftover.stdout.strip() == ""
 
 
+def test_reap_removes_container_with_dead_pid(monkeypatch: pytest.MonkeyPatch):
+    """STORY-173 AC1: a container matching the fixture's own name pattern
+    (unique_container_name()'s prefix) whose embedded PID is no longer
+    alive is removed before the run proceeds.
+
+    Injects list_containers/pid_is_alive/remove_container so this proves
+    the reaper's own decision logic without touching real Docker or a real
+    process.
+    """
+    dead_name = "uptime_dynamo_pytest_12345_abcd1234"
+    removed = []
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=lambda: [dead_name],
+        pid_is_alive=lambda pid: False,
+        remove_container=lambda name: removed.append(name),
+    )
+
+    assert removed == [dead_name]
+    assert plan == [dead_name]
+
+
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
     # Retrieve the control table (using default name)
     table = dynamo_resource.Table("uptime-control")

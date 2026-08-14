@@ -8,7 +8,9 @@ from __future__ import annotations
 
 import os
 import random
+import re
 import subprocess
+import sys
 import time
 import uuid
 from collections.abc import Callable, Iterator, Mapping
@@ -95,6 +97,158 @@ def _candidate_port_for_test_injection() -> int:
 def unique_container_name(prefix: str = "uptime_dynamo_pytest") -> str:
     """A container name unique to this process."""
     return f"{prefix}_{os.getpid()}_{uuid.uuid4().hex[:8]}"
+
+
+# STORY-173: anchored (`^...$`) to the EXACT shape `unique_container_name()`
+# produces above -- prefix, pid, 8 lowercase hex chars -- so a name that
+# merely starts with or contains "uptime_dynamo" (e.g. the gate's own
+# long-lived `uptime_dynamo_8021`) never matches. AC2(b) depends on this
+# being a full match, not a prefix/substring check.
+_PYTEST_CONTAINER_NAME_RE = re.compile(r"^uptime_dynamo_pytest_(\d+)_[0-9a-f]{8}$")
+
+
+def _list_pytest_containers() -> list[str]:
+    """Names of all containers (running or stopped) whose name starts with
+    the `unique_container_name()` prefix, via a single targeted
+    `docker ps -a --filter name=...` -- never a broad listing (AC2c).
+    """
+    result = subprocess.run(
+        [
+            "docker",
+            "ps",
+            "-a",
+            "--filter",
+            "name=uptime_dynamo_pytest_",
+            "--format",
+            "{{.Names}}",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    if result.returncode != 0:
+        return []
+    return [line for line in result.stdout.splitlines() if line.strip()]
+
+
+def _pid_is_alive(pid: int) -> bool | None:
+    """Best-effort liveness check for `pid`.
+
+    Returns True if the process appears to be running, False if it is
+    confirmed NOT running, and None if liveness could not be determined --
+    the conservative case a caller must treat as "leave it alone" (AC5).
+
+    STORY-173, measured on Windows at pre-lock verification (2026-08-14),
+    do not re-derive: `os.kill(pid, 0)` does not terminate anything (that is
+    signal 9's job) -- it is a liveness probe. On a dead or nonexistent pid
+    it raises a bare `OSError` with `winerror == 87`, NOT
+    `ProcessLookupError`. A reaper that only catches `ProcessLookupError`
+    (the POSIX shape) lets that OSError propagate and violates AC4. A
+    still-open process handle can also make a dead pid read as alive --
+    which is exactly why the conservative branch below exists: anything
+    that is not affirmatively "confirmed dead" is left alone.
+    """
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except OSError as exc:
+        if getattr(exc, "winerror", None) == 87:
+            return False
+        # Some other OSError (e.g. a permission failure probing a process
+        # owned by someone else) -- undetermined, not "dead".
+        return None
+    except Exception:
+        return None
+    else:
+        return True
+
+
+def reap_dead_pytest_containers(
+    *,
+    docker_available: Callable[[], bool] | None = None,
+    list_containers: Callable[[], list[str]] | None = None,
+    pid_is_alive: Callable[[int], bool | None] | None = None,
+    remove_container: Callable[[str], None] | None = None,
+) -> list[str]:
+    """Remove `uptime_dynamo_pytest_*` containers whose embedded PID is
+    confirmed dead -- the fix for STORY-173: a killed pytest run leaves its
+    session-scoped container running, and the NEXT run's fixture then stalls
+    against it with no diagnosis.
+
+    Called from `resolve_dynamo` BEFORE the `DYNAMO_ENDPOINT_URL`
+    short-circuit, so it runs whether or not that variable is set (a
+    container leaked by a PREVIOUS run is leaked regardless of how THIS run
+    obtains its endpoint; the gate itself sets that variable, so placing
+    this after the short-circuit would make it dead code in exactly the
+    configuration it exists for).
+
+    Each collaborator is a keyword-only `Callable | None = None` that falls
+    back to the real module-level implementation when omitted, following
+    the same convention `resolve_dynamo` already uses for
+    `docker_available`/`spawn_container` -- production callers are
+    unaffected; only tests inject.
+
+    AC2, the half that matters (a reaper that removes too much is worse than
+    none):
+    - only names matching `unique_container_name()`'s EXACT shape
+      (`_PYTEST_CONTAINER_NAME_RE`, a full match) are ever considered --
+      anything else, notably the gate's own long-lived
+      `uptime_dynamo_8021`, is never touched no matter what
+      `list_containers` returns.
+    - a matching container is removed ONLY when `pid_is_alive` returns
+      `False` -- confirmed dead. `True` (alive) or `None` (undetermined)
+      leaves it alone (AC5's conservative branch).
+    - removal is always a single targeted `stop_container(name)` call
+      (`docker rm -f <name>`, one name) -- never a broad `docker rm -f`
+      with no name and never a wildcard prune.
+
+    AC4: degrades to a no-op, never a failure. Docker absent, slow,
+    erroring, or a removal that itself raises is swallowed here and at most
+    noted on stderr -- this must never fail the run that calls it.
+
+    Returns the names actually removed.
+    """
+    if docker_available is None:
+        docker_available = globals()["docker_available"]
+    if list_containers is None:
+        list_containers = _list_pytest_containers
+    if pid_is_alive is None:
+        pid_is_alive = _pid_is_alive
+    if remove_container is None:
+        remove_container = stop_container
+
+    removed: list[str] = []
+    try:
+        if not docker_available():
+            return removed
+        for name in list_containers():
+            match = _PYTEST_CONTAINER_NAME_RE.match(name)
+            if match is None:
+                continue
+            pid = int(match.group(1))
+            try:
+                alive = pid_is_alive(pid)
+            except Exception:
+                alive = None
+            if alive is not False:
+                continue
+            try:
+                remove_container(name)
+                removed.append(name)
+            except Exception as exc:
+                print(
+                    f"dynamo_local: WARNING could not reap dead-PID "
+                    f"container {name!r}: {exc!r}",
+                    file=sys.stderr,
+                )
+    except Exception as exc:
+        print(
+            f"dynamo_local: WARNING reap_dead_pytest_containers failed, "
+            f"continuing without reaping: {exc!r}",
+            file=sys.stderr,
+        )
+    return removed
 
 
 def _docker_port_mapping(name: str, container_port: int = 8000) -> int:
