@@ -227,7 +227,25 @@ board:
     title: The 7 skill-test modules join the DoD gate
     points: 3
     order: 2
-    status: todo
+    status: in_progress
+    dispatch_reverify: >-
+      RE-VERIFIED AT DISPATCH 2026-08-14 at 9f9ee79 (plan risk 7), everything holds:
+      SEVEN test modules under .claude/skills/yourteam/scripts/tests/ (test_backlog_story_parity,
+      test_scrum_encoding, test_template_parity, test_yt_board, test_yt_gate, test_yt_git_guard,
+      test_yt_wiki) plus __init__.py. yt_selftest.py: 89 tests, OK, exit 0, 5.3s.
+      BLAST RADIUS STILL 0: neither .scrum/definition-of-done.md nor yt_gate.py appears in any
+      article's code_refs.
+      A20 CONFIRMED IN CODE: `_ORCHESTRATOR_OWNED_PREFIXES = (".scrum/",)` -- `.claude/` is NOT
+      exempt, which is exactly why AC3's mutation must be committed in a scratch clone.
+      DIRTY-TREE REFUSAL CONFIRMED: yt_gate.py returns 3 with "REFUSING dirty tree" before running
+      any command.
+      *** PLACEMENT DESIGN CONFIRMED AGAINST THE REAL FILE: the DoD has exactly TWO `## Commands`
+      sections -- `## Commands (backend)` at :30 and `## Commands (frontend - live from STORY-015a,
+      Sprint 25, run from `frontend/`)` at :87. The "run from `dir/`" phrase lives IN THE HEADING,
+      which is how section_cwd is derived. The new section must omit it to run at repo root. ***
+      PARITY HARD ASSERTIONS PRESENT: test_every_file_pointer_resolves and test_no_orphan_story_files.
+      AC9 TARGETS PRESENT AND MUST STAY 8/8: demo-engine.md:617 and :636. CLAUDE.md:194 says
+      "8 commands", :199 "Backend (5)", :202 "Frontend (3, from `frontend/`)" -- all three move.
     file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_second: >-
