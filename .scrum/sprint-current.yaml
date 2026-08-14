@@ -458,7 +458,27 @@ board:
     title: Reap the leaked DynamoDB Local container at session start
     points: 2
     order: 3
-    status: todo
+    status: in_progress
+    dispatch_reverify: >-
+      RE-VERIFIED AT DISPATCH 2026-08-15 at 9575a49 (plan risk 7). Everything holds and STORY-224
+      touched none of these files:
+      resolve_dynamo's signature is EXACTLY `(*, env, docker_available, spawn_container)` with NO
+      reaper parameter, and it still returns early on DYNAMO_ENDPOINT_URL before any container code
+      -- the placement trap is live.
+      unique_container_name is `f"{prefix}_{os.getpid()}_{uuid.uuid4().hex[:8]}"`, prefix
+      `uptime_dynamo_pytest`, so PID liveness is checkable with no extra bookkeeping.
+      stop_container is a TARGETED `docker rm -f <name>` -- note for AC2(c), which forbids a BROAD
+      rm -f / wildcard prune, not this existing single-name call.
+      NO REAPING LOGIC EXISTS: grep for reap/orphan/prune/remove_container returns only a COMMENT.
+      *** AND THAT COMMENT IS A GIFT FROM STORY-179 (dynamo_local.py:52-58): it names STORY-173 by
+      number, describes the exact defect ("a container leaked by a dead PID ... holds its port slot
+      in this fixed range until 173's reaper lands"), and quantifies the accepted limitation. The
+      previous story left the seam documented for this one. ***
+      WIKI, information only, NOT a pre-declared blast radius (plan-verification.md:19):
+      scripts/dynamo_local.py is in NO article's code_refs -- verified by grepping every code_refs
+      line, zero matches. backend/tests/conftest.py IS a code_ref of demo-engine.md and
+      persistence-adapters.md, BOTH tier: map / status: verified. Placement is an engineering call;
+      the sweep after the last commit decides what must be re-verified.
     file: docs/scrum/stories/STORY-173-dynamo-container-leak.md
     ceremony: "implementer -> gate -> reality gate (1-2 pts: no review pair)"
     carry_into_brief: >-
