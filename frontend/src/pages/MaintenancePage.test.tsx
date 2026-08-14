@@ -246,7 +246,14 @@ describe('MaintenancePage', () => {
   })
 
   it('POSTs a tz-aware payload with Title and Reason, refreshes the list, and resets the form on success (AC1, AC2)', async () => {
-    const user = userEvent.setup()
+    // STORY-221: `delay: null` skips the awaited macrotask user-event's default
+    // `delay: 0` inserts between every keystroke (utils/misc/wait.js returns
+    // immediately when `typeof delay !== 'number'`). This test types the full
+    // `datetime-local` literal into Start/End (16 keystrokes each) — under gate
+    // load those 32 real waits, competing with ~50 other jsdom environments,
+    // are what let the trailing `findByText`/`findByRole` assertions time out.
+    // Delivery only changes; nothing here waits less or runs less of the suite.
+    const user = userEvent.setup({ delay: null })
     let postedBody:
       | { component_id: string; starts_at: string; ends_at: string; title: string | null; reason: string | null }
       | undefined
@@ -315,7 +322,8 @@ describe('MaintenancePage', () => {
   })
 
   it('renders a naive-starts_at 422 INLINE next to the Start field, not toast/console-only (AC2)', async () => {
-    const user = userEvent.setup()
+    // STORY-221: see the delay:null note on the POST-success test above.
+    const user = userEvent.setup({ delay: null })
     server.use(
       http.post('/api/v1/maintenance', () =>
         HttpResponse.json({ detail: 'starts_at must be timezone-aware.' }, { status: 422 }),
@@ -341,7 +349,8 @@ describe('MaintenancePage', () => {
   })
 
   it('renders an empty-component_id 422 INLINE next to the Component field (AC2)', async () => {
-    const user = userEvent.setup()
+    // STORY-221: see the delay:null note on the POST-success test above.
+    const user = userEvent.setup({ delay: null })
     server.use(
       http.post('/api/v1/maintenance', () =>
         HttpResponse.json(
@@ -379,7 +388,8 @@ describe('MaintenancePage', () => {
   })
 
   it('renders an ends_at<=starts_at 422 INLINE next to the End field, not the Component field (AC2)', async () => {
-    const user = userEvent.setup()
+    // STORY-221: see the delay:null note on the POST-success test above.
+    const user = userEvent.setup({ delay: null })
     server.use(
       http.post('/api/v1/maintenance', () =>
         HttpResponse.json(
@@ -420,7 +430,8 @@ describe('MaintenancePage', () => {
   })
 
   it('falls back to a form-level error when the 422 detail names no known field (AC2)', async () => {
-    const user = userEvent.setup()
+    // STORY-221: see the delay:null note on the POST-success test above.
+    const user = userEvent.setup({ delay: null })
     server.use(
       http.post('/api/v1/maintenance', () =>
         HttpResponse.json({ detail: 'something unexpected happened' }, { status: 422 }),
