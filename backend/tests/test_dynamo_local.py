@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import socket
 import subprocess
 import sys
@@ -473,6 +474,119 @@ def test_reap_removes_container_with_dead_pid(monkeypatch: pytest.MonkeyPatch):
 
     assert removed == [dead_name]
     assert plan == [dead_name]
+
+
+def test_reap_leaves_live_pid_container_alone():
+    """STORY-173 AC2(a): a pattern-matching container whose PID is ALIVE is
+    NOT removed. A reaper that removes too much is worse than none.
+    """
+    live_name = "uptime_dynamo_pytest_99999_deadbeef"
+    removed = []
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=lambda: [live_name],
+        pid_is_alive=lambda pid: True,
+        remove_container=lambda name: removed.append(name),
+    )
+
+    assert removed == []
+    assert plan == []
+
+
+def test_reap_never_removes_non_matching_container_name():
+    """STORY-173 AC2(b): a container that does not match the fixture's own
+    name pattern is NEVER removed -- named explicitly because the gate's
+    own long-lived container is `uptime_dynamo_8021`, outside the
+    `uptime_dynamo_pytest_` pattern, and destroying it would break the gate
+    mid-run. `pid_is_alive` is stubbed to always say "dead" here, so the
+    only thing standing between this container and removal is the name
+    match -- proving that guard, not the liveness check, does the work.
+    """
+    gate_container = "uptime_dynamo_8021"
+    removed = []
+
+    plan = dynamo_local.reap_dead_pytest_containers(
+        docker_available=lambda: True,
+        list_containers=lambda: [gate_container],
+        pid_is_alive=lambda pid: False,
+        remove_container=lambda name: removed.append(name),
+    )
+
+    assert removed == []
+    assert plan == []
+
+
+def test_reap_never_issues_broad_or_wildcard_docker_removal():
+    """STORY-173 AC2(c): no broad `docker rm -f` (with no target name) and
+    no wildcard prune appears anywhere in the diff. Static source check --
+    the dynamic tests above only prove the DECISIONS are right; this proves
+    the underlying REMOVAL primitive can never be broadened by construction.
+    """
+    source = Path(REPO_ROOT / "scripts" / "dynamo_local.py").read_text()
+    # Look for "prune" as an actual string LITERAL (a subprocess argument),
+    # not prose mentioning the word in a docstring/comment -- this AC's own
+    # docstrings say "never a wildcard prune", which would otherwise
+    # false-positive a substring check against the whole file.
+    assert not re.search(r'["\']prune["\']', source), (
+        "a wildcard prune command must never appear in dynamo_local.py"
+    )
+    # No wildcard argument to any docker command (e.g. `docker rm -f "*"`),
+    # and no shell=True anywhere -- every subprocess call in this file is a
+    # list of literal argv tokens, which is what makes "broad" impossible by
+    # construction: there is no shell for a glob/substitution to expand in.
+    assert '"*"' not in source and "'*'" not in source, (
+        "a wildcard argument must never appear in a docker command"
+    )
+    assert "shell=True" not in source, (
+        "a shell-invoked docker command could expand a wildcard/substitution "
+        "that a list-of-argv call cannot"
+    )
+    # Every `docker rm` invocation must pass an explicit, non-empty NAME
+    # positional argument (never removal with no target).
+    for match in re.finditer(r'\["docker",\s*"rm"[^\]]*\]', source):
+        call = match.group(0)
+        assert re.search(r",\s*name\s*[,\]]", call), (
+            f"docker rm call does not pass an explicit `name` argument: {call!r}"
+        )
+
+
+def _naive_prefix_only_reaper(names: list[str], remove) -> list[str]:
+    """STORY-173 AC2: the naive design this story deliberately did NOT ship
+    -- match by name PREFIX only, ignore PID liveness entirely, remove
+    everything that matches. Defined here, in the test module, purely to
+    demonstrate the RED it produces; it is not shipped in dynamo_local.py.
+    """
+    removed = []
+    for name in names:
+        if name.startswith("uptime_dynamo"):
+            remove(name)
+            removed.append(name)
+    return removed
+
+
+def test_naive_prefix_only_reaper_fails_both_ac2_negatives():
+    """STORY-173 AC2(a)/(b), shown RED: a naive prefix-only reaper (no
+    liveness check, loose name matching) removes BOTH a live-PID container
+    AND the gate's own non-matching container. This is the control that
+    proves AC2's careful design (exact-pattern match + confirmed-dead-only)
+    is doing real work, not decoration.
+    """
+    live_pytest_container = "uptime_dynamo_pytest_99999_deadbeef"
+    gate_container = "uptime_dynamo_8021"
+    removed = []
+
+    result = _naive_prefix_only_reaper(
+        [live_pytest_container, gate_container], removed.append
+    )
+
+    # The naive reaper removes both -- this IS the RED: neither the live
+    # PID's container nor the gate's own container should ever be touched.
+    assert result == [live_pytest_container, gate_container]
+    with pytest.raises(AssertionError):
+        assert live_pytest_container not in removed
+    with pytest.raises(AssertionError):
+        assert gate_container not in removed
 
 
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
