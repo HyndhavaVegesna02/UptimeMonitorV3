@@ -283,12 +283,51 @@ class ClosedSetAdvisoryTests(unittest.TestCase):
         ]
         self.assertEqual(entries_missing_file(stories), ["STORY-005"])
 
-    def test_reuses_yt_board_closed_statuses_not_a_second_list(self) -> None:
+    def test_closed_statuses_constant_covers_the_known_terminal_statuses(self) -> None:
+        """Sanity check on the CONSTANT alone -- does not exercise delegation.
+
+        See `test_entries_missing_file_actually_reads_yt_board_closed_statuses`
+        below for the test that proves `entries_missing_file` reuses this
+        constant rather than a parallel hardcoded copy.
+        """
         self.assertTrue(
             yt_board.CLOSED_STATUSES.issuperset(
                 {"archived", "superseded", "split", "done"}
             )
         )
+
+    def test_entries_missing_file_actually_reads_yt_board_closed_statuses(self) -> None:
+        """MINOR, STORY-224 fix round (quality reviewer).
+
+        The renamed test above proves nothing about `entries_missing_file` --
+        replacing its `yt_board.CLOSED_STATUSES` reference with a copied
+        literal `{"done", "superseded", "archived", "split"}` left the whole
+        suite green (`Ran 99 tests ... OK`). This monkeypatches the shared
+        constant and checks the EFFECT propagates through
+        `entries_missing_file`, which only a real attribute lookup (not a
+        hardcoded copy) can produce.
+
+        Falsified by: `entries_missing_file` internally using a literal set
+        instead of `yt_board.CLOSED_STATUSES` -- this patch would then have
+        no effect and the assertion below would fail.
+        """
+        original = yt_board.CLOSED_STATUSES
+        try:
+            yt_board.CLOSED_STATUSES = frozenset({"totally_custom_closed_status"})
+            stories = [
+                # Closed only under the PATCHED set -- must be excluded.
+                {
+                    "id": "STORY-001",
+                    "status": "totally_custom_closed_status",
+                    "file": None,
+                },
+                # "archived" is closed under the REAL constant but not the
+                # patched one -- must now be INCLUDED if delegation is real.
+                {"id": "STORY-002", "status": "archived", "file": None},
+            ]
+            self.assertEqual(entries_missing_file(stories), ["STORY-002"])
+        finally:
+            yt_board.CLOSED_STATUSES = original
 
 
 class NextStoryIdCounterTests(unittest.TestCase):
