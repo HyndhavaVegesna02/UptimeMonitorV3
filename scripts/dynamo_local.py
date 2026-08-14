@@ -53,16 +53,25 @@ def docker_available() -> bool:
 # a permanent guarantee; re-run the command above if this range ever needs
 # re-justifying.
 #
-# STORY-173 (separate story, NOT in this sprint): a container leaked by a
-# dead PID -- e.g. a killed pytest run that never reached its finalizer --
-# holds its port slot in this fixed range until 173's reaper lands. That is
-# a known, accepted limitation of shipping 179 without 173: N leaked slots
-# cost N/100 of the range; exhaustion needs >= _MAX_BIND_ATTEMPTS (20) held
-# simultaneously, not "a handful".
+# STORY-173 (landed, sprint 72): a container leaked by a dead PID -- e.g. a
+# killed pytest run that never reached its finalizer -- held its port slot
+# in this fixed range indefinitely before 173's reaper existed.
+# `resolve_dynamo` now calls `reap_dead_pytest_containers()` at the START of
+# EVERY call (before the DYNAMO_ENDPOINT_URL short-circuit), so a container
+# leaked by a previous killed run is removed at the start of the NEXT
+# session that resolves a plan, before any new port is requested here. This
+# substantially narrows the exposure this comment used to describe (any
+# leaked slot could persist across arbitrarily many later runs); it does
+# not eliminate it in a single pathological case the reaper's own
+# conservative design (AC5) leaves alone on purpose: a PID that is dead but
+# whose liveness cannot be confirmed as such (see `_pid_is_alive`'s
+# "undetermined -> leave it alone" branch, and the still-open-handle trap
+# documented there) still holds its slot.
 _PORT_RANGE_START = 18000
 _PORT_RANGE_END = 18100  # exclusive
-# 20 of 100 slots: a compromise between tolerating _MAX_BIND_ATTEMPTS-1
-# simultaneous in-use/leaked ports (STORY-173's known limitation above) and
+# 20 of 100 slots: a compromise between tolerating a handful of
+# undetermined-liveness/simultaneous in-use ports (STORY-173's reaper
+# narrows, but does not zero out, the leaked-slot case described above) and
 # not spending more than 20 subprocess round-trips retrying a range that is,
 # in practice, almost always immediately available on a dev/CI box.
 _MAX_BIND_ATTEMPTS = 20
