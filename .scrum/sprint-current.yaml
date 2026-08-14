@@ -562,7 +562,22 @@ board:
     title: Demo-engine doc + test hygiene batch
     points: 1
     order: 4
-    status: todo
+    status: in_progress
+    dispatch_reverify: >-
+      RE-VERIFIED AT DISPATCH 2026-08-15 at e3cf227. The story's OWN corrections hold exactly, which
+      matters because this story exists to fix wrong citations:
+      the nine rejection tests are at backend/tests/demo_engine/test_scenario.py:331, 340, 366, 380,
+      394, 408, 423, 444, 458 -- all nine confirmed to be `def test_load_scenario_file_*` functions,
+      and the file is 469 lines as stated (the story's own "seven at :295-405" was already corrected
+      to nine at planning).
+      NOTE THE PATH: it is `backend/tests/demo_engine/`, NOT `tools/demo_engine/tests/`. I guessed
+      the latter at re-verification and got zero hits; the story had it right.
+      SCOPE CHANGE 1 CONFIRMED DISCHARGED: `interval_seconds` appears NOWHERE in CLAUDE.md, so that
+      item is already fixed by STORY-184 and must not be "fixed" again.
+      SCOPE CHANGE 2 CONFIRMED: dev-setup-and-dod.md is in docs/scrum/wiki/archive/, so AC1a's
+      decision is live -- an archived article is a tombstone, not a maintenance target.
+      COST TO EXPECT: demo-engine.md is tier: map / status: verified and this story edits it, so
+      A18 forces its Facts re-verified IN-STORY. That is the real weight in this 1-pointer.
     file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
     ceremony: "implementer -> gate -> reality gate (1-2 pts: no review pair)"
     first_to_drop: true
