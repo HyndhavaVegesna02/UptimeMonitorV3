@@ -249,10 +249,16 @@ describe('MaintenancePage', () => {
     // STORY-221: `delay: null` skips the awaited macrotask user-event's default
     // `delay: 0` inserts between every keystroke (utils/misc/wait.js returns
     // immediately when `typeof delay !== 'number'`). This test types the full
-    // `datetime-local` literal into Start/End (16 keystrokes each) — under gate
-    // load those 32 real waits, competing with ~50 other jsdom environments,
-    // are what let the trailing `findByText`/`findByRole` assertions time out.
-    // Delivery only changes; nothing here waits less or runs less of the suite.
+    // `datetime-local` literal into Start/End (16 keystrokes each), so 32 real
+    // waits — measured: this test runs in ~273ms with `delay: null` and ~1296ms
+    // without it. That those waits, under gate load and competing with ~50 other
+    // jsdom environments, are what let the trailing `findByText`/`findByRole`
+    // assertions time out is the LIKELIEST MECHANISM, NOT A DEMONSTRATED CAUSE:
+    // the flake reproduced 0-in-8 before this change and 0-in-8 after, so the
+    // fix is unfalsified rather than proven. Don't read it as settled.
+    // No assertion timeout was raised and no parallelism was reduced — this
+    // changes keystroke delivery only, and still runs every assertion (proven by
+    // mutation: breaking the 422 path fails these tests, it does not skip them).
     const user = userEvent.setup({ delay: null })
     let postedBody:
       | { component_id: string; starts_at: string; ends_at: string; title: string | null; reason: string | null }
