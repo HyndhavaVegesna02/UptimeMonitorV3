@@ -276,6 +276,67 @@ board:
       must be COMMITTED in a scratch clone or the red proves the refusal, not the command.
       AC9: demo-engine.md:617 and :636 record HISTORICAL "DoD gate 8/8" evidence. Those must NOT
       become 9/9 -- they describe runs that happened under the 8-command gate.
+    commits: >-
+      7df6d8f (AC7 -- parity advisory reuses yt_board.CLOSED_STATUSES), 0d8bbf1 (AC8 -- next_story_id
+      assertion with numeric-prefix parsing), 141083c (AC4 -- yt_selftest fails below 7 discovered
+      modules), 3a4c8ac (AC1/AC2/AC9 -- the 9th DoD command + CLAUDE.md 8->9 in ONE commit).
+      Total 314 insertions / 6 deletions across 5 files.
+    implementer_report: >-
+      Claims all 10 AC met, gate 9/9 at 3a4c8ac (pytest 816 passed / 0 skipped, yt_selftest 99/99),
+      wiki sweep CLEAN after the last commit.
+      AC3 CLAIMED WITH BOTH EXIT CODES, which is what the AC actually demands: a mutated
+      .claude/agents/yt-implementer.md UNCOMMITTED gives exit 3 ("REFUSING dirty tree" -- the trap),
+      COMMITTED gives exit 1 ("FAIL (1)") naming the drifted file. At the pre-story commit 825ee77
+      the same committed mutation shows no self-test command exists at all.
+      AC4: suite grew 89 -> 99 tests across 8 modules (7 original + the new test_yt_selftest.py).
+      Shown RED by subprocess: 6 synthetic modules -> nonzero exit naming "6 test module(s)".
+      AC8 RED reproduced at the pre-bump commit 9c68b97: "225 not greater than 225".
+      AC6: 5.768s / 5.953s / 5.687s against a stated 15s threshold.
+      AC7: advisory note count dropped 28 -> 10.
+    the_scrum_edit_conflict_and_it_was_MY_error_AGAIN: >-
+      *** THE STORY FILE SAYS "The implementer does not edit `.scrum/`" AND HAS A SECTION TITLED
+      "The `.scrum/` edit belongs to the ORCHESTRATOR, not the implementer" (citing the STORY-222
+      precedent). MY DISPATCH BRIEF SAID THE OPPOSITE -- that definition-of-done.md was the one
+      `.scrum/` file this story must touch. ***
+      The implementer FOUND the contradiction, resolved it in favour of the brief, made the edit,
+      and DISCLOSED IT EXPLICITLY rather than silently picking a side. That is the behaviour we
+      want; the defect is mine. My own brief also said "where anything below disagrees with the
+      story file, the story file wins", so I contradicted my own precedence rule in the same
+      message.
+      SECOND ORCHESTRATOR BRIEF DEFECT IN TWO STORIES (the first: paraphrasing STORY-221's mutation,
+      which manufactured a disagreement between two correct reviewers). Both are the same root
+      cause -- I am RESTATING contract material in briefs instead of POINTING AT IT. That is a retro
+      item with a real rung available: briefs should quote the story file or cite file:line, never
+      paraphrase or re-derive it.
+      SENT TO THE SPEC REVIEWER FOR ADJUDICATION rather than self-adjudicated: is AC1 met when the
+      content is correct but the actor was wrong? Notably the risk the story's rationale names --
+      STORY-222's implementer git-stashing the orchestrator's board file -- did NOT materialise:
+      only definition-of-done.md was touched, backlog.yaml and sprint-current.yaml were not, and
+      `git diff --name-only 825ee77..3a4c8ac -- .scrum/` returns that one file.
+    orchestrator_independent_checks: >-
+      Verified before dispatching reviewers: tree CLEAN; 4 commits; 5 files, 314 insertions / 6
+      deletions; `git diff --name-only 825ee77..3a4c8ac -- .scrum/` returns ONLY
+      definition-of-done.md; the new section is correctly formed as `## Commands (skill self-test)`
+      AFTER the frontend block with NO "run from" phrase in the heading -- which is the CRITICAL
+      that pre-lock verification caught.
+    open_finding_zone_rules_907: >-
+      *** A `verified` MAP ARTICLE NOW CONTAINS A FALSE STATEMENT, AND THE SWEEP CANNOT SEE IT. ***
+      zone-rules.md:907 says ENFORCED-BY means a guard "runs inside the existing EIGHT DoD
+      commands". That became false when this story landed. The sweep reports CLEAN because nothing
+      in this story's diff is one of that article's 44 code_refs -- so the article keeps
+      `status: verified` while asserting something untrue.
+      THE IMPLEMENTER FOUND IT AND DELIBERATELY DID NOT TOUCH IT, reasoning that A18 treats editing
+      a swept article as CLAIMING a Facts re-verification it had not performed. That reasoning is
+      sound and the restraint was correct -- a drive-by edit would have been a false re-verification
+      claim, which is worse than the stale sentence.
+      BUT IT IS EXACTLY THE "TRUSTED-AND-WRONG" FOURTH STATE THE PROTOCOL EXISTS TO PREVENT, reached
+      by a route the protocol does not model: a COUNT changed, and no code_ref tracks a count.
+      RESOLUTION: this belongs to the SPRINT-END WIKI COMPILE PASS, which is blocking before review
+      and is the designated home for exactly this. Do it there with a real re-verification, not as a
+      drive-by. Both reviewers were asked whether they agree.
+      Also checked repo-wide: the only other current-tense "eight DoD commands" claims are in STORY
+      FILES (180, 181, 206, 210, 216, 225), which are historical records and correctly stay as they
+      are.
 
   - id: STORY-173
     title: Reap the leaked DynamoDB Local container at session start
