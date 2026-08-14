@@ -83,7 +83,7 @@ board:
     title: "`npm test` false-reds under gate load (MaintenancePage)"
     points: 3
     order: 1
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
     dispatch_reverify: >-
       RE-VERIFIED AT DISPATCH 2026-08-14 (plan risk 7), all three planning measurements HOLD at
@@ -149,6 +149,79 @@ board:
       briefs require the AC3 mutation to be RE-RUN independently rather than accepted, and both were
       pointed at the wall-clock anomaly and at whether `delay: null` changes test SEMANTICS (fake
       timers, observation points for change/input handlers) and not merely speed.
+    spec_review: >-
+      **PASS**, all 7 AC met. AC3 RE-RUN INDEPENDENTLY in a scratch git worktree at e60b3c7 (never
+      the live tree): baseline 13/13 pass; mutating useMaintenance.ts::schedule to unconditional
+      `return true` gave 5 failed / 8 passed, the 5 being exactly the tests the diff touches. AC2
+      re-grepped from the diff itself -- the only findBy*/waitFor match is inside a COMMENT, not a
+      config change. AC6 re-confirmed by name-only diff. AC1's precondition independently checked
+      (`git diff --stat bb480d1..dc28502 -- frontend/` empty).
+      *** IT WENT PAST THE REPORT ON AC5 AND EXPLAINED THE ANOMALY. *** Breaking the 16 runs down by
+      vitest phase: the `tests` phase -- the only one `delay: null` touches -- went DOWN (~53.5s ->
+      ~52.3s), while the unrelated `environment` phase (jsdom spin-up across 51 files) rose ~160s ->
+      ~185s and drove the total up. So the +11.2% is contention, not a cost of the fix.
+      Minor report-hygiene defect found: before_summary.log's own tally lists 7 runs, but
+      before_run8.log exists and shows PASS -- the raw data supports 0-in-8, the summary undercounts.
+    quality_review: >-
+      **APPROVE -- 0 critical, 0 major, 3 minor.** It refuted the tests-that-lie hypothesis BY
+      EXECUTION rather than by reading: a 7-run mutation battery against the real committed tree
+      (in-memory vite transform plugin, no repo file ever written), breaking six different product
+      paths. All 5 affected tests fail when the path they name is broken, and none is vacuous. Two
+      details beyond the headline: under the 422-neutralising mutations the tests fail at the
+      ASSERTION, not earlier, so typing/validation/submit/POST all still ran under `delay: null`;
+      and a bad-tz-conversion mutation proves the full 16-character literal still reaches the posted
+      body, i.e. no keystrokes were silently truncated.
+      *** IT ALSO SETTLED AC5 INDEPENDENTLY, by A/B-ing the fix in isolation on the same file/machine:
+      the affected file's test time drops ~63% and the flaking test 4.7x (1296ms -> 273ms). Both
+      reviewers reached the same conclusion by different routes. ***
+      Comment mechanism verified against the INSTALLED package: wait.js does return early on a
+      non-number delay, and keyboard/index.js awaits once per character, so "16 keystrokes / 32 real
+      waits" is exact. No fake timers are active in this file (vi.setSystemTime without
+      vi.useFakeTimers()), so skipping advanceTimers is inert -- SEMANTICS UNCHANGED, which was the
+      open question at dispatch.
+      Coherence of 5-of-66 checked and ACCEPTED: datetime-local typing exists nowhere else in
+      frontend/src, these are the only options-passing setup() sites, and a setup.ts default would
+      change delivery for 61 tests that never had the problem -- wider blast radius, no benefit.
+    the_ac3_disagreement_and_it_was_MY_error: >-
+      *** THE TWO REVIEWERS APPEARED TO CONTRADICT EACH OTHER ON AC3 AND NEITHER WAS WRONG. ***
+      Quality reported that breaking the 422 render fails 4 of 5, not 5, and flagged the relayed
+      claim as off by one. Spec reported exactly 5. They mutated DIFFERENT THINGS: `return true` in
+      schedule skips the POST entirely, so the POST-success test fails too (spec, 5); whereas
+      setMutationError(null) kills only the error path, so the POST-success test legitimately
+      survives (quality, 4). The implementer's actual claim was the `return true` mutation, which
+      spec reproduced exactly. WHAT WAS OFF BY ONE WAS MY PARAPHRASE IN THE QUALITY REVIEWER'S BRIEF
+      ("break the 422 render"), not the implementer's report. Recorded as an orchestrator error, not
+      an implementer one -- a brief that paraphrases evidence can manufacture a disagreement between
+      two correct reviewers, which is worth a retro look.
+    fix_round: >-
+      Quality minors 1 and 2 fixed at 401fcb6. Minor 3 needed no fix (see above -- it was my error).
+      MADE BY THE ORCHESTRATOR, NOT AN IMPLEMENTER, and recorded as such: the implementer was sent
+      the two findings and DIED ON THE SESSION LIMIT (resets 4:10pm) before acting, and spending the
+      reset budget on a fresh agent for a comment-only edit is a bad trade. `git diff` touches
+      comment lines only; no code changed.
+      What was wrong: (1) the comment said "nothing here waits less", which is FALSE and was
+      contradicted by the six lines above it -- quality measured 273ms with the fix vs 1296ms
+      without. Replaced with the intended meaning (no timeout raised, no parallelism reduced) plus
+      the real numbers. (2) it asserted the gate-load mechanism as established FACT; the flake was
+      0-in-8 before and 0-in-8 after, so it is unfalsified, not proven. The comment now says so.
+    final_gate: >-
+      Frontend commands re-run at 401fcb6 AFTER the node_modules repair: npm test / npm run build /
+      npm run lint all PASS, 51 files / 363 tests, exit 0. Backend commands unaffected by this diff
+      (one frontend test file) and green at bb480d1 + e60b3c7.
+      WIKI SWEEP AFTER THE LAST COMMIT: sweep CLEAN, facts CLEAN, links CLEAN, integrity CLEAN.
+      MaintenancePage.test.tsx is in no article's code_refs, as predicted. The 146 citation notes
+      are the standing STORY-223 advisory, unchanged and not caused by this story.
+    verdict: >-
+      DONE. 3 points. Both reviews positive, both load-bearing proofs independently reproduced by a
+      reviewer rather than accepted on report, minors fixed.
+      *** WHAT THIS STORY ACTUALLY DELIVERED, STATED HONESTLY FOR THE PO: the flake was NOT
+      reproduced (0-in-8 before, 0-in-8 after, on top of 0-in-4 across sprint 71 and 0-in-1 at this
+      sprint's baseline). So determinism is NOT demonstrated. *** What IS demonstrated, and measured
+      twice by two independent routes, is that the affected file's tests got ~63% faster and the
+      suspect test 4.7x faster with no loss of assertion power (proven by a 7-mutation battery plus
+      an independent worktree re-run). The story removed a real, measured source of timing pressure
+      on the exact tests that flaked. Whether that was THE cause remains unproven, and the code now
+      says so.
 
   - id: STORY-224
     title: The 7 skill-test modules join the DoD gate
@@ -231,6 +304,35 @@ board:
       not an edit.
       CITATION CORRECTED: its "seven rejection tests at :295-405" are NINE, at test_scenario.py:331,
       340, 366, 380, 394, 408, 423, 444, 458.
+
+incidents:
+  node_modules_destroyed_during_review: >-
+    *** frontend/node_modules WAS DESTROYED DURING THE STORY-221 CONCURRENT REVIEW WINDOW AND HAS
+    BEEN REPAIRED. Not a defect in the diff; a process hazard worth a retro item. ***
+    FOUND: the quality reviewer reported it mid-review (199 top-level entries, no .bin/vitest, no
+    .package-lock.json, @jridgewell/sourcemap-codec missing so magic-string fails to import).
+    Neither reviewer attempted repair -- correctly, since a repair would have raced the other one.
+    CONFIRMED independently by the orchestrator: node_modules was a REAL directory, not a reparse
+    point, and no install process was running, so nothing was mid-install.
+    REPAIRED with `npm ci` in frontend/: 300 packages, exit 0, 23s. Healthy state is **216
+    top-level entries**; the broken state was 199.
+    *** THAT 216-vs-199 GAP IS THE FINDING. *** The spec reviewer junction-linked node_modules into
+    a scratch worktree to avoid a reinstall, removed the junction with a reparse-point-only delete,
+    and verified cleanup by confirming "the real node_modules still had its 199 top-level entries
+    intact". 199 WAS ALREADY THE DAMAGED COUNT -- so that verification compared the damage against
+    itself and read it as healthy. It also noted every package's mtime was 2026-07-02 (the original
+    install), which is consistent: deleting whole package directories does not restamp the
+    survivors. This is the leading hypothesis, not proof -- an interrupted `npm ci` by some other
+    process would leave the same signature, and the missing `.package-lock.json` (npm writes it
+    last) fits that too. What IS certain is that the damage happened inside the review window and
+    that the cleanup check could not have detected it.
+    LESSON FOR THE RETRO (do not act on it mid-sprint): a subagent junction-linking a shared,
+    expensive, gitignored directory is a hazard the git-discipline hook cannot see, because
+    node_modules is not tracked -- `git status` stays clean through total destruction. A cheap
+    guard would be a healthy-baseline count or a `.bin/vitest` existence check, and the natural
+    rung is a preflight in yt_gate.py rather than prose.
+    VERIFIED AFTER REPAIR: npm test / build / lint all PASS, 51 files / 363 tests; no stray git
+    worktrees (`git worktree list` shows only the main tree); tree clean.
 
 execution_order: >-
   221 -> 224 -> 173 -> 186. Two rationales are real and NEITHER IS A CODE DEPENDENCY: 221 first
