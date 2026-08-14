@@ -904,7 +904,11 @@ exactly one, but a rule whose own Coverage verdict already splits into two indep
 halves carries one verdict PER HALF, in the same cell (ZR-5 is that case: `ENFORCED-BY` for its
 code-level half, `UNGUARDABLE` for its operational half — corrected here, STORY-209, from an earlier
 version of this line that claimed "exactly one verdict" unconditionally while ZR-5's own row already
-carried two). `ENFORCED-BY` means a guard exists, runs inside the existing eight DoD commands, and has
+carried two). `ENFORCED-BY` means a guard exists, runs inside the existing nine DoD commands
+(CORRECTED from "eight" 2026-08-14, STORY-224 fix round: that story's own diff added a ninth
+DoD command, the skill self-test suite, invalidating this count — noted rather than silently
+fixed, per A18: this is a count STORY-224's diff falsified, not a re-verification of this
+article's 44 `code_refs`), and has
 been **shown RED** (C3/A9) — never merely "is green". `GUARDABLE-DEFERRED` means the guard is
 specified in the rule above and a named story will land it. `UNGUARDABLE` states the reason no
 mechanical rung can hold it.
