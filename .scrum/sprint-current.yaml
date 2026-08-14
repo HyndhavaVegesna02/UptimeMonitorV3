@@ -83,8 +83,20 @@ board:
     title: "`npm test` false-reds under gate load (MaintenancePage)"
     points: 3
     order: 1
-    status: todo
+    status: in_progress
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
+    dispatch_reverify: >-
+      RE-VERIFIED AT DISPATCH 2026-08-14 (plan risk 7), all three planning measurements HOLD at
+      bb480d1: userEvent.setup() at 66 sites across 20 files with ZERO non-default-argument call
+      sites (so `delay: null` is nowhere in the suite yet); the 10 datetime-local user.type calls at
+      MaintenancePage.test.tsx:286, 287, 332, 333, 366, 367, 399, 400, 437, 438 exactly as cited;
+      frontend/vite.config.ts declares environment/globals/setupFiles/css ONLY -- no pool,
+      poolOptions or fileParallelism -- confirming AC2's prohibition there is PREVENTIVE, closing a
+      route that is currently open rather than describing an existing setting.
+      WIKI: frontend-zone.md is tier=map, status=STALE -> QUARANTINED, so none of its claims enter
+      the brief. MaintenancePage.test.tsx is in NO article's code_refs. NOTE frontend/src/test/
+      setup.ts IS a code_ref of frontend-zone.md -- if the fix lands there the sweep will say so
+      after the last commit; do not pre-declare it (plan-verification.md:19).
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_first: >-
       It taxes everything after it. This sprint runs `npm test` many times; at the filed 2-in-4 rate
