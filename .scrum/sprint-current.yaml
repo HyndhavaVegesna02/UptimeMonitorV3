@@ -117,6 +117,38 @@ board:
       uncomparable before/after as if it were one.
       AC3 IS THE PROOF THAT MATTERS: mutation -- the 5 affected tests must still FAIL when the 422
       render is broken. A faster test that no longer tests is the failure mode here.
+    commits: "e60b3c7 (single commit; 5 call sites + comments, 16 insertions / 5 deletions, one file)"
+    implementer_report: >-
+      *** THE FLAKE DID NOT REPRODUCE, AND THE IMPLEMENTER SAID SO RATHER THAN MANUFACTURING ONE.
+      AC1 8 gate-shape runs at dc28502: 0 failures in 8. AC4 8 more at e60b3c7: 0 failures in 8. ***
+      Both sides 0-in-8, so there is NO before/after delta and the report explicitly declines to
+      present one -- which is what AC4 demands. The fix rests on the seam analysis plus AC3's
+      mutation proof, not on a flake-rate improvement. Recent history is now 0-in-4 full gate runs
+      (sprint 71) + 0-in-1 (this sprint's baseline) + 0-in-16 here.
+      CHANGE: the 5 userEvent.setup() sites preceding the 10 datetime-local user.type calls become
+      userEvent.setup({ delay: null }). Nothing else under frontend/ touched -- vite.config.ts,
+      package.json and tsconfig*.json verified unchanged (AC6).
+      AC3 CLAIMED: mutating useMaintenance.ts::schedule to `return true` failed exactly the 5
+      affected tests, 8 others green; mutation reverted, empty diff verified.
+      AC7 CLAIMED: full 8-command gate at e60b3c7, exit 0, 816 passed / 0 skipped, 51 files / 363
+      tests in 58.75s. Wiki sweep CLEAN, nothing to update.
+      *** THE NUMBER THAT DOES NOT FIT, AND IT IS FLAGGED FOR BOTH REVIEWERS: npm test got SLOWER,
+      not faster -- mean 50.02s -> 55.65s (+11.2%), median 47.34s -> 53.36s (+12.7%). *** Removing
+      32 awaited macrotasks per affected test should be FASTER. The implementer attributes it to
+      system-load noise (observed range 44-82s) and notes the change touches 5 of 363 tests, so a
+      real effect would have to be large per-test. Under AC5's stated 20% threshold and disclosed
+      rather than absorbed -- but "disclosed" is not "explained", and both reviewers were asked to
+      form their own view.
+    orchestrator_independent_checks: >-
+      Verified BEFORE dispatching reviewers, not taken on report: tree CLEAN; diff is exactly one
+      file, 16 insertions / 5 deletions; `git diff --stat dc28502..e60b3c7 -- .scrum/` EMPTY, so the
+      implementer wrote no orchestrator state and did not git-stash (the STORY-222 MAJOR did not
+      recur); no leftover mutation in useMaintenance.ts.
+    review_dispatched: >-
+      Spec + quality reviewers dispatched CONCURRENTLY 2026-08-14 on range dc28502..e60b3c7. Both
+      briefs require the AC3 mutation to be RE-RUN independently rather than accepted, and both were
+      pointed at the wall-clock anomaly and at whether `delay: null` changes test SEMANTICS (fake
+      timers, observation points for change/input handlers) and not merely speed.
 
   - id: STORY-224
     title: The 7 skill-test modules join the DoD gate
