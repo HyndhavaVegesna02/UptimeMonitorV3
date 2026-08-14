@@ -100,10 +100,16 @@
 
 ## Commands (skill self-test)
 - [ ] Skill self-test suite: `python .claude/skills/yourteam/scripts/yt_selftest.py` -> exit 0
-      (2026-08-14, STORY-224: seven `.claude/skills/yourteam/scripts/tests/` modules --
+      (2026-08-14, STORY-224: the EIGHT `.claude/skills/yourteam/scripts/tests/` modules --
        including the template-parity and `.scrum/` mojibake-encoding guards, both of which had
        already caught real defects by luck of a human remembering to run `yt_selftest.py` by
-       hand -- now gate every story instead of running only when someone remembers. Interpreter
+       hand -- now gate every story instead of running only when someone remembers.
+       COUNT CORRECTED from "seven" on 2026-08-14 at review, by the orchestrator: seven modules
+       existed when this story was refined and the story itself added the eighth
+       (`test_yt_selftest.py`), so the number was invalidated by the diff that wrote it. Both
+       reviewers found the same off-by-one independently, and it mattered far more in
+       `yt_selftest.py`'s floor constant, where it left the guard green for exactly the first
+       silent module drop it exists to catch. Interpreter
        form, never a console-script shim, matching the rest of this file's invocations (this
        machine's Windows Device Guard / Application Control policy has already widened twice
        mid-sprint unannounced, STORY-210). This section's heading carries no `run from` phrase,
