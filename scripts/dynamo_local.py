@@ -475,14 +475,31 @@ def resolve_dynamo(
     env: Mapping[str, str] | None = None,
     docker_available: Callable[[], bool] | None = None,
     spawn_container: Callable[[str, int], None] | None = None,
+    reap: Callable[[], list[str]] | None = None,
 ) -> DynamoPlan:
     """Decide how to obtain a DynamoDB instance.
 
     Order:
+    0. Reap dead-PID `uptime_dynamo_pytest_*` containers left by a killed
+       PREVIOUS run (STORY-173) -- BEFORE step 1, deliberately. A leaked
+       container is leaked regardless of how THIS run obtains its endpoint,
+       and the gate's own configuration always sets DYNAMO_ENDPOINT_URL, so
+       placing the reap after step 1 would make it dead code exactly where
+       it is needed (STORY-179's AC8 trap, applied forward).
     1. DYNAMO_ENDPOINT_URL set -> reuse it (source="env")
     2. Docker available -> spawn container (source="container")
     3. Skip -> source="skip"
+
+    `reap`: keyword-only, `Callable[[], list[str]] | None = None`. Falls
+    back to the module-level `reap_dead_pytest_containers` when omitted, so
+    production callers are unaffected; tests inject a stub to assert it was
+    invoked (AC3) or to avoid touching Docker. `reap_dead_pytest_containers`
+    itself never raises (AC4), so this call is unguarded here.
     """
+    if reap is None:
+        reap = reap_dead_pytest_containers
+    reap()
+
     if env is None:
         env = os.environ
 

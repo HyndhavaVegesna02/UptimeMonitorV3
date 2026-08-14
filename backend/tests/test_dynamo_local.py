@@ -380,6 +380,38 @@ def test_resolve_dynamo_spawns_container_when_docker_available(
     assert spawned[0][0] == plan.container_name
 
 
+def test_resolve_dynamo_invokes_reap_with_endpoint_url_set(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-173 AC3: the reap runs even when DYNAMO_ENDPOINT_URL IS set --
+    the gate's own configuration, and the one place STORY-179's AC8 trap
+    would have hidden a reaper placed after the short-circuit.
+    """
+    monkeypatch.setenv("DYNAMO_ENDPOINT_URL", "http://aws-dynamo:8000")
+    calls = []
+
+    plan = dynamo_local.resolve_dynamo(reap=lambda: calls.append(1) or [])
+
+    assert plan.source == "env"
+    assert calls == [1], "reap must run before/regardless of the env short-circuit"
+
+
+def test_resolve_dynamo_invokes_reap_with_endpoint_url_unset(
+    monkeypatch: pytest.MonkeyPatch,
+):
+    """STORY-173 AC3: the reap also runs when DYNAMO_ENDPOINT_URL is unset
+    (the container-spawn/skip path) -- proven in BOTH configurations because
+    the gate only ever exercises the first."""
+    monkeypatch.delenv("DYNAMO_ENDPOINT_URL", raising=False)
+    monkeypatch.setattr(dynamo_local, "docker_available", lambda: False)
+    calls = []
+
+    plan = dynamo_local.resolve_dynamo(reap=lambda: calls.append(1) or [])
+
+    assert plan.source == "skip"
+    assert calls == [1]
+
+
 def test_resolve_dynamo_skips_when_no_external_and_no_docker(
     monkeypatch: pytest.MonkeyPatch,
 ):
