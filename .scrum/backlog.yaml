@@ -3,7 +3,19 @@
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
-next_story_id: 225   # bumped again 2026-08-13 AT THE MOMENT OF CONSUMPTION: 224 (skill tests
+next_story_id: 226   # *** BUMPED 225 -> 226 AT THE SPRINT-72 LOCK, 2026-08-14, AND THIS ONE WAS A
+                    # REAL COLLISION, NOT HOUSEKEEPING: STORY-225 already existed as BOTH a backlog
+                    # entry and a story file, so the next filing would have reused its number. The
+                    # 2026-08-13 bump below stopped one short -- it counted 224 as it filed it and
+                    # missed that 225 was filed in the same pass. FOURTH recorded staleness.
+                    # THE PERMANENT FIX LANDS THIS SPRINT: STORY-224 AC8 adds the yt_selftest
+                    # assertion `next_story_id > max(id in stories)`. It is written below as the
+                    # thing that "would end this permanently" -- it is now scheduled, order 2.
+                    # Because of this bump that assertion is GREEN at dispatch (226 > 225), so
+                    # STORY-224's implementer adds the assertion ONLY and must NOT edit this file;
+                    # its shown-RED comes from a scratch-clone mutation of this counter.
+                    # ---- previously ----
+                    # 225   # bumped again 2026-08-13 AT THE MOMENT OF CONSUMPTION: 224 (skill tests
                     # outside the gate), filed by the sprint-71 pre-lock plan verifier.
                     # Earlier the same day: the equilibrium refinement
                     # pass filed 222 (record the stack decommission) and 223 (wiki citation
@@ -1978,7 +1990,7 @@ stories:
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-173-dynamo-container-leak.md   # written 2026-08-13; re-verified -- conftest.py still has NO reaping logic
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. PENDING PO LOCK.
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # The placement question is SETTLED BY MEASUREMENT, not preference:
                     # resolve_dynamo returns at scripts/dynamo_local.py:335-337 when
                     # DYNAMO_ENDPOINT_URL is set -- WHICH IS THE GATE'S OWN CONFIGURATION -- so a
@@ -2006,7 +2018,7 @@ stories:
     points: 2       # ESTIMATED 2026-08-14 at sprint-72 planning. The reap itself is small; the
                     # weight is AC2's three negatives, not the happy path.
     type: defect
-    sprint: null
+    sprint: 72      # LOCKED 2026-08-14, story 3 of 4. Filed 2026-07-28, carried 6 sprints.
   - id: STORY-172
     title: Per-location streak persistence — separate a regional outage from a flaky probe (F2)
     epic: deferred-by-po
@@ -2197,7 +2209,12 @@ stories:
     points: 1
     priority: 60
     type: chore
-    sprint: null    # CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.
+    sprint: 72      # LOCKED 2026-08-14, story 4 of 4 and the DECLARED FIRST-TO-DROP. Third time
+                    # scheduled: cut from 64 (gates nothing), then CUT FROM SPRINT 65 at plan
+                    # verification (2026-07-30), PO-approved. Citations re-verified at sprint-72
+                    # planning and the story SHRANK -- the CLAUDE.md interval_seconds item is
+                    # DISCHARGED (STORY-184 removed the sentence) and one target moved to
+                    # wiki/archive/, which is now a scope decision (new AC1a), not an edit.
                     # NOT merely sizing: AC2 parametrises the very test_scenario.py rejection tests
                     # and AC4 refactors the load_scenario_file per-block validation that STORY-191
                     # EXTENDS, while STORY-191 AC2 requires those same tests to pass UNMODIFIED.
@@ -3454,7 +3471,7 @@ stories:
     title: The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. PENDING PO LOCK.
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # THE SEAM WAS MEASURED, which is what bounds the estimate: `user.type()` on a
                     # datetime-local field types 16 chars, and userEvent.setup()'s default inserts
                     # an AWAITED macrotask between every keystroke -- 32 real yields per test, plus
@@ -3488,7 +3505,10 @@ stories:
     priority: 60    # above the tooling backlog: it can make a CORRECT story look red, and it
                     # trains people to discount reds
     type: defect
-    sprint: null
+    sprint: 72      # LOCKED 2026-08-14, story 1 of 4 and FIRST for a reason that pays for itself:
+                    # this sprint runs `npm test` many times, and at the filed 2-in-4 rate every
+                    # later gate red must go through the two-limb attribution protocol before it
+                    # can be believed.
 
   # ── Filed 2026-08-13 at the equilibrium refinement pass ──────────
   - id: STORY-222
@@ -3596,7 +3616,7 @@ stories:
     title: An entire second test suite exists and the DoD gate does not run it — 7 skill-level modules, including the two guards that have already caught real defects
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 10 AC written. PENDING PO LOCK.
+    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 10 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # *** SHAPE DECIDED ON MEASURED BLAST RADIUS, and it is not close. ***
                     #   (a) 9th DoD command -> edits .scrum/definition-of-done.md + CLAUDE.md, both
                     #       in NO article's code_refs. RADIUS ZERO.
@@ -3646,7 +3666,11 @@ stories:
                     # on routine board bookkeeping, proven BOTH ways).
     priority: 15    # high: it is the mechanical floor failing to be mechanical
     type: defect
-    sprint: null
+    sprint: 72      # LOCKED 2026-08-14, story 2 of 4 -- second so the remaining stories exercise
+                    # the 9th command in anger rather than it being proven once and never used.
+                    # NOTE: its AC8 assertion is GREEN at dispatch, because the lock commit bumped
+                    # next_story_id 225 -> 226. The implementer adds the assertion ONLY and must
+                    # NOT edit this file; the shown-RED comes from a scratch-clone mutation.
   - id: STORY-225
     title: The deployment/infra files are in no article's code_refs — infra/stack.yaml is gated every run but hooked by no wiki article
     epic: process-ratchet-brake

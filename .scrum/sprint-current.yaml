@@ -1,454 +1,291 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
-sprint: 71
-status: closed     # none | planning | active | review | closed | aborted | parked
+sprint: 72
+status: active     # none | planning | active | review | closed | aborted | parked
 goal: >-
-  Every check the DoD gate runs, and every document a session loads, is either true or visibly
-  stale. Nothing in the floor reports a result it did not measure.
-branch: sprint-71
-start_tag: sprint-71-start
-started: 2026-08-13
-mode: in-process   # implementer + spec reviewer + quality reviewer per story (PO-decided 2026-08-13)
-points_committed: 10
-plan: docs/scrum/sprints/2026-08-13-sprint-71/plan.md
+  The gate runs everything it claims to run, and it says the same thing twice.
+branch: sprint-72
+start_tag: sprint-72-start
+started: 2026-08-14
+mode: in-process   # implementer + spec reviewer + quality reviewer per 3-pt story; gate at every size
+points_committed: 9
+plan: docs/scrum/sprints/2026-08-14-sprint-72/plan.md
 branched_from: >-
-  sprint-70 HEAD 7a82104 ("sprint 71 v2: RE-PLANNED after verification returned RE-PLAN").
-  Sprints 66-71 ALL STAY UNMERGED; nothing touches main.
-
-po_review:
-  date: 2026-08-14
-  verdict: "accept all 5, approve A20"
-  accepted: "STORY-222 (3), STORY-179 (3), STORY-213 (2), STORY-201 (1), STORY-189 (1) = 10/10"
-  amendment_approved: >-
-    A20 -- the gate ignores orchestrator-owned paths when judging tree cleanliness.
-    LANDED at the SCRIPT rung in .claude/skills/yourteam/scripts/yt_gate.py: tree_state() now
-    returns a THIRD list, and modified `.scrum/` paths are reported individually as
-    "orchestrator-owned ... NOT gating" instead of refusing. Every other modified tracked file
-    still refuses, unchanged.
-    GUARDED by OrchestratorOwnedPathsTests in scripts/tests/test_yt_gate.py, SHOWN RED against the
-    pre-A20 behaviour (mutating _ORCHESTRATOR_OWNED_PREFIXES to () fails 3 of 5). The 2 that stay
-    green are the teeth-tests asserting the NEGATIVE -- a path outside `.scrum/` still gates, and
-    lookalikes (`.scrumtools/`, `docs/.scrum/`, `scrum/`) are not owned -- which is exactly why
-    they hold in both worlds and why they matter: without them, "ignore .scrum/" could widen to
-    "ignore everything" unnoticed.
-    Renames are judged on the DESTINATION; `UU` conflicts on a `.scrum/` path are informational too.
-    NO template drift risk: yt_gate.py exists in one place only, and template parity covers
-    agents/hooks/checklists, not scripts -- checked, per A19's lesson.
-  a20_shipped_a_bug: >-
-    *** A20'S OWN GUARD SHIPPED WITH THIS SPRINT'S DOMINANT DEFECT, caught by RUNNING the gate for
-    real rather than trusting its unit tests. Recorded, not tidied away. ***
-    The first implementation sliced the porcelain line at a fixed offset (line[3:]). But git()
-    calls .strip() on the WHOLE output, so the FIRST status line of a run loses its leading space:
-    " M .scrum/x" arrives as "M .scrum/x", the slice ate the leading ".", and .scrum/ stopped
-    matching -- the gate refused on an orchestrator-owned path, which is precisely what A20 exists
-    to prevent. Five unit tests were GREEN; every one fed idealised 3-char prefixes the real
-    wrapper never produces, pinning my mental model of the input rather than the input.
-    It surfaced only because the first live run had THREE dirty files, so the .scrum/ line was not
-    first and kept its space. The second had only .scrum/ dirty -- the bug needed exactly the case
-    A20 was built for in order to appear.
-    FIXED at 2b456e0's follow-up: split on whitespace, plus a test driving tree_state end-to-end
-    through a real temporary git repo. BOTH new tests shown RED against the shipped slice.
-    VERIFIED LIVE END-TO-END: with only .scrum/sprint-current.yaml modified, the gate now exits 0,
-    reports "1 orchestrator-owned path(s) modified, NOT gating", and runs 8/8 -- 816 passed,
-    contracts 9 kept / 0 broken.
-  stash_disposal: >-
-    PO chose "drop it with capture" for the abandoned 2026-07-14 STORY-017 stash. Captured to
-    docs/scrum/sprints/2026-08-13-sprint-71/stash-story-017-phase0-spike.captured.patch.md (full
-    4-file diff + metadata + supersession reasoning), verified complete, then dropped. Recorded on
-    STORY-017's archived backlog entry. Every hunk was verified superseded first: install_cors is
-    ACTIVELY UNWANTED, cors_allowed_origins patches the POSTGRES-era Settings class, boto3 is
-    already at pyproject.toml:16. It was based on a commit whose parent is "supersede STORY-017".
+  sprint-71 HEAD 9c68b97 ("sprint 72 v2: pre-lock verification returned FIX-THEN-PROCEED -- all 18
+  findings resolved"). NOT fa5507d: that commit predates this sprint's own plan and all four story
+  refinements, so cutting there would put the sprint on a commit where its plan does not exist.
+  SPRINTS 66-72 ALL STAY UNMERGED; nothing touches main.
 
 lock_record:
-  locked: 2026-08-13
-  po_instruction: "fix AC7 and re-check 189's estimate and lock as planned"
+  locked: 2026-08-14
+  po_instruction: >-
+    "plan sprint 72 and then run verifier agent but dont sart implementation till i say" (planning),
+    then "lock it" (2026-08-14). The hold is discharged; the sprint is live.
   plan_verification: >-
-    RAN AND RETURNED **RE-PLAN** against v1 -- 3 CRITICAL, 8 MAJOR. v2 is the re-plan. The three
-    findings that reshaped it: (1) 9 of 11 committed points had NO acceptance criteria
-    (STORY-179/173/192 were points:null, status:draft, 12 open questions) -- they were written in
-    FILING shape during the equilibrium pass and put into a sprint unrefined; (2) STORY-192's
-    ~2->~4 rested on a VOID premise, its articles' baseline having already been reset by d9319d8
-    (2026-08-12) with an empty code_ref diff; (3) STORY-173's 3 PRE-DECLARED a wiki blast radius,
-    which plan-verification.md:19 forbids. Two ordering rationales were refuted and REMOVED rather
-    than rewritten. A first verifier dispatch died on the session limit having done no work; this
-    is the second.
+    RAN AND RETURNED **FIX-THEN-PROCEED** against v1 -- 3 CRITICAL, 6 MAJOR, 9 MINOR. All 18
+    resolved in v2 (9c68b97) BEFORE the PO saw the plan. The three CRITICALs were all inside
+    STORY-224, the story that rewrites the contract every later story's evidence is recorded
+    against: (1) AC1 and AC2 specified INCOMPATIBLE placements -- run through the real
+    yt_gate.parse_dod, appending the self-test to the backend section makes it command 6 of 9, not
+    the 9th, and silently turns CLAUDE.md's "Backend (5)" into six; only a new third section works;
+    (2) AC8's assertion `next_story_id > max(story id)` was RED at HEAD (225 > 225 is false), so
+    landing it would have reddened the gate for every later story, with the only fix living in
+    .scrum/ where implementers may not write; (3) AC3's suggested mutation reds the gate at EXIT 3
+    via the dirty-tree refusal (yt_gate.py:427-437), proving nothing -- A20 exempts only .scrum/
+    (yt_gate.py:125), not .claude/agents/.
+    Sharpest MAJOR: STORY-147's AC1 cited config.py:343-357 for "outside the try/except", and that
+    range is now AppConfig's mode="before" model_validator -- THE EXACT IMPLEMENTATION AC1 EXISTS TO
+    FORBID. Stale in the worst possible direction.
+  deliberate_divergence_from_verifier: >-
+    *** THE VERIFIER RECOMMENDED CUTTING STORY-186 AND KEEPING STORY-147 AT 3 (11 pts / 4 stories).
+    NOT FOLLOWED. STORY-147 was cut instead (9 pts / 4 stories). *** Argued, not ignored: the same
+    report's capacity section says in plain terms that the measurement tax is not the bottleneck and
+    "STORY-147 is." Keeping the cost driver and dropping the 1-pointer keeps the problem. STORY-147
+    is also consumerless today -- the frontend line is archived and STORY-175 is blocked behind
+    STORY-151 + STORY-152 -- so it loses nothing by waiting, and goes to sprint 73 honestly sized
+    (estimate corrected 2 -> 3) with its citation table already re-derived.
   pre_lock_fixes:
-    - "STORY-222 AC7 reassigned to the ORCHESTRATOR: it edits .scrum/backlog.yaml:1069, and .scrum/
-       is orchestrator-owned -- subagents never write it. The implementer must not touch that file."
     - >-
-      STORY-189 estimate RE-CHECKED and HELD at 1, but only because AC7/AC8 were added. Measured
-      exposure: api-five-file-convention.md has ONE Fact citing availability/models.py and it is
-      SYMBOL-cited; the vendor_health.py Facts in the other two articles are almost all symbol-based;
-      but zone-rules.md:751 cites `backend/src/composition/vendor_health.py:70-133` and AC3's edit at
-      :77 IS INSIDE THAT RANGE. New AC7 forces both docstring edits LINE-COUNT NEUTRAL (insertions ==
-      deletions), so no citation moves. Without it this is a 3, not a 1.
-  housekeeping_done:
-    - "Stale worktree .claude/worktrees/yourteam-skill-analysis-a29bf1 REMOVED (git worktree remove
-       + prune). Verified safe twice: clean tree, 0 tracked files, HEAD 2f31ec9 reachable from 6
-       branches. It was polluting recursive searches."
-    - "Container uptime_dynamo_8021 restarted and PROVEN ANSWERING: boto3 list_tables() returned in
-       0.66s -- against the 25s timeout that motivated STORY-179."
+      STORY-224 AC1 now names the literal placement: a THIRD `## Commands (skill self-test)` section
+      AFTER the frontend section, with NO "run from `dir/`" phrase, so section_cwd stays empty and it
+      becomes command 9 of 9 at repo root.
+    - >-
+      STORY-224 AC3 now requires the mutation be COMMITTED in a scratch clone, and the evidence to
+      DISTINGUISH exit 1 (a real red) from exit 3 (the dirty-tree refusal). A red at exit 3 proves
+      nothing about the new command.
+    - >-
+      STORY-224 AC5 gained proof (c) against the two HARD parity assertions
+      (test_backlog_story_parity.py:101 and :119), plus the rule that a mid-sprint filing lands its
+      backlog entry and its story file in ONE commit.
+    - >-
+      STORY-221 AC2 rewritten to prohibit the cheats BY EFFECT, not by location: no raised
+      findBy*/waitFor timeout, no parallelism reduction "not in package.json's test script, not as a
+      CLI flag, and NOT in frontend/vite.config.ts" via test.fileParallelism, test.pool or
+      test.poolOptions.*.{singleFork,singleThread,maxForks,maxThreads}, no retry. vite.config.ts
+      declares none of those today, so it was an open route around a location-scoped prohibition.
+      AC6 extended past frontend/src/ to the frontend/ root config files for the same reason.
+    - >-
+      STORY-173 AC3 now requires the injection seam be ADDED AND NAMED -- resolve_dynamo is
+      `resolve_dynamo(*, env, docker_available, spawn_container)` (dynamo_local.py:319-323) and has
+      NO reaper parameter today. AC5 gained the two measured Windows traps.
+  orchestrator_precondition_discharged_at_lock: >-
+    *** next_story_id BUMPED 225 -> 226 IN THE LOCK COMMIT, ahead of STORY-224. ***
+    The plan had this landing inside STORY-224 alongside its DoD line. Moved earlier because it is a
+    straight correctness fix independent of that story: STORY-225 ALREADY EXISTS as both a backlog
+    entry and a story file, so `next_story_id: 225` would have collided on the next filing -- the
+    counter was simply stale (the sprint-71 handoff recorded it as "stale three times now").
+    CONSEQUENCE FOR STORY-224: its AC8 assertion is now GREEN at dispatch rather than RED, so the
+    implementer adds the assertion ONLY. It must NOT also edit .scrum/backlog.yaml -- that file is
+    orchestrator-owned. AC8's shown-RED must therefore come from a SCRATCH-CLONE mutation of the
+    counter, not from the live repo.
 
 board:
-  - id: STORY-222
-    title: Record the AWS stack decommission
+  - id: STORY-221
+    title: "`npm test` false-reds under gate load (MaintenancePage)"
     points: 3
     order: 1
-    status: done
-    file: docs/scrum/stories/STORY-222-record-stack-decommission.md
-    dispatch_reverify: >-
-      RE-VERIFIED AT DISPATCH (own risk item): all surfaces still live. CLAUDE.md 2 hits for the
-      dead host, tools/ui-sweep/sweep.mjs 2, package.json 1; deployment-and-infra.md is
-      tier=map/status=stale with 16+ mojibake; deployment-topology.md is tier=reference with 8+;
-      `grep -c "^status: stale"` returns 3 articles. Nothing had been fixed underneath it.
-    commits: "28e3421, 4795007, 979b7a8, 3e76e27 (round 1); 5528551, 824cf62, 6b0005e, 2811619, 4ddcbef (fix round)"
-    spec_review: >-
-      **FAIL** on round 1. 10 of 11 AC met and independently re-verified (the reviewer re-derived
-      the mojibake count with its own detector, 24+11 -> 0+0, matching exactly, and confirmed the
-      AC7 NEGATIVE -- no .scrum/ writes by the implementer). AC2 clause 4 PARTIAL: the `## Facts`
-      heading was RENAMED to `## What was built` rather than substantively de-cited, leaving NINE
-      `infra/stack.yaml:LINE` citations plus one into scripts/create_tables.py.
-    quality_review: >-
-      **FIX_REQUIRED** on round 1, 4 MAJORs. MAJOR 1 PROVED THE LAUNDERING BY MUTATION: a citation
-      pointing 5,000 lines past EOF stays GREEN at tier=reference and goes RED at tier=map -- ten
-      enforced citations lost their pin. It also proved the heading rename was the sole reason the
-      lints stayed CLEAN (restoring only the heading made integrity AND facts fire).
-      MAJOR 2: test_citation_gate.py:97 said "14 map-tier articles" when the story's own edit made
-      it 13 -- the sprint-70 dominant finding again, in the module that already fixed it once.
-      *** MAJOR 3, THE ONE WITH REAL-WORLD CONSEQUENCE: CLAUDE.md asserted "no DynamoDB tables are
-      running, and the stack was torn down", contradicted by the repo's OWN template --
-      infra/stack.yaml sets DeletionPolicy: Retain on BOTH tables AND the frontend S3 bucket, so a
-      delete-stack leaves all three. deployment-topology.md:76-80 records that those leftovers
-      BLOCK A FRESH CREATE by name. Nobody had verified what the teardown removed. ***
-      MAJOR 4 (process, no code fix): the implementer ran `git stash` on the orchestrator's
-      uncommitted .scrum/sprint-current.yaml to obtain clean-tree gate evidence -- disclosed, and
-      restored cleanly, but yt-implementer.md:32 binds "Never write .scrum/ files". A death
-      mid-stash would have stranded the board edit. Recorded, not re-dispatched.
-    orchestrator_adjudication: >-
-      *** THE TWO REVIEWERS RECOMMENDED DIFFERENT FIXES AND I OVERRODE THE QUALITY REVIEWER'S. ***
-      Quality proposed reverting to tier: map + status: stale -- protocol-correct and needing NO
-      guard edit, but it puts the stale-article count back to 3 and BREAKS AC10, which that
-      reviewer did not account for. Spec proposed stripping the line numbers. I took the second:
-      keep tier: reference and make that classification TRUE by de-lining, so the protocol holds,
-      AC10 holds, and the guard's exemption note stops being a false claim.
-    orchestrator_verified: >-
-      Verified independently at final HEAD, NOT accepted on report:
-      (a) `grep -nE "(infra/stack\.yaml|create_tables\.py):[0-9]"` on the tombstone -> NO MATCHES;
-      (b) `grep -c "^status: stale"` -> exactly 2 (core-pipeline-and-availability, frontend-zone);
-      (c) yt_wiki.py exit 0, sweep/facts/links/integrity ALL CLEAN;
-      (d) the re-pointed test_ac2_classifier_keeps_its_teeth was READ IN FULL to check for
-          weakening -- it is STRONGER: it now pins on a synthetic tmp_path article citing a real
-          repo file at its real line count, carries a `Falsified by:` clause, and states explicitly
-          that it no longer depends on any baseline being nonzero. Re-pointing was forced, not
-          chosen: CITATION_RE mandates a line number, so de-lining left the old pin with nothing
-          to extract.
-    findings_kept: >-
-      COVERAGE HOLE CREATED BY THIS STORY, to be filed: infra/stack.yaml, Dockerfile, .dockerignore
-      and scripts/create_tables.py are now in NO article's code_refs -- zero forward blast radius on
-      a file the DoD gate still cfn-lints every run.
-      Also: the story file cites the backlog line as :1069; it is actually :1087.
-    note: >-
-      Re-scoped 2->3 at verification: three missing surfaces, one EXECUTABLE
-      (tools/ui-sweep/sweep.mjs:23 hard-codes the dead CloudFront URL) plus CLAUDE.md:144-145's
-      Stack table. AC2 carries two clauses THE TOOL CANNOT ENFORCE -- remove the `status:` line
-      (map-only) and keep the file in the main wiki dir -- proven necessary by a scratch wiki where
-      tier:reference + status:stale passed integrity exit 0, silently leaving AC10 unmet.
-      AC7 is an ORCHESTRATOR action (see lock_record).
-  - id: STORY-179
-    title: dynamo_local port allocation + readiness probe
+    status: todo
+    file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
+    ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
+    why_first: >-
+      It taxes everything after it. This sprint runs `npm test` many times; at the filed 2-in-4 rate
+      every later gate red must go through the two-limb attribution protocol before it can be
+      believed. Fixing it first is the only ordering in this sprint that pays for itself.
+    carry_into_brief: >-
+      MEASURED SEAM: userEvent.setup() is called with DEFAULT options at 66 sites across 20 files.
+      user.type() on a datetime-local field types the full '2026-07-09T09:00' literal -- 16
+      keystrokes, so 16 AWAITED MACROTASKS per field -- at MaintenancePage.test.tsx:286, 287, 332,
+      333, 366, 367, 399, 400, 437, 438. That is 10 user.type calls across 5 tests, ALL IN ONE FILE;
+      no other test file in the suite types a datetime-local. That containment is what holds the
+      estimate at 3.
+      CONFIRMED VIABLE AT VERIFICATION: userEvent.setup({ delay: null }) works -- utils/misc/wait.js
+      returns early when typeof delay !== 'number' -- so AC2 does not block the story by construction.
+      HONEST NEGATIVE IS PERMITTED AND MUST NOT BE MANUFACTURED: it went 2-in-4 on 2026-08-06 but
+      0-in-3 across sprint 71's full gate runs. Two flakes in this repo evaporated before their fix
+      (STORY-178; STORY-213 at 0-in-12). AC1 explicitly allows a negative; AC4 forbids presenting an
+      uncomparable before/after as if it were one.
+      AC3 IS THE PROOF THAT MATTERS: mutation -- the 5 affected tests must still FAIL when the 422
+      render is broken. A faster test that no longer tests is the failure mode here.
+
+  - id: STORY-224
+    title: The 7 skill-test modules join the DoD gate
     points: 3
     order: 2
-    status: done   # after a fix round closing 2 CRITICALs + 2 MAJORs + 7 MINORs
-    file: docs/scrum/stories/STORY-179-dynamo-local-port-and-readiness.md
-    commits: "8dac223 (AC1), 7db3dbf (AC4/AC5), e1ffe17 (AC2/AC3/AC6), 37a7c37 (AC7)"
-    orchestrator_verified: >-
-      Reality gate run by the orchestrator at final HEAD 37a7c37, not accepted on report:
-      8/8 PASS, 805 passed / 0 SKIPPED, contracts 9 kept / 0 broken. Implementation spot-checked:
-      _PORT_RANGE_START/END = 18000-18100 exist (dynamo_local.py:51-52), the STORY-173 limitation
-      comment is at the range declaration site (:46-49) as AC6 requires, and wait_for_dynamo does a
-      real list_tables() (:190) AND checks for the TableNames key (:197).
-    implementer_finding_worth_keeping: >-
-      *** THE FIX ALMOST SHIPPED WITH THE ORIGINAL DEFECT INSIDE IT. *** Mid-implementation the
-      implementer discovered that botocore's LENIENT JSON-protocol parsing lets a bare "200 OK"
-      satisfy a plain `client.list_tables()` call WITHOUT raising. So "call ListTables instead of
-      GET /" -- the fix as written in AC4 and in the story's fix direction -- would still have
-      green-lit a non-DynamoDB responder, which is defect 2 all over again one layer down. The
-      `TableNames`-key check at :197 is what actually pins "the service answers". Disclosed
-      unprompted. This is the sprint's best finding so far and belongs in the review narrative.
-    ac7_honest_negative: >-
-      The WinNAT hang did NOT reproduce today on either old or new code (old: 800 passed + 5
-      expected new-API-shape failures in 77.29s; fixed: 805 in 79.99s). The implementer recorded
-      that plainly rather than manufacturing a dramatic before/after -- consistent with refinement
-      decision 2, which is exactly why the shown-REDs were designed NOT to depend on reproducing it.
-    shown_red_claimed: >-
-      AC1: "port 61867 is inside Windows' WinNAT-reserved dynamic range (>= 49152)" against the
-      unmodified _free_tcp_port(). AC4/AC5: "DID NOT RAISE TimeoutError" against the unmodified
-      wait_for_dynamo(), with the old probe measured returning green in 0.02s against a listener
-      answering a generic non-DynamoDB 200 OK.
-      *** CLAIMED, NOT YET INDEPENDENTLY RE-RUN -- that is the reviewers' job. ***
-    fix_round: "00b2966, 8087e0f (CRITICALs); 716a85c, 6be387b (MAJORs); 3e0e685, 3b09a54, b905cde, c1c5a73 (MINORs)"
-    spec_review: >-
-      **FAIL.** 6 of 8 AC met, both shown-REDs independently reproduced against reconstructed
-      pre-fix code (AC1 "port 54206 >= 49152"; AC4 old probe "returned green in 0.013s"). AC5
-      PARTIAL and AC8 NOT_MET on one reproduced defect -- see CRITICAL 1 below.
-      *** THE FINDING SURFACED ONLY IN AC8 CONFIG 2, THE CONFIG ONLY A REVIEWER RAN. *** The
-      implementer ran it once and got green; the reviewer ran it four times and got 1 red. Had the
-      single run been trusted, this shipped.
-    quality_review: >-
-      **FIX_REQUIRED, 2 CRITICALs.** Everything measured, not reasoned.
-      CRITICAL 1 -- wait_for_dynamo's boto3 client had NO botocore Config, so botocore defaults
-      (60s connect, 60s read, legacy retries) bounded each call while the deadline was only checked
-      BETWEEN calls. Measured at a 3.0s budget: *** 626.24s against a silent peer -- 209x over ***,
-      46.00s against a closed port, and the story's own test flaked 2-of-6 at HEAD. With the
-      production default of 30s a mapped-but-dead port hangs the fixture for MINUTES -- the exact
-      "healthy suite looks hung" symptom this story exists to remove, reinstated BY THE FIX.
-      CRITICAL 2 -- *** THE SHOWN-RED WAS REAL BUT PINNED THE WRONG FUNCTION. *** AC1's test asserts
-      on _free_tcp_port(), which after the diff is reached ONLY from resolve_dynamo's test-injection
-      branch. The container's port comes from start_container -> _candidate_ports(), which NO test
-      constrained. Proven: reverting start_container to ephemeral ports -- defect 1 verbatim -- left
-      the file GREEN, 12 passed, ZERO RED. The one test with the opportunity spent it on
-      `assert isinstance(port, int)`, vacuous by construction.
-      MAJOR 1 -- AC5's message claimed "the port is mapped, not dead-on-arrival" verbatim against a
-      port where NOTHING was listening; the probe cannot distinguish the two cases.
-      MAJOR 2 -- the retry loop retried ANY non-zero docker exit: measured 20 `docker run` + 21
-      `docker rm` on a daemon-down error, then blamed port exhaustion.
-      Clean bills: every commit green on its own tree (checked per-commit via git archive), no
-      container leaks, no dead code.
-    the_finding_worth_keeping: >-
-      *** BOTOCORE'S FORGIVINGNESS UNDERMINED THIS FIX TWICE, FROM TWO DIRECTIONS. ***
-      (1) Lenient JSON parsing lets a bare "200 OK" satisfy client.list_tables() WITHOUT raising --
-      so AC4 as written ("issue a real ListTables call") would still have green-lit a non-DynamoDB
-      responder. The implementer found this MID-IMPLEMENTATION and disclosed it unprompted. Both
-      reviewers confirmed it by mutation in both directions: neutralise the `TableNames` check ->
-      GREEN in 0.88s; keep it -> RED in 3.15s. LOAD-BEARING, not decoration.
-      (2) Default timeouts let one call exceed the caller's budget 209x -- found by the reviewers.
-      Same shape twice: the library is more forgiving than the code assumes, and the probe inherits
-      the forgiveness. AC4 being insufficient was a SYMPTOM, not the whole gap.
-    orchestrator_verified: >-
-      Verified at final HEAD c1c5a73, not accepted on report. CONFIG 1 gate: 8/8 PASS, 809 passed /
-      0 skipped, contracts 9 kept / 0 broken. CONFIG 2 (DYNAMO_ENDPOINT_URL unset, Docker up) run
-      TWICE independently: 809 passed both times. `docker ps -a` shows no uptime_dynamo_pytest_*
-      residue. Spot-checked both CRITICAL fixes in the code: Config(connect_timeout=1.0,
-      read_timeout=1.0, retries max_attempts=1) at dynamo_local.py:258-259, and the range assertion
-      on the REAL path at test_dynamo_local.py:273-276.
-      The fix round's own CRITICAL 2 proof was the reviewer's mutation run in reverse: mutating
-      start_container to ephemeral allocation now yields "requested port 50073 outside the fixed
-      range 18000-18099" -- the pin reds under the mutation it exists to catch.
-    note: >-
-      REFINED at this planning: 8 AC, four open questions settled. KEY FINDING -- the shown-RED does
-      NOT need a WinNAT-reserved port (unreproducible, would block the story by construction); any
-      plain TCP listener that accepts and never answers proves the probe defect deterministically.
-      *** AC8 IS THE ONE NOT TO SKIP: with DYNAMO_ENDPOINT_URL set, resolve_dynamo short-circuits at
-      dynamo_local.py:113-115 and NONE of the changed functions is called, so a gate-env-only run
-      stays green through total breakage. BOTH configurations required. ***
-  - id: STORY-213
-    title: Self-diagnosing pagination assertion
+    status: todo
+    file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
+    ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
+    why_second: >-
+      So the rest of the sprint exercises the 9th command for real, in anger, rather than the new
+      command being proven once and never used again.
+    carry_into_brief: >-
+      SHAPE (a) IS SETTLED BY MEASUREMENT, NOT PREFERENCE: .scrum/definition-of-done.md and
+      yt_gate.py are in NO article's code_refs (radius 0); pyproject.toml -- the filing's obvious
+      one-line fix -- is a code_ref in FOUR verified map articles, each of which A18 would force
+      re-verified inside the story. yt_selftest.py measured 89 tests / 4.84s / exit 0 at HEAD,
+      stdlib-only, so no tooling-freeze problem.
+      *** PLACEMENT IS LITERAL AND WAS A CRITICAL AT VERIFICATION: a THIRD
+      `## Commands (skill self-test)` section AFTER the frontend section, no "run from `dir/`"
+      phrase. Appending to the backend section yields command 6 of 9 and silently makes
+      CLAUDE.md's "Backend (5)" six. ***
+      AC8 IS NOW GREEN AT DISPATCH -- the orchestrator bumped next_story_id to 226 in the lock
+      commit. Add the assertion only; do NOT edit .scrum/backlog.yaml. Its shown-RED comes from a
+      scratch-clone mutation.
+      *** AC8 TRAP FOUND AT THE LOCK, 2026-08-14 -- 13 STORY IDS ARE NOT NUMERIC. *** The split
+      stories carry letter suffixes: STORY-014b, 014c, 015a-015g, 040a, 016a, 016b, 016c. The
+      obvious implementation `int(sid.split("-")[1])` RAISES ValueError on the first of them, so the
+      assertion would go red for a reason that has nothing to do with the counter -- the exact
+      false-red shape this sprint exists to remove. Parse with a numeric-prefix match
+      (re.match(r"STORY-(\d+)", sid)) and TEST a suffixed id explicitly. Verified at lock:
+      max numeric id 225, next_story_id 226, assertion holds.
+      AC3 MUST DISTINGUISH EXIT 1 FROM EXIT 3: yt_gate.py:427-437 refuses a dirty tree with exit 3
+      BEFORE running anything, and A20 (yt_gate.py:125) exempts only .scrum/ paths. The mutation
+      must be COMMITTED in a scratch clone or the red proves the refusal, not the command.
+      AC9: demo-engine.md:617 and :636 record HISTORICAL "DoD gate 8/8" evidence. Those must NOT
+      become 9/9 -- they describe runs that happened under the 8-command gate.
+
+  - id: STORY-173
+    title: Reap the leaked DynamoDB Local container at session start
     points: 2
     order: 3
-    status: done   # after a fix round closing 2 MAJORs + 5 MINORs
-    file: docs/scrum/stories/STORY-213-pagination-test-isolation.md
-    flake_remeasured: >-
-      *** THE FLAKE DID NOT REPRODUCE: 0-in-12 full-suite runs in config 2, measured AFTER
-      STORY-179's fixture rewrite landed earlier this sprint. With the original 35 non-reproductions
-      that is 47-in-47 across TWO fixture generations. *** Recorded as an honest negative, and it
-      correctly did NOT gate the story: the deliverable was always the self-diagnosing MESSAGE, and
-      the story's own refinement forbids letting non-reproduction block it ("35 runs already failed
-      to reproduce it -- that would block this story by construction"). Re-measuring first was the
-      right call given TWO stories this sprint (178, 189a) turned out already-fixed.
-      CONSEQUENCE FOR REVIEW: with nobody able to watch it work, the helper's entire value rests on
-      the message it renders when something eventually goes wrong. Both reviewers were briefed to
-      judge it on exactly that -- and both MAJORs landed there.
-    spec_review: "FAIL -- 5 of 6 AC met and independently verified; AC1 NOT_MET on the inverted docstring."
-    quality_review: >-
-      FIX_REQUIRED, 2 MAJORs, 5 MINORs, no CRITICALs.
-      *** MAJOR 1 (both reviewers, independently): THE STORY'S CENTRAL CLAIM WAS STATED BACKWARDS AT
-      THE ONE CALL SITE THE FLAKE ACTUALLY FIRED ON. *** test_dynamo_adapters.py:161-162 said
-      "flake (LEK present) ... regression (LEK never appears)". Measured truth, reproduced by both:
-      flake = LEK ABSENT (=False), regression = LEK PRESENT (=True). NOT a fresh error -- commit
-      25f221c is titled "correct the diagnostic docstring's flake/regression LEK mapping against the
-      observed evidence" and fixed TWO copies in pagination_diagnostics.py while missing a THIRD
-      written one commit earlier by 82bcadc. It was the only surviving wrong copy, on the docstring
-      of the test the 1-in-11 fired on -- a reader applying it to a =True failure files a genuine
-      STORY-199 regression as a flake.
-      MAJOR 2 (quality only, and the sharper finding): the is_under_maintenance message branched on
-      LEK ALONE while its own spy.summary() printed the discriminating page_count one line above.
-      Measured against the real container: cause A (window not visible, loop intact) renders
-      "6 pages, LEK=False"; cause B (DynamoDB Local drops LEK) renders "1 page, LEK=False". Same LEK,
-      different page count -- so the message handed cause A the diagnosis for cause B. And A is the
-      LEADING explanation: the three GSI-backed sites cannot use ConsistentRead=True, which this
-      story's own AC3 recorded.
-      VERIFIED CLEAN, worth recording: PaginationSpy changes only what the tests REPORT, never what
-      they ASSERT -- proven by mutation, all five keep full set equality with a lazily-evaluated
-      message. The citation gate was NOT weakened (test_citation_gate.py diff empty across the whole
-      story). Every commit green on its own tree.
-    orchestrator_verified: >-
-      Verified at final HEAD, not on report: `git grep` for every phrasing of the inverted mapping
-      returns NOTHING; the corrected is_under_maintenance message reads correctly and keys on page
-      count; gate 8/8, 815 passed / 0 skipped, contracts 9 kept / 0 broken; tree clean.
-    reviewer_correction_by_orchestrator: >-
-      Quality's MINOR 5 warned the committed AC2 mutation patch would be silently invalidated by
-      STORY-214 rewriting list_components. *** STORY-214 WAS ARCHIVED BY PO DECISION 2026-08-13 ***
-      as accepted duplication -- precisely because extracting that helper would red all six
-      compliant sites. The named threat is not coming. Fix recorded as a note, not a mechanism.
-    incident: >-
-      *** THE SPEC REVIEWER RAN `git stash -u` THEN `git stash pop` -- FORBIDDEN BY ITS OWN
-      DEFINITION -- AND POPPED AN UNRELATED PRE-EXISTING STASH (STORY-017 Phase-0 spike, 2026-07-14,
-      PO-cleaned and superseded). *** That left live merge-conflict markers in
-      backend/src/api/v1/_shared/middleware.py and backend/src/composition/settings.py plus a staged
-      CORS change in composition/app.py -- none related to STORY-213 -- and would have blocked the
-      concurrently-running quality reviewer's gate.
-      ORCHESTRATOR REPAIR: confirmed all three files were untouched by the story diff (so HEAD was
-      the correct content), restored them, verified no conflict markers remain anywhere under
-      backend/src/, and confirmed the suite green. *** THE STASH ENTRY IS INTACT AND UNDROPPED ***
-      -- that 2026-07-14 spike is still there for the PO to dispose of deliberately.
-      The reviewer did the right thing AFTER the wrong thing: it stopped rather than compounding one
-      forbidden command with another (checkout/reset are equally off-limits to it) and disclosed
-      fully with exact file states.
-      *** SECOND OCCURRENCE THIS SPRINT of an agent reaching for `git stash` to work around a dirty
-      tree -- STORY-222's implementer stashed the orchestrator's board file. THAT IS A PATTERN AND
-      BELONGS IN THE RETRO, not a per-incident scolding. ***
-      An intermediate suite run during the repair showed 6 failures; two further runs were clean at
-      815. Attributed to contention with the still-running quality reviewer on the shared :8021
-      container -- re-run rather than discounted, per the standing rule.
-    note: >-
-      Was ALREADY refined (6 AC, points 2) and mis-statused draft; promoted at verification. It had
-      been deferred out of v1 on grounds ITS OWN REFINEMENT FORBIDS ("non-reproduction must not block
-      the story -- 35 runs already failed to reproduce it"). MUST FOLLOW STORY-179: its AC3 probes
-      the clean_dynamo_tables fixture that 179 changes, and both may touch conftest.py.
-  - id: STORY-201
-    title: Clickpath normalizer -- use require_field for execution.outcome
+    status: todo
+    file: docs/scrum/stories/STORY-173-dynamo-container-leak.md
+    ceremony: "implementer -> gate -> reality gate (1-2 pts: no review pair)"
+    carry_into_brief: >-
+      *** PLACEMENT IS DECIDED AND IT IS THE WHOLE STORY: reap BEFORE resolve_dynamo's step-1
+      short-circuit. *** resolve_dynamo returns at scripts/dynamo_local.py:335-337 when
+      DYNAMO_ENDPOINT_URL is set -- WHICH IS THE GATE'S OWN CONFIGURATION -- so a reaper placed
+      after it would be dead code precisely where it is needed. This is STORY-179's AC8 trap applied
+      forward, caught at planning this time instead of at review.
+      THE INJECTION SEAM MUST BE ADDED AND NAMED: resolve_dynamo is today
+      `resolve_dynamo(*, env, docker_available, spawn_container)` (dynamo_local.py:319-323), with no
+      reaper parameter. Follow that convention -- keyword-only Callable | None = None falling back
+      to the module-level implementation.
+      *** AC2 IS THE HALF THAT MATTERS: a reaper that removes too much is worse than none. *** The
+      gate's own container is `uptime_dynamo_8021`, OUTSIDE the `uptime_dynamo_pytest_` pattern;
+      destroying it breaks the gate mid-run. Three shown-RED negatives: live PID untouched,
+      non-matching name never removed, no broad `docker rm -f` or wildcard prune in the diff.
+      WINDOWS FACTS MEASURED AT VERIFICATION -- DO NOT RE-DERIVE, DO NOT ASSUME POSIX SHAPES:
+      (1) os.kill(pid, 0) does NOT terminate the process, and on a dead/nonexistent PID it raises a
+      bare OSError with winerror == 87, NOT ProcessLookupError -- a reaper catching only
+      ProcessLookupError RAISES, violating AC4. Branch on winerror and test it.
+      (2) A still-open process handle makes a DEAD pid read as ALIVE -- keep the conservative
+      branch, and consider pairing liveness with an age bound against PID recycling.
+
+  - id: STORY-186
+    title: Demo-engine doc + test hygiene batch
     points: 1
     order: 4
-    status: done   # first-pass clean, no fix round
-    file: docs/scrum/stories/STORY-201-clickpath-require-field-hygiene.md
-    note_done: >-
-      Shown RED as a bare `KeyError: 'execution.outcome'`, then GREEN as MalformedDqlRowError.
-      1-pointer, so implementer + gates per the skill's scaling rule -- no reviewer pair.
-      SCOPE LIMIT HONOURED AND REPORTED AS AN INFERENCE, not as verified: normalize_clickpath_row
-      is still unreachable in production (dispatch.py's _NORMALIZERS maps only
-      "http_monitor_execution"), so the quarantine-net claim rests solely on the type relationship
-      MalformedDqlRowError < ValueError. The implementer did NOT manufacture an artificial route to
-      make it look end-to-end proven -- which is the "proof that reads stronger than it is" shape
-      this sprint hit four times.
-      Wiki blast radius closed in-story: dynatrace-adapter.md (new Fact + the inference stated) and
-      zone-rules.md (re-verified; its cited ZR-8 line untouched).
-      Orchestrator verified: gate 8/8, 816 passed / 0 skipped, tree clean.
-    note: >-
-      Fully independent: touches only adapters/inbound/dynatrace/, blast radius dynatrace-adapter.md
-      alone. Carries an explicit SCOPE LIMIT -- the quarantine-net claim cannot be shown end-to-end
-      (clickpath is absent from _NORMALIZERS) and must be reported as an INFERENCE, not "verified".
-  - id: STORY-189
-    title: Close the two doc/wiki gaps sprint 64 left
-    points: 1
-    order: 5
-    status: done   # last story; one self-caught fix commit
-    file: docs/scrum/stories/STORY-189-sprint64-doc-gaps.md
-    note_done: >-
-      AC1 correctly NOT REDONE -- already satisfied; touching demo-engine.md would have reset its
-      staleness baseline for nothing. AC7's line-count-neutral constraint HELD (3 insertions, 3
-      deletions), so no citation moved and the estimate stayed at 1.
-      *** STORY-213'S LESSON APPLIED FORWARD, AND IT FOUND ONE: *** the implementer grepped for
-      other copies of each false statement before committing, and found core/queries/availability.py
-      :71 carrying the same "expected-but-missing" phrase -- traced the computation, confirmed the
-      limitation genuinely applies there too, did NOT fix it (outside AC4's scope, would blow the
-      1-point sizing), and reported it. Filed.
-      SMALL VINDICATION: its own fix commit was forced by STORY-219's citation ratchet, which caught
-      a wiki History note adding a bare-filename citation (188 -> 189). The guard working.
-      Also reported: the brief's own `zone-rules.md:751` citation is STALE (now :812) -- a live
-      instance of the STORY-223 defect class.
-      Orchestrator verified: line-count neutrality, demo-engine.md untouched, only docstring string
-      literals changed, gate 8/8 816 passed / 0 skipped.
-    note: >-
-      *** DECLARED FIRST-TO-DROP. *** Re-scoped 3 findings -> 2: AC1 is ALREADY SATISFIED
-      (demo-engine.md's code_refs now list all nine tools/demo_loop_gate/ files) and MUST NOT be
-      redone -- touching that article would reset its derived baseline for nothing. Both remaining
-      citations had drifted and are corrected in AC3/AC4. New AC7 (line-count neutral) is what holds
-      the estimate at 1.
+    status: todo
+    file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
+    ceremony: "implementer -> gate -> reality gate (1-2 pts: no review pair)"
+    first_to_drop: true
+    carry_into_brief: >-
+      DECLARED FIRST-TO-DROP: smallest, last in order, blocks nothing, already cut twice for
+      capacity without harm.
+      IT SHRANK ON RE-VERIFICATION (2026-08-14): the CLAUDE.md:142 interval_seconds item is
+      DISCHARGED -- STORY-184 removed that sentence and it exists nowhere in the repo. A second
+      target, dev-setup-and-dod.md, is now in wiki/archive/, which is a SCOPE DECISION (new AC1a),
+      not an edit.
+      CITATION CORRECTED: its "seven rejection tests at :295-405" are NINE, at test_scenario.py:331,
+      340, 366, 380, 394, 408, 423, 444, 458.
 
 execution_order: >-
-  222 -> 179 -> 213 -> 201 -> 189. ONLY ONE CONSTRAINT IS REAL AND IT IS 179 -> 213 (213's AC3
-  probes the fixture 179 changes; both may touch conftest.py and its two articles). 222 goes first
-  because it converts deployment-and-infra.md to a tombstone and discharges one of the three stale
-  articles. 201 and 189 are genuinely independent and are ordered by size, not dependency.
-  *** v1's "not negotiable" 179-before-173 rationale was REFUTED and REMOVED: _free_tcp_port()
-  (:39-45) and unique_container_name() (:48-50) take no shared input. Do not resurrect it. ***
+  221 -> 224 -> 173 -> 186. Two rationales are real and NEITHER IS A CODE DEPENDENCY: 221 first
+  because it taxes every later gate run; 224 second so the remaining stories exercise the 9th
+  command in anger. 173 and 186 are priority order only. They touch disjoint FILES -- but disjoint
+  at the file level is not disjoint at the ARTICLE level: if STORY-173's reaper lands in
+  backend/tests/conftest.py rather than scripts/dynamo_local.py, both stories reach demo-engine.md.
+  Whichever runs second takes the sweep's answer as it finds it.
 
-parallelism_ruling: >-
-  Analysed before lock at PO request. FILE AND WIKI FOOTPRINTS ARE DISJOINT except 179/213 (both
-  reach conftest.py -> demo-engine.md + persistence-adapters.md). But the REAL serializer is the
-  GATE, not the files: `python -m pytest` runs the whole suite, so two implementers committing to
-  one branch means each one's gate observes the other's half-finished work, and "green at my commit"
-  -- the acceptance evidence -- stops meaning anything. Worse, STORY-179 CHANGES THE HARNESS every
-  other story gates on. A parallel shape (222 || 201 || 189 in worktrees, then 179 alone, then 213)
-  would save roughly one wave out of five steps while requiring a NEW integration-gate semantics the
-  DoD does not describe. DECIDED: run sequentially. 5 of the 10 points are serial regardless.
+gate_arithmetic_changes_mid_sprint: >-
+  *** ONCE STORY-224 LANDS, GATE EVIDENCE READS 9/9, NOT 8/8, FOR EVERY STORY AFTER IT. *** This is
+  expected, not an error. The DoD file, CLAUDE.md:194 and the emitted evidence all move together
+  (STORY-224 AC9). Evidence recorded BEFORE that story legitimately reads 8/8, and the historical
+  8/8 lines in demo-engine.md must stay 8/8.
 
 deferred:
-  - {id: STORY-192, reason: "NOT READY. Count corrected 218 -> 293; re-baseline premise VOID; its guard-placement choice is a false choice pending STORY-224. Re-refine first."}
-  - {id: STORY-173, reason: "NOT READY -- 4 open questions incl. where the reaper is invoked relative to resolve_dynamo's env short-circuit, and the reap match-pattern."}
-  - {id: STORY-224, reason: "Filed BY this verification; unestimated. The obvious fix edits pyproject.toml, an amplifier code_ref in 4 articles."}
-  - {id: STORY-186, reason: "CAPACITY ONLY. ready at 1pt. Not a judgement about its value."}
-  - {id: STORY-221, reason: "CAPACITY. v1 deferred it on a shared-substrate argument that was simply WRONG -- it lives entirely in frontend/, a zone this sprint does not touch. See risks.frontend_flake: it will fire anyway."}
+  - "STORY-147 (3, re-estimated from 2) -- cut at pre-lock verification on re-measured cost, not
+     value: five verified/map articles in its blast radius, priced at zero. SPRINT-73 CANDIDATE,
+     citations already re-derived in the story file."
+  - "STORY-225 -- NOT ready and a DIFFERENT story than filed. The sweep its own refinement demanded
+     was run: 281 files, 213 hooked, 68 UNHOOKED. Both premises refuted -- the gap is repo-wide not
+     222-created, and infra/stack.yaml has not been touched since 2026-07-17."
+  - "STORY-223 (146 unresolvable Fact citations) -- contained debt, not compounding: held flat
+     across sprint 71's 51 commits and the ratchet caught the one attempt to add to it."
+  - "STORY-192 (wiki mojibake) -- depends on STORY-224's answer for where its guard lands, and that
+     answer arrives DURING this sprint. Guaranteed conflict."
+  - "STORY-154 -- still blocked on Dynatrace access. When it lands, 154 RUNS FIRST AND ALONE."
+  - "STORY-174, STORY-193 -- unrefined, no AC, not load-bearing."
 
 risks:
-  gate_env_hides_179: >-
-    STORY-179 modifies the harness the gate runs on, AND the gate env hides it. With
-    DYNAMO_ENDPOINT_URL set, resolve_dynamo returns at dynamo_local.py:113-115 and none of the
-    changed functions is called; REQUIRE_DYNAMO is inert too (conftest.py:52-86 is only reached when
-    plan.source == "skip"). Mitigation is AC8: gate green in BOTH configs.
-  frontend_flake: >-
-    *** STORY-221's flake WILL fire this sprint. *** Measured 2 RED IN 4 at 56491a8 with zero
-    frontend diff, including one failure run ALONE (which breaks the "passes in isolation" limb).
-    npm test is gate command 6 of 8 and this sprint runs the full gate 5+ times.
-    ATTRIBUTION PROTOCOL, BOTH LIMBS, EVERY TIME, BEFORE ANY RED IS DISCOUNTED:
-      (a) confirm `git diff --stat sprint-71-start..HEAD -- frontend/` is EMPTY
-      (b) re-run serialized: `npm test -- --no-file-parallelism` (~205s vs ~93s)
-    Record the discount on the board. NEVER discount silently.
-  no_predeclared_blast_radius: >-
-    plan-verification.md:19 -- AC must not pre-declare wiki blast radius; the mechanical sweep is
-    the sole decider. Run it after EACH story's last commit and take what it returns.
-  reverify_at_dispatch: >-
-    This session found STORY-178 and STORY-189(a) ALREADY FIXED, then the verifier refuted two of
-    v1's own price justifications. The gap between planning and dispatch is where claims die.
-    RE-VERIFY EVERY STORY AGAINST THE LIVE TREE AT DISPATCH.
+  - "STORY-221 MAY NOT REPRODUCE. 2-in-4 on 2026-08-06, 0-in-3 across sprint 71. An honest negative
+     is permitted by AC1 and must not be manufactured."
+  - "STORY-224 PUTS A NEW COMMAND IN FRONT OF EVERY FUTURE GATE RUN. If it is slow, flaky, or
+     sensitive to routine board bookkeeping, the cure is worse than the disease. AC5 proves both
+     directions; AC6 bounds runtime with a stated threshold."
+  - "STORY-173's REAPER CAN DESTROY THE GATE'S OWN CONTAINER (uptime_dynamo_8021, outside the
+     fixture's name pattern). AC2's three negatives are shown-RED requirements, not prose."
+  - "TWO OF FOUR STORIES CHANGE THE HARNESS THE GATE ITSELF RUNS ON (224, 173). The green baseline
+     below is what any later red is compared against."
+  - "SESSION CAPACITY. Sprint 71 ran 10 pts / 5 stories with the full loop and PAUSED mid-sprint on
+     the session limit. This is 9 pts / 4 stories with two review pairs -- deliberately lighter.
+     Still pre-empt the limit: pause with a committed handoff rather than dispatching a review pair
+     that may die mid-task. The measurement work is not the tax it looks like -- pytest 50s,
+     npm test 37s, so STORY-221's AC1+AC4 at 8 runs each is about 23 minutes, not an hour."
+  - "DO NOT PRE-DECLARE WIKI BLAST RADIUS (plan-verification.md:19). Run the sweep AFTER each
+     story's last commit and take what it returns."
+  - "RE-VERIFY EACH STORY AT DISPATCH. This planning found a discharged claim in STORY-186, a
+     discharged dependency in STORY-147, and drifted citations in both. The gap between planning and
+     dispatch is where claims die."
+
+baseline:
+  measured_at: "cc88d78, 2026-08-14, pre-lock verification"
+  tree: clean
+  pytest: "816 passed, 0 SKIPPED, 50.12s, exit 0 (DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, REQUIRE_DYNAMO=1)"
+  npm_test: "51 files / 363 tests, 37.02s, exit 0"
+  container: "uptime_dynamo_8021 Up, 127.0.0.1:8021->8000/tcp"
+  wiki: "sweep / facts / links / integrity all CLEAN"
+  note: >-
+    A nonzero SKIP count is an incomplete gate, not a pass. A full gate run at sprint-72-start is
+    required BEFORE STORY-224 or STORY-173 lands, so a later red has something to be compared to.
 
 gate:
-  commands: "8, per .scrum/definition-of-done.md, all must exit 0, run via yt_gate.py"
-  env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021 and REQUIRE_DYNAMO=1 on EVERY run"
-  skip_rule: "A nonzero SKIP count is an incomplete gate, NOT a pass."
-  known_defect: "STORY-178 is CLOSED (verified fixed 2026-08-13) -- yt_gate now exits 4 when --only matches nothing, and strips ANSI before slicing the tail."
-  baseline: >-
-    bfec505/7a82104: yt_selftest exit 0, ruff clean (260 files), yt_wiki sweep/facts/links/integrity
-    CLEAN exit 0 with the citation advisory at 146. Sprint-70 final gate 8/8, 800 passed / 0 skipped.
+  runner: "python .claude/skills/yourteam/scripts/yt_gate.py"
+  commands_at_lock: 8
+  scoping: >-
+    Mid-sprint per-story gates MAY be scoped with --only to the commands the story's diff can
+    affect. The FULL gate is mandatory and is the evidence of record at least once at sprint close
+    on the final HEAD.
+  dirty_tree: >-
+    yt_gate.py REFUSES a dirty tree with EXIT 3 -- except modified `.scrum/` paths, which A20
+    reports individually as orchestrator-owned and NOT gating. Commit orchestrator edits before
+    dispatching, or create only UNTRACKED files.
 
 standing:
-  publish_safety: >-
-    NEVER run `python -m src.composition.run` -- decide publishes recoveries with NO human gate, to
-    the LIVE public Statuspage. If create_app() is constructed, PIN CONFIG_DIR=config/demo.
-  fleet_sequencing: >-
-    *** STORY-175 (author the real multi-component topology) CANNOT ENTER A SPRINT BEFORE STORY-151
-    AND STORY-152 HAVE LANDED. *** decide publishes recoveries with no human gate and each signal
-    calls decide() INDEPENDENTLY for a shared component -- so on a fleet larger than one, a healthy
-    monitor OBSOLETEs a failing sibling's proposal and posts a FALSE ALL-CLEAR to the public page.
-    STORY-152 rides with it (completeness counts OBSERVED locations, so a dark location reads ~100%).
-    STORY-150 is NOT part of this gate -- it encodes a severity POLICY the inbound core requirements
-    may rewrite.
-  vendor_access_first_move: >-
-    WHEN DYNATRACE ACCESS LANDS, STORY-154 RUNS FIRST AND ALONE, BEFORE ANYTHING ELSE TOUCHES
-    INGEST. PROVISIONAL_STATUS_MAPPING's two pairs have NEVER BEEN OBSERVED; they are assumptions.
-  agent_evidence: "CHECKPOINT AGENT EVIDENCE OUTSIDE THE REPO, to the session scratchpad, AS YOU GO."
-  a19: "Every scratch `cd` is written `cd X || exit 1`. No tool relies on a --repo-root default pointing at the working tree."
-  import_root: >-
-    The editable install is a plain absolute sys.path entry: src.* resolves to the MAIN tree from any
-    worktree or scratch copy. Pin PYTHONPATH on the command and assert the resolved root.
-  device_guard: "Console-script shims blocked -- module form only (pytest, ruff, cfn-lint, lint-imports)."
-  git_guard: "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
-  scrum_ownership: ".scrum/ is orchestrator-owned; subagents NEVER write it."
-  window_check: "At every AGENT BOUNDARY, not per story. Pause with a committed handoff before the session limit bites."
+  - "SPRINTS 66-72 ALL STAY UNMERGED. Nothing touches main."
+  - "PUBLISH SAFETY: NEVER run `python -m src.composition.run` -- decide publishes recoveries with
+     NO human gate to the LIVE public Statuspage. CONFIG_DIR=config/demo on BOTH the loop and the
+     API process if either composition root is built."
+  - "STORY-175 CANNOT ENTER A SPRINT BEFORE STORY-151 AND STORY-152 LAND. When Dynatrace access
+     arrives, STORY-154 RUNS FIRST AND ALONE -- the two mapped failure pairs are UNVERIFIED
+     ASSUMPTIONS."
+  - "PO GRANTED STANDING SUBAGENT-DISPATCH AUTHORITY (2026-08-03). Do not re-ask. PO also directs
+     autonomous execution to review -- no mid-sprint check-ins, no AskUserQuestion."
+  - ".scrum/ IS ORCHESTRATOR-OWNED; subagents NEVER write it -- INCLUDING via git stash. That is
+     what STORY-222's implementer did, recorded as a MAJOR."
+  - "A19: every scratch `cd` written `cd X || exit 1`."
+  - "Console-script shims (pytest.exe, lint-imports.exe, cfn-lint.exe) are blocked by Windows
+     Device Guard -- module / entry-point form only."
+  - "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
+  - "npm test has a MEASURED 2-red-in-4 false-red rate (that is STORY-221, order 1). Until it
+     lands, both limbs before discounting any red: empty frontend diff AND a serialized re-run.
+     Never discount silently."
 
 owed_one_liners: >-
-  Two one-line skill fixes, to RIDE ALONG with any story rather than earn their own:
-  (1) test_backlog_story_parity.py:155 filters on status != "done" instead of the full closed set,
-  so the 22 stories archived on 2026-08-13 sit permanently in a "refinement should write one"
-  advisory. Reuse yt_board.py:68 CLOSED_STATUSES.
-  (2) a yt_selftest assertion `next_story_id > max(id in stories)`. The field has gone stale THREE
-  times; STORY-179's entry was ALSO found carrying no points key at all, only a "~2pts" comment.
+  Ride along with a story; do NOT make them stories.
+  1. test_backlog_story_parity.py:155 filters on status != "done" instead of the full closed set, so
+     archived stories sit permanently in a "refinement should write one" advisory (28 of them at
+     lock). Reuse yt_board.py:68 CLOSED_STATUSES. Natural home: STORY-224, which is already in that
+     module.
+  2. yt_board reports "board is current for sprint-42" -- 30 sprints stale. Noted at the sprint-72
+     standup, deliberately NOT filed as a story (equilibrium directive). Natural home: sprint close,
+     when yt_board.py regenerates BOARD.md anyway.

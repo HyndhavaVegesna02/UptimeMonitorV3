@@ -4,9 +4,9 @@ title: An entire second test suite exists and the DoD gate does not run it — 7
 type: defect
 points: 3
 status: ready
-refined: 2026-08-14   # sprint-72 planning; shape decided on measurement below. PENDING PO lock.
+refined: 2026-08-14   # sprint-72 planning; shape decided on measurement below. LOCKED into sprint 72 by the PO on 2026-08-14.
 filed: 2026-08-13
-sprint: null
+sprint: 72   # story 2 of 4
 ---
 
 ## Context

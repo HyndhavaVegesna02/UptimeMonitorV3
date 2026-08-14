@@ -4,9 +4,9 @@ title: The frontend gate can false-red under parallel file execution — Mainten
 type: defect
 points: 3
 status: ready
-refined: 2026-08-14   # sprint-72 planning; AC written from the measurements below. PENDING PO lock.
+refined: 2026-08-14   # sprint-72 planning; AC written from the measurements below. LOCKED into sprint 72 by the PO on 2026-08-14.
 filed: 2026-08-06
-sprint: null
+sprint: 72   # story 1 of 4
 ---
 
 ## Context

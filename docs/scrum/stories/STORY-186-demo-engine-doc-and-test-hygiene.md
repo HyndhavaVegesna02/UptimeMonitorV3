@@ -7,6 +7,7 @@ status: ready
 refined: 2026-07-30   # PO-approved `ready` at the sprint-64 refinement ("approve all five"); the
                       # frontmatter was never updated to match, which the sprint-65 plan-verifier
                       # caught as a Definition-of-Ready failure. Recorded here, not re-approved.
+sprint: 72   # story 4 of 4 and the DECLARED FIRST-TO-DROP. Citations re-verified 2026-08-14.
 ---
 
 > **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.** The conflict that caused

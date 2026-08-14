@@ -4,9 +4,9 @@ title: A killed pytest run leaks its DynamoDB Local container and stalls the nex
 type: defect
 points: 2
 status: ready
-refined: 2026-08-14   # sprint-72 planning; placement decided on measurement below. PENDING PO lock.
+refined: 2026-08-14   # sprint-72 planning; placement decided on measurement below. LOCKED into sprint 72 by the PO on 2026-08-14.
 filed: 2026-07-28
-sprint: null
+sprint: 72   # story 3 of 4
 ---
 
 ## Context

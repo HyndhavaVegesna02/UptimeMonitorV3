@@ -7,7 +7,16 @@ would put the sprint on a commit where its own plan does not exist. · **Committ
 **Mode:** in-process
 
 **Status: v2 — pre-lock verification RAN and returned FIX-THEN-PROCEED (3 CRITICAL, 6 MAJOR,
-9 MINOR). All are resolved below. Awaiting PO lock.**
+9 MINOR). All are resolved below. LOCKED by the PO on 2026-08-14 ("lock it") — branch `sprint-72`
+cut from `sprint-71` HEAD `9c68b97`, tagged `sprint-72-start`. Scope is frozen.**
+
+**One change made AT the lock, not during planning:** `next_story_id` was bumped **225 → 226** in
+the lock commit rather than inside STORY-224. The plan had it riding along with that story's DoD
+line; it moved earlier because it is a straight correctness fix independent of it — `STORY-225`
+already exists as both a backlog entry and a story file, so the counter would have collided on the
+next filing. **Consequence for STORY-224: its AC8 assertion is now GREEN at dispatch instead of
+RED**, so the implementer adds the assertion only, must not edit `.scrum/backlog.yaml`, and takes
+AC8's shown-RED from a scratch-clone mutation of the counter.
 
 ## Goal
 
