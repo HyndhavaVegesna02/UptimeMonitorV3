@@ -24,8 +24,14 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import yt_selftest  # noqa: E402
 
-YT_SELFTEST_PATH = Path(__file__).resolve().parents[1] / "yt_selftest.py"
+REAL_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+YT_SELFTEST_PATH = REAL_SCRIPTS_DIR / "yt_selftest.py"
 REAL_TESTS_DIR = Path(__file__).resolve().parent
+#: .../skills/yourteam -- the whole skill, not just scripts/. test_template_parity.py
+#: reaches sideways into `SKILL / "templates"`, so a copy of `scripts/` ALONE fails
+#: it for a reason that has nothing to do with a dropped module (measured: 1 real
+#: failure + 6 real errors from missing siblings, in a first version of this proof).
+REAL_SKILL_DIR = Path(__file__).resolve().parents[2]
 
 #: `unittest.discover` caches imported module NAMES process-wide, so two
 #: separate tempdirs each holding a `test_m0.py` collide the second time
@@ -56,28 +62,33 @@ class ModuleDiscoveryFunctionsTests(unittest.TestCase):
             len(modules), yt_selftest.MIN_TEST_MODULES, sorted(modules)
         )
 
-    def test_seven_synthetic_modules_are_all_discovered(self) -> None:
+    def test_synthetic_modules_at_the_floor_are_all_discovered(self) -> None:
         with tempfile.TemporaryDirectory() as td:
             tests_dir = Path(td)
             (tests_dir / "__init__.py").write_text("", encoding="utf-8")
-            for _ in range(7):
+            for _ in range(yt_selftest.MIN_TEST_MODULES):
                 _write_passing_module(tests_dir, "m")
             modules = yt_selftest.discovered_test_modules(tests_dir)
-            self.assertEqual(len(modules), 7, sorted(modules))
+            self.assertEqual(
+                len(modules), yt_selftest.MIN_TEST_MODULES, sorted(modules)
+            )
 
     def test_a_module_renamed_out_of_the_pattern_silently_drops_the_count(self) -> None:
         """This IS the defect AC4 guards -- discovery itself never errors."""
         with tempfile.TemporaryDirectory() as td:
             tests_dir = Path(td)
             (tests_dir / "__init__.py").write_text("", encoding="utf-8")
-            names = [_write_passing_module(tests_dir, "m") for _ in range(7)]
-            self.assertEqual(len(yt_selftest.discovered_test_modules(tests_dir)), 7)
+            floor = yt_selftest.MIN_TEST_MODULES
+            names = [_write_passing_module(tests_dir, "m") for _ in range(floor)]
+            self.assertEqual(len(yt_selftest.discovered_test_modules(tests_dir)), floor)
 
             last = names[-1]
             # Renamed OUT of the `test_*.py` glob -- a real "no longer discovered",
             # not just a differently-named module that discovery still finds.
             (tests_dir / f"{last}.py").rename(tests_dir / "dropped_not_a_test_file.py")
-            self.assertEqual(len(yt_selftest.discovered_test_modules(tests_dir)), 6)
+            self.assertEqual(
+                len(yt_selftest.discovered_test_modules(tests_dir)), floor - 1
+            )
 
 
 class MainExitCodeTests(unittest.TestCase):
@@ -99,7 +110,7 @@ class MainExitCodeTests(unittest.TestCase):
         return root / "yt_selftest.py"
 
     def test_at_the_floor_passes_and_exits_0(self) -> None:
-        script = self._scratch_script(7)
+        script = self._scratch_script(yt_selftest.MIN_TEST_MODULES)
         proc = subprocess.run(
             [sys.executable, str(script)],
             cwd=script.parent,
@@ -110,7 +121,8 @@ class MainExitCodeTests(unittest.TestCase):
 
     def test_one_module_short_of_the_floor_exits_nonzero_and_says_why(self) -> None:
         """AC4 shown RED: a silent drop must fail the RUN, not just note it."""
-        script = self._scratch_script(6)
+        short = yt_selftest.MIN_TEST_MODULES - 1
+        script = self._scratch_script(short)
         proc = subprocess.run(
             [sys.executable, str(script)],
             cwd=script.parent,
@@ -119,7 +131,39 @@ class MainExitCodeTests(unittest.TestCase):
         )
         combined = proc.stdout + proc.stderr
         self.assertNotEqual(proc.returncode, 0, combined)
-        self.assertIn("6 test module", combined)
+        self.assertIn(f"{short} test module", combined)
+
+
+class RealTestsDirDriftTests(unittest.TestCase):
+    """STORY-224 fix round, MAJOR 1 (both reviewers, independently).
+
+    The synthetic exactly-N/N-1 fixtures above pin the MECHANISM but were the
+    ONLY proof offered for AC4's shown-RED, and both reviewers found that
+    `MIN_TEST_MODULES = 7` was already one behind the REAL tree (8 modules
+    after this story added `test_yt_selftest.py` itself) -- so the actual
+    failure mode neither review needed to imagine, dropping this suite's own
+    file, passed silently: `Ran 94 tests ... OK`, exit 0, with every test of
+    the AC4 mechanism itself gone. This copies the REAL `scripts/` directory
+    (not a synthetic fixture) and drops `test_yt_selftest.py` from the copy.
+    """
+
+    def test_dropping_test_yt_selftest_py_itself_reds_the_real_tree(self) -> None:
+        with tempfile.TemporaryDirectory() as td:
+            scratch_skill = Path(td) / "yourteam"
+            shutil.copytree(
+                REAL_SKILL_DIR,
+                scratch_skill,
+                ignore=shutil.ignore_patterns("__pycache__"),
+            )
+            (scratch_skill / "scripts" / "tests" / "test_yt_selftest.py").unlink()
+            proc = subprocess.run(
+                [sys.executable, str(scratch_skill / "scripts" / "yt_selftest.py")],
+                cwd=scratch_skill / "scripts",
+                capture_output=True,
+                text=True,
+            )
+            combined = proc.stdout + proc.stderr
+            self.assertNotEqual(proc.returncode, 0, combined)
 
 
 if __name__ == "__main__":

@@ -22,8 +22,14 @@ from pathlib import Path
 #: test, but a rename or a file falling outside the `test_*.py` glob makes
 #: the count drop with no error at all. Once this script is a gate command
 #: (AC1), that silent drop must fail the RUN, not just change what the next
-#: standup happens to see. 7 is the module count at STORY-224 refinement.
-MIN_TEST_MODULES = 7
+#: standup happens to see.
+#: CORRECTED 7 -> 8 at review (fix round, MAJOR 1, both reviewers independently):
+#: 7 was the count when this story was REFINED, but the story's OWN diff added
+#: an 8th module (`test_yt_selftest.py`), so the constant was invalidated by the
+#: same diff that wrote it. At 7, dropping `test_yt_selftest.py` itself -- the
+#: file containing every test of THIS mechanism -- left 7 real modules >= 7,
+#: exiting 0 on exactly the failure mode this floor exists to catch.
+MIN_TEST_MODULES = 8
 
 
 def _module_names(suite: unittest.TestSuite) -> set[str]:
