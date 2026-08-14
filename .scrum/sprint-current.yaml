@@ -227,7 +227,7 @@ board:
     title: The 7 skill-test modules join the DoD gate
     points: 3
     order: 2
-    status: in_progress
+    status: done
     dispatch_reverify: >-
       RE-VERIFIED AT DISPATCH 2026-08-14 at 9f9ee79 (plan risk 7), everything holds:
       SEVEN test modules under .claude/skills/yourteam/scripts/tests/ (test_backlog_story_parity,
@@ -367,6 +367,74 @@ board:
       the reuse is replaced by a copied literal (verified by mutation) -- the name promises a
       property nothing pins; and test_yt_selftest.py:92 leaks 2 temp dirs per gate run (measured
       78 -> 80), now on every run forever.
+    spec_review: >-
+      **FAIL** on round 1 -- AC1 and AC4 NOT MET, AC9 PARTIAL. The other seven AC were each
+      independently reproduced, nothing accepted on report. AC3 is the most thoroughly verified: it
+      ran TWO complete real 9-command gates in scratch clones -- committed mutation gives commands
+      1-8 PASS and command 9/9 FAIL(1), overall exit 1; uncommitted gives exit 3 "REFUSING dirty
+      tree". AC8's RED reproduced verbatim at 9c68b97 ("225 not greater than 225") and it confirmed
+      the orchestrator did the counter bump at bb480d1 -- correct actor, correct sequencing.
+      *** IT FOUND THE MIN_TEST_MODULES DEFECT INDEPENDENTLY, before seeing the quality review, and
+      by the same method: delete test_yt_selftest.py in a scratch clone -> exit 0, "OK". *** It also
+      caught that AC4's claimed shown-RED was true only against SYNTHETIC exactly-7/exactly-6
+      fixtures (test_yt_selftest.py:59-80), never against the real tree.
+      AC1 NOT MET on the actor rule, with the reasoning stated cleanly: the STORY-222 precedent is a
+      STANDING constraint, not one scoped to the original stash incident, and "if the plan and the
+      AC disagree, the AC wins, and that conflict is itself a finding".
+    fix_round: >-
+      ALL RESOLVED at 869ae27 -- 6 commits (2991624 CRITICAL, 43f63f1 MAJOR 1, 3aece2d MAJOR 2,
+      0206132 MAJOR 3, e4ece49 + 869ae27 MINORs), plus 57ef6da by the ORCHESTRATOR for the .scrum/
+      half of MAJOR 2.
+      *** THE CRITICAL FIX, AND IT SATISFIES BOTH HORNS INSTEAD OF CHOOSING ONE: the two
+      .scrum/-reading suites now read committed HEAD (`git show HEAD:<path>` / `git ls-tree HEAD`),
+      falling back to the working tree only outside a git repo. *** The gate stamps its evidence
+      with a commit, so its inputs are now that commit. The implementer was invited to argue against
+      this direction and reported it could not find a reason to. yt_gate.py:116-136 and
+      test_scrum_encoding.py's docstring -- both of which asserted the opposite of reality -- were
+      corrected with it.
+      MAJOR 1's re-proof now copies the REAL .claude/skills/yourteam/ tree rather than a synthetic
+      fixture: an early draft copying only scripts/ produced 1 failure + 6 errors from missing
+      siblings like templates/, "proving nothing". The synthetic exactly-N fixtures now DERIVE N
+      from yt_selftest.MIN_TEST_MODULES so they cannot drift from the constant again.
+      MINOR: the reuse test was renamed honestly and a monkeypatch test added that actually proves
+      delegation, shown RED against the reviewer's exact literal-copy mutation.
+    orchestrator_independent_verification_of_the_fix: >-
+      *** I REPRODUCED THE CRITICAL SCENARIO MYSELF IN A SCRATCH CLONE RATHER THAN ACCEPTING THE
+      FIX ON REPORT, and BOTH properties hold simultaneously -- which is the whole point: ***
+      (1) SOUNDNESS RESTORED: violation COMMITTED at 9405ce5, then reverted in the WORKING TREE ONLY
+      -> self-test STILL exit 1, failing test_every_file_pointer_resolves against the committed
+      content. Pre-fix this exact sequence produced GREEN evidence stamped at that red commit.
+      (2) A20's INTENT PRESERVED: clean HEAD 869ae27 with a violation introduced UNCOMMITTED ->
+      exit 0, 108 tests OK. An orchestrator's mid-edit still cannot red an agent's gate, and no
+      exit-3 box was reintroduced.
+      (3) MAJOR 1 re-verified by dropping test_yt_selftest.py itself against the real tree -> exit 1
+      with a message naming all 7 survivors and the expected floor of 8 (A12: the message is part of
+      the guard). That case was exit 0 before the fix.
+      Scratch clone removed; live tree verified clean, `git worktree list` shows only the main tree.
+    final_gate: >-
+      FULL 9-COMMAND GATE AT 869ae27: **9/9 PASS, exit 0.** pytest 816 passed / 0 SKIPPED / 55.43s;
+      import-linter 151 files, 432 dependencies, contracts 9 kept / 0 broken; ruff check + format
+      clean; cfn-lint clean; npm test 51 files / 363 tests / 46.75s; build + lint clean; yt_selftest
+      108 tests OK.
+      Wiki sweep after the last commit: CLEAN.
+      *** FIRST GATE RUN IN THIS PROJECT'S HISTORY THAT READS 9/9. ***
+      COST FLAGGED BY THE IMPLEMENTER, HONESTLY: yt_selftest went ~5.8s -> ~8.0-10.7s because the
+      new committed-HEAD tests spawn real `git` subprocesses per test. Still well under AC6's 15s
+      bound, but it is the direction to watch if more .scrum/-reading suites get the same treatment.
+    verdict: >-
+      DONE, 3 points, with ONE DISCLOSED AC FAILURE THE PO MUST RULE ON.
+      *** AC1 REMAINS NOT MET AND CANNOT BE CURED RETROACTIVELY: commit 3a4c8ac edits
+      .scrum/definition-of-done.md, which AC1 assigns to the orchestrator, because MY DISPATCH BRIEF
+      INSTRUCTED IT -- in the same message that told the implementer the story file wins on any
+      disagreement. *** The implementer flagged the contradiction and disclosed its reasoning rather
+      than silently choosing, which is the behaviour we want. The risk the AC guards against did NOT
+      materialise (only that one file; no git stash; backlog.yaml and sprint-current.yaml untouched),
+      and every .scrum/ edit after the finding was made by me. PO options at review: accept with the
+      disclosure recorded, or require AC1 amended -- the spec reviewer's point stands that such an
+      amendment must be made to the AC, not assumed by a brief.
+      Everything else is met and independently reproduced, and the story is materially BETTER than
+      it was at first submission: it went in adding a gate command and came out having exposed and
+      fixed a soundness break in the gate runner itself.
     open_finding_zone_rules_907: >-
       *** A `verified` MAP ARTICLE NOW CONTAINS A FALSE STATEMENT, AND THE SWEEP CANNOT SEE IT. ***
       zone-rules.md:907 says ENFORCED-BY means a guard "runs inside the existing EIGHT DoD
