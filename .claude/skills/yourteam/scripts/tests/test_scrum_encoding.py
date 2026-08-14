@@ -5,10 +5,18 @@ layout. Where a project has no `.scrum/` (fresh checkout, partial adoption),
 the check skips cleanly.
 
 WHY THIS EXISTS (STORY-188, sprint-65). `.scrum/` is read and rewritten by
-every session, but NO gate command reads it -- the DoD's commands are all
-test/lint/build tools pointed at source and infrastructure. So an encoding
-defect there is invisible to the entire mechanical floor and can only be
-caught by a human reading a diff.
+every session. Originally NO gate command read it -- the DoD's commands were
+all test/lint/build tools pointed at source and infrastructure -- so an
+encoding defect there was invisible to the entire mechanical floor and could
+only be caught by a human reading a diff.
+
+CORRECTED (STORY-224 fix round, 2026-08-14): THIS test now IS a gate command
+-- `yt_selftest.py` joined the DoD as its 9th command, and this module is one
+of the suites it runs. That is what surfaced the CRITICAL this module also
+fixes: reading the .scrum/ WORKING TREE from inside a gate command breaks the
+soundness of the gate's own "commit: X" evidence stamp (see
+`committed_or_working_scrum_files` below). This module reads the COMMITTED
+tree at HEAD now, not the working tree, for exactly that reason.
 
 It is not hypothetical. Two distinct corruptions accumulated undetected in
 one project's `.scrum/`:
@@ -32,6 +40,8 @@ be perfectly valid UTF-8 and still be full of `U+FFFD`.
 
 from __future__ import annotations
 
+import subprocess
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -51,16 +61,71 @@ def project_root() -> Path | None:
     return None
 
 
-def scrum_text_files(root: Path) -> list[Path]:
+def _is_git_repo(root: Path) -> bool:
+    return (root / ".git").exists()
+
+
+def _skip(rel_path: str) -> bool:
+    p = Path(rel_path)
+    if p.suffix.lower() in SKIP_SUFFIXES:
+        return True
+    return any(part in SKIP_DIR_NAMES for part in p.parts)
+
+
+def committed_or_working_scrum_files(root: Path) -> list[tuple[str, bytes]]:
+    """[(relative_posix_path, content_bytes)] for every `.scrum/` text file.
+
+    CRITICAL, STORY-224 fix round (both reviewers). This suite is now a gate
+    command, so `yt_gate.py`'s A20 premise -- "`.scrum/` is read by NO gate
+    command" -- is false for it. Walking the WORKING TREE let an uncommitted
+    `.scrum/` edit change a result stamped `commit: X` in either direction: a
+    real mojibake byte committed at X could be masked by an uncommitted
+    working-tree fix ("dirty-tree-green" evidence -- demonstrated by the
+    quality reviewer in a scratch repo), or the orchestrator's continuous,
+    concurrent `.scrum/` edits (made even WHILE an agent's gate run is in
+    flight) could red an unrelated agent's run -- precisely the box A20
+    exists to remove.
+
+    Reading the COMMITTED tree at HEAD instead makes `commit: X` in the
+    gate's evidence mean what it says (soundness), and keeps A20's original
+    intent (an uncommitted `.scrum/` edit cannot perturb a gate result) --
+    both properties at once, with no exit-3 dirty-tree box reintroduced.
+
+    Falls back to a working-tree walk OUTSIDE a git repository (no `.git`),
+    so this module stays usable in a non-git checkout -- generic by
+    construction, same as the rest of this suite.
+    """
+    if _is_git_repo(root):
+        proc = subprocess.run(
+            ["git", "ls-tree", "-r", "--name-only", "HEAD", "--", ".scrum"],
+            cwd=root,
+            capture_output=True,
+            timeout=30,
+        )
+        if proc.returncode != 0:
+            return []
+        files = []
+        for rel in sorted(proc.stdout.decode("utf-8", errors="replace").splitlines()):
+            rel = rel.strip()
+            if not rel or _skip(rel):
+                continue
+            show = subprocess.run(
+                ["git", "show", f"HEAD:{rel}"],
+                cwd=root,
+                capture_output=True,
+                timeout=30,
+            )
+            if show.returncode == 0:
+                files.append((rel, show.stdout))
+        return files
     files = []
     for p in sorted((root / ".scrum").rglob("*")):
         if not p.is_file():
             continue
-        if p.suffix.lower() in SKIP_SUFFIXES:
+        rel = p.relative_to(root).as_posix()
+        if _skip(rel):
             continue
-        if any(part in SKIP_DIR_NAMES for part in p.parts):
-            continue
-        files.append(p)
+        files.append((rel, p.read_bytes()))
     return files
 
 
@@ -71,13 +136,13 @@ class ScrumEncodingTests(unittest.TestCase):
         if root is None:
             self.skipTest("no enclosing project with a .scrum/ directory")
         offenders = []
-        for p in scrum_text_files(root):
+        for rel, data in committed_or_working_scrum_files(root):
             try:
-                p.read_bytes().decode("utf-8")
+                data.decode("utf-8")
             except UnicodeDecodeError as exc:
                 offenders.append(
-                    f"{p.relative_to(root).as_posix()}: {exc.reason} "
-                    f"at byte {exc.start} ({hex(exc.object[exc.start])})"
+                    f"{rel}: {exc.reason} at byte {exc.start} "
+                    f"({hex(exc.object[exc.start])})"
                 )
         self.assertEqual(
             [],
@@ -93,14 +158,14 @@ class ScrumEncodingTests(unittest.TestCase):
         if root is None:
             self.skipTest("no enclosing project with a .scrum/ directory")
         offenders = []
-        for p in scrum_text_files(root):
+        for rel, data in committed_or_working_scrum_files(root):
             try:
-                text = p.read_bytes().decode("utf-8")
+                text = data.decode("utf-8")
             except UnicodeDecodeError:
                 continue  # reported by the sibling test; not double-counted here
             count = text.count(REPLACEMENT_CHAR)
             if count:
-                offenders.append(f"{p.relative_to(root).as_posix()}: {count}")
+                offenders.append(f"{rel}: {count}")
         self.assertEqual(
             [],
             offenders,
@@ -109,6 +174,68 @@ class ScrumEncodingTests(unittest.TestCase):
             "recovered from the file. Restore from git history:\n  "
             + "\n  ".join(offenders),
         )
+
+
+def _init_git_repo(root: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@t"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "t"], cwd=root, check=True, capture_output=True
+    )
+
+
+def _commit_all(root: Path, message: str) -> None:
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", message],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+
+
+class CommittedHeadReadTests(unittest.TestCase):
+    """CRITICAL, STORY-224 fix round -- same reasoning as
+    `test_backlog_story_parity.py::CommittedHeadReadTests`.
+
+    Falsified by: a committed-vs-working-tree divergence producing the
+    working tree's answer instead of the committed one.
+    """
+
+    def _repo(self, filename: str, content: bytes) -> Path:
+        root = Path(tempfile.mkdtemp())
+        _init_git_repo(root)
+        (root / ".scrum").mkdir()
+        (root / ".scrum" / filename).write_bytes(content)
+        _commit_all(root, "init")
+        return root
+
+    def test_uncommitted_mojibake_is_not_seen(self) -> None:
+        root = self._repo("x.md", b"clean ascii text\n")
+        # Dirty the working tree only, with the EXACT byte STORY-188 chased --
+        # deliberately NOT committed.
+        (root / ".scrum" / "x.md").write_bytes(b"an em dash \x97 written wrong\n")
+        files = dict(committed_or_working_scrum_files(root))
+        self.assertEqual(files[".scrum/x.md"], b"clean ascii text\n")
+
+    def test_a_committed_mojibake_byte_IS_seen(self) -> None:
+        root = self._repo("x.md", b"clean ascii text\n")
+        (root / ".scrum" / "x.md").write_bytes(b"an em dash \x97 written wrong\n")
+        _commit_all(root, "corrupt")
+        files = dict(committed_or_working_scrum_files(root))
+        self.assertEqual(files[".scrum/x.md"], b"an em dash \x97 written wrong\n")
+
+    def test_non_git_directory_falls_back_to_the_working_tree(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        (root / ".scrum").mkdir()
+        (root / ".scrum" / "x.md").write_bytes(b"hello\n")
+        files = dict(committed_or_working_scrum_files(root))
+        self.assertEqual(files[".scrum/x.md"], b"hello\n")
 
 
 if __name__ == "__main__":

@@ -113,15 +113,32 @@ def git(root: Path, *args: str) -> str:
     return out.stdout.strip()
 
 
-#: Paths owned by the orchestrator, not by any agent, and read by NO gate command.
-#: A20 (sprint-71 retro): their state cannot affect a gate result, so refusing on
-#: them bought nothing — while the orchestrator edits them CONTINUOUSLY, including
-#: while an agent runs. That combination left an agent needing clean-tree evidence
-#: with no sanctioned move, and TWO agents in one sprint independently reached for
-#: `git stash` to escape it. One stashed the orchestrator's board file; the other
-#: popped an unrelated 2026-07-14 stash and left merge-conflict markers across three
+#: Paths owned by the orchestrator, not by any agent, and exempted from the
+#: dirty-tree refusal below. A20 (sprint-71 retro): an orchestrator's edit to
+#: these paths must not force an agent into a `git stash` corner, since the
+#: orchestrator edits them CONTINUOUSLY, including while an agent runs. That
+#: combination left an agent needing clean-tree evidence with no sanctioned
+#: move, and TWO agents in one sprint independently reached for `git stash`
+#: to escape it. One stashed the orchestrator's board file; the other popped
+#: an unrelated 2026-07-14 stash and left merge-conflict markers across three
 #: `backend/src/` files mid-sprint. Neither was careless — they were boxed in.
 #: This removes the incentive; the "never write .scrum/" prohibition stays.
+#:
+#: CORRECTED (STORY-224 fix round, 2026-08-14): this comment used to claim
+#: "`.scrum/` is read by NO gate command" — STORY-224 made that FALSE by
+#: adding a 9th command (`yt_selftest.py`), two of whose suites
+#: (`test_backlog_story_parity.py`, `test_scrum_encoding.py`) read `.scrum/`.
+#: A20's SAFETY still holds, but no longer because nothing reads these paths
+#: — it holds because those two suites read the COMMITTED tree at HEAD, not
+#: the working tree (see `read_committed_scrum_file` /
+#: `committed_or_working_scrum_files` in that pair of test modules), so an
+#: uncommitted `.scrum/` edit — exempted here from the dirty check — cannot
+#: change what a gate run stamped `commit: X` actually sees. Any FUTURE
+#: `.scrum/`-reading check added without that same committed-HEAD discipline
+#: reopens the hole this exemption depends on: a result stamped `commit: X`
+#: could reflect a working-tree state `X` never contained ("dirty-tree-green"
+#: evidence — demonstrated in the STORY-224 fix round before the read was
+#: corrected).
 _ORCHESTRATOR_OWNED_PREFIXES = (".scrum/",)
 
 

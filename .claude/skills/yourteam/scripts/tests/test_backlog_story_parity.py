@@ -33,7 +33,9 @@ the kind of gap a mechanical check should catch instead of a human.
 from __future__ import annotations
 
 import re
+import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -51,17 +53,63 @@ def project_root() -> Path | None:
     return None
 
 
+def _is_git_repo(root: Path) -> bool:
+    return (root / ".git").exists()
+
+
+def read_committed_scrum_file(root: Path, rel_path: str):
+    """Text of a `.scrum/` file as COMMITTED at HEAD, or None if unreadable.
+
+    CRITICAL, STORY-224 fix round (both reviewers). This suite is now a gate
+    command (AC1), so `yt_gate.py`'s A20 premise -- "`.scrum/` is read by NO
+    gate command" -- is false for it. Reading the WORKING TREE let an
+    uncommitted `.scrum/` edit change a result stamped `commit: X` in either
+    direction: a real defect committed at X could be masked by an
+    uncommitted working-tree fix ("dirty-tree-green" evidence -- demonstrated
+    by the quality reviewer in a scratch repo), or the orchestrator's
+    continuous, concurrent `.scrum/` edits (made even WHILE an agent's gate
+    run is in flight) could red an unrelated agent's run -- precisely the box
+    A20 exists to remove.
+
+    Reading the COMMITTED blob instead makes `commit: X` in the gate's
+    evidence mean what it says (soundness), and keeps A20's original intent
+    (an uncommitted `.scrum/` edit cannot perturb a gate result) -- both
+    properties at once, with no exit-3 dirty-tree box reintroduced.
+
+    Falls back to a plain working-tree read OUTSIDE a git repository (no
+    `.git`), so this module stays usable in a non-git checkout -- this suite
+    is generic by construction. A path not tracked at HEAD (inside a git
+    repo) is treated as absent, not as "read the working tree instead": a
+    file that exists only in the working tree has not been committed, so it
+    is not part of "what commit X contains" either.
+    """
+    if _is_git_repo(root):
+        proc = subprocess.run(
+            ["git", "show", f"HEAD:{rel_path}"],
+            cwd=root,
+            capture_output=True,
+            timeout=30,
+        )
+        if proc.returncode != 0:
+            return None
+        return proc.stdout.decode("utf-8", errors="replace")
+    path = root / rel_path
+    if not path.is_file():
+        return None
+    return path.read_text(encoding="utf-8", errors="replace")
+
+
 def load_backlog(root: Path):
     """Return the backlog's story list, or None when it cannot be read.
 
     Uses PyYAML when available and falls back to a line scan otherwise, so the
     check still works in a stdlib-only environment (the rest of this suite is
-    stdlib-only by rule).
+    stdlib-only by rule). Reads the COMMITTED `.scrum/backlog.yaml` -- see
+    `read_committed_scrum_file`.
     """
-    path = root / ".scrum" / "backlog.yaml"
-    if not path.is_file():
+    text = read_committed_scrum_file(root, ".scrum/backlog.yaml")
+    if text is None:
         return None
-    text = path.read_text(encoding="utf-8", errors="replace")
     try:
         import yaml  # type: ignore
 
@@ -94,12 +142,12 @@ def load_next_story_id(root: Path):
     """Return the backlog's `next_story_id`, or None when it cannot be read.
 
     Same PyYAML-with-fallback shape as `load_backlog` -- this suite stays
-    stdlib-only-capable.
+    stdlib-only-capable. Reads the COMMITTED `.scrum/backlog.yaml` -- see
+    `read_committed_scrum_file`.
     """
-    path = root / ".scrum" / "backlog.yaml"
-    if not path.is_file():
+    text = read_committed_scrum_file(root, ".scrum/backlog.yaml")
+    if text is None:
         return None
-    text = path.read_text(encoding="utf-8", errors="replace")
     try:
         import yaml  # type: ignore
 
@@ -288,6 +336,93 @@ class NextStoryIdCounterTests(unittest.TestCase):
 
     def test_empty_story_list_has_max_id_zero(self) -> None:
         self.assertEqual(max_filed_story_id([]), 0)
+
+
+def _init_git_repo(root: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "config", "user.email", "t@t"],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "t"], cwd=root, check=True, capture_output=True
+    )
+
+
+def _commit_all(root: Path, message: str) -> None:
+    subprocess.run(["git", "add", "-A"], cwd=root, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-q", "-m", message],
+        cwd=root,
+        check=True,
+        capture_output=True,
+    )
+
+
+class CommittedHeadReadTests(unittest.TestCase):
+    """CRITICAL, STORY-224 fix round (both reviewers).
+
+    This suite is now a gate command (AC1), so `yt_gate.py`'s A20 premise --
+    "`.scrum/` is read by NO gate command" -- is false for it. Reading the
+    WORKING TREE let an uncommitted `.scrum/` edit change a result stamped
+    `commit: X` in either direction: a real defect committed at X could be
+    masked by an uncommitted working-tree fix (dirty-tree-green evidence,
+    demonstrated by the quality reviewer), or the orchestrator's continuous,
+    concurrent `.scrum/` edits could red an unrelated agent's run -- exactly
+    the box A20 exists to remove. `load_backlog`/`load_next_story_id` now
+    read the COMMITTED blob at HEAD, falling back to the working tree only
+    outside a git repository.
+
+    Falsified by: a committed-vs-working-tree divergence producing the
+    working tree's answer instead of the committed one.
+    """
+
+    def _repo(self, backlog_text: str) -> Path:
+        root = Path(tempfile.mkdtemp())
+        _init_git_repo(root)
+        (root / ".scrum").mkdir()
+        (root / ".scrum" / "backlog.yaml").write_text(backlog_text, encoding="utf-8")
+        _commit_all(root, "init")
+        return root
+
+    def test_uncommitted_edit_does_not_change_the_result(self) -> None:
+        root = self._repo("next_story_id: 5\nstories: []\n")
+        # Dirty the working tree only -- deliberately NOT committed.
+        (root / ".scrum" / "backlog.yaml").write_text(
+            "next_story_id: 999\nstories: []\n", encoding="utf-8"
+        )
+        self.assertEqual(load_next_story_id(root), 5)
+
+    def test_uncommitted_edit_does_not_change_the_stories_list_either(self) -> None:
+        root = self._repo(
+            "next_story_id: 2\nstories:\n  - id: STORY-001\n    file: null\n"
+        )
+        (root / ".scrum" / "backlog.yaml").write_text(
+            "next_story_id: 2\nstories:\n"
+            "  - id: STORY-001\n    file: null\n"
+            "  - id: STORY-999\n    file: null\n",
+            encoding="utf-8",
+        )
+        stories = load_backlog(root)
+        self.assertEqual([s["id"] for s in stories], ["STORY-001"])
+
+    def test_a_committed_edit_IS_seen(self) -> None:
+        root = self._repo("next_story_id: 5\nstories: []\n")
+        (root / ".scrum" / "backlog.yaml").write_text(
+            "next_story_id: 6\nstories: []\n", encoding="utf-8"
+        )
+        _commit_all(root, "bump")
+        self.assertEqual(load_next_story_id(root), 6)
+
+    def test_non_git_directory_falls_back_to_the_working_tree(self) -> None:
+        root = Path(tempfile.mkdtemp())
+        (root / ".scrum").mkdir()
+        (root / ".scrum" / "backlog.yaml").write_text(
+            "next_story_id: 42\nstories: []\n", encoding="utf-8"
+        )
+        self.assertEqual(load_next_story_id(root), 42)
 
 
 if __name__ == "__main__":
