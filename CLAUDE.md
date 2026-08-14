@@ -201,8 +201,9 @@ worktree's code (`tools/import_provenance.py::assert_import_root`).
   `python -c "from cfnlint.runner import main; main()" infra/stack.yaml`
 - **Frontend (3, from `frontend/`):** `npm test`, `npm run build`, `npm run lint`
 - **Skill self-test (1):** `python .claude/skills/yourteam/scripts/yt_selftest.py` — runs the
-  seven `.claude/skills/yourteam/scripts/tests/` modules that gate the skill's own enforcement
-  scripts (STORY-224, sprint 72). Runs from the repo root, not `frontend/`.
+  eight `.claude/skills/yourteam/scripts/tests/` modules that gate the skill's own enforcement
+  scripts (STORY-224, sprint 72; corrected from "seven" at review — the story itself added the
+  eighth, `test_yt_selftest.py`). Runs from the repo root, not `frontend/`.
 
 `lint-imports` enforces nine zone contracts (STORY-206 added `inbound-adapters-dont-persist`,
 ZR-1's guard); `ruff` covers style, import sorting and formatting; `cfn-lint` validates the
