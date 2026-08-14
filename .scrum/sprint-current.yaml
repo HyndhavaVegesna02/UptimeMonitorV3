@@ -458,7 +458,63 @@ board:
     title: Reap the leaked DynamoDB Local container at session start
     points: 2
     order: 3
-    status: in_progress
+    status: done
+    commits: >-
+      e775fed (AC1), 2d5fc36 (AC2), 6554f28 (AC3), db55c7e (AC4), 5d317e5 (AC5), 11f897a (retire the
+      STORY-179 comment), 4b5ee5b (AC6 end-to-end), ddc889a (story file). 698 insertions across
+      3 files: scripts/dynamo_local.py (+196), backend/tests/test_dynamo_local.py (+465, 19 new
+      tests -> 35 in the file), and the story file. `.scrum/` UNTOUCHED.
+    implementer_report: >-
+      PLACEMENT IS CORRECT AND DOCUMENTED AS SUCH: `reap()` is the FIRST STATEMENT of
+      resolve_dynamo, and the docstring now carries it as "step 0 ... BEFORE step 1, deliberately",
+      naming STORY-179's AC8 trap as the reason. The injection seam AC3 demanded was added and
+      named: `reap: Callable[[], list[str]] | None = None`, keyword-only, falling back to the
+      module-level implementation, documented in the docstring exactly as the three existing
+      parameters are.
+      MUTATION PROOFS, all reverted with an empty `git diff` verified each time: AC1 RED before any
+      code existed (AttributeError); AC2(c) RED when stop_container's name arg was replaced with
+      "*"; AC4 3/5 RED with all try/except removed; AC5 3/6 RED against a POSIX-only
+      `except ProcessLookupError`.
+      *** AN INCONVENIENT TRUTH IT WENT AND FOUND, NOT IN THE BRIEF: os.kill(pid, 0) reads a
+      still-ALIVE result for a child this SAME process spawned via subprocess.Popen and already
+      wait()ed on -- even though tasklist confirms it is gone from the OS process table. *** That is
+      a second, distinct manifestation of the still-open-handle trap. It then PROVED IT DOES NOT
+      AFFECT THE REAPER's path, with a second test that spawns the dead process through a helper
+      subprocess (so no handle is held) and correctly reads False / winerror 87. Both shapes are now
+      pinned as named tests rather than left as an assumption.
+      AC6 IS A REAL END-TO-END REPRODUCTION, NOT A MOCK: a helper process spawns a container and
+      exits without teardown -- the actual defect -- then the real reap_dead_pytest_containers()
+      removes it. AC4 cost when Docker is present measured at ~0.1s.
+    orchestrator_independent_checks: >-
+      Verified rather than accepted on report:
+      FULL 9-COMMAND GATE at ddc889a: **9/9 PASS, exit 0** -- pytest 835 passed / 0 SKIPPED /
+      61.59s (up 19 from 816, matching the 19 new tests), contracts 9 kept / 0 broken, ruff +
+      cfn-lint clean, npm 51 files / 363 tests, self-test 108 tests. The implementer additionally
+      ran config 2 (DYNAMO_ENDPOINT_URL UNSET): 835 passed / 0 skipped / 85.44s, spawning its own
+      container through the reaped-then-fresh path with no 20-minute stall -- which is AC7's whole
+      point, since the gate itself only ever exercises config 1.
+      *** AC2(b) CHECKED AGAINST THIS MACHINE'S REAL CONTAINER LIST, WHICH MAKES IT MORE THAN
+      THEORETICAL: the box currently holds a dozen unrelated `gateway-poc-*` containers plus the
+      gate's own `uptime_dynamo_8021` and an old `uptime_pg_pytest`. The regex is anchored
+      `^uptime_dynamo_pytest_(\d+)_[0-9a-f]{8}$`; I ran it against all of those plus a `my_`-prefixed
+      lookalike and a truncated `uptime_dynamo_pytest_x_y` -- ONLY the exact fixture shape matches.
+      The gate's own container is safe. ***
+      AC2(c) is implemented as a STATIC SOURCE CHECK -- a test that greps dynamo_local.py for
+      `prune`, for `"*"`, and for any `["docker", "rm", ...]` call lacking a name argument. That is
+      the enforcement ladder applied correctly: a mechanism, not a promise in prose.
+      `git diff --name-only a139af5..HEAD -- .scrum/` EMPTY. No leaked containers before or after.
+    final_gate: >-
+      9/9 at ddc889a in BOTH DYNAMO_ENDPOINT_URL configurations. Wiki sweep after the last commit:
+      CLEAN -- scripts/dynamo_local.py is in no article's code_refs, and the implementer chose to
+      put the reaper there rather than in conftest.py, which is the engineering-grounds placement
+      the story asked for and NOT a wiki dodge (conftest.py would have reached two verified map
+      articles).
+    verdict: >-
+      DONE, 2 points, no review pair at this size and none needed. All 7 AC met with mutation proofs
+      for four of them. The story also retired the STORY-179 comment that had been waiting for it.
+      Candidate left explicitly unclaimed and correctly out of a 2-point scope: an age bound
+      alongside PID liveness, which would tighten the still-open-handle false-alive case that AC5
+      currently handles by leaving undetermined containers alone.
     dispatch_reverify: >-
       RE-VERIFIED AT DISPATCH 2026-08-15 at 9575a49 (plan risk 7). Everything holds and STORY-224
       touched none of these files:
