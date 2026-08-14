@@ -832,6 +832,91 @@ def test_reap_leaves_undetermined_liveness_container_alone():
     assert plan == []
 
 
+@pytest.mark.skipif(
+    not dynamo_local.docker_available(),
+    reason="requires Docker to reproduce a real leaked container end-to-end",
+)
+def test_reap_end_to_end_reproduces_and_fixes_the_real_defect():
+    """STORY-173: the story's own reproduction, against REAL Docker, no
+    mocks -- a container is spawned by a SEPARATE process (via
+    `start_container` directly, not through pytest's fixture) and that
+    process exits without ever calling `stop_container`, exactly like a
+    killed pytest run that never reaches its finalizer. The leaked
+    container is left `Up`, with a name embedding the now-dead helper
+    process's real PID. THIS process (which never held any handle to that
+    helper -- see the pid_is_alive tests above for why that distinction
+    matters on Windows) then calls the real, unmodified
+    `reap_dead_pytest_containers()` and the leaked container must be gone
+    afterward.
+    """
+    helper_script = (
+        "import sys; "
+        f"sys.path.insert(0, {str(REPO_ROOT / 'scripts')!r}); "
+        "import dynamo_local; "
+        "name = dynamo_local.unique_container_name(); "
+        "dynamo_local.start_container(name); "
+        "print(name)"
+    )
+    helper = subprocess.run(
+        [sys.executable, "-c", helper_script],
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert helper.returncode == 0, (
+        f"helper process failed to spawn the leaked container: "
+        f"{helper.stdout}{helper.stderr}"
+    )
+    leaked_name = helper.stdout.strip().splitlines()[-1]
+    assert leaked_name.startswith("uptime_dynamo_pytest_")
+
+    try:
+        # Reproduce: the leaked container is really there, really `Up`.
+        listing = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                f"name={leaked_name}",
+                "--format",
+                "{{.Names}}",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert listing.stdout.strip() == leaked_name, (
+            "reproduction failed: the helper's container is not present"
+        )
+
+        # Fix: the real reaper, called exactly as resolve_dynamo calls it.
+        removed = dynamo_local.reap_dead_pytest_containers()
+        assert leaked_name in removed
+
+        listing_after = subprocess.run(
+            [
+                "docker",
+                "ps",
+                "-a",
+                "--filter",
+                f"name={leaked_name}",
+                "--format",
+                "{{.Names}}",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert listing_after.stdout.strip() == "", (
+            "the leaked container must be gone after reap_dead_pytest_containers()"
+        )
+    finally:
+        # Belt-and-braces: never leak from this test itself, even if an
+        # assertion above fails before the reaper runs.
+        subprocess.run(
+            ["docker", "rm", "-f", leaked_name], capture_output=True, text=True
+        )
+
+
 def test_dynamo_resource_fixture_isolation_part_1(dynamo_resource):
     # Retrieve the control table (using default name)
     table = dynamo_resource.Table("uptime-control")
