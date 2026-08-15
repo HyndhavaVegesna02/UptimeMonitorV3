@@ -19,8 +19,8 @@ import './AppShell.css'
  * tests can wrap it in a `MemoryRouter` without pulling in `BrowserRouter`
  * (unchanged from STORY-015a). Used to also lift a load+mutate hook result
  * down to `TopBar`'s trigger and a dismissible warning banner (STORY-049,
- * relocated STORY-056); both were removed by STORY-155a — see that story's
- * History for what was here.
+ * relocated STORY-056); both were removed by STORY-155a — see that
+ * story's file under `docs/scrum/stories/` for what was here.
  */
 export function AppShell() {
   const [expanded, setExpanded] = useState(() => resolveInitialExpanded())

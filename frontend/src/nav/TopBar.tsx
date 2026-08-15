@@ -6,7 +6,8 @@ import './TopBar.css'
  * Top bar (STORY-056 AC2): right-aligned, `--header-height` tall. Hosts the
  * theme toggle carried over from the old `Nav`. Used to also host a live
  * failure-trigger ⚡ switch (STORY-049, relocated STORY-056); removed by
- * STORY-155a — see that story's History for what was here.
+ * STORY-155a — see that story's file under `docs/scrum/stories/` for what
+ * was here.
  */
 export function TopBar() {
   const { theme, toggleTheme } = useTheme()
