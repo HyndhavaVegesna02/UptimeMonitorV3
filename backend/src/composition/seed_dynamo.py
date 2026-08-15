@@ -43,15 +43,31 @@ def seed_topology_dynamo(config: Config, db_resource, table_name: str) -> None:
         for comp in app.components:
             # We use update_item with if_not_exists to update name and app_id,
             # but preserve status if the component already exists.
+            # group/description (STORY-147 AC3) are config-owned, like name/
+            # app_id: always SET fresh from config, never preserved via
+            # if_not_exists — config is the source of truth for both. An
+            # absent config value writes DynamoDB's NULL type, which boto3
+            # round-trips as Python `None` (AC3: never "" / a placeholder).
             table.update_item(
                 Key=component_item_key(comp.id),
-                UpdateExpression="SET #n = :name, app_id = :aid, #s = if_not_exists(#s, :default), id = :id",
-                ExpressionAttributeNames={"#n": "name", "#s": "status"},
+                UpdateExpression=(
+                    "SET #n = :name, app_id = :aid, "
+                    "#s = if_not_exists(#s, :default), id = :id, "
+                    "#g = :group, #d = :description"
+                ),
+                ExpressionAttributeNames={
+                    "#n": "name",
+                    "#s": "status",
+                    "#g": "group",
+                    "#d": "description",
+                },
                 ExpressionAttributeValues={
                     ":name": comp.name,
                     ":aid": app.id,
                     ":default": ComponentStatus.OPERATIONAL.value,
                     ":id": comp.id,
+                    ":group": comp.group,
+                    ":description": comp.description,
                 },
             )
 

@@ -126,3 +126,54 @@ def test_seed_topology_dynamo(dynamo_resource):
     # Re-seed with config_mod -> status should STILL be DEGRADED
     seed_topology_dynamo(config_mod, dynamo_resource, settings.dynamo_control_table)
     assert comp_repo.get("comp-a").status == ComponentStatus.DEGRADED
+
+
+def test_seed_topology_dynamo_persists_group_and_description(dynamo_resource):
+    """STORY-147 AC3: seed_topology_dynamo persists ComponentConfig.group and
+    .description onto the raw COMPONENT# item. Reads the table directly
+    (not through DynamoComponentRepository) so this step is provable
+    independently of the repository's own `.get()`-safe read (a separate
+    part of the round trip)."""
+    settings = load_settings()
+    table = dynamo_resource.Table(settings.dynamo_control_table)
+
+    app_cfg = AppConfig(
+        id="app-group",
+        name="Group App",
+        monitor_provider="dynatrace",
+        components=[
+            ComponentConfig(
+                id="comp-group",
+                name="Component Group",
+                group="Commerce",
+                description="Cart, payments and order placement",
+                monitors=[
+                    MonitorConfig(
+                        signal_key="sig-group",
+                        native_id="NATIVE-GROUP",
+                        name="Signal Group",
+                        interval_seconds=60,
+                    )
+                ],
+            ),
+            ComponentConfig(id="comp-no-group", name="Component No Group"),
+        ],
+    )
+    config = Config([app_cfg])
+    seed_topology_dynamo(config, dynamo_resource, settings.dynamo_control_table)
+
+    item_with_group = table.get_item(
+        Key={"pk": "TOPOLOGY", "sk": "COMPONENT#comp-group"}
+    )["Item"]
+    # AC2: group is normalized to a lowercase slug BEFORE it ever reaches
+    # seed_topology_dynamo (ComponentConfig's own field validator).
+    assert item_with_group["group"] == "commerce"
+    assert item_with_group["description"] == "Cart, payments and order placement"
+
+    item_without_group = table.get_item(
+        Key={"pk": "TOPOLOGY", "sk": "COMPONENT#comp-no-group"}
+    )["Item"]
+    # AC3: absent config fields persist as None, never "" and never a
+    # placeholder like "Uncategorized".
+    assert item_without_group.get("group") is None
+    assert item_without_group.get("description") is None
