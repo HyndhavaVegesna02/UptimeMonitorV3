@@ -192,6 +192,77 @@ def entries_missing_file(stories: list) -> list:
     ]
 
 
+def load_board_statuses(root: Path):
+    """`{story_id: status}` from the COMMITTED sprint board, or None.
+
+    PyYAML only: the board's `status` lives one level inside a `board:` list of
+    mappings, and a line scan for a nested key that also appears at the top of
+    the same file (the SPRINT's own `status:`) is the kind of fragile parse this
+    module exists to catch, not to commit. When PyYAML is absent the caller
+    skips rather than guessing -- a check that cannot read its input must not
+    report a verdict about it.
+    """
+    text = read_committed_scrum_file(root, ".scrum/sprint-current.yaml")
+    if text is None:
+        return None
+    try:
+        import yaml  # type: ignore
+
+        data = yaml.safe_load(text)
+    except Exception:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("board"), list):
+        return None
+    return {
+        str(e["id"]): str(e.get("status", ""))
+        for e in data["board"]
+        if isinstance(e, dict) and e.get("id")
+    }
+
+
+def load_backlog_statuses(root: Path):
+    """`{story_id: status}` from the COMMITTED backlog, or None. PyYAML only."""
+    text = read_committed_scrum_file(root, ".scrum/backlog.yaml")
+    if text is None:
+        return None
+    try:
+        import yaml  # type: ignore
+
+        data = yaml.safe_load(text)
+    except Exception:
+        return None
+    if not isinstance(data, dict) or not isinstance(data.get("stories"), list):
+        return None
+    return {
+        str(s["id"]): str(s.get("status", ""))
+        for s in data["stories"]
+        if isinstance(s, dict) and s.get("id")
+    }
+
+
+def board_backlog_done_drift(board: dict, backlog: dict) -> list:
+    """Stories the BOARD calls `done` that the BACKLOG does not. One-way.
+
+    Deliberately asymmetric. Board-`done` implies backlog-`done`; the converse
+    is NOT asserted, because a backlog entry may legitimately be `done` from an
+    earlier sprint while this sprint's board never mentions it. Do not
+    "tighten" this into a symmetry -- it would fire on every sprint.
+
+    A board id absent from the backlog is skipped here rather than reported:
+    that is a different defect (orphan board entry) and conflating the two
+    produces a message that names the wrong fix.
+    """
+    drift = []
+    for sid, board_status in sorted(board.items()):
+        if board_status != "done":
+            continue
+        actual = backlog.get(sid)
+        if actual is None or actual == "done":
+            continue
+        drift.append(f"{sid}: board=done but backlog={actual}")
+    return drift
+
+
 class BacklogStoryParityTest(unittest.TestCase):
     def setUp(self) -> None:
         self.root = project_root()
@@ -462,6 +533,87 @@ class CommittedHeadReadTests(unittest.TestCase):
             "next_story_id: 42\nstories: []\n", encoding="utf-8"
         )
         self.assertEqual(load_next_story_id(root), 42)
+
+
+class BoardBacklogStatusParityTests(unittest.TestCase):
+    """A story the sprint board calls DONE must be DONE in the backlog.
+
+    Landed 2026-08-15 as enforcement-ladder work (A14 exempts the ladder from
+    the tooling freeze), NOT as a story -- one assertion at a rung that already
+    runs in the gate is an owed one-liner, not backlog.
+
+    THE OCCURRENCE, and it is not hypothetical: on 2026-08-15, one day after
+    sprint 72 closed, `sprint-current.yaml` recorded STORY-221, STORY-224 and
+    STORY-173 as `done` and PO-ACCEPTED, while `backlog.yaml` -- the file the
+    skill calls "the source of truth for story status" -- still said `ready`
+    for all three. The full 9-command gate was green at every one of those
+    commits, because nothing compared the two files. Planning then read the
+    backlog and offered all three as candidates for the next sprint.
+
+    Root cause: the two files are written by the same actor at different
+    moments (the board at each transition, the backlog at close) and nothing
+    tied the second write to the first. "Remember to update both" is the prose
+    rung; this is the rung below it.
+    """
+
+    def test_board_done_implies_backlog_done(self):
+        root = project_root()
+        if root is None:
+            self.skipTest("no enclosing project (.scrum)")
+        board = load_board_statuses(root)
+        backlog = load_backlog_statuses(root)
+        if board is None or backlog is None:
+            self.skipTest("board or backlog unreadable at HEAD (PyYAML absent?)")
+        drift = board_backlog_done_drift(board, backlog)
+        self.assertEqual(
+            drift,
+            [],
+            "sprint board and backlog disagree about completed work. The backlog "
+            "is the source of truth for story status, so it is the file to fix: "
+            "set these entries to `done` in .scrum/backlog.yaml. " + str(drift),
+        )
+
+    def test_mid_sprint_states_do_not_trip_it(self):
+        """The half that decides whether this guard is worth having.
+
+        A gate command that reds on ordinary bookkeeping trains people to
+        discount reds -- which is what STORY-221 spent three points on. Every
+        legitimate mid-sprint combination must stay green.
+        """
+        backlog = {"STORY-1": "ready", "STORY-2": "ready", "STORY-3": "blocked"}
+        for board_status in ("todo", "in_progress", "dropped", "blocked", "review"):
+            with self.subTest(board_status=board_status):
+                self.assertEqual(
+                    board_backlog_done_drift({"STORY-1": board_status}, backlog), []
+                )
+
+    def test_board_entry_absent_from_backlog_is_not_reported_here(self):
+        self.assertEqual(
+            board_backlog_done_drift({"STORY-999": "done"}, {"STORY-1": "ready"}), []
+        )
+
+    def test_backlog_done_without_a_board_entry_is_not_drift(self):
+        """The asymmetry, pinned so it is not 'fixed' into a symmetry later."""
+        self.assertEqual(board_backlog_done_drift({}, {"STORY-1": "done"}), [])
+
+    def test_the_real_drift_is_detected_and_named(self):
+        """Shown RED against the exact 2026-08-15 occurrence.
+
+        STORY-173 is `done` in both files here on purpose: it proves the check
+        reports only the entries that actually drifted, not every done story on
+        the board.
+        """
+        drift = board_backlog_done_drift(
+            {"STORY-221": "done", "STORY-224": "done", "STORY-173": "done"},
+            {"STORY-221": "ready", "STORY-224": "ready", "STORY-173": "done"},
+        )
+        self.assertEqual(
+            drift,
+            [
+                "STORY-221: board=done but backlog=ready",
+                "STORY-224: board=done but backlog=ready",
+            ],
+        )
 
 
 if __name__ == "__main__":
