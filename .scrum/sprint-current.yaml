@@ -169,8 +169,13 @@ board:
     title: Remove sample_mode from the frontend — the consumer goes first
     points: 3
     order: 2
-    status: todo
+    status: in_progress
     file: docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md
+    dispatched_at: >-
+      Window at dispatch: 5h 48% used, 7d 15%. Verdict: dispatch freely (<85). STORY-147 banked at
+      482c7f4 (3 pts). 10 points remain in the atomic pair and roughly half the 5h window -- if 155b
+      cannot finish, atomicity_rule governs: PAUSE WITH A COMMITTED HANDOFF, never close the sprint
+      with 155a landed and 155b outstanding.
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     atomic_with: STORY-155b
 
