@@ -6,12 +6,14 @@ verified_sprint: sprint-69
 status: stale
 # DEMOTED 2026-08-16 (STORY-155a): the frontend half of sample_mode is now deleted --
 # useSampleMode.ts, nav/SampleModeBanner.{tsx,css}, mocks/handlers/sampleMode.ts are gone,
-# and AppShell.tsx / api/client.ts / api/types.ts / mocks/handlers/index.ts no longer
-# reference it -- 8 of this article's code_refs moved, and the sweep (correctly) reports
-# STALE. NOT re-verified: half the subject is deleted and the other half (backend) is
-# about to be, so a re-verification claim now would be false. This is the protocol's
-# designed safe state -- quarantined, not laundered. STORY-155b removes the backend half
-# and ARCHIVES this article; do not re-verify it before then.
+# and AppShell.tsx / nav/TopBar.tsx / api/client.ts / api/types.ts / mocks/handlers/index.ts
+# no longer reference it -- 8 of this article's code_refs moved (AppShell.tsx,
+# api/client.ts, api/types.ts, features/dashboard/useSampleMode.ts, mocks/handlers/index.ts,
+# mocks/handlers/sampleMode.ts, nav/SampleModeBanner.tsx, nav/TopBar.tsx), and the sweep
+# (correctly) reports STALE. NOT re-verified: half the subject is deleted and the other
+# half (backend) is about to be, so a re-verification claim now would be false. This is
+# the protocol's designed safe state -- quarantined, not laundered. STORY-155b removes
+# the backend half and ARCHIVES this article; do not re-verify it before then.
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only because run.py and
 # test_pull_loop.py are code_refs; sample_mode itself is untouched and still inert. Its removal
 # remains STORY-155.
