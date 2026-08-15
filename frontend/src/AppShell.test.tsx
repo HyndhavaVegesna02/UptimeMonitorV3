@@ -162,42 +162,28 @@ describe('AppShell — sidebar collapse (STORY-056 AC1)', () => {
   })
 })
 
-describe('AppShell — top bar + banner (STORY-056 AC2, AC3)', () => {
-  it('renders the top bar sample-mode trigger and theme toggle', async () => {
-    renderShell('/')
-    expect(await screen.findByRole('switch', { name: 'Sample mode' })).toBeInTheDocument()
+describe('AppShell — top bar (STORY-056 AC2, STORY-155a)', () => {
+  it('renders the theme toggle as the top bar\'s only control, and no warning banner (a live-toggle trigger + banner used to sit here — removed by STORY-155a)', async () => {
+    const { container } = renderShell('/')
+
+    // Wait for the shell's other initial fetch (the approvals badge) to
+    // settle before asserting the top bar's final shape — any hook the
+    // removed feature used to run would have resolved by now too.
+    await screen.findByRole('link', {
+      name: `Approvals, ${FIXTURE_PROPOSALS.length} pending`,
+    })
+
+    // The theme toggle is the ONLY button in the top bar now — the removed
+    // trigger (role="switch") used to sit beside it.
+    const topBar = container.querySelector('.top-bar')
+    expect(topBar?.querySelectorAll('button')).toHaveLength(1)
     expect(screen.getByRole('button', { name: /switch to/i })).toBeInTheDocument()
-  })
+    expect(screen.queryByRole('switch')).not.toBeInTheDocument()
 
-  it('shows the sample-mode banner only once the flag is on', async () => {
-    server.use(http.get('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
-    renderShell('/')
-
-    expect(
-      await screen.findByText(/sample mode — signals recorded as down/i),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('status')).toBeInTheDocument()
-  })
-
-  it('does not show the banner when the flag is off', async () => {
-    renderShell('/')
-    await screen.findByRole('switch', { name: 'Sample mode' })
-    expect(
-      screen.queryByText(/sample mode — signals recorded as down/i),
-    ).not.toBeInTheDocument()
-  })
-
-  it('toggling the top-bar trigger on shows the banner (single shared source of truth)', async () => {
-    const user = userEvent.setup()
-    server.use(http.put('/api/v1/sample-mode', () => HttpResponse.json({ enabled: true })))
-    renderShell('/')
-
-    const toggle = await screen.findByRole('switch', { name: 'Sample mode' })
-    await user.click(toggle)
-
-    expect(
-      await screen.findByText(/sample mode — signals recorded as down/i),
-    ).toBeInTheDocument()
+    // The removed warning banner used to sit between the top bar and <main>
+    // — `.app-shell__content` now has exactly those two children.
+    const content = container.querySelector('.app-shell__content')
+    expect(content?.children).toHaveLength(2)
   })
 })
 

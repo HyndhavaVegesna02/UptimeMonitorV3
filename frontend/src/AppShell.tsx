@@ -2,10 +2,8 @@ import { useState } from 'react'
 import { Route, Routes } from 'react-router-dom'
 import { Sidebar } from './nav/Sidebar'
 import { TopBar } from './nav/TopBar'
-import { SampleModeBanner } from './nav/SampleModeBanner'
 import { persistExpanded, resolveInitialExpanded } from './nav/sidebarState'
 import { useApprovalsBadge } from './features/shell/useApprovalsBadge'
-import { useSampleMode } from './features/dashboard/useSampleMode'
 import { DashboardPage } from './pages/DashboardPage'
 import { AvailabilityPage } from './pages/AvailabilityPage'
 import { ApprovalsPage } from './pages/ApprovalsPage'
@@ -17,22 +15,16 @@ import './AppShell.css'
 
 /**
  * The routed shell (STORY-056): a collapsible left icon `Sidebar` + a
- * `TopBar` (theme toggle + the relocated sample-mode trigger) + a
- * dismissible `SampleModeBanner`, wrapping one route per tab. Router-
- * agnostic so tests can wrap it in a `MemoryRouter` without pulling in
- * `BrowserRouter` (unchanged from STORY-015a).
- *
- * `useSampleMode()` is called ONCE here and its result is passed down to
- * both `TopBar` (the trigger) and `SampleModeBanner` (via the derived
- * `visible` boolean) — a single source of truth, so a toggle in the top
- * bar is guaranteed to be reflected in the banner on the very same render
- * (two independent hook instances would each run their own GET/override
- * cycle and could disagree — see `TopBar.tsx`'s header comment).
+ * `TopBar` (theme toggle), wrapping one route per tab. Router-agnostic so
+ * tests can wrap it in a `MemoryRouter` without pulling in `BrowserRouter`
+ * (unchanged from STORY-015a). Used to also lift a load+mutate hook result
+ * down to `TopBar`'s trigger and a dismissible warning banner (STORY-049,
+ * relocated STORY-056); both were removed by STORY-155a — see that story's
+ * History for what was here.
  */
 export function AppShell() {
   const [expanded, setExpanded] = useState(() => resolveInitialExpanded())
   const pendingApprovals = useApprovalsBadge()
-  const sampleMode = useSampleMode()
 
   const toggleExpanded = () => {
     setExpanded((current) => {
@@ -41,8 +33,6 @@ export function AppShell() {
       return next
     })
   }
-
-  const bannerVisible = sampleMode.state.phase === 'success' && sampleMode.enabled === true
 
   return (
     <div className="app-shell">
@@ -65,8 +55,7 @@ export function AppShell() {
         pendingApprovals={pendingApprovals}
       />
       <div className="app-shell__content">
-        <TopBar sampleMode={sampleMode} />
-        <SampleModeBanner visible={bannerVisible} />
+        <TopBar />
         <main id="main-content" className="app-shell__main" tabIndex={-1}>
           <Routes>
             <Route path="/" element={<DashboardPage />} />
