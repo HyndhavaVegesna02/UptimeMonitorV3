@@ -33,40 +33,12 @@
   project examples in skill text are labeled as examples. (PO directive at the sprint-44 review:
   "keep it generic so it can be used on other projects also.")
 
-- 2026-07-29 — **The "Window Check" — read the session window at every agent boundary, and park
-  rather than die mid-agent.** Invocable by name: "run a window check", or "window check before
-  you dispatch".
-  **When:** immediately after EVERY subagent completes (implementer, spec reviewer, quality
-  reviewer, plan verifier, scout — the reviewer pair counts as one boundary since they run
-  concurrently) and before dispatching the next one. Not per story — per agent. Every such
-  boundary has a commit behind it, so parking there costs nothing and dying there costs one step.
-  **How (mechanical — the number is read, never estimated):** the PO's statusline command writes
-  its full payload to `~/.claude/statusline-latest.json` on every render. Read it:
-  ```
-  python -c "import json,time,os;d=json.load(open(os.path.expanduser('~/.claude/statusline-latest.json')));r=d['rate_limits']['five_hour'];print('5h used %s%%, resets %s'%(r['used_percentage'],time.strftime('%H:%M',time.localtime(r['resets_at']))));print('7d used %s%%'%d['rate_limits']['seven_day']['used_percentage'])"
-  ```
-  **Thresholds:** `five_hour.used_percentage` **< 85** → dispatch freely. **85–94** → finish work
-  already in flight on the CURRENT story (a re-work implementer, a gate, a reality gate) but do NOT
-  start a new story's implementer. **>= 95** → park until `resets_at`, then resume from the board.
-  Separately, `seven_day >= 90` → tell the PO instead of parking; a 7-day reset cannot be waited
-  out inside a session.
-  **Recording:** every park updates `.scrum/session.lock`'s `NEXT:` line with the head commit, the
-  percentage, the reset time and the exact next step, so a session that dies anyway resumes at the
-  same place; parks are summarised in the sprint's `review.md` as process data for the retro.
-  **Caveat, stated because it bounds the rule:** the file is only rewritten when the statusline
-  renders, so it can lag during a long agent run. It is accurate at an agent boundary, which is
-  the only moment this rule reads it.
-  (PO directive 2026-07-29, mid-sprint-63: "just check after each agents work is done if the
-  session limit is near end; if it is near end then pause until the reset time and continue",
-  refined to per-agent granularity: "what I meant is you can pause after any agent." Motivating
-  history: sprint 46 was pushed to an external agent by a session limit; sprint 45 consumed two
-  full 5-hour windows; STORY-149's first implementer died mid-story on a session limit. In all
-  three the limit arrived unseen — this rule exists because it no longer has to.)
-  (Rung: prose + an inlined mechanical command. The script rung WAS considered and is where this
-  belongs long-term — the check is pure arithmetic over a JSON file and would be project-generic,
-  since `statusline-latest.json` is a Claude Code artifact, not a project one. It is not taken now
-  for two reasons: tooling is frozen mid-sprint by the 2026-01-01 agreement, and the 2026-07-15
-  entry forbids ad-hoc skill-script edits outside a story. File it at the sprint-63 retro.)
+- 2026-07-29 — **The "Window Check"** — RELOCATED TO THE HOOK RUNG AND DELETED HERE by
+  **A21** (sprint-72 retro, PO-approved 2026-08-15). The rule is unchanged and now lives in
+  `.claude/hooks/yt_window_check.py`, which runs on every agent dispatch. It is no longer
+  prose because prose did not work: it went nine sprints without being routed to the rung it
+  named for itself, and in sprint 72 it was run **zero times across seven agent boundaries**
+  while two agents died on the limit. Full text in git history; see A21 below.
 
 ## PO working agreements (locked at inception, 2026-06-23 — from YOURTEAM_INCEPTION.md §7)
 - 2026-06-23 — **The dossier is the spec.** Every subagent brief cites the relevant
@@ -556,3 +528,41 @@ Per A15 this REPLACES the earlier reading rather than restating it. Clause 2 was
 time on 2026-08-12, when the field it governed was deleted; the amplifier problem it names in the
 "from above" case is now bounded by the `map`/`reference` tier split rather than by stamp
 discipline. Narrative: RC-9 and RC-10 in `docs/scrum/sprints/2026-08-05-sprint-69/retro.md`.
+
+## A21 — the Window Check is a hook, not a paragraph (2026-08-15, sprint-72 retro)
+
+**Rung: `.claude/hooks/yt_window_check.py` (PreToolUse on agent dispatch), registered in
+`.claude/settings.json` on matcher `Agent|Task`.** This is a **RELOCATION, not an addition** —
+thresholds and data source are byte-identical to the PO-stated rule of 2026-07-29, and that rule's
+prose entry was **DELETED in the same commit** (−34 lines). A15 §3 is explicit that routing down the
+ladder is not deletion; moving a rule and leaving it behind keeps the cost and creates the drift.
+
+**Why it was needed, stated as evidence rather than as a principle.** The rule existed for nine
+sprints. Its own closing parenthetical named the script rung as where it belonged and said *"File it
+at the sprint-63 retro."* That never happened. In sprint 72 it was run **zero times across seven
+agent boundaries**, and **two agents died on the session limit** — one mid-fix-round, one before it
+touched a file, costing the sprint its last story. Checked at the retro: the statusline file existed
+and was current the whole time, and the command worked on first try. Nothing was broken except that
+a paragraph in a 558-line file loaded once per session was not read at hour four.
+
+Both stated reasons for the original deferral were void by then: **A14** exempts the enforcement
+ladder from the mid-sprint tooling freeze, and a retro-approved amendment landing at a named rung is
+the opposite of the ad-hoc skill-script edit the 2026-07-15 entry forbids.
+
+**Behaviour** (unchanged): `five_hour.used_percentage` **< 85** allow silently · **85–94** allow with
+a warning naming the percentage and reset time · **≥ 95** **BLOCK** with the reset time and a pointer
+to the board · `seven_day ≥ 90` warn only, never block, because a 7-day reset cannot be waited out
+inside a session and the PO must be told instead.
+
+**FAILS OPEN by construction** — a missing, stale or malformed statusline allows the dispatch with a
+note. Same contract as `yt_git_guard.py`: a backstop, never an outage.
+
+**Guarded, and shown RED.** Nine branches exercised at landing (13/84/85/94/95/99 percent, a 7-day
+trip, a missing file, a malformed file) with the exit codes verified 0/0/0/0/2/2/0/0/0. Template
+parity now **globs `templates/hooks/*.py`** instead of naming one hook — the hardcoded entry would
+have silently excluded this hook, passing while it drifted. Shown RED by mutating the instance.
+
+**Project-generic** (PO directive 2026-07-13): `~/.claude/statusline-latest.json` is a Claude Code
+artifact; the hook knows nothing about the project's name, stack, or layout. Its user-facing strings
+are pure ASCII, deliberately — this repo has a live mojibake story (STORY-192) and a `.scrum/`
+encoding guard, and a hook that prints through a cp1252 console should not add to it.

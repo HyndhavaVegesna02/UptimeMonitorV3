@@ -173,8 +173,11 @@ def tree_state(root: Path) -> tuple[list[str], list[str], list[str]]:
     """Return (dirty_lines, untracked_lines, orchestrator_owned_lines).
 
     A20: modified ORCHESTRATOR-OWNED paths are split out of `dirty` and reported
-    separately rather than refused. They are read by no gate command, so they
-    cannot change a result. Every other modified tracked file still refuses.
+    separately rather than refused. Their WORKING-TREE state cannot change a
+    result -- not because nothing reads them (STORY-224's 9th command does), but
+    because the suites that read them read the COMMITTED tree at HEAD. See the
+    corrected note on `_ORCHESTRATOR_OWNED_PREFIXES`. Every other modified
+    tracked file still refuses.
     """
     lines = [ln for ln in git(root, "status", "--porcelain").splitlines() if ln.strip()]
     untracked = [ln for ln in lines if ln.startswith("??")]
@@ -436,7 +439,7 @@ def main() -> int:
         # evidence records exactly what was modified and by whom it is owned.
         print(
             f"yt_gate: {len(owned)} orchestrator-owned path(s) modified, NOT gating "
-            "(read by no gate command — see A20):",
+            "(their committed state is what gate commands read -- see A20):",
             file=sys.stderr,
         )
         for ln in owned:

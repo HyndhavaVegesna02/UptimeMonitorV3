@@ -24,10 +24,14 @@ def project_root() -> Path | None:
 
 
 PAIRS = [
-    (
-        SKILL / "templates" / "hooks" / "yt_git_guard.py",
-        ".claude/hooks/yt_git_guard.py",
-    ),
+    # Hooks are GLOBBED, not listed. A21 (sprint-72 retro) added a second hook and
+    # the hardcoded single entry would have silently excluded it from parity -- the
+    # test would have passed while the new hook drifted. Agents were already globbed;
+    # this makes hooks self-maintaining the same way.
+    *[
+        (t, f".claude/hooks/{t.name}")
+        for t in sorted((SKILL / "templates" / "hooks").glob("*.py"))
+    ],
     *[
         (t, f".claude/agents/{t.name}")
         for t in sorted((SKILL / "templates" / "agents").glob("yt-*.md"))
