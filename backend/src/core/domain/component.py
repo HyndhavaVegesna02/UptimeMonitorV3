@@ -31,3 +31,11 @@ class Component(BaseModel):
     name: str
     status: ComponentStatus
     app_id: str
+    group: str | None = None
+    """Optional display sub-label (STORY-147) — decorative only, sourced from
+    ``ComponentConfig.group`` via topology seeding; ``None`` is a legitimate
+    state (a component not yet categorized)."""
+    description: str | None = None
+    """Optional one-line operator-facing description (STORY-147), sourced from
+    ``ComponentConfig.description`` via topology seeding; ``None`` is a
+    legitimate state, never a placeholder like ``"Uncategorized"``."""

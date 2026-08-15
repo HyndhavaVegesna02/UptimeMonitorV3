@@ -28,3 +28,30 @@ def test_component_domain_type_is_frozen():
     )
     with pytest.raises(ValidationError):
         comp.id = "comp-2"  # type: ignore
+
+
+def test_component_group_and_description_default_to_none():
+    """STORY-147 AC3/AC5: the two fields are additive and optional — a
+    component constructed without them (every pre-existing call site) still
+    constructs, and both read back as None."""
+    comp = Component(
+        id="comp-1",
+        name="Checkout Component",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+    )
+    assert comp.group is None
+    assert comp.description is None
+
+
+def test_component_group_and_description_construct_when_given():
+    comp = Component(
+        id="comp-1",
+        name="Checkout Component",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="app-1",
+        group="commerce",
+        description="Cart, payments and order placement",
+    )
+    assert comp.group == "commerce"
+    assert comp.description == "Cart, payments and order placement"
