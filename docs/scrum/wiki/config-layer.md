@@ -88,8 +88,20 @@ Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
   models, and both now carry rejected-shape tests (zero AND negative). Deliberately NO `kind:` field — `native_kind` is discovered from
   the vendor's `event.type` per row (`dispatch.py:44`); a declared field
   nothing reads would let config lie.
-- `ComponentConfig{id, name, statuspage_component_id: str | None, monitors: list[MonitorConfig] = []}`
-  — a component declaration, now carrying its nested monitors.
+- `ComponentConfig{id, name, statuspage_component_id: str | None, monitors: list[MonitorConfig] = [], group: str | None = None, description: str | None = None}`
+  — a component declaration, now carrying its nested monitors, plus two optional display
+  fields (STORY-147): `group` (a decorative sub-label, free text — NOT a closed enum, so
+  a new category is a config change, never a code change) and `description` (a one-line
+  operator-facing description, capped at 80 characters). `group` is normalized to a
+  lowercase slug by a `field_validator(mode="after")` ON THIS MODEL
+  (`ComponentConfig::_normalize_group_case`) — `Commerce`/`COMMERCE`/`commerce` all
+  construct as `commerce`; display-casing is the frontend's concern. The validator never
+  raises (it only lowercases); slug-SAFETY (character set) is a separate check, described
+  below, that must live in `load_config` rather than on this model for the same
+  pydantic-swallows-the-subclass reason `InvalidFreshnessError`/`UndeclaredLocationAliasError`
+  do. Neither field reaches Statuspage — the publish payload
+  (`adapters/outbound/statuspage/__init__.py:54`, `{"component": {"status": vendor_status}}`)
+  and `Config.statuspage_mapping()` are built from `statuspage_component_id`/`status` alone.
 - `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` —
   UNCHANGED shape; still the consumption type every existing reader sees, now
   always synthesized rather than authored.
@@ -133,9 +145,9 @@ Symbol citations:
 - `backend/src/composition/config.py::AppConfig::_derive_signals_from_monitors`
 - `backend/src/composition/config.py::AppConfig::_validate_uniqueness_and_thresholds`
 
-### Named config-authoring errors (STORY-146 AC5)
+### Named config-authoring errors (STORY-146 AC5; STORY-147 AC1 adds a fifth)
 `backend/src/composition/config.py::ConfigError(ValueError)` is the base for
-four subclasses, all raised by `load_config` **OUTSIDE** its
+five subclasses, all raised by `load_config` **OUTSIDE** its
 `except (TypeError, ValueError)` block (below the try that constructs
 `AppConfig`), so the named subclass survives to the caller:
 
@@ -160,6 +172,16 @@ four subclasses, all raised by `load_config` **OUTSIDE** its
   reachable when STORY-146 made `app.id` a lookup key — before that nothing
   resolved by app id. Checked beside the existing global
   `signal_key`/`component.id` uniqueness checks, and names BOTH filenames.
+- `InvalidComponentFieldError` (STORY-147 AC1) — a component's `group` is not
+  slug-safe (`^[a-z0-9]+(-[a-z0-9]+)*$`) AFTER `ComponentConfig`'s own
+  case-normalization, or its `description` exceeds 80 characters
+  (`_MAX_DESCRIPTION_LENGTH`). Checked in a loop over `app.components` placed
+  after the AC4 freshness checks and before the global uniqueness checks,
+  naming the yaml file, the component id, and the offending field — never a
+  bare `ValueError`, never silent truncation. The 80-char boundary is tested
+  non-aligned (exactly 80 is valid, 81 raises) and shown RED by mutation
+  (`>` swapped for `>=` fails the exact-80 case naming the component; reverted,
+  `git diff` empty).
 
 **Probed (twice, independently):** a `ValueError` subclass raised inside a
 pydantic `model_validator` — in EITHER `mode="before"` or `mode="after"` — is
@@ -213,6 +235,8 @@ Fail-fast error cases (all raise with a descriptive message at `load_config` tim
 - A non-positive `freshness.stale_after_cycles`/`reentry_cycles`
   (`InvalidFreshnessError`).
 - The same `app.id` declared in two files (`DuplicateAppIdError`).
+- A component's `group` not slug-safe after normalization, or `description`
+  over 80 characters (`InvalidComponentFieldError`, STORY-147 AC1).
 
 ### In-memory resolvers
 Six methods on `Config`:
@@ -268,7 +292,9 @@ shift every other line in the file):
   `for sig in self.signals:` (duplicate signal_key check — NOT the deleted
   referential check, which was a separate loop over the same list)
 - `backend/src/composition/run.py:136` — `for signal in app.signals:`
-- `backend/src/composition/seed_dynamo.py:60` — `for sig in app.signals:`
+- `backend/src/composition/seed_dynamo.py:76` — `for sig in app.signals:`
+  (re-keyed from `:60` by STORY-147's component-seeding block gaining 16 lines
+  above this loop — see History)
 - `backend/src/composition/vendor_health.py:106` — `for signal in app.signals:`
 - `scripts/seed_topology.py:48` — `sum(len(app.signals) for app in config.apps)`
 
@@ -415,3 +441,18 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   failure, `` `dispatch.py:44` `` (a bare filename, unrelated to either fix), is untouched and stays
   advisory-only under STORY-219's enforcement (it carries no `/`, so it is never ratcheted). Every
   other Fact was re-read against `backend/src/composition/config.py`; none has moved since `13bbb07`.
+- sprint-73 (STORY-147): `ComponentConfig` gains two optional fields, `group` and
+  `description` — `group` free-text, normalized to a lowercase slug by the model's own
+  `field_validator` (`ComponentConfig::_normalize_group_case`); `description` capped at 80
+  characters. A fifth `ConfigError` subclass, `InvalidComponentFieldError`, joins the
+  STORY-146 four, checked in `load_config` for the same reason the other four are (a
+  pydantic validator cannot raise a subclass that survives the caller). Neither field
+  reaches Statuspage — `statuspage_mapping()` and the publish payload
+  (`adapters/outbound/statuspage/__init__.py:54`) are unaffected, pinned by a new
+  regression test. **Re-keyed one "Seven surviving readers" citation while here**:
+  `backend/src/composition/seed_dynamo.py`'s component-seeding `update_item` call grew by
+  16 lines (the new `group`/`description` `ExpressionAttributeNames`/`Values` entries),
+  shifting `for sig in app.signals:` from `:60` to `:76` — corrected above. No other Fact
+  in this article changed; `AppConfig`/`Config`/`load_config`'s existing behaviour for
+  every pre-existing field is untouched (proven by the full pre-existing `test_config.py`
+  suite passing unmodified).
