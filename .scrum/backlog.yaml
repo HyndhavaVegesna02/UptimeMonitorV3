@@ -1439,7 +1439,11 @@ stories:
     title: Remove sample_mode from the frontend — the consumer goes first
     epic: deferred-future
     file: docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md
-    status: ready   # REFINED 2026-08-15 at sprint-73 planning, 6 AC. PENDING PO LOCK.
+    status: done    # DONE 2026-08-16, sprint 73, final HEAD f6ce2c6, gate 9/9. Spec PASS, quality
+                    # REQUEST CHANGES -> one MAJOR (dead TopBar.css rules) fixed at 077b328.
+                    # *** ATOMIC WITH STORY-155b, WHICH IS NOT DONE. This half must NOT be presented
+                    # as deliverable on its own -- the declared drop unit is THE PAIR. ***
+                    # REFINED 2026-08-15 at sprint-73 planning, 6 AC.
                     # Split from STORY-155 (an 8). Goes FIRST: removing the backend endpoint before
                     # the consumer would leave the SPA calling a 404.
                     # IT IS USER-FACING, not a dead-code sweep -- AppShell.tsx:69 renders

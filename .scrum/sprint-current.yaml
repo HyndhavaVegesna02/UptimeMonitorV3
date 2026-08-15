@@ -169,8 +169,47 @@ board:
     title: Remove sample_mode from the frontend — the consumer goes first
     points: 3
     order: 2
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md
+    completed:
+      final_head: f6ce2c6
+      commits: 7   # be362c9..f6ce2c6, all implementer
+      spec_review: >-
+        PASS -- all six AC MET. The reviewer re-derived the test-count delta ITSELF rather than
+        trusting the report (30 removed / 1 added; 12 in deleted files, 18 in edited ones), matching
+        the story's corrected 18-of-30 clause exactly.
+      quality_review: "REQUEST CHANGES -> one MAJOR, fixed at 077b328."
+      major_finding: >-
+        Dead CSS the removal itself created. ORCHESTRATOR VERIFIED before acting: `top-bar__` had
+        exactly ONE live consumer left (`top-bar__button`, TopBar.tsx:18) while four rule blocks
+        remained -- including `.top-bar__error` at :13, which the implementer's OWN candidates list
+        missed. The implementer had knowingly left them, arguing they were outside the verified edit
+        list and outside AC2's grep. The second ground is the argument FOR removing them: the rules
+        contain no matching text, so nothing in 155b and no later sweep could ever find them. The
+        story file itself documents three places its planning greps were holed; this was a fourth.
+        `.top-bar__button:disabled` correctly KEPT -- a state rule on a live class.
+      reviewer_disagreement_resolved_by_orchestrator: >-
+        Spec wanted the dangling "see that story's History" pointers CLOSED (the story has no History
+        section); quality wanted them DROPPED as near-valueless. Ruled: REPOINT at the story file, so
+        the citation resolves and the deletion-reason trace survives. The implementer then avoided
+        citing the literal filename, which contains "sample-mode" and would have re-broken AC2's grep.
+      story_file_corrected_by_the_work: >-
+        The demotion reason says EIGHT code_refs moved, not the NINE the story claimed --
+        pages/DashboardPage.tsx is a code_ref this diff never touches. The implementer was right and
+        the story file was wrong.
+      reality_gate: >-
+        PASS. For a removal story the real question is the shipped artifact, not the source tree:
+        grepped the BUILT bundle -- frontend/dist/assets/*.js and *.css -- for
+        samplemode|sample-mode|sample mode. ZERO in both. Orchestrator also re-ran AC2's grep (0),
+        AC4's backend check (0 files), and confirmed TopBar.css now carries only the four live rules.
+      carried_to_po_at_review: >-
+        THREE quality minors deliberately NOT fixed: (1) frontend-zone.md still lists three
+        now-deleted files as code_refs and documents putJson -- it was ALREADY status: stale before
+        this story, so it is quarantined and the sweep skips it; no gate breach, but its eventual
+        rehab pass has grown; (2) AppShell.test.tsx:172-174 uses the Approvals badge as a settle
+        barrier, coupling the top-bar test to FIXTURE_PROPOSALS; (3) the Icon registry's `zap` glyph
+        is now unused, but that catalogue already carries unused search/trash/x -- not this story's
+        debt.
     dispatched_at: >-
       Window at dispatch: 5h 48% used, 7d 15%. Verdict: dispatch freely (<85). STORY-147 banked at
       482c7f4 (3 pts). 10 points remain in the atomic pair and roughly half the 5h window -- if 155b
@@ -293,4 +332,59 @@ story_147_gate:
       output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.022s | OK"
       commit: 4b8501e
       at: "2026-08-15T20:38:24+00:00"
+  
+
+story_155a_gate:
+  commit: f6ce2c6
+  result: "9/9 PASS, exit 0"
+  pytest: "851 passed, 0 skipped"
+  npm_test: "49 files, 334 tests (was 51/363)"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_sweep: "CLEAN -- sample-mode.md not swept (status=stale)"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 851 passed in 62.03s (0:01:02) ========================"
+      commit: f6ce2c6
+      at: "2026-08-15T21:11:29+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 152 files, 433 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: f6ce2c6
+      at: "2026-08-15T21:12:31+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: f6ce2c6
+      at: "2026-08-15T21:12:32+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "265 files already formatted"
+      commit: f6ce2c6
+      at: "2026-08-15T21:12:32+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: f6ce2c6
+      at: "2026-08-15T21:12:32+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  02:42:35 | Duration  45.57s (transform 5.72s, setup 44.84s, import 23.05s, tests 49.22s, environment 161.20s)"
+      commit: f6ce2c6
+      at: "2026-08-15T21:12:35+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-DGYXseT8.js                               276.07 kB │ gzip: 84.91 kB | ✓ built in 358ms"
+      commit: f6ce2c6
+      at: "2026-08-15T21:13:21+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: f6ce2c6
+      at: "2026-08-15T21:13:26+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.703s | OK"
+      commit: f6ce2c6
+      at: "2026-08-15T21:13:32+00:00"
   
