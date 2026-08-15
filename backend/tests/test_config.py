@@ -20,6 +20,7 @@ from src.composition.config import (
     Config,
     DuplicateAppIdError,
     FlatSignalsRejectedError,
+    InvalidComponentFieldError,
     InvalidFreshnessError,
     MonitorConfig,
     SignalConfig,
@@ -843,3 +844,130 @@ class TestRealHttpcheckYamlMigratedNestingOnly:
         for comp in httpcheck.components:
             for mon in comp.monitors:
                 assert mon.expected_locations == []
+
+
+# ---------------------------------------------------------------------------
+# STORY-147 — component `group` + `description`
+# ---------------------------------------------------------------------------
+
+
+class TestComponentGroupAndDescription:
+    """AC1/AC2: ComponentConfig.group/description — optional, normalized,
+    validated OUTSIDE load_config's try/except (see the module-level AC5
+    comment in config.py for why a pydantic validator cannot raise a
+    subclass that survives to the caller)."""
+
+    def test_group_and_description_default_to_none(self):
+        comp = ComponentConfig(id="c1", name="C1")
+        assert comp.group is None
+        assert comp.description is None
+
+    def test_group_is_lowercased_at_construction(self):
+        """AC2: Commerce / COMMERCE / commerce all normalize to commerce —
+        at the ComponentConfig construction level (the model owns
+        normalization; load_config owns validation, per AC1)."""
+        for raw in ("Commerce", "COMMERCE", "commerce"):
+            comp = ComponentConfig(id="c1", name="C1", group=raw)
+            assert comp.group == "commerce"
+
+    def test_group_normalized_to_lowercase_at_load(self, tmp_config_dir: Path):
+        """AC2 at the load_config level: a test asserts all three casings of
+        the same word produce one value after loading real YAML."""
+        yaml_content = """\
+app:
+  id: group-app
+  name: Group App
+  monitor_provider: dynatrace
+components:
+  - { id: c1, name: C1, group: Commerce }
+  - { id: c2, name: C2, group: COMMERCE }
+  - { id: c3, name: C3, group: commerce }
+"""
+        _write_yaml(tmp_config_dir, "group.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        groups = {c.id: c.group for c in cfg.apps[0].components}
+        assert groups == {"c1": "commerce", "c2": "commerce", "c3": "commerce"}
+
+    def test_description_round_trips_when_valid(self, tmp_config_dir: Path):
+        yaml_content = """\
+app:
+  id: desc-app
+  name: Desc App
+  monitor_provider: dynatrace
+components:
+  - { id: c1, name: C1, description: "Cart, payments and order placement" }
+"""
+        _write_yaml(tmp_config_dir, "desc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        assert (
+            cfg.apps[0].components[0].description
+            == "Cart, payments and order placement"
+        )
+
+    def test_group_not_slug_safe_after_normalization_raises(self, tmp_config_dir: Path):
+        """AC1: a group that fails the slug pattern even after lowercasing
+        (spaces/punctuation) raises InvalidComponentFieldError naming the
+        component and the field — never a bare ValueError."""
+        yaml_content = """\
+app:
+  id: bad-group-app
+  name: Bad Group App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A, group: "Not Valid!" }
+"""
+        _write_yaml(tmp_config_dir, "bad_group.yaml", yaml_content)
+        with pytest.raises(InvalidComponentFieldError) as exc_info:
+            load_config(tmp_config_dir)
+        assert type(exc_info.value) is InvalidComponentFieldError, (
+            "load_config must raise the specific InvalidComponentFieldError "
+            "class, not a bare ValueError (STORY-147 AC1)"
+        )
+        message = str(exc_info.value)
+        assert "comp-a" in message
+        assert "group" in message
+
+    def test_description_over_80_chars_raises_invalid_component_field_error(
+        self, tmp_config_dir: Path
+    ):
+        long_desc = "x" * 81
+        yaml_content = f"""\
+app:
+  id: bad-desc-app
+  name: Bad Desc App
+  monitor_provider: dynatrace
+components:
+  - {{ id: comp-a, name: Comp A, description: "{long_desc}" }}
+"""
+        _write_yaml(tmp_config_dir, "bad_desc.yaml", yaml_content)
+        with pytest.raises(InvalidComponentFieldError) as exc_info:
+            load_config(tmp_config_dir)
+        assert type(exc_info.value) is InvalidComponentFieldError, (
+            "load_config must raise the specific InvalidComponentFieldError "
+            "class, not a bare ValueError (STORY-147 AC1)"
+        )
+        message = str(exc_info.value)
+        assert "comp-a" in message
+        assert "description" in message
+
+    def test_description_exactly_80_chars_is_valid(self, tmp_config_dir: Path):
+        """Boundary: 80 chars is the cap, not the first rejected length."""
+        desc_80 = "x" * 80
+        yaml_content = f"""\
+app:
+  id: boundary-desc-app
+  name: Boundary Desc App
+  monitor_provider: dynatrace
+components:
+  - {{ id: comp-a, name: Comp A, description: "{desc_80}" }}
+"""
+        _write_yaml(tmp_config_dir, "boundary_desc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        assert cfg.apps[0].components[0].description == desc_80
+
+    def test_invalid_component_field_error_is_config_error(self):
+        """InvalidComponentFieldError joins the ConfigError hierarchy
+        STORY-146 landed (config.py:97-123), alongside its siblings."""
+        from src.composition.config import ConfigError
+
+        assert issubclass(InvalidComponentFieldError, ConfigError)

@@ -16,11 +16,19 @@ Public surface:
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Annotated, Any
 
 import yaml
-from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from src.core.services.pipeline import AntiFlapThresholds
 
@@ -29,6 +37,16 @@ from src.core.services.pipeline import AntiFlapThresholds
 # ---------------------------------------------------------------------------
 
 _SECTION_10_DEFAULTS = AntiFlapThresholds(major=5, partial=3, degraded=2, recovery=2)
+
+_GROUP_SLUG_RE = re.compile(r"^[a-z0-9]+(?:-[a-z0-9]+)*$")
+"""Lowercase alphanumeric segments separated by single hyphens — no spaces,
+underscores or punctuation (STORY-147 AC1). Checked AFTER normalization
+(``ComponentConfig``'s lowercasing field validator), so ``Commerce`` is
+checked as ``commerce``, not as authored."""
+
+_MAX_DESCRIPTION_LENGTH = 80
+"""Cap on ``ComponentConfig.description`` (STORY-147 AC1) — never silently
+truncated; over-length raises ``InvalidComponentFieldError``."""
 
 
 def _require_positive_interval(value: int) -> int:
@@ -133,6 +151,22 @@ class DuplicateAppIdError(ConfigError):
     """
 
 
+class InvalidComponentFieldError(ConfigError):
+    """Raised when a component's ``group`` is not slug-safe after
+    normalization, or its ``description`` exceeds
+    ``_MAX_DESCRIPTION_LENGTH`` characters (STORY-147 AC1).
+
+    Checked in ``load_config``, OUTSIDE the ``except (TypeError, ValueError)``
+    block, for the same reason as ``UndeclaredLocationAliasError``/
+    ``InvalidFreshnessError`` above: a ``ValueError`` subclass raised inside a
+    pydantic ``model_validator`` is converted to ``ValidationError``, losing
+    the subclass — probed twice, independently (see the AC5 module comment).
+    ``group``'s case-normalization lives ON the model (``ComponentConfig``'s
+    field validator, STORY-147 AC2) because it never raises; the slug-safety
+    *check* stays here because it must.
+    """
+
+
 # ---------------------------------------------------------------------------
 # Config models (frozen pydantic; model_validator enforces invariants)
 # ---------------------------------------------------------------------------
@@ -200,6 +234,29 @@ class ComponentConfig(BaseModel):
 
     monitors: list[MonitorConfig] = Field(default_factory=list)
     """Monitors nested under this component (STORY-146 AC1)."""
+
+    group: str | None = None
+    """Optional display sub-label (STORY-147 AC1/AC2) — free text, normalized
+    to a lowercase slug at construction (this field's own validator below).
+    Decorative only in this story: a display sub-label, not a structural
+    grouping (dashboard sectioning by group is deliberately deferred)."""
+
+    description: str | None = None
+    """Optional one-line operator-facing description (STORY-147 AC1), capped
+    at ``_MAX_DESCRIPTION_LENGTH`` characters — validated in ``load_config``,
+    never silently truncated here."""
+
+    @field_validator("group", mode="after")
+    @classmethod
+    def _normalize_group_case(cls, value: str | None) -> str | None:
+        """Lowercase ``group`` at construction (STORY-147 AC2): ``Commerce``,
+        ``COMMERCE`` and ``commerce`` all load as ``commerce``. Display-casing
+        is the frontend's concern, not config's. Deliberately never raises —
+        slug-safety of the normalized value is validated separately in
+        ``load_config`` (``InvalidComponentFieldError``, STORY-147 AC1),
+        outside this model, because a pydantic validator cannot raise a
+        subclass that survives to the caller."""
+        return value.lower() if value is not None else None
 
 
 class SignalConfig(BaseModel):
@@ -584,9 +641,12 @@ def load_config(config_dir: str | Path) -> Config:
       quality rework F4, 2026-07-29) — ``app.id`` is a ``Config``-level lookup
       key (``locations_for``/``freshness_for``), so a second file silently
       overwriting the first's index entries would otherwise discard the
-      first file's ``locations``/``freshness`` with no error.
+      first file's ``locations``/``freshness`` with no error;
+    - a component's ``group`` that is not slug-safe after normalization, or a
+      ``description`` over ``_MAX_DESCRIPTION_LENGTH`` characters
+      (``InvalidComponentFieldError``, STORY-147 AC1).
 
-    The last four checks run OUTSIDE the ``except (TypeError, ValueError)``
+    The last five checks run OUTSIDE the ``except (TypeError, ValueError)``
     block below, so their named subclasses (all ``ConfigError``) survive to
     the caller — a pydantic ``model_validator`` cannot do this (probed twice,
     independently: it converts a raised ``ValueError`` subclass to
@@ -687,6 +747,28 @@ def load_config(config_dir: str | Path) -> Config:
                 f"{yaml_path.name}: freshness.reentry_cycles must be a "
                 f"positive integer (got {app.freshness.reentry_cycles!r})."
             )
+
+        # STORY-147 AC1: a component's `group` must be slug-safe AFTER
+        # normalization (ComponentConfig's field validator already lowercased
+        # it); a `description` must not exceed _MAX_DESCRIPTION_LENGTH chars.
+        # Never silently truncated — a bad value is a loud, named failure.
+        for comp in app.components:
+            if comp.group is not None and not _GROUP_SLUG_RE.fullmatch(comp.group):
+                raise InvalidComponentFieldError(
+                    f"{yaml_path.name}: component {comp.id!r} has an invalid "
+                    f"`group` {comp.group!r} — after normalization it must "
+                    "be lowercase alphanumeric segments separated by single "
+                    "hyphens (e.g. `commerce`, `payments-core`)."
+                )
+            if (
+                comp.description is not None
+                and len(comp.description) > _MAX_DESCRIPTION_LENGTH
+            ):
+                raise InvalidComponentFieldError(
+                    f"{yaml_path.name}: component {comp.id!r} has a "
+                    f"`description` longer than {_MAX_DESCRIPTION_LENGTH} "
+                    f"characters (got {len(comp.description)})."
+                )
 
         # Global uniqueness checks across apps (dossier §7 — ids are globally stable)
         for sig in app.signals:
