@@ -15,7 +15,7 @@ refined: 2026-07-28   # PO-approved at sprint-62 refinement; citations re-verifi
 > `backend/tests/fakes.py` — whose `code_refs` span **five `verified`/`tier: map` articles**:
 > `config-layer.md` (417 lines), `zone-rules.md` (975), `canonical-types-and-ports.md` (312),
 > `persistence-adapters.md` (143), `api-five-file-convention.md` (82).
-> `.scrum/definition-of-done.md:110-114` requires each to be updated or re-verified **within the
+> `.scrum/definition-of-done.md:133-136` requires each to be updated or re-verified **within the
 > story**. That is the largest wiki radius in the candidate set and it was priced at zero. **The
 > estimate is corrected to 3 here so it enters its next sprint honestly sized**, with the citation
 > table below already re-derived. Sprint-73 candidate.
@@ -95,8 +95,8 @@ real cards on screen to judge (PO discussion 2026-07-28).
       implementation cannot satisfy this AC. The test asserts the specific class, not `ValueError`.
       ⚠ **The citations `config.py:343-357` / `:356` that stood here until 2026-08-14 were stale in
       the worst possible direction: `:343-357` is now `AppConfig`'s `mode="before"`
-      `model_validator` — the exact implementation this AC forbids — and `:356` is
-      `if not isinstance(data, dict): return data`.** Caught at pre-lock verification. Follow the
+      `model_validator` — the exact implementation this AC forbids — and the `if not isinstance(data, dict): return data`
+      line is `:354-355`, not `:356` (which is blank) — corrected at sprint-73 verification.** Caught at pre-lock verification. Follow the
       line numbers in this paragraph and the table above, not any others in this file.
 - [ ] **AC2** — `group` is normalized to a lowercase slug at load: `Commerce`, `COMMERCE`, and
       `commerce` all load as `commerce`. A test asserts all three inputs produce one value.

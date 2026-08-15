@@ -1,20 +1,20 @@
 # Backlog board
 
-**Snapshot at sprint-72, commit `adf1883`, generated 2026-08-15.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
+**Snapshot at sprint-72, commit `a47c469`, generated 2026-08-15.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
 
-**172/189 stories closed.** 17 open: 4 estimated (11 pts) + **13 unestimated**.
+**177/191 stories closed.** 14 open: 3 estimated (13 pts) + **11 unestimated**.
 
-> ⚠ Total work remaining is NOT computable: 13 of 17 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
+> ⚠ Total work remaining is NOT computable: 11 of 14 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
 
 ## Open work
 
 | Epic | Progress | Stories | Est. pts | Unestimated |
 | --- | --- | --- | --- | --- |
 | **Sprint 62 — fleet readiness foundation** <br>`sprint-62-fleet` | `#########.` | 6/7 | 20/23 | — |
-| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `..........` | 0/6 | 0/0 | 6 |
-| **Deferred by explicit PO decision (recorded, not forgotten)** <br>`deferred-by-po` | `########..` | 14/18 | 14/16 | 3 |
+| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `#.........` | 1/8 | 0/10 | 5 |
+| **Deferred by explicit PO decision (recorded, not forgotten)** <br>`deferred-by-po` | `########..` | 15/18 | 16/16 | 3 |
 | **Split out / created at sprint-65 refinement (2026-07-30)** <br>`sprint-65-splits` | `#########.` | 19/21 | 47/47 | 2 |
-| **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `#######...` | 10/14 | 19/25 | 2 |
+| **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `#########.` | 13/14 | 25/25 | 1 |
 
 ### Open stories by epic
 
@@ -29,12 +29,12 @@
 - `draft` STORY-152 _(no story file yet)_ — Completeness uses expected locations, not observed ones · defect · **unestimated**
 - `draft` STORY-153 _(no story file yet)_ — Rejected proposal reopens on the next cycle — needs a suppression window (F1) · defect · **unestimated**
 - `blocked` STORY-154 _(no story file yet)_ — Map the real Dynatrace HTTP failure codes (blocked on trial renewal) · chore · **unestimated**
-- `draft` STORY-155 _(no story file yet)_ — Remove sample_mode (superseded by the demo engine) · chore · **unestimated**
+- `ready` [STORY-155a](docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md) — Remove sample_mode from the frontend — the consumer goes first · chore · 3 pts
+- `ready` [STORY-155b](docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md) — Remove sample_mode from the backend, and tombstone its article · chore · 7 pts
 
 **Deferred by explicit PO decision (recorded, not forgotten)**
 
 - `blocked` STORY-172 _(no story file yet)_ — Per-location streak persistence — separate a regional outage from a flaky probe (F2) · feature · **unestimated**
-- `ready` [STORY-173](docs/scrum/stories/STORY-173-dynamo-container-leak.md) — Killed pytest run leaks its DynamoDB Local container and stalls the next run · defect · 2 pts
 - `draft` STORY-174 _(no story file yet)_ — Expose probe-location labels through the API (B7 consumption side) · feature · **unestimated**
 - `blocked` STORY-175 _(no story file yet)_ — Fleet expansion — author the real multi-component topology · chore · **unestimated**
 
@@ -45,10 +45,7 @@
 
 **Process: the ratchet brake (filed 2026-08-01, PO-directed)**
 
-- `ready` [STORY-221](docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md) — The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions · defect · 3 pts
 - `draft` [STORY-223](docs/scrum/stories/STORY-223-wiki-citation-resolution.md) — Wiki Fact citations that do not resolve from the repo root — 146 across 11 articles, silently skipped by the Facts lint · defect · **unestimated**
-- `ready` [STORY-224](docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md) — An entire second test suite exists and the DoD gate does not run it — 7 skill-level modules, including the two guards that have already caught real defects · defect · 3 pts
-- `draft` [STORY-225](docs/scrum/stories/STORY-225-infra-files-outside-wiki-coverage.md) — The deployment/infra files are in no article's code_refs — infra/stack.yaml is gated every run but hooked by no wiki article · defect · **unestimated**
 
 ## Complete
 

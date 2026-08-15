@@ -1,9 +1,10 @@
 # Sprint 73 — plan
 
-**Branch:** `sprint-73` off `sprint-72` HEAD at lock · **Committed:** 11 points / 3 stories ·
+**Branch:** `sprint-73` off `sprint-72` HEAD at lock · **Committed:** 10 points / 2 stories ·
 **Mode:** in-process
 
-**Status: DRAFT — awaiting PO lock.** Plan verification not yet dispatched (see Verification below).
+**Status: v2 — pre-lock verification RAN and returned FIX-THEN-PROCEED (4 CRITICAL, 4 HIGH,
+3 MEDIUM, 5 LOW). All applied below. Awaiting PO lock.**
 
 ## Goal
 
@@ -19,17 +20,36 @@ deliberate choice, not an oversight — 8 of the 14 open stories are fleet-path 
 them is unestimated, so the fleet critical path stays where the equilibrium pass left it. Recorded
 here so a later reader does not mistake it for drift.
 
-## Scope — 3 stories, 11 points
+## Scope — 2 stories, 10 points
 
 | # | Story | Pts | State |
 | --: | --- | --: | --- |
-| 1 | **STORY-155a** — remove `sample_mode` from the frontend | 3 | `draft` → **split + refined at this planning**, 6 AC |
-| 2 | **STORY-155b** — remove `sample_mode` from the backend, tombstone its article | 5 | `draft` → **split + refined at this planning**, 8 AC |
-| 3 | **STORY-147** — component `group` + `description` | 3 | `ready` since sprint 62; re-verified 2026-08-14 |
+| 1 | **STORY-155a** — remove `sample_mode` from the frontend | 3 | `draft` → **split + refined**, 6 AC |
+| 2 | **STORY-155b** — remove `sample_mode` from the backend, tombstone its article | **7** | `draft` → **split + refined**, 11 AC |
 
-Velocity: 11, 10, 11, 11, 10, **8**. This commits **11** — the top of the band, deliberately, because
-sprint 72's 8 was one dropped story on a session limit and **A21 (the window-check hook) now blocks a
-dispatch above 95%**, which is the specific failure that cost that point.
+Velocity: 11, 10, 11, 11, 10, **8**. This commits **10**.
+
+### STORY-147 was cut at verification, and STORY-155b re-priced 5 → 7
+
+**The re-pricing indicts my own method.** v1 bumped STORY-147 from 2 to 3 *specifically because* its
+diff reaches five `verified`/`tier: map` articles that A18 forces re-verified in-story — then priced
+STORY-155b's **nine** such articles at zero and called them "informational only." The same rule,
+applied to the small story and withheld from the big one. Verification computed the overlap
+(`api-five-file-convention`, `architecture-boundary`, `canonical-types-and-ports`, `config-layer`,
+`ingest-service-and-pull-loop`, `persistence-adapters`, `statuspage-publish`, `zone-rules`,
+`sample-mode`) and **that scope cannot be split into a follow-up — A18 makes it in-story by rule.**
+
+With 155b honestly at 7, the sprint was a 13. STORY-147 is cut.
+
+**Is this STORY-186 repeating?** The plan said 147 "either goes in now or should be archived", so the
+question is owed an answer rather than a third silent deferral. **I judge it is not the same pattern,
+and the difference is checkable:** STORY-186 was never started across three sprints, its content
+*shrank* on every re-verification, and it had no consumer. STORY-147 is `ready`, estimated, its
+citations re-derived twice (2026-08-14 and again at this verification, all exact), and it has a
+definite future consumer — its own rationale sequences it *before* fleet expansion so component
+entries are authored once rather than twice. It is being displaced by a story that got more expensive,
+not losing a contest on merit. **PO decision requested: archive it, or commit it as sprint 74's first
+story.** Deferring it again without deciding is what produced STORY-186.
 
 ## Why this is the equilibrium sprint
 
@@ -44,14 +64,6 @@ on record — exactly what the directive asks for.
 224 mojibake sequences** (re-measured 2026-08-15; filed as 218, the sprint-71 verifier said 293).
 STORY-192 must be re-measured after this sprint rather than carried at its current size.
 
-**STORY-147 is here to stop it becoming another STORY-186.** It has been deferred from sprint 62 and
-sprint 72. STORY-186 was deferred three times, never once started, and was archived at the sprint-72
-review. The lesson was explicit: *a story that loses every prioritisation contest is telling you its
-real priority.* STORY-147 either goes in now or it should be archived — and it is `ready`, its
-citations were re-derived on 2026-08-14, and its own rationale sequences it **before** fleet
-expansion (whoever authors the coming components fills `group`/`description` in the same edit rather
-than every entry being touched twice). So it goes in, first-to-drop.
-
 ## Backlog arithmetic — the point of the sprint
 
 | | Open |
@@ -60,9 +72,10 @@ than every entry being touched twice). So it goes in, first-to-drop.
 | At this planning, before changes | 14 |
 | STORY-225 **archived** (below) | 13 |
 | STORY-155 **split** into 155a + 155b (`split` closes, two open) | 14 |
-| **After sprint 73 completes all three** | **11** |
+| **After sprint 73 completes both** | **12** |
 
-Trajectory: **42 → 21 → 14 → 11.**
+Trajectory: **42 → 21 → 14 → 12.** (v1 projected 11 with STORY-147 included; it is cut, so the
+sprint returns one fewer. If the PO archives 147, it is 11.)
 
 **One archive, and it is archived on its own evidence.** STORY-225's refinement question 4 *demanded*
 a sweep before choosing a shape. The sweep was run at sprint-72 planning and **refuted both of its
@@ -95,12 +108,20 @@ opposite of *"most of the value is in the archiving, not the building."* `next_s
 
 ## Execution order
 
-**155a → 155b → 147**
+**155a → 155b**
 
-1. **155a before 155b is a hard dependency, not a preference.** Removing the backend endpoint first
-   leaves the SPA calling a route that 404s, on a branch that may sit unmerged for sprints.
-2. **147 last** because it is additive and off-goal; it is the **declared first-to-drop**. If it
-   drops, it is archived rather than deferred a fourth time — see above.
+**The ordering rationale stated in v1 was WRONG and is replaced.** I claimed removing the backend
+first would leave the SPA "calling a 404" in a broken intermediate state. Verification refuted it by
+reading the code: the SPA **degrades gracefully** — `client.ts:73-79` throws `ApiError(status=404)`,
+`TopBar.tsx:52-58` renders *"Sample mode unavailable — retry"*, and `TopBar.test.tsx:126` already
+covers that path.
+
+**The order still stands, on a reason that survives:** 155a's diff **stales `sample-mode.md`** (nine
+of the article's `code_refs` are files 155a deletes or edits) and 155b **archives** it. Consumer-first
+archives the article once instead of updating-then-archiving.
+
+**Neither half may ship alone.** A half-removed feature is precisely what equilibrium test 2
+("nothing is half-landed") forbids. If 155b cannot complete, 155a's commits stay unmerged with it.
 
 ## Risks
 
@@ -130,8 +151,40 @@ To be measured at lock, not assumed. Expected baseline from sprint-72 close: **9
 pytest **835 passed / 0 skipped**, `npm test` 51 files / 363 tests, `yt_selftest` **113 tests** (108
 plus the five added by the parity guard), wiki sweep CLEAN.
 
-## Verification
+## Pre-lock verification — RAN, verdict **FIX-THEN-PROCEED**
 
-**This sprint IS contract-sensitive** — 155b touches the live ingest seam and the API route table,
-and both removal stories consume a wiki-held recipe that is already known to have drifted. The
-`yt-plan-verifier` should be dispatched before lock.
+4 CRITICAL, 4 HIGH, 3 MEDIUM, 5 LOW. All applied. Several probed by **execution**, not reading.
+
+**What it confirmed I got right:** `SampleModeIngest` really is a live decorator (and I *understated*
+it — `sample_mode.py:61` also does a per-cycle control-table read); the ZR1 citations and their `8`;
+STORY-147's entire corrected citation table, exact at HEAD; the backlog arithmetic; and that
+`putJson` has exactly one caller so it is safe to delete.
+
+### The four CRITICALs — every one would have reddened the gate at a story's final commit
+
+| | Finding | Fix |
+| --- | --- | --- |
+| **C1** | `pyproject.toml` is in **neither story**, and names sample-mode modules in **three** import-linter contracts (`:79`, `:105`, `:141`). Probed: an *independence* contract naming a deleted module → **exit 1**; a *forbidden* contract → **silent exit 0**. So `:79` reds DoD command 2 and `:105` rots invisibly. 155b's grep was scoped `backend/` and never reaches the file. | 155b **AC2**, naming all three |
+| **C2** | `test_citation_gate.py:242-251` asserts `found == set(BASELINE)` over the literal glob `wiki/*.md`; `BASELINE:212` holds a `"sample-mode.md"` key. Archiving the article guarantees a red pytest — and 155b's underscore grep cannot see a hyphenated filename. | 155b **AC4** |
+| **C3** | **155b AC1 was unsatisfiable as written.** `build_live_loop` cannot prove it — `test_run_live_loop.py:94` patches `run_periodic` away and asserts an `isinstance`, so removal becomes a one-word edit proving nothing. Worse, the "before" arm cannot live in the suite because AC2 deletes the before-object, and the one existing behavioural proof (`test_sample_mode_end_to_end.py:116`) is on the delete list. | AC1 rewritten: `run_periodic` + `test_pull_loop.py`'s harness, before-arm as **captured evidence**, compared at observation level |
+| **C4** | **155a stales `sample-mode.md`** — nine of its `code_refs` are files 155a touches — while 155a's own "Not in scope" forbade touching it and DoD `:133-136` required acting. Three rules, no legal move. | 155a demotes it to `status: stale` with a reason pointing at 155b — the protocol's designed safe state |
+
+### The HIGHs
+
+**H1 re-priced the sprint** (see Scope). **H2:** 155a's AC5 was *false by construction* — ~18 of ~30
+lost tests are in **edited** files, so the AC flagged its own correct outcome as a regression.
+**H3:** both AC2 greps were holed — 155a's underscore pattern missed `AppShell.test.tsx` and
+`SampleModeBanner.css`; 155b's could **never** return zero because it matches
+`uptime_monitor_v3.egg-info/SOURCES.txt`. **H4:** `tools/demo_loop_gate/harness.py:800` asserts
+`GET /sample-mode == {"enabled": False}` and **no DoD command runs it** — it would have silently
+broken the only proven end-to-end verification left since the vendor trial expired.
+
+### MEDIUM / LOW
+
+Further recipe drift beyond the one I found (`PostgresSampleModeRepository`, a `TopBar.css` with no
+sample-mode content, and the recipe's own discovery grep finding **4 of 16** files); the file counts
+were wrong in both directions (actual **23 backend / 16 frontend / 3 cross-cutting = 42**); 155a's
+AC3 offered a false binary when `useMaintenance` carries only a **docstring** reference; STORY-147's
+DoD citation corrected `:110-114` → `:133-136`; `archived_sprint`/`archived_reason` named in AC8; and
+`BOARD.md` regenerated — it still showed STORY-155 as an unestimated draft, contradicting the very
+parity guard this planning landed.

@@ -1467,7 +1467,14 @@ stories:
                     # api/v1/sample_mode/ is correct (verified).
                     # AC6 tombstones sample-mode.md, which also removes ~110 of STORY-192's 224
                     # mojibake sequences -- re-measure 192 afterwards.
-    points: 5
+    points: 7       # RE-PRICED 5 -> 7 at pre-lock verification 2026-08-15. The 5 counted the code
+                    # and priced the WIKI AT ZERO -- while this same sprint bumped STORY-147 from
+                    # 2 to 3 for exactly that reason. My own rule, applied to the small story and
+                    # withheld from the big one. The diff overlaps NINE tier:map/status:verified
+                    # articles that DoD:133-136 forces updated-or-re-verified IN-STORY, and A18
+                    # makes that non-splittable. Plus pyproject.toml's three import-linter
+                    # contracts, the citation-gate BASELINE key, and an AC1 that needs a two-run
+                    # captured-evidence procedure.
     priority: 31
     type: chore
     sprint: null
