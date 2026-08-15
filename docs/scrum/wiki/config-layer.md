@@ -100,7 +100,7 @@ Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
   below, that must live in `load_config` rather than on this model for the same
   pydantic-swallows-the-subclass reason `InvalidFreshnessError`/`UndeclaredLocationAliasError`
   do. Neither field reaches Statuspage — the publish payload
-  (`adapters/outbound/statuspage/__init__.py:54`, `{"component": {"status": vendor_status}}`)
+  (`backend/src/adapters/outbound/statuspage/__init__.py:54`, `{"component": {"status": vendor_status}}`)
   and `Config.statuspage_mapping()` are built from `statuspage_component_id`/`status` alone.
 - `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` —
   UNCHANGED shape; still the consumption type every existing reader sees, now
@@ -448,7 +448,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   STORY-146 four, checked in `load_config` for the same reason the other four are (a
   pydantic validator cannot raise a subclass that survives the caller). Neither field
   reaches Statuspage — `statuspage_mapping()` and the publish payload
-  (`adapters/outbound/statuspage/__init__.py:54`) are unaffected, pinned by a new
+  (`backend/src/adapters/outbound/statuspage/__init__.py:54`) are unaffected, pinned by a new
   regression test. **Re-keyed one "Seven surviving readers" citation while here**:
   `backend/src/composition/seed_dynamo.py`'s component-seeding `update_item` call grew by
   16 lines (the new `group`/`description` `ExpressionAttributeNames`/`Values` entries),
