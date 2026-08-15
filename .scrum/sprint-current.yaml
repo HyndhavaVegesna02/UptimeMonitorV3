@@ -1,6 +1,39 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 73
 status: active     # none | planning | active | review | closed | aborted | parked
+                   # ACTIVE BUT PAUSED MID-SPRINT -- see pause_record below.
+
+pause_record:
+  paused: 2026-08-16
+  at_commit: f6ce2c6          # last story commit; gate 9/9 green here
+  delivered: "6 of 13 points -- STORY-147 (3) done, STORY-155a (3) done. Both gate 9/9, both reality-gated."
+  remaining: "STORY-155b (7) -- NOT STARTED. Its dependency (155a) is satisfied."
+  window_at_decision: "5h 82% used, resets 05:50 | 7d 18%."
+  why: >-
+    Paused on the SESSION WINDOW per the PO's lock instruction "be aware of session limits" --
+    NOT on a blocker. There is no blocker. A21's rule reads <85 dispatch freely, and 82% still
+    qualifies; I stopped anyway. STORY-155b is 7 points, 11 AC, and nine tier:map articles that
+    A18 forces re-verified IN-STORY. Starting it with ~3 points of headroom before the
+    "start no new story" threshold would have guaranteed a mid-story death -- which ALREADY
+    HAPPENED THIS SPRINT to STORY-147's first implementer, on a 3-pointer. Starting a story that
+    certainly cannot finish is how the half-landed state gets created.
+  the_rule_that_governs_the_next_session: >-
+    *** STORY-155a AND STORY-155b ARE ATOMIC. DO NOT CLOSE THIS SPRINT WITH 155a DONE AND 155b
+    OUTSTANDING -- a half-removed feature is precisely what equilibrium test 2 ("nothing is
+    half-landed") forbids, and equilibrium is this sprint's goal. The declared drop unit is THE
+    PAIR. If 155b proves undeliverable, 155a's commits stay unmerged WITH it. 155a is marked
+    `done` in both .scrum files WITH that warning attached; do not quietly drop it.
+  next_action: >-
+    Resume at STORY-155b. Read docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md --
+    the story file, not any summary of it. Full handoff detail (the five recorded traps, the
+    environment, the retro raw material) is in .scrum/session.lock, which is GITIGNORED and
+    therefore local to this machine; this record is the committed copy.
+  one_thing_155b_does_not_yet_know: >-
+    *** STORY-147 CHANGED test_citation_gate.py, WHICH 155b's AC4 MUST EDIT. *** The distinct-
+    citation numbers are now 190 per-article / 178 globally, and the test asserts FOUR numbers,
+    not three. Archiving sample-mode.md (AC8) WILL move them again, and the BASELINE dict still
+    carries a "sample-mode.md" key that AC4 requires removed in the same commit. Re-derive those
+    numbers live; do not carry any figure from the story file or this board.
 goal: >-
   Equilibrium: the dead feature is gone, and the backlog shrinks.
 branch: sprint-73
