@@ -108,9 +108,9 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - sprint-73 (STORY-147): `seed_topology_dynamo` and `DynamoComponentRepository._map_item` gain
   Facts for the new `group`/`description` fields — SET fresh from config on every seed (never
   preserved, unlike `status`), read back with `.get()` (never bracket access) so a pre-story
-  component item round-trips as `None` instead of raising `KeyError`. Added
+  component item round-trips as `None` instead of raising `KeyError`.
   `backend/tests/test_dynamo_seed.py` and `backend/tests/test_dynamo_adapters.py` were already
-  `code_refs`; no new file added. `topology_keys.py`'s key-schema Fact (ZR-8 Finding 1) is
+  `code_refs`; no new file was added. `topology_keys.py`'s key-schema Fact (ZR-8 Finding 1) is
   untouched — this story adds attributes to the same items, not a new key shape.
 - sprint-68 (STORY-205 fix round): RE-VERIFIED, no content change. The sweep flagged
   `topology_keys.py` and `test_topology_keys.py` (both `code_refs`) for the quality-review
