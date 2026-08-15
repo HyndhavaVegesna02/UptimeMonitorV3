@@ -64,7 +64,15 @@ status: verified
   `state:ProposalState`, `reason:str|None=None`, `proposed_at:datetime`, `resolved_at:datetime|None=None`,
   `id:int|None=None`. Timezones for proposed_at/resolved_at are validated to be UTC (`proposal.py::StatusProposal`).
 - `Component` (frozen) models a component and its display status (`component.py::Component`).
-  Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b).
+  Fields: `id:str`, `name:str`, `status:ComponentStatus`, `app_id:str` (STORY-014b),
+  `group:str|None=None`, `description:str|None=None` (STORY-147) — both additive/optional
+  display metadata (a decorative sub-label and a one-line operator-facing description),
+  sourced from `composition/config.py::ComponentConfig` via topology seeding
+  (`composition/seed_dynamo.py`) and read back with `.get()` by
+  `DynamoComponentRepository._map_item` (see [[persistence-adapters]]) so a component item
+  seeded before STORY-147, carrying neither key at all, still reads back as `None` rather
+  than raising `KeyError`. `None` is a legitimate state — a component not yet categorized —
+  never a placeholder value.
 - STORY-045: `ComponentNotFoundError` (`component.py::ComponentNotFoundError`, a `ValueError` subclass)
   mirrors `proposal.py::ProposalNotFoundError`'s pattern. Raised by `ComponentRepository.set_status`
   when the conditional write affects zero rows (2026-06-28 check-then-act agreement: never a bare
@@ -310,3 +318,9 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   the same abbreviated-path pattern, left unfixed as out of this round's scope and flagged as a
   candidate:** line 99's `core/services/approval.py` re-exports... citation has the identical
   problem and predates STORY-200. verified_sha -> 013f344.
+- sprint-73 (STORY-147): `Component`'s Fact above gains two new fields, `group:str|None=None` and
+  `description:str|None=None` — additive/optional operator-cockpit display metadata, sourced from
+  `ComponentConfig` (see [[config-layer]]) via topology seeding and read back with `.get()` (never
+  bracket access) so a pre-STORY-147 component item, carrying neither key, still reads back as
+  `None`. No other Fact in this article changed — `ComponentNotFoundError`, the port signatures, and
+  every other domain type are untouched by this story.
