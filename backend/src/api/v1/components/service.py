@@ -24,6 +24,8 @@ class ComponentsService:
                 id=c.id,
                 name=c.name,
                 status=c.status.value,
+                group=c.group,
+                description=c.description,
             )
             for c in components
         ]

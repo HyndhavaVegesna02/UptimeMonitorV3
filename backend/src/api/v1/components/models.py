@@ -14,3 +14,5 @@ class ComponentDTO(BaseModel):
     id: str
     name: str
     status: str
+    group: str | None = None
+    description: str | None = None
