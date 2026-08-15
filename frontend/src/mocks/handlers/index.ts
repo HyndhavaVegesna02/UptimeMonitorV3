@@ -9,7 +9,6 @@ import {
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_TOPOLOGY,
 } from './availability'
-import { FIXTURE_SAMPLE_MODE_OFF, sampleModeHandlers } from './sampleMode'
 import {
   FIXTURE_HISTORY_BY_SIGNAL,
   FIXTURE_HISTORY_FRONTEND_HTTP,
@@ -29,7 +28,6 @@ export const handlers = [
   ...componentsHandlers,
   ...approvalsHandlers,
   ...availabilityHandlers,
-  ...sampleModeHandlers,
   ...historyHandlers,
   ...publicationsHandlers,
   ...maintenanceHandlers,
@@ -43,7 +41,6 @@ export {
   FIXTURE_PROPOSALS,
   FIXTURE_AVAILABILITY_BY_COMPONENT,
   FIXTURE_TOPOLOGY,
-  FIXTURE_SAMPLE_MODE_OFF,
   FIXTURE_HISTORY_BY_SIGNAL,
   FIXTURE_HISTORY_FRONTEND_HTTP,
   FIXTURE_HISTORY_FRONTEND_TLS,

@@ -9,7 +9,6 @@ import type {
   ObservationDTO,
   ProposalDTO,
   PublicationDTO,
-  SampleModeDTO,
 } from './types'
 
 /**
@@ -105,24 +104,6 @@ async function postJson<TResponse, TBody>(
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
-  } catch {
-    throw new ApiError(`Network error while requesting ${path}`)
-  }
-
-  return readOkJson<TResponse>(response, path)
-}
-
-async function putJson<TResponse, TBody>(
-  path: string,
-  body: TBody,
-): Promise<TResponse> {
-  let response: Response
-  try {
-    response = await fetch(`${API_BASE_URL}${path}`, {
-      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
@@ -234,24 +215,6 @@ export function getHistory(params: {
  */
 export function getPublications(): Promise<PublicationDTO[]> {
   return getJson<PublicationDTO[]>('/v1/publications')
-}
-
-/**
- * `GET /api/v1/sample-mode` (STORY-048/STORY-049 AC1, AC4) — the current
- * sample-mode flag state. TEMPORARY feature seam — see
- * `docs/scrum/wiki/sample-mode.md`'s REMOVAL inventory.
- */
-export function getSampleMode(): Promise<SampleModeDTO> {
-  return getJson<SampleModeDTO>('/v1/sample-mode')
-}
-
-/**
- * `PUT /api/v1/sample-mode` (STORY-048/STORY-049 AC2) — sets the flag and
- * returns the new state (idempotent). TEMPORARY feature seam — see
- * `docs/scrum/wiki/sample-mode.md`'s REMOVAL inventory.
- */
-export function putSampleMode(enabled: boolean): Promise<SampleModeDTO> {
-  return putJson<SampleModeDTO, { enabled: boolean }>('/v1/sample-mode', { enabled })
 }
 
 /**

@@ -167,16 +167,6 @@ export interface PublicationDTO {
 }
 
 /**
- * Mirrors `backend/src/api/v1/sample_mode/models.py::SampleModeDTO`
- * (STORY-048/STORY-049 AC4) — the persisted, process-crossing sample-mode
- * flag. `enabled: false` when the flag was never set. THIS IS A TEMPORARY
- * FEATURE (see `docs/scrum/wiki/sample-mode.md`'s REMOVAL inventory).
- */
-export interface SampleModeDTO {
-  enabled: boolean
-}
-
-/**
  * Mirrors `backend/src/api/v1/maintenance/models.py::MaintenanceWindowDTO`
  * (STORY-036/STORY-015f AC1) — a single scheduled maintenance window.
  * `starts_at`/`ends_at` are ISO-8601 UTC strings (trailing `Z`); `reason` is
