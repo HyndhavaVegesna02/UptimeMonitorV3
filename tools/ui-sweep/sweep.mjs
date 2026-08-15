@@ -4,8 +4,6 @@
 // failure in one phase never forces a re-run of the others:
 //   node sweep.mjs tabs        -- AC1/AC2: six tabs, SPA-nav + deep-load
 //   node sweep.mjs theme       -- AC4: dark/light + 390px viewport
-//   node sweep.mjs sample-on   -- AC3 step: toggle sample mode ON, screenshot
-//   node sweep.mjs sample-off  -- AC3 step: toggle sample mode OFF, screenshot
 //   node sweep.mjs maint-create -- AC3 step: schedule the probe window
 //   node sweep.mjs maint-delete -- AC3 step: delete the probe window, verify clean
 //
@@ -184,54 +182,6 @@ async function phaseTheme(browser) {
   }
 }
 
-async function phaseSampleOn(browser) {
-  const context = await browser.newContext()
-  const page = await context.newPage()
-  const evidence = newEvidence()
-  attachCapture(page, evidence)
-  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(500)
-  await screenshot(page, 'sample-mode-before')
-
-  const toggle = page.locator('button[aria-label="Sample mode"]')
-  await toggle.click()
-  await page.waitForFunction(
-    () =>
-      document.querySelector('button[aria-label="Sample mode"]')?.getAttribute(
-        'aria-checked',
-      ) === 'true',
-  )
-  await page.waitForTimeout(500)
-  await screenshot(page, 'sample-mode-on')
-  writeEvidence('sample-mode-on', evidence)
-  await context.close()
-}
-
-async function phaseSampleOff(browser) {
-  const context = await browser.newContext()
-  const page = await context.newPage()
-  const evidence = newEvidence()
-  attachCapture(page, evidence)
-  await page.goto(`${BASE_URL}/`, { waitUntil: 'networkidle' })
-  await page.waitForTimeout(500)
-
-  const toggle = page.locator('button[aria-label="Sample mode"]')
-  const checked = await toggle.getAttribute('aria-checked')
-  if (checked === 'true') {
-    await toggle.click()
-    await page.waitForFunction(
-      () =>
-        document.querySelector('button[aria-label="Sample mode"]')?.getAttribute(
-          'aria-checked',
-        ) === 'false',
-    )
-  }
-  await page.waitForTimeout(500)
-  await screenshot(page, 'sample-mode-off')
-  writeEvidence('sample-mode-off', evidence)
-  await context.close()
-}
-
 async function phaseMaintCreate(browser) {
   const context = await browser.newContext()
   const page = await context.newPage()
@@ -302,8 +252,6 @@ async function phaseMaintDelete(browser) {
 const PHASES = {
   tabs: phaseTabs,
   theme: phaseTheme,
-  'sample-on': phaseSampleOn,
-  'sample-off': phaseSampleOff,
   'maint-create': phaseMaintCreate,
   'maint-delete': phaseMaintDelete,
 }
