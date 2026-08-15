@@ -971,3 +971,27 @@ components:
         from src.composition.config import ConfigError
 
         assert issubclass(InvalidComponentFieldError, ConfigError)
+
+    def test_statuspage_mapping_unaffected_by_group_and_description(self):
+        """AC4: group/description are internal-only operator-cockpit
+        metadata — statuspage_mapping() stays exactly
+        {component_id: statuspage_component_id}, byte-identical to before
+        this story, even when a component declares both new fields."""
+        apps = [
+            AppConfig(
+                id="app-1",
+                name="App 1",
+                monitor_provider="dynatrace",
+                components=[
+                    ComponentConfig(
+                        id="comp-1",
+                        name="Comp 1",
+                        statuspage_component_id="sp-1",
+                        group="commerce",
+                        description="Cart, payments and order placement",
+                    ),
+                ],
+            )
+        ]
+        cfg = Config(apps)
+        assert cfg.statuspage_mapping() == {"comp-1": "sp-1"}
