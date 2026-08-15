@@ -80,6 +80,21 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   Git-configured apps, components, and signals into the `TOPOLOGY` partition, obtaining
   its keys from `topology_keys.py` (above). Uses an update expression with
   `if_not_exists` to preserve existing component status on re-seed.
+- **`group`/`description` (STORY-147).** `ComponentConfig.group`/`.description` (see
+  [[config-layer]]) are SET fresh from config on every seed — like `name`/`app_id`, and
+  UNLIKE `status`, which is the one field preserved via `if_not_exists`. An absent config
+  value writes DynamoDB's NULL type; boto3 round-trips that as Python `None`.
+  `DynamoComponentRepository._map_item` reads both with `.get("group")`/`.get("description")`,
+  never bracket access — every `COMPONENT#` item seeded before this story has neither key
+  at all, and bracket access would raise `KeyError` on read-back for every one of them.
+  Proven by `test_dynamo_component_repository_reads_legacy_item_without_group_or_description`
+  (`backend/tests/test_dynamo_adapters.py`), shown RED by mutation (bracket access in place
+  of `.get()` raises `KeyError: 'group'` against a legacy-shaped item; reverted, `git diff`
+  empty), and the round trip itself by
+  `test_seed_topology_dynamo_persists_group_and_description` (`backend/tests/test_dynamo_seed.py`,
+  reads the raw table item directly) and
+  `test_dynamo_component_repository_reads_group_and_description_when_present`
+  (`backend/tests/test_dynamo_adapters.py`, through the repository).
 - Contract parity is verified in `backend/tests/test_dynamo_adapters.py`, `backend/tests/test_dynamo_publication_repository.py`, `backend/tests/test_dynamo_maintenance_repository.py`, `backend/tests/test_dynamo_rejected_observation_repository.py`, and `backend/tests/test_dynamo_seed.py` against a real local DynamoDB instance.
 
 ### Testing convention
@@ -90,6 +105,13 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-73 (STORY-147): `seed_topology_dynamo` and `DynamoComponentRepository._map_item` gain
+  Facts for the new `group`/`description` fields — SET fresh from config on every seed (never
+  preserved, unlike `status`), read back with `.get()` (never bracket access) so a pre-story
+  component item round-trips as `None` instead of raising `KeyError`. Added
+  `backend/tests/test_dynamo_seed.py` and `backend/tests/test_dynamo_adapters.py` were already
+  `code_refs`; no new file added. `topology_keys.py`'s key-schema Fact (ZR-8 Finding 1) is
+  untouched — this story adds attributes to the same items, not a new key shape.
 - sprint-68 (STORY-205 fix round): RE-VERIFIED, no content change. The sweep flagged
   `topology_keys.py` and `test_topology_keys.py` (both `code_refs`) for the quality-review
   fix round's rename of the public `TOPOLOGY_PK` constant to `_TOPOLOGY_PK` (no consumer
