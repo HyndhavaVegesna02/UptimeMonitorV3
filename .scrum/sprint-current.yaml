@@ -108,6 +108,22 @@ board:
       canonical-types-and-ports, persistence-adapters, api-five-file-convention) that DoD:133-136
       forces updated-or-re-verified IN-STORY. That is why it is a 3 and not a 2. Sweep AFTER the last
       commit; do not pre-declare a radius.
+    resume_from: >-
+      *** FIRST IMPLEMENTER DIED ON THE SESSION LIMIT, 2026-08-15. 15 commits survive
+      (da69c92..795f4cb). RESUMING, NOT RESTARTING. ***
+      DONE per commit range: AC1/AC2 (3591722), AC3 (3a40e6b, 86cd95d, 48c5e64, 9c790e2),
+      AC4 (bb2cd3a), AC5 (9c790e2, 076f33e), and the A18 wiki pass over all five articles
+      (dbdb6b5, 316c2b1, 4202f42, 0da9e7f, 651d36e, d5be31d, 29ffc6a).
+      RECOVERED BY THE ORCHESTRATOR: the agent's last words were that it had found a real
+      citation defect (an abbreviated path) and was fixing it. Its uncommitted 2-line edit was
+      verified against the repo convention and committed as 795f4cb -- coherent work preserved,
+      not a scrap.
+      *** STILL RED, AND THE AGENT NEVER REACHED IT: backend/tests/test_citation_gate.py::
+      test_ac1_docstring_scope_numbers_are_current FAILS at 795f4cb -- "says 13 of 188 distinct
+      citations ... live measurement says 13 of 190". The story's own wiki commits added two
+      distinct citations. The failure message names the fix itself: the docstring sentence AND
+      the assertion, in the same commit. ***
+      REMAINING: that red, then AC6 (the gate).
 
   - id: STORY-155a
     title: Remove sample_mode from the frontend — the consumer goes first
