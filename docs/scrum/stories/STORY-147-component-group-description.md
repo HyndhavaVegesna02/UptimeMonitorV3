@@ -5,8 +5,26 @@ type: feature
 points: 3          # RE-ESTIMATED 2 -> 3 at sprint-72 pre-lock verification: the diff necessarily
                    # reaches FIVE verified/map wiki articles, which A18 forces re-verified in-story.
 status: ready
-refined: 2026-07-28   # PO-approved at sprint-62 refinement; citations re-verified 2026-08-14
+refined: 2026-07-28   # PO-approved at sprint-62 refinement; citations re-verified 2026-08-14 and
+                      # again 2026-08-15 at sprint-73 pre-lock verification -- all rows exact.
+sprint: 73   # story 1 of 3 -- PO ruling 2026-08-15 "i want 147". PENDING PO LOCK.
 ---
+
+> ## *** IN SPRINT 73, STORY 1 OF 3 — PO ruling 2026-08-15: "i want 147". ***
+>
+> Sprint-73 v2 had cut it again (STORY-155b re-priced 5 → 7 pushed the sprint to 13) and put the
+> choice to the PO — archive it, or commit it — because a third silent deferral is what produced
+> STORY-186. The PO chose to commit it, and it runs **FIRST**: it is the only independent, already
+> `ready`, small story in the sprint, and scheduling it last is what gets a story dropped.
+>
+> **Its citations were re-verified a THIRD time at sprint-73 pre-lock verification (2026-08-15) and
+> every row of the table below is exact at HEAD** — `ComponentConfig` at `config.py:180`,
+> `load_config` at `:567`, the bare-`ValueError` re-raise at `:650-651`, `component.py:22`, and
+> `models.py:9-16` in a file that is exactly 16 lines. AC4 is structurally guaranteed:
+> `adapters/outbound/statuspage/__init__.py:54` is `{"component": {"status": vendor_status}}`.
+> Two citation corrections were applied at that verification: the wiki re-verification rule is
+> `.scrum/definition-of-done.md:133-136` (not `:110-114`, which is STORY-224's self-test note), and
+> the `if not isinstance(data, dict)` line is `:354-355`, not `:356`.
 
 > **DEFERRED OUT OF SPRINT 72 (2026-08-14) on its own re-measurement, not on priority.** Pre-lock
 > verification found the diff must touch `composition/config.py`, `composition/seed_dynamo.py`,

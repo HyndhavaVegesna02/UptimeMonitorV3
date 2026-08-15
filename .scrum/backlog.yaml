@@ -1244,7 +1244,12 @@ stories:
                     # Sprint-73 candidate, already re-verified.
     priority: 53
     type: feature
-    sprint: null # RE-DEFERRED 2026-07-29 (PO): its sprint-63 tag rested on "the frontend lands
+    sprint: 73      # *** PO RULING 2026-08-15: "i want 147". *** v2 of the sprint-73 plan CUT it
+                    # (155b re-priced 5 -> 7 made the sprint a 13) and put its fate to the PO --
+                    # archive it, or commit it. The PO chose to commit it, so it goes FIRST: it is
+                    # the only independent, already-ready, small story here, and a story scheduled
+                    # last is a story that gets dropped -- the mechanism that produced STORY-186
+                    # across three sprints. Story 1 of 3. Deferred from sprints 62 and 72.
                  # in 63", and it does not -- 63 opens with STORY-176 (PO decision at the
                  # sprint-62 review). Unchanged reasoning, corrected destination: purely
                  # decorative with nothing rendering it, so it lands WITH its consuming frontend
@@ -1444,7 +1449,8 @@ stories:
     points: 3
     priority: 30
     type: chore
-    sprint: null
+    sprint: 73      # story 2 of 3. PENDING PO LOCK. ATOMIC WITH ITS PAIR -- both land or
+                    # neither does; a half-removed feature is what equilibrium test 2 forbids.
   - id: STORY-155b
     title: Remove sample_mode from the backend, and tombstone its article
     epic: deferred-future
@@ -1477,7 +1483,8 @@ stories:
                     # captured-evidence procedure.
     priority: 31
     type: chore
-    sprint: null
+    sprint: 73      # story 3 of 3. PENDING PO LOCK. ATOMIC WITH ITS PAIR -- both land or
+                    # neither does; a half-removed feature is what equilibrium test 2 forbids.
   - id: STORY-154
     title: Map the real Dynatrace HTTP failure codes (blocked on trial renewal)
     epic: deferred-future

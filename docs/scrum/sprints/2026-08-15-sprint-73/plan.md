@@ -1,10 +1,11 @@
 # Sprint 73 — plan
 
-**Branch:** `sprint-73` off `sprint-72` HEAD at lock · **Committed:** 10 points / 2 stories ·
+**Branch:** `sprint-73` off `sprint-72` HEAD at lock · **Committed:** 13 points / 3 stories ·
 **Mode:** in-process
 
-**Status: v2 — pre-lock verification RAN and returned FIX-THEN-PROCEED (4 CRITICAL, 4 HIGH,
-3 MEDIUM, 5 LOW). All applied below. Awaiting PO lock.**
+**Status: v3 — pre-lock verification RAN (FIX-THEN-PROCEED, 16 findings, all applied). PO then ruled
+on the one question v2 raised: *"i want 147"*. STORY-147 is back in and the sprint is 13 points.
+Awaiting PO lock.**
 
 ## Goal
 
@@ -20,14 +21,16 @@ deliberate choice, not an oversight — 8 of the 14 open stories are fleet-path 
 them is unestimated, so the fleet critical path stays where the equilibrium pass left it. Recorded
 here so a later reader does not mistake it for drift.
 
-## Scope — 2 stories, 10 points
+## Scope — 3 stories, 13 points
 
 | # | Story | Pts | State |
 | --: | --- | --: | --- |
 | 1 | **STORY-155a** — remove `sample_mode` from the frontend | 3 | `draft` → **split + refined**, 6 AC |
 | 2 | **STORY-155b** — remove `sample_mode` from the backend, tombstone its article | **7** | `draft` → **split + refined**, 11 AC |
+| 3 | **STORY-147** — component `group` + `description` | 3 | `ready` since sprint 62; citations verified exact at v2 verification |
 
-Velocity: 11, 10, 11, 11, 10, **8**. This commits **10**.
+Velocity: 11, 10, 11, 11, 10, **8**. This commits **13** — **two points above the highest figure this
+team has ever delivered**, and that is stated plainly rather than smoothed over.
 
 ### STORY-147 was cut at verification, and STORY-155b re-priced 5 → 7
 
@@ -39,17 +42,21 @@ applied to the small story and withheld from the big one. Verification computed 
 `ingest-service-and-pull-loop`, `persistence-adapters`, `statuspage-publish`, `zone-rules`,
 `sample-mode`) and **that scope cannot be split into a follow-up — A18 makes it in-story by rule.**
 
-With 155b honestly at 7, the sprint was a 13. STORY-147 is cut.
+With 155b honestly at 7, the sprint is a 13.
 
-**Is this STORY-186 repeating?** The plan said 147 "either goes in now or should be archived", so the
-question is owed an answer rather than a third silent deferral. **I judge it is not the same pattern,
-and the difference is checkable:** STORY-186 was never started across three sprints, its content
-*shrank* on every re-verification, and it had no consumer. STORY-147 is `ready`, estimated, its
-citations re-derived twice (2026-08-14 and again at this verification, all exact), and it has a
-definite future consumer — its own rationale sequences it *before* fleet expansion so component
-entries are authored once rather than twice. It is being displaced by a story that got more expensive,
-not losing a contest on merit. **PO decision requested: archive it, or commit it as sprint 74's first
-story.** Deferring it again without deciding is what produced STORY-186.
+**v2 cut STORY-147 and put its fate to the PO — archive, or commit it. The PO ruled: *"i want 147"*.**
+It is in, and it goes **first**.
+
+**That ruling is what sets the ordering, and the reasoning is worth recording.** 147 is the only
+story here that is independent, already `ready`, and small. Running it first **banks it** — the PO
+asked for it specifically, and a story scheduled last is a story that gets dropped, which is the
+mechanism that produced STORY-186 over three sprints. Running it first removes that risk entirely.
+
+**The cost of that choice, stated honestly: it moves the risk onto the `sample_mode` pair.** If the
+sprint runs short, the pair is what remains, and the pair is atomic (below). So the realistic bad
+outcome is a sprint that delivers 3 points instead of 13 — not a sprint that delivers 10 and drops a
+3. I judge that the right trade because the PO named 147 explicitly and the pair is worthless
+half-done, but it is a trade and it should be visible at review if it lands badly.
 
 ## Why this is the equilibrium sprint
 
@@ -108,7 +115,17 @@ opposite of *"most of the value is in the archiving, not the building."* `next_s
 
 ## Execution order
 
-**155a → 155b**
+**147 → 155a → 155b**
+
+**147 first** — see Scope. It is independent of both removal stories (its diff touches
+`composition/config.py`, `seed_dynamo.py`, `core/domain/component.py`, the component repository and
+the components API feature; none is a `sample_mode` file), so nothing about the removal changes it.
+
+**⚠ 155a and 155b are ATOMIC — both land, or neither does.** A half-removed feature is exactly what
+equilibrium test 2 ("nothing is half-landed") forbids. If the window closes mid-155b, **pause with a
+committed handoff** rather than closing the sprint with 155a merged and 155b outstanding; if 155b
+proves undeliverable, 155a's commits stay unmerged with it. The declared drop unit is **the pair**,
+never one half.
 
 **The ordering rationale stated in v1 was WRONG and is replaced.** I claimed removing the backend
 first would leave the SPA "calling a 404" in a broken intermediate state. Verification refuted it by
