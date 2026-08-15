@@ -80,8 +80,48 @@ board:
     title: Component group + description — config to ComponentDTO
     points: 3
     order: 1
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-147-component-group-description.md
+    completed:
+      final_head: 4b8501e
+      commits: 18   # da69c92..4b8501e, minus the 1 orchestrator board commit
+      spec_review: "PASS -- all six AC MET, each traced to a test the reviewer RAN, none inspection-only."
+      quality_review: >-
+        REQUEST CHANGES -> one MAJOR, fixed at 3c3e820. The code itself (config.py, seed_dynamo.py,
+        _map_item, DTO/service) was called clean and zone-correct with no changes asked.
+      major_finding: >-
+        test_citation_gate.py:19 -- the docstring's globally-distinct count said 186; live is 178, and
+        THIS STORY moved it (176 at da69c92 -> 178 at 4b8501e). ORCHESTRATOR VERIFIED INDEPENDENTLY
+        before acting: per-article-summed 190, globally-distinct (path,l1,l2) 178, path-only 78.
+        The sharper half: the docstring claimed "re-derives all three live, so this sentence cannot go
+        stale silently again" while 186 was a FOURTH number nothing asserted -- a false proof-label
+        beside its own counter-example. Fix made the claim TRUE (the test now asserts all four,
+        len(globally_distinct) == 178 at :469), not merely reworded.
+      in_story_corrections: >-
+        Two false sentences THIS STORY wrote into wiki History were fixed with the MAJOR (ca62753,
+        4b8501e): persistence-adapters.md's garbled "Added ... were already code_refs", and
+        statuspage-publish.md labelling STORY-147 an "unrelated story" when the test that entry
+        records is this story's own AC4 evidence. Correcting text the story authored is not scope
+        creep; leaving them would breach equilibrium test 1 ("nothing lies").
+      reality_gate: >-
+        PASS. The HTTP tests use FakeComponentRepository, so the full chain had never run in one
+        process. Ran the REAL composition root (create_app() with no injected repos) against real
+        DynamoDB Local with a scratch CONFIG_DIR declaring `group: "Commerce"` + a description on one
+        component and NEITHER on a second. Result: HTTP 200, grouped-comp -> group "commerce"
+        (AC2 normalization survives config -> seed -> Dynamo -> repo -> DTO -> JSON, not just the
+        pydantic model), legacy-comp -> group null and description null, NOT "" (AC3's negative clause
+        past the fake-repo seam). Publish-guard safe by construction: the scratch config declares zero
+        statuspage_component_id, so build_publisher falls to LoggingPublisher.
+      carried_to_po_at_review: >-
+        FIVE quality minors deliberately NOT fixed mid-sprint -- they are design observations, not
+        defects in the delivered work, and the call is the PO's: (1) test_statuspage_adapter.py:98-123
+        overlaps :36-65, only the model_fields pin is new; (2) config.py:756-762's error message quotes
+        the NORMALIZED group, so an author who wrote "Not Valid!" is shown "not valid!" and cannot grep
+        their YAML; (3) `description: ""` is accepted while `group: ""` is rejected -- asymmetry the UI
+        must special-case; (4) the DynamoDB NULL-vs-absent distinction is asserted nowhere, though
+        seed_dynamo.py's comment and persistence-adapters.md's Fact both claim it; (5) config-layer.md
+        cites statuspage/__init__.py:54, outside its 3-entry code_refs, so drift there never
+        re-triggers the article.
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_first: >-
       PO ruling. The only independent, already-ready, small story in the sprint, and a story scheduled
@@ -195,3 +235,57 @@ standing:
   - "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
   - "plan-verification.md:19 FORBIDS pre-declaring a story's wiki blast radius."
   - "A nonzero pytest SKIP count is an incomplete gate, not a pass."
+
+story_147_gate:
+  commit: 4b8501e
+  result: "9/9 PASS, exit 0"
+  pytest: "851 passed, 0 skipped"
+  run_by: orchestrator   # NOT the implementer self-run -- external-delivery contract
+  wiki_sweep: "CLEAN at 4b8501e"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 851 passed in 61.67s (0:01:01) ========================"
+      commit: 4b8501e
+      at: "2026-08-15T20:36:22+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 152 files, 433 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: 4b8501e
+      at: "2026-08-15T20:37:24+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 4b8501e
+      at: "2026-08-15T20:37:25+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "265 files already formatted"
+      commit: 4b8501e
+      at: "2026-08-15T20:37:25+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: 4b8501e
+      at: "2026-08-15T20:37:25+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  02:07:28 | Duration  45.81s (transform 5.90s, setup 41.06s, import 23.06s, tests 44.25s, environment 164.90s)"
+      commit: 4b8501e
+      at: "2026-08-15T20:37:28+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 357ms"
+      commit: 4b8501e
+      at: "2026-08-15T20:38:14+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: 4b8501e
+      at: "2026-08-15T20:38:19+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.022s | OK"
+      commit: 4b8501e
+      at: "2026-08-15T20:38:24+00:00"
+  
