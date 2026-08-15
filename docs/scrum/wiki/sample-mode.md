@@ -3,7 +3,15 @@ title: Sample mode â€” the on-demand outage simulator (TEMPORARY feature)
 code_refs: [backend/src/core/ports/sample_mode_repository.py, backend/src/core/ports/__init__.py, backend/src/api/v1/sample_mode/__init__.py, backend/src/api/v1/sample_mode/controller.py, backend/src/api/v1/sample_mode/models.py, backend/src/api/v1/sample_mode/validation.py, backend/src/api/v1/sample_mode/service.py, backend/src/api/dependencies.py, backend/src/api/v1/__init__.py, backend/src/composition/app.py, backend/src/composition/sample_mode.py, backend/src/composition/run.py, pyproject.toml, backend/tests/fakes.py, backend/tests/test_sample_mode_repository_contract.py, backend/tests/test_sample_mode_endpoint.py, backend/tests/test_sample_mode_ingest.py, backend/tests/test_sample_mode_end_to_end.py, backend/tests/test_run_live_loop.py, frontend/src/api/types.ts, frontend/src/api/client.ts, frontend/src/mocks/handlers/sampleMode.ts, frontend/src/mocks/handlers/index.ts, frontend/src/features/dashboard/useSampleMode.ts, frontend/src/AppShell.tsx, frontend/src/nav/TopBar.tsx, frontend/src/nav/SampleModeBanner.tsx, frontend/src/pages/DashboardPage.tsx, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py]
 tier: map
 verified_sprint: sprint-69
-status: verified
+status: stale
+# DEMOTED 2026-08-16 (STORY-155a): the frontend half of sample_mode is now deleted --
+# useSampleMode.ts, nav/SampleModeBanner.{tsx,css}, mocks/handlers/sampleMode.ts are gone,
+# and AppShell.tsx / api/client.ts / api/types.ts / mocks/handlers/index.ts no longer
+# reference it -- 8 of this article's code_refs moved, and the sweep (correctly) reports
+# STALE. NOT re-verified: half the subject is deleted and the other half (backend) is
+# about to be, so a re-verification claim now would be false. This is the protocol's
+# designed safe state -- quarantined, not laundered. STORY-155b removes the backend half
+# and ARCHIVES this article; do not re-verify it before then.
 # Re-verified 2026-07-30 (sprint-65) WITHOUT content change. Touched only because run.py and
 # test_pull_loop.py are code_refs; sample_mode itself is untouched and still inert. Its removal
 # remains STORY-155.
