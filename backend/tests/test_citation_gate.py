@@ -16,8 +16,10 @@ citations repo-wide carry one and get a content check; 8 pass and 5 fail**
 config-layer.md and zone-rules.md moved to 198, and 8 counted the PASSING
 subset while the sentence described the CHECKED set. "Distinct" means
 per-article dedupe summed across articles (`partition_citations` resets its
-`seen` set per article), NOT globally distinct -- which is 186, and stating
-the number without its method is how the first version rotted. Re-corrected
+`seen` set per article), NOT globally distinct -- which is a SEPARATE,
+smaller number (deduped on `(path, l1, l2)` across ALL articles combined,
+one `seen` set, not one per article) -- and stating either number without
+its method is how the first version rotted. Re-corrected
 2026-08-13 (STORY-222 fix round): `deployment-and-infra.md`'s 10 citations
 were de-lined when that article became a decommission tombstone (its
 `file:line` claims into `infra/stack.yaml`/`scripts/create_tables.py` were
@@ -29,11 +31,17 @@ non-anchored citations -- `config-layer.md` gained
 `backend/src/adapters/outbound/statuspage/__init__.py:54` and re-keyed
 `seed_dynamo.py:60` to `:76` (net +1 distinct), and `zone-rules.md` gained
 the bare-filename `component.py:17` (net +1 distinct, advisory-only per the
-path-resolvability filter above) -- moving the distinct total from 188 to
-190. The anchored count (13) and the anchored-passing count (8) are
-unaffected, since none of those citations carry an excerpt anchor.
-`test_ac1_docstring_scope_numbers_are_current` re-derives all three live, so
-this sentence cannot go stale silently again. **A wrong-but-in-range line
+path-resolvability filter above) -- moving the per-article-summed total from
+188 to 190, AND (missed in the first pass at this same commit, caught at
+quality review) the globally-distinct count from 176 to 178. The anchored
+count (13) and the anchored-passing count (8) are unaffected, since none of
+those citations carry an excerpt anchor.
+`test_ac1_docstring_scope_numbers_are_current` re-derives all FOUR numbers
+live -- `anchored`, `total`, `anchored_ok`, and now the globally-distinct
+count (178) named just above -- so none of this sentence's numbers can go
+stale silently again; the earlier "re-derives all three" claim was itself
+false (it asserted three, this docstring stated four, and 186/178 was the
+fourth left unchecked). **A wrong-but-in-range line
 number PASSES.** The worked example that demonstrates this today:
 `scripts/seed_topology.py:44` (cited from `config-layer.md`'s own History,
 sprint-68 entry) is reported OK by this exact mechanism, even though the
@@ -415,12 +423,23 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     nothing asserted against -- the exact failure class this test already
     exists to attack, just not yet applied to those two numbers.
 
+    Extended again 2026-08-16 (STORY-147 fix round) to also assert the
+    globally-distinct count (deduped on ``(path, l1, l2)`` in ONE `seen` set
+    across every article, not per-article-summed). The module docstring
+    NAMED this number ("NOT globally distinct -- which is N") without ever
+    asserting it, so a prior commit updated the per-article total (188 ->
+    190) and left this one stale (186, real value 178) -- a claim of
+    "cannot go stale silently" sitting beside its own live counter-example.
+    Not yet applied to the globally-distinct-on-PATH-ALONE number (78) named
+    in the fix-round report but not in this module's docstring.
+
     Falsified by: any edit that changes the repo's citation population, or a
     wiki article's tier, without updating the docstring sentences above.
     """
     import citation_sweep as sweep
 
     total = anchored = anchored_ok = 0
+    globally_distinct: set[tuple[str, int, int | None]] = set()
     for article in gate.wiki_articles(_REPO_ROOT):
         seen: set[tuple[str, int, int | None]] = set()
         for m in sweep.CITATION_RE.finditer(article.read_text(encoding="utf-8")):
@@ -430,6 +449,7 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
                 continue
             seen.add(key)
             total += 1
+            globally_distinct.add(key)
             if anchor:
                 anchored += 1
                 ok, _ = sweep.check_citation(
@@ -445,6 +465,13 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     assert anchored_ok == 8, (
         f"the docstring says 8 of the {anchored} anchored citations pass; live "
         f"measurement says {anchored_ok}."
+    )
+    assert len(globally_distinct) == 178, (
+        f"the module docstring's method-defining clause says the GLOBALLY "
+        f"distinct count (deduped on (path, l1, l2) across every article, not "
+        f"per-article-summed) is 178; live measurement says "
+        f"{len(globally_distinct)}. Update the docstring sentence AND this "
+        f"assertion in the same commit."
     )
 
     map_tier_count = 0
