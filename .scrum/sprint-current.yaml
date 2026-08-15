@@ -1,6 +1,6 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 72
-status: active     # none | planning | active | review | closed | aborted | parked
+status: review     # none | planning | active | review | closed | aborted | parked
 goal: >-
   The gate runs everything it claims to run, and it says the same thing twice.
 branch: sprint-72
@@ -694,6 +694,47 @@ baseline:
   note: >-
     A nonzero SKIP count is an incomplete gate, not a pass. A full gate run at sprint-72-start is
     required BEFORE STORY-224 or STORY-173 lands, so a later red has something to be compared to.
+
+final_gate_of_record:
+  # THE EVIDENCE OF RECORD for sprint 72. Full 9-command run at the final HEAD, after the wiki
+  # compile pass, with the tree clean. This is the run the sprint is judged on.
+  commit: f29f99b
+  result: "9/9 PASS, gate exit 0"
+  env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, REQUIRE_DYNAMO=1"
+  commands:
+    - "python -m pytest -> 835 passed, 0 SKIPPED, 71.22s (was 816 at lock; +19 from STORY-173)"
+    - "import-linter -> 151 files, 432 dependencies, contracts 9 kept / 0 broken"
+    - "ruff check . -> All checks passed!"
+    - "ruff format --check . -> 263 files already formatted"
+    - "cfn-lint infra/stack.yaml -> clean"
+    - "npm test -> 51 files / 363 tests"
+    - "npm run build -> clean"
+    - "npm run lint -> clean"
+    - "yt_selftest.py -> 108 tests, OK  *** THE 9TH COMMAND, NEW THIS SPRINT (was 89 tests) ***"
+  first_ever_9_of_9: true
+
+wiki_compile_pass:
+  ran: 2026-08-15
+  blocking_before_review: true
+  result: "sweep CLEAN, facts CLEAN, links CLEAN, integrity CLEAN"
+  map_tier_articles: 13
+  reference_tier_articles: 4
+  growth_this_sprint: >-
+    NONE -- map tier held at 13. The protocol says growth every sprint means routing row 1 is not
+    being used; it did not grow, and no new map article was created.
+  stale_and_quarantined: >-
+    core-pipeline-and-availability.md and frontend-zone.md. BOTH PRE-EXISTING, neither caused by this
+    sprint, neither swept. Rehabilitating them is STORY-223-adjacent work and was deliberately not
+    smuggled into this sprint.
+  learnings_routed: >-
+    Nothing new folded into articles, and that is the correct outcome rather than an omission: each
+    story discharged its own A18 obligation IN-STORY (STORY-224 corrected zone-rules.md:907 itself),
+    and this sprint's remaining learnings are PROCESS learnings that belong at the retro's
+    enforcement-ladder rungs, not in the wiki -- the node_modules hazard (candidate rung: a
+    yt_gate.py preflight) and the orchestrator brief-paraphrase defect (candidate rung: a
+    checklist/agent-definition item that briefs quote or cite file:line, never re-derive).
+
+review_artifact: docs/scrum/sprints/2026-08-14-sprint-72/review.md
 
 baseline_gate_at_lock:
   # THE BASELINE OF RECORD for this sprint. Risk 4: two of four stories change the harness the gate
