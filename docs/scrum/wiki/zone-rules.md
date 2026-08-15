@@ -39,6 +39,21 @@ status: verified
 # symbol- and range-based and untouched; that :70-133 bound still lands on
 # the same two lines (def at :70, the warning branch's closing paren at
 # :133) -- confirmed after the edit. No Fact in this article changed.
+# sprint-73 (STORY-147): re-verified after three code_refs changed --
+# `backend/src/adapters/persistence/dynamo_component_repository.py`,
+# `backend/src/composition/seed_dynamo.py` and
+# `backend/src/core/domain/component.py` -- STORY-147 added two new optional
+# fields (`group`, `description`) to `ComponentConfig`/`Component`, threaded
+# through seeding and `_map_item`. Confirmed every citation this article
+# makes into those three files is untouched: `component.py:17`'s
+# ComponentNotFoundError docstring (ZR-2's compliant citation) is unchanged
+# -- the new fields were appended below it, inside `Component` itself, never
+# touching `ComponentNotFoundError`; `dynamo_component_repository.py`'s
+# `list_components` pagination loop (ZR-7) is untouched -- only `_map_item`'s
+# body gained two `.get()` reads; and every `seed_dynamo.py` line number this
+# article cites (Finding 1, ZR-8) is a HISTORICAL quote of the file's
+# pre-STORY-205-fix shape ("as they stood then"), not a live citation into
+# current code, so nothing needed re-pointing. No Fact changed.
 ---
 
 ## Purpose
