@@ -59,6 +59,15 @@ status: verified
 - `StatusWritebackPublisher` + `build_publisher` are tested in `backend/tests/test_publish_helper.py` (STORY-045): write-before-delegate ordering (a spy delegate reads the fake repo's status when called), survives a `BestEffortPublisher`-swallowed delegate failure (write-back stands, nothing recorded), an unknown component id propagates `ComponentNotFoundError` before the delegate is ever reached, and `build_publisher` assembles both D2 shapes (creds+mapping present vs absent, including the empty-mapping-with-creds edge). `backend/tests/test_run_live_loop.py::test_build_live_loop_assembly` (rewritten, not deleted, per the 2026-06-29 contract-change agreement) now asserts the real chain nests `StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))` under `DecideService._publisher`.
 
 ## History
+- sprint-73 (STORY-147, unrelated story — mechanical staleness sweep only): the sweep flagged
+  `backend/tests/test_statuspage_adapter.py`, which gained one new regression test,
+  `test_publish_payload_unaffected_by_component_group_and_description` — STORY-147 added two
+  optional operator-cockpit display fields (`group`, `description`) to the `Component`/
+  `ComponentConfig` types, and the new test pins that neither reaches Statuspage: `StatusChange`
+  (the only type `publish()` reads) has exactly `{component_id, status}`, and the publish payload
+  stays byte-identical (`{"component": {"status": ...}}`). `StatuspagePublisher.publish` itself,
+  `build_publisher`, and every existing test in this file are unmodified. No Fact in this article
+  changed.
 - sprint-68 (STORY-204 fix round, unrelated story — mechanical staleness sweep only): the sweep
   flagged `run.py`. STORY-204's fix round expanded the vendor-id drift probe's call-site comment
   (see [[ingest-service-and-pull-loop]]/[[zone-rules]]), unrelated to `build_publisher`/
