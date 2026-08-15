@@ -64,6 +64,17 @@ lock_record:
     trade because the PO named 147 explicitly and the pair is worthless half-done -- but it IS a trade
     and it must be visible at review if it lands badly.
 
+baseline_gate_at_lock:
+  # The green of record for sprint 73. Taken on the LOCK COMMIT, tree clean, before any story landed.
+  commit: da4f9ce
+  result: "9/9 PASS, gate exit 0"
+  env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, REQUIRE_DYNAMO=1"
+  note: >-
+    All nine commands green: pytest, import-linter, ruff check, ruff format, cfn-lint, npm test,
+    npm run build, npm run lint, yt_selftest. This is what any later red is compared against --
+    it matters most for STORY-155b, which deletes four test files and archives a wiki article,
+    so its counts WILL move and the delta must be explained against this run.
+
 board:
   - id: STORY-147
     title: Component group + description — config to ComponentDTO
