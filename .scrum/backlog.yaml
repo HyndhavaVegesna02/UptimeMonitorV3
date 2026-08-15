@@ -1219,7 +1219,7 @@ stories:
     title: Component group + description — config to ComponentDTO
     epic: sprint-62-fleet
     file: docs/scrum/stories/STORY-147-component-group-description.md
-    status: ready
+    status: done
     points: 3       # RE-ESTIMATED 2 -> 3 at sprint-72 PRE-LOCK VERIFICATION (2026-08-14), and CUT
                     # from that sprint on the same measurement. The diff necessarily touches
                     # composition/config.py, composition/seed_dynamo.py, core/domain/component.py,
