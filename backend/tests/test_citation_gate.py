@@ -8,7 +8,7 @@ than "citations are correct" (AC1):** for every citation whose path resolves
 from the repo root (a repo-relative path, not a bare filename), the cited
 file exists and is long enough to contain the cited line. The cited CONTENT
 is verified only for the minority of citations carrying a parenthesized
-excerpt anchor (`` `path:line` (`excerpt`) ``) -- **13 of 198 distinct
+excerpt anchor (`` `path:line` (`excerpt`) ``) -- **13 of 190 distinct
 citations repo-wide carry one and get a content check; 8 pass and 5 fail**
 (the 5 are zone-rules.md's own anchor-mismatch baseline). Corrected
 2026-08-13 after quality review: the earlier "8 of 195" was wrong twice --
@@ -23,7 +23,15 @@ were de-lined when that article became a decommission tombstone (its
 `file:line` claims into `infra/stack.yaml`/`scripts/create_tables.py` were
 no longer checkable at `tier: reference`), dropping the distinct total from
 198 to 188 -- the anchored count (13) and the anchored-passing count (8) are
-unaffected, none of those 10 carried an excerpt anchor.
+unaffected, none of those 10 carried an excerpt anchor. Re-corrected again
+2026-08-16 (STORY-147): the wiki blast-radius pass net-added two distinct,
+non-anchored citations -- `config-layer.md` gained
+`backend/src/adapters/outbound/statuspage/__init__.py:54` and re-keyed
+`seed_dynamo.py:60` to `:76` (net +1 distinct), and `zone-rules.md` gained
+the bare-filename `component.py:17` (net +1 distinct, advisory-only per the
+path-resolvability filter above) -- moving the distinct total from 188 to
+190. The anchored count (13) and the anchored-passing count (8) are
+unaffected, since none of those citations carry an excerpt anchor.
 `test_ac1_docstring_scope_numbers_are_current` re-derives all three live, so
 this sentence cannot go stale silently again. **A wrong-but-in-range line
 number PASSES.** The worked example that demonstrates this today:
@@ -429,8 +437,8 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
                 )
                 anchored_ok += 1 if ok else 0
 
-    assert (anchored, total) == (13, 188), (
-        f"the module docstring says 13 of 188 distinct citations carry an "
+    assert (anchored, total) == (13, 190), (
+        f"the module docstring says 13 of 190 distinct citations carry an "
         f"excerpt anchor; live measurement says {anchored} of {total}. Update "
         f"the docstring sentence AND this assertion in the same commit."
     )
