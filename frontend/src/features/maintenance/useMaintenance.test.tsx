@@ -14,7 +14,7 @@ const VALID_REQUEST = {
 }
 
 /** Minimal harness driving every `useMaintenance` phase the way its
- * consumer (`MaintenancePage`) will (mirrors `useSampleMode.test.tsx`'s
+ * consumer (`MaintenancePage`) will (mirrors `useComponents.test.tsx`'s
  * harness pattern). */
 function Harness() {
   const { state, retry, schedule, scheduling, mutationError } = useMaintenance()

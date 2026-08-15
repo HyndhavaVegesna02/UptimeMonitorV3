@@ -17,7 +17,7 @@ export interface UseMaintenanceResult {
    * server after a resolved mutation) — the caller does not need to call
    * `retry()` itself. On failure, `mutationError` is set (the list is left
    * as-is) and the promise still resolves rather than rejecting — callers
-   * read `mutationError` rather than catching (mirrors `useSampleMode`).
+   * read `mutationError` rather than catching.
    * Resolves to `true` on success / `false` on failure so a caller (e.g.
    * the schedule form) can reset its own local field state exactly once,
    * without racing this hook's own state update.
@@ -45,10 +45,10 @@ export interface UseMaintenanceResult {
 /**
  * Feature hook for the Maintenance tab (STORY-015f): loads the window list
  * via the shared `useFetch(getMaintenance)`, then exposes `schedule` to POST
- * a new window — the "load+mutate in one hook" shape `useSampleMode`
- * established (STORY-049), adapted here for a growing LIST rather than a
- * single flag: a successful POST calls the list's own `retry()` to
- * reconcile with the server, instead of locally overriding a value.
+ * a new window — a "load+mutate in one hook" shape, adapted here for a
+ * growing LIST rather than a single flag: a successful POST calls the
+ * list's own `retry()` to reconcile with the server, instead of locally
+ * overriding a value.
  */
 export function useMaintenance(): UseMaintenanceResult {
   const { state, retry } = useFetch(getMaintenance)
