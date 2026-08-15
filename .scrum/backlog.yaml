@@ -1990,7 +1990,9 @@ stories:
     title: Killed pytest run leaks its DynamoDB Local container and stalls the next run
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-173-dynamo-container-leak.md   # written 2026-08-13; re-verified -- conftest.py still has NO reaping logic
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
+    status: done    # *** DONE AND PO-ACCEPTED at the sprint-72 review, 2026-08-15 ("accept all
+                    # three"). spec PASS 7/7, quality APPROVE (3 minors fixed). The flake never reproduced (0-in-8 before, 0-in-8 after) -- determinism NOT demonstrated; what is, measured twice independently, is ~63% faster tests with no loss of assertion power.
+                    # Was: REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # The placement question is SETTLED BY MEASUREMENT, not preference:
                     # resolve_dynamo returns at scripts/dynamo_local.py:335-337 when
                     # DYNAMO_ENDPOINT_URL is set -- WHICH IS THE GATE'S OWN CONFIGURATION -- so a
@@ -3484,7 +3486,9 @@ stories:
     title: The frontend gate can false-red under parallel file execution -- MaintenancePage inline-422 assertions
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-221-frontend-gate-flake-maintenance-page.md
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
+    status: done    # *** DONE AND PO-ACCEPTED at the sprint-72 review, 2026-08-15 ("accept all
+                    # three"). all 7 AC, four with mutation proofs; gate green in BOTH DYNAMO_ENDPOINT_URL configurations.
+                    # Was: REFINED 2026-08-14 at sprint-72 planning -- 7 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # THE SEAM WAS MEASURED, which is what bounds the estimate: `user.type()` on a
                     # datetime-local field types 16 chars, and userEvent.setup()'s default inserts
                     # an AWAITED macrotask between every keystroke -- 32 real yields per test, plus
@@ -3629,7 +3633,9 @@ stories:
     title: An entire second test suite exists and the DoD gate does not run it — 7 skill-level modules, including the two guards that have already caught real defects
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-224-skill-tests-outside-the-gate.md
-    status: ready   # REFINED 2026-08-14 at sprint-72 planning -- 10 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
+    status: done    # *** DONE AND PO-ACCEPTED at the sprint-72 review, 2026-08-15 ("accept all
+                    # three"). the 9th DoD command. Accepted WITH the AC1 disclosure: the implementer edited .scrum/ because the ORCHESTRATOR'S BRIEF said to, contradicting the AC. Its fix round also repaired a soundness break in yt_gate itself.
+                    # Was: REFINED 2026-08-14 at sprint-72 planning -- 10 AC written. LOCKED INTO SPRINT 72 on PO instruction 2026-08-14.
                     # *** SHAPE DECIDED ON MEASURED BLAST RADIUS, and it is not close. ***
                     #   (a) 9th DoD command -> edits .scrum/definition-of-done.md + CLAUDE.md, both
                     #       in NO article's code_refs. RADIUS ZERO.
