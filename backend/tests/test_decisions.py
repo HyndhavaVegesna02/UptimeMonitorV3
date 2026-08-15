@@ -299,10 +299,18 @@ def test_decision_endpoint_approve_publishes_and_writes_back_status():
     assert response.status_code == 200
 
     # AC2: components.status is written back — GET /components serves it.
+    # STORY-147: group/description are additive — the seeded Component
+    # declares neither, so both serialize as null (AC3).
     comp_response = client.get("/api/v1/components")
     assert comp_response.status_code == 200
     assert comp_response.json() == [
-        {"id": "checkout", "name": "Checkout", "status": "degraded"}
+        {
+            "id": "checkout",
+            "name": "Checkout",
+            "status": "degraded",
+            "group": None,
+            "description": None,
+        }
     ]
 
     # AC1: a publication was recorded (delegate publish succeeded).
