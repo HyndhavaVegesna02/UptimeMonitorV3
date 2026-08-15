@@ -293,8 +293,8 @@ shift every other line in the file):
   referential check, which was a separate loop over the same list)
 - `backend/src/composition/run.py:136` — `for signal in app.signals:`
 - `backend/src/composition/seed_dynamo.py:76` — `for sig in app.signals:`
-  (re-keyed from `:60` by STORY-147's component-seeding block gaining 16 lines
-  above this loop — see History)
+  (re-keyed from line 60 by STORY-147's component-seeding block gaining 16
+  lines above this loop — see History)
 - `backend/src/composition/vendor_health.py:106` — `for signal in app.signals:`
 - `scripts/seed_topology.py:48` — `sum(len(app.signals) for app in config.apps)`
 
@@ -452,7 +452,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   regression test. **Re-keyed one "Seven surviving readers" citation while here**:
   `backend/src/composition/seed_dynamo.py`'s component-seeding `update_item` call grew by
   16 lines (the new `group`/`description` `ExpressionAttributeNames`/`Values` entries),
-  shifting `for sig in app.signals:` from `:60` to `:76` — corrected above. No other Fact
-  in this article changed; `AppConfig`/`Config`/`load_config`'s existing behaviour for
+  shifting `for sig in app.signals:` from line 60 to line 76 — corrected above. No other
+  Fact in this article changed; `AppConfig`/`Config`/`load_config`'s existing behaviour for
   every pre-existing field is untouched (proven by the full pre-existing `test_config.py`
   suite passing unmodified).
