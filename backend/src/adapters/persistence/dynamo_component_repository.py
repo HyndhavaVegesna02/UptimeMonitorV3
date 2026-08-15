@@ -22,11 +22,17 @@ class DynamoComponentRepository(ComponentRepository):
         self._limit: int | None = None  # Hook for testing pagination
 
     def _map_item(self, item: dict) -> Component:
+        # STORY-147 AC3: group/description read with `.get()`, never bracket
+        # access — every component item seeded before this story has neither
+        # key at all, and bracket access would raise KeyError on every one of
+        # them at read-back.
         return Component(
             id=item["id"],
             name=item["name"],
             status=ComponentStatus(item["status"]),
             app_id=item["app_id"],
+            group=item.get("group"),
+            description=item.get("description"),
         )
 
     def list_components(self) -> list[Component]:

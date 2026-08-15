@@ -100,6 +100,69 @@ def _seed_component_dynamo(
     )
 
 
+def test_dynamo_component_repository_reads_legacy_item_without_group_or_description(
+    dynamo_resource,
+):
+    """STORY-147 AC3: `_map_item` must read group/description with `.get()`,
+    not bracket access — every component item seeded before this story has
+    neither key at all, and bracket access would raise KeyError on read-back
+    for every one of them. `_seed_component_dynamo` deliberately never sets
+    either key, so this item IS that legacy shape."""
+    from src.adapters.persistence.dynamo_component_repository import (
+        DynamoComponentRepository,
+    )
+
+    settings = load_settings()
+    _seed_component_dynamo(dynamo_resource, settings, "legacy-comp")
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
+
+    comp = repo.get("legacy-comp")
+    assert comp is not None
+    assert comp.group is None
+    assert comp.description is None
+
+    components = repo.list_components()
+    assert len(components) == 1
+    assert components[0].group is None
+    assert components[0].description is None
+
+
+def test_dynamo_component_repository_reads_group_and_description_when_present(
+    dynamo_resource,
+):
+    """STORY-147 AC3 round trip: an item WITH group/description set reads
+    back through both `get` and `list_components`."""
+    from src.adapters.persistence.dynamo_component_repository import (
+        DynamoComponentRepository,
+    )
+
+    settings = load_settings()
+    table = dynamo_resource.Table(settings.dynamo_control_table)
+    table.put_item(
+        Item={
+            "pk": "TOPOLOGY",
+            "sk": "COMPONENT#comp-with-group",
+            "id": "comp-with-group",
+            "name": "Comp With Group",
+            "status": ComponentStatus.OPERATIONAL.value,
+            "app_id": "app-1",
+            "group": "commerce",
+            "description": "Cart, payments and order placement",
+        }
+    )
+    repo = DynamoComponentRepository(dynamo_resource, settings.dynamo_control_table)
+
+    comp = repo.get("comp-with-group")
+    assert comp is not None
+    assert comp.group == "commerce"
+    assert comp.description == "Cart, payments and order placement"
+
+    components = repo.list_components()
+    assert len(components) == 1
+    assert components[0].group == "commerce"
+    assert components[0].description == "Cart, payments and order placement"
+
+
 def test_dynamo_component_repository_empty(dynamo_resource):
     from src.adapters.persistence.dynamo_component_repository import (
         DynamoComponentRepository,
