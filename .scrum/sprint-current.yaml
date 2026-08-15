@@ -562,7 +562,22 @@ board:
     title: Demo-engine doc + test hygiene batch
     points: 1
     order: 4
-    status: in_progress
+    status: dropped
+    dropped: >-
+      *** DROPPED ON CAPACITY, AS DECLARED IN ADVANCE. NOT STARTED -- NO CODE WAS WRITTEN. ***
+      Its implementer died on the session limit ("resets 3:40am") having done nothing but begin
+      reading the test files; the tree was clean with no scraps to discard, verified.
+      This is the plan's DECLARED FIRST-TO-DROP, named at planning for exactly this situation:
+      "smallest, last in order, blocks nothing, and already cut twice for capacity without harm."
+      The alternative was to spend reset budget on the smallest story after the other 8 points were
+      already banked and accepted, or for me to write it myself -- and unlike STORY-221's three-line
+      comment fix, this one is real work (parametrising nine tests plus an A18 Facts re-verification
+      of a verified map article), which the orchestrator should not be authoring.
+      THIRD TIME CUT FOR CAPACITY (sprint 64, sprint 65, now 72) AND STILL NEVER STARTED. That is a
+      pattern worth a decision at review rather than a fourth reschedule: either it matters enough
+      to go FIRST in a sprint, or it should be archived. Its content has only shrunk each time it is
+      re-verified -- one of its four original items is already discharged.
+      Returns to the backlog at 1 point, citations freshly re-verified 2026-08-15.
     dispatch_reverify: >-
       RE-VERIFIED AT DISPATCH 2026-08-15 at e3cf227. The story's OWN corrections hold exactly, which
       matters because this story exists to fix wrong citations:

@@ -2209,7 +2209,11 @@ stories:
     points: 1
     priority: 60
     type: chore
-    sprint: 72      # LOCKED 2026-08-14, story 4 of 4 and the DECLARED FIRST-TO-DROP. Third time
+    sprint: null    # *** CUT FROM SPRINT 72 on capacity, 2026-08-15 -- NEVER STARTED, no code
+                    # written (its implementer died on the session limit before touching a file).
+                    # THIRD capacity cut and still never begun; decide at review whether it goes
+                    # FIRST somewhere or gets archived, rather than rescheduling it a fourth time.
+                    # Was: LOCKED 2026-08-14, story 4 of 4 and the DECLARED FIRST-TO-DROP. Third time
                     # scheduled: cut from 64 (gates nothing), then CUT FROM SPRINT 65 at plan
                     # verification (2026-07-30), PO-approved. Citations re-verified at sprint-72
                     # planning and the story SHRANK -- the CLAUDE.md interval_seconds item is
