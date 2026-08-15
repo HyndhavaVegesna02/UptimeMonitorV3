@@ -1,6 +1,6 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 72
-status: review     # none | planning | active | review | closed | aborted | parked
+status: closed     # none | planning | active | review | closed | aborted | parked
 goal: >-
   The gate runs everything it claims to run, and it says the same thing twice.
 branch: sprint-72
@@ -733,6 +733,25 @@ wiki_compile_pass:
     enforcement-ladder rungs, not in the wiki -- the node_modules hazard (candidate rung: a
     yt_gate.py preflight) and the orchestrator brief-paraphrase defect (candidate rung: a
     checklist/agent-definition item that briefs quote or cite file:line, never re-derive).
+
+po_review:
+  date: 2026-08-15
+  verdict: "accept all three, archive 186, run the retro"
+  accepted: "STORY-221 (3), STORY-224 (3), STORY-173 (2) = 8/8 delivered points"
+  ac1_ruling: >-
+    STORY-224 ACCEPTED WITH THE AC1 DISCLOSURE ON RECORD. The PO accepted all three without
+    requiring AC1 amended, having been shown that the unmet AC was caused by MY dispatch brief
+    contradicting the story file, that the implementer disclosed the contradiction rather than
+    resolving it silently, and that the risk AC1 guards against did not materialise (one file, no
+    git stash, board files untouched).
+  story_186: >-
+    ARCHIVED by PO decision, not rescheduled. Third capacity cut across sprints 64, 65 and 72, and
+    never started once. The PO took the review's framing -- first in a sprint or archived -- and
+    chose archived.
+  merge: >-
+    NOT MERGED. The standing directive that sprints 66-72 all stay unmerged is unchanged and was not
+    revisited at this review; acceptance here is acceptance of the work, not authorisation to touch
+    main. Ask before merging any of them.
 
 review_artifact: docs/scrum/sprints/2026-08-14-sprint-72/review.md
 

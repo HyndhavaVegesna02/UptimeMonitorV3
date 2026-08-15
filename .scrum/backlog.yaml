@@ -2145,7 +2145,16 @@ stories:
     title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
     epic: deferred-by-po
     file: docs/scrum/stories/STORY-186-demo-engine-doc-and-test-hygiene.md
-    status: ready   # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
+    status: archived   # *** ARCHIVED BY PO DECISION at the sprint-72 review, 2026-08-15:
+                    # "archive 186". THIRD capacity cut (sprints 64, 65, 72) and NEVER STARTED
+                    # ONCE -- no code was ever written for it. The review put the choice as
+                    # "first in a sprint or archived" and the PO chose archived, which is the
+                    # equilibrium directive applied: a story that loses every prioritisation
+                    # contest for three sprints is telling you its real priority.
+                    # NOT LOST: its citation table was re-verified 2026-08-15 and one of its four
+                    # original items was already discharged by STORY-184. If the demo-engine prose
+                    # ever matters again, re-file from the story file, which stays at its path.
+                    # Was: ready # PO-APPROVED 2026-07-30 at refinement ("approve all five"). NOT in sprint 64 —
                     # pure accuracy/shape, gates nothing. Next candidate for sprint 65.
                     # Filed 2026-07-30, batching the re-review's remaining minors plus the round-1
                     # minors deliberately deferred during sprint 63. None is a defect; all are

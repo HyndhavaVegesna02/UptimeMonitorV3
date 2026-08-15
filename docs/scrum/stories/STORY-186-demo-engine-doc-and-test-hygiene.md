@@ -3,12 +3,31 @@ id: STORY-186
 title: Demo-engine doc and test hygiene batch (wiki prose, parametrised rejection tests, minors)
 type: chore
 points: 1
-status: ready
+status: archived
 refined: 2026-07-30   # PO-approved `ready` at the sprint-64 refinement ("approve all five"); the
                       # frontmatter was never updated to match, which the sprint-65 plan-verifier
                       # caught as a Definition-of-Ready failure. Recorded here, not re-approved.
 sprint: 72   # story 4 of 4 and the DECLARED FIRST-TO-DROP. Citations re-verified 2026-08-14.
 ---
+
+> ## *** ARCHIVED BY PO DECISION, 2026-08-15 (sprint-72 review): "archive 186". ***
+>
+> **Third capacity cut — sprints 64, 65 and 72 — and never started once.** No code was ever
+> written for it. Its sprint-72 implementer died on the session limit having only begun reading
+> the test files; the tree was clean.
+>
+> The review put the choice plainly as *first in a sprint, or archived*, because a fourth
+> reschedule would have been a scheduling accident rather than a decision. The PO chose archived.
+> That is the equilibrium directive applied: a story that loses every prioritisation contest for
+> three sprints is telling you its real priority.
+>
+> **Not lost, and cheap to revive.** Every citation below was re-verified at sprint-72 planning
+> (2026-08-14) and again at dispatch (2026-08-15) — the nine rejection tests are confirmed at
+> `backend/tests/demo_engine/test_scenario.py:331, 340, 366, 380, 394, 408, 423, 444, 458`. One of
+> the four original items is already **discharged** (STORY-184 removed the `CLAUDE.md`
+> `interval_seconds` sentence), and a second target has since moved to `docs/scrum/wiki/archive/`,
+> so the real remaining scope is smaller than 1 point. This file stays at its path; re-file from it
+> if the demo-engine prose ever matters again.
 
 > **CUT FROM SPRINT 65 at plan verification (2026-07-30), PO-approved.** The conflict that caused
 > the cut is **DISCHARGED**: STORY-191 and STORY-184 both landed (sprint 65 / sprint 66), so
