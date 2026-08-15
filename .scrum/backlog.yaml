@@ -1430,6 +1430,47 @@ stories:
                     # an identical proposal reopens (every 60s on a fast monitor).
     type: defect
     sprint: null
+  - id: STORY-155a
+    title: Remove sample_mode from the frontend — the consumer goes first
+    epic: deferred-future
+    file: docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md
+    status: ready   # REFINED 2026-08-15 at sprint-73 planning, 6 AC. PENDING PO LOCK.
+                    # Split from STORY-155 (an 8). Goes FIRST: removing the backend endpoint before
+                    # the consumer would leave the SPA calling a 404.
+                    # IT IS USER-FACING, not a dead-code sweep -- AppShell.tsx:69 renders
+                    # <SampleModeBanner> and TopBar carries the trigger.
+                    # 14 frontend files. useMaintenance.ts is the surprise in that list; AC3 makes
+                    # understanding it a precondition rather than deleting through it.
+    points: 3
+    priority: 30
+    type: chore
+    sprint: null
+  - id: STORY-155b
+    title: Remove sample_mode from the backend, and tombstone its article
+    epic: deferred-future
+    file: docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md
+    status: ready   # REFINED 2026-08-15 at sprint-73 planning, 8 AC. PENDING PO LOCK.
+                    # DEPENDS ON STORY-155a -- consumer before producer.
+                    # *** "INERT" MEANS THE FLAG IS OFF, NOT THAT THE CODE IS UNWIRED, and that is
+                    # what makes this a 5 rather than a 3: SampleModeIngest is LIVE in the pull
+                    # loop -- composition/run.py:101 wraps the real SignalIngestPort in it on every
+                    # build, and app.py:47 takes a sample_mode_repo param. Removing it is surgery on
+                    # the live ingest seam, behaviour-preserving only because the flag reads false.
+                    # AC1 requires that be PROVEN against behaviour, not argued.
+                    # A LANDING PAD ALREADY EXISTS: test_zr1_forbidden_list_completeness.py:35 and
+                    # :195-196 name this story and pre-record that the count goes to 8 -- the same
+                    # courtesy STORY-179 left STORY-173.
+                    # THE RECIPE EXISTS AND HAS DRIFTED: sample-mode.md:226 holds a complete
+                    # mechanical deletion checklist (STORY-048 AC7c), but it names
+                    # adapters/persistence/sample_mode_repository.py, which DOES NOT EXIST -- the
+                    # file is dynamo_sample_mode_repository.py. Its "all five files" claim for
+                    # api/v1/sample_mode/ is correct (verified).
+                    # AC6 tombstones sample-mode.md, which also removes ~110 of STORY-192's 224
+                    # mojibake sequences -- re-measure 192 afterwards.
+    points: 5
+    priority: 31
+    type: chore
+    sprint: null
   - id: STORY-154
     title: Map the real Dynatrace HTTP failure codes (blocked on trial renewal)
     epic: deferred-future
@@ -1456,7 +1497,13 @@ stories:
     title: Remove sample_mode (superseded by the demo engine)
     epic: deferred-future
     file: null
-    status: draft   # *** EXPLICITLY DEFERRED BY THE PO 2026-08-13: "dont remove the sample mode
+    status: split   # *** SPLIT 2026-08-15 at sprint-73 planning into STORY-155a (frontend, 3)
+                    # and STORY-155b (backend, 5). Measured: sample_mode spans 41 CODE FILES across
+                    # two toolchains (27 backend, 14 frontend) plus a tier:map/status:verified wiki
+                    # article -- an 8, and the Definition of Ready forbids an 8 entering a sprint.
+                    # SPLIT AXIS IS CONSUMER-THEN-PRODUCER, not backend/frontend for its own sake:
+                    # removing the endpoint first leaves the SPA calling a 404 on a branch that may
+                    # sit unmerged for sprints. 155a lands first, 155b follows.
                     # yet. ill tell you when to do." NOT archived -- this is a live intention with
                     # a held trigger, and the distinction is the point of the equilibrium pass.
                     # DO NOT SCHEDULE IT WITHOUT AN EXPLICIT PO INSTRUCTION.
@@ -3694,7 +3741,22 @@ stories:
     title: The deployment/infra files are in no article's code_refs — infra/stack.yaml is gated every run but hooked by no wiki article
     epic: process-ratchet-brake
     file: docs/scrum/stories/STORY-225-infra-files-outside-wiki-coverage.md
-    status: draft   # FILED 2026-08-13 by the STORY-222 quality reviewer, and CREATED BY STORY-222.
+    status: archived   # *** ARCHIVED 2026-08-15 at sprint-73 planning, PO equilibrium directive.
+                    # ARCHIVED ON ITS OWN EVIDENCE, which is the strongest reason available: this
+                    # story's refinement question 4 DEMANDED a sweep before choosing a shape. The
+                    # sweep was run (2026-08-14) and REFUTED BOTH ITS PREMISES.
+                    # (1) "a localized gap created by STORY-222" -- false: 281 files checked, 213
+                    #     hooked, 68 UNHOOKED. Its four files are 4 of 68, and most predate 222.
+                    # (2) "infra/stack.yaml is actively maintained" -- false: untouched since
+                    #     2026-07-17. Option (a)'s own test ("check first whether anyone will
+                    #     maintain it; an unmaintained map article is worse than an honest gap")
+                    #     therefore answers NO.
+                    # What survives is a POLICY question -- what does code_refs coverage mean when
+                    # 68 gated files have none, and is that a defect or the intended state? -- which
+                    # is a different story than this one, wants the sweep as its INPUT, and should be
+                    # re-filed deliberately if the PO wants it. Equilibrium test 3 ("what remains is
+                    # chosen") is what this fails: it had no path to `ready` and was not chosen.
+                    # The sweep's 281/213/68 numbers are preserved in the story file, which stays.
                     # Converting deployment-and-infra.md to a tier:reference tombstone stripped its
                     # code_refs -- which were the ONLY wiki hooks these files had. VERIFIED at HEAD:
                     #   infra/stack.yaml           -> NO article
