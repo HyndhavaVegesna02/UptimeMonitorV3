@@ -65,9 +65,11 @@ acceptance rate that the actual history does not support. See STORY-211.
 
 ## `sample_mode`
 
-The pre-demo-engine way to fake vendor data — it flips already-normalized rows.
-Inert since the Dynatrace trial expired (2026-07-28), for the same reason the trial
-matters everywhere else: no observations arrive to flip. Removal is STORY-155.
+The pre-demo-engine way to fake vendor data — it flipped already-normalized rows.
+It went inert when the Dynatrace trial expired (2026-07-28), for the same reason
+the trial matters everywhere else: no observations arrived to flip — and was
+REMOVED by STORY-155a (frontend, sprint 73) and STORY-155b (backend, sprint 73).
+See `docs/scrum/wiki/archive/sample-mode.md` for its history.
 
 ## `api/v1/_shared/middleware.py` and CORS
 
