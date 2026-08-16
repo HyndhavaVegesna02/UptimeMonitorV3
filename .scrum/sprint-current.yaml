@@ -66,6 +66,27 @@ lock_record:
     ALSO: 226 and 227 both priced wiki cost at ZERO and were re-priced (2->3, 3->5); 228 named a
     file that does not exist; 227 AC4's shown-RED was IMPOSSIBLE as written.
 
+pause_record:
+  paused: 2026-08-17
+  at_commit: 1e1d870          # STORY-228's final commit; gate 9/9 green here
+  delivered: "2 of 15 points -- STORY-228 done, gated and reality-gated."
+  remaining: "STORY-229 (5), STORY-226 (3), STORY-227 (5). None started."
+  window_at_decision: "5h 91% used, 7d 37%."
+  why: >-
+    Paused on the SESSION WINDOW, not on a blocker -- there is no blocker. A21's rule for 85-94 is
+    explicit: FINISH the work already in flight on the CURRENT story, START NO NEW ONE. STORY-228 was
+    finished completely (fix round, orchestrator gate of record, reality gate, board and backlog both
+    updated); STORY-229 was not started. Starting a 5-point story at 91% would guarantee the
+    mid-story death that cost STORY-147 an implementer in sprint 73.
+  next_action: >-
+    Resume at STORY-229 (order 2). Read docs/scrum/stories/STORY-229-frontend-zone-article-rehab.md
+    -- the story file, not any summary. Its board entry carries the four things verification proved
+    that the story alone will not tell you.
+  no_atomicity_constraint_here: >-
+    Unlike sprint 73, THIS SPRINT HAS NO ATOMIC PAIR. STORY-228 is complete and coherent on its own,
+    so the sprint CAN be closed at 2/15 if it comes to that. STORY-227 (5) remains the DECLARED FIRST
+    DROP, named at lock so the decision is not made under pressure.
+
 baseline_gate_at_lock:
   # The green of record for sprint 74. Taken on the LOCK COMMIT, tree clean, before any story landed.
   commit: 15cc68a
