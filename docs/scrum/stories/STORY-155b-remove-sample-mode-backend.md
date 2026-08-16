@@ -154,3 +154,34 @@ this article removes ~110–142 of its sequences; **re-measure 192 afterwards**)
 ## Open Questions
 
 None.
+
+## History
+
+- 2026-08-16: **AC7 (the DynamoDB row).** Checked the CORRECT key
+  (`pk="CONFIG", sk="SAMPLE_MODE"` — the sort key, per the recipe correction above,
+  not the `SAMPLE_MODE` partition the old recipe named) against every control table
+  visible on the local DynamoDB Local instance used for dev/CI
+  (`uptime-control`, plus leftover scratch tables `custom-control-table`,
+  `rg147-ctrl` from earlier stories' reality-gate runs): `get_item` returned no
+  `Item` on any of them — the flag was never set on this machine. There is
+  therefore no row to delete here. The documented one-liner, for any table that
+  DOES carry a stale row (e.g. a developer machine that ran sample-mode live
+  before this story):
+  `table.delete_item(Key={"pk": "CONFIG", "sk": "SAMPLE_MODE"})` against the
+  `dynamo_control_table` resource. A stale row left behind on such a machine is
+  harmless either way: `DynamoSampleModeRepository` (this story's AC2) no longer
+  exists, so nothing in the codebase reads or writes that key any more — it
+  would sit as one inert, unreferenced item, not a security or correctness
+  hazard. Production has no live table at all (`CLAUDE.md`'s "Deployed
+  topology" section — the AWS stack was decommissioned 2026-08-13), so there is
+  no live-table case to address.
+- 2026-08-16: **Why sample_mode was removed** (feeds AC8's wiki tombstone
+  reason): `sample_mode` was the on-demand outage simulator (STORY-048),
+  declared TEMPORARY by PO directive 2026-07-03, and was superseded by the
+  Grail demo engine (`tools/demo_engine/`), which reached the same
+  demonstration goal — exercising the real degrade→approve→publish→recover
+  loop — without a bespoke, always-armed decorator sitting over the live
+  ingest front door. STORY-155a removed the frontend consumer first
+  (2026-08-15/16); this story removes the backend producer and archives its
+  wiki article, closing the feature out per `CLAUDE.md`'s standing note that
+  STORY-155 is its removal.
