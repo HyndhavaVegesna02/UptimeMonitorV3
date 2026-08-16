@@ -1474,11 +1474,8 @@ stories:
     title: Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies
     epic: deferred-future
     file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
-    status: ready   # READY 2026-08-16: PO answered AC4's Open Question -- REMOVE the four unused
-                    # Icon glyphs (search, x, trash, zap; measured, not assumed -- 'search' looks
-                    # used but its only hit is type="search" at CheckHistoryPage.tsx:117).
-                    # That branch collides with STORY-229, so sprint 74 runs THIS STORY FIRST,
-                    # which removes the hazard by construction.
+    status: done    # DONE 2026-08-17, sprint 74, final HEAD 1e1d870, gate 9/9, reality gate passed.
+                    # Spec FAIL (AC3/AC6) then MET; quality TWO MAJORs, both fixed.
     points: 2
     priority: low
 
