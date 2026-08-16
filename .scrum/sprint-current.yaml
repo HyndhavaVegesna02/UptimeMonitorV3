@@ -255,8 +255,26 @@ board:
     title: Remove sample_mode from the backend, and tombstone its article
     points: 7
     order: 3
-    status: todo
+    status: in_progress
     file: docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md
+    dispatched_at: >-
+      Resumed 2026-08-16 after the pause. Window at dispatch: 5h 0% (RESET) | 7d 18%. Verdict:
+      dispatch freely. Preconditions verified: tree clean at 1c02559, node_modules 216,
+      uptime_dynamo_8021 up, yt_selftest 113 OK.
+    orchestrator_measured_before_dispatch: >-
+      *** AC4's landing point MOVED and the story file's line number is now WRONG. *** The story
+      cites the BASELINE "sample-mode.md" key at test_citation_gate.py:212; it is at :228 -- STORY-147's
+      docstring edits shifted it. Measured at 1c02559, AC8's archive move breaks FOUR hardcoded facts
+      in that one file, not the one the story names:
+        :81  comment "17 articles"
+        :228 BASELINE dict key "sample-mode.md"
+        :260 docstring "exactly the 17 articles this baseline covers"
+        :269 assert len(found) == 17
+      Live count is 17 top-level articles today, so every one of those becomes 16 / absent.
+      ALSO: STORY-147 extended that test to assert FOUR numbers where the story file assumes three --
+      (13, 190) at :460, anchored_ok == 8 at :465, len(globally_distinct) == 178 at :469, and
+      (total_enforced_fail, map_tier_count) == (15, 13) at :486. Archiving a tier:map article moves
+      the map_tier_count arm too. RE-DERIVE ALL OF THEM LIVE; carry no figure from any document.
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     atomic_with: STORY-155a
 
