@@ -158,15 +158,19 @@ contract):
   against an empty `DemoRowStore` vs. the coverage store above and asserts
   the drift/healthy-INFO counts differ).
 
-Verified green at the time of this run: AC1(a), (b) and (d) all recorded (including
+Verified green at the time of this run: AC1(a), (b), (d) and (e) all recorded (including
 STORY-176's publish-guard regression re-run); AC2 fresh tables; AC3 all 41 signals
 ingest 20 rows / 4 distinct locations each; AC4 zero drift warnings, 41
 `Vendor-id health OK` INFO lines; AC5 `/approvals` == `[]`. **AC1(c) — `GET
 /api/v1/sample-mode` → `{"enabled": false}` — was retired by STORY-155b** (2026-08-16,
 sprint 73), which removed the `sample_mode` feature entirely; the endpoint now 404s, and
-`tools/demo_loop_gate/harness.py`'s own AC1(c) check was updated in that story's AC10 to
-match. This record is historical (a past run's checklist) and is not re-run here. Full
-detail: `docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md`,
+`tools/demo_loop_gate/harness.py`'s own AC1(c) check was removed in that story's AC10 (not
+updated to match anything — there is no replacement assertion, since the sample-mode
+feature it checked no longer exists). **AC1(e) is unaffected and stays live** — asserted at
+`harness.py:811-817` ("every component operational, before the loop starts"), named in the
+`_assert_ac1_preconditions` docstring at `:739`, and printed at `:857`. This record is
+historical (a past run's checklist) and is not re-run here. Full detail:
+`docs/scrum/stories/STORY-182-demo-loop-run-and-gate.md`,
 `docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md` AC10.
 
 ## Honest limit: failure codes are provisional and unverified
