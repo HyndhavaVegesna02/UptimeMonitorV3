@@ -300,6 +300,12 @@
       "committed": 9,
       "accepted": 8,
       "note": "3 of 4 stories accepted; STORY-186 (1) dropped on capacity, never started, ARCHIVED by PO. Gate moved 8->9 commands."
+    },
+    {
+      "sprint": 73,
+      "committed": 13,
+      "accepted": 13,
+      "note": "3 of 3 accepted by PO ('accept all three'). HIGHEST EVER -- previous best 11, prior sprint 8. The atomic pair (155a+155b) landed WHOLE after a mid-sprint pause on the session window. Every story needed exactly one fix round; each MAJOR was something the implementer's own self-report missed. PO directed: file the carried minors, run the retro, DO NOT MERGE."
     }
   ]
 }
