@@ -463,8 +463,8 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   config loader/resolvers, matching every earlier `pyproject.toml`-only re-verification above.
   No Fact changed.
 - sprint-74 (STORY-228 AC3): this article cited
-  `backend/src/adapters/outbound/statuspage/__init__.py:54` TWICE (the "Config models" Fact
-  above and this History's own STORY-147 entry), and that file is not among this article's
+  `backend/src/adapters/outbound/statuspage/__init__.py`, line 54, TWICE (the "Config models"
+  Fact above and this History's own STORY-147 entry), and that file is not among this article's
   `code_refs` — so drift there could never re-stale this article via the sweep. Resolved by
   **removing the line number** (de-lining to a bare file mention) rather than adding the path
   to `code_refs`: the citation's only content claim (`{"component": {"status": vendor_status}}`)

@@ -35,7 +35,24 @@ path-resolvability filter above) -- moving the per-article-summed total from
 188 to 190, AND (missed in the first pass at this same commit, caught at
 quality review) the globally-distinct count from 176 to 178. The anchored
 count (13) and the anchored-passing count (8) are unaffected, since none of
-those citations carry an excerpt anchor.
+those citations carry an excerpt anchor. Moved again 2026-08-16 (STORY-155b,
+detailed in `test_ac1_docstring_scope_numbers_are_current`'s own extended
+docstring below): zone-rules.md's harness.py re-key added one new distinct
+citation net, moving total 190 -> 191 and globally-distinct 178 -> 179 -- a
+move this LEAD sentence was never updated for, so it silently read "13 of
+190" while the live value was 191 for the rest of sprint 73. Re-corrected
+2026-08-17 (STORY-228): AC3 de-lined a citation into
+`backend/src/adapters/outbound/statuspage/__init__.py` that config-layer.md
+carried twice (neither occurrence covered by that article's `code_refs`),
+removing it from the citation population entirely; AC2 consolidated
+zone-rules.md's four STORY-155b re-verification blocks into one but
+re-quoted its sole unique advisory citation (`harness.py:62-69`, which
+occurs nowhere else in that article) so it contributed zero net change.
+Net: total 191 -> 190 and globally-distinct 179 -> 178 -- numerically back
+to STORY-147's values, coincidentally (two independent changes, not a
+revert of STORY-155b's move). The anchored count (13) and anchored-passing
+count (8) are unaffected by either move; none of the touched citations
+carry an excerpt anchor.
 `test_ac1_docstring_scope_numbers_are_current` re-derives all FOUR numbers
 live -- `anchored`, `total`, `anchored_ok`, and now the globally-distinct
 count (178) named just above -- so none of this sentence's numbers can go
@@ -448,6 +465,28 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     carry an excerpt anchor). The headline-ratio comment above BASELINE was
     updated in the same commit as the map-tier-count move.
 
+    Re-derived 2026-08-17 (STORY-228 AC5), from TWO independent edits in the
+    same story: AC2 consolidated zone-rules.md's four separate STORY-155b
+    re-verification blocks (`:57-100`, inside the frontmatter comment block)
+    into one entry, re-quoting `harness.py:62-69` -- the one citation in
+    that range with no other occurrence in the article -- so this
+    consolidation contributed a NET-ZERO change to `total`/`globally_distinct`.
+    AC3 resolved config-layer.md's citation into
+    `backend/src/adapters/outbound/statuspage/__init__.py:54`, present
+    TWICE (a Fact and a History entry) and outside that article's
+    `code_refs`, by de-lining BOTH occurrences (dropping the line number,
+    since the citation was already deduped to ONE distinct `(path, l1, l2)`
+    tuple before this fix -- de-lining only one of the two textual
+    occurrences would have been a no-op for `total`). That removes one
+    distinct citation: `total` 191 -> 190, `globally_distinct` 179 -> 178.
+    `anchored`, `anchored_ok` and `total_enforced_fail`/`map_tier_count` are
+    unaffected -- neither touched citation carried an excerpt anchor, and
+    the removed citation was already ADVISORY-irrelevant to
+    `total_enforced_fail` (it had a `/` in its path, so it was ENFORCED, but
+    it PASSED -- `partition_citations` counts only `enforced_fail`, and this
+    citation was never in that bucket, at config-layer.md's committed
+    baseline of 0).
+
     Falsified by: any edit that changes the repo's citation population, or a
     wiki article's tier, without updating the docstring sentences above.
     """
@@ -472,8 +511,8 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
                 )
                 anchored_ok += 1 if ok else 0
 
-    assert (anchored, total) == (13, 191), (
-        f"the module docstring says 13 of 191 distinct citations carry an "
+    assert (anchored, total) == (13, 190), (
+        f"the module docstring says 13 of 190 distinct citations carry an "
         f"excerpt anchor; live measurement says {anchored} of {total}. Update "
         f"the docstring sentence AND this assertion in the same commit."
     )
@@ -481,10 +520,10 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
         f"the docstring says 8 of the {anchored} anchored citations pass; live "
         f"measurement says {anchored_ok}."
     )
-    assert len(globally_distinct) == 179, (
+    assert len(globally_distinct) == 178, (
         f"the module docstring's method-defining clause says the GLOBALLY "
         f"distinct count (deduped on (path, l1, l2) across every article, not "
-        f"per-article-summed) is 179; live measurement says "
+        f"per-article-summed) is 178; live measurement says "
         f"{len(globally_distinct)}. Update the docstring sentence AND this "
         f"assertion in the same commit."
     )
