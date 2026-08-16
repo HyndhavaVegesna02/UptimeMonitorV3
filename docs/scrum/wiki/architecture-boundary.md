@@ -57,9 +57,11 @@ status: verified
     port by its exact module**, e.g. `from src.core.ports.signal_ingest import SignalIngestPort`
     — never the package form `from src.core.ports import SignalIngestPort`.
     `backend/src/core/ports/__init__.py` re-exports every port, and import-linter follows
-    indirect chains by default, so the package form transitively imports all nine forbidden
-    modules at once and trips `inbound-adapters-dont-persist` even when it names only the front
-    door (verified by mutation, STORY-206 rework: `Contracts: 8 kept, 1 broken`, reverted).
+    indirect chains by default, so the package form transitively imports all eight forbidden
+    modules at once (nine before STORY-155b removed `sample_mode_repository` from both the
+    package and the contract) and trips `inbound-adapters-dont-persist` even when it names only
+    the front door (verified by mutation, STORY-206 rework: `Contracts: 8 kept, 1 broken`,
+    reverted).
     That is a rule about how to WRITE a compliant import, which a red/green contract states
     only after you have already got it wrong. ZR-1's full derivation: [[zone-rules]].
   - Also not derivable from the contract list: `signal_ingest`, `clock` and `status_publisher`
@@ -246,3 +248,12 @@ status: verified
   shadow `src`). Third instance in this story of an unverified causal inference carried under a
   verification stamp (QM-2, QM-4, ZR-1 residue (2) v1 — and this one was the orchestrator's).
   No `code_ref` moved; verified_sha stays `13bbb07`.
+- sprint-73 (STORY-155b): re-verified after `pyproject.toml` and `core/ports/__init__.py`
+  (both `code_refs`) changed — STORY-155b removed `sample_mode_repository` from BOTH the
+  `inbound-adapters-dont-persist` contract's `forbidden_modules` and the port re-export
+  package, and removed `src.api.v1.sample_mode` from `api-feature-independence` and
+  `api-shared-no-feature-imports`. The CONTRACT COUNT is unaffected (still nine contracts —
+  only one contract's member list shrank), so the Facts above that defer to "the runner's own
+  `Contracts: N kept, 0 broken.` line" needed no change. The one Fact that DID name a specific
+  number — "all nine forbidden modules" describing `inbound-adapters-dont-persist` — is
+  corrected to eight, with the sprint-155b removal noted inline rather than silently.
