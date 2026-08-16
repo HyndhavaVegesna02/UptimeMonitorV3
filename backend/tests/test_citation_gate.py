@@ -78,8 +78,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # AC3/AC4/AC6/AC8 -- the committed per-article baseline.
 #
 # Glob is LITERAL: docs/scrum/wiki/*.md, top level only (`Path.glob`, non-
-# recursive) -- 17 articles. `docs/scrum/wiki/archive/` is a subdirectory and
-# is OUT of scope; this is stated here, not left as a 17-vs-19 ambiguity.
+# recursive) -- 16 articles (was 17 before STORY-155b archived sample-mode.md
+# to docs/scrum/wiki/archive/). `docs/scrum/wiki/archive/` is a subdirectory
+# and is OUT of scope; this is stated here, not left as a 16-vs-19 ambiguity.
 #
 # Per article: {"tier": "map"|"reference", "baseline": int | None, "note": str}.
 #   - tier == "reference": AC6 EXEMPTS it from the ratchet -- read live from
@@ -123,7 +124,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # directly, not hidden by this narrower gate.
 #
 # THE HEADLINE RATIO, stated so a green run cannot be misread: this ratchet
-# enforces 15 failures across 13 map-tier articles (`test_ac1_docstring_scope_
+# enforces 15 failures across 12 map-tier articles (was 13 before STORY-155b
+# archived sample-mode.md, a vacuously-clean map article that contributed 0
+# to the failure count -- `test_ac1_docstring_scope_
 # numbers_are_current` re-derives both numbers live, so this cannot go stale
 # silently). Of the 129 raw at STORY-219's base, 113 are ADVISORY (bare
 # filename) and 1 sits in a `tier: reference` article that AC6 exempts. Green
@@ -225,11 +228,6 @@ BASELINE: dict[str, dict] = {
         "baseline": 0,
         "note": ("1 citation extracted, bare filename -- advisory only, 0 enforced"),
     },
-    "sample-mode.md": {
-        "tier": "map",
-        "baseline": 0,
-        "note": "vacuously clean -- no citations extracted",
-    },
     "statuspage-publish.md": {
         "tier": "map",
         "baseline": 0,
@@ -257,8 +255,9 @@ BASELINE: dict[str, dict] = {
 
 def test_ac3_glob_matches_exactly_the_committed_baseline_keys() -> None:
     """The literal glob `docs/scrum/wiki/*.md` (top-level only) must name
-    exactly the 17 articles this baseline covers -- no more, no fewer. A
-    mismatch means either a new article landed with no baseline entry (AC4
+    exactly the 16 articles this baseline covers (was 17 before STORY-155b
+    archived sample-mode.md to docs/scrum/wiki/archive/) -- no more, no fewer.
+    A mismatch means either a new article landed with no baseline entry (AC4
     would silently default it to unlimited if this test did not exist) or a
     baseline entry survives for an article that is gone."""
     found = {p.name for p in gate.wiki_articles(_REPO_ROOT)}
@@ -266,7 +265,7 @@ def test_ac3_glob_matches_exactly_the_committed_baseline_keys() -> None:
         f"docs/scrum/wiki/*.md (top-level) found {sorted(found)}, "
         f"baseline covers {sorted(BASELINE)} -- add/remove a BASELINE entry"
     )
-    assert len(found) == 17, f"expected 17 top-level articles, found {len(found)}"
+    assert len(found) == 16, f"expected 16 top-level articles, found {len(found)}"
 
 
 def test_ac3_archive_directory_is_out_of_scope() -> None:
@@ -433,6 +432,16 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     Not yet applied to the globally-distinct-on-PATH-ALONE number (78) named
     in the fix-round report but not in this module's docstring.
 
+    Re-derived 2026-08-16 (STORY-155b): archiving sample-mode.md (a
+    vacuously-clean, `tier: map`, `baseline: 0` article) to
+    docs/scrum/wiki/archive/ removes it from the `docs/scrum/wiki/*.md` glob
+    entirely, moving the map-tier-article count from 13 to 12. It contributed
+    0 to every one of the four numbers below except this one, so `anchored`,
+    `total`, `anchored_ok` and `globally_distinct` are UNCHANGED (13, 190, 8,
+    178) and only `map_tier_count` moves (13 -> 12); `total_enforced_fail`
+    stays 15. The headline-ratio comment above BASELINE was updated in the
+    same commit.
+
     Falsified by: any edit that changes the repo's citation population, or a
     wiki article's tier, without updating the docstring sentences above.
     """
@@ -483,8 +492,8 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
         _, enforced_fail, _, _ = gate.partition_citations(_REPO_ROOT, article)
         total_enforced_fail += len(enforced_fail)
 
-    assert (total_enforced_fail, map_tier_count) == (15, 13), (
-        f"the headline ratio says 15 failures across 13 map-tier articles; "
+    assert (total_enforced_fail, map_tier_count) == (15, 12), (
+        f"the headline ratio says 15 failures across 12 map-tier articles; "
         f"live measurement says {total_enforced_fail} failures across "
         f"{map_tier_count} map-tier articles. Update the headline-ratio "
         f"comment above BASELINE AND this assertion in the same commit."
