@@ -1,6 +1,6 @@
 ---
 title: Config layer — per-app YAML files, fail-fast loader, and in-memory resolvers
-code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml]
+code_refs: [backend/src/composition/config.py, config/apps/httpcheck.yaml, pyproject.toml, backend/src/adapters/outbound/statuspage/__init__.py]
 tier: map
 verified_sprint: sprint-69
 status: verified
@@ -100,7 +100,7 @@ Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
   below, that must live in `load_config` rather than on this model for the same
   pydantic-swallows-the-subclass reason `InvalidFreshnessError`/`UndeclaredLocationAliasError`
   do. Neither field reaches Statuspage — the publish payload
-  (`backend/src/adapters/outbound/statuspage/__init__.py`, `{"component": {"status": vendor_status}}`)
+  (`backend/src/adapters/outbound/statuspage/__init__.py:54`, `{"component": {"status": vendor_status}}`)
   and `Config.statuspage_mapping()` are built from `statuspage_component_id`/`status` alone.
 - `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` —
   UNCHANGED shape; still the consumption type every existing reader sees, now
@@ -448,7 +448,7 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   STORY-146 four, checked in `load_config` for the same reason the other four are (a
   pydantic validator cannot raise a subclass that survives the caller). Neither field
   reaches Statuspage — `statuspage_mapping()` and the publish payload
-  (`backend/src/adapters/outbound/statuspage/__init__.py`) are unaffected, pinned by a new
+  (`backend/src/adapters/outbound/statuspage/__init__.py:54`) are unaffected, pinned by a new
   regression test. **Re-keyed one "Seven surviving readers" citation while here**:
   `backend/src/composition/seed_dynamo.py`'s component-seeding `update_item` call grew by
   16 lines (the new `group`/`description` `ExpressionAttributeNames`/`Values` entries),
@@ -462,16 +462,19 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   `inbound-adapters-dont-persist` (the whole `sample_mode` feature's removal) — unrelated to the
   config loader/resolvers, matching every earlier `pyproject.toml`-only re-verification above.
   No Fact changed.
-- sprint-74 (STORY-228 AC3): this article cited
-  `backend/src/adapters/outbound/statuspage/__init__.py`, line 54, TWICE (the "Config models"
-  Fact above and this History's own STORY-147 entry), and that file is not among this article's
-  `code_refs` — so drift there could never re-stale this article via the sweep. Resolved by
-  **removing the line number** (de-lining to a bare file mention) rather than adding the path
-  to `code_refs`: the citation's only content claim (`{"component": {"status": vendor_status}}`)
-  is a literal payload shape a one-line diff would not silently break in a way this article
-  needs to catch, and `code_refs` stays narrow per the zone-rules.md precedent (a new `code_ref`
-  widens this article's future sweep surface for every unrelated change to that adapter file, a
-  real ongoing cost, not a one-time fix). The file is still named in both places for navigation;
-  neither now makes a checkable line claim. Both occurrences fixed in the same commit — fixing
-  only one would have left the other still uncovered by `code_refs`, a no-op for the underlying
-  problem. No Fact's substance changed.
+- sprint-74 (STORY-228 AC3, corrected at fix round): this article cited
+  `backend/src/adapters/outbound/statuspage/__init__.py:54` TWICE (the "Config models" Fact
+  above and this History's own STORY-147 entry), and that file was not among this article's
+  `code_refs` — so drift there could never re-stale this article via the sweep. **First attempt
+  de-lined both occurrences** (dropped the line number); review caught two problems with that:
+  it moved the citation from invisible-to-every-checker to flagged by `yt_wiki.py facts`
+  (`CITE_RE` matches a bare backticked path with no line number, unlike `citation_gate.py`'s
+  `CITATION_RE`, which requires one) — a real regression, clean at the sprint baseline — and it
+  did not fix the actual harm: the file was still absent from `code_refs` and the Fact still
+  asserted something about it, so drift there still could not re-trigger this article. **Resolved
+  instead by adding the path to `code_refs` and restoring both `:54` citations**: the cited line
+  is literally `json_body = {"component": {"status": vendor_status}}`, the exact dict the Fact
+  quotes — a correct, passing, content-bearing citation, and the file becomes a `code_ref` in only
+  3 articles repo-wide (`zone-rules.md`, `statuspage-publish.md`, this one), under the
+  `AMPLIFIER_THRESHOLD = 4` `refs` check. Both occurrences restored in the same commit. No Fact's
+  substance changed.
