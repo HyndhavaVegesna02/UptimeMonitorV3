@@ -1,553 +1,233 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
-sprint: 73
-status: closed     # none | planning | active | review | closed | aborted | parked
-                   # CLOSED 2026-08-16. PO: "accept all three, file for fixing the minors, run the
-                   # retro, dont merge". 13/13 points accepted -- highest ever. Retro proposed ZERO
-                   # amendments. NOT MERGED. BOARD.md regenerated at close.
-
-pause_record:
-  # HISTORICAL -- the pause was RESOLVED. The window reset, STORY-155b was dispatched and
-  # completed, and the atomic pair landed WHOLE. Kept as the record of why the sprint stopped.
-  resolved: 2026-08-16
-  paused: 2026-08-16
-  at_commit: f6ce2c6          # last story commit; gate 9/9 green here
-  delivered: "6 of 13 points -- STORY-147 (3) done, STORY-155a (3) done. Both gate 9/9, both reality-gated."
-  remaining: "STORY-155b (7) -- NOT STARTED. Its dependency (155a) is satisfied."
-  window_at_decision: "5h 82% used, resets 05:50 | 7d 18%."
-  why: >-
-    Paused on the SESSION WINDOW per the PO's lock instruction "be aware of session limits" --
-    NOT on a blocker. There is no blocker. A21's rule reads <85 dispatch freely, and 82% still
-    qualifies; I stopped anyway. STORY-155b is 7 points, 11 AC, and nine tier:map articles that
-    A18 forces re-verified IN-STORY. Starting it with ~3 points of headroom before the
-    "start no new story" threshold would have guaranteed a mid-story death -- which ALREADY
-    HAPPENED THIS SPRINT to STORY-147's first implementer, on a 3-pointer. Starting a story that
-    certainly cannot finish is how the half-landed state gets created.
-  the_rule_that_governs_the_next_session: >-
-    *** STORY-155a AND STORY-155b ARE ATOMIC. DO NOT CLOSE THIS SPRINT WITH 155a DONE AND 155b
-    OUTSTANDING -- a half-removed feature is precisely what equilibrium test 2 ("nothing is
-    half-landed") forbids, and equilibrium is this sprint's goal. The declared drop unit is THE
-    PAIR. If 155b proves undeliverable, 155a's commits stay unmerged WITH it. 155a is marked
-    `done` in both .scrum files WITH that warning attached; do not quietly drop it.
-  next_action: >-
-    Resume at STORY-155b. Read docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md --
-    the story file, not any summary of it. Full handoff detail (the five recorded traps, the
-    environment, the retro raw material) is in .scrum/session.lock, which is GITIGNORED and
-    therefore local to this machine; this record is the committed copy.
-  one_thing_155b_does_not_yet_know: >-
-    *** STORY-147 CHANGED test_citation_gate.py, WHICH 155b's AC4 MUST EDIT. *** The distinct-
-    citation numbers are now 190 per-article / 178 globally, and the test asserts FOUR numbers,
-    not three. Archiving sample-mode.md (AC8) WILL move them again, and the BASELINE dict still
-    carries a "sample-mode.md" key that AC4 requires removed in the same commit. Re-derive those
-    numbers live; do not carry any figure from the story file or this board.
+sprint: 74
+status: active     # none | planning | active | review | closed | aborted | parked
 goal: >-
-  Equilibrium: the dead feature is gone, and the backlog shrinks.
-branch: sprint-73
-start_tag: sprint-73-start
-started: 2026-08-15
-mode: in-process   # implementer + spec reviewer + quality reviewer per 3+ pt story; gate at every size
-points_committed: 13
-plan: docs/scrum/sprints/2026-08-15-sprint-73/plan.md
+  Pay the review debt, then leave the enforcement machinery more honest than we found it.
+branch: sprint-74
+start_tag: sprint-74-start
+started: 2026-08-16
+mode: in-process   # implementer + spec reviewer + quality reviewer per story; gate at every size
+points_committed: 15
+plan: docs/scrum/sprints/2026-08-16-sprint-74/plan.md
 branched_from: >-
-  sprint-72 HEAD ea52b8f. SPRINTS 66-73 ALL STAY UNMERGED; nothing touches main. Acceptance at
+  sprint-73 HEAD 15cc68a. SPRINTS 66-74 ALL STAY UNMERGED; nothing touches main. Acceptance at
   review is acceptance of the WORK, not authorisation to merge -- ask the PO first.
+previous_sprint: >-
+  Sprint 73 CLOSED 2026-08-16: 13/13 points, 3/3 accepted, retro proposed ZERO amendments. Its board
+  is preserved in git history at d683422.
 
 lock_record:
-  locked: 2026-08-15
+  locked: 2026-08-16
   po_instructions: >-
-    "plan sprint 73" -> "continue the plan according to equilibrium state as goal" -> "yes run the
-    verifier" -> "i want 147" -> "be aware of session limits, lockit". All are honoured: the goal is
-    equilibrium, verification ran, 147 is IN and FIRST, and the window is checked at every agent
-    boundary per A21.
-  window_at_lock: "5h used 74%, resets 00:40 | 7d used 7%. Verdict: dispatch freely (<85)."
+    "in next sprint first finish the minors then go to equilibrium list" (given at the sprint-73
+    close) -> "plan sprint 74" -> "what is the icon question?" -> "lock it".
+    HONOURED: every story in this sprint is a sprint-73 carried minor; the equilibrium backlog is
+    deliberately NOT in scope and is what sprint 75 returns to.
+  window_at_lock: "5h used 50%, 7d 33%. Verdict: dispatch freely (<85)."
+  po_rulings_folded_into_ac:
+    - "STORY-226 item 1: the validation error shows the AUTHORED value AND the normalized one."
+    - "STORY-226 item 2: an empty description NORMALIZES to null at load; one representation of nothing."
+    - "STORY-228 AC4: REMOVE the four unused Icon glyphs (search, x, trash, zap)."
+  capacity_risk_disclosed_at_lock: >-
+    *** 15 POINTS IS TWO ABOVE THE HIGHEST THIS TEAM HAS EVER DELIVERED. *** Velocity 11, 10, 11,
+    11, 10, 8, 13. Sprint 73 made the same disclosure at 13 against a best of 11 and landed it only
+    after a mid-sprint PAUSE on the session window.
+    THE MITIGATION IS STRUCTURAL AND REAL: there is NO ATOMIC PAIR. All four stories are mutually
+    independent, so the drop unit is ONE STORY, not sprint 73's 10-point pair.
+    *** STORY-227 (5) IS THE DECLARED FIRST DROP. READ THIS AS 10 FIRM + 5 STRETCH. ***
   plan_verification: >-
-    RAN, verdict FIX-THEN-PROCEED -- 4 CRITICAL, 4 HIGH, 3 MEDIUM, 5 LOW, all applied in v2. Several
+    RAN, verdict FIX-THEN-PROCEED -- 4 CRITICAL, 4 HIGH, 5 MEDIUM, 11 LOW, ALL APPLIED. Several
     probed by EXECUTION, not reading.
-    *** THE FINDING THAT INDICTED MY OWN METHOD: v1 bumped STORY-147 from 2 to 3 precisely because
-    its diff reaches five verified/map articles that A18 forces re-verified in-story -- then priced
-    STORY-155b's NINE such articles at zero as "informational only". The same rule, applied to the
-    small story and withheld from the big one. 155b re-priced 5 -> 7; that scope cannot be split to a
-    follow-up because A18 makes it in-story. ***
-    THE FOUR CRITICALS, each of which would have reddened the gate at a story's final commit:
-    C1 pyproject.toml was in NEITHER story while naming sample-mode modules in THREE import-linter
-       contracts (:79, :105, :141). Probed: an INDEPENDENCE contract naming a deleted module exits 1;
-       a FORBIDDEN contract exits 0 SILENTLY. So :79 reds the gate and :105 would rot invisibly.
-    C2 test_citation_gate.py:242-251 asserts found == set(BASELINE) over the literal glob wiki/*.md
-       and BASELINE:212 holds a "sample-mode.md" key -- archiving guarantees a red pytest, and the
-       underscore grep cannot see a hyphenated filename.
-    C3 155b AC1 was UNSATISFIABLE: build_live_loop cannot prove it (test_run_live_loop.py:94 patches
-       run_periodic away and asserts an isinstance), the "before" arm cannot live in the suite because
-       AC2 deletes the before-object, and the only existing behavioural proof
-       (test_sample_mode_end_to_end.py:116) was on the delete list.
-    C4 155a stales sample-mode.md -- NINE of its code_refs are files 155a touches -- while 155a's own
-       Not-in-scope forbade touching it and DoD:133-136 required acting. Three rules, no legal move.
-    TWO OF MY OWN RATIONALES WERE REFUTED and replaced rather than reworded: the SPA does NOT break on
-    a missing route (client.ts:73-79 -> TopBar.tsx:52-58 renders a retry affordance, tested at
-    TopBar.test.tsx:126), so the ordering rests on wiki-staleness instead; and 155a's AC5 was FALSE BY
-    CONSTRUCTION, flagging its own correct outcome as a regression (~18 of ~30 lost tests are in
-    EDITED files).
-    ALSO CAUGHT: tools/demo_loop_gate/harness.py:800 asserts GET /sample-mode == {"enabled": False}
-    and NO DoD command runs it -- the only proven end-to-end verification left since the vendor trial
-    expired would have broken silently.
-  po_ruling_on_147: >-
-    v2 CUT STORY-147 and put its fate to the PO -- archive, or commit -- because a third silent
-    deferral is the mechanism that produced STORY-186. *** THE PO RULED "i want 147". *** It is in and
-    it runs FIRST: the only independent, already-ready, small story here, and scheduling it last is
-    what gets a story dropped.
-  capacity_risk_accepted_with_eyes_open: >-
-    *** 13 POINTS IS TWO ABOVE THE HIGHEST FIGURE THIS TEAM HAS EVER DELIVERED (best 11, three times;
-    last sprint 8). Stated at lock, not discovered at review. ***
-    A21's window hook removes the specific failure that cost sprint 72 its last story, but it does not
-    create capacity. Putting 147 first MOVES THE RISK ONTO THE PAIR: the realistic bad outcome is a
-    sprint that delivers 3 instead of 13, not one that delivers 10 and drops a 3. Judged the right
-    trade because the PO named 147 explicitly and the pair is worthless half-done -- but it IS a trade
-    and it must be visible at review if it lands badly.
+    *** THE DISPATCH DECISION WAS THE RIGHT CALL AND IS WORTH REMEMBERING: by the letter of the
+    token-economy rule this "internal" sprint qualified for a SKIP. It was dispatched anyway because
+    three of four stories edit the ENFORCEMENT MACHINERY ITSELF -- and three of the four CRITICALs
+    turned out to be gate-red at a story's final commit, two of them in exactly that machinery. ***
+    C1 STORY-229 AC5 asserted the OPPOSITE OF THE TRUTH: it claimed only the archive branch moves
+       the citation-gate numbers. Verification patched the tier to `reference` (option (b), nothing
+       else changed), ran the REAL tests, and got TWO failures -- map_tier_count 12 -> 11
+       (test_citation_gate.py:501) and the BASELINE tier cross-check (:325, :330-332). Option (a)
+       moves them too: the article yields ZERO citations today because none carry a line number, so
+       following AC3 and writing file:line adds up to 58. AC5 now names all eight sites plus prose.
+    C2 STORY-228 had NO citation-gate AC AT ALL while its AC2 consolidates zone-rules.md:57-100 --
+       which is INSIDE the frontmatter comment block, and citation_gate.py:75,82 scans frontmatter.
+       harness.py:62-69 occurs nowhere else in that article, so dropping it reds two assertions.
+    C3 STORY-226 AC4 was UNSATISFIABLE-OR-THEATRE: service.py:22-29 is an unconditional passthrough
+       and FakeComponentRepository never invokes load_config, so the AC's subject cannot exist at
+       that seam. Seeding None gives a test that passes identically before and after the fix.
+    C4 STORY-229 AC2's stated verification mechanism is INERT -- the Facts lint, the citation gate
+       and the sweep are ALL GREEN RIGHT NOW on the article the story exists because it is wrong
+       (yt_wiki.py:262-263 SKIPS unresolvable citations; nothing anywhere checks that a code_ref
+       exists on disk).
+    *** THE HIGH THAT WOULD HAVE DESTROYED KNOWLEDGE: STORY-229 AC3 said "where a Fact cannot be
+    checked, it is deleted". Verification classified all 36 unresolvable citations -- 33 are merely
+    MIS-ROOTED (api/client.ts -> frontend/src/api/client.ts) and only 3 are genuinely gone. Deletion
+    was the cheaper branch, so a literal implementer would have destroyed 33 TRUE Facts under an AC
+    written to protect knowledge. AC3 now requires re-rooting first. ***
+    ALSO: 226 and 227 both priced wiki cost at ZERO and were re-priced (2->3, 3->5); 228 named a
+    file that does not exist; 227 AC4's shown-RED was IMPOSSIBLE as written.
 
 baseline_gate_at_lock:
-  # The green of record for sprint 73. Taken on the LOCK COMMIT, tree clean, before any story landed.
-  commit: da4f9ce
+  # The green of record for sprint 74. Taken on the LOCK COMMIT, tree clean, before any story landed.
+  commit: 15cc68a
   result: "9/9 PASS, gate exit 0"
   env: "DYNAMO_ENDPOINT_URL=http://127.0.0.1:8021, REQUIRE_DYNAMO=1"
+  pytest: "831 passed, 0 skipped"
+  npm_test: "49 files, 334 tests"
+  yt_selftest: "113 tests OK"
   note: >-
-    All nine commands green: pytest, import-linter, ruff check, ruff format, cfn-lint, npm test,
-    npm run build, npm run lint, yt_selftest. This is what any later red is compared against --
-    it matters most for STORY-155b, which deletes four test files and archives a wiki article,
-    so its counts WILL move and the delta must be explained against this run.
+    This is what any later red is compared against. It matters most for STORY-227 (AC5 deletes
+    assertions, AC1-AC4 strengthen them) and STORY-228 (the Icon removal changes the frontend test
+    array), so counts WILL move and each delta must be explained against THIS run.
 
 board:
-  - id: STORY-147
-    title: Component group + description — config to ComponentDTO
-    points: 3
+  - id: STORY-228
+    title: Four documentation leftovers from sprint 73
+    points: 2
     order: 1
-    status: done
-    file: docs/scrum/stories/STORY-147-component-group-description.md
-    completed:
-      final_head: 4b8501e
-      commits: 18   # da69c92..4b8501e, minus the 1 orchestrator board commit
-      spec_review: "PASS -- all six AC MET, each traced to a test the reviewer RAN, none inspection-only."
-      quality_review: >-
-        REQUEST CHANGES -> one MAJOR, fixed at 3c3e820. The code itself (config.py, seed_dynamo.py,
-        _map_item, DTO/service) was called clean and zone-correct with no changes asked.
-      major_finding: >-
-        test_citation_gate.py:19 -- the docstring's globally-distinct count said 186; live is 178, and
-        THIS STORY moved it (176 at da69c92 -> 178 at 4b8501e). ORCHESTRATOR VERIFIED INDEPENDENTLY
-        before acting: per-article-summed 190, globally-distinct (path,l1,l2) 178, path-only 78.
-        The sharper half: the docstring claimed "re-derives all three live, so this sentence cannot go
-        stale silently again" while 186 was a FOURTH number nothing asserted -- a false proof-label
-        beside its own counter-example. Fix made the claim TRUE (the test now asserts all four,
-        len(globally_distinct) == 178 at :469), not merely reworded.
-      in_story_corrections: >-
-        Two false sentences THIS STORY wrote into wiki History were fixed with the MAJOR (ca62753,
-        4b8501e): persistence-adapters.md's garbled "Added ... were already code_refs", and
-        statuspage-publish.md labelling STORY-147 an "unrelated story" when the test that entry
-        records is this story's own AC4 evidence. Correcting text the story authored is not scope
-        creep; leaving them would breach equilibrium test 1 ("nothing lies").
-      reality_gate: >-
-        PASS. The HTTP tests use FakeComponentRepository, so the full chain had never run in one
-        process. Ran the REAL composition root (create_app() with no injected repos) against real
-        DynamoDB Local with a scratch CONFIG_DIR declaring `group: "Commerce"` + a description on one
-        component and NEITHER on a second. Result: HTTP 200, grouped-comp -> group "commerce"
-        (AC2 normalization survives config -> seed -> Dynamo -> repo -> DTO -> JSON, not just the
-        pydantic model), legacy-comp -> group null and description null, NOT "" (AC3's negative clause
-        past the fake-repo seam). Publish-guard safe by construction: the scratch config declares zero
-        statuspage_component_id, so build_publisher falls to LoggingPublisher.
-      carried_to_po_at_review: >-
-        FIVE quality minors deliberately NOT fixed mid-sprint -- they are design observations, not
-        defects in the delivered work, and the call is the PO's: (1) test_statuspage_adapter.py:98-123
-        overlaps :36-65, only the model_fields pin is new; (2) config.py:756-762's error message quotes
-        the NORMALIZED group, so an author who wrote "Not Valid!" is shown "not valid!" and cannot grep
-        their YAML; (3) `description: ""` is accepted while `group: ""` is rejected -- asymmetry the UI
-        must special-case; (4) the DynamoDB NULL-vs-absent distinction is asserted nowhere, though
-        seed_dynamo.py's comment and persistence-adapters.md's Fact both claim it; (5) config-layer.md
-        cites statuspage/__init__.py:54, outside its 3-entry code_refs, so drift there never
-        re-triggers the article.
+    status: todo
+    file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_first: >-
-      PO ruling. The only independent, already-ready, small story in the sprint, and a story scheduled
-      last is a story that gets dropped -- which is exactly what the ruling was about. Its diff touches
-      composition/config.py, seed_dynamo.py, core/domain/component.py, the component repository and the
-      components API feature; NO sample_mode file, so the removal cannot disturb it.
+      *** THIS ORDERING IS A HAZARD FIX, NOT A PREFERENCE. *** The PO ruled REMOVE on AC4's Icon
+      glyphs, and Icon.tsx is code_ref #23 of frontend-zone.md -- the article STORY-229 exists to
+      fix. If 229 landed option (a) and set status: verified FIRST, this edit would re-stale that
+      article at final HEAD (yt_wiki.py:201-225 diffs code_refs from the article's own last commit),
+      SILENTLY UNDOING THE SPRINT'S 5-POINT CENTREPIECE. Running 228 first makes that impossible by
+      construction instead of by an instruction someone must remember.
     carry_into_brief: >-
-      *** CITATIONS VERIFIED EXACT THREE TIMES (sprint-72 planning, sprint-72 verification, sprint-73
-      verification). USE THE TABLE IN THE STORY FILE, NOT ANY OTHER LINE NUMBERS IN IT. ***
-      ComponentConfig at config.py:180 · load_config at :567 · the bare-ValueError re-raise at
-      :650-651 · ConfigError hierarchy at :97-123 · component.py:22 · models.py:9-16 in a file that is
-      exactly 16 lines.
-      THE TRAP THAT NEARLY SHIPPED TWICE: config.py:343-357 -- cited by an older draft of AC1 as the
-      place to put the check -- is AppConfig's mode="before" model_validator, THE EXACT IMPLEMENTATION
-      AC1 FORBIDS. A ValueError subclass raised inside a pydantic validator becomes ValidationError and
-      is re-raised bare by config.py:651, losing the subclass. The check MUST live in load_config
-      OUTSIDE that try/except.
-      AC4 IS STRUCTURALLY GUARANTEED and cheap to assert: the Statuspage payload is
-      {"component": {"status": vendor_status}} (adapters/outbound/statuspage/__init__.py:54).
-      AC3 IMPLEMENTATION NOTE: dynamo_component_repository.py:24-30 _map_item reads with BRACKET
-      access (item["name"]), so the two new fields must be read with .get() or every already-seeded
-      item raises KeyError on read-back.
-      WIKI: this diff reaches FIVE verified/map articles (config-layer, zone-rules,
-      canonical-types-and-ports, persistence-adapters, api-five-file-convention) that DoD:133-136
-      forces updated-or-re-verified IN-STORY. That is why it is a 3 and not a 2. Sweep AFTER the last
-      commit; do not pre-declare a radius.
-    resume_from: >-
-      *** FIRST IMPLEMENTER DIED ON THE SESSION LIMIT, 2026-08-15. 15 commits survive
-      (da69c92..795f4cb). RESUMING, NOT RESTARTING. ***
-      DONE per commit range: AC1/AC2 (3591722), AC3 (3a40e6b, 86cd95d, 48c5e64, 9c790e2),
-      AC4 (bb2cd3a), AC5 (9c790e2, 076f33e), and the A18 wiki pass over all five articles
-      (dbdb6b5, 316c2b1, 4202f42, 0da9e7f, 651d36e, d5be31d, 29ffc6a).
-      RECOVERED BY THE ORCHESTRATOR: the agent's last words were that it had found a real
-      citation defect (an abbreviated path) and was fixing it. Its uncommitted 2-line edit was
-      verified against the repo convention and committed as 795f4cb -- coherent work preserved,
-      not a scrap.
-      *** STILL RED, AND THE AGENT NEVER REACHED IT: backend/tests/test_citation_gate.py::
-      test_ac1_docstring_scope_numbers_are_current FAILS at 795f4cb -- "says 13 of 188 distinct
-      citations ... live measurement says 13 of 190". The story's own wiki commits added two
-      distinct citations. The failure message names the fix itself: the docstring sentence AND
-      the assertion, in the same commit. ***
-      REMAINING: that red, then AC6 (the gate).
+      AC4 MEASURED, NOT ASSUMED: 18 glyphs in the registry, exactly FOUR unused across the 117 files
+      outside components/Icon/ -- search, x, trash, zap. WARNING: `search` LOOKS used and is NOT --
+      its only hit is type="search" at frontend/src/pages/CheckHistoryPage.tsx:117, an HTML input
+      attribute, not a glyph name.
+      THREE EDITS, ONE COMMIT: the IconName union (:18-29), the PATHS record, and
+      Icon.test.tsx:21-40's as-const array. Union without array = TypeScript error = `npm run build`
+      (tsc -b) FAILS = gate-red on DoD command 7. Expect PATHS 18 -> 14 and the array 18 -> 14.
+      AC5 IS NEW AND WAS ADDED BY VERIFICATION -- the draft had NO citation-gate AC. AC2 consolidates
+      zone-rules.md:57-100, which is INSIDE the frontmatter comment block, and citation_gate.py:75,82
+      scans frontmatter. `harness.py:62-69` occurs NOWHERE ELSE in that article. AC3's statuspage
+      citation in config-layer.md is DUPLICATED at :103 AND :451 -- removing one is a no-op.
+      The path in the original story was WRONG and is corrected: frontend/src/components/Icon/Icon.tsx,
+      NOT frontend/src/nav/Icon.tsx.
 
-  - id: STORY-155a
-    title: Remove sample_mode from the frontend — the consumer goes first
-    points: 3
+  - id: STORY-229
+    title: Rehabilitate frontend-zone.md — 67 code_refs, three of which no longer exist
+    points: 5
     order: 2
-    status: done
-    file: docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md
-    completed:
-      final_head: f6ce2c6
-      commits: 7   # be362c9..f6ce2c6, all implementer
-      spec_review: >-
-        PASS -- all six AC MET. The reviewer re-derived the test-count delta ITSELF rather than
-        trusting the report (30 removed / 1 added; 12 in deleted files, 18 in edited ones), matching
-        the story's corrected 18-of-30 clause exactly.
-      quality_review: "REQUEST CHANGES -> one MAJOR, fixed at 077b328."
-      major_finding: >-
-        Dead CSS the removal itself created. ORCHESTRATOR VERIFIED before acting: `top-bar__` had
-        exactly ONE live consumer left (`top-bar__button`, TopBar.tsx:18) while four rule blocks
-        remained -- including `.top-bar__error` at :13, which the implementer's OWN candidates list
-        missed. The implementer had knowingly left them, arguing they were outside the verified edit
-        list and outside AC2's grep. The second ground is the argument FOR removing them: the rules
-        contain no matching text, so nothing in 155b and no later sweep could ever find them. The
-        story file itself documents three places its planning greps were holed; this was a fourth.
-        `.top-bar__button:disabled` correctly KEPT -- a state rule on a live class.
-      reviewer_disagreement_resolved_by_orchestrator: >-
-        Spec wanted the dangling "see that story's History" pointers CLOSED (the story has no History
-        section); quality wanted them DROPPED as near-valueless. Ruled: REPOINT at the story file, so
-        the citation resolves and the deletion-reason trace survives. The implementer then avoided
-        citing the literal filename, which contains "sample-mode" and would have re-broken AC2's grep.
-      story_file_corrected_by_the_work: >-
-        The demotion reason says EIGHT code_refs moved, not the NINE the story claimed --
-        pages/DashboardPage.tsx is a code_ref this diff never touches. The implementer was right and
-        the story file was wrong.
-      reality_gate: >-
-        PASS. For a removal story the real question is the shipped artifact, not the source tree:
-        grepped the BUILT bundle -- frontend/dist/assets/*.js and *.css -- for
-        samplemode|sample-mode|sample mode. ZERO in both. Orchestrator also re-ran AC2's grep (0),
-        AC4's backend check (0 files), and confirmed TopBar.css now carries only the four live rules.
-      carried_to_po_at_review: >-
-        THREE quality minors deliberately NOT fixed: (1) frontend-zone.md still lists three
-        now-deleted files as code_refs and documents putJson -- it was ALREADY status: stale before
-        this story, so it is quarantined and the sweep skips it; no gate breach, but its eventual
-        rehab pass has grown; (2) AppShell.test.tsx:172-174 uses the Approvals badge as a settle
-        barrier, coupling the top-bar test to FIXTURE_PROPOSALS; (3) the Icon registry's `zap` glyph
-        is now unused, but that catalogue already carries unused search/trash/x -- not this story's
-        debt.
-    dispatched_at: >-
-      Window at dispatch: 5h 48% used, 7d 15%. Verdict: dispatch freely (<85). STORY-147 banked at
-      482c7f4 (3 pts). 10 points remain in the atomic pair and roughly half the 5h window -- if 155b
-      cannot finish, atomicity_rule governs: PAUSE WITH A COMMITTED HANDOFF, never close the sprint
-      with 155a landed and 155b outstanding.
+    status: todo
+    file: docs/scrum/stories/STORY-229-frontend-zone-article-rehab.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
-    atomic_with: STORY-155b
+    carry_into_brief: >-
+      *** AC1 MAKES THE DECISION THE DELIVERABLE: rehabilitate as tier: map (a), demote to
+      tier: reference (b), or archive (c). Doing (a) BY DEFAULT is the failure to avoid -- it is the
+      only branch with recurring cost, and this article has been quarantined for four months without
+      anyone needing it. ***
+      AC3'S TRAP, MEASURED: of 36 unresolvable citations, 33 are MERELY MIS-ROOTED (written relative
+      to frontend/src/) and only 3 are GENUINELY GONE. RE-ROOT BEFORE JUDGING ANYTHING UNCHECKABLE --
+      the draft's bare "delete what cannot be checked" would have destroyed 33 true Facts.
+      AC2: the Facts lint, the citation gate and the sweep are ALL GREEN ON THIS ARTICLE TODAY. They
+      cannot see the problem (yt_wiki.py:262-263 skips unresolvable cites; nothing checks code_ref
+      existence). READING is the only mechanism that works; the evidence is a re-derived EMPTY list.
+      AC5: EVERY branch moves test_citation_gate.py's numbers -- proven by execution, option (b)
+      alone reds two assertions. RE-DERIVE LIVE at the final commit; carry no figure from the story,
+      the plan, or this board.
+      AC4: the link lint CANNOT verify this (yt_wiki.py:403-412 resolves archive/ too, so it is green
+      either way). Use a GREP for `frontend-zone` across CLAUDE.md, docs/, .claude/, .agents/ --
+      known plain-path refs at CLAUDE.md:86, docs/project-history.md:86, and both
+      council.config.yaml:10.
+      Not-in-scope was NARROWED: frontend/README.md IS permitted (AC1 option (c) requires writing it).
 
-  - id: STORY-155b
-    title: Remove sample_mode from the backend, and tombstone its article
-    points: 7
+  - id: STORY-226
+    title: ComponentConfig validation ergonomics
+    points: 3
     order: 3
-    status: done
-    file: docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md
-    completed:
-      final_head: b55cc74
-      commits: 29   # 1c02e63..b55cc74, all implementer
-      spec_review: >-
-        FAIL -> then MET after the fix round. Ten AC MET on the first pass; AC11 NOT MET on its
-        SECOND clause -- the gate was green and the arithmetic right, but the required written
-        accounting did not exist. Commit dea9660 deferred it ("AC11 accounts for the delta"), no
-        later commit delivered it, and 6d0297f ticked the checkbox anyway. ORCHESTRATOR VERIFIED:
-        "851" and "831" appeared NOWHERE in the story file. A ticked box with no deliverable is the
-        precise failure the mechanical gate exists to prevent, and on a deletion story the delta
-        narrative is the artifact proving coverage did not vanish unnoticed.
-      quality_review: "REQUEST CHANGES -> one MAJOR, fixed at 7d15a8f."
-      major_finding: >-
-        docs/project-history.md:66-70 still said sample_mode was "Inert since the Dynatrace trial
-        expired" and "Removal is STORY-155" -- both false at HEAD. ORCHESTRATOR VERIFIED the reason
-        it is blocking rather than cosmetic: CLAUDE.md:16 routes readers to that file NAMING
-        sample_mode as its topic, and this same story fixed the identical sentence in CLAUDE.md at
-        592c76d. The sibling copy one file away was missed.
-      orchestrator_added_to_the_fix_round: >-
-        canonical-types-and-ports.md:120,122 claimed "ten STABLE core ports"; I counted ELEVEN on
-        disk. The off-by-one predates this story, but the story re-verified that exact line, and a
-        re-verification restating a false count converts inherited drift into a claim this story
-        owns. Fixed at 787e165 -- and correctly, as a CORRECTION TRAIL: the History records that the
-        previous entry got it wrong rather than silently rewriting it.
-      ac1_the_estimate_justifier_held: >-
-        *** THE STRONGEST VERIFICATION THIS SPRINT. *** AC1 had a known cheap fake the story named in
-        advance (after removal, test_run_live_loop.py:94's isinstance assertion becomes a one-word
-        edit proving nothing). It was NOT taken. QUALITY reconstructed the deleted
-        composition/sample_mode.py and core/ports/sample_mode_repository.py from 1c02e63 in a scratch
-        dir, re-ran the same run_periodic harness with the decorator wrapping a real IngestService,
-        and confirmed the committed "before" literal matches FIELD-FOR-FIELD -- so the capture is
-        real evidence, not a typed number. SPEC independently mutated health_mapping to flip
-        UP->DOWN and confirmed the test reds naming the mismatch. Falsifiable, and falsified.
-      reality_gate: >-
-        PASS, run by the orchestrator against the REAL composition root (create_app(), no injected
-        repos) and real DynamoDB Local, CONFIG_DIR=config/demo per the publish-safety rule, and
-        WITHOUT launching the loop process. GET /api/v1/sample-mode -> 404 and PUT -> 404 (the route
-        is genuinely gone at the real HTTP surface, not just absent from a route table literal),
-        while GET /api/v1/components -> 200 and GET /api/v1/health -> 200 (no surviving route broke).
-        The app boots cleanly now that the composition root no longer constructs
-        DynamoSampleModeRepository -- which is the removal's real risk, since SampleModeIngest was a
-        LIVE decorator over the ingest front door in both composition roots.
-      wiki_compile_pass: "sweep CLEAN | links CLEAN | integrity CLEAN, all at the final HEAD."
-      carried_to_po_at_review: >-
-        SIX quality minors deliberately NOT fixed: (1) test_pull_loop.py:1080's AC1 literal omits
-        response_status_code -- none in this harness, so nothing is wrong today, but it is a hole in
-        an otherwise byte-level pin; (2) test_zone_layout.py:238's _EXPECTED_ROUTE_TABLE pins paths
-        but NOT HTTP methods, so a method change on a surviving route would pass; (3) the
-        grep-avoidance test name at test_zone_layout.py:253; (4) zone-rules.md:57-100 carries FOUR
-        separate STORY-155b blocks -- judged self-inflicted ordering (AC10 landed after the wiki
-        pass), final state verified coherent, but one consolidated entry would have said the same;
-        (5) tools/demo_engine/README.md:161's dated historical claim; (6) pre-existing citation debt
-        in zone-rules.md (6) and demo-engine.md (8), untouched and unaffected.
-    dispatched_at: >-
-      Resumed 2026-08-16 after the pause. Window at dispatch: 5h 0% (RESET) | 7d 18%. Verdict:
-      dispatch freely. Preconditions verified: tree clean at 1c02559, node_modules 216,
-      uptime_dynamo_8021 up, yt_selftest 113 OK.
-    orchestrator_measured_before_dispatch: >-
-      *** AC4's landing point MOVED and the story file's line number is now WRONG. *** The story
-      cites the BASELINE "sample-mode.md" key at test_citation_gate.py:212; it is at :228 -- STORY-147's
-      docstring edits shifted it. Measured at 1c02559, AC8's archive move breaks FOUR hardcoded facts
-      in that one file, not the one the story names:
-        :81  comment "17 articles"
-        :228 BASELINE dict key "sample-mode.md"
-        :260 docstring "exactly the 17 articles this baseline covers"
-        :269 assert len(found) == 17
-      Live count is 17 top-level articles today, so every one of those becomes 16 / absent.
-      ALSO: STORY-147 extended that test to assert FOUR numbers where the story file assumes three --
-      (13, 190) at :460, anchored_ok == 8 at :465, len(globally_distinct) == 178 at :469, and
-      (total_enforced_fail, map_tier_count) == (15, 13) at :486. Archiving a tier:map article moves
-      the map_tier_count arm too. RE-DERIVE ALL OF THEM LIVE; carry no figure from any document.
+    status: todo
+    file: docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
-    atomic_with: STORY-155a
+    carry_into_brief: >-
+      BOTH PO RULINGS ARE IN THE AC: the error shows the AUTHORED value AND the normalized one; an
+      empty description normalizes to null AT LOAD.
+      *** THE TRAP: the authored group is NOT available where the error is raised, because the field
+      validator lowercases at CONSTRUCTION. The obvious fix -- move the check into the validator --
+      is the EXACT failure STORY-147 documented twice: a ValueError subclass raised inside a pydantic
+      validator becomes a ValidationError and LOSES ITS SUBCLASS. The check MUST stay in load_config,
+      OUTSIDE the try/except. ***
+      THE VERIFIED WAY THROUGH: `raw` is assigned at config.py:669-671 and is STILL IN SCOPE at the
+      :755 raise site, so raw["components"] carries the authored group verbatim. JOIN ON comp.id
+      (never normalized), not on list position.
+      AC4 WAS REWRITTEN -- the draft was unsatisfiable-or-theatre. service.py:22-29 is an
+      unconditional passthrough and the fake repo never invokes load_config, so AC3 is the guarantee
+      and the API inherits it. DO NOT add a normalization step downstream to green a test.
+      AC5: state the whitespace rule AS CODE. Recommended `None if not v.strip() else v` -- the
+      alternative (`v.strip() or None`) moves the _MAX_DESCRIPTION_LENGTH boundary pinned at
+      test_config.py:953.
 
-atomicity_rule: >-
-  *** STORY-155a AND STORY-155b ARE ATOMIC: BOTH LAND, OR NEITHER DOES. *** A half-removed feature is
-  exactly what equilibrium test 2 ("nothing is half-landed") forbids. If the window closes mid-155b,
-  PAUSE WITH A COMMITTED HANDOFF rather than closing the sprint with 155a done and 155b outstanding.
-  If 155b proves undeliverable, 155a's commits stay unmerged with it. The declared drop unit is THE
-  PAIR, never one half. STORY-147 is NOT part of that unit -- it is independent and banked first.
+  - id: STORY-227
+    title: Six test-pinning gaps found at sprint-73 review
+    points: 5
+    order: 4
+    status: todo
+    file: docs/scrum/stories/STORY-227-test-pinning-gaps-sprint-73.md
+    ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
+    declared_first_drop: >-
+      *** IF THE SPRINT RUNS SHORT, THIS IS THE STORY THAT GOES. *** Pure test-quality cleanup, no
+      consumer waiting on it, and no other story depends on it. Declared AT LOCK so the decision is
+      not made under pressure at the end -- which is how STORY-186 died over three sprints.
+    carry_into_brief: >-
+      RE-PRICED 3 -> 5 AT VERIFICATION because the 3 priced wiki cost at ZERO -- this diff touches
+      code_refs of FOUR tier:map/status:verified articles (zone-rules, persistence-adapters,
+      ingest-service-and-pull-loop, statuspage-publish) that A18 forces re-verified IN-STORY, and
+      AC3 MANDATES an edit to persistence-adapters.md's own Fact. The wiki IS the dominant cost here,
+      not the six test edits.
+      AC4'S SHOWN-RED WAS IMPOSSIBLE AS DRAFTED and is corrected: the test derives its expectation
+      from the same constant it mutates, so it passes before AND after. The ONLY mutation that reds
+      it is emptying FIXTURE_PROPOSALS to [] (Sidebar.tsx:51-54, hasBadge > 0).
+      AC3: the PROVE-IT branch IS reachable -- probed against the local DynamoDB, `'group' in item`
+      returns True for the NULL form and False for the absent form, on the SAME resource Table the
+      test already uses. Do not default to withdrawing the claim.
+      AC3 ALSO: if you edit the comment at seed_dynamo.py:46-50, RE-KEY config-layer.md's citations
+      to seed_dynamo.py:56 and :76 in the SAME commit -- the file is 88 lines so a shift leaves them
+      IN RANGE AND SILENTLY WRONG, which no mechanism catches.
+      AC5: the block is 26 lines (:98-123), not the "~6" the draft guessed; only the model_fields
+      assertion at :106 must survive. pytest drops 831 -> 830; AC7 must account for it.
+      AC1 IS CONFIRMED FEASIBLE: app.openapi() yields 11 paths / 12 (method, path) pairs, and
+      /api/v1/maintenance carries BOTH GET and POST -- the case that proves the pair table earns its
+      keep. A pair set strictly implies the current path set, so STORY-155b's AC6 is not weakened.
 
 execution_order: >-
-  147 -> 155a -> 155b. 147 first by PO ruling and because it is independent. 155a before 155b is NOT
-  the "SPA would 404" reason given at planning -- verification refuted that (the SPA degrades
-  gracefully). The surviving reason: 155a's diff STALES sample-mode.md and 155b ARCHIVES it, so
-  consumer-first archives the article ONCE instead of updating-then-archiving.
+  228 -> 229 -> 226 -> 227. 228 FIRST is a hazard fix (see its why_first), not a preference.
+  229 second because it carries all the uncertainty and its AC1 decision may change its own cost.
+  226 third: the only behaviour change, PO-ruled, banked before the tail. 227 LAST because it is the
+  declared drop.
 
-session_limit_discipline: >-
-  *** PO INSTRUCTION AT LOCK: "be aware of session limits". *** A21's hook blocks a dispatch at >=95%,
-  but the hook is a backstop, not a plan. RUN THE WINDOW CHECK AT EVERY AGENT BOUNDARY -- the reviewer
-  pair counts as ONE boundary since they run concurrently. 5h <85 dispatch freely | 85-94 finish work
-  already in flight on the CURRENT story but start no new story | >=95 park until resets_at and resume
-  from the board. 7d >=90 -> tell the PO; a 7-day reset cannot be waited out inside a session.
-  AT LOCK: 74%, resets 00:40. Enough for STORY-147's implementer and NOT obviously enough for the
-  review pair after it -- RE-CHECK AT THAT BOUNDARY.
-
-deferred:
-  - "STORY-225 ARCHIVED at this planning on its own evidence -- its refinement DEMANDED a sweep before
-     choosing a shape, the sweep was run, and it refuted BOTH premises (68 unhooked files repo-wide,
-     not the 4 it names; infra/stack.yaml untouched since 2026-07-17)."
-  - "STORY-174 and STORY-193 were PROPOSED for archive and WITHDRAWN after checking their content
-     instead of their titles: 174 is fleet-path work the equilibrium pass consciously kept; 193 is a
-     MEASURED defect (two identical reality-gate runs disagreed, arithmetic root cause verified)."
-  - "STORY-192 (mojibake) re-measured at 224 sequences across 4 files. MUST BE RE-MEASURED AFTER THIS
-     SPRINT: archiving sample-mode.md removes ~110-142 of them."
-  - "FLEET READINESS IS EXPLICITLY NOT THIS SPRINT'S GOAL (PO confirmed). 8 of the 14 open stories are
-     fleet-path and every one is UNESTIMATED. STORY-151 and STORY-152 remain the two things standing
-     between the project and a fleet."
+risks:
+  - "STORY-229's AC1 may choose the expensive branch. The Fact pass is 25 bullets / 58 citations /
+     33 re-rootings. IF IT OVERRUNS, THE AC REQUIRES SPLITTING, NOT SKIMPING -- a half-verified
+     article restored to status: verified is STRICTLY WORSE than the quarantined article we have,
+     because it converts visibly-stale into trusted-and-wrong."
+  - "EVERY branch of 229 moves the citation-gate numbers. Re-derive live, carry no figure forward."
+  - "227's wiki radius is its dominant cost, not its test edits."
+  - "`python -m pytest` MUST run from the REPO ROOT. From backend/, three tests fail spuriously
+     (test_asgi.py::test_create_app_serves_real_components_route and both test_seed.py CLI tests)
+     because scripts/seed_topology.py resolves repo-root-relative. THREE stories require count
+     accounting, so a spurious red would corrupt it."
+  - "No live vendor data since 2026-07-28, unchanged. Nothing in this sprint needs it."
 
 standing:
-  - "SPRINTS 66-73 ALL STAY UNMERGED. Nothing touches main."
+  - "SPRINTS 66-74 ALL STAY UNMERGED. Nothing touches main."
   - "PUBLISH SAFETY: NEVER run `python -m src.composition.run` -- decide publishes recoveries with NO
      human gate to the LIVE public Statuspage. CONFIG_DIR=config/demo on BOTH processes if built."
   - "STORY-175 CANNOT ENTER A SPRINT BEFORE STORY-151 AND STORY-152 LAND. When Dynatrace access
      arrives, STORY-154 RUNS FIRST AND ALONE."
   - "PO granted STANDING subagent-dispatch authority (2026-08-03). Run autonomously to review."
   - ".scrum/ is orchestrator-owned; subagents NEVER write it -- INCLUDING via git stash. NO story in
-     this sprint needs a .scrum/ edit. If one seems to, the ORCHESTRATOR makes it -- STORY-224's AC1
-     failure came from a brief telling an implementer otherwise."
-  - "BRIEFS QUOTE OR CITE file:line. NEVER re-derive or paraphrase contract material -- two defects in
-     sprint 72 came from exactly that, one manufacturing a disagreement between two correct reviewers."
+     this sprint needs a .scrum/ edit. If one seems to, the ORCHESTRATOR makes it."
+  - "BRIEFS QUOTE OR CITE file:line. NEVER re-derive or paraphrase contract material."
   - "A19: every scratch `cd` written `cd X || exit 1`."
   - "Console-script shims (pytest.exe, lint-imports.exe, cfn-lint.exe) blocked by Device Guard."
   - "A PreToolUse hook BLOCKS bulk git staging during an active sprint. Stage explicitly."
   - "plan-verification.md:19 FORBIDS pre-declaring a story's wiki blast radius."
   - "A nonzero pytest SKIP count is an incomplete gate, not a pass."
-
-story_147_gate:
-  commit: 4b8501e
-  result: "9/9 PASS, exit 0"
-  pytest: "851 passed, 0 skipped"
-  run_by: orchestrator   # NOT the implementer self-run -- external-delivery contract
-  wiki_sweep: "CLEAN at 4b8501e"
-  dod_evidence:
-    - command: "python -m pytest"
-      exit_code: 0
-      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 851 passed in 61.67s (0:01:01) ========================"
-      commit: 4b8501e
-      at: "2026-08-15T20:36:22+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "--------- | Contracts | --------- | Analyzed 152 files, 433 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-      commit: 4b8501e
-      at: "2026-08-15T20:37:24+00:00"
-    - command: "python -m ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: 4b8501e
-      at: "2026-08-15T20:37:25+00:00"
-    - command: "python -m ruff format --check ."
-      exit_code: 0
-      output_tail: "265 files already formatted"
-      commit: 4b8501e
-      at: "2026-08-15T20:37:25+00:00"
-    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-      exit_code: 0
-      output_tail: ""
-      commit: 4b8501e
-      at: "2026-08-15T20:37:25+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  51 passed (51) | Tests  363 passed (363) | Start at  02:07:28 | Duration  45.81s (transform 5.90s, setup 41.06s, import 23.06s, tests 44.25s, environment 164.90s)"
-      commit: 4b8501e
-      at: "2026-08-15T20:37:28+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-teVmGzHT.css                              140.89 kB │ gzip: 76.31 kB | dist/assets/index-CS_W8toy.js                               278.14 kB │ gzip: 85.39 kB | ✓ built in 357ms"
-      commit: 4b8501e
-      at: "2026-08-15T20:38:14+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 lint | > eslint ."
-      commit: 4b8501e
-      at: "2026-08-15T20:38:19+00:00"
-    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
-      exit_code: 0
-      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.022s | OK"
-      commit: 4b8501e
-      at: "2026-08-15T20:38:24+00:00"
-  
-
-story_155a_gate:
-  commit: f6ce2c6
-  result: "9/9 PASS, exit 0"
-  pytest: "851 passed, 0 skipped"
-  npm_test: "49 files, 334 tests (was 51/363)"
-  run_by: orchestrator   # NOT the implementer self-run
-  wiki_sweep: "CLEAN -- sample-mode.md not swept (status=stale)"
-  dod_evidence:
-    - command: "python -m pytest"
-      exit_code: 0
-      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 851 passed in 62.03s (0:01:02) ========================"
-      commit: f6ce2c6
-      at: "2026-08-15T21:11:29+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "--------- | Contracts | --------- | Analyzed 152 files, 433 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-      commit: f6ce2c6
-      at: "2026-08-15T21:12:31+00:00"
-    - command: "python -m ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: f6ce2c6
-      at: "2026-08-15T21:12:32+00:00"
-    - command: "python -m ruff format --check ."
-      exit_code: 0
-      output_tail: "265 files already formatted"
-      commit: f6ce2c6
-      at: "2026-08-15T21:12:32+00:00"
-    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-      exit_code: 0
-      output_tail: ""
-      commit: f6ce2c6
-      at: "2026-08-15T21:12:32+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  02:42:35 | Duration  45.57s (transform 5.72s, setup 44.84s, import 23.05s, tests 49.22s, environment 161.20s)"
-      commit: f6ce2c6
-      at: "2026-08-15T21:12:35+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-DGYXseT8.js                               276.07 kB │ gzip: 84.91 kB | ✓ built in 358ms"
-      commit: f6ce2c6
-      at: "2026-08-15T21:13:21+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 lint | > eslint ."
-      commit: f6ce2c6
-      at: "2026-08-15T21:13:26+00:00"
-    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
-      exit_code: 0
-      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.703s | OK"
-      commit: f6ce2c6
-      at: "2026-08-15T21:13:32+00:00"
-  
-
-story_155b_gate:
-  commit: b55cc74
-  result: "9/9 PASS, exit 0"
-  pytest: "831 passed, 0 skipped (was 851; delta -20 accounted in the story History)"
-  run_by: orchestrator   # NOT the implementer self-run
-  wiki_sweep: "CLEAN"
-  dod_evidence:
-    - command: "python -m pytest"
-      exit_code: 0
-      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 831 passed in 66.81s (0:01:06) ========================"
-      commit: b55cc74
-      at: "2026-08-16T12:44:55+00:00"
-    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
-      exit_code: 0
-      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
-      commit: b55cc74
-      at: "2026-08-16T12:46:03+00:00"
-    - command: "python -m ruff check ."
-      exit_code: 0
-      output_tail: "All checks passed!"
-      commit: b55cc74
-      at: "2026-08-16T12:46:03+00:00"
-    - command: "python -m ruff format --check ."
-      exit_code: 0
-      output_tail: "253 files already formatted"
-      commit: b55cc74
-      at: "2026-08-16T12:46:03+00:00"
-    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
-      exit_code: 0
-      output_tail: ""
-      commit: b55cc74
-      at: "2026-08-16T12:46:04+00:00"
-    - command: "npm test"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  18:16:08 | Duration  48.70s (transform 6.30s, setup 44.78s, import 23.88s, tests 53.44s, environment 176.03s)"
-      commit: b55cc74
-      at: "2026-08-16T12:46:07+00:00"
-    - command: "npm run build"
-      exit_code: 0
-      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-DGYXseT8.js                               276.07 kB │ gzip: 84.91 kB | ✓ built in 322ms"
-      commit: b55cc74
-      at: "2026-08-16T12:46:57+00:00"
-    - command: "npm run lint"
-      exit_code: 0
-      output_tail: "> frontend@0.0.0 lint | > eslint ."
-      commit: b55cc74
-      at: "2026-08-16T12:47:02+00:00"
-    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
-      exit_code: 0
-      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 12.299s | OK"
-      commit: b55cc74
-      at: "2026-08-16T12:47:07+00:00"
-  
+  - "WINDOW CHECK AT EVERY AGENT BOUNDARY (A21 hook): <85 dispatch freely | 85-94 finish the CURRENT
+     story, start NO new one | >=95 park until resets_at and resume from the board."
+  - "STORY-192 must be RE-MEASURED before sizing -- archiving sample-mode.md removed ~110-142 of its
+     ~224 mojibake sequences."
