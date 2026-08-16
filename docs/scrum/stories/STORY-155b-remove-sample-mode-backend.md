@@ -185,3 +185,20 @@ None.
   (2026-08-15/16); this story removes the backend producer and archives its
   wiki article, closing the feature out per `CLAUDE.md`'s standing note that
   STORY-155 is its removal.
+- 2026-08-16: **AC11 (the count, before/after, accounted exactly).** Backend
+  `pytest`: **before 851 passed / 0 skipped** (the sprint baseline recorded at
+  STORY-155a's `f6ce2c6`), **after 831 passed / 0 skipped** — net **−20**.
+  Accounted exactly, not merely reconciled to the right total:
+  - **−21**: the four dedicated test files this story deletes —
+    `test_sample_mode_endpoint.py` (8), `test_sample_mode_repository_contract.py`
+    (2), `test_sample_mode_ingest.py` (9), `test_sample_mode_end_to_end.py` (2);
+    8+2+9+2 = 21.
+  - **−1**: `test_dynamo_sample_mode_repository_lifecycle`, removed from
+    `test_dynamo_adapters.py` (the file itself stays — it still covers the
+    other eight DynamoDB repositories).
+  - **+1**: AC1's new `test_run_periodic_records_same_observations_with_
+    ingest_decorator_removed` (`test_pull_loop.py`).
+  - **+1**: AC6's new `test_the_removed_sample_route_is_gone_and_no_other_
+    route_changed` (`test_zone_layout.py`).
+  - −21 − 1 + 1 + 1 = **−20**. 851 − 20 = **831**, matching the measured
+    after-count exactly.
