@@ -117,10 +117,10 @@ status: verified
   them for callers that import from the service. See [[persistence-adapters]] for the repository
   contract that raises them.
 
-### The ten STABLE core ports (`core/ports/`, ABCs)
+### The eleven STABLE core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
-them, the composition root injects them. All ten are `abc.ABC` with `@abstractmethod`,
-signatures in canonical vocabulary only (no vendor/HTTP/SQL types). (A TEMPORARY eleventh,
+them, the composition root injects them. All eleven are `abc.ABC` with `@abstractmethod`,
+signatures in canonical vocabulary only (no vendor/HTTP/SQL types). (A TEMPORARY twelfth,
 `SampleModeRepository`, existed alongside these from STORY-048 through STORY-155b, which
 removed it along with the feature it supported; see [[sample-mode]] (archived).)
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
@@ -324,3 +324,14 @@ removed it along with the feature it supported; see [[sample-mode]] (archived).)
   eleventh" heading corrected to "the ten STABLE core ports" (a parenthetical points at the archived
   [[sample-mode]] for what the eleventh was). Every other Fact — the ten stable ports themselves,
   the domain types, the boundary status — is untouched.
+- sprint-73 (STORY-155b fix round): the entry directly above got the count WRONG — there are
+  ELEVEN stable core ports on disk today (`clock`, `component_repository`,
+  `maintenance_repository`, `observation_repository`, `proposal_repository`,
+  `publication_repository`, `rejected_observation_repository`, `signal_ingest`,
+  `signal_repository`, `status_publisher`, `watermark` — counted directly against
+  `backend/src/core/ports/`, matching the eleven bullets already listed below the heading, which
+  were never wrong), not ten; the off-by-one predated this story but this story's own
+  re-verification pass restated it instead of catching it. "The ten STABLE core ports" heading
+  and "All ten are `abc.ABC`" corrected to "eleven"/"All eleven"; the parenthetical's "TEMPORARY
+  eleventh" corrected to "TEMPORARY twelfth" (eleven stable + one temporary = twelve existed
+  before removal). No other Fact changed.
