@@ -1,6 +1,8 @@
 # Sprint 74 — Plan
 
-**Status: DRAFT, awaiting PO approval and lock.**
+**Status: VERIFIED, awaiting PO lock.** Pre-lock verification ran and all findings are applied
+(see the bottom section). Both PO questions raised at planning — STORY-226's two rulings and
+STORY-228's `Icon` registry question — have been answered and are written into the AC.
 
 ## Goal
 
@@ -10,22 +12,30 @@ This sprint is scoped by direct PO instruction given at the sprint-73 close: *"i
 finish the minors then go to equilibrium list."* Every story here is a sprint-73 carried minor. The
 equilibrium backlog is deliberately **not** in scope — it is what sprint 75 returns to.
 
-## Scope — 3 stories, 13 points *(was 4 stories / 12 before verification)*
+## Scope — 4 stories, 15 points *(12 as first drafted; +3 from verification's re-pricing)*
 
 | # | Story | Pts | State |
 | --: | --- | --: | --- |
-| 1 | **STORY-229** — rehabilitate (or retire) `frontend-zone.md` | 5 | `ready`, 6 AC |
-| 2 | **STORY-226** — ComponentConfig validation ergonomics | **3** *(was 2)* | `ready`, 7 AC, **both PO questions answered** |
-| 3 | **STORY-227** — six test-pinning gaps | **5** *(was 3)* | `ready`, 7 AC |
+| 1 | **STORY-228** — four documentation leftovers | 2 | `ready`, 6 AC, **PO ruled on AC4: REMOVE** |
+| 2 | **STORY-229** — rehabilitate (or retire) `frontend-zone.md` | 5 | `ready`, 6 AC |
+| 3 | **STORY-226** — ComponentConfig validation ergonomics | **3** *(was 2)* | `ready`, 7 AC, **both PO questions answered** |
+| 4 | **STORY-227** — six test-pinning gaps | **5** *(was 3)* | `ready`, 7 AC |
 
-**STORY-228 (2) is HELD OUT — it is not `ready`.** Pre-lock verification exposed that its AC4 rests
-on an Open Question the PO has not answered (remove the unused `Icon` glyphs, or document the
-registry as a catalogue). An unresolved question fails the Definition of Ready, so it cannot enter a
-sprint. **This is a readiness call, not a capacity cut** — one PO answer makes it a refinable 2 for
-sprint 75. Its collision with STORY-229 (below) disappears as a side effect.
+STORY-228 was held out at verification because AC4 rested on an unanswered question — an open
+question fails the Definition of Ready. **The PO answered it at planning (remove the four unused
+`Icon` glyphs), so it is now `ready` and back in.**
 
-Velocity: 11, 10, 11, 11, 10, 8, **13**. This commits **13** — equal to last sprint, the highest
-this team has delivered. Stated at lock, not discovered at review.
+### ⚠ 15 points is TWO ABOVE the highest this team has ever delivered
+
+Velocity: 11, 10, 11, 11, 10, 8, **13**. This commits **15**. Stated at lock, not discovered at
+review — the same disclosure sprint 73 made when it committed 13 against a best of 11, and that one
+landed only after a mid-sprint pause on the session window.
+
+**The mitigation is structural, and it is real this time.** Sprint 73's bad outcome was
+*"delivers 3 instead of 13"* because its drop unit was a 10-point atomic pair. Here there is **no
+atomic pair**: all four stories are mutually independent, so the drop unit is a single story.
+**STORY-227 (5) is the declared first drop** — pure test-quality cleanup with no consumer waiting on
+it. Read this as **10 points firm + 5 stretch**, not 15 committed evenly.
 
 ### Two stories were re-priced, and the reason indicts the first draft
 
@@ -42,29 +52,37 @@ estimate that is true.
 
 ### The one structural improvement over sprint 73
 
-**There is no atomic pair in this sprint.** All three stories are mutually independent: none blocks
-another, and dropping any one leaves the rest coherent and shippable. Sprint 73's realistic bad
-outcome was *"delivers 3 instead of 13"* because its drop unit was a 10-point pair. Here the drop
-unit is a single story, and the tail (227) is droppable cleanup.
+**There is no atomic pair in this sprint.** All four stories are mutually independent: none blocks
+another, and dropping any one leaves the rest coherent and shippable. That is what makes the
+15-point commitment defensible — see the disclosure above — and it is a deliberate property of the
+scope, not luck.
 
-That is a deliberate property of the ordering below, not luck.
+The one genuine coupling (228's `Icon.tsx` edit vs 229's article) is resolved by **ordering**, not by
+an atomicity rule: run 228 first and it cannot fire.
 
-## Execution order — 229 → 226 → 227
+## Execution order — 228 → 229 → 226 → 227
 
-**229 first, because it carries all the uncertainty.** Its AC1 is a *decision* — rehabilitate as
+**228 first, and this ordering is a HAZARD FIX, not a preference.** The PO's ruling on AC4 — remove
+the four unused glyphs — edits `frontend/src/components/Icon/Icon.tsx`, which is **`code_ref` #23 of
+`frontend-zone.md`**, the article STORY-229 exists to fix. If 229 landed option (a) and set
+`status: verified` first, this edit would re-stale that article at final HEAD (`yt_wiki.py:201-225`
+diffs `code_refs` from the article's own last commit) — **silently undoing the sprint's 5-point
+centrepiece**. Running 228 first removes the hazard by construction rather than by remembering to
+handle it. It is also the smallest story, so the ordering costs nothing.
+
+**229 second, because it carries all the uncertainty.** Its AC1 is a *decision* — rehabilitate as
 `tier: map`, demote to `tier: reference`, or archive — and the three branches have materially
-different costs. Running it first means we learn which branch we are on while there is capacity to
+different costs. Running it early means we learn which branch we are on while there is capacity to
 absorb the answer. It is also the only story that can grow: if the Fact-by-Fact pass exceeds the
 estimate, its own AC says **stop and split rather than skimp**, and that call is far cheaper to make
 in the first third of a sprint than the last.
 
-**226 second, because it is the only behaviour change and the PO has already ruled on it.** Banking
+**226 third, because it is the only behaviour change and the PO has already ruled on it.** Banking
 it early follows sprint 73's lesson — a story scheduled last is a story that gets dropped, which is
 the mechanism that produced STORY-186 across three sprints.
 
 **227 last, because it is the safest thing to lose.** Pure test-quality cleanup with no consumer
-waiting on it. It is now the largest of the three at 5, so losing it costs more than the old plan
-implied — that is the honest consequence of pricing it correctly, and it is visible here rather than
+waiting on it. It is tied-largest at 5, so losing it costs more than the first draft implied — that is the honest consequence of pricing it correctly, and it is visible here rather than
 at review.
 
 ## Execution mode
@@ -73,13 +91,13 @@ at review.
 reality gate, for every story (all are 2+ points; the 3+ rule catches 227 and 229, and sprint 73
 showed the review pair earning its cost on every single story, so the 2-pointers get it too).
 
-## Why the plan verifier IS being dispatched, despite this being an "internal" sprint
+## Why the plan verifier WAS dispatched, despite this being an "internal" sprint
 
 The token-economy rule says purely internal sprints — docs, one-zone refactors, UI against existing
 DTOs — skip the pre-lock verifier, and note the skip. By the letter of the rule this sprint
 qualifies for a skip: no adapter, no vendor path, no units/scale logic, no external mode.
 
-**Dispatching anyway, and the reason is specific.** Three of these four stories edit the
+**Dispatched, and the reason was specific.** Three of these four stories edit the
 **enforcement machinery itself** — `test_citation_gate.py`'s baseline and article counts (229 AC5),
 the route-table pin (227 AC1), the wiki tier system (229 AC1/AC4). Sprint 73's verifier found **four
 CRITICALs, every one of which would have reddened the gate at a story's final commit**, and two of
@@ -183,8 +201,9 @@ AC written to protect knowledge. AC3 now requires re-rooting before judging anyt
 
 - **HIGH 2** — wiki cost priced at zero on 226 and 227; both re-priced (see Scope).
 - **HIGH 3** — 228's `Icon.tsx` edit would re-stale `frontend-zone.md` after 229 option (a), silently
-  undoing this sprint's centrepiece. Recorded in 228, and **structurally avoided** by 228 being held
-  out.
+  undoing this sprint's centrepiece. **The PO then chose exactly that branch at planning**, so the
+  finding went live — resolved by running 228 FIRST (see Execution order), which removes the hazard
+  by construction rather than by an instruction someone must remember.
 - **HIGH 4** — 227 AC4's shown-RED was impossible: the test derives its expectation from the same
   constant it mutates, so it passes before *and* after. Corrected to the one mutation that works —
   empty `FIXTURE_PROPOSALS` to `[]`.

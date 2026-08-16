@@ -3,9 +3,9 @@ id: STORY-228
 title: Four documentation leftovers from sprint 73 — each in a place the wiki protocol deliberately does not look
 type: chore
 points: 2
-status: draft   # NOT READY -- AC4's Open Question is UNANSWERED, so it fails the Definition of
-                # Ready and CANNOT enter a sprint. Held out of sprint 74 for that reason, not on
-                # capacity. Ask the PO the Icon-registry question, then this is a 2 and refinable.
+status: ready   # READY as of 2026-08-16: the PO answered AC4's Open Question -- REMOVE the four
+                # unused glyphs. That is the branch that collides with STORY-229, so this story now
+                # runs FIRST in sprint 74, which removes the collision by construction.
 refined: 2026-08-16   # sprint-74 refinement. SPLIT: item 1 became STORY-229 on measurement.
 sprint: null
 ---
@@ -87,11 +87,17 @@ recorded as a note on STORY-223, not duplicated into a new story.
       `:451`** (found at pre-lock verification); handle both. Resolve it **either** by adding the
       path to `code_refs` **or** by removing the citation — and state which, and why. ⚠ Adding it
       widens the article's sweep surface; that is a real cost, not a free fix.
-- [ ] **AC4 (the `Icon` registry question is answered in writing, not left implicit)** — per the
-      PO's ruling on the Open Question below, either the unused glyphs (`zap`, `search`, `trash`,
-      `x`) are removed, or a comment in `frontend/src/components/Icon/Icon.tsx` records that the
-      registry is a **catalogue ported from the design mock** and that unused entries are expected.
-      Silence is not an outcome: today a reader cannot tell dead code from deliberate inventory.
+- [ ] **AC4 (the four unused glyphs are REMOVED — PO ruling, 2026-08-16)** — delete `search`, `x`,
+      `trash` and `zap` from `frontend/src/components/Icon/Icon.tsx`.
+      **Measured at the ruling, not assumed:** the registry holds **18** glyphs; scanning all 117
+      files outside `components/Icon/`, exactly these four are referenced by nothing. ⚠ `search`
+      looks used and is not — its only hit is `type="search"` at
+      `frontend/src/pages/CheckHistoryPage.tsx:117`, an HTML input attribute, not a glyph name.
+      Re-verify before deleting.
+      **Three edits, ONE commit:** the `IconName` union (`:18-29`), the `PATHS` record, and
+      `Icon.test.tsx:21-40`'s `as const` name array. Removing a name from the union without the
+      array is a TypeScript error, so `npm run build` (`tsc -b`) fails — **gate-red on DoD command
+      7**. Expected: `PATHS` 18 → 14, the test array 18 → 14.
       ⚠ **Path corrected at pre-lock verification** — the draft said `frontend/src/nav/Icon.tsx`,
       which does not exist (`frontend/src/nav/` holds only `Sidebar.*`, `TopBar.*`, `sidebarState.*`,
       `tabs.ts`). The registry is at `frontend/src/components/Icon/Icon.tsx` (`zap` at `:74`, the
@@ -100,11 +106,13 @@ recorded as a note on STORY-223, not duplicated into a new story.
       updated in the SAME commit** — it enumerates all 18 names in an `as const` array including
       `search`, `x`, `trash`, `zap`. Removing them from the union without touching that array is a
       TypeScript error, so `npm run build` (`tsc -b`) fails: **gate-red on DoD command 7.**
-      ⚠ **The remove branch also collides with STORY-229.** `Icon.tsx` is `code_ref` #23 of
-      `frontend-zone.md`. If 229 lands option (a) and sets `status: verified`, this edit re-stales
-      that article at final HEAD (`yt_wiki.py:201-225` diffs refs from the article's own last
-      commit) — silently undoing 229's centrepiece. If both stories are ever in one sprint, either
-      run this one FIRST or commit a same-commit re-verification touch of `frontend-zone.md`.
+      ⚠ **The remove branch COLLIDES with STORY-229, and the sprint order is the mitigation.**
+      `Icon.tsx` is `code_ref` #23 of `frontend-zone.md`. If 229 lands option (a) and sets
+      `status: verified` first, this edit re-stales that article at final HEAD
+      (`yt_wiki.py:201-225` diffs refs from the article's own last commit) — silently undoing 229's
+      centrepiece. **Sprint 74 therefore runs THIS STORY FIRST**, which removes the hazard by
+      construction. If that order ever changes, this edit must land with a same-commit
+      re-verification touch of `frontend-zone.md`.
 - [ ] **AC5 (the citation-gate numbers are re-derived — AC2 and AC3 MOVE them) — added at pre-lock
       verification, and a gate-red if missed.** ⚠ **The draft had no AC for this at all.**
       `zone-rules.md:57-100` is inside the **frontmatter comment block** (it closes at `:101`), and
@@ -135,7 +143,7 @@ caught automatically.
 
 ## Open Questions
 
-1. **AC4 — the PO decides:** remove the four unused glyphs, or document the registry as a catalogue
-   and stop treating unused entries as debt? *(Asked at sprint-74 refinement. The reviewer's own
-   view was that this is not debt — the registry was ported verbatim from the design mock — which
-   argues for documenting rather than deleting.)*
+**None — resolved 2026-08-16.** AC4's question was put to the PO at sprint-74 planning: remove the
+four unused glyphs, or document the registry as a catalogue? **The PO ruled: REMOVE.** *(For the
+record, the quality reviewer's own view leaned the other way — that the registry is inventory ported
+from the design mock rather than debt. The PO's ruling overrides that, and AC4 is written to it.)*

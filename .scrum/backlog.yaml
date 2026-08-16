@@ -1474,11 +1474,11 @@ stories:
     title: Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies
     epic: deferred-future
     file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
-    status: draft   # NOT READY -- pre-lock verification found AC4 rests on an UNANSWERED PO
-                    # question (remove the unused Icon glyphs, or document the registry as a
-                    # catalogue). An open question fails the Definition of Ready, so it was HELD
-                    # OUT of sprint 74 on READINESS, not capacity. One PO answer makes it a
-                    # refinable 2. Its Icon.tsx edit also collides with STORY-229 -- see the story.
+    status: ready   # READY 2026-08-16: PO answered AC4's Open Question -- REMOVE the four unused
+                    # Icon glyphs (search, x, trash, zap; measured, not assumed -- 'search' looks
+                    # used but its only hit is type="search" at CheckHistoryPage.tsx:117).
+                    # That branch collides with STORY-229, so sprint 74 runs THIS STORY FIRST,
+                    # which removes the hazard by construction.
     points: 2
     priority: low
 
