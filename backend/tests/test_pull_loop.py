@@ -948,3 +948,176 @@ def test_healthy_batch_logs_no_quarantine_warning(caplog):
     assert result.accepted == 2
     assert rejected_repo.saved == []
     assert not [r for r in caplog.records if "Quarantining row" in r.getMessage()]
+
+
+# --- STORY-155b AC1: the live ingest path is provably unchanged with the
+# sample-mode decorator removed -----------------------------------------
+
+
+def test_run_periodic_records_same_observations_as_sample_mode_off_passthrough():
+    """AC1: drives `run_periodic` with the REAL, un-decorated `IngestService`
+    (the shape `composition/run.py::build_live_loop` has after this story
+    removes the `SampleModeIngest` wrapper) and asserts the recorded
+    observations match, byte-for-byte, a REAL "before" capture.
+
+    The "before" arm cannot live in this suite (AC2 deletes
+    `SampleModeIngest`/`test_sample_mode_end_to_end.py` in this same story),
+    so it is recorded here instead: this is the ACTUAL output of running this
+    exact harness (this same config/executor/fakes shape) through
+    `SampleModeIngest(delegate=IngestService(...), sample_mode_repo=<never
+    set, i.e. OFF>)` before the decorator was deleted -- not an invented
+    fixture. `test_sample_mode_end_to_end.py::
+    test_end_to_end_flag_off_persists_rows_matching_vendor_payload` already
+    proved OFF is a byte-identical passthrough at the direct
+    `ingest_observations` level; this test re-proves the same invariant one
+    layer up, through the actual `run_periodic` scheduling loop, so the claim
+    survives the decorator's deletion instead of dying with it.
+
+    Comparison is at the OBSERVATION level (fields below), never a DB-call
+    count -- `sample_mode.py:61`'s per-cycle `is_enabled()` read legitimately
+    disappears with the decorator, and a call-count comparison would prove
+    nothing (the AC's own warning).
+    """
+    from fakes import (
+        FakeClock,
+        FakeComponentRepository,
+        FakeMaintenanceRepository,
+        FakeObservationRepository,
+        FakeProposalRepository,
+        RecordingStatusPublisher,
+    )
+    from src.composition.config import AppConfig, ComponentConfig, Config, MonitorConfig
+    from src.composition.pull_loop import run_periodic
+    from src.core.domain import Component, ComponentStatus, Health
+    from src.core.services.decide import DecideService
+    from src.core.services.ingest_service import IngestService
+    from src.core.services.pipeline import AntiFlapThresholds
+
+    signal_key = "checkout-http"
+    native_id = "HTTP_CHECK-9F2A"
+    component_id = "checkout"
+    now_ts = datetime(2026, 6, 24, 10, 0, 0, tzinfo=timezone.utc)
+
+    mon_cfg = MonitorConfig(
+        signal_key=signal_key,
+        native_id=native_id,
+        name="Checkout Link",
+        interval_seconds=60,
+    )
+    comp_cfg = ComponentConfig(id=component_id, name="Checkout", monitors=[mon_cfg])
+    app_cfg = AppConfig(
+        id="sockshop",
+        name="Sock Shop",
+        monitor_provider="dynatrace",
+        components=[comp_cfg],
+        thresholds=AntiFlapThresholds(major=3, partial=2, degraded=1, recovery=1),
+    )
+    config = Config([app_cfg])
+
+    watermark_repo = FakeWatermarkRepository()
+    obs_repo = FakeObservationRepository()
+    rejected_repo = FakeRejectedObservationRepository()
+    clock = FakeClock(now_ts)
+
+    # POST-removal shape: the bare, un-decorated IngestService -- no
+    # SampleModeIngest wrapper. This is what build_live_loop wires today.
+    ingest_port = IngestService(
+        observation_repo=obs_repo,
+        watermark_repo=watermark_repo,
+        rejected_repo=rejected_repo,
+        clock=clock,
+    )
+
+    comp = Component(
+        id=component_id,
+        name="Checkout",
+        status=ComponentStatus.OPERATIONAL,
+        app_id="sockshop",
+    )
+    component_repo = FakeComponentRepository(components=[comp])
+    maintenance_repo = FakeMaintenanceRepository()
+    proposal_repo = FakeProposalRepository()
+    publisher = RecordingStatusPublisher()
+    decide_service = DecideService(proposal_repo=proposal_repo, publisher=publisher)
+
+    async def run_once():
+        stop_event = asyncio.Event()
+        results = []
+
+        async def on_cycle(res):
+            results.append(res)
+            stop_event.set()
+
+        await run_periodic(
+            signal_key=signal_key,
+            native_id=native_id,
+            watermark_repo=watermark_repo,
+            ingest_port=ingest_port,
+            executor=lambda q: [
+                _row("evt-cap-1", "2026-06-24T09:59:00Z"),
+                _row("evt-cap-2", "2026-06-24T09:59:30Z"),
+            ],
+            interval_seconds=0.01,
+            stop_event=stop_event,
+            on_cycle=on_cycle,
+            config=config,
+            observation_repo=obs_repo,
+            maintenance_repo=maintenance_repo,
+            component_repo=component_repo,
+            decide_service=decide_service,
+            clock=clock,
+        )
+        return results
+
+    results = asyncio.run(asyncio.wait_for(run_once(), timeout=5))
+
+    assert len(results) == 1
+    (ingest_result, decide_action) = results[0]
+    assert isinstance(ingest_result, IngestResult)
+    assert ingest_result.accepted == 2
+
+    # The RECORDED "before" evidence (captured 2026-08-16, pre-removal, via
+    # SampleModeIngest(delegate=IngestService(...), sample_mode_repo=<OFF>)
+    # driven through this identical run_periodic harness).
+    assert len(obs_repo.saved) == 2
+    saved = [
+        {
+            "signal_key": o.signal_key,
+            "observed_at": o.observed_at.isoformat(),
+            "health": o.health,
+            "source_event_id": o.source_event_id,
+            "raw_ref": o.raw_ref,
+            "location": o.location,
+            "latency_ms": o.latency_ms,
+            "source_system": o.source.system,
+            "source_native_id": o.source.native_id,
+            "source_native_kind": o.source.native_kind,
+        }
+        for o in obs_repo.saved
+    ]
+    assert saved == [
+        {
+            "signal_key": "checkout-http",
+            "observed_at": "2026-06-24T09:59:00+00:00",
+            "health": Health.UP,
+            "source_event_id": "evt-cap-1",
+            "raw_ref": None,
+            "location": "us-east-1",
+            "latency_ms": 100,
+            "source_system": "dynatrace",
+            "source_native_id": "HTTP_CHECK-9F2A",
+            "source_native_kind": "http",
+        },
+        {
+            "signal_key": "checkout-http",
+            "observed_at": "2026-06-24T09:59:30+00:00",
+            "health": Health.UP,
+            "source_event_id": "evt-cap-2",
+            "raw_ref": None,
+            "location": "us-east-1",
+            "latency_ms": 100,
+            "source_system": "dynatrace",
+            "source_native_id": "HTTP_CHECK-9F2A",
+            "source_native_kind": "http",
+        },
+    ]
