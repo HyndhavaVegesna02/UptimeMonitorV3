@@ -1,7 +1,9 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 73
-status: review     # none | planning | active | review | closed | aborted | parked
-                   # ALL THREE STORIES DONE, 13/13 POINTS. AWAITING PO VERDICT.
+status: closed     # none | planning | active | review | closed | aborted | parked
+                   # CLOSED 2026-08-16. PO: "accept all three, file for fixing the minors, run the
+                   # retro, dont merge". 13/13 points accepted -- highest ever. Retro proposed ZERO
+                   # amendments. NOT MERGED. BOARD.md regenerated at close.
 
 pause_record:
   # HISTORICAL -- the pause was RESOLVED. The window reset, STORY-155b was dispatched and

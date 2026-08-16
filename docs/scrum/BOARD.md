@@ -1,26 +1,21 @@
 # Backlog board
 
-**Snapshot at sprint-72, commit `a47c469`, generated 2026-08-15.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
+**Snapshot at sprint-73, commit `4e4322c`, generated 2026-08-16.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
 
-**177/191 stories closed.** 14 open: 3 estimated (13 pts) + **11 unestimated**.
+**180/194 stories closed.** 14 open: 0 estimated (0 pts) + **14 unestimated**.
 
-> ⚠ Total work remaining is NOT computable: 11 of 14 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
+> ⚠ Total work remaining is NOT computable: 14 of 14 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
 
 ## Open work
 
 | Epic | Progress | Stories | Est. pts | Unestimated |
 | --- | --- | --- | --- | --- |
-| **Sprint 62 — fleet readiness foundation** <br>`sprint-62-fleet` | `#########.` | 6/7 | 20/23 | — |
-| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `#.........` | 1/8 | 0/10 | 5 |
+| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `###.......` | 3/11 | 10/10 | 8 |
 | **Deferred by explicit PO decision (recorded, not forgotten)** <br>`deferred-by-po` | `########..` | 15/18 | 16/16 | 3 |
 | **Split out / created at sprint-65 refinement (2026-07-30)** <br>`sprint-65-splits` | `#########.` | 19/21 | 47/47 | 2 |
 | **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `#########.` | 13/14 | 25/25 | 1 |
 
 ### Open stories by epic
-
-**Sprint 62 — fleet readiness foundation**
-
-- `ready` [STORY-147](docs/scrum/stories/STORY-147-component-group-description.md) — Component group + description — config to ComponentDTO · feature · 3 pts
 
 **Deferred / future work, filed at sprint-62 planning**
 
@@ -29,8 +24,9 @@
 - `draft` STORY-152 _(no story file yet)_ — Completeness uses expected locations, not observed ones · defect · **unestimated**
 - `draft` STORY-153 _(no story file yet)_ — Rejected proposal reopens on the next cycle — needs a suppression window (F1) · defect · **unestimated**
 - `blocked` STORY-154 _(no story file yet)_ — Map the real Dynatrace HTTP failure codes (blocked on trial renewal) · chore · **unestimated**
-- `ready` [STORY-155a](docs/scrum/stories/STORY-155a-remove-sample-mode-frontend.md) — Remove sample_mode from the frontend — the consumer goes first · chore · 3 pts
-- `ready` [STORY-155b](docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md) — Remove sample_mode from the backend, and tombstone its article · chore · 7 pts
+- `draft` [STORY-226](docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md) — ComponentConfig validation ergonomics — the error names a value the author never typed, and "" is legal for one field but not the other · None · **unestimated**
+- `draft` [STORY-227](docs/scrum/stories/STORY-227-test-pinning-gaps-sprint-73.md) — Six test-pinning gaps found at sprint-73 review — assertions that pass today for reasons that are not the reason we think · None · **unestimated**
+- `draft` [STORY-228](docs/scrum/stories/STORY-228-doc-debt-sprint-73.md) — Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies · None · **unestimated**
 
 **Deferred by explicit PO decision (recorded, not forgotten)**
 
@@ -49,7 +45,7 @@
 
 ## Complete
 
-20 epics with no open stories. Listed, not detailed — this is the three quarters of the backlog that no longer needs reading.
+21 epics with no open stories. Listed, not detailed — this is the three quarters of the backlog that no longer needs reading.
 
 - **Sprint 0 — Setup** — 3 stories, 8 pts
 - **Zone 1 — Canonical types + ports** — 2 stories, 6 pts
@@ -70,5 +66,6 @@
 - **Chores (from retros)** — 17 stories, 23 pts
 - **API restructure "now" phase (2026-07-10 proposal)** — 8 stories, 19 pts
 - **AWS migration epic (PO decisions 2026-07-14; supersedes STORY-017)** — 16 stories, 47 pts
+- **Sprint 62 — fleet readiness foundation** — 7 stories, 23 pts
 - **Frontend rebuild programme (3rd attempt line)** — 13 stories, 0 pts
 
