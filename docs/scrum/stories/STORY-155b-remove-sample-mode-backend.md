@@ -82,7 +82,7 @@ pre-record that the count goes to **8** — the same courtesy STORY-179 left STO
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (the live ingest path is provably unchanged) — the AC that justifies the estimate.**
+- [x] **AC1 (the live ingest path is provably unchanged) — the AC that justifies the estimate.**
       Prove the pull loop records the **same observations** with `SampleModeIngest` removed.
       **Use `run_periodic`, not `build_live_loop`:** `test_run_live_loop.py:94` patches `run_periodic`
       outright and records zero observations — it asserts `isinstance(ingest_port, SampleModeIngest)`
@@ -96,52 +96,52 @@ pre-record that the count goes to **8** — the same courtesy STORY-179 left STO
       (`sample_mode.py:61`'s per-cycle read legitimately disappears).
       ⚠ `test_sample_mode_end_to_end.py:116` is the existing behavioural proof that flag-OFF is
       byte-identical passthrough — **read it before deleting it**; it is the shape AC1 wants.
-- [ ] **AC2 (`pyproject.toml`'s THREE import-linter contracts) — a gate break if missed.**
+- [x] **AC2 (`pyproject.toml`'s THREE import-linter contracts) — a gate break if missed.**
       `pyproject.toml:79` (`api-feature-independence`), `:105` (`api-shared-no-feature-imports`),
       `:141` (`inbound-adapters-dont-persist`) all name sample-mode modules. Verified by probe:
       an **independence** contract naming a deleted module fails with `Module 'X' does not exist.`
       (**exit 1**); a **forbidden** contract naming one passes **silently at exit 0**. So `:79`
       reds DoD command 2, and `:105` would **rot invisibly forever**. Remove all three.
-- [ ] **AC3 (the ZR1 guard moves deliberately, via the right assertion)** —
+- [x] **AC3 (the ZR1 guard moves deliberately, via the right assertion)** —
       `test_zr1_forbidden_list_completeness.py` is updated in the same commit as the deletion, its
       count reaching the **8** the file already predicts. **The shown-RED must come from the
       set-equality test at `:216-236` (`declared == discovered`), NOT the floor** — the floor is
       `>= 5` deliberately and will not go red on this removal. Mutating the floor proves nothing.
-- [ ] **AC4 (`test_citation_gate.py` moves with the archive)** —
+- [x] **AC4 (`test_citation_gate.py` moves with the archive)** —
       `backend/tests/test_citation_gate.py:242-251` asserts `found == set(BASELINE)` where `found`
       is the literal glob `docs/scrum/wiki/*.md`. `BASELINE` carries a `"sample-mode.md"` key at
       `:212`. AC8 moves the article out of that glob, so **the key must be removed in the same
       commit** or pytest reds at this story's last commit.
-- [ ] **AC5 (no `sample_mode` remains in backend source or tests)** —
+- [x] **AC5 (no `sample_mode` remains in backend source or tests)** —
       `grep -ri "sample_mode" backend/ --exclude-dir=__pycache__ --exclude-dir=*.egg-info` returns
       **zero**. ⚠ The `egg-info` exclusion is required, not cosmetic:
       `backend/uptime_monitor_v3.egg-info/SOURCES.txt` matches, so without it **this AC can never be
       satisfied**. The `SampleModeRepository` port and its `__all__` entry are gone from
       `core/ports/__init__.py`.
-- [ ] **AC6 (the API surface loses the route cleanly)** — `GET`/`PUT /api/v1/sample-mode` no longer
+- [x] **AC6 (the API surface loses the route cleanly)** — `GET`/`PUT /api/v1/sample-mode` no longer
       exists, the registration is gone from `api/v1/__init__.py`, and **no other route changed** —
       asserted against the remaining route table.
-- [ ] **AC7 (the DynamoDB row is deleted with the CORRECT key)** — the flag is
+- [x] **AC7 (the DynamoDB row is deleted with the CORRECT key)** — the flag is
       `pk="CONFIG"`, `sk="SAMPLE_MODE"` (`dynamo_sample_mode_repository.py:18-19`) — **not a
       `SAMPLE_MODE` partition, which is what the recipe says and what would make the delete a
       no-op.** Delete it with a documented one-liner, or record explicitly why a stale row in a dev
       table is harmless. Do not leave it unmentioned.
-- [ ] **AC8 (the article is TOMBSTONED, with the keys the lint enforces)** — `sample-mode.md` moves
+- [x] **AC8 (the article is TOMBSTONED, with the keys the lint enforces)** — `sample-mode.md` moves
       to `docs/scrum/wiki/archive/` as `tier: reference`, dropping `code_refs` and Facts, and
       **carrying `archived_sprint` and `archived_reason`** — `yt_wiki.py:388-397` enforces both on
       every file under `archive/`. The reason states *why* the feature died (superseded by the demo
       engine; PO directive 2026-07-03) — the protocol's rule that deletion adds knowledge. Every
       internal link to it is repointed or pruned, verified by the link lint.
-- [ ] **AC9 (the NINE overlapping articles are each updated or re-verified IN-STORY)** — per
+- [x] **AC9 (the NINE overlapping articles are each updated or re-verified IN-STORY)** — per
       `.scrum/definition-of-done.md:133-136`. The live present-tense claims listed above are the
       known ones; the post-commit sweep decides the rest. **This is the scope that re-priced the
       story and it is not optional.**
-- [ ] **AC10 (`tools/` is not left broken — it is outside every gate command)** —
+- [x] **AC10 (`tools/` is not left broken — it is outside every gate command)** —
       `tools/demo_loop_gate/harness.py:800-803` asserts `GET /sample-mode == {"enabled": False}` as
       its own AC1(c); after this story that is a 404. **No DoD command runs it**, so nothing would
       catch the break — and the demo-loop gate is the project's only proven end-to-end verification
       since the vendor trial expired. Update it and state that you ran it.
-- [ ] **AC11 (gate, and the count is explained)** — full 9-command gate exits 0 at the final HEAD.
+- [x] **AC11 (gate, and the count is explained)** — full 9-command gate exits 0 at the final HEAD.
       Four dedicated test files are deleted, so the backend count **will drop**: state before/after
       and account for the delta exactly.
 
