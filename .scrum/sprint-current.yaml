@@ -84,7 +84,7 @@ board:
     title: Four documentation leftovers from sprint 73
     points: 2
     order: 1
-    status: todo
+    status: in_progress
     file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_first: >-
