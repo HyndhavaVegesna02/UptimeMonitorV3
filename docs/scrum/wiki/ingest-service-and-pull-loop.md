@@ -1,6 +1,6 @@
 ---
 title: Zone 3 â€” the ingest service (Â§8 ordering) + the asyncio pull loop
-code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/sample_mode.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
+code_refs: [backend/src/core/services/ingest_service.py, backend/src/composition/pull_loop.py, backend/src/composition/run.py, backend/src/composition/vendor_health.py, backend/tests/test_ingest_service.py, backend/tests/test_pull_loop.py, backend/tests/test_run_live_loop.py, backend/tests/test_vendor_health.py, backend/tests/test_dynamo_rejected_observation_repository.py]
 tier: map
 verified_sprint: sprint-69
 status: verified
@@ -209,15 +209,15 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   silent-no-data-pipeline gap (a monitor id recreated in Dynatrace, hotfix `79bfbb3`; see the
   2026-07-08 retro working agreement). Uses its own `make_grail_executor` instance (a cheap
   closure, no network until invoked) so it never depends on `build_live_loop` having run.
-- **STORY-048 sample-mode seam (temporary â€” see [[sample-mode]]):** `build_live_loop` step 2's
-  `ingest_port` is now `composition/sample_mode.py::SampleModeIngest(delegate=IngestService(...),
-  sample_mode_repo=PostgresSampleModeRepository(engine))` instead of a bare `IngestService` â€” a
-  composition-layer decorator that forces every observation to `Health.DOWN` (+ a `raw_ref`
-  marker) while a persisted flag is ON, and passes the batch through byte-identically while OFF.
-  `IngestService` and `run_periodic`/`run_cycle` (`composition/pull_loop.py`) themselves are
-  UNCHANGED â€” the decorator wraps the ingest port from the outside, at the one seam
-  `build_live_loop` already owned. This is a TEMPORARY, removable feature; see [[sample-mode]] for
-  its full Facts and the removal inventory.
+- **`build_live_loop` step 2's `ingest_port` is the bare `IngestService(...)` directly** (removed
+  STORY-155b). From STORY-048 through STORY-155b it was wrapped by a TEMPORARY composition-layer
+  decorator, `composition/sample_mode.py::SampleModeIngest`, that forced every observation to
+  `Health.DOWN` (+ a `raw_ref` marker) while a persisted flag was ON and passed the batch through
+  byte-identically while OFF — a removable seam by design (dedicated new file, one wrap point).
+  STORY-155b deleted the decorator, its port, and its DynamoDB adapter, and restored step 2 to the
+  bare `IngestService`; `IngestService` and `run_periodic`/`run_cycle`
+  (`composition/pull_loop.py`) were UNCHANGED by either the wrap or the unwrap. Full history of
+  the removed feature: [[sample-mode]] (archived).
 
 ### Tests
 - `backend/tests/test_ingest_service.py` exercises the real `IngestService` through in-memory fake
@@ -246,10 +246,12 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   patched) and asserts the `StatusWritebackâ†’BestEffortâ†’Recordingâ†’Statuspage` nesting + the six
   extras on each call (including that the SAME `component_repo` instance threads into both
   `run_periodic` and the writeback publisher), plus `main()` engine-dispose on success AND on a
-  seeding failure. STORY-048 (the sanctioned AC7b exception, temporary feature â€” see
-  [[sample-mode]]) additionally asserts `ingest_port` is a `SampleModeIngest` wrapping the REAL
-  `IngestService` wired to the real repos, and that the SAME `ingest_port` instance threads into
-  every per-signal `run_periodic` call.
+  seeding failure. `test_build_live_loop_assembly` additionally asserts `ingest_port` IS the REAL
+  `IngestService` wired to the real repos directly (STORY-048 through STORY-155b it asserted a
+  `SampleModeIngest` wrapping that same `IngestService`; STORY-155b rewrote the assertion to match
+  the unwrapped shape, per the 2026-06-29 contract-change-rewrites-tests agreement — see
+  [[sample-mode]], archived), and that the SAME `ingest_port` instance threads into every
+  per-signal `run_periodic` call.
 - `backend/tests/test_vendor_health.py` (STORY-070) exercises `check_vendor_id_health` with FAKE
   executors (no live Dynatrace): a 0-rows and a `[{"count()":0}]` result each assert exactly one
   WARNING record naming the monitor id; a `[{"count()":2882}]` result asserts NO warning; a raising
@@ -410,3 +412,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   what the code does (logs at INFO); line-count neutral, no code changed. The Fact above (line
   199, "a healthy id logs only INFO") already stated this correctly before the fix and is
   unaffected. No Fact in this article changed.
+- sprint-73 (STORY-155b): `composition/sample_mode.py` (a `code_ref`) is DELETED — removed from
+  `code_refs`. Rewrote the "STORY-048 sample-mode seam" Fact (previously stated in present tense,
+  including the stale `PostgresSampleModeRepository` name left over from the DynamoDB cutover)
+  to past tense describing the removed seam, and rewrote the `test_run_live_loop.py` Fact's
+  `SampleModeIngest` assertion description to match `test_build_live_loop_assembly`'s rewritten
+  assertion (the bare `IngestService` directly). Every other Fact in this article —
+  `IngestService`, `run_periodic`/`run_cycle`, the STORY-050 resilience behaviour, the vendor-id
+  health probe — is untouched; none of those files or tests changed under this story.
