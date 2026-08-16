@@ -412,7 +412,8 @@ def run_positive_side(
       3. Create FRESH observations+control tables (AC2, B4).
       4. Launch the API as a real `uvicorn` subprocess with CONFIG_DIR=
          config/demo (AC1a) and the fresh table names (AC1b).
-      5. Assert AC1(a)-(e) against the running API.
+      5. Assert AC1(a),(b),(d),(e) against the running API ((c), sample-mode OFF,
+         was retired STORY-155b -- the feature it checked no longer exists).
       6. Launch `python -m src.composition.run`, UNMODIFIED, with the SAME
          env matrix (AC1a/AC1b), against the demo engine.
       7. Wait long enough for every signal's first cycle (the loop's first
@@ -735,7 +736,11 @@ def run_positive_side(
 def _assert_ac1_preconditions(
     *, api_base: str, api_env: dict, expected_component_ids: list[str]
 ) -> dict:
-    """Assert and record AC1(a)-(e) BEFORE the loop starts."""
+    """Assert and record AC1(a),(b),(d),(e) BEFORE the loop starts.
+
+    (c) -- sample-mode OFF -- was retired STORY-155b: the sample-mode feature
+    and its GET/PUT /sample-mode route no longer exist.
+    """
     result: dict = {}
 
     # AC1(a): CONFIG_DIR on the API process -- recorded from the exact env
@@ -796,12 +801,12 @@ def _assert_ac1_preconditions(
         "to config/demo on the API process."
     )
 
-    # AC1(c): sample-mode must be OFF.
-    sample_mode_resp = httpx.get(f"{api_base}/sample-mode", timeout=10.0).json()
-    result["sample_mode"] = sample_mode_resp
-    assert sample_mode_resp == {"enabled": False}, (
-        f"AC1(c) FAILED: GET /sample-mode returned {sample_mode_resp!r}"
-    )
+    # AC1(c) RETIRED (STORY-155b, 2026-08-16): the sample-mode feature (and its
+    # GET/PUT /sample-mode route) was removed from the backend, so this check
+    # -- "sample-mode must be OFF" -- no longer has a subject; GET /sample-mode
+    # is a 404 today, not {"enabled": False}. Removed rather than left to
+    # silently 404 uncaught: this harness's own docstring warns no DoD command
+    # runs it, so a break here would have gone unnoticed indefinitely.
 
     # AC1(e): every component operational, BEFORE the loop starts (B4).
     statuses = {c["id"]: c["status"] for c in components_resp}
