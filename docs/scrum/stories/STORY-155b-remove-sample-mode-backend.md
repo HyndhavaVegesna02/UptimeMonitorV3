@@ -202,3 +202,19 @@ None.
     route_changed` (`test_zone_layout.py`).
   - −21 − 1 + 1 + 1 = **−20**. 851 − 20 = **831**, matching the measured
     after-count exactly.
+- 2026-08-16 (fix round): **AC11's gate record corrected.** A commit message
+  had claimed "gate 9/9 at `592c76d`" — true when written, but two commits
+  before this story's actual final HEAD at the time (both reviewers re-ran
+  the backend commands at `69c1a50` and got green, so only the recorded
+  commit was stale, not the substance). Also fixed in this same fix round:
+  the missing AC11 accounting above (spec FAIL), `docs/project-history.md`'s
+  stale "sample_mode is inert, removal is STORY-155" claim (MAJOR — the
+  sibling of the identical claim `592c76d` already fixed in `CLAUDE.md`),
+  and a false port count (`canonical-types-and-ports.md`'s "ten" — actually
+  eleven — that this story's own AC9 pass restated instead of catching).
+  Full 9-command gate re-run **9/9 PASS at `787e165`** (this fix round's own
+  final HEAD before this entry, which adds no code/gate-relevant change):
+  `pytest` 831 passed / 0 skipped, import-linter 9/9 KEPT, `ruff check`/
+  `ruff format --check` clean, `cfn-lint` clean, `npm test` 49 files/334
+  tests, `npm run build`/`npm run lint` clean, `yt_selftest.py` 113 tests
+  OK. Wiki sweep CLEAN, re-run after every commit in this round.
