@@ -1,12 +1,18 @@
 ---
 id: STORY-228
-title: Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies
+title: Four documentation leftovers from sprint 73 — each in a place the wiki protocol deliberately does not look
 type: chore
-points: null
-status: draft
-refined: null
+points: 2
+status: ready
+refined: 2026-08-16   # sprint-74 refinement. SPLIT: item 1 became STORY-229 on measurement.
 sprint: null
 ---
+
+> **SPLIT AT REFINEMENT (2026-08-16).** As filed this story carried five items, and its own Open
+> Question asked whether item 1 (`frontend-zone.md`) should be split out "once its true size is
+> measured". It was measured: **634 lines, 67 `code_refs`, ~40 Facts, 3 refs already missing from
+> disk.** That is not a tidy-up item — rehabilitating it is a story. It is now **STORY-229**, and
+> this story keeps the four genuinely small items below.
 
 ## Where this came from
 
@@ -64,16 +70,42 @@ recorded as a note on STORY-223, not duplicated into a new story.
 
 ## Acceptance Criteria
 
-*(To be written at refinement.)* Item 1 should be scoped honestly: rehabilitating `frontend-zone.md`
-may be most of this story's cost and could reasonably be split back out.
+- [ ] **AC1 (the false claim in `tools/` is corrected)** — `tools/demo_engine/README.md:161` no
+      longer asserts "AC1(a)-(e) all recorded". It states which sub-AC was retired, by which story,
+      and why. ⚠ **Nothing lints this file** — no DoD command touches `tools/`, and the wiki
+      mechanisms do not sweep it — so the correction must be verified by reading, and the AC is met
+      by showing the new text, not by a green command.
+- [ ] **AC2 (`zone-rules.md`'s four STORY-155b blocks become one)** — the four separate entries at
+      `:57-100` are consolidated into a single History entry that says the same thing. **No claim
+      may be dropped in the merge**: the consolidated entry still names the `harness.py` line shifts,
+      the ZR-3 re-key, and the citation-count re-derivation. State the before/after line count.
+- [ ] **AC3 (`config-layer.md`'s out-of-`code_refs` citation is resolved)** — it cites
+      `backend/src/adapters/outbound/statuspage/__init__.py:54`, which is not among its `code_refs`,
+      so drift in that file can never re-trigger this article. Resolve it **either** by adding the
+      path to `code_refs` **or** by removing the citation — and state which, and why. ⚠ Adding it
+      widens the article's sweep surface; that is a real cost, not a free fix.
+- [ ] **AC4 (the `Icon` registry question is answered in writing, not left implicit)** — per the
+      PO's ruling on the Open Question below, either the unused glyphs (`zap`, `search`, `trash`,
+      `x`) are removed, or a comment in `Icon.tsx` records that the registry is a **catalogue ported
+      from the design mock** and that unused entries are expected. Silence is not an outcome: today
+      a reader cannot tell dead code from deliberate inventory.
+- [ ] **AC5 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD. Run the wiki
+      sweep after the last commit and take what it returns; do not pre-declare a blast radius.
+
+## Estimate: 2
+
+Four small, independent edits. The only judgement calls are AC3's either/or and AC4's, and both are
+one-line decisions once made. Nothing here needs a test, which is precisely why none of it was
+caught automatically.
 
 ## Not in scope
 
-Mojibake repair (**STORY-192** — and note that story must be **re-measured** first, since archiving
-`sample-mode.md` removed roughly 110–142 of its sequences).
+`frontend-zone.md` — **now STORY-229**. Mojibake repair (**STORY-192** — and that story must be
+**re-measured** first, since archiving `sample-mode.md` removed roughly 110–142 of its sequences).
 
 ## Open Questions
 
-1. Item 5: remove the unused glyphs, or document the registry as a catalogue and stop counting them?
-2. Item 1: rehabilitate `frontend-zone.md` inside this story, or split it out once its true size is
-   measured?
+1. **AC4 — the PO decides:** remove the four unused glyphs, or document the registry as a catalogue
+   and stop treating unused entries as debt? *(Asked at sprint-74 refinement. The reviewer's own
+   view was that this is not debt — the registry was ported verbatim from the design mock — which
+   argues for documenting rather than deleting.)*

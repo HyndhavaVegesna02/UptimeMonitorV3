@@ -2,9 +2,9 @@
 id: STORY-227
 title: Six test-pinning gaps found at sprint-73 review — assertions that pass today for reasons that are not the reason we think
 type: chore
-points: null
-status: draft
-refined: null
+points: 3
+status: ready
+refined: 2026-08-16   # sprint-74 refinement
 sprint: null
 ---
 
@@ -63,9 +63,49 @@ failure as a stale wiki Fact, one layer down.
 
 ## Acceptance Criteria
 
-*(To be written at refinement. Each of the six needs the same shape: state what the test currently
-proves, what it should prove, and show the strengthened assertion RED against the current
-behaviour before it goes green — a strengthened test that was never seen to fail proves nothing.)*
+> **THE RULE THAT APPLIES TO ALL SIX.** Every strengthened assertion must be **shown RED before it
+> goes green**, against the gap it closes — not against a mutation of unrelated code. A test
+> strengthened without ever being seen to fail proves only that it compiles. Record, per item, what
+> you broke to make it red.
+
+- [ ] **AC1 (the route table pins methods, not just paths) — the highest-value item.**
+      `test_zone_layout.py:238`'s `_EXPECTED_ROUTE_TABLE` is a set of **11 path strings**
+      (measured at refinement). It must pin the **(method, path)** pairs the app actually serves, so
+      a `GET` → `POST` change on a surviving route fails.
+      ⚠ **Do not weaken STORY-155b's AC6 while doing this** — the existing test must still prove the
+      sample-mode route is absent and no other route changed. Shown-RED: flip one surviving route's
+      method and watch it fail naming that route.
+- [ ] **AC2 (the AC1-of-155b observation literal pins every field)** —
+      `test_pull_loop.py:1080` compares ten `SignalObservation` fields and omits
+      `response_status_code`. Add it. ⚠ **This is the test that proves the live ingest path was
+      unchanged when `SampleModeIngest` was removed**, so it is the one place a missing field
+      matters most. Shown-RED: set a non-`None` `response_status_code` on one expected row.
+- [ ] **AC3 (the DynamoDB NULL claim is asserted, or the claim is withdrawn)** —
+      `test_dynamo_seed.py` asserts `item.get("group") is None`, which cannot distinguish *written
+      as a DynamoDB NULL* from *attribute absent*. Both `seed_dynamo.py`'s comment and
+      `persistence-adapters.md`'s Fact claim the NULL form **specifically**.
+      Either assert the raw attribute type (so the claim is proven), **or** correct the comment and
+      the Fact to say only what is true. ⚠ **A wiki Fact making a claim no test checks is exactly
+      what the Facts lint cannot catch** — this is the case that motivated grouping these six.
+- [ ] **AC4 (the top-bar test stops depending on an unrelated fixture)** —
+      `frontend/src/AppShell.test.tsx:172-174` uses the Approvals badge as its settle barrier, so a
+      change to `FIXTURE_PROPOSALS` fails a test about the top bar. Wait on something the test is
+      actually about. Shown-RED: change `FIXTURE_PROPOSALS` and confirm the test **no longer** fails
+      (the inverse demonstration — the coupling is gone).
+- [ ] **AC5 (the duplicated publish test collapses, keeping the part that matters)** —
+      `test_statuspage_adapter.py:98-123` duplicates `:36-65` with a strictly weaker payload
+      assertion; only the `set(StatusChange.model_fields) == {"component_id", "status"}` pin is new,
+      **and that pin is what makes STORY-147's AC4 structural rather than incidental — it must
+      survive.** Net removal is expected to be ~6 lines; state the actual before/after.
+- [ ] **AC6 (the grep-shaped test name reads for a human)** —
+      `test_zone_layout.py:253`'s `test_the_removed_sample_route_is_gone_and_no_other_route_changed`
+      is an artifact of STORY-155b's AC5 (zero matches for `sample_mode` in `backend/`). Rename it
+      to read naturally. ⚠ **Re-run that grep afterwards** — the original name matched its own
+      story's AC and had to be renamed mid-story; do not reintroduce the match.
+- [ ] **AC7 (gate, and the count is explained)** — the full nine-command gate exits 0 at the final
+      HEAD. AC5 removes assertions and AC1–AC4 strengthen them, so the count may move: state
+      before/after and account for any delta. ⚠ *Sprint 73's STORY-155b was marked FAIL by spec
+      review for ticking exactly this kind of checkbox without writing the accounting. Write it.*
 
 ## Not in scope
 
