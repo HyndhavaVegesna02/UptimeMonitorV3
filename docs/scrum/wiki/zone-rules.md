@@ -79,6 +79,14 @@ status: verified
 # so the tool's line-count-only check passed before and after regardless;
 # the correction is for honesty, not to satisfy the gate. No Fact's SUBSTANCE
 # changed, only line numbers.
+# sprint-73 (STORY-155b, third round): re-verified after a sixth code_ref,
+# `backend/tests/test_zr3_duplicate_declarations.py`, changed -- re-keying its
+# two harness.py adjudication entries (:938->:943, :999->:1004) for the same
+# AC10 shift as the second round above. ZR-3's table row cites the ADJUDICATION
+# COUNT (13, all INDEPENDENT) and the fix history, neither of which this
+# re-keying touches -- the two collisions are unchanged, only their recorded
+# line moved, exactly the shape every other entry in that file's own
+# `_ADJUDICATED` dict already documents for itself. No Fact changed.
 ---
 
 ## Purpose
