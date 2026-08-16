@@ -456,3 +456,9 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   Fact in this article changed; `AppConfig`/`Config`/`load_config`'s existing behaviour for
   every pre-existing field is untouched (proven by the full pre-existing `test_config.py`
   suite passing unmodified).
+- sprint-73 (STORY-155b): re-verified after `pyproject.toml` (a `code_ref`) changed. The edit
+  removed `"src.api.v1.sample_mode"` from `api-feature-independence` and
+  `api-shared-no-feature-imports`, and `"src.core.ports.sample_mode_repository"` from
+  `inbound-adapters-dont-persist` (the whole `sample_mode` feature's removal) — unrelated to the
+  config loader/resolvers, matching every earlier `pyproject.toml`-only re-verification above.
+  No Fact changed.
