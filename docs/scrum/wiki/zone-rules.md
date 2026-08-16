@@ -67,6 +67,18 @@ status: verified
 # re-running the citation partition), and its content (the `main()` startup
 # sequence) is untouched by this story's edit, which is confined to
 # `build_live_loop` step 2. No other Fact changed.
+# sprint-73 (STORY-155b, second round): re-verified after a fifth code_ref,
+# `tools/demo_loop_gate/harness.py`, changed -- AC10's removal of its AC1(c)
+# `GET /sample-mode` check shifted every line-numbered citation into that file
+# below the edit point by +1 or +5 (ZR-3's blocklist span, its
+# `harness.py:62-69` import-site list, and ZR-5's env-setting-discipline
+# citations). Every one corrected inline, with the shift amount stated so a
+# future reader can tell "moved because of this story" from "moved for an
+# unrelated reason." The enforced citation-partition count is UNCHANGED (6,
+# matching baseline) -- none of the corrected sites carry an excerpt anchor,
+# so the tool's line-count-only check passed before and after regardless;
+# the correction is for honesty, not to satisfy the gate. No Fact's SUBSTANCE
+# changed, only line numbers.
 ---
 
 ## Purpose
@@ -372,7 +384,9 @@ citations regardless of enforcement status; the row is the authoritative verdict
   second time.
 - **Fixed and guarded (STORY-203, sprint-68) — the last four `MUST-IMPORT-FROM-SRC`
   entries this rule adjudicated, zero remain.** `tools/demo_loop_gate/harness.py`'s
-  defensive blocklist (`:772-785` at HEAD — re-keyed from `:762-775` by STORY-218's own
+  defensive blocklist (`:777-790` at HEAD — shifted +5 by STORY-155b's AC1(c) removal
+  a few lines earlier in the same function, from the `:772-785` this article previously,
+  and at the time correctly, recorded — re-keyed from `:762-775` by STORY-218's own
   AC6 comment edit above these asserts, correcting the "follows a future rename
   automatically" claim; before that, a fix-round edit named each assert's failure
   message, widening the span from `:761-768`; STORY-215's own `935cd70` added one more
@@ -424,13 +438,14 @@ citations regardless of enforcement status; the row is the authoritative verdict
   `tools/demo_loop_gate/env_matrix.py:76-90`).
   `tools/demo_loop_gate/harness.py:62-69` imports only the FIVE it actually
   re-types as a dict key, at its SEVEN re-type sites — re-derived directly against
-  HEAD for this fix round (not carried forward from any commit message or prior wiki
-  text): `:548` (`api_env[CONFIG_DIR_VAR]`, inside the API-launch evidence `print`),
-  `:616` (`loop_env[DYNATRACE_ENV_URL_VAR]`, inside the loop-launch evidence `print`),
-  `:617` (`loop_env[CONFIG_DIR_VAR]`, the same `print`), `:745`
-  (`result["config_dir_api"] = api_env[CONFIG_DIR_VAR]`), `:751`
-  (`result["dynamo_endpoint_url"] = api_env[DYNAMO_ENDPOINT_URL_VAR]`), `:752`
-  (`result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]`), `:753`
+  HEAD for STORY-155b, which shifted every site below by +1 or +5 (its AC1(c) removal
+  sits between the `print` sites and the `result[...]` sites, so only the latter group
+  moved the full +5): `:549` (`api_env[CONFIG_DIR_VAR]`, inside the API-launch evidence `print`),
+  `:617` (`loop_env[DYNATRACE_ENV_URL_VAR]`, inside the loop-launch evidence `print`),
+  `:618` (`loop_env[CONFIG_DIR_VAR]`, the same `print`), `:750`
+  (`result["config_dir_api"] = api_env[CONFIG_DIR_VAR]`), `:756`
+  (`result["dynamo_endpoint_url"] = api_env[DYNAMO_ENDPOINT_URL_VAR]`), `:757`
+  (`result["observations_table"] = api_env[DYNAMO_OBSERVATIONS_TABLE_VAR]`), `:758`
   (`result["control_table"] = api_env[DYNAMO_CONTROL_TABLE_VAR]`) — the five imported
   symbols are `CONFIG_DIR_VAR`, `DYNAMO_CONTROL_TABLE_VAR`, `DYNAMO_ENDPOINT_URL_VAR`,
   `DYNAMO_OBSERVATIONS_TABLE_VAR`, `DYNATRACE_ENV_URL_VAR` — because
@@ -563,8 +578,9 @@ citations regardless of enforcement status; the row is the authoritative verdict
   its OWN environment, so setting `CONFIG_DIR` in one process's env does not
   propagate to the other's. No import-linter contract and no single-process test can
   see across a process boundary; the harness's own env-setting discipline
-  (`tools/demo_loop_gate/harness.py:525` and `tools/demo_loop_gate/harness.py:586`,
-  line numbers as of `0d39de7` post-STORY-202, setting `config_dir=` explicitly on
+  (`tools/demo_loop_gate/harness.py:526` and `tools/demo_loop_gate/harness.py:587`,
+  shifted +1 by STORY-155b's AC1(c) removal earlier in the same file, from `:525`/`:586`
+  as of `0d39de7` post-STORY-202, setting `config_dir=` explicitly on
   BOTH child envs) is today's only guard against the operational half, and it is
   procedural, not a code invariant.
 - **Coverage verdict.** `GUARDABLE`, but only PARTIALLY — for the code-level half
@@ -986,7 +1002,8 @@ STORY-197 acceptance. Categorised by direct read, not assumed from the pattern:
   citation without its directory prefix for readability — `env_matrix.py:39/49`,
   `query.py:63-80/133/136/136-155`, `composition/app.py:224`,
   `dynamo_publication_repository.py:53`, `seed_dynamo.py:29-30`, `run.py:182-184`,
-  `status_publisher.py:14-19`, `harness.py:61/615/616/754/761-774`,
+  `status_publisher.py:14-19`, `harness.py:61/617/618/759/777-790` (shifted from
+  `61/615/616/754/761-774` by STORY-155b's AC1(c) removal),
   `test_demo_fleet_config.py:174/194/219-232/226-232`, `failure_path_reality_gate.py:149`); the
   sweep's regex matches each bare mention as a fresh citation and fails it as "file does
   not exist" even though the real, full-path citation elsewhere in the article is fine.
