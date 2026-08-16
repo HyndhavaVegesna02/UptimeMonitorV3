@@ -144,3 +144,12 @@ status: verified
   gained real assertions on the mocked resource-lifecycle surface (`build_live_loop` called once);
   the publisher chain this article describes is UNCHANGED. No Fact changed. verified_sha -> a8700f5.
 - sprint-62 (STORY-146): RE-VERIFIED, no content change. `test_run_live_loop.py` changed only in `AppConfig` construction. The single claim here that touches config — that `StatuspagePublisher`'s `component_mapping` comes from `Config.statuspage_mapping()` — is explicitly pinned byte-identical by STORY-146 AC8 and asserted by its migration test. verified_sha -> d004da7.
+- sprint-73 (STORY-155b): re-verified after `composition/run.py` and `test_run_live_loop.py` (both
+  `code_refs`) changed. `run.py`'s change is step 2 (`ingest_port`), BEFORE the publisher assembly
+  this article describes — the `SampleModeIngest` decorator sprint-31 added there (see the
+  2026-07-03 entry above) is REMOVED, restoring the bare `IngestService`; step 4
+  (`build_publisher`) and everything downstream of it is byte-identical, closing the loop the
+  sprint-31 entry opened. `test_run_live_loop.py`'s change is confined to the SAME `ingest_port`
+  assertion (now checks a bare `IngestService`, not a `SampleModeIngest` wrapper); every
+  publisher-chain assertion this article's Facts cite is untouched. No Fact in this article
+  changed. The removed feature's full history now lives at [[sample-mode]] (archived).
