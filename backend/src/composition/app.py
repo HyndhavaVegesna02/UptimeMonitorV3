@@ -13,9 +13,6 @@ from src.core.ports import (
     StatusPublisherPort,
 )
 
-# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-from src.core.ports.sample_mode_repository import SampleModeRepository
-
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -43,8 +40,6 @@ def create_app(
     observation_repo: ObservationRepository | None = None,
     publication_repo: PublicationRepository | None = None,
     signal_repo: SignalRepository | None = None,
-    # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-    sample_mode_repo: SampleModeRepository | None = None,
     clock: ClockPort | None = None,
     publisher: StatusPublisherPort | None = None,
     config_dir: str | None = None,
@@ -84,9 +79,6 @@ def create_app(
         from src.adapters.persistence.dynamo_proposal_repository import (
             DynamoProposalRepository,
         )
-        from src.adapters.persistence.dynamo_sample_mode_repository import (
-            DynamoSampleModeRepository,
-        )
         from src.adapters.persistence.dynamo_signal_repository import (
             DynamoSignalRepository,
         )
@@ -122,11 +114,6 @@ def create_app(
             )
         if signal_repo is None:
             signal_repo = DynamoSignalRepository(
-                db_resource, settings.dynamo_control_table
-            )
-        # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-        if sample_mode_repo is None:
-            sample_mode_repo = DynamoSampleModeRepository(
                 db_resource, settings.dynamo_control_table
             )
 
@@ -209,8 +196,6 @@ def create_app(
     app.state.observation_repo = observation_repo
     app.state.publication_repo = publication_repo
     app.state.signal_repo = signal_repo
-    # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-    app.state.sample_mode_repo = sample_mode_repo
     app.state.clock = clock
     app.state.publisher = publisher
     app.state.approval_service = approval_service

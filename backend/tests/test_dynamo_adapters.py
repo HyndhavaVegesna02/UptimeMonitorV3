@@ -354,45 +354,6 @@ def test_dynamo_watermark_repository_lifecycle(dynamo_resource):
     assert spy_kwargs[0].get("ConsistentRead") is True
 
 
-def test_dynamo_sample_mode_repository_lifecycle(dynamo_resource):
-    from src.adapters.persistence.dynamo_sample_mode_repository import (
-        DynamoSampleModeRepository,
-    )
-
-    settings = load_settings()
-    repo = DynamoSampleModeRepository(dynamo_resource, settings.dynamo_control_table)
-
-    # absent item -> disabled
-    assert repo.is_enabled() is False
-
-    # set_enabled(True)
-    repo.set_enabled(True)
-    assert repo.is_enabled() is True
-
-    # idempotent re-set
-    repo.set_enabled(True)
-    assert repo.is_enabled() is True
-
-    # set_enabled(False)
-    repo.set_enabled(False)
-    assert repo.is_enabled() is False
-
-    # Spy on get_item to check ConsistentRead
-    table = repo._table
-    original_get_item = table.get_item
-    spy_kwargs = []
-
-    def spied_get_item(*args, **kwargs):
-        spy_kwargs.append(kwargs)
-        return original_get_item(*args, **kwargs)
-
-    table.get_item = spied_get_item
-
-    repo.is_enabled()
-    assert len(spy_kwargs) == 1
-    assert spy_kwargs[0].get("ConsistentRead") is True
-
-
 def test_dynamo_component_repository_list_components(dynamo_resource):
     from src.adapters.persistence.dynamo_component_repository import (
         DynamoComponentRepository,

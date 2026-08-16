@@ -71,9 +71,8 @@ class _FakeRejectedRepo(RejectedObservationRepository):
     expected to be rejected (all timestamps are at or before `end_time`,
     AC2f), so this only needs to exist, not do anything interesting. Subclasses
     the real port (sprint-63 fix round, quality finding S1) so a port
-    signature change would be caught here too, matching the peer fakes at
-    `test_ingest_service.py::FakeRejectedObservationRepository` and
-    `test_sample_mode_end_to_end.py::_FakeRejectedObservationRepository`."""
+    signature change would be caught here too, matching the peer fake at
+    `test_ingest_service.py::FakeRejectedObservationRepository`."""
 
     def __init__(self) -> None:
         self.saved: list[dict] = []

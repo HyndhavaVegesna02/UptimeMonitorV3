@@ -16,9 +16,6 @@ from src.core.ports.publication_repository import PublicationRepository
 from src.core.ports.rejected_observation_repository import (
     RejectedObservationRepository,
 )
-
-# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-from src.core.ports.sample_mode_repository import SampleModeRepository
 from src.core.ports.signal_ingest import SignalIngestPort
 from src.core.ports.signal_repository import SignalRepository
 from src.core.ports.status_publisher import StatusPublisherPort
@@ -29,7 +26,6 @@ __all__ = [
     "ObservationRepository",
     "PublicationRepository",
     "RejectedObservationRepository",
-    "SampleModeRepository",  # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
     "SignalIngestPort",
     "SignalRepository",
     "StatusPublisherPort",

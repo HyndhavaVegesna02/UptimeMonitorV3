@@ -75,8 +75,6 @@ modules = [
     "src.api.v1.history",
     "src.api.v1.publications",
     "src.api.v1.topology",
-    # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-    "src.api.v1.sample_mode",
 ]
 
 # The api zone's thinness becomes a build failure (closes G1)
@@ -102,7 +100,6 @@ forbidden_modules = [
     "src.api.v1.decisions", "src.api.v1.health", "src.api.v1.components",
     "src.api.v1.approvals", "src.api.v1.maintenance", "src.api.v1.availability",
     "src.api.v1.history", "src.api.v1.publications", "src.api.v1.topology",
-    "src.api.v1.sample_mode",
 ]
 
 [[tool.importlinter.contracts]]
@@ -138,7 +135,6 @@ forbidden_modules = [
     "src.core.ports.proposal_repository",
     "src.core.ports.publication_repository",
     "src.core.ports.rejected_observation_repository",
-    "src.core.ports.sample_mode_repository",
     "src.core.ports.signal_repository",
     "src.core.ports.watermark",
 ]

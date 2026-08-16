@@ -30,11 +30,6 @@ from src.adapters.persistence.dynamo_publication_repository import (
 from src.adapters.persistence.dynamo_rejected_observation_repository import (
     DynamoRejectedObservationRepository,
 )
-
-# STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md)
-from src.adapters.persistence.dynamo_sample_mode_repository import (
-    DynamoSampleModeRepository,
-)
 from src.adapters.persistence.dynamo_watermark_repository import (
     DynamoWatermarkRepository,
 )
@@ -42,7 +37,6 @@ from src.composition.config import Config, load_config
 from src.composition.dynamo import make_dynamo_resource
 from src.composition.publish_helper import build_publisher
 from src.composition.pull_loop import run_periodic
-from src.composition.sample_mode import SampleModeIngest
 from src.composition.seed_dynamo import seed_topology_dynamo
 from src.composition.settings import (
     LiveSecrets,
@@ -94,20 +88,11 @@ def build_live_loop(
     )
 
     # 2. Ingest Service
-    # STORY-048 sample-mode seam (temporary — see docs/scrum/wiki/sample-mode.md):
-    # wrapped by SampleModeIngest, which reads the persisted flag once per
-    # cycle (D4) and forces every observation to DOWN + marks it while ON;
-    # OFF is a byte-identical passthrough to the real IngestService below.
-    ingest_port = SampleModeIngest(
-        delegate=IngestService(
-            observation_repo=observation_repo,
-            watermark_repo=watermark_repo,
-            rejected_repo=rejected_repo,
-            clock=clock,
-        ),
-        sample_mode_repo=DynamoSampleModeRepository(
-            db_resource, settings.dynamo_control_table
-        ),
+    ingest_port = IngestService(
+        observation_repo=observation_repo,
+        watermark_repo=watermark_repo,
+        rejected_repo=rejected_repo,
+        clock=clock,
     )
 
     # 3. Dynatrace DQL Executor
