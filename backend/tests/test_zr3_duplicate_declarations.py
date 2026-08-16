@@ -126,7 +126,7 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "INDEPENDENT: Path(__file__).resolve().parents[2], same shape as above, a "
         "different file."
     ),
-    ("tools/demo_loop_gate/harness.py", 938): (
+    ("tools/demo_loop_gate/harness.py", 943): (
         "INDEPENDENT: dict(list(per_signal.items())[:3]), a slice bound unrelated "
         "to FreshnessConfig.stale_after_cycles. (Re-keyed from :903 to :910 by "
         "STORY-202's own harness.py edits, then :910 to :921 by STORY-203's own "
@@ -138,8 +138,10 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "existing `from src.composition.settings import (...)` block), then "
         ":928 to :938 by STORY-218's own AC6 comment edit above the AC1(b) "
         "blocklist asserts (correcting the STORY-203 'follows a future rename "
-        "automatically' comment to what is now unconditionally true) -- the "
-        "collision is unchanged, only its line moved.)"
+        "automatically' comment to what is now unconditionally true), then :938 "
+        "to :943 by STORY-155b's AC10 removal of the AC1(c) sample-mode check "
+        "earlier in the same function -- the collision is unchanged, only its "
+        "line moved.)"
     ),
     ("tools/citation_gate.py", 53): (
         "INDEPENDENT: text.find('\\n---', 3), the start-offset argument to "
@@ -180,7 +182,7 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "collision twice without retiring it -- the collision is "
         "unchanged, only its line moved.)"
     ),
-    ("tools/demo_loop_gate/harness.py", 999): (
+    ("tools/demo_loop_gate/harness.py", 1004): (
         "INDEPENDENT: print(json.dumps(evidence, indent=2, default=str))'s "
         "indent=2 keyword argument, unrelated to FreshnessConfig.reentry_cycles. "
         "(Re-keyed from :964 to :971, same cause as :927 above, then :971 to "
@@ -188,7 +190,9 @@ _ADJUDICATED: dict[tuple[str, int], str] = {
         "988 by the same STORY-203 fix-round message edit that re-keyed :927, "
         "then :988 to :989 by the same STORY-215 harness.py import-block edit "
         "that re-keyed :927 to :928 above, then :989 to :999 by the same "
-        "STORY-218 AC6 comment edit that re-keyed :928 to :938 above.)"
+        "STORY-218 AC6 comment edit that re-keyed :928 to :938 above, then :999 "
+        "to :1004 by STORY-155b's AC10 removal that re-keyed :938 to :943 "
+        "above.)"
     ),
 }
 
