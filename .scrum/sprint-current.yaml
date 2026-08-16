@@ -1,9 +1,12 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 73
-status: active     # none | planning | active | review | closed | aborted | parked
-                   # ACTIVE BUT PAUSED MID-SPRINT -- see pause_record below.
+status: review     # none | planning | active | review | closed | aborted | parked
+                   # ALL THREE STORIES DONE, 13/13 POINTS. AWAITING PO VERDICT.
 
 pause_record:
+  # HISTORICAL -- the pause was RESOLVED. The window reset, STORY-155b was dispatched and
+  # completed, and the atomic pair landed WHOLE. Kept as the record of why the sprint stopped.
+  resolved: 2026-08-16
   paused: 2026-08-16
   at_commit: f6ce2c6          # last story commit; gate 9/9 green here
   delivered: "6 of 13 points -- STORY-147 (3) done, STORY-155a (3) done. Both gate 9/9, both reality-gated."
@@ -255,8 +258,61 @@ board:
     title: Remove sample_mode from the backend, and tombstone its article
     points: 7
     order: 3
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md
+    completed:
+      final_head: b55cc74
+      commits: 29   # 1c02e63..b55cc74, all implementer
+      spec_review: >-
+        FAIL -> then MET after the fix round. Ten AC MET on the first pass; AC11 NOT MET on its
+        SECOND clause -- the gate was green and the arithmetic right, but the required written
+        accounting did not exist. Commit dea9660 deferred it ("AC11 accounts for the delta"), no
+        later commit delivered it, and 6d0297f ticked the checkbox anyway. ORCHESTRATOR VERIFIED:
+        "851" and "831" appeared NOWHERE in the story file. A ticked box with no deliverable is the
+        precise failure the mechanical gate exists to prevent, and on a deletion story the delta
+        narrative is the artifact proving coverage did not vanish unnoticed.
+      quality_review: "REQUEST CHANGES -> one MAJOR, fixed at 7d15a8f."
+      major_finding: >-
+        docs/project-history.md:66-70 still said sample_mode was "Inert since the Dynatrace trial
+        expired" and "Removal is STORY-155" -- both false at HEAD. ORCHESTRATOR VERIFIED the reason
+        it is blocking rather than cosmetic: CLAUDE.md:16 routes readers to that file NAMING
+        sample_mode as its topic, and this same story fixed the identical sentence in CLAUDE.md at
+        592c76d. The sibling copy one file away was missed.
+      orchestrator_added_to_the_fix_round: >-
+        canonical-types-and-ports.md:120,122 claimed "ten STABLE core ports"; I counted ELEVEN on
+        disk. The off-by-one predates this story, but the story re-verified that exact line, and a
+        re-verification restating a false count converts inherited drift into a claim this story
+        owns. Fixed at 787e165 -- and correctly, as a CORRECTION TRAIL: the History records that the
+        previous entry got it wrong rather than silently rewriting it.
+      ac1_the_estimate_justifier_held: >-
+        *** THE STRONGEST VERIFICATION THIS SPRINT. *** AC1 had a known cheap fake the story named in
+        advance (after removal, test_run_live_loop.py:94's isinstance assertion becomes a one-word
+        edit proving nothing). It was NOT taken. QUALITY reconstructed the deleted
+        composition/sample_mode.py and core/ports/sample_mode_repository.py from 1c02e63 in a scratch
+        dir, re-ran the same run_periodic harness with the decorator wrapping a real IngestService,
+        and confirmed the committed "before" literal matches FIELD-FOR-FIELD -- so the capture is
+        real evidence, not a typed number. SPEC independently mutated health_mapping to flip
+        UP->DOWN and confirmed the test reds naming the mismatch. Falsifiable, and falsified.
+      reality_gate: >-
+        PASS, run by the orchestrator against the REAL composition root (create_app(), no injected
+        repos) and real DynamoDB Local, CONFIG_DIR=config/demo per the publish-safety rule, and
+        WITHOUT launching the loop process. GET /api/v1/sample-mode -> 404 and PUT -> 404 (the route
+        is genuinely gone at the real HTTP surface, not just absent from a route table literal),
+        while GET /api/v1/components -> 200 and GET /api/v1/health -> 200 (no surviving route broke).
+        The app boots cleanly now that the composition root no longer constructs
+        DynamoSampleModeRepository -- which is the removal's real risk, since SampleModeIngest was a
+        LIVE decorator over the ingest front door in both composition roots.
+      wiki_compile_pass: "sweep CLEAN | links CLEAN | integrity CLEAN, all at the final HEAD."
+      carried_to_po_at_review: >-
+        SIX quality minors deliberately NOT fixed: (1) test_pull_loop.py:1080's AC1 literal omits
+        response_status_code -- none in this harness, so nothing is wrong today, but it is a hole in
+        an otherwise byte-level pin; (2) test_zone_layout.py:238's _EXPECTED_ROUTE_TABLE pins paths
+        but NOT HTTP methods, so a method change on a surviving route would pass; (3) the
+        grep-avoidance test name at test_zone_layout.py:253; (4) zone-rules.md:57-100 carries FOUR
+        separate STORY-155b blocks -- judged self-inflicted ordering (AC10 landed after the wiki
+        pass), final state verified coherent, but one consolidated entry would have said the same;
+        (5) tools/demo_engine/README.md:161's dated historical claim; (6) pre-existing citation debt
+        in zone-rules.md (6) and demo-engine.md (8), untouched and unaffected.
     dispatched_at: >-
       Resumed 2026-08-16 after the pause. Window at dispatch: 5h 0% (RESET) | 7d 18%. Verdict:
       dispatch freely. Preconditions verified: tree clean at 1c02559, node_modules 216,
@@ -438,4 +494,58 @@ story_155a_gate:
       output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.703s | OK"
       commit: f6ce2c6
       at: "2026-08-15T21:13:32+00:00"
+  
+
+story_155b_gate:
+  commit: b55cc74
+  result: "9/9 PASS, exit 0"
+  pytest: "831 passed, 0 skipped (was 851; delta -20 accounted in the story History)"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_sweep: "CLEAN"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 831 passed in 66.81s (0:01:06) ========================"
+      commit: b55cc74
+      at: "2026-08-16T12:44:55+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: b55cc74
+      at: "2026-08-16T12:46:03+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: b55cc74
+      at: "2026-08-16T12:46:03+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "253 files already formatted"
+      commit: b55cc74
+      at: "2026-08-16T12:46:03+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: b55cc74
+      at: "2026-08-16T12:46:04+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  18:16:08 | Duration  48.70s (transform 6.30s, setup 44.78s, import 23.88s, tests 53.44s, environment 176.03s)"
+      commit: b55cc74
+      at: "2026-08-16T12:46:07+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-DGYXseT8.js                               276.07 kB │ gzip: 84.91 kB | ✓ built in 322ms"
+      commit: b55cc74
+      at: "2026-08-16T12:46:57+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: b55cc74
+      at: "2026-08-16T12:47:02+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 12.299s | OK"
+      commit: b55cc74
+      at: "2026-08-16T12:47:07+00:00"
   

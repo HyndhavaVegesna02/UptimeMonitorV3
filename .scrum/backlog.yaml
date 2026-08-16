@@ -1459,7 +1459,10 @@ stories:
     title: Remove sample_mode from the backend, and tombstone its article
     epic: deferred-future
     file: docs/scrum/stories/STORY-155b-remove-sample-mode-backend.md
-    status: ready   # REFINED 2026-08-15 at sprint-73 planning, 8 AC. PENDING PO LOCK.
+    status: done    # DONE 2026-08-16, sprint 73, final HEAD b55cc74, gate 9/9.
+                    # Spec FAIL on AC11 (written delta accounting missing) then MET;
+                    # quality MAJOR (docs/project-history.md stale claim) fixed at 7d15a8f.
+                    # The atomic pair with STORY-155a LANDED WHOLE.
                     # DEPENDS ON STORY-155a -- consumer before producer.
                     # *** "INERT" MEANS THE FLAG IS OFF, NOT THAT THE CODE IS UNWIRED, and that is
                     # what makes this a 5 rather than a 3: SampleModeIngest is LIVE in the pull
