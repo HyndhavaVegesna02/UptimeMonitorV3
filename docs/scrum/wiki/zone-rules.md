@@ -87,6 +87,17 @@ status: verified
 # re-keying touches -- the two collisions are unchanged, only their recorded
 # line moved, exactly the shape every other entry in that file's own
 # `_ADJUDICATED` dict already documents for itself. No Fact changed.
+# sprint-73 (STORY-155b, fourth round): re-verified after a seventh code_ref,
+# `backend/tests/test_zone_layout.py`, changed -- AC5's fresh re-run of its own
+# grep (checklist's last-step rule) caught that AC6's new test function name,
+# `test_sample_mode_route_gone_and_no_other_route_changed`, itself carried the
+# literal substring the grep zeroes; renamed to
+# `test_the_removed_sample_route_is_gone_and_no_other_route_changed`. This
+# article cites `test_zone_layout_agreements`,
+# `test_seed_dynamo_uses_shared_topology_key_schema` and the five-file-shape
+# test by name (ZR-4/ZR-8 rows, the :125-173 line-range Fact) -- none of them
+# is the renamed function, which did not exist when those Facts were written.
+# No Fact changed.
 ---
 
 ## Purpose
