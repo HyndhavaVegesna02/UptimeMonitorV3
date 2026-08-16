@@ -72,22 +72,22 @@ recorded as a note on STORY-223, not duplicated into a new story.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (the false claim in `tools/` is corrected)** — `tools/demo_engine/README.md:161` no
+- [x] **AC1 (the false claim in `tools/` is corrected)** — `tools/demo_engine/README.md:161` no
       longer asserts "AC1(a)-(e) all recorded". It states which sub-AC was retired, by which story,
       and why. ⚠ **Nothing lints this file** — no DoD command touches `tools/`, and the wiki
       mechanisms do not sweep it — so the correction must be verified by reading, and the AC is met
       by showing the new text, not by a green command.
-- [ ] **AC2 (`zone-rules.md`'s four STORY-155b blocks become one)** — the four separate entries at
+- [x] **AC2 (`zone-rules.md`'s four STORY-155b blocks become one)** — the four separate entries at
       `:57-100` are consolidated into a single History entry that says the same thing. **No claim
       may be dropped in the merge**: the consolidated entry still names the `harness.py` line shifts,
       the ZR-3 re-key, and the citation-count re-derivation. State the before/after line count.
-- [ ] **AC3 (`config-layer.md`'s out-of-`code_refs` citation is resolved)** — it cites
+- [x] **AC3 (`config-layer.md`'s out-of-`code_refs` citation is resolved)** — it cites
       `backend/src/adapters/outbound/statuspage/__init__.py:54`, which is not among its `code_refs`,
       so drift in that file can never re-trigger this article. ⚠ **It is cited TWICE — `:103` and
       `:451`** (found at pre-lock verification); handle both. Resolve it **either** by adding the
       path to `code_refs` **or** by removing the citation — and state which, and why. ⚠ Adding it
       widens the article's sweep surface; that is a real cost, not a free fix.
-- [ ] **AC4 (the four unused glyphs are REMOVED — PO ruling, 2026-08-16)** — delete `search`, `x`,
+- [x] **AC4 (the four unused glyphs are REMOVED — PO ruling, 2026-08-16)** — delete `search`, `x`,
       `trash` and `zap` from `frontend/src/components/Icon/Icon.tsx`.
       **Measured at the ruling, not assumed:** the registry holds **18** glyphs; scanning all 117
       files outside `components/Icon/`, exactly these four are referenced by nothing. ⚠ `search`
@@ -113,7 +113,7 @@ recorded as a note on STORY-223, not duplicated into a new story.
       centrepiece. **Sprint 74 therefore runs THIS STORY FIRST**, which removes the hazard by
       construction. If that order ever changes, this edit must land with a same-commit
       re-verification touch of `frontend-zone.md`.
-- [ ] **AC5 (the citation-gate numbers are re-derived — AC2 and AC3 MOVE them) — added at pre-lock
+- [x] **AC5 (the citation-gate numbers are re-derived — AC2 and AC3 MOVE them) — added at pre-lock
       verification, and a gate-red if missed.** ⚠ **The draft had no AC for this at all.**
       `zone-rules.md:57-100` is inside the **frontmatter comment block** (it closes at `:101`), and
       `tools/citation_gate.py:75,82` scans the whole file, frontmatter included. Two citations live
@@ -127,7 +127,7 @@ recorded as a note on STORY-223, not duplicated into a new story.
       totals.
       **Re-derive `test_citation_gate.py:475`, `:484` (and `:501` if any tier moves) live at the
       final commit, and update the module docstring in the same commit.**
-- [ ] **AC6 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD. Run the wiki
+- [x] **AC6 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD. Run the wiki
       sweep after the last commit and take what it returns; do not pre-declare a blast radius.
 
 ## Estimate: 2
