@@ -54,6 +54,19 @@ status: verified
 # article cites (Finding 1, ZR-8) is a HISTORICAL quote of the file's
 # pre-STORY-205-fix shape ("as they stood then"), not a live citation into
 # current code, so nothing needed re-pointing. No Fact changed.
+# sprint-73 (STORY-155b): re-verified after four code_refs changed --
+# `backend/src/core/ports/__init__.py`, `backend/src/composition/run.py`,
+# `backend/src/composition/app.py` -- STORY-155b removed the `sample_mode`
+# feature and its `SampleModeRepository` port entirely. Corrected ZR-1's
+# mirrored contract block (removed the `sample_mode_repository` line, "all
+# nine forbidden ones" -> "all eight" with the removal noted inline) and
+# ZR-4's "Checked all ten features" Fact (now nine features, eight -- not
+# nine -- carrying the full five-file set). The pre-existing anchor-mismatch
+# citation into `run.py:182-184` is UNCHANGED debt, not new: it was already
+# failing before this story (baseline 6, still 6 after -- verified by
+# re-running the citation partition), and its content (the `main()` startup
+# sequence) is untouched by this story's edit, which is confined to
+# `build_live_loop` step 2. No other Fact changed.
 ---
 
 ## Purpose
@@ -166,7 +179,6 @@ citations regardless of enforcement status; the row is the authoritative verdict
       "src.core.ports.proposal_repository",
       "src.core.ports.publication_repository",
       "src.core.ports.rejected_observation_repository",
-      "src.core.ports.sample_mode_repository",
       "src.core.ports.signal_repository",
       "src.core.ports.watermark",
   ]
@@ -183,11 +195,12 @@ citations regardless of enforcement status; the row is the authoritative verdict
   Facts; see the frontmatter comment for why.)*
   **An inbound adapter must import a port by its exact module — never the package
   form.** `backend/src/core/ports/__init__.py` re-exports every port, including all
-  nine forbidden ones, and import-linter follows indirect chains by default, so
+  eight forbidden ones (nine before STORY-155b removed `sample_mode_repository`), and
+  import-linter follows indirect chains by default, so
   `from src.core.ports import SignalIngestPort` (the package form, naming only the
-  front door) still trips this contract on all nine forbidden modules at once —
-  proven by mutation (STORY-206 rework: `Contracts: 8 kept, 1 broken`, all nine named
-  via the `src.core.ports` re-export chain; reverted). Only
+  front door) still trips this contract on all forbidden modules at once —
+  proven by mutation (STORY-206 rework, when there were nine: `Contracts: 8 kept, 1
+  broken`, all nine named via the `src.core.ports` re-export chain; reverted). Only
   `from src.core.ports.signal_ingest import SignalIngestPort` (the exact-module form)
   is KEPT (`Contracts: 9 kept, 0 broken`). Do not widen the contract with
   `allow_indirect_imports = true` to permit the package form — that would also blind
@@ -494,13 +507,14 @@ citations regardless of enforcement status; the row is the authoritative verdict
   CLAUDE.md's api zone description: "thin FastAPI HTTP surface (five-file features
   under `api/v1/`)."
 - **Compliant citation.** `backend/src/api/v1/decisions/__init__.py:6`
-  (`from src.api.v1.decisions.controller import router as router`) — one of the nine
+  (`from src.api.v1.decisions.controller import router as router`) — one of the eight
   features carrying the full five-file set; [[api-five-file-convention]] holds the
-  per-file citations for the other eight.
-- **Checked all ten features this story** (`ls backend/src/api/v1/*/`, excluding
-  `_shared/`, which is explicitly not a feature): NINE (`decisions`, `components`,
-  `approvals`, `maintenance`, `availability`, `history`, `publications`, `topology`,
-  `sample_mode`) are exactly five files. ONE — `health` — is the documented exception:
+  per-file citations for the other seven.
+- **Checked all nine features as of STORY-155b** (`ls backend/src/api/v1/*/`,
+  excluding `_shared/`, which is explicitly not a feature — was ten features at this
+  Fact's original writing, before STORY-155b removed `sample_mode`): EIGHT
+  (`decisions`, `components`, `approvals`, `maintenance`, `availability`, `history`,
+  `publications`, `topology`) are exactly five files. ONE — `health` — is the documented exception:
   `backend/src/api/v1/health/controller.py` ships with only `__init__.py` +
   `controller.py` (2 files; no `models.py`/`validation.py`/`service.py`), because it
   is a static liveness stub with nothing to model, validate, or orchestrate —
