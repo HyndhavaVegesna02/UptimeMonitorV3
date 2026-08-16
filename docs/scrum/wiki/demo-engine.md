@@ -635,3 +635,13 @@ governs how much these codes may be trusted.
   had deleted; the fail-loud contract shipping with zero test coverage) and 8 minors routed to
   STORY-180. DoD gate 8/8 at `29430ff`, reality gate 19/19. verified_sha -> 64f680b (the last
   commit touching the engine or its tests).
+- sprint-73 (STORY-155b): RE-VERIFIED, no content change. The sweep flagged two `code_refs`:
+  `backend/tests/demo_engine/test_scenario_coverage.py` (a docstring cross-reference to the
+  now-deleted `test_sample_mode_end_to_end.py` was reworded to name its peer fake instead — no
+  behavioural change) and `tools/demo_loop_gate/harness.py` (its AC1(c) `GET /sample-mode ==
+  {"enabled": False}` check was removed, since the route it checked no longer exists — see
+  [[zone-rules]] ZR-3/ZR-8 rows for the mechanical guard covering `harness.py`). No Fact in this
+  article's `## Facts` section cites either changed span (checked directly: neither
+  `_FakeRejectedRepo`'s docstring nor the removed AC1(c) block is quoted or line-cited here). Ran
+  the harness for real as part of this same story (STORY-155b AC10): `REALITY GATE 182 SIDE 1:
+  PASS`, all of AC1(a)/(b)/(d)/(e), AC3, AC4, AC5 green.
