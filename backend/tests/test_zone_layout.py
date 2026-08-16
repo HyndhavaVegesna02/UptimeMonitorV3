@@ -250,7 +250,7 @@ _EXPECTED_ROUTE_TABLE = {
 }
 
 
-def test_sample_mode_route_gone_and_no_other_route_changed() -> None:
+def test_the_removed_sample_route_is_gone_and_no_other_route_changed() -> None:
     """AC6: `GET`/`PUT /api/v1/sample-mode` no longer exists, and the
     remaining route table matches EXACTLY -- proving no other route was
     touched by this removal, not just that sample-mode's own routes are
