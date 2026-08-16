@@ -20,8 +20,10 @@ decision looks wrong and you are about to change it.
 
 1. **No live vendor data since 2026-07-28.** The Dynatrace trial expired, so no
    observations arrive and nothing is verifiable against real vendor traffic. The
-   PO-approved substitute is the local demo engine below. `sample_mode` still
-   exists but is inert for the same reason; its removal is STORY-155.
+   PO-approved substitute is the local demo engine below. `sample_mode` — the
+   on-demand outage simulator this same gap once motivated — is REMOVED
+   (STORY-155a frontend, STORY-155b backend, sprint 73); its history is
+   `docs/scrum/wiki/archive/sample-mode.md`.
 2. **No vendor FAILURE code has ever been observed — the two we map are ASSUMPTIONS.**
    `map_synthetic_status` (`adapters/inbound/dynatrace/health_mapping.py`) resolves in
    three steps: the healthy OR-rule (`code == "0"` **or** `message == "HEALTHY"` →
