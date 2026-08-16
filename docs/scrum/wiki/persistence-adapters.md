@@ -1,6 +1,6 @@
 ---
 title: Persistence adapters — the repository implementations
-code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_sample_mode_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py, backend/tests/pagination_diagnostics.py]
+code_refs: [backend/tests/test_component_repository_contract.py, backend/tests/test_signal_repository_contract.py, backend/src/core/queries/availability.py, backend/tests/conftest.py, backend/tests/fakes.py, backend/src/adapters/persistence/dynamo_signal_repository.py, backend/src/adapters/persistence/dynamo_component_repository.py, backend/src/adapters/persistence/dynamo_watermark_repository.py, backend/src/adapters/persistence/dynamo_serde.py, backend/tests/test_dynamo_adapters.py, backend/src/adapters/persistence/dynamo_publication_repository.py, backend/src/adapters/persistence/dynamo_maintenance_repository.py, backend/src/adapters/persistence/dynamo_rejected_observation_repository.py, backend/src/adapters/persistence/dynamo_proposal_repository.py, backend/src/composition/seed_dynamo.py, backend/src/adapters/persistence/topology_keys.py, backend/tests/test_topology_keys.py, backend/tests/test_dynamo_publication_repository.py, backend/tests/test_dynamo_maintenance_repository.py, backend/tests/test_dynamo_rejected_observation_repository.py, backend/tests/test_dynamo_seed.py, backend/tests/test_dynamo_proposal_repository.py, backend/tests/pagination_diagnostics.py]
 tier: map
 verified_sprint: sprint-68
 status: verified
@@ -29,14 +29,13 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   - `DynamoSignalRepository` (`dynamo_signal_repository.py`)
   - `DynamoComponentRepository` (`dynamo_component_repository.py`)
   - `DynamoWatermarkRepository` (`dynamo_watermark_repository.py`)
-  - `DynamoSampleModeRepository` (`dynamo_sample_mode_repository.py`)
   - `DynamoPublicationRepository` (`dynamo_publication_repository.py`)
   - `DynamoMaintenanceRepository` (`dynamo_maintenance_repository.py`)
   - `DynamoRejectedObservationRepository` (`dynamo_rejected_observation_repository.py`)
   - `DynamoObservationRepository` (`dynamo_observation_repository.py`)
   - `DynamoProposalRepository` (`dynamo_proposal_repository.py`)
 - They take `db_resource` (boto3 DynamoDB resource) and `table_name: str` in their constructor, preventing direct dependencies on `src.composition` to adhere to the `adapters-edge-only` boundary contract.
-- Point-reads for decision-path queries (`DynamoComponentRepository.get`, `DynamoWatermarkRepository.get`, `DynamoSampleModeRepository.is_enabled`) use `ConsistentRead=True` to guarantee read-after-write consistency.
+- Point-reads for decision-path queries (`DynamoComponentRepository.get`, `DynamoWatermarkRepository.get`) use `ConsistentRead=True` to guarantee read-after-write consistency.
 - `DynamoComponentRepository.set_status` uses conditional updates (`ConditionExpression="attribute_exists(pk)"`) to raise `ComponentNotFoundError` when updating a non-existent component.
 - `DynamoPublicationRepository` implements `list_recent` descending Query under the `PUBLICATION` partition, resolving authors via BatchGetItem on distinct proposal METAs using the denormalized `approved_actor` attribute.
 - `DynamoMaintenanceRepository` stores windows under `MAINTWIN#<id>`/`META` and indexes them on `gsi1` using `gsi1pk="MAINT"`, `gsi1sk="<starts_at>#<id>"` for starts_at ascending list queries.
@@ -163,3 +162,9 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - sprint-49 (STORY-087): Fully retired Neon Postgres database, Alembic migrations, and the nine Postgres repository adapters. Rewired composition and endpoints to DynamoDB Local.
 - sprint-62 (STORY-146): RE-VERIFIED, no content change. Only `test_dynamo_seed.py`'s `AppConfig` construction changed; `seed_dynamo.py` itself is untouched (AC7) and its `for sig in app.signals:` loop reads the same derived list it always did. verified_sha -> d004da7.
 - sprint-62 (STORY-148): RE-VERIFIED, no content change. The sweep flagged `backend/tests/conftest.py` in `code_refs` for a second `sys.path` insertion (repo-root `tools/`, alongside the existing `scripts/` one, so the new `tools/demo_engine/` Grail-shaped demo HTTP server is importable from tests). The `dynamo_local`/`clean_dynamo_tables` fixture behaviour this article documents is byte-identical. verified_sha -> ba00bd5.
+- sprint-73 (STORY-155b): `DynamoSampleModeRepository` and its adapter file
+  (`dynamo_sample_mode_repository.py`) are DELETED — removed the bullet naming it from the "DynamoDB
+  Repositories" list, removed `DynamoSampleModeRepository.is_enabled` from the point-reads Fact's
+  example list, and dropped the file from `code_refs`. The removed lifecycle test
+  (`test_dynamo_sample_mode_repository_lifecycle`, which lived in `test_dynamo_adapters.py`, still a
+  `code_ref` for the other eight adapters) is gone with it. Every other repository Fact is untouched.
