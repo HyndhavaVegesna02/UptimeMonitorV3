@@ -20,12 +20,8 @@ export type IconName =
   | 'chevron-right'
   | 'sun'
   | 'moon'
-  | 'search'
   | 'alert-triangle'
   | 'check'
-  | 'x'
-  | 'trash'
-  | 'zap'
   | 'arrow-right'
 
 const PATHS: Record<IconName, ReactNode> = {
@@ -59,19 +55,10 @@ const PATHS: Record<IconName, ReactNode> = {
     </>
   ),
   moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />,
-  search: (
-    <>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3" />
-    </>
-  ),
   'alert-triangle': (
     <path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z" />
   ),
   check: <path d="M20 6 9 17l-5-5" />,
-  x: <path d="M18 6 6 18M6 6l12 12" />,
-  trash: <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6" />,
-  zap: <path d="M13 2 3 14h7l-1 8 10-12h-7z" />,
   'arrow-right': <path d="M5 12h14M13 6l6 6-6 6" />,
 }
 

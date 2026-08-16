@@ -30,12 +30,8 @@ describe('Icon', () => {
       'chevron-right',
       'sun',
       'moon',
-      'search',
       'alert-triangle',
       'check',
-      'x',
-      'trash',
-      'zap',
       'arrow-right',
     ] as const
 
