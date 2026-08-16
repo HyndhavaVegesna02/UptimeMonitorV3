@@ -84,7 +84,7 @@ board:
     title: Four documentation leftovers from sprint 73
     points: 2
     order: 1
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     why_first: >-
@@ -108,6 +108,56 @@ board:
       citation in config-layer.md is DUPLICATED at :103 AND :451 -- removing one is a no-op.
       The path in the original story was WRONG and is corrected: frontend/src/components/Icon/Icon.tsx,
       NOT frontend/src/nav/Icon.tsx.
+    completed:
+      final_head: 1e1d870
+      commits: 9   # 3a5a36c..1e1d870, all implementer
+      spec_review: "FAIL (AC3, AC6) -> MET after the fix round."
+      quality_review: "REQUEST CHANGES -> TWO MAJORs, both fixed."
+      major_1_both_reviewers_found_it_independently: >-
+        AC3's fix turned `yt_wiki.py facts` RED -- clean at the sprint baseline, 1 finding at the
+        story's HEAD. Quality proved it TWO-SIDED in a scratch copy swapping only config-layer.md:
+        pre-image exit 0, the AC3 commit exit 1, HEAD exit 1. ORCHESTRATOR RE-RAN IT and confirmed.
+        THE MECHANISM IS THE LESSON: citation_gate.py's CITATION_RE REQUIRES a :NNN, so the original
+        `path:54` citation was invisible to it; yt_wiki.py:70's CITE_RE is MORE PERMISSIVE and
+        matches a backticked path WITHOUT a line number. De-lining moved the citation from
+        "invisible to every checker" to "flagged by a second one" -- on the exact property AC3
+        existed to close -- while leaving the stated harm (no drift signal) untouched.
+        RESOLVED BY ORCHESTRATOR RULING: add the path to code_refs and RESTORE the :54 citations,
+        rather than remove. The citation was correct, passing and content-bearing (:54 is literally
+        the dict the Fact quotes), and the cost the implementer cited was UNMEASURED -- the path is a
+        code_ref in only 3 articles, under AMPLIFIER_THRESHOLD = 4.
+      major_2: >-
+        AC1's correction silently DROPPED AC1(e), which STORY-155b never retired. Verified: it is
+        asserted at harness.py:811-817, named in the docstring at :739, printed at :857. So the fix
+        explained (c)'s retirement and left (e)'s disappearance unexplained -- the incomplete-record
+        failure AC1 exists to prevent, inside the sentence fixing it. NOTHING LINTS tools/, so no
+        check would ever have caught it.
+      ac6_was_written_to_match_what_was_run: >-
+        The implementer ran `yt_wiki.py sweep` only, which was CLEAN -- that is HOW the facts red
+        went unseen. The fix round required the FULL `yt_wiki.py` (no subcommand). Now: sweep, facts,
+        links, refs, integrity ALL CLEAN; citations 35 pre-existing notes (STORY-223 debt).
+      also_fixed: >-
+        Two false statements in text this story wrote: zone-rules.md's consolidated entry asserted
+        "no claim dropped" while three clauses had not survived the merge, and it said "seven
+        code_refs" while naming six.
+      credited_by_quality: >-
+        AC5 was called the strongest part of the diff -- the implementer found a PRE-EXISTING stale
+        number nobody had asserted against (the docstring said "13 of 190" while the live assertion
+        said (13, 191)) and fixed prose and assertions together. AC4's removal was judged exact.
+        It also SELF-CAUGHT a transient regression it had created (its AC3 History note re-quoted the
+        very citation it claimed to remove) and disclosed it plainly.
+      reality_gate: >-
+        PASS. For a glyph removal the real question is the shipped artifact: grepped the BUILT bundle
+        (frontend/dist/assets/*.js) for the removed glyphs and their path data -- ZERO hits. The 14
+        survivors are covered by Icon.test.tsx, which renders every name in the union.
+      carried_to_po_at_review: >-
+        THREE minors deliberately NOT fixed: (1) config-layer.md:466 keeps a line number as PROSE
+        ("line 54, TWICE") -- a line claim in a form no checker can resolve, harmless in a History
+        entry but arguably better dropped; (2) test_citation_gate.py's module docstring is now a
+        five-deep ledger of number corrections that the live re-derivation test makes largely
+        redundant -- a candidate for collapsing to current-state + pointer; (3) commit 66f557d
+        transiently left the repo asserting a falsehood, self-caught and disclosed, HEAD correct, and
+        the only remaining remedy would be a history rewrite.
 
   - id: STORY-229
     title: Rehabilitate frontend-zone.md — 67 code_refs, three of which no longer exist
@@ -231,3 +281,58 @@ standing:
      story, start NO new one | >=95 park until resets_at and resume from the board."
   - "STORY-192 must be RE-MEASURED before sizing -- archiving sample-mode.md removed ~110-142 of its
      ~224 mojibake sequences."
+
+story_228_gate:
+  commit: 1e1d870
+  result: "9/9 PASS, exit 0"
+  pytest: "831 passed, 0 skipped -- matches the lock baseline exactly"
+  npm_test: "49 files, 334 tests -- unchanged"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_full: "sweep/facts/links/refs/integrity ALL CLEAN; citations 35 pre-existing notes"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 831 passed in 63.43s (0:01:03) ========================"
+      commit: 1e1d870
+      at: "2026-08-16T19:05:28+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: 1e1d870
+      at: "2026-08-16T19:06:32+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 1e1d870
+      at: "2026-08-16T19:06:32+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "253 files already formatted"
+      commit: 1e1d870
+      at: "2026-08-16T19:06:33+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: 1e1d870
+      at: "2026-08-16T19:06:33+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  00:36:36 | Duration  46.98s (transform 5.88s, setup 46.46s, import 22.54s, tests 46.09s, environment 170.83s)"
+      commit: 1e1d870
+      at: "2026-08-16T19:06:36+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-C9VYcJLR.js                               275.78 kB │ gzip: 84.80 kB | ✓ built in 391ms"
+      commit: 1e1d870
+      at: "2026-08-16T19:07:23+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: 1e1d870
+      at: "2026-08-16T19:07:29+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 11.234s | OK"
+      commit: 1e1d870
+      at: "2026-08-16T19:07:35+00:00"
+  
