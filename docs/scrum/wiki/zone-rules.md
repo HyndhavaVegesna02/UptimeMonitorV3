@@ -54,47 +54,55 @@ status: verified
 # article cites (Finding 1, ZR-8) is a HISTORICAL quote of the file's
 # pre-STORY-205-fix shape ("as they stood then"), not a live citation into
 # current code, so nothing needed re-pointing. No Fact changed.
-# sprint-73 (STORY-155b): re-verified across seven code_refs as this
-# story's `sample_mode` removal landed in stages (consolidated from four
-# separate re-verification touches into this one entry, 2026-08-17,
-# STORY-228 AC2 -- no claim dropped). `backend/src/core/ports/__init__.py`,
+# sprint-73 (STORY-155b): re-verified in four separate touches as this
+# story's `sample_mode` removal landed in stages (consolidated into this one
+# entry, 2026-08-17, STORY-228 AC2, corrected at fix round -- every clause
+# below survives from the four original entries; none dropped). First, a
+# fourth code_ref changed -- `backend/src/core/ports/__init__.py`,
 # `backend/src/composition/run.py`, `backend/src/composition/app.py` --
 # STORY-155b removed the `sample_mode` feature and its
 # `SampleModeRepository` port entirely. Corrected ZR-1's mirrored contract
 # block (removed the `sample_mode_repository` line, "all nine forbidden
-# ones" -> "all eight") and ZR-4's "Checked all ten features" Fact (now nine
-# features, eight -- not nine -- carrying the full five-file set). The
-# pre-existing anchor-mismatch citation into `run.py:182-184` is UNCHANGED
-# debt, not new: already failing before this story (baseline 6, still 6
-# after), and its content (the `main()` startup sequence) is untouched by
-# this story's edit, confined to `build_live_loop` step 2.
-# `tools/demo_loop_gate/harness.py` then changed -- AC10's removal of its
-# AC1(c) `GET /sample-mode` check shifted every line-numbered citation into
-# that file below the edit point by +1 or +5 (ZR-3's blocklist span, its
-# `harness.py:62-69` import-site list, and ZR-5's env-setting-discipline
-# citations), corrected inline with the shift amount stated so a future
-# reader can tell "moved because of this story" from "moved for an
-# unrelated reason." The enforced citation-partition count stayed UNCHANGED
-# (6, matching baseline) throughout -- none of the corrected sites carry an
-# excerpt anchor, so the tool's line-count-only check passed before and
-# after regardless; the correction was for honesty, not the gate.
-# `backend/tests/test_zr3_duplicate_declarations.py` then changed --
-# re-keying its two harness.py adjudication entries (:938->:943,
-# :999->:1004) for the same AC10 shift. ZR-3's table row cites the
-# ADJUDICATION COUNT (13, all INDEPENDENT) and the fix history, neither of
-# which this re-keying touched -- the two collisions are unchanged, only
-# their recorded line moved.
-# `backend/tests/test_zone_layout.py` then changed -- AC5's fresh re-run of
-# its own grep (checklist's last-step rule) caught that AC6's new test
-# function name, `test_sample_mode_route_gone_and_no_other_route_changed`,
-# itself carried the literal substring the grep zeroes; renamed to
+# ones" -> "all eight" with the removal noted inline) and ZR-4's "Checked
+# all ten features" Fact (now nine features, eight -- not nine -- carrying
+# the full five-file set). The pre-existing anchor-mismatch citation into
+# `run.py:182-184` is UNCHANGED debt, not new: already failing before this
+# story (baseline 6, still 6 after -- verified by re-running the citation
+# partition), and its content (the `main()` startup sequence) is untouched
+# by this story's edit, confined to `build_live_loop` step 2.
+# A fifth code_ref, `tools/demo_loop_gate/harness.py`, then changed --
+# AC10's removal of its AC1(c) `GET /sample-mode` check shifted every
+# line-numbered citation into that file below the edit point by +1 or +5
+# (ZR-3's blocklist span, its `harness.py:62-69` import-site list, and
+# ZR-5's env-setting-discipline citations), corrected inline with the shift
+# amount stated so a future reader can tell "moved because of this story"
+# from "moved for an unrelated reason." The enforced citation-partition
+# count stayed UNCHANGED (6, matching baseline) throughout -- none of the
+# corrected sites carry an excerpt anchor, so the tool's line-count-only
+# check passed before and after regardless; the correction was for
+# honesty, not the gate.
+# A sixth code_ref, `backend/tests/test_zr3_duplicate_declarations.py`,
+# then changed -- re-keying its two harness.py adjudication entries
+# (:938->:943, :999->:1004) for the same AC10 shift. ZR-3's table row cites
+# the ADJUDICATION COUNT (13, all INDEPENDENT) and the fix history, neither
+# of which this re-keying touched -- the two collisions are unchanged, only
+# their recorded line moved, exactly the shape every other entry in that
+# file's own `_ADJUDICATED` dict already documents for itself.
+# A seventh code_ref, `backend/tests/test_zone_layout.py`, then changed --
+# AC5's fresh re-run of its own grep (checklist's last-step rule) caught
+# that AC6's new test function name,
+# `test_sample_mode_route_gone_and_no_other_route_changed`, itself carried
+# the literal substring the grep zeroes; renamed to
 # `test_the_removed_sample_route_is_gone_and_no_other_route_changed`. This
 # article cites `test_zone_layout_agreements`,
 # `test_seed_dynamo_uses_shared_topology_key_schema` and the five-file-shape
 # test by name (ZR-4/ZR-8 rows, the :125-173 line-range Fact) -- none of
 # them is the renamed function, which did not exist when those Facts were
 # written. No Fact's SUBSTANCE changed across any of the four touches, only
-# line numbers and the two ZR-1/ZR-4 counts stated above.
+# line numbers and the two ZR-1/ZR-4 counts stated above. (The original
+# first touch's "a fourth code_ref changed" names only three files; that
+# ordinal mismatch predates this consolidation and is left as-is rather
+# than guessed at.)
 ---
 
 ## Purpose
