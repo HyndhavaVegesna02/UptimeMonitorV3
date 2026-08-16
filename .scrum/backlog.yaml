@@ -1451,10 +1451,13 @@ stories:
     title: ComponentConfig validation ergonomics — the error names a value the author never typed, and "" is legal for one field but not the other
     epic: deferred-future
     file: docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md
-    status: draft   # FILED 2026-08-16 at sprint-73 review on PO instruction ("file for fixing the
+    status: ready   # REFINED 2026-08-16 at sprint-74 refinement, 7 AC, AFTER the PO answered both
+                    # Open Questions: (1) the error shows the AUTHORED value AND the normalized
+                    # one; (2) description: "" NORMALIZES TO null at load. group: "" is
+                    # deliberately UNCHANGED -- AC6 records that assumption and pins it.
                     # minors"). BLOCKED ON A PO ANSWER, not on work: both items are product
                     # decisions, not defects. Cannot be estimated until the Open Questions resolve.
-    points: null
+    points: 2
     priority: low
 
   - id: STORY-227
