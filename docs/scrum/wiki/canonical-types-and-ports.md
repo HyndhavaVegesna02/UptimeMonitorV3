@@ -1,6 +1,6 @@
 ---
 title: Zone 1 — the canonical vocabulary and the core ports
-code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/ports/sample_mode_repository.py, backend/src/core/services/pipeline.py, backend/src/core/services/approval.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
+code_refs: [backend/src/core/domain/signal.py, backend/src/core/domain/status.py, backend/src/core/domain/verdict.py, backend/src/core/domain/proposal.py, backend/src/core/domain/component.py, backend/src/core/domain/maintenance.py, backend/src/core/domain/publication.py, backend/src/core/domain/topology.py, backend/src/core/ports/__init__.py, backend/src/core/ports/clock.py, backend/src/core/ports/observation_repository.py, backend/src/core/ports/proposal_repository.py, backend/src/core/ports/rejected_observation_repository.py, backend/src/core/ports/signal_ingest.py, backend/src/core/ports/signal_repository.py, backend/src/core/ports/status_publisher.py, backend/src/core/ports/watermark.py, backend/src/core/ports/component_repository.py, backend/src/core/ports/maintenance_repository.py, backend/src/core/ports/publication_repository.py, backend/src/core/services/pipeline.py, backend/src/core/services/approval.py, backend/tests/fakes.py, backend/tests/test_ingest_service.py]
 tier: map
 verified_sprint: sprint-67
 status: verified
@@ -117,10 +117,12 @@ status: verified
   them for callers that import from the service. See [[persistence-adapters]] for the repository
   contract that raises them.
 
-### The ten STABLE core ports (`core/ports/`, ABCs) + one TEMPORARY eleventh
+### The ten STABLE core ports (`core/ports/`, ABCs)
 Ports are interfaces the core OWNS but does not implement (dossier §6); adapters implement
 them, the composition root injects them. All ten are `abc.ABC` with `@abstractmethod`,
-signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
+signatures in canonical vocabulary only (no vendor/HTTP/SQL types). (A TEMPORARY eleventh,
+`SampleModeRepository`, existed alongside these from STORY-048 through STORY-155b, which
+removed it along with the feature it supported; see [[sample-mode]] (archived).)
 - `SignalIngestPort.ingest_observations(batch: Sequence[SignalObservation]) -> IngestResult`
   — inbound front door (`signal_ingest.py::SignalIngestPort.ingest_observations`).
 - `StatusPublisherPort.publish(change: StatusChange) -> None` — outbound
@@ -175,13 +177,6 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   comparison branch (`action is ProposalState.APPROVED`) is unobservable through the fake; see
   [[persistence-adapters]] for the adapter side and its real-DynamoDB proving test. Also provides
   `list_open() -> list[StatusProposal]` (STORY-014b: returns all open proposals, or `[]` if none exist).
-- `SampleModeRepository` (`sample_mode_repository.py::SampleModeRepository`, STORY-048, sprint-31) —
-  the eleventh port, but deliberately NOT counted among the ten stable ones above: it exists ONLY to
-  support a TEMPORARY, PO-directed feature (the on-demand outage simulator) and is scheduled for
-  deletion — see [[sample-mode]] for its full Facts and the REMOVAL inventory. Provides
-  `is_enabled() -> bool` (never raises; `False` when the flag was never set) and
-  `set_enabled(enabled: bool) -> None` (idempotent upsert). No new domain type (bare bool payload)
-  and no new domain error.
 
 ### Zone 4 core logic — moved
 - The pipeline (`collapse`/`streak`, STORY-010) and the availability engine
@@ -197,8 +192,7 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   KEPT (no adapter / sqlalchemy / httpx in core). See [[architecture-boundary]].
 - Fakes for every port live under `backend/tests/fakes.py` (FakeClock, FakeWatermarkRepository,
   FakeObservationRepository, RecordingStatusPublisher, FakeSignalIngestPort, FakePublicationRepository,
-  FakeSignalRepository, FakeSampleModeRepository — STORY-048, temporary, see [[sample-mode]]) —
-  never in `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
+  FakeSignalRepository) — never in `src/adapters`, keeping the production edge clean. STORY-009's `IngestService` test
   (`backend/tests/test_ingest_service.py`) additionally defines its own local fakes
   (`DedupingObservationRepository`, `FakeWatermarkRepository`,
   `FakeRejectedObservationRepository`, `FakeClock`) rather than extending `tests/fakes.py`,
@@ -324,3 +318,9 @@ signatures in canonical vocabulary only (no vendor/HTTP/SQL types):
   bracket access) so a pre-STORY-147 component item, carrying neither key, still reads back as
   `None`. No other Fact in this article changed — `ComponentNotFoundError`, the port signatures, and
   every other domain type are untouched by this story.
+- sprint-73 (STORY-155b): removed the `SampleModeRepository` port Fact, `sample_mode_repository.py`
+  from `code_refs`, and the `FakeSampleModeRepository` mention in the fakes list — the port, its
+  DynamoDB adapter, and its fake no longer exist. "The ten STABLE core ports + one TEMPORARY
+  eleventh" heading corrected to "the ten STABLE core ports" (a parenthetical points at the archived
+  [[sample-mode]] for what the eleventh was). Every other Fact — the ten stable ports themselves,
+  the domain types, the boundary status — is untouched.
