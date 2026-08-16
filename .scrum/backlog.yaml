@@ -1,5 +1,17 @@
 # YourTeam backlog — machine state, source of truth for story status.
 # Stories are never deleted; status is a field, never a folder.
+#
+# *** PO DIRECTIVE 2026-08-16, AT THE SPRINT-73 CLOSE — READ THIS AT SPRINT-74 PLANNING ***
+#   "in next sprint first finish the minors then go to equilibrium list"
+#   Sprint 74 takes the sprint-73 carried minors FIRST -- STORY-227 (6 test-pinning gaps) and
+#   STORY-228 (5 documentation leftovers), both refinable as they stand -- and only THEN returns
+#   to the equilibrium backlog. STORY-226 is the third of that set but CANNOT BE ESTIMATED until
+#   the PO answers its two Open Questions; both are product decisions, not defects. Surface them
+#   at REFINEMENT, not mid-sprint.
+#   ⚠ NO STORY IS `ready` AS OF THIS CLOSE (14 open = 10 draft + 4 blocked), so sprint 74 cannot
+#   be planned at all without a refinement pass first.
+#   ⚠ STORY-192 MUST BE RE-MEASURED before it is sized -- archiving sample-mode.md removed roughly
+#   110-142 of its ~224 mojibake sequences.
 # Sprint-0 stories (001-003) are fully refined → ready. Stories 004-017 carry the
 # seed's draft AC and rough estimates; each gets a refinement pass (and STORY-015
 # its split) before it may enter a sprint — so they stay `draft` until then.
