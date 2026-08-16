@@ -951,31 +951,30 @@ def test_healthy_batch_logs_no_quarantine_warning(caplog):
 
 
 # --- STORY-155b AC1: the live ingest path is provably unchanged with the
-# sample-mode decorator removed -----------------------------------------
+# SampleModeIngest decorator removed -------------------------------------
 
 
-def test_run_periodic_records_same_observations_as_sample_mode_off_passthrough():
+def test_run_periodic_records_same_observations_with_ingest_decorator_removed():
     """AC1: drives `run_periodic` with the REAL, un-decorated `IngestService`
     (the shape `composition/run.py::build_live_loop` has after this story
     removes the `SampleModeIngest` wrapper) and asserts the recorded
     observations match, byte-for-byte, a REAL "before" capture.
 
-    The "before" arm cannot live in this suite (AC2 deletes
-    `SampleModeIngest`/`test_sample_mode_end_to_end.py` in this same story),
-    so it is recorded here instead: this is the ACTUAL output of running this
-    exact harness (this same config/executor/fakes shape) through
-    `SampleModeIngest(delegate=IngestService(...), sample_mode_repo=<never
-    set, i.e. OFF>)` before the decorator was deleted -- not an invented
-    fixture. `test_sample_mode_end_to_end.py::
-    test_end_to_end_flag_off_persists_rows_matching_vendor_payload` already
-    proved OFF is a byte-identical passthrough at the direct
-    `ingest_observations` level; this test re-proves the same invariant one
-    layer up, through the actual `run_periodic` scheduling loop, so the claim
-    survives the decorator's deletion instead of dying with it.
+    The "before" arm cannot live in this suite (this same story deletes
+    `SampleModeIngest` and its dedicated end-to-end test), so it is recorded
+    here instead: this is the ACTUAL output of running this exact harness
+    (this same config/executor/fakes shape) through
+    `SampleModeIngest(delegate=IngestService(...), <flag repo left unset,
+    i.e. OFF>)` before the decorator was deleted -- not an invented fixture.
+    The now-deleted end-to-end test already proved OFF is a byte-identical
+    passthrough at the direct `ingest_observations` level; this test
+    re-proves the same invariant one layer up, through the actual
+    `run_periodic` scheduling loop, so the claim survives the decorator's
+    deletion instead of dying with it.
 
     Comparison is at the OBSERVATION level (fields below), never a DB-call
-    count -- `sample_mode.py:61`'s per-cycle `is_enabled()` read legitimately
-    disappears with the decorator, and a call-count comparison would prove
+    count -- the decorator's per-cycle flag-repository read legitimately
+    disappears along with it, and a call-count comparison would prove
     nothing (the AC's own warning).
     """
     from fakes import (
@@ -1077,8 +1076,8 @@ def test_run_periodic_records_same_observations_as_sample_mode_off_passthrough()
     assert ingest_result.accepted == 2
 
     # The RECORDED "before" evidence (captured 2026-08-16, pre-removal, via
-    # SampleModeIngest(delegate=IngestService(...), sample_mode_repo=<OFF>)
-    # driven through this identical run_periodic harness).
+    # SampleModeIngest(delegate=IngestService(...), <flag repo left unset,
+    # i.e. OFF>) driven through this identical run_periodic harness).
     assert len(obs_repo.saved) == 2
     saved = [
         {

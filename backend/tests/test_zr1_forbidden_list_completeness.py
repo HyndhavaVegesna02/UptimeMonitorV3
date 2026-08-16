@@ -9,8 +9,9 @@ a guard that pinned a different property).
 
 Cites: `docs/scrum/wiki/zone-rules.md` ZR-1 (an inbound adapter is a pure
 translation function; it must never hold or call a persistence port) and its
-Coverage verdict, which specifies the exact nine-module `forbidden_modules`
-list this test's discovery rule reproduces.
+Coverage verdict, which specifies the exact `forbidden_modules` list this
+test's discovery rule reproduces -- eight modules as of STORY-155b (was
+nine before that story's removal).
 
 **AC1 -- the discovery rule.** Every `*_repository.py` file directly under
 `backend/src/core/ports/`, plus the explicitly named `watermark.py`, as
@@ -32,7 +33,9 @@ proposed this test explicitly scoped it to filename discovery.
 
 **AC2 -- non-vacuity floor is direction-free.** See `_NON_VACUITY_FLOOR`'s own
 comment: it is >= 5, not ">= 9 at time of writing", because a >= 9 floor would
-go RED on STORY-155's LEGITIMATE removal of `sample_mode_repository.py`.
+have gone RED on STORY-155b's LEGITIMATE removal of the sample-mode
+repository port module (now landed; the floor stayed direction-free and
+did not need touching).
 
 **AC3/AC4 -- shown RED, both directions, recorded in the story/board, not as a
 permanent mutation test here** (matching the house convention in
@@ -190,10 +193,10 @@ def test_load_contract_forbidden_modules_raises_when_contract_not_found(
 # ---------------------------------------------------------------------------
 
 #: AC2, corrected 2026-08-13 at plan verification: DIRECTION-FREE (>= 5), not
-#: ">= 9 at time of writing". Nine is today's count under AC1's discovery
-#: rule; a floor of 9 would go RED on the LEGITIMATE removal of a port --
-#: STORY-155 (remove sample_mode, named in CLAUDE.md) deletes
-#: sample_mode_repository.py, taking the correct count to 8. AC1's set
+#: ">= 9 at time of writing". Nine was the count under AC1's discovery rule
+#: before STORY-155b (remove the sample-mode feature, named in CLAUDE.md)
+#: deleted its repository port module -- a floor of 9 would have gone RED on
+#: that LEGITIMATE removal, which took the correct count to 8. AC1's set
 #: EQUALITY (below) is the real guard; this floor exists only so a parse
 #: that finds nothing (a broken discovery rule or a moved contract) goes red
 #: instead of green.
