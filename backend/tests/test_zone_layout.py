@@ -230,6 +230,42 @@ def test_zone_layout_agreements() -> None:
         assert_feature_five_file_shape(feature, v1_dir / feature)
 
 
+#: STORY-155b AC6: the exact route table left behind once the sample-mode
+#: feature's GET/PUT /sample-mode routes are gone -- a pinned SET EQUALITY
+#: (not merely "sample-mode is absent"), so an unrelated route accidentally
+#: dropped or renamed by the same diff would fail here too, not just the
+#: routes this story intentionally removed.
+_EXPECTED_ROUTE_TABLE = {
+    "/api/v1/approvals",
+    "/api/v1/availability",
+    "/api/v1/availability/component/{component_id}",
+    "/api/v1/components",
+    "/api/v1/decisions/{proposal_id}",
+    "/api/v1/health",
+    "/api/v1/history",
+    "/api/v1/maintenance",
+    "/api/v1/maintenance/{window_id}",
+    "/api/v1/publications",
+    "/api/v1/topology",
+}
+
+
+def test_sample_mode_route_gone_and_no_other_route_changed() -> None:
+    """AC6: `GET`/`PUT /api/v1/sample-mode` no longer exists, and the
+    remaining route table matches EXACTLY -- proving no other route was
+    touched by this removal, not just that sample-mode's own routes are
+    gone."""
+    from src.composition.asgi import app
+
+    openapi_paths = set(app.openapi()["paths"].keys())
+
+    assert "/api/v1/sample-mode" not in openapi_paths
+    assert openapi_paths == _EXPECTED_ROUTE_TABLE, (
+        f"route table drifted beyond the sample-mode removal. "
+        f"Difference: {openapi_paths.symmetric_difference(_EXPECTED_ROUTE_TABLE)}"
+    )
+
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SEED_DYNAMO_PATH = _REPO_ROOT / "backend" / "src" / "composition" / "seed_dynamo.py"
 
