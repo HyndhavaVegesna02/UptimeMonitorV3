@@ -3,7 +3,9 @@ id: STORY-228
 title: Four documentation leftovers from sprint 73 — each in a place the wiki protocol deliberately does not look
 type: chore
 points: 2
-status: ready
+status: draft   # NOT READY -- AC4's Open Question is UNANSWERED, so it fails the Definition of
+                # Ready and CANNOT enter a sprint. Held out of sprint 74 for that reason, not on
+                # capacity. Ask the PO the Icon-registry question, then this is a 2 and refinable.
 refined: 2026-08-16   # sprint-74 refinement. SPLIT: item 1 became STORY-229 on measurement.
 sprint: null
 ---
@@ -55,7 +57,7 @@ staleness mechanism is keyed on `code_refs`, and a citation outside them is invi
 matches the article's pre-existing "Seven surviving readers" pattern, so this is a known shape, not
 a novelty.
 
-### 5. `frontend/src/nav/Icon.tsx` — the `zap` glyph is now unused
+### 5. `frontend/src/components/Icon/Icon.tsx` — the `zap` glyph is now unused
 STORY-155a deleted its only consumer. The reviewer judged it **not that story's debt**, because the
 registry already carries unused `search`, `trash` and `x` — it is a catalogue ported verbatim from
 the design mock, not a use-list. Included here for completeness; the honest options are "remove all
@@ -81,15 +83,43 @@ recorded as a note on STORY-223, not duplicated into a new story.
       the ZR-3 re-key, and the citation-count re-derivation. State the before/after line count.
 - [ ] **AC3 (`config-layer.md`'s out-of-`code_refs` citation is resolved)** — it cites
       `backend/src/adapters/outbound/statuspage/__init__.py:54`, which is not among its `code_refs`,
-      so drift in that file can never re-trigger this article. Resolve it **either** by adding the
+      so drift in that file can never re-trigger this article. ⚠ **It is cited TWICE — `:103` and
+      `:451`** (found at pre-lock verification); handle both. Resolve it **either** by adding the
       path to `code_refs` **or** by removing the citation — and state which, and why. ⚠ Adding it
       widens the article's sweep surface; that is a real cost, not a free fix.
 - [ ] **AC4 (the `Icon` registry question is answered in writing, not left implicit)** — per the
       PO's ruling on the Open Question below, either the unused glyphs (`zap`, `search`, `trash`,
-      `x`) are removed, or a comment in `Icon.tsx` records that the registry is a **catalogue ported
-      from the design mock** and that unused entries are expected. Silence is not an outcome: today
-      a reader cannot tell dead code from deliberate inventory.
-- [ ] **AC5 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD. Run the wiki
+      `x`) are removed, or a comment in `frontend/src/components/Icon/Icon.tsx` records that the
+      registry is a **catalogue ported from the design mock** and that unused entries are expected.
+      Silence is not an outcome: today a reader cannot tell dead code from deliberate inventory.
+      ⚠ **Path corrected at pre-lock verification** — the draft said `frontend/src/nav/Icon.tsx`,
+      which does not exist (`frontend/src/nav/` holds only `Sidebar.*`, `TopBar.*`, `sidebarState.*`,
+      `tabs.ts`). The registry is at `frontend/src/components/Icon/Icon.tsx` (`zap` at `:74`, the
+      `IconName` union at `:23-28`).
+      ⚠ **If the REMOVE branch is chosen, `frontend/src/components/Icon/Icon.test.tsx:21-40` must be
+      updated in the SAME commit** — it enumerates all 18 names in an `as const` array including
+      `search`, `x`, `trash`, `zap`. Removing them from the union without touching that array is a
+      TypeScript error, so `npm run build` (`tsc -b`) fails: **gate-red on DoD command 7.**
+      ⚠ **The remove branch also collides with STORY-229.** `Icon.tsx` is `code_ref` #23 of
+      `frontend-zone.md`. If 229 lands option (a) and sets `status: verified`, this edit re-stales
+      that article at final HEAD (`yt_wiki.py:201-225` diffs refs from the article's own last
+      commit) — silently undoing 229's centrepiece. If both stories are ever in one sprint, either
+      run this one FIRST or commit a same-commit re-verification touch of `frontend-zone.md`.
+- [ ] **AC5 (the citation-gate numbers are re-derived — AC2 and AC3 MOVE them) — added at pre-lock
+      verification, and a gate-red if missed.** ⚠ **The draft had no AC for this at all.**
+      `zone-rules.md:57-100` is inside the **frontmatter comment block** (it closes at `:101`), and
+      `tools/citation_gate.py:75,82` scans the whole file, frontmatter included. Two citations live
+      in the region AC2 consolidates: `run.py:182-184` at `:65` and `harness.py:62-69` at `:74`.
+      **`harness.py:62-69` occurs NOWHERE ELSE in that article**, so if the merged prose does not
+      re-quote it, `total` goes 191 → 190 and `globally_distinct` 179 → 178, reddening
+      `test_citation_gate.py:475` and `:484`. Simulated at verification; whether it fires depends on
+      wording an implementer cannot know to weight.
+      AC3 has the same shape: `config-layer.md` carries that statuspage citation **twice**
+      (`:103` **and `:451`**) — removing only one is a no-op for the gate, removing both moves the
+      totals.
+      **Re-derive `test_citation_gate.py:475`, `:484` (and `:501` if any tier moves) live at the
+      final commit, and update the module docstring in the same commit.**
+- [ ] **AC6 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD. Run the wiki
       sweep after the last commit and take what it returns; do not pre-declare a blast radius.
 
 ## Estimate: 2

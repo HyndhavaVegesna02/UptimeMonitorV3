@@ -1457,7 +1457,7 @@ stories:
                     # deliberately UNCHANGED -- AC6 records that assumption and pins it.
                     # minors"). BLOCKED ON A PO ANSWER, not on work: both items are product
                     # decisions, not defects. Cannot be estimated until the Open Questions resolve.
-    points: 2
+    points: 3
     priority: low
 
   - id: STORY-227
@@ -1467,18 +1467,18 @@ stories:
     status: ready   # REFINED 2026-08-16 at sprint-74 refinement, 7 AC. PENDING PO APPROVAL.
                     # findings grouped: none is a failing test; each is a green whose meaning is
                     # narrower than its name. Refinable as it stands, no open questions.
-    points: 3
+    points: 5
     priority: medium
 
   - id: STORY-228
     title: Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies
     epic: deferred-future
     file: docs/scrum/stories/STORY-228-doc-debt-sprint-73.md
-    status: ready   # REFINED 2026-08-16, 5 AC, 2 pts. SPLIT AT REFINEMENT: its frontend-zone.md
-                    # item was MEASURED (634 lines, 67 code_refs, ~40 Facts) and became STORY-229.
-                    # somewhere the wiki protocol DELIBERATELY does not look, so none can be caught
-                    # by tightening the sweep. The 6th carried item was NOT filed here -- it is
-                    # already STORY-223 (verified, not assumed).
+    status: draft   # NOT READY -- pre-lock verification found AC4 rests on an UNANSWERED PO
+                    # question (remove the unused Icon glyphs, or document the registry as a
+                    # catalogue). An open question fails the Definition of Ready, so it was HELD
+                    # OUT of sprint 74 on READINESS, not capacity. One PO answer makes it a
+                    # refinable 2. Its Icon.tsx edit also collides with STORY-229 -- see the story.
     points: 2
     priority: low
 

@@ -2,11 +2,32 @@
 id: STORY-227
 title: Six test-pinning gaps found at sprint-73 review — assertions that pass today for reasons that are not the reason we think
 type: chore
-points: 3
+points: 5          # RE-PRICED 3 -> 5 at pre-lock verification, 2026-08-16. See "Why 5, not 3".
 status: ready
-refined: 2026-08-16   # sprint-74 refinement
+refined: 2026-08-16   # sprint-74 refinement; re-priced at pre-lock verification the same day
 sprint: null
 ---
+
+## Why 5, not 3
+
+Re-priced at pre-lock verification, and **the 3 repeated sprint 73's own worst estimation habit**:
+it counted the test edits and priced the wiki at **zero**.
+
+Measured — this story's diff touches `code_refs` of **four `tier: map` / `status: verified`
+articles**, every one of which `.scrum/definition-of-done.md:133-136` and A18 force updated or
+explicitly re-verified **in-story**:
+
+| Article | Reached via |
+| --- | --- |
+| `zone-rules.md` | `backend/tests/test_zone_layout.py` (AC1, AC6), `composition/seed_dynamo.py` (AC3) |
+| `persistence-adapters.md` | `backend/tests/test_dynamo_seed.py` (AC3), `composition/seed_dynamo.py` |
+| `ingest-service-and-pull-loop.md` | `backend/tests/test_pull_loop.py` (AC2) |
+| `statuspage-publish.md` | `backend/tests/test_statuspage_adapter.py` (AC5) |
+
+AC3 additionally **mandates** an edit to `persistence-adapters.md`'s own Fact. That work cannot be
+split into a follow-up — A18 makes it in-story by rule. Sprint 73 re-priced STORY-155b 5 → 7 for
+exactly this reason and its retro called the correction the right call; withholding the same rule
+here would be the identical mistake in the opposite direction.
 
 ## Where this came from
 
@@ -87,16 +108,37 @@ failure as a stale wiki Fact, one layer down.
       Either assert the raw attribute type (so the claim is proven), **or** correct the comment and
       the Fact to say only what is true. ⚠ **A wiki Fact making a claim no test checks is exactly
       what the Facts lint cannot catch** — this is the case that motivated grouping these six.
+      ✅ **The prove-it branch IS reachable — verified by probe at pre-lock verification, against the
+      local throwaway DynamoDB, so do not default to withdrawing the claim:**
+      `'group' in item` returns **True** for the NULL form and **False** for the absent form, on the
+      same `resource` Table object the test already uses (the low-level client shows `{'NULL': True}`).
+      A one-line change at `backend/tests/test_dynamo_seed.py:178-179` proves it. "Assert the raw
+      attribute type" does **not** require a low-level-client rewrite.
+      ⚠ **If you take the withdraw branch and edit the comment at `seed_dynamo.py:46-50`, RE-KEY
+      `config-layer.md`'s citations to `seed_dynamo.py:56` and `:76` in the same commit.** Both are
+      enforced and currently passing; the file is 88 lines, so a line shift leaves them **in range
+      and silently wrong** — the "wrong-but-in-range PASSES" hole that `test_citation_gate.py:378-406`
+      exists to document. No mechanism catches this.
 - [ ] **AC4 (the top-bar test stops depending on an unrelated fixture)** —
       `frontend/src/AppShell.test.tsx:172-174` uses the Approvals badge as its settle barrier, so a
       change to `FIXTURE_PROPOSALS` fails a test about the top bar. Wait on something the test is
-      actually about. Shown-RED: change `FIXTURE_PROPOSALS` and confirm the test **no longer** fails
-      (the inverse demonstration — the coupling is gone).
+      actually about.
+      ⚠ **The draft's shown-RED was IMPOSSIBLE and is corrected.** It said "change
+      `FIXTURE_PROPOSALS` and confirm the test no longer fails" — but the test builds its expectation
+      **from the same constant** (`` `Approvals, ${FIXTURE_PROPOSALS.length} pending` ``,
+      `AppShell.test.tsx:172-174`), so adding or removing a proposal moves expectation and render in
+      lockstep and the test passes before *and* after. A vacuous "before" makes the "after" vacuous.
+      **The only mutation that reds it today is emptying `FIXTURE_PROPOSALS` to `[]`** — that flips
+      `hasBadge` false at `Sidebar.tsx:51-54` and the label becomes bare `Approvals`. Use that
+      mutation: it must red today and must NOT red after the fix.
 - [ ] **AC5 (the duplicated publish test collapses, keeping the part that matters)** —
       `test_statuspage_adapter.py:98-123` duplicates `:36-65` with a strictly weaker payload
       assertion; only the `set(StatusChange.model_fields) == {"component_id", "status"}` pin is new,
       **and that pin is what makes STORY-147's AC4 structural rather than incidental — it must
-      survive.** Net removal is expected to be ~6 lines; state the actual before/after.
+      survive.** ⚠ The draft guessed "~6 lines"; measured at pre-lock verification the block is
+      **26 lines** (`:98-123`), of which only the `model_fields` assertion at `:106` need survive.
+      State the actual before/after — and note the pytest count drops **831 → 830**, which AC7 must
+      account for.
 - [ ] **AC6 (the grep-shaped test name reads for a human)** —
       `test_zone_layout.py:253`'s `test_the_removed_sample_route_is_gone_and_no_other_route_changed`
       is an artifact of STORY-155b's AC5 (zero matches for `sample_mode` in `backend/`). Rename it

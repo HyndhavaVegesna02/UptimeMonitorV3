@@ -2,7 +2,9 @@
 id: STORY-226
 title: ComponentConfig validation ergonomics — the error names a value the author never typed, and "" is legal for one field but not the other
 type: defect
-points: 2
+points: 3          # RE-PRICED 2 -> 3 at pre-lock verification: composition/config.py is a
+                   # code_ref of config-layer.md (tier: map / status: verified), which A18 forces
+                   # re-verified IN-STORY. The 2 priced that at zero -- sprint 73's exact habit.
 status: ready
 refined: 2026-08-16   # sprint-74 refinement, AFTER the PO answered both Open Questions
 sprint: null
@@ -66,6 +68,12 @@ for description but not for group, or it renders an empty label.
       subclass raised inside a pydantic validator becomes a `ValidationError` and is re-raised bare,
       losing the subclass. **Do not move the check into the validator to get easy access to the raw
       value.** That is the trap that nearly shipped twice in STORY-147.
+      ✅ **AC1 IS satisfiable without the validator, and pre-lock verification found the mechanism —
+      use it rather than reaching for a private field on a `frozen=True` model:** the parsed YAML is
+      assigned to `raw` at `config.py:669-671` and **is still in scope at the `:755` raise site**, so
+      `raw["components"]` carries the authored `group` verbatim. `_derive_signals_from_monitors`
+      (`:386-438`) neither reorders nor drops components, so `app.components` aligns with it — but
+      **join on `comp.id`** (never normalized), not on list position, which is the robust key.
 - [ ] **AC2 (a test proves the authored value survives)** — a test asserts the message contains the
       pre-normalization string for a `group` that differs from its normalized form. Shown-RED
       against the current behaviour (today the message contains only the normalized value), so the
@@ -73,15 +81,31 @@ for description but not for group, or it renders an empty label.
 - [ ] **AC3 (`description: ""` becomes `None` at load)** — a component declaring `description: ""`
       loads successfully and yields `description=None`, not `""`. Verified **through
       `load_config`**, not only on the model.
-- [ ] **AC4 (`""` never reaches the API)** — `GET /api/v1/components` returns `"description": null`
-      for a component whose config declared `description: ""`. Asserted at the HTTP boundary, so the
-      guarantee holds for the operator cockpit, which is the consumer this ruling was made for.
-      ⚠ STORY-147's own HTTP tests use `FakeComponentRepository`; that is fine for this AC, but it
-      means the fake-repo seam is where this is proven — say so rather than implying end-to-end.
-- [ ] **AC5 (whitespace-only is decided, not left to chance)** — `description: "   "` must behave
-      the same as `""` (strip, then treat as empty) or explicitly not. State which and test it. The
-      PO ruled on `""`; whitespace-only is the adjacent case a config author will actually hit, and
-      leaving it undecided reintroduces the same two-representations problem this story closes.
+- [ ] **AC4 (the HTTP layer is shown to be a PASSTHROUGH — it is not where this is proven)** —
+      ⚠ **The draft AC4 was UNSATISFIABLE-OR-THEATRE and is replaced.** Pre-lock verification showed
+      `api/v1/components/service.py:22-29` is an unconditional passthrough
+      (`ComponentDTO(..., description=c.description)`), and `FakeComponentRepository` is seeded with
+      hand-built `Component` objects — `load_config` is never invoked at that seam. So "a component
+      whose config declared `description: \"\"`" **cannot exist** there. Both readings failed: seed
+      the fake with `None` and the test passes identically before and after AC3, unable to fail if
+      AC3 regresses (theatre); seed it with `""` and the only way to green it is to normalize in the
+      service or DTO, which **contradicts AC3 and the PO's ruling** that normalization happens at
+      load.
+      **What this AC now requires:** state, citing `service.py:28`, that the HTTP layer performs no
+      normalization and therefore returns whatever the load seam produced — so AC3 is the guarantee
+      and the API inherits it. Do **not** add a normalization step downstream to satisfy a test.
+      *(If the PO wants the full chain proven end-to-end — `load_config` → `seed_topology_dynamo` →
+      `DynamoComponentRepository` → endpoint, `dynamo_local`-gated — that is a real cost on a small
+      story and should be its own AC with its own points, not smuggled in here.)*
+- [ ] **AC5 (whitespace-only is decided, and the rule is stated AS CODE)** — `description: "   "`
+      must behave the same as `""`. ⚠ **"Strip, then treat as empty" is ambiguous in a way that moves
+      a pinned boundary**, so state which rule you implement:
+      `None if not v.strip() else v` — leaves non-empty values **untouched**, or
+      `v.strip() or None` — strips **every** value.
+      The second changes which side of `_MAX_DESCRIPTION_LENGTH` (`config.py:47`) a padded value
+      lands on, and `backend/tests/test_config.py:953` pins an exactly-80-character description as
+      valid. **Recommended: `None if not v.strip() else v`**, which closes the empty case without
+      touching the length boundary STORY-147 established.
 - [ ] **AC6 (`group: ""` is UNCHANGED, and the reason is recorded)** — `group: ""` continues to
       raise. **Assumption stated rather than silently taken:** the PO's ruling was scoped to
       `description`, and `group` is a slug identifier used for grouping — an empty slug is
@@ -92,11 +116,16 @@ for description but not for group, or it renders an empty label.
 - [ ] **AC7 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD, counts
       recorded. Run the wiki sweep after the last commit and take what it returns.
 
-## Estimate: 2
+## Estimate: 3 (re-priced from 2 at pre-lock verification)
 
-Both changes live in one file (`backend/src/composition/config.py`) with tests beside them. AC1's
-"carry the authored value to the raise site" is the only non-trivial mechanical part, and STORY-147
-already established exactly where that check must live.
+Both code changes live in one file (`backend/src/composition/config.py`) with tests beside them, and
+AC1's "carry the authored value to the raise site" is the only non-trivial mechanical part — the
+verifier found the mechanism (`raw` at `:669-671`), so it is bounded.
+
+**The +1 is wiki cost that the 2 priced at zero.** `composition/config.py` is a `code_ref` of
+`config-layer.md`, which is `tier: map` / `status: verified` — so this diff stales it, and A18 plus
+`.scrum/definition-of-done.md:133-136` force it updated or explicitly re-verified **in-story**. That
+is the same asymmetry sprint 73's retro praised catching when STORY-155b went 5 → 7.
 
 ## Not in scope
 
