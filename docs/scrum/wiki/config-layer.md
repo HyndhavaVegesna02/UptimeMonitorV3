@@ -520,10 +520,14 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   (`_normalize_blank_description`, never raises) — rule `None if not v.strip() else v`, chosen
   because it does not move the pinned 80-char boundary. **AC6**: `group: ""` is UNCHANGED (still
   raises) — the PO's ruling was scoped to `description`; pinned by a new regression test. **AC4**:
-  the HTTP layer (`api/v1/components/service.py::ComponentsService.get_all_components`) is an
-  unconditional passthrough and performs no normalization of its own — see the `components`
-  feature Fact in [[api-five-file-convention]] for that statement; not duplicated here since this
-  article's `code_refs` do not include that file. Both `ComponentConfig` model_validators
-  (`_normalize_group_case`, `_normalize_blank_description`) are documented above in the "Config
-  models" Fact. Every other Fact in this article was re-read against `config.py` at this story's
-  final commit; none has moved.
+  the HTTP layer (`backend/src/api/v1/components/service.py::ComponentsService.get_all_components`)
+  is an unconditional passthrough and performs no normalization of its own — see the `components`
+  feature Fact in [[api-five-file-convention]] for that statement (corrected at fix round to scope
+  it to a component sourced from a CURRENT config load, after quality review found the original
+  wording one step beyond the evidence); not duplicated here since this article's `code_refs` do
+  not include that file. Both `ComponentConfig` FIELD validators (`_normalize_group_case`,
+  `_normalize_blank_description` — `ComponentConfig` has no `model_validator` at all; this
+  distinction is the STORY-147 trap this very story navigates, corrected at fix round after
+  quality review caught this History entry calling them `model_validator`s) are documented above
+  in the "Config models" Fact. Every other Fact in this article was re-read against `config.py` at
+  this story's final commit; none has moved.
