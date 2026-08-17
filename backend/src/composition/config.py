@@ -778,9 +778,7 @@ def load_config(config_dir: str | Path) -> Config:
         # neither reorders nor drops components — but join on `comp.id`
         # (never normalized), not on list position, which is the robust key.
         raw_components_by_id = {
-            c.get("id"): c
-            for c in (raw.get("components") or [])
-            if isinstance(c, dict)
+            c.get("id"): c for c in (raw.get("components") or []) if isinstance(c, dict)
         }
         for comp in app.components:
             if comp.group is not None and not _GROUP_SLUG_RE.fullmatch(comp.group):
