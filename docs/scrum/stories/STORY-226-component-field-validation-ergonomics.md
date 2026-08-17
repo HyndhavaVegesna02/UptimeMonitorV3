@@ -56,7 +56,7 @@ for description but not for group, or it renders an empty label.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (the error names the value the author actually typed)** — when a `group` fails the slug
+- [x] **AC1 (the error names the value the author actually typed)** — when a `group` fails the slug
       rule, `InvalidComponentFieldError`'s message contains **the authored string AND the normalized
       one**, per the PO ruling. Given `group: "Not Valid!"`, the message contains both `Not Valid!`
       and `not valid!`.
@@ -74,14 +74,14 @@ for description but not for group, or it renders an empty label.
       `raw["components"]` carries the authored `group` verbatim. `_derive_signals_from_monitors`
       (`:386-438`) neither reorders nor drops components, so `app.components` aligns with it — but
       **join on `comp.id`** (never normalized), not on list position, which is the robust key.
-- [ ] **AC2 (a test proves the authored value survives)** — a test asserts the message contains the
+- [x] **AC2 (a test proves the authored value survives)** — a test asserts the message contains the
       pre-normalization string for a `group` that differs from its normalized form. Shown-RED
       against the current behaviour (today the message contains only the normalized value), so the
       test is known to fail before it passes.
-- [ ] **AC3 (`description: ""` becomes `None` at load)** — a component declaring `description: ""`
+- [x] **AC3 (`description: ""` becomes `None` at load)** — a component declaring `description: ""`
       loads successfully and yields `description=None`, not `""`. Verified **through
       `load_config`**, not only on the model.
-- [ ] **AC4 (the HTTP layer is shown to be a PASSTHROUGH — it is not where this is proven)** —
+- [x] **AC4 (the HTTP layer is shown to be a PASSTHROUGH — it is not where this is proven)** —
       ⚠ **The draft AC4 was UNSATISFIABLE-OR-THEATRE and is replaced.** Pre-lock verification showed
       `api/v1/components/service.py:22-29` is an unconditional passthrough
       (`ComponentDTO(..., description=c.description)`), and `FakeComponentRepository` is seeded with
@@ -97,7 +97,7 @@ for description but not for group, or it renders an empty label.
       *(If the PO wants the full chain proven end-to-end — `load_config` → `seed_topology_dynamo` →
       `DynamoComponentRepository` → endpoint, `dynamo_local`-gated — that is a real cost on a small
       story and should be its own AC with its own points, not smuggled in here.)*
-- [ ] **AC5 (whitespace-only is decided, and the rule is stated AS CODE)** — `description: "   "`
+- [x] **AC5 (whitespace-only is decided, and the rule is stated AS CODE)** — `description: "   "`
       must behave the same as `""`. ⚠ **"Strip, then treat as empty" is ambiguous in a way that moves
       a pinned boundary**, so state which rule you implement:
       `None if not v.strip() else v` — leaves non-empty values **untouched**, or
@@ -106,14 +106,14 @@ for description but not for group, or it renders an empty label.
       lands on, and `backend/tests/test_config.py:953` pins an exactly-80-character description as
       valid. **Recommended: `None if not v.strip() else v`**, which closes the empty case without
       touching the length boundary STORY-147 established.
-- [ ] **AC6 (`group: ""` is UNCHANGED, and the reason is recorded)** — `group: ""` continues to
+- [x] **AC6 (`group: ""` is UNCHANGED, and the reason is recorded)** — `group: ""` continues to
       raise. **Assumption stated rather than silently taken:** the PO's ruling was scoped to
       `description`, and `group` is a slug identifier used for grouping — an empty slug is
       meaningless, so an error is the right signal, whereas an empty description simply means "none
       given". After this story **neither field can carry `""` into the DTO**, so the asymmetry the
       PO objected to is gone at the boundary that mattered. A regression test pins that `group: ""`
       still errors, so this is a decision, not a gap.
-- [ ] **AC7 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD, counts
+- [x] **AC7 (gate)** — the DoD commands the diff can affect exit 0 at the final HEAD, counts
       recorded. Run the wiki sweep after the last commit and take what it returns.
 
 ## Estimate: 3 (re-priced from 2 at pre-lock verification)
