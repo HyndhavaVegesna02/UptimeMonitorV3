@@ -420,3 +420,11 @@ composition-zone asyncio PULL LOOP that drives it from the Dynatrace adapter (se
   assertion (the bare `IngestService` directly). Every other Fact in this article —
   `IngestService`, `run_periodic`/`run_cycle`, the STORY-050 resilience behaviour, the vendor-id
   health probe — is untouched; none of those files or tests changed under this story.
+- sprint-74 (STORY-227 AC2): re-verified after this article's code_ref `backend/tests/test_pull_loop.py`
+  changed. `test_run_periodic_records_same_observations_with_ingest_decorator_removed` (the
+  STORY-155b AC1 observation-parity literal — no Fact here cites it by name) compared ten
+  `SignalObservation` fields and omitted `response_status_code`; added, both expected rows now
+  pin it explicit `None` (the harness's `_row()` rows carry no response status either way, so the
+  live value is unchanged — this closes a hole in the pin, not a behaviour difference). Shown RED
+  by setting `response_status_code: 200` on one expected row; reverted. No Fact in this article
+  changed.
