@@ -927,6 +927,40 @@ components:
         assert "comp-a" in message
         assert "group" in message
 
+    def test_group_error_message_contains_authored_and_normalized_value(
+        self, tmp_config_dir: Path
+    ):
+        """STORY-226 AC1/AC2: the error must name the value the author
+        actually typed, not only the normalized one — `comp.group` is
+        already lowercased at construction (`field_validator("group",
+        mode="after")`) by the time `load_config` raises, so the authored
+        string must be carried separately (from `raw`, joined on
+        `comp.id`). Given `group: "Not Valid!"`, the message must contain
+        BOTH `Not Valid!` (authored) and `not valid!` (normalized).
+
+        Shown RED against current behaviour (2026-08-17): today the
+        message quotes only `comp.group`, which is already normalized, so
+        this assertion fails before the AC1 fix lands.
+        """
+        yaml_content = """\
+app:
+  id: bad-group-app
+  name: Bad Group App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A, group: "Not Valid!" }
+"""
+        _write_yaml(tmp_config_dir, "bad_group_authored.yaml", yaml_content)
+        with pytest.raises(InvalidComponentFieldError) as exc_info:
+            load_config(tmp_config_dir)
+        message = str(exc_info.value)
+        assert "Not Valid!" in message, (
+            f"message must contain the AUTHORED value 'Not Valid!', got: {message!r}"
+        )
+        assert "not valid!" in message, (
+            f"message must contain the NORMALIZED value 'not valid!', got: {message!r}"
+        )
+
     def test_description_over_80_chars_raises_invalid_component_field_error(
         self, tmp_config_dir: Path
     ):

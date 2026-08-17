@@ -752,12 +752,30 @@ def load_config(config_dir: str | Path) -> Config:
         # normalization (ComponentConfig's field validator already lowercased
         # it); a `description` must not exceed _MAX_DESCRIPTION_LENGTH chars.
         # Never silently truncated — a bad value is a loud, named failure.
+        #
+        # STORY-226 AC1: index the RAW (pre-validation) component dicts by
+        # id, so the AUTHORED `group` string is available here even though
+        # `comp.group` is already lowercased (`ComponentConfig`'s
+        # `field_validator("group", mode="after")` runs at construction,
+        # before this loop). `raw["components"]` is still in scope (it was
+        # assigned above, `:669-671`ish) and `_derive_signals_from_monitors`
+        # neither reorders nor drops components — but join on `comp.id`
+        # (never normalized), not on list position, which is the robust key.
+        raw_components_by_id = {
+            c.get("id"): c
+            for c in (raw.get("components") or [])
+            if isinstance(c, dict)
+        }
         for comp in app.components:
             if comp.group is not None and not _GROUP_SLUG_RE.fullmatch(comp.group):
+                authored_group = raw_components_by_id.get(comp.id, {}).get(
+                    "group", comp.group
+                )
                 raise InvalidComponentFieldError(
                     f"{yaml_path.name}: component {comp.id!r} has an invalid "
-                    f"`group` {comp.group!r} — after normalization it must "
-                    "be lowercase alphanumeric segments separated by single "
+                    f"`group`: authored as {authored_group!r}, normalized to "
+                    f"{comp.group!r} — after normalization it must be "
+                    "lowercase alphanumeric segments separated by single "
                     "hyphens (e.g. `commerce`, `payments-core`)."
                 )
             if (
