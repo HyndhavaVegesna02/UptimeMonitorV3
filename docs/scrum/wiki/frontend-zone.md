@@ -28,7 +28,12 @@ archived_reason: >-
 # the reference tier's integrity rule (yt_wiki.py::check_integrity) -- a reference article makes
 # no live-code claims, so it carries nothing that can rot and is never swept. Filenames mentioned
 # in prose below are bare (no line numbers) navigation, per the deployment-and-infra.md precedent
-# -- never a checkable claim. See History for the full accounting of this conversion.
+# -- never a checkable claim. `verified_sprint: sprint-63` is RETAINED, not bumped: it records the
+# last sprint this article's now-deleted Facts were actually checked against code, not a currency
+# claim about the "why" content below (which was written 2026-08-17 and needs no re-verification,
+# being reference tier) -- same retained-not-bumped meaning as deployment-and-infra.md's and
+# deployment-topology.md's own `verified_sprint: sprint-50`. See History for the full accounting
+# of this conversion.
 ---
 
 This article no longer tracks frontend/'s current shape. It records *why* the frontend zone is
@@ -85,9 +90,13 @@ Two decisions worth carrying forward even without file specifics:
   every tab and is the frontend's version of the backend's "no persisted verdicts" discipline.
 
 ## Why the API client centralizes error handling
-Every client call funnels through one `readOkJson` helper so there is exactly one `ApiError`
-shape (network failure, non-2xx with a readable `.status`, or a malformed 2xx body) — the reason a
-mutating tab can branch on 404/409 without re-deriving what "failure" means per endpoint. The
+Both `getJson` (GET) and `postJson` (POST) funnel through one shared `readOkJson` helper so there
+is exactly one `ApiError` shape (network failure, non-2xx with a readable `.status`, or a
+malformed 2xx body) — the reason a mutating tab can branch on 404/409 without re-deriving what
+"failure" means per endpoint. (Not every client function honors this: `deleteRequest` re-implements
+the non-2xx branch inline rather than going through `readOkJson` — a narrower claim than "every
+client call" would suggest, worth knowing if a future change tries to lean on a uniform contract
+that does not quite reach every verb.) The
 later addition of a best-effort `.detail` parse (a non-2xx body's `{"detail": "..."}` string) was
 built as purely additive to that contract for exactly this reason: no caller that already checked
 `.status` could break. The actor seam (`getActor()`) is a single, deliberately fake swap-point for
@@ -111,13 +120,16 @@ compound topology+range key) with zero changes to the hook itself — evidence t
 abstraction was drawn at the right seam. Its one sharp edge, worth carrying forward: the fetcher
 function passed in must be a stable reference, or the effect refetches every render.
 
-## Why fields the wire doesn't expose are omitted, never invented
+## Why a field the wire doesn't expose was omitted, never invented
 Every one of the six tab rebuilds hit fields a mock or a design reference implied but the backend
-did not yet provide (an approval's detected-ago, a publication's author, a maintenance window's
-delete control). The standing convention was to omit the field and file an explicit follow-up
-story, never to fabricate a plausible-looking value — the same "fixtures derive from a real
-captured sample" discipline the backend testing checklist states, applied to what a UI is allowed
-to *display*, not just what a test is allowed to *assert*.
+did not yet provide at the time (an approval's detected-ago; at rebuild time, a publication's
+author and a maintenance window's delete control — both have SINCE landed, STORY-065/066, so this
+is no longer a live gap for those two). The standing convention throughout was to omit the field
+and file an explicit follow-up story, never to fabricate a plausible-looking value in the
+meantime — the same "fixtures derive from a real captured sample" discipline the backend testing
+checklist states, applied to what a UI is allowed to *display*, not just what a test is allowed to
+*assert*. Worth carrying forward as a convention regardless of which specific fields are still
+missing today, which this article no longer tracks.
 
 ## Sample mode (removed — historical pointer only)
 A shell-level "force every observation DOWN" trigger existed from STORY-049 through STORY-155a/b
@@ -158,9 +170,12 @@ today; the full account of what it was and why removability was designed in from
   `wiki/archive/` — frontend/ is live code, not a decommissioned feature, so the sample-mode/
   deployment-and-infra tombstone shape does not apply; this stays in the main wiki dir at
   `tier: reference`, matching `deployment-and-infra.md`'s precedent for that exact distinction.
-  Inbound plain-path references corrected in the same story: `CLAUDE.md`'s "full detail" pointer,
-  and the frontend-lens council prompt's "wiki Facts vs code" phrasing (both `.claude/` and
-  `.agents/` copies of `council.config.yaml`). `backend/tests/test_citation_gate.py`'s baseline
+  Inbound plain-path references found by grep and handled: `CLAUDE.md`'s "full detail" pointer was
+  corrected in this story's commits. The frontend-lens council prompt's "wiki Facts vs code"
+  phrasing (`.claude/skills/council/council.config.yaml:10`, mirrored at the `.agents/` path) was
+  corrected only in this machine's local working tree — both paths are `.gitignore`'d
+  (`:30-31`), so that edit is in NO commit, will not survive a fresh clone, and is not a repo-state
+  claim this article can make. `backend/tests/test_citation_gate.py`'s baseline
   table, headline-ratio comment, and `test_ac1_docstring_scope_numbers_are_current` assertions
   re-derived live in the same commit (map-tier article count 12 → 11; `total`/`anchored`/
   `globally_distinct` unaffected — this article contributed 0 citations to that gate both before
