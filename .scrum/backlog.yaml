@@ -1451,12 +1451,9 @@ stories:
     title: ComponentConfig validation ergonomics — the error names a value the author never typed, and "" is legal for one field but not the other
     epic: deferred-future
     file: docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md
-    status: ready   # REFINED 2026-08-16 at sprint-74 refinement, 7 AC, AFTER the PO answered both
-                    # Open Questions: (1) the error shows the AUTHORED value AND the normalized
-                    # one; (2) description: "" NORMALIZES TO null at load. group: "" is
-                    # deliberately UNCHANGED -- AC6 records that assumption and pins it.
-                    # minors"). BLOCKED ON A PO ANSWER, not on work: both items are product
-                    # decisions, not defects. Cannot be estimated until the Open Questions resolve.
+    status: done    # DONE 2026-08-17, sprint 74, final HEAD f212901, gate 9/9, reality-gated on
+                    # BOTH PO rulings through the real load_config. Spec PASS (7 AC); quality
+                    # 3 MAJORs, all fixed. pytest 831 -> 838 (+7, exactly the new tests).
     points: 3
     priority: low
 

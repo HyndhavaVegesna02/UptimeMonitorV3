@@ -67,6 +67,23 @@ lock_record:
     file that does not exist; 227 AC4's shown-RED was IMPOSSIBLE as written.
 
 pause_record:
+  # SECOND PAUSE of sprint 74. The first (at 2/15) is superseded by this one.
+  paused_again: 2026-08-17
+  at_commit_2: f212901
+  delivered_2: "10 of 15 points -- STORY-228 (2), STORY-229 (5), STORY-226 (3). All gated and reality-gated."
+  remaining_2: "STORY-227 (5) -- NOT STARTED. It is the DECLARED FIRST DROP, named at lock."
+  window_at_decision_2: "5h 92% used, 7d 46%."
+  why_2: >-
+    Paused on the SESSION WINDOW, not a blocker. A21's 85-94 rule: FINISH the current story, START NO
+    NEW ONE. STORY-226 was finished completely (fix round, orchestrator gate of record, reality gate
+    on both PO rulings, board and backlog). STORY-227 is a 5 -- starting it at 92% would guarantee a
+    mid-story death.
+  the_decision_the_next_session_faces: >-
+    *** STORY-227 IS THE DECLARED FIRST DROP, named at lock precisely so this call is not made under
+    pressure. Two legitimate options: (1) resume and run 227, closing at 15/15; or (2) CLOSE THE
+    SPRINT AT 10/15 and carry 227 to sprint 75. There is NO ATOMIC PAIR, so closing at 10/15 is
+    coherent -- 228, 229 and 226 each stand alone. This is a PO call at review, not an orchestrator
+    call. PRESENT BOTH.
   paused: 2026-08-17
   at_commit: 1e1d870          # STORY-228's final commit; gate 9/9 green here
   delivered: "2 of 15 points -- STORY-228 done, gated and reality-gated."
@@ -291,7 +308,7 @@ board:
     title: ComponentConfig validation ergonomics
     points: 3
     order: 3
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md
     dispatched_at: >-
       Dispatched 2026-08-17. Window: 5h 54% | 7d 42%. Verdict: dispatch freely (<85). 7/15 banked
@@ -315,6 +332,62 @@ board:
       AC5: state the whitespace rule AS CODE. Recommended `None if not v.strip() else v` -- the
       alternative (`v.strip() or None`) moves the _MAX_DESCRIPTION_LENGTH boundary pinned at
       test_config.py:953.
+    completed:
+      final_head: f212901
+      commits: 13   # dc83184..f212901, all implementer
+      spec_review: >-
+        PASS -- all seven AC. The reviewer VERIFIED HARD rather than reading: it built an isolated
+        worktree at the pre-fix commit with PYTHONPATH forced to the worktree's backend/ (respecting
+        the editable-install hazard CLAUDE.md documents, where src.* otherwise resolves to the MAIN
+        tree and a worktree check silently tests the wrong code) to confirm AC2's test genuinely goes
+        RED; and it probed the id-join with a two-component YAML where the INVALID component was
+        listed SECOND.
+      quality_review: "REQUEST CHANGES -> THREE MAJORs, all fixed."
+      major_1_and_2: >-
+        "description can never be '' at this seam" was one step beyond the evidence, asserted in BOTH
+        service.py's docstring AND as a tier:map/status:verified wiki Fact -- the sentence a cockpit
+        implementer would cite when deciding to drop their "" branch. ORCHESTRATOR VERIFIED THE
+        FALSIFIER: dynamo_component_repository.py:35 reads .get("description") with NO normalization,
+        and seed_topology_dynamo is upsert-only (put_item/update_item, NO delete_item anywhere), so a
+        row seeded with "" while that was legal (STORY-147 -> this story) and later dropped from
+        config keeps "" and reaches the DTO. Rescoped in both places -- and the fix went FURTHER than
+        asked, correctly noting that group: "" has ALWAYS been a load-time error and so never had a
+        legal-then-orphaned window, meaning that half holds unconditionally.
+      major_3_the_orchestrator_supplied_the_bad_number: >-
+        The new comment cited `raw` at :669-671; it is at :687, and :669-671 now lands inside
+        load_config's docstring where it reads plausibly and cites nothing.
+        *** THAT NUMBER CAME FROM THE ORCHESTRATOR'S BRIEF. *** It was correct when pre-lock
+        verification measured it, and the story's OWN first hunk (+16 lines) moved it. Right when
+        measured, wrong when written -- the exact failure class this project keeps hitting, with the
+        orchestrator supplying a link in the chain. Fixed by DELETING the parenthetical: "assigned at
+        the top of this per-file loop" needs no number and cannot rot.
+      orchestrator_added_to_the_fix_round: >-
+        The spec reviewer PROVED the id-join by hand-building a two-component case, but the committed
+        test used a SINGLE component and so could not distinguish an id-join from a positional one.
+        Required that case be put INTO the test -- verification that lives only in a review transcript
+        protects nothing. Done: comp-a (valid) now precedes comp-b (invalid), asserting comp-a's
+        authored value does not leak into the error.
+      third_citation_regression_of_the_sprint: >-
+        A bare `service.py:28` written in wiki prose became a genuine CITATION_RE match and moved the
+        population 191 -> 192. Self-caught, fixed by reusing the existing SYMBOL citation. In the fix
+        round the implementer then avoided a fourth by pointing at [[persistence-adapters]] instead of
+        re-deriving with a fresh file:line. THREE implementers, THREE regressions, one mechanism, all
+        caught by the gate. Retro material.
+      reality_gate: >-
+        PASS on BOTH PO rulings, through the REAL load_config, not a model construction.
+        RULING 1: the error reads "component 'bad-comp' has an invalid `group`: authored as
+        'Not Valid!', normalized to 'not valid!'" -- both values, exactly as ruled.
+        RULING 2: description "   " -> None, "" -> None, AND "  Checkout surface  " preserved
+        BYTE-IDENTICAL with its padding. That third row is the sharpest evidence -- it proves the
+        implemented rule is `None if not v.strip() else v` and NOT `v.strip() or None`, which are
+        distinguishable only on padded values and where the alternative would have moved the 80-char
+        boundary test_config.py:953 pins.
+      carried_to_po_at_review: >-
+        THREE minors NOT fixed: (1) config.py:780 builds raw_components_by_id on EVERY successful
+        load but reads it only on the error path -- a next(...) at the raise site would confine the
+        work to the failure it serves; (2) config.py:781's isinstance(c, dict) filter can never fire
+        (a non-dict entry dies at ComponentConfig(**c)); (3) twelve lines of comment for a three-line
+        comprehension, most of it restated in the docstring and both wiki articles.
 
   - id: STORY-227
     title: Six test-pinning gaps found at sprint-73 review
@@ -496,4 +569,60 @@ story_229_gate:
       output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.759s | OK"
       commit: 519e65c
       at: "2026-08-17T06:29:44+00:00"
+  
+
+story_226_gate:
+  commit: f212901
+  result: "9/9 PASS, exit 0"
+  pytest: "838 passed, 0 skipped (was 831 at lock; +7 = exactly the seven new tests)"
+  npm_test: "49 files, 334 tests -- unchanged, backend-only story"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_full: "sweep/facts/links/refs/integrity ALL CLEAN; citations 34 pre-existing notes"
+  citation_population: "191 / 179 -- restored after the mid-story regression, verified live"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ============================ 838 passed in 58.92s ============================="
+      commit: f212901
+      at: "2026-08-17T07:22:49+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: f212901
+      at: "2026-08-17T07:23:49+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: f212901
+      at: "2026-08-17T07:23:49+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "253 files already formatted"
+      commit: f212901
+      at: "2026-08-17T07:23:49+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: f212901
+      at: "2026-08-17T07:23:49+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  12:53:53 | Duration  39.96s (transform 5.92s, setup 37.38s, import 20.51s, tests 41.33s, environment 142.91s)"
+      commit: f212901
+      at: "2026-08-17T07:23:52+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-C9VYcJLR.js                               275.78 kB │ gzip: 84.80 kB | ✓ built in 348ms"
+      commit: f212901
+      at: "2026-08-17T07:24:33+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: f212901
+      at: "2026-08-17T07:24:38+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.294s | OK"
+      commit: f212901
+      at: "2026-08-17T07:24:43+00:00"
   
