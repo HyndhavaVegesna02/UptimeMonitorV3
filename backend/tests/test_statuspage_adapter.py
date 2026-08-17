@@ -36,6 +36,15 @@ def _load_fixture(name: str) -> dict:
 def test_publisher_publishes_status_change_correctly():
     from src.core.domain.status import ComponentStatus, StatusChange
 
+    # STORY-147 AC4 / STORY-227 AC5: neither `group` nor `description` can
+    # reach Statuspage -- structurally guaranteed, since `StatusChange`
+    # (what `publish()` reads) carries only these two fields. Pinned here,
+    # on the OPERATIONAL case this test already builds, rather than in a
+    # near-duplicate test with a strictly weaker payload assertion (the
+    # duplicate collapsed away; this pin is the only part of it that
+    # mattered).
+    assert set(StatusChange.model_fields) == {"component_id", "status"}
+
     recorded_calls = []
 
     def fake_executor(method: str, url: str, headers: dict, json_body: dict) -> dict:
@@ -93,34 +102,6 @@ def test_publisher_publishes_degraded_status_change_correctly():
         "Content-Type": "application/json",
     }
     assert json_body == {"component": {"status": "degraded_performance"}}
-
-
-def test_publish_payload_unaffected_by_component_group_and_description():
-    """STORY-147 AC4: neither `group` nor `description` reaches Statuspage.
-    Structurally guaranteed — `StatusChange` (what `publish()` reads) carries
-    only `component_id`/`status`, pinned here so a future change that widens
-    it would have to touch this assertion. The publish payload itself stays
-    byte-identical to the pre-story shape."""
-    from src.core.domain.status import ComponentStatus, StatusChange
-
-    assert set(StatusChange.model_fields) == {"component_id", "status"}
-
-    recorded_calls = []
-
-    def fake_executor(method: str, url: str, headers: dict, json_body: dict) -> dict:
-        recorded_calls.append(json_body)
-        return _load_fixture("component_operational")
-
-    publisher = StatuspagePublisher(
-        page_id="page-123",
-        api_token="token-abc",
-        component_mapping={"checkout": "comp-123"},
-        executor=fake_executor,
-    )
-    change = StatusChange(component_id="checkout", status=ComponentStatus.OPERATIONAL)
-    publisher.publish(change)
-
-    assert recorded_calls == [{"component": {"status": "operational"}}]
 
 
 def test_publisher_raises_on_unmapped_component_id():

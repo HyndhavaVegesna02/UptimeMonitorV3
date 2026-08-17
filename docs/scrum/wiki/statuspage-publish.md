@@ -59,6 +59,16 @@ status: verified
 - `StatusWritebackPublisher` + `build_publisher` are tested in `backend/tests/test_publish_helper.py` (STORY-045): write-before-delegate ordering (a spy delegate reads the fake repo's status when called), survives a `BestEffortPublisher`-swallowed delegate failure (write-back stands, nothing recorded), an unknown component id propagates `ComponentNotFoundError` before the delegate is ever reached, and `build_publisher` assembles both D2 shapes (creds+mapping present vs absent, including the empty-mapping-with-creds edge). `backend/tests/test_run_live_loop.py::test_build_live_loop_assembly` (rewritten, not deleted, per the 2026-06-29 contract-change agreement) now asserts the real chain nests `StatusWritebackPublisher(BestEffortPublisher(RecordingPublisher(StatuspagePublisher)))` under `DecideService._publisher`.
 
 ## History
+- sprint-74 (STORY-227 AC5): `test_publish_payload_unaffected_by_component_group_and_description`
+  (added sprint-73, entry below) duplicated `test_publisher_publishes_status_change_correctly`
+  with a strictly weaker payload assertion; only its `set(StatusChange.model_fields) ==
+  {"component_id", "status"}` pin was load-bearing (it is what makes STORY-147's AC4 structural
+  rather than incidental). That test is now GONE — its pin was merged into
+  `test_publisher_publishes_status_change_correctly` instead, so the sprint-73 entry below names a
+  test function that no longer exists; the claim it records (STORY-147 AC4, structurally
+  guaranteed via `StatusChange.model_fields`) still holds, now pinned in one place instead of two.
+  Re-shown RED post-merge: a temporary extra field on `StatusChange` failed the pin in its new
+  location; reverted, `git diff` empty. No other Fact in this article changed.
 - sprint-73 (STORY-147, this story's own AC4 evidence — NOT an unrelated-story sweep flag, unlike
   the entries below): the sweep flagged `backend/tests/test_statuspage_adapter.py`, which gained
   one new regression test, `test_publish_payload_unaffected_by_component_group_and_description` —
