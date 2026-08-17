@@ -82,8 +82,10 @@ touch it and vice versa. Six-tab IA with one source of truth for sidebar AND rou
 (`src/nav/tabs.ts`). Fonts are self-hosted Geist + Geist Mono — no runtime
 Google-CDN `<link>`.
 
-Structure and conventions: `frontend/README.md`; full detail
-`docs/scrum/wiki/frontend-zone.md`.
+Structure and conventions: `frontend/README.md`. The design rationale (why the zone is
+isolated, why the toolchain/pattern choices were made) is `docs/scrum/wiki/frontend-zone.md`
+(`tier: reference` as of STORY-229 — reasons only, no file-level Facts; read the code or
+`frontend/README.md` for current shape).
 
 **Design reference:** the PO-built UI at `C:\Hyn\new ui\ops-pulse-react` — *visual*
 only, no data layer. The in-repo capture is authoritative:
