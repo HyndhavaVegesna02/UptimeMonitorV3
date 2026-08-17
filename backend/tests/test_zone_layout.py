@@ -274,13 +274,18 @@ _EXPECTED_ROUTE_TABLE = {
 }
 
 
-def test_the_removed_sample_route_is_gone_and_no_other_route_or_method_changed() -> (
-    None
-):
+def test_sample_route_removed_without_disturbing_any_other_route_or_method() -> None:
     """AC6 (STORY-155b) + AC1 (STORY-227): `GET`/`PUT /api/v1/sample-mode` no
     longer exists, and the remaining route table matches EXACTLY on
     (method, path) pairs -- proving no other route, and no other route's
-    METHOD, was touched by this removal."""
+    METHOD, was touched by this removal.
+
+    Renamed from `test_the_removed_sample_route_is_gone_and_no_other_route_changed`
+    (STORY-227 AC6): that name was shaped by STORY-155b's own AC5 grep for the
+    removed feature's identifier (case-insensitive, zero matches required across
+    `backend/`) -- the original draft name spelled that identifier out literally and
+    had to be renamed mid-story to avoid matching its own story's grep. This name
+    reads for a human while still avoiding that identifier."""
     from src.composition.asgi import app
 
     openapi_paths = app.openapi()["paths"]
