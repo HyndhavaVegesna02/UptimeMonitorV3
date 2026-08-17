@@ -115,8 +115,9 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   `.get("group") is None`, which cannot distinguish written-NULL from attribute-absent.
   Strengthened to `"group" in item` (the discriminating check); shown RED against a temporary
   mutation of `seed_topology_dynamo` that omitted the attribute instead of writing NULL,
-  reverted. No code_ref changed; `seed_dynamo.py`'s own comment (untouched) already said the
-  true thing.
+  reverted. `code_refs` already covered both files, no re-keying needed —
+  `backend/tests/test_dynamo_seed.py` (which changed) and `seed_dynamo.py` (whose own comment,
+  untouched, already said the true thing) were both already listed.
 - sprint-73 (STORY-147): `seed_topology_dynamo` and `DynamoComponentRepository._map_item` gain
   Facts for the new `group`/`description` fields — SET fresh from config on every seed (never
   preserved, unlike `status`), read back with `.get()` (never bracket access) so a pre-story
