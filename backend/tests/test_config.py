@@ -1021,6 +1021,11 @@ components:
         Shown RED against current behaviour (2026-08-17): today the
         message quotes only `comp.group`, which is already normalized, so
         this assertion fails before the AC1 fix lands.
+
+        Two components, invalid one SECOND (quality review, fix round):
+        a single-component fixture cannot distinguish an id-join from a
+        positional lookup — `comp-a` (valid, listed first) pins that the
+        authored-value recovery is keyed on `comp.id`, not on list index.
         """
         yaml_content = """\
 app:
@@ -1028,17 +1033,23 @@ app:
   name: Bad Group App
   monitor_provider: dynatrace
 components:
-  - { id: comp-a, name: Comp A, group: "Not Valid!" }
+  - { id: comp-a, name: Comp A, group: "Commerce" }
+  - { id: comp-b, name: Comp B, group: "Not Valid!" }
 """
         _write_yaml(tmp_config_dir, "bad_group_authored.yaml", yaml_content)
         with pytest.raises(InvalidComponentFieldError) as exc_info:
             load_config(tmp_config_dir)
         message = str(exc_info.value)
+        assert "comp-b" in message, f"message must name comp-b, got: {message!r}"
         assert "Not Valid!" in message, (
             f"message must contain the AUTHORED value 'Not Valid!', got: {message!r}"
         )
         assert "not valid!" in message, (
             f"message must contain the NORMALIZED value 'not valid!', got: {message!r}"
+        )
+        assert "Commerce" not in message, (
+            f"message must not leak comp-a's authored value 'Commerce' — a "
+            f"positional lookup would grab it instead of comp-b's, got: {message!r}"
         )
 
     def test_description_over_80_chars_raises_invalid_component_field_error(
