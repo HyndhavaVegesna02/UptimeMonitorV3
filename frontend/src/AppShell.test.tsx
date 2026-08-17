@@ -166,12 +166,14 @@ describe('AppShell — top bar (STORY-056 AC2, STORY-155a)', () => {
   it('renders the theme toggle as the top bar\'s only control, and no warning banner (a live-toggle trigger + banner used to sit here — removed by STORY-155a)', async () => {
     const { container } = renderShell('/')
 
-    // Wait for the shell's other initial fetch (the approvals badge) to
-    // settle before asserting the top bar's final shape — any hook the
-    // removed feature used to run would have resolved by now too.
-    await screen.findByRole('link', {
-      name: `Approvals, ${FIXTURE_PROPOSALS.length} pending`,
-    })
+    // Settle barrier: wait on the top bar's OWN control (what this test is
+    // actually about), not the sidebar's unrelated Approvals badge fetch
+    // (STORY-227 AC4 — the old barrier coupled this test's pass/fail to
+    // FIXTURE_PROPOSALS's exact count, a fixture this test never asserts
+    // on). The theme toggle renders synchronously with no fetch of its
+    // own, so this also proves no hook the removed feature used to run is
+    // still pending.
+    await screen.findByRole('button', { name: /switch to/i })
 
     // The theme toggle is the ONLY button in the top bar now — the removed
     // trigger (role="switch") used to sit beside it.
