@@ -103,6 +103,20 @@ status: verified
 # first touch's "a fourth code_ref changed" names only three files; that
 # ordinal mismatch predates this consolidation and is left as-is rather
 # than guessed at.)
+# sprint-74 (STORY-227 AC1/AC6): re-verified after `backend/tests/test_zone_layout.py`
+# changed twice more. AC1 strengthened `_EXPECTED_ROUTE_TABLE` from a set of paths to a
+# set of (method, path) pairs (net +28 lines) -- entirely BELOW `test_zone_layout_agreements`
+# (still at :167, unmoved) and BELOW the :125-173 Fact this article cites, so that citation's
+# target lines are untouched by this edit (its own drift, if any, predates this story). AC6
+# then renamed `test_the_removed_sample_route_is_gone_and_no_other_route_changed` (the name
+# the sprint-73 entries above document) to
+# `test_sample_route_removed_without_disturbing_any_other_route_or_method` (net +5 lines) for
+# readability, re-running STORY-155b AC5's grep afterward (zero matches, docstring included).
+# Net effect on this article's Facts: `test_seed_dynamo_uses_shared_topology_key_schema`
+# is cited BY SYMBOL (line 920 area, `::`-form), immune to the line shift -- confirmed it
+# still exists at that name and still passes. `test_zone_layout_agreements` is untouched in
+# content and position. Neither renamed/strengthened function is cited by name anywhere in
+# this article's Facts. No Fact SUBSTANCE changed.
 ---
 
 ## Purpose
