@@ -102,6 +102,18 @@ Six frozen pydantic models, all with `model_config = ConfigDict(frozen=True)`:
   do. Neither field reaches Statuspage — the publish payload
   (`backend/src/adapters/outbound/statuspage/__init__.py:54`, `{"component": {"status": vendor_status}}`)
   and `Config.statuspage_mapping()` are built from `statuspage_component_id`/`status` alone.
+  **STORY-226 (sprint-74, PO ruling 2026-08-16)**: `description` gains a SECOND
+  `field_validator(mode="after")` (`ComponentConfig::_normalize_blank_description`), mirroring
+  `_normalize_group_case` — never raises. Rule implemented: `None if not v.strip() else v` —
+  a blank or whitespace-only `description` (`""`, `"   "`) normalizes to `None` at
+  construction, so one representation of "nothing" reaches `ComponentDTO`; a non-empty value
+  is left byte-identical (no stripping), so this does NOT move the `_MAX_DESCRIPTION_LENGTH`
+  boundary (`test_description_exactly_80_chars_is_valid` still pins exactly-80 as valid).
+  `group: ""` is UNCHANGED and stays an `InvalidComponentFieldError` — the PO's ruling was
+  scoped to `description` only, pinned by `test_group_empty_string_still_raises`
+  (a regression test, not a behaviour change). Proven THROUGH `load_config`, not only on the
+  model (`test_empty_description_normalizes_to_none_at_load`,
+  `test_whitespace_only_description_normalizes_to_none_at_load`).
 - `SignalConfig{signal_key, native_id, name, component_id, interval_seconds}` —
   UNCHANGED shape; still the consumption type every existing reader sees, now
   always synthesized rather than authored.
@@ -178,7 +190,26 @@ five subclasses, all raised by `load_config` **OUTSIDE** its
   (`_MAX_DESCRIPTION_LENGTH`). Checked in a loop over `app.components` placed
   after the AC4 freshness checks and before the global uniqueness checks,
   naming the yaml file, the component id, and the offending field — never a
-  bare `ValueError`, never silent truncation. The 80-char boundary is tested
+  bare `ValueError`, never silent truncation.
+  **STORY-226 AC1/AC2 (sprint-74)**: the `group` message now names BOTH the
+  AUTHORED value and the normalized one (PO ruling 2026-08-16) — e.g.
+  `group: "Not Valid!"` raises a message containing both `Not Valid!` and
+  `not valid!`. `comp.group` is already lowercased by the time this check
+  runs (`ComponentConfig`'s own `field_validator` runs at construction,
+  before `load_config`'s checks), so the authored string is recovered from
+  `raw["components"]` (still in scope at this raise site, `load_config`'s own
+  `raw` variable), joined on `comp.id` — never on list position, which is the
+  robust key since `_derive_signals_from_monitors` neither reorders nor drops
+  components but does not guarantee position stability either. The join is
+  built into a local `raw_components_by_id` dict right before the loop. Shown
+  RED first: `test_group_error_message_contains_authored_and_normalized_value`
+  failed against the pre-fix message (which quoted only the normalized value)
+  before the fix landed. The check itself STAYS in `load_config`, outside the
+  `try/except` — moving it into the validator to get easier access to the raw
+  value is the exact trap STORY-147 documented twice (a `ValueError` subclass
+  raised inside a pydantic validator is converted to `ValidationError`,
+  losing the subclass).
+  The 80-char boundary is tested
   non-aligned (exactly 80 is valid, 81 raises) and shown RED by mutation
   (`>` swapped for `>=` fails the exact-80 case naming the component; reverted,
   `git diff` empty).
@@ -478,3 +509,21 @@ STORY-040a Phase A).  It is a runtime dependency — config loads at boot.
   3 articles repo-wide (`zone-rules.md`, `statuspage-publish.md`, this one), under the
   `AMPLIFIER_THRESHOLD = 4` `refs` check. Both occurrences restored in the same commit. No Fact's
   substance changed.
+- sprint-74 (STORY-226): two ergonomics fixes to `ComponentConfig` validation, both PO-ruled at
+  refinement (2026-08-16). **AC1/AC2**: the `InvalidComponentFieldError` message for an invalid
+  `group` now names BOTH the authored and normalized values (previously only the normalized one,
+  since `comp.group` is already lowercased by construction time) — recovered from `raw` (still in
+  scope at `load_config`'s raise site), joined on `comp.id`. The check stays in `load_config`,
+  outside the `try/except` — moving it into the validator was considered and rejected as the exact
+  STORY-147 trap. **AC3/AC5**: `description: ""` (and whitespace-only) now normalizes to `None` at
+  construction via a second `field_validator(mode="after")` on `ComponentConfig`
+  (`_normalize_blank_description`, never raises) — rule `None if not v.strip() else v`, chosen
+  because it does not move the pinned 80-char boundary. **AC6**: `group: ""` is UNCHANGED (still
+  raises) — the PO's ruling was scoped to `description`; pinned by a new regression test. **AC4**:
+  the HTTP layer (`api/v1/components/service.py::ComponentsService.get_all_components`) is an
+  unconditional passthrough and performs no normalization of its own — see the `components`
+  feature Fact in [[api-five-file-convention]] for that statement; not duplicated here since this
+  article's `code_refs` do not include that file. Both `ComponentConfig` model_validators
+  (`_normalize_group_case`, `_normalize_blank_description`) are documented above in the "Config
+  models" Fact. Every other Fact in this article was re-read against `config.py` at this story's
+  final commit; none has moved.
