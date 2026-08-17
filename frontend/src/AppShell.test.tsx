@@ -166,13 +166,16 @@ describe('AppShell — top bar (STORY-056 AC2, STORY-155a)', () => {
   it('renders the theme toggle as the top bar\'s only control, and no warning banner (a live-toggle trigger + banner used to sit here — removed by STORY-155a)', async () => {
     const { container } = renderShell('/')
 
-    // Settle barrier: wait on the top bar's OWN control (what this test is
-    // actually about), not the sidebar's unrelated Approvals badge fetch
-    // (STORY-227 AC4 — the old barrier coupled this test's pass/fail to
-    // FIXTURE_PROPOSALS's exact count, a fixture this test never asserts
-    // on). The theme toggle renders synchronously with no fetch of its
-    // own, so this also proves no hook the removed feature used to run is
-    // still pending.
+    // Wait on the top bar's OWN control (what this test is actually about),
+    // not the sidebar's unrelated Approvals badge fetch (STORY-227 AC4 —
+    // the old barrier coupled this test's pass/fail to FIXTURE_PROPOSALS's
+    // exact count, a fixture this test never asserts on). TopBar.tsx renders
+    // this button synchronously from context, with no fetch of its own, so
+    // `findByRole` resolves on its first check — there is nothing async
+    // here to drain, and this line does NOT wait for the sidebar's approvals
+    // fetch to settle (that fetch is deliberately left in flight; a real
+    // drain barrier, if ever needed again, would need a different
+    // mechanism, not this one).
     await screen.findByRole('button', { name: /switch to/i })
 
     // The theme toggle is the ONLY button in the top bar now — the removed
