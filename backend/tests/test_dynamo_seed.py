@@ -173,7 +173,16 @@ def test_seed_topology_dynamo_persists_group_and_description(dynamo_resource):
     item_without_group = table.get_item(
         Key={"pk": "TOPOLOGY", "sk": "COMPONENT#comp-no-group"}
     )["Item"]
-    # AC3: absent config fields persist as None, never "" and never a
-    # placeholder like "Uncategorized".
-    assert item_without_group.get("group") is None
-    assert item_without_group.get("description") is None
+    # AC3 (STORY-147): absent config fields persist as None, never "" and
+    # never a placeholder like "Uncategorized".
+    # STORY-227 AC3: `.get("group") is None` alone cannot tell "written as a
+    # DynamoDB NULL" from "attribute never written" -- both round-trip to
+    # Python None through this same `resource` Table object. `in` does
+    # discriminate: it is True only when the attribute is present (as NULL),
+    # False when it is absent -- so asserting both proves the NULL form
+    # specifically, matching seed_dynamo.py's own comment and
+    # persistence-adapters.md's Fact.
+    assert "group" in item_without_group
+    assert item_without_group["group"] is None
+    assert "description" in item_without_group
+    assert item_without_group["description"] is None

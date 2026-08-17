@@ -91,9 +91,15 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
   of `.get()` raises `KeyError: 'group'` against a legacy-shaped item; reverted, `git diff`
   empty), and the round trip itself by
   `test_seed_topology_dynamo_persists_group_and_description` (`backend/tests/test_dynamo_seed.py`,
-  reads the raw table item directly) and
+  reads the raw table item directly). **The NULL-vs-absent claim specifically** is asserted with
+  `"group" in item`/`"description" in item` (STORY-227) — `.get("group") is None` alone cannot
+  distinguish "written as a DynamoDB NULL" from "attribute never written", since both round-trip
+  identically through this same `resource` Table object; only `in` discriminates. Shown RED by
+  temporarily making `seed_topology_dynamo` omit `#g`/`#d` from the SET expression when both are
+  `None` instead of writing NULL — the `in` assertion failed, `.get() is None` would not have
+  caught it; reverted, `git diff` empty. Also proven, through the repository, by
   `test_dynamo_component_repository_reads_group_and_description_when_present`
-  (`backend/tests/test_dynamo_adapters.py`, through the repository).
+  (`backend/tests/test_dynamo_adapters.py`).
 - Contract parity is verified in `backend/tests/test_dynamo_adapters.py`, `backend/tests/test_dynamo_publication_repository.py`, `backend/tests/test_dynamo_maintenance_repository.py`, `backend/tests/test_dynamo_rejected_observation_repository.py`, and `backend/tests/test_dynamo_seed.py` against a real local DynamoDB instance.
 
 ### Testing convention
@@ -104,6 +110,13 @@ The concrete DynamoDB implementations of the core's persistence ports (STORY-082
 - Eventual consistency of Global Secondary Indexes is mitigated by scheduling maintenance windows in advance, but could lead to race conditions if checked immediately after creation.
 
 ## History
+- sprint-74 (STORY-227 AC3): the `group`/`description` NULL-vs-absent Fact was true but
+  UNDER-PROVEN — `test_seed_topology_dynamo_persists_group_and_description` asserted
+  `.get("group") is None`, which cannot distinguish written-NULL from attribute-absent.
+  Strengthened to `"group" in item` (the discriminating check); shown RED against a temporary
+  mutation of `seed_topology_dynamo` that omitted the attribute instead of writing NULL,
+  reverted. No code_ref changed; `seed_dynamo.py`'s own comment (untouched) already said the
+  true thing.
 - sprint-73 (STORY-147): `seed_topology_dynamo` and `DynamoComponentRepository._map_item` gain
   Facts for the new `group`/`description` fields — SET fresh from config on every seed (never
   preserved, unlike `status`), read back with `.get()` (never bracket access) so a pre-story
