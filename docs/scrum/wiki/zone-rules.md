@@ -117,6 +117,11 @@ status: verified
 # still exists at that name and still passes. `test_zone_layout_agreements` is untouched in
 # content and position. Neither renamed/strengthened function is cited by name anywhere in
 # this article's Facts. No Fact SUBSTANCE changed.
+# sprint-74 (STORY-227 fix round, item 1): re-verified after `backend/tests/test_zone_layout.py`
+# changed again -- `_HTTP_METHODS` gained the missing `trace` key plus a new meta-test
+# (`test_route_method_path_pairs_includes_trace`), net +30 lines, again entirely below
+# `test_zone_layout_agreements` (still at :167, unmoved). `test_seed_dynamo_uses_shared_topology_key_schema`
+# moved further down (now :388) but stays cited by symbol, immune. No Fact SUBSTANCE changed.
 ---
 
 ## Purpose

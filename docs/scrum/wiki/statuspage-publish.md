@@ -69,6 +69,10 @@ status: verified
   guaranteed via `StatusChange.model_fields`) still holds, now pinned in one place instead of two.
   Re-shown RED post-merge: a temporary extra field on `StatusChange` failed the pin in its new
   location; reverted, `git diff` empty. No other Fact in this article changed.
+- sprint-74 (STORY-227 fix round, item 4): re-verified after `backend/tests/test_statuspage_adapter.py`
+  changed again — a comment-only wording fix inside the merged test above (named `component_id`/
+  `status` explicitly instead of the ambiguous "these two fields", whose nearest antecedent read
+  as `group`/`description`). No behaviour or assertion changed; no Fact in this article changed.
 - sprint-73 (STORY-147, this story's own AC4 evidence — NOT an unrelated-story sweep flag, unlike
   the entries below): the sweep flagged `backend/tests/test_statuspage_adapter.py`, which gained
   one new regression test, `test_publish_payload_unaffected_by_component_group_and_description` —
