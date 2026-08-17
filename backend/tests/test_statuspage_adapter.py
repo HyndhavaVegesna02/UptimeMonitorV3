@@ -38,11 +38,11 @@ def test_publisher_publishes_status_change_correctly():
 
     # STORY-147 AC4 / STORY-227 AC5: neither `group` nor `description` can
     # reach Statuspage -- structurally guaranteed, since `StatusChange`
-    # (what `publish()` reads) carries only these two fields. Pinned here,
-    # on the OPERATIONAL case this test already builds, rather than in a
-    # near-duplicate test with a strictly weaker payload assertion (the
-    # duplicate collapsed away; this pin is the only part of it that
-    # mattered).
+    # (what `publish()` reads) carries only `component_id` and `status`, no
+    # other field. Pinned here, on the OPERATIONAL case this test already
+    # builds, rather than in a near-duplicate test with a strictly weaker
+    # payload assertion (the duplicate collapsed away; this pin is the only
+    # part of it that mattered).
     assert set(StatusChange.model_fields) == {"component_id", "status"}
 
     recorded_calls = []
