@@ -86,13 +86,7 @@ answer.
       `yt_gate.py`, `yt_selftest.py`, `tools/citation_gate.py`, `tools/citation_sweep.py`.
       **So AC2's evidence is a re-derived list of `code_refs` that do not resolve, which must be
       empty, stated in the story.** Reading is the only mechanism that can see this; say so.
-- [ ] **N/A — AC1 chose option (b), and this AC's own text is scoped "if (a)".** No Facts were
-      re-verified because no Facts remain to re-verify; they were dropped whole per AC4's (b)
-      branch, not re-rooted one by one. The 33-re-rootable/3-genuinely-gone measurement below is
-      preserved for the record — it would have been the AC3 work under option (a) — but performing
-      it was moot once (b) was chosen: dropping the Facts section made the re-rooting question
-      itself not arise.
-- [ ] **AC3 (if (a): every re-verified Fact was actually checked — and MIS-ROOTED IS NOT GONE)** — a
+- [x] **AC3 (if (a): every re-verified Fact was actually checked — and MIS-ROOTED IS NOT GONE)** — a
       re-verification that restates a claim without opening the file is the exact failure sprint 73
       caught twice (`canonical-types-and-ports.md`'s "ten ports", `statuspage-publish.md`'s
       "unrelated story"). For each Fact, the cited path resolves and says what the Fact says.
@@ -103,6 +97,13 @@ answer.
       `SampleModeBanner.tsx` ×2 spellings). **The draft's bare "deleted, not carried" would have
       destroyed 33 true Facts under an AC written to protect knowledge** — deletion is reserved for a
       claim whose subject no longer exists.
+      **N/A, as disclosed by this AC's own "if (a)" scope: AC1 chose option (b).** No Facts were
+      re-verified because no Facts remain to re-verify — they were dropped whole per AC4's (b)
+      branch, not re-rooted one by one. The 33-re-rootable/3-genuinely-gone measurement above is
+      preserved for the record (it would have been the AC3 work under option (a)) but performing it
+      was moot once (b) was chosen: dropping the Facts section made the re-rooting question itself
+      not arise. The story's own Estimate section pre-declared this — option (b) discharges AC3's
+      cost, not just its checklist entry.
 - [x] **AC4 (if (b) or (c): the tier change is mechanically legal, and inbound refs are found by
       GREP, not by the link lint)** — `tier: reference` articles carry **no `code_refs` and no
       Facts** (`yt_wiki.py:376-387`); anything under `archive/` carries `archived_sprint` and
