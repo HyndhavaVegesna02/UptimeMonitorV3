@@ -1483,11 +1483,12 @@ stories:
     title: Rehabilitate frontend-zone.md — a quarantined map article carrying 67 code_refs, three of which no longer exist
     epic: deferred-future
     file: docs/scrum/stories/STORY-229-frontend-zone-article-rehab.md
-    status: ready   # REFINED 2026-08-16 at sprint-74 refinement, 6 AC. SPLIT OUT of STORY-228 on
-                    # MEASUREMENT (634 lines, 67 code_refs, 3 already missing from disk, ~40 Facts).
-                    # AC1 makes the ROUTING DECISION the deliverable -- rehabilitate as tier: map,
-                    # demote to tier: reference, or archive -- because (a) is the only option with
-                    # recurring cost and doing it by default is the failure to avoid.
+    status: done    # DONE 2026-08-17, sprint 74, final HEAD 519e65c, gate 9/9.
+                    # AC1 chose (b) DEMOTE to tier: reference (634 -> 167 lines), NOT the
+                    # default (a): quarantined since 2026-08-12 with zero consumers, and (c)
+                    # archive was rejected because frontend/ is LIVE code, not a dead subject.
+                    # Quality audited the deletion: every reason survives IN CODE, no Fact
+                    # content exists nowhere. Spec PASS; quality 3 MAJORs, all fixed.
     points: 5
     priority: low
 

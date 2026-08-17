@@ -184,7 +184,7 @@ board:
     title: Rehabilitate frontend-zone.md — 67 code_refs, three of which no longer exist
     points: 5
     order: 2
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-229-frontend-zone-article-rehab.md
     dispatched_at: >-
       Resumed 2026-08-17 after the 91% pause. Window: 5h 0% (RESET) | 7d 37%. Preconditions verified:
@@ -212,6 +212,80 @@ board:
       known plain-path refs at CLAUDE.md:86, docs/project-history.md:86, and both
       council.config.yaml:10.
       Not-in-scope was NARROWED: frontend/README.md IS permitted (AC1 option (c) requires writing it).
+    completed:
+      final_head: 519e65c
+      commits: 8   # b91267a..519e65c, all implementer
+      ac1_decision: >-
+        *** CHOSE (b) -- DEMOTE TO tier: reference. NOT the default (a). *** 634 lines -> 167.
+        Grounds recorded in the article's own frontmatter and History: quarantined status: stale
+        since 2026-08-12 with ZERO consumers across four-plus months; tier: map is the only shape
+        with recurring cost; and (c) ARCHIVE was rejected on a genuinely good distinction --
+        frontend/ is LIVE, gated code, whereas the tombstone shape is reserved for subjects that no
+        longer exist. Precedent verified by the orchestrator: deployment-and-infra.md and
+        deployment-topology.md are both tier: reference in the MAIN wiki dir with a retained
+        verified_sprint and an archived_reason. This follows an established pattern, not an invention.
+      spec_review: "PASS -- six AC met or N/A-justified; every gate command independently re-run and reproducing."
+      quality_review: "REQUEST CHANGES -> THREE MAJORs, all fixed."
+      the_deletion_was_audited_and_judged_safe: >-
+        Quality traced EVERY non-obvious reason the 634-line pre-image carried and confirmed each
+        survives IN CODE, where it cannot rot: the percent-vs-fraction wire scale (format.ts:4-5),
+        tokens-never-raw-hex (tokens.css:11), status-never-colour-alone (StatusBadge.tsx:30-31), the
+        deliberate pre-paint theme duplication, maxRenderedRows, getHistory omitting `limit`,
+        fieldErrorFromDetail's ordering rule. *** NO FACT'S CONTENT NOW EXISTS NOWHERE. *** It also
+        found one pre-image Fact that was ALREADY FALSE (buildAvailabilitySegments "line-for-line
+        copy" -- both call a shared uptimeSegments.ts), which strengthens the demotion case.
+      why_three_majors_mattered_here_more_than_usual: >-
+        tier: reference is NEVER SWEPT AND NEVER RATCHETED AGAIN, so anything wrong in the survivor
+        is wrong PERMANENTLY AND SILENTLY. That is the whole reason to get it right at the moment of
+        conversion.
+        M1 "Every client call funnels through one readOkJson helper" was FALSE -- deleteRequest
+           (client.ts:117-135, used by deleteMaintenance at :248) re-implements the non-2xx branch
+           inline. The PRE-IMAGE was accurate and narrower ("Both getJson and postJson"); the rewrite
+           generalized one step past its evidence. Orchestrator confirmed by reading the code.
+        M2 test_citation_gate.py's docstring had the precedent BACKWARDS and contradicted itself six
+           lines later, AND contradicted the BASELINE note the SAME COMMIT added. The article's own
+           History had it RIGHT -- so the story asserted the truth in one file and its inverse in
+           another. Numbers were all correct; it was purely the prose, in the one file whose recorded
+           history is a ledger of prose rotting.
+        M3 The article recorded the council.config.yaml correction as LANDED, but both copies are
+           gitignored (.gitignore:31) and the edit is in NO COMMIT. The implementer's commit message
+           was honest about this; the permanent article was not.
+      implementer_self_caught_a_regression_again: >-
+        Mid-fix-round, writing `council.config.yaml:10` in backticks created a genuine CITATION_RE
+        match and moved `total` 191 -> 192. It caught this itself, de-lined it, and reconfirmed
+        191/179 -- the second time this sprint an implementer caught a citation regression it had
+        just created. The mechanism keeps biting in the same way.
+      ac4_literal_instruction_was_wrong: >-
+        AC4 told the implementer to copy archive/sample-mode.md's frontmatter (tier: reference +
+        status: archived + both archived keys). Quality falsified that IN-PROCESS: that shape would
+        have FAILED the integrity lint for an article not under archive/. The deviation was correct,
+        and the reviewer credited it rather than penalising a departure from the written AC.
+      reality_gate: >-
+        PASS, at the mechanism level, which is the right level for a tier conversion. The sweep now
+        reports "frontend-zone.md not swept (tier=reference -- no live claims)". With no code_refs
+        there is nothing for the sweep to diff, so the recurring cost is STRUCTURALLY gone rather
+        than merely declared -- which was the entire point of choosing (b).
+      carried_to_po_at_review: >-
+        FOUR items deliberately NOT fixed: (1) frontend-zone.md:76-78's "consumed by both the sidebar
+        and the router" is imprecise -- AppShell.tsx:61-67 hardcodes the routes and never imports
+        TABS; the invariant is held by AppShell.test.tsx:98-104. The SAME imprecision pre-exists in
+        nav/tabs.ts's docstring and CLAUDE.md:82, so fixing it here alone would leave two copies
+        wrong; (2) CLAUDE.md:85-88 and frontend-zone.md:36-38 point at frontend/README.md "for
+        current shape", but that 37-line README carries no layout, per-tab pattern, useFetch or MSW
+        convention -- the honest fallback is the code; half that sentence pre-dates this diff;
+        (3) the story file has NO ## History section, unlike its sprint-74 siblings -- the deletion
+        reasoning IS fully recorded (article frontmatter + article History + commit messages), so
+        this is a convention gap, not a lost record; (4) commit 0cbeee1's message lost a backticked
+        clause to shell command substitution during authoring -- readable and not misleading, left
+        as landed per the no-amend rule.
+      process_observation_for_the_retro: >-
+        The SPEC reviewer attempted a modifying action (mutating tier: reference -> tier: map in the
+        live article to prove a test goes red). The classifier BLOCKED it before it touched the
+        tracked file, the tree was confirmed unchanged, and THE REVIEWER SELF-REPORTED IT rather than
+        dropping it silently. It then established the test's legitimacy by reading its body
+        (test_citation_gate.py:356-366 does a live per-article frontmatter read, not a hardcoded
+        check). A read-only agent reaching for a write is worth recording; self-reporting it is the
+        behaviour we want.
 
   - id: STORY-226
     title: ComponentConfig validation ergonomics
@@ -362,4 +436,60 @@ story_228_gate:
       output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 11.234s | OK"
       commit: 1e1d870
       at: "2026-08-16T19:07:35+00:00"
+  
+
+story_229_gate:
+  commit: 519e65c
+  result: "9/9 PASS, exit 0"
+  pytest: "831 passed, 0 skipped -- matches the lock baseline exactly"
+  npm_test: "49 files, 334 tests -- unchanged"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_full: "sweep/facts/links/refs/integrity ALL CLEAN; citations 34 pre-existing notes"
+  citation_numbers: "191 / 13 / 8 / 179 unchanged; map_tier_count 12 -> 11 -- re-derived live by the orchestrator"
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 831 passed in 60.68s (0:01:00) ========================"
+      commit: 519e65c
+      at: "2026-08-17T06:27:43+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: 519e65c
+      at: "2026-08-17T06:28:44+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: 519e65c
+      at: "2026-08-17T06:28:45+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "253 files already formatted"
+      commit: 519e65c
+      at: "2026-08-17T06:28:45+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: 519e65c
+      at: "2026-08-17T06:28:45+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  11:58:48 | Duration  43.86s (transform 5.62s, setup 42.46s, import 20.90s, tests 44.43s, environment 159.60s)"
+      commit: 519e65c
+      at: "2026-08-17T06:28:48+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-C9VYcJLR.js                               275.78 kB │ gzip: 84.80 kB | ✓ built in 382ms"
+      commit: 519e65c
+      at: "2026-08-17T06:29:32+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: 519e65c
+      at: "2026-08-17T06:29:38+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.759s | OK"
+      commit: 519e65c
+      at: "2026-08-17T06:29:44+00:00"
   
