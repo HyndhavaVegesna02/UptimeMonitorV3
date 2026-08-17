@@ -129,7 +129,7 @@ answer.
       commit: `test_citation_gate.py:264`, `:268`, `:325`, `:330-332`, `:475`, `:480`, `:484`,
       `:501`, the prose at `:79-83`, `:126-134`, `:256-262`, and this article's BASELINE entry at
       `:216-220`. **Carry no figure from this story, the plan, or the board.**
-- [ ] **AC6 (gate)** — the full nine-command gate exits 0 at the final HEAD, with counts recorded.
+- [x] **AC6 (gate)** — the full nine-command gate exits 0 at the final HEAD, with counts recorded.
       Run the wiki sweep after the last commit and take what it returns.
 
 ## Estimate: 5
