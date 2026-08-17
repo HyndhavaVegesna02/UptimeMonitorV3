@@ -258,6 +258,22 @@ class ComponentConfig(BaseModel):
         subclass that survives to the caller."""
         return value.lower() if value is not None else None
 
+    @field_validator("description", mode="after")
+    @classmethod
+    def _normalize_blank_description(cls, value: str | None) -> str | None:
+        """Normalize a blank or whitespace-only ``description`` to ``None``
+        at construction (STORY-226 AC3/AC5 — PO ruling 2026-08-16: one
+        representation of "nothing" reaches the DTO, so the operator
+        cockpit checks only for ``null``, never a separate ``""`` case).
+
+        Rule implemented: ``None if not v.strip() else v`` — a non-empty
+        value is left byte-identical (no stripping), so this does not move
+        the ``_MAX_DESCRIPTION_LENGTH`` boundary
+        (``test_description_exactly_80_chars_is_valid``). Deliberately
+        never raises, same as ``_normalize_group_case`` above — length
+        validation stays in ``load_config``."""
+        return None if value is not None and not value.strip() else value
+
 
 class SignalConfig(BaseModel):
     """A single signal (native monitor) declared in an app's config file (dossier §7).

@@ -904,6 +904,86 @@ components:
             == "Cart, payments and order placement"
         )
 
+    def test_empty_description_normalizes_to_none_at_construction(self):
+        """STORY-226 AC3/AC5 — PO ruling 2026-08-16: `description: ""`
+        normalizes to `None`, so one representation of "nothing" reaches
+        the DTO. At the ComponentConfig construction level (mirrors
+        `test_group_is_lowercased_at_construction`)."""
+        comp = ComponentConfig(id="c1", name="C1", description="")
+        assert comp.description is None
+
+    def test_whitespace_only_description_normalizes_to_none_at_construction(self):
+        """AC5: whitespace-only is decided the same way as empty — the rule
+        implemented is `None if not v.strip() else v`, which treats
+        `"   "` as empty without stripping any NON-empty value."""
+        comp = ComponentConfig(id="c1", name="C1", description="   ")
+        assert comp.description is None
+
+    def test_non_empty_description_is_left_untouched_by_normalization(self):
+        """AC5: the recommended rule (`None if not v.strip() else v`)
+        leaves a non-empty value byte-identical — it does NOT strip
+        leading/trailing whitespace off a real description, unlike
+        `v.strip() or None`. Padding is preserved so the pinned 80-char
+        boundary (`test_description_exactly_80_chars_is_valid`) is never
+        moved by this normalization."""
+        comp = ComponentConfig(id="c1", name="C1", description="  Cart  ")
+        assert comp.description == "  Cart  "
+
+    def test_empty_description_normalizes_to_none_at_load(self, tmp_config_dir: Path):
+        """AC3: verified THROUGH load_config, not only on the model —
+        a component declaring `description: ""` loads successfully and
+        yields `description=None`, not `""`."""
+        yaml_content = """\
+app:
+  id: empty-desc-app
+  name: Empty Desc App
+  monitor_provider: dynatrace
+components:
+  - { id: c1, name: C1, description: "" }
+"""
+        _write_yaml(tmp_config_dir, "empty_desc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        assert cfg.apps[0].components[0].description is None
+
+    def test_whitespace_only_description_normalizes_to_none_at_load(
+        self, tmp_config_dir: Path
+    ):
+        """AC3/AC5: `description: "   "` behaves the same as `""` at load."""
+        yaml_content = """\
+app:
+  id: whitespace-desc-app
+  name: Whitespace Desc App
+  monitor_provider: dynatrace
+components:
+  - { id: c1, name: C1, description: "   " }
+"""
+        _write_yaml(tmp_config_dir, "whitespace_desc.yaml", yaml_content)
+        cfg = load_config(tmp_config_dir)
+        assert cfg.apps[0].components[0].description is None
+
+    def test_group_empty_string_still_raises(self, tmp_config_dir: Path):
+        """AC6 regression: `group: ""` stays an error — deliberately.
+
+        The PO's ruling (2026-08-16) was scoped to `description`; `group`
+        is a slug identifier used for grouping, and an empty slug is
+        meaningless, so an error remains the right signal. This pins the
+        current behaviour as a recorded decision, not a gap."""
+        yaml_content = """\
+app:
+  id: empty-group-app
+  name: Empty Group App
+  monitor_provider: dynatrace
+components:
+  - { id: comp-a, name: Comp A, group: "" }
+"""
+        _write_yaml(tmp_config_dir, "empty_group.yaml", yaml_content)
+        with pytest.raises(InvalidComponentFieldError) as exc_info:
+            load_config(tmp_config_dir)
+        assert type(exc_info.value) is InvalidComponentFieldError
+        message = str(exc_info.value)
+        assert "comp-a" in message
+        assert "group" in message
+
     def test_group_not_slug_safe_after_normalization_raises(self, tmp_config_dir: Path):
         """AC1: a group that fails the slug pattern even after lowercasing
         (spaces/punctuation) raises InvalidComponentFieldError naming the
