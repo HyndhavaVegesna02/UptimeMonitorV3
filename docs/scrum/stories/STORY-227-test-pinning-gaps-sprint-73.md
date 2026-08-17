@@ -149,9 +149,14 @@ failure as a stale wiki Fact, one layer down.
       before/after and account for any delta. ⚠ *Sprint 73's STORY-155b was marked FAIL by spec
       review for ticking exactly this kind of checkbox without writing the accounting. Write it.*
       **Accounting:** pytest 838 passed / 0 skipped (sprint-74 baseline, post-STORY-226) →
-      **837 passed / 0 skipped** at this story's final HEAD. Delta is exactly -1, entirely AC5's
-      dedup (one duplicate test function deleted; AC1-AC4/AC6 strengthened or renamed existing
-      tests without adding/removing any). Gate 9/9 green at final HEAD (commit 3a3f0d6).
+      **837 passed / 0 skipped** at the original submission (commit `dc09be8`). Delta was exactly
+      -1, entirely AC5's dedup (one duplicate test function deleted; AC1-AC4/AC6 strengthened or
+      renamed existing tests without adding/removing any).
+      **Fix round:** item 1 (`_HTTP_METHODS` missing `trace`) added one meta-test
+      (`test_route_method_path_pairs_includes_trace`), so the count moved again: 837 → **838
+      passed / 0 skipped**. Items 2/3/4 are comment/docs-only and moved nothing. Gate 9/9 green
+      re-confirmed at commit `7545d21` (the fix round's last code/wiki commit; this AC7 edit and
+      any subsequent tick-only commit are docs-only and do not change gate results).
 
 ## Not in scope
 
