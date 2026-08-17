@@ -230,11 +230,24 @@ def test_zone_layout_agreements() -> None:
         assert_feature_five_file_shape(feature, v1_dir / feature)
 
 
-#: HTTP methods that can legitimately appear as a key under an OpenAPI
-#: `paths[path]` mapping. Filters out any future non-method key (FastAPI does
+#: All eight OpenAPI operation keys that can legitimately appear under a
+#: `paths[path]` mapping (`get`, `put`, `post`, `delete`, `options`, `head`,
+#: `patch`, `trace`) -- filters out any future non-method key (FastAPI does
 #: not emit one today -- measured zero at STORY-227 refinement -- but the
 #: extraction stays defensive rather than assuming that holds forever).
-_HTTP_METHODS = {"get", "put", "post", "delete", "patch", "options", "head"}
+#: STORY-227 fix round: `trace` was missing from an earlier 7-entry version
+#: of this set, which would have silently dropped a TRACE route from a table
+#: that claims to be an exact (method, path) pin.
+_HTTP_METHODS = {
+    "get",
+    "put",
+    "post",
+    "delete",
+    "patch",
+    "options",
+    "head",
+    "trace",
+}
 
 
 def route_method_path_pairs(openapi_paths: dict) -> set[tuple[str, str]]:
@@ -249,6 +262,20 @@ def route_method_path_pairs(openapi_paths: dict) -> set[tuple[str, str]]:
         for path, methods in openapi_paths.items()
         for method in methods
         if method in _HTTP_METHODS
+    }
+
+
+def test_route_method_path_pairs_includes_trace() -> None:
+    """Meta-test for the helper itself (STORY-227 fix round): an earlier
+    7-entry version of `_HTTP_METHODS` omitted `trace`, one of OpenAPI's
+    eight legitimate operation keys, so a TRACE route would have been
+    silently dropped from a table that claims to be an exact pin. Proven
+    against a synthetic input, before trusting the helper against the real
+    app below."""
+    synthetic_paths = {"/api/v1/probe": {"trace": {}, "get": {}}}
+    assert route_method_path_pairs(synthetic_paths) == {
+        ("TRACE", "/api/v1/probe"),
+        ("GET", "/api/v1/probe"),
     }
 
 
