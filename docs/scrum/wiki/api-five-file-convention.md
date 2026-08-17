@@ -88,5 +88,8 @@ Facts: everything that makes a claim about the API zone as it stands now.
   (config-layer load, not here). No behaviour changed (proven: `test_components_endpoint.py`
   passes unmodified) and no other file in this article's `code_refs` moved. The `components`
   Fact above gained the sentence recording that guarantee, since the story's own AC4 asked for
-  it stated citing `service.py:28` and this is where the components feature's Facts already
-  live. Re-read against the rest of the Fact set: nothing else drifted.
+  it stated citing the passthrough call site (`api/v1/components/service.py::ComponentsService.get_all_components`,
+  the same symbol this article already cites elsewhere, reused rather than a fresh bare
+  filename-plus-line-number reference — a symbol applies here, so the symbol form is the one
+  this project's wiki convention asks for) and this is where the components feature's Facts
+  already live. Re-read against the rest of the Fact set: nothing else drifted.
