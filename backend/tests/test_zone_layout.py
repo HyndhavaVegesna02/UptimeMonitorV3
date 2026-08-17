@@ -230,39 +230,67 @@ def test_zone_layout_agreements() -> None:
         assert_feature_five_file_shape(feature, v1_dir / feature)
 
 
-#: STORY-155b AC6: the exact route table left behind once the sample-mode
-#: feature's GET/PUT /sample-mode routes are gone -- a pinned SET EQUALITY
-#: (not merely "sample-mode is absent"), so an unrelated route accidentally
-#: dropped or renamed by the same diff would fail here too, not just the
-#: routes this story intentionally removed.
+#: HTTP methods that can legitimately appear as a key under an OpenAPI
+#: `paths[path]` mapping. Filters out any future non-method key (FastAPI does
+#: not emit one today -- measured zero at STORY-227 refinement -- but the
+#: extraction stays defensive rather than assuming that holds forever).
+_HTTP_METHODS = {"get", "put", "post", "delete", "patch", "options", "head"}
+
+
+def route_method_path_pairs(openapi_paths: dict) -> set[tuple[str, str]]:
+    """Flatten an OpenAPI `paths` mapping to `(METHOD, path)` pairs.
+
+    STORY-227 AC1: a set of paths alone cannot catch a `GET` -> `POST` change
+    on a surviving route -- the path is unchanged, only the method moved.
+    Pairing method with path closes that gap.
+    """
+    return {
+        (method.upper(), path)
+        for path, methods in openapi_paths.items()
+        for method in methods
+        if method in _HTTP_METHODS
+    }
+
+
+#: STORY-155b AC6 / STORY-227 AC1: the exact (method, path) table left behind
+#: once the sample-mode feature's GET/PUT /sample-mode routes are gone -- a
+#: pinned SET EQUALITY over (method, path) PAIRS, not just paths, so a
+#: `GET` -> `POST` change on a surviving route (e.g. `/api/v1/maintenance`,
+#: which legitimately carries both GET and POST) fails here too, not just a
+#: route accidentally dropped or renamed by the same diff.
 _EXPECTED_ROUTE_TABLE = {
-    "/api/v1/approvals",
-    "/api/v1/availability",
-    "/api/v1/availability/component/{component_id}",
-    "/api/v1/components",
-    "/api/v1/decisions/{proposal_id}",
-    "/api/v1/health",
-    "/api/v1/history",
-    "/api/v1/maintenance",
-    "/api/v1/maintenance/{window_id}",
-    "/api/v1/publications",
-    "/api/v1/topology",
+    ("GET", "/api/v1/approvals"),
+    ("GET", "/api/v1/availability"),
+    ("GET", "/api/v1/availability/component/{component_id}"),
+    ("GET", "/api/v1/components"),
+    ("POST", "/api/v1/decisions/{proposal_id}"),
+    ("GET", "/api/v1/health"),
+    ("GET", "/api/v1/history"),
+    ("GET", "/api/v1/maintenance"),
+    ("POST", "/api/v1/maintenance"),
+    ("DELETE", "/api/v1/maintenance/{window_id}"),
+    ("GET", "/api/v1/publications"),
+    ("GET", "/api/v1/topology"),
 }
 
 
-def test_the_removed_sample_route_is_gone_and_no_other_route_changed() -> None:
-    """AC6: `GET`/`PUT /api/v1/sample-mode` no longer exists, and the
-    remaining route table matches EXACTLY -- proving no other route was
-    touched by this removal, not just that sample-mode's own routes are
-    gone."""
+def test_the_removed_sample_route_is_gone_and_no_other_route_or_method_changed() -> (
+    None
+):
+    """AC6 (STORY-155b) + AC1 (STORY-227): `GET`/`PUT /api/v1/sample-mode` no
+    longer exists, and the remaining route table matches EXACTLY on
+    (method, path) pairs -- proving no other route, and no other route's
+    METHOD, was touched by this removal."""
     from src.composition.asgi import app
 
-    openapi_paths = set(app.openapi()["paths"].keys())
+    openapi_paths = app.openapi()["paths"]
+    openapi_path_names = set(openapi_paths.keys())
+    openapi_pairs = route_method_path_pairs(openapi_paths)
 
-    assert "/api/v1/sample-mode" not in openapi_paths
-    assert openapi_paths == _EXPECTED_ROUTE_TABLE, (
+    assert "/api/v1/sample-mode" not in openapi_path_names
+    assert openapi_pairs == _EXPECTED_ROUTE_TABLE, (
         f"route table drifted beyond the sample-mode removal. "
-        f"Difference: {openapi_paths.symmetric_difference(_EXPECTED_ROUTE_TABLE)}"
+        f"Difference: {openapi_pairs.symmetric_difference(_EXPECTED_ROUTE_TABLE)}"
     )
 
 
