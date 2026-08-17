@@ -184,8 +184,14 @@ board:
     title: Rehabilitate frontend-zone.md — 67 code_refs, three of which no longer exist
     points: 5
     order: 2
-    status: todo
+    status: in_progress
     file: docs/scrum/stories/STORY-229-frontend-zone-article-rehab.md
+    dispatched_at: >-
+      Resumed 2026-08-17 after the 91% pause. Window: 5h 0% (RESET) | 7d 37%. Preconditions verified:
+      tree clean at 5512607, node_modules 216, uptime_dynamo_8021 up, yt_selftest 113 OK.
+      *** THE SPRINT-ORDER HAZARD IS NOW DISCHARGED: STORY-228 already landed its Icon.tsx edit
+      (4248f73), so rehabilitating this article now CANNOT be undone by a later glyph removal. That
+      was the entire reason 228 ran first, and it worked. ***
     ceremony: "implementer -> spec reviewer + quality reviewer (concurrent) -> gate -> reality gate"
     carry_into_brief: >-
       *** AC1 MAKES THE DECISION THE DELIVERABLE: rehabilitate as tier: map (a), demote to
