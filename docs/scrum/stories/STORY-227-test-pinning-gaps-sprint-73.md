@@ -89,19 +89,19 @@ failure as a stale wiki Fact, one layer down.
 > strengthened without ever being seen to fail proves only that it compiles. Record, per item, what
 > you broke to make it red.
 
-- [ ] **AC1 (the route table pins methods, not just paths) — the highest-value item.**
+- [x] **AC1 (the route table pins methods, not just paths) — the highest-value item.**
       `test_zone_layout.py:238`'s `_EXPECTED_ROUTE_TABLE` is a set of **11 path strings**
       (measured at refinement). It must pin the **(method, path)** pairs the app actually serves, so
       a `GET` → `POST` change on a surviving route fails.
       ⚠ **Do not weaken STORY-155b's AC6 while doing this** — the existing test must still prove the
       sample-mode route is absent and no other route changed. Shown-RED: flip one surviving route's
       method and watch it fail naming that route.
-- [ ] **AC2 (the AC1-of-155b observation literal pins every field)** —
+- [x] **AC2 (the AC1-of-155b observation literal pins every field)** —
       `test_pull_loop.py:1080` compares ten `SignalObservation` fields and omits
       `response_status_code`. Add it. ⚠ **This is the test that proves the live ingest path was
       unchanged when `SampleModeIngest` was removed**, so it is the one place a missing field
       matters most. Shown-RED: set a non-`None` `response_status_code` on one expected row.
-- [ ] **AC3 (the DynamoDB NULL claim is asserted, or the claim is withdrawn)** —
+- [x] **AC3 (the DynamoDB NULL claim is asserted, or the claim is withdrawn)** —
       `test_dynamo_seed.py` asserts `item.get("group") is None`, which cannot distinguish *written
       as a DynamoDB NULL* from *attribute absent*. Both `seed_dynamo.py`'s comment and
       `persistence-adapters.md`'s Fact claim the NULL form **specifically**.
@@ -119,7 +119,7 @@ failure as a stale wiki Fact, one layer down.
       enforced and currently passing; the file is 88 lines, so a line shift leaves them **in range
       and silently wrong** — the "wrong-but-in-range PASSES" hole that `test_citation_gate.py:378-406`
       exists to document. No mechanism catches this.
-- [ ] **AC4 (the top-bar test stops depending on an unrelated fixture)** —
+- [x] **AC4 (the top-bar test stops depending on an unrelated fixture)** —
       `frontend/src/AppShell.test.tsx:172-174` uses the Approvals badge as its settle barrier, so a
       change to `FIXTURE_PROPOSALS` fails a test about the top bar. Wait on something the test is
       actually about.
@@ -131,7 +131,7 @@ failure as a stale wiki Fact, one layer down.
       **The only mutation that reds it today is emptying `FIXTURE_PROPOSALS` to `[]`** — that flips
       `hasBadge` false at `Sidebar.tsx:51-54` and the label becomes bare `Approvals`. Use that
       mutation: it must red today and must NOT red after the fix.
-- [ ] **AC5 (the duplicated publish test collapses, keeping the part that matters)** —
+- [x] **AC5 (the duplicated publish test collapses, keeping the part that matters)** —
       `test_statuspage_adapter.py:98-123` duplicates `:36-65` with a strictly weaker payload
       assertion; only the `set(StatusChange.model_fields) == {"component_id", "status"}` pin is new,
       **and that pin is what makes STORY-147's AC4 structural rather than incidental — it must
@@ -139,15 +139,19 @@ failure as a stale wiki Fact, one layer down.
       **26 lines** (`:98-123`), of which only the `model_fields` assertion at `:106` need survive.
       State the actual before/after — and note the pytest count drops **831 → 830**, which AC7 must
       account for.
-- [ ] **AC6 (the grep-shaped test name reads for a human)** —
+- [x] **AC6 (the grep-shaped test name reads for a human)** —
       `test_zone_layout.py:253`'s `test_the_removed_sample_route_is_gone_and_no_other_route_changed`
       is an artifact of STORY-155b's AC5 (zero matches for `sample_mode` in `backend/`). Rename it
       to read naturally. ⚠ **Re-run that grep afterwards** — the original name matched its own
       story's AC and had to be renamed mid-story; do not reintroduce the match.
-- [ ] **AC7 (gate, and the count is explained)** — the full nine-command gate exits 0 at the final
+- [x] **AC7 (gate, and the count is explained)** — the full nine-command gate exits 0 at the final
       HEAD. AC5 removes assertions and AC1–AC4 strengthen them, so the count may move: state
       before/after and account for any delta. ⚠ *Sprint 73's STORY-155b was marked FAIL by spec
       review for ticking exactly this kind of checkbox without writing the accounting. Write it.*
+      **Accounting:** pytest 838 passed / 0 skipped (sprint-74 baseline, post-STORY-226) →
+      **837 passed / 0 skipped** at this story's final HEAD. Delta is exactly -1, entirely AC5's
+      dedup (one duplicate test function deleted; AC1-AC4/AC6 strengthened or renamed existing
+      tests without adding/removing any). Gate 9/9 green at final HEAD (commit 3a3f0d6).
 
 ## Not in scope
 
