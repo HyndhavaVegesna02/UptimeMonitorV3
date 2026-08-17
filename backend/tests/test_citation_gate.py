@@ -150,9 +150,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # THE HEADLINE RATIO, stated so a green run cannot be misread: this ratchet
 # enforces 15 failures across 11 map-tier articles (was 12 before STORY-229
 # demoted frontend-zone.md to tier: reference -- a vacuously-clean map article
-# that contributed 0 to the failure count, same shape as sample-mode.md's
-# archival below; was 13 before THAT, before STORY-155b archived sample-mode.md
-# -- `test_ac1_docstring_scope_
+# that contributed 0 to the failure count, converted in the deployment-and-
+# infra.md SHAPE (stays in the main wiki dir, `archived_reason` reused, no
+# `wiki/archive/` move), NOT the sample-mode.md shape (which moved to
+# `wiki/archive/` under `status: archived` -- was 13 before THAT, before
+# STORY-155b archived sample-mode.md) -- `test_ac1_docstring_scope_
 # numbers_are_current` re-derives both numbers live, so this cannot go stale
 # silently). Of the 129 raw at STORY-219's base, 113 are ADVISORY (bare
 # filename) and 1 sits in a `tier: reference` article that AC6 exempts. Green
@@ -515,12 +517,15 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
 
     Re-derived 2026-08-17 (STORY-229): demoted frontend-zone.md from
     `tier: map` / `baseline: 0` to `tier: reference` / `baseline: None` --
-    the same shape as sample-mode.md's STORY-155b archival above, not the
-    deployment-and-infra.md tombstone shape (frontend/ is live code, so this
-    article was NOT moved to `wiki/archive/`; it stays in the
+    the same SHAPE as deployment-and-infra.md's conversion above (stays in
+    the main `docs/scrum/wiki/` dir, `archived_reason` reused to say why it
+    stopped being a live claim, no move), NOT sample-mode.md's STORY-155b
+    archival shape (`status: archived`, moved into `wiki/archive/`).
+    frontend/ is live code, unlike sample-mode's fully-deleted feature, so
+    there was nothing to tombstone by moving it: it stays in the
     `docs/scrum/wiki/*.md` glob, unlike sample-mode.md's move, so the
     16-article `test_ac3_glob_matches_exactly_the_committed_baseline_keys`
-    count is UNCHANGED by this story -- only its `tier` entry moved).
+    count is UNCHANGED by this story -- only its `tier` entry moved.
     frontend-zone.md was already vacuously clean (0 raw citations, per its
     prior baseline note) and carried no `` `path:line` `` citation anywhere
     in its body before this conversion; it still carries none after --

@@ -172,10 +172,10 @@ today; the full account of what it was and why removability was designed in from
   `tier: reference`, matching `deployment-and-infra.md`'s precedent for that exact distinction.
   Inbound plain-path references found by grep and handled: `CLAUDE.md`'s "full detail" pointer was
   corrected in this story's commits. The frontend-lens council prompt's "wiki Facts vs code"
-  phrasing (`.claude/skills/council/council.config.yaml:10`, mirrored at the `.agents/` path) was
-  corrected only in this machine's local working tree — both paths are `.gitignore`'d
-  (`:30-31`), so that edit is in NO commit, will not survive a fresh clone, and is not a repo-state
-  claim this article can make. `backend/tests/test_citation_gate.py`'s baseline
+  phrasing, in `council.config.yaml` (both the `.claude/skills/council/` and mirrored `.agents/`
+  copies), was corrected only in this machine's local working tree — both paths are gitignored, so
+  that edit is in NO commit, will not survive a fresh clone, and is not a repo-state claim this
+  article can make. `backend/tests/test_citation_gate.py`'s baseline
   table, headline-ratio comment, and `test_ac1_docstring_scope_numbers_are_current` assertions
   re-derived live in the same commit (map-tier article count 12 → 11; `total`/`anchored`/
   `globally_distinct` unaffected — this article contributed 0 citations to that gate both before
