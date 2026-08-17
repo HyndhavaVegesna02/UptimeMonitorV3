@@ -61,7 +61,7 @@ answer.
 
 ## Acceptance Criteria
 
-- [ ] **AC1 (the routing decision is made explicitly and recorded)** — decide, and write down why,
+- [x] **AC1 (the routing decision is made explicitly and recorded)** — decide, and write down why,
       which of these the article becomes:
       **(a)** rehabilitated as `tier: map` — all ~40 Facts re-verified, the 3 dead `code_refs`
       removed, `putJson` claims deleted, `status: verified`;
