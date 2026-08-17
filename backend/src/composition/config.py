@@ -773,8 +773,8 @@ def load_config(config_dir: str | Path) -> Config:
         # id, so the AUTHORED `group` string is available here even though
         # `comp.group` is already lowercased (`ComponentConfig`'s
         # `field_validator("group", mode="after")` runs at construction,
-        # before this loop). `raw["components"]` is still in scope (it was
-        # assigned above, `:669-671`ish) and `_derive_signals_from_monitors`
+        # before this loop). `raw` is assigned at the top of this per-file
+        # loop and is still in scope here, and `_derive_signals_from_monitors`
         # neither reorders nor drops components — but join on `comp.id`
         # (never normalized), not on list position, which is the robust key.
         raw_components_by_id = {
