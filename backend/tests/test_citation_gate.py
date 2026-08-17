@@ -148,9 +148,11 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 # directly, not hidden by this narrower gate.
 #
 # THE HEADLINE RATIO, stated so a green run cannot be misread: this ratchet
-# enforces 15 failures across 12 map-tier articles (was 13 before STORY-155b
-# archived sample-mode.md, a vacuously-clean map article that contributed 0
-# to the failure count -- `test_ac1_docstring_scope_
+# enforces 15 failures across 11 map-tier articles (was 12 before STORY-229
+# demoted frontend-zone.md to tier: reference -- a vacuously-clean map article
+# that contributed 0 to the failure count, same shape as sample-mode.md's
+# archival below; was 13 before THAT, before STORY-155b archived sample-mode.md
+# -- `test_ac1_docstring_scope_
 # numbers_are_current` re-derives both numbers live, so this cannot go stale
 # silently). Of the 129 raw at STORY-219's base, 113 are ADVISORY (bare
 # filename) and 1 sits in a `tier: reference` article that AC6 exempts. Green
@@ -238,9 +240,17 @@ BASELINE: dict[str, dict] = {
         ),
     },
     "frontend-zone.md": {
-        "tier": "map",
-        "baseline": 0,
-        "note": "vacuously clean -- no citations extracted",
+        "tier": "reference",
+        "baseline": None,
+        "note": (
+            "exempt (AC6) -- demoted to tier: reference (STORY-229, 2026-08-17): "
+            "quarantined status: stale since 2026-08-12 with no consumer across "
+            "four-plus months of sprints, and the PO's UI-rewrite directive "
+            "archived further frontend UI work, removing the churn tier: map "
+            "exists to track. Not moved to wiki/archive/ -- frontend/ is live "
+            "code, unlike deployment-and-infra.md's decommissioned stack -- so "
+            "this stays in the main wiki dir, same shape as deployment-and-infra.md"
+        ),
     },
     "ingest-service-and-pull-loop.md": {
         "tier": "map",
@@ -503,6 +513,25 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
     at config-layer.md's committed baseline of 0), never in the
     `enforced_fail` bucket `total_enforced_fail` counts.
 
+    Re-derived 2026-08-17 (STORY-229): demoted frontend-zone.md from
+    `tier: map` / `baseline: 0` to `tier: reference` / `baseline: None` --
+    the same shape as sample-mode.md's STORY-155b archival above, not the
+    deployment-and-infra.md tombstone shape (frontend/ is live code, so this
+    article was NOT moved to `wiki/archive/`; it stays in the
+    `docs/scrum/wiki/*.md` glob, unlike sample-mode.md's move, so the
+    16-article `test_ac3_glob_matches_exactly_the_committed_baseline_keys`
+    count is UNCHANGED by this story -- only its `tier` entry moved).
+    frontend-zone.md was already vacuously clean (0 raw citations, per its
+    prior baseline note) and carried no `` `path:line` `` citation anywhere
+    in its body before this conversion; it still carries none after --
+    its own rewrite added no backtick-quoted line-numbered citation, by
+    design (a reference article makes no checkable line claim). So `total`,
+    `anchored`, `anchored_ok` and `globally_distinct` are UNCHANGED at
+    191/13/8/179. The only number this story moves is `map_tier_count`,
+    12 -> 11, and correspondingly `total_enforced_fail` stays 15 (unaffected,
+    since the demoted article contributed 0 to it both before and after).
+    The headline-ratio comment above BASELINE was updated in the same commit.
+
     Falsified by: any edit that changes the repo's citation population, or a
     wiki article's tier, without updating the docstring sentences above.
     """
@@ -553,8 +582,8 @@ def test_ac1_docstring_scope_numbers_are_current() -> None:
         _, enforced_fail, _, _ = gate.partition_citations(_REPO_ROOT, article)
         total_enforced_fail += len(enforced_fail)
 
-    assert (total_enforced_fail, map_tier_count) == (15, 12), (
-        f"the headline ratio says 15 failures across 12 map-tier articles; "
+    assert (total_enforced_fail, map_tier_count) == (15, 11), (
+        f"the headline ratio says 15 failures across 11 map-tier articles; "
         f"live measurement says {total_enforced_fail} failures across "
         f"{map_tier_count} map-tier articles. Update the headline-ratio "
         f"comment above BASELINE AND this assertion in the same commit."

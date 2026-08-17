@@ -117,7 +117,7 @@ answer.
       **`docs/project-history.md:86`**, **`.claude/skills/council/council.config.yaml:10`** and
       **`.agents/skills/council/council.config.yaml:10`**. Find them by grepping `frontend-zone`
       across `CLAUDE.md`, `docs/`, `.claude/`, `.agents/`.
-- [ ] **AC5 (`test_citation_gate.py` is re-derived LIVE — under EVERY branch, not just archiving)** —
+- [x] **AC5 (`test_citation_gate.py` is re-derived LIVE — under EVERY branch, not just archiving)** —
       ⚠ **The draft claimed "option (c) moves the count again; options (a) and (b) do not." Pre-lock
       verification DISPROVED that BY EXECUTION and it is deleted.** Running the real tests with the
       tier patched to `reference` (option (b), nothing else changed) failed **two** assertions:
