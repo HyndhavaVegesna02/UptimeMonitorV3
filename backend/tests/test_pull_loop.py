@@ -1091,6 +1091,7 @@ def test_run_periodic_records_same_observations_with_ingest_decorator_removed():
             "source_system": o.source.system,
             "source_native_id": o.source.native_id,
             "source_native_kind": o.source.native_kind,
+            "response_status_code": o.response_status_code,
         }
         for o in obs_repo.saved
     ]
@@ -1106,6 +1107,7 @@ def test_run_periodic_records_same_observations_with_ingest_decorator_removed():
             "source_system": "dynatrace",
             "source_native_id": "HTTP_CHECK-9F2A",
             "source_native_kind": "http",
+            "response_status_code": None,
         },
         {
             "signal_key": "checkout-http",
@@ -1118,5 +1120,6 @@ def test_run_periodic_records_same_observations_with_ingest_decorator_removed():
             "source_system": "dynatrace",
             "source_native_id": "HTTP_CHECK-9F2A",
             "source_native_kind": "http",
+            "response_status_code": None,
         },
     ]
