@@ -1461,9 +1461,9 @@ stories:
     title: Six test-pinning gaps found at sprint-73 review — assertions that pass today for reasons that are not the reason we think
     epic: deferred-future
     file: docs/scrum/stories/STORY-227-test-pinning-gaps-sprint-73.md
-    status: ready   # REFINED 2026-08-16 at sprint-74 refinement, 7 AC. PENDING PO APPROVAL.
-                    # findings grouped: none is a failing test; each is a green whose meaning is
-                    # narrower than its name. Refinable as it stands, no open questions.
+    status: done    # DONE 2026-08-17, sprint 74, final HEAD c439f9e, gate 9/9.
+                    # Six test-pinning gaps closed, each shown RED by a named mutation that
+                    # BOTH reviewers independently reproduced. Spec PASS; quality 1 MAJOR fixed.
     points: 5
     priority: medium
 

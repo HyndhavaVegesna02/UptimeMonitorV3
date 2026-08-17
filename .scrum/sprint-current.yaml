@@ -1,6 +1,7 @@
 # YourTeam sprint board — machine state. Orchestrator-owned; subagents NEVER write this file.
 sprint: 74
-status: active     # none | planning | active | review | closed | aborted | parked
+status: review     # none | planning | active | review | closed | aborted | parked
+                   # ALL FOUR STORIES DONE, 15/15 POINTS. AWAITING PO VERDICT.
 goal: >-
   Pay the review debt, then leave the enforcement machinery more honest than we found it.
 branch: sprint-74
@@ -393,7 +394,7 @@ board:
     title: Six test-pinning gaps found at sprint-73 review
     points: 5
     order: 4
-    status: in_progress
+    status: done
     file: docs/scrum/stories/STORY-227-test-pinning-gaps-sprint-73.md
     dispatched_at: >-
       Dispatched 2026-08-17 after the 92% pause. Window: 5h 0% (RESET) | 7d 47%.
@@ -633,4 +634,60 @@ story_226_gate:
       output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 10.294s | OK"
       commit: f212901
       at: "2026-08-17T07:24:43+00:00"
+  
+
+story_227_gate:
+  commit: c439f9e
+  result: "9/9 PASS, exit 0"
+  pytest: "838 passed, 0 skipped"
+  count_story: "838 (at story start, post-226) -> 837 (AC5 dedup) -> 838 (fix-round trace meta-test)"
+  run_by: orchestrator   # NOT the implementer self-run
+  wiki_full: "sweep/facts/links/refs/integrity ALL CLEAN; citations 34 pre-existing"
+  citation_population: "191 / 179 -- UNCHANGED. The only story this sprint with NO citation regression."
+  dod_evidence:
+    - command: "python -m pytest"
+      exit_code: 0
+      output_tail: "y_claims.py .................... [ 97%] | .                                                                        [ 97%] | backend\\tests\\test_zr1_forbidden_list_completeness.py ......             [ 98%] | backend\\tests\\test_zr2_vendor_vocabulary.py ...                          [ 98%] | backend\\tests\\test_zr3_duplicate_declarations.py ..                      [ 99%] | backend\\tests\\test_zr5_config_dir_parity.py .....                        [ 99%] | backend\\tests\\test_zr7_pagination_guard.py ..                            [100%] | ======================= 838 passed in 63.89s (0:01:03) ========================"
+      commit: c439f9e
+      at: "2026-08-17T14:45:53+00:00"
+    - command: "python -c \"from importlinter.cli import lint_imports_command; lint_imports_command()\""
+      exit_code: 0
+      output_tail: "--------- | Contracts | --------- | Analyzed 144 files, 409 dependencies. | ------------------------------------- | core-independence KEPT | core-internal-layering KEPT | adapters-independence KEPT | api-feature-independence KEPT | api-outward-independence KEPT | adapters-edge-only KEPT | api-shared-no-feature-imports KEPT | src-no-tests KEPT | inbound-adapters-dont-persist KEPT | Contracts: 9 kept, 0 broken."
+      commit: c439f9e
+      at: "2026-08-17T14:46:57+00:00"
+    - command: "python -m ruff check ."
+      exit_code: 0
+      output_tail: "All checks passed!"
+      commit: c439f9e
+      at: "2026-08-17T14:46:58+00:00"
+    - command: "python -m ruff format --check ."
+      exit_code: 0
+      output_tail: "253 files already formatted"
+      commit: c439f9e
+      at: "2026-08-17T14:46:58+00:00"
+    - command: "python -c \"from cfnlint.runner import main; main()\" infra/stack.yaml"
+      exit_code: 0
+      output_tail: ""
+      commit: c439f9e
+      at: "2026-08-17T14:46:58+00:00"
+    - command: "npm test"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 test | > vitest run | RUN  v4.1.9 C:/Hyn/uptime_monitor_v3/frontend | Test Files  49 passed (49) | Tests  334 passed (334) | Start at  20:17:01 | Duration  53.83s (transform 6.12s, setup 52.91s, import 24.98s, tests 55.64s, environment 197.88s)"
+      commit: c439f9e
+      at: "2026-08-17T14:47:01+00:00"
+    - command: "npm run build"
+      exit_code: 0
+      output_tail: "/geist-latin-400-normal-cWY99Cna.woff             17.20 kB | dist/assets/geist-mono-latin-600-normal-C5fp8g0r.woff        17.37 kB | dist/assets/geist-mono-latin-500-normal-YfPbDI_o.woff        17.38 kB | dist/assets/geist-latin-500-normal-CHEM4JuE.woff             17.48 kB | dist/assets/geist-latin-700-normal-RGxhsL9r.woff             17.55 kB | dist/assets/geist-latin-600-normal-BeQEdSAO.woff             17.56 kB | dist/assets/index-CrPOBrmH.css                              139.75 kB │ gzip: 76.15 kB | dist/assets/index-C9VYcJLR.js                               275.78 kB │ gzip: 84.80 kB | ✓ built in 468ms"
+      commit: c439f9e
+      at: "2026-08-17T14:47:56+00:00"
+    - command: "npm run lint"
+      exit_code: 0
+      output_tail: "> frontend@0.0.0 lint | > eslint ."
+      commit: c439f9e
+      at: "2026-08-17T14:48:03+00:00"
+    - command: "python .claude/skills/yourteam/scripts/yt_selftest.py"
+      exit_code: 0
+      output_tail: "ORY-174, STORY-175, STORY-172, STORY-193 | yt_board: board is current for sprint-42 | yt_board: board is current for sprint-42 | ..........................yt_board: board is a sprint-41 snapshot but board state says sprint-42 — regenerate at sprint close | .yt_board: board carries no `Snapshot at sprint-N` line, so its age cannot be established — regenerate it | ..yt_board: docs/scrum/BOARD.md does not exist — generate it | .................................................................................... | ---------------------------------------------------------------------- | Ran 113 tests in 14.814s | OK"
+      commit: c439f9e
+      at: "2026-08-17T14:48:10+00:00"
   

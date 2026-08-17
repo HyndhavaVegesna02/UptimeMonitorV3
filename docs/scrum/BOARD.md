@@ -1,16 +1,16 @@
 # Backlog board
 
-**Snapshot at sprint-73, commit `4e4322c`, generated 2026-08-16.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
+**Snapshot at sprint-74, commit `c439f9e`, generated 2026-08-17.** Regenerated ONCE per sprint at close, so it is expected to lag `.scrum/backlog.yaml` mid-sprint — `backlog.yaml` is always the source of truth. Rebuild with `python .claude/skills/yourteam/scripts/yt_board.py`.
 
-**180/194 stories closed.** 14 open: 0 estimated (0 pts) + **14 unestimated**.
+**184/195 stories closed.** 11 open: 0 estimated (0 pts) + **11 unestimated**.
 
-> ⚠ Total work remaining is NOT computable: 14 of 14 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
+> ⚠ Total work remaining is NOT computable: 11 of 11 open stories carry no estimate, so any points figure below covers only the estimated ones. Refinement closes this gap; no arrangement of the file can.
 
 ## Open work
 
 | Epic | Progress | Stories | Est. pts | Unestimated |
 | --- | --- | --- | --- | --- |
-| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `###.......` | 3/11 | 10/10 | 8 |
+| **Deferred / future work, filed at sprint-62 planning** <br>`deferred-future` | `######....` | 7/12 | 25/25 | 5 |
 | **Deferred by explicit PO decision (recorded, not forgotten)** <br>`deferred-by-po` | `########..` | 15/18 | 16/16 | 3 |
 | **Split out / created at sprint-65 refinement (2026-07-30)** <br>`sprint-65-splits` | `#########.` | 19/21 | 47/47 | 2 |
 | **Process: the ratchet brake (filed 2026-08-01, PO-directed)** <br>`process-ratchet-brake` | `#########.` | 13/14 | 25/25 | 1 |
@@ -24,9 +24,6 @@
 - `draft` STORY-152 _(no story file yet)_ — Completeness uses expected locations, not observed ones · defect · **unestimated**
 - `draft` STORY-153 _(no story file yet)_ — Rejected proposal reopens on the next cycle — needs a suppression window (F1) · defect · **unestimated**
 - `blocked` STORY-154 _(no story file yet)_ — Map the real Dynatrace HTTP failure codes (blocked on trial renewal) · chore · **unestimated**
-- `draft` [STORY-226](docs/scrum/stories/STORY-226-component-field-validation-ergonomics.md) — ComponentConfig validation ergonomics — the error names a value the author never typed, and "" is legal for one field but not the other · None · **unestimated**
-- `draft` [STORY-227](docs/scrum/stories/STORY-227-test-pinning-gaps-sprint-73.md) — Six test-pinning gaps found at sprint-73 review — assertions that pass today for reasons that are not the reason we think · None · **unestimated**
-- `draft` [STORY-228](docs/scrum/stories/STORY-228-doc-debt-sprint-73.md) — Five documentation leftovers from sprint 73 — one quarantined article whose rehab grew, and four smaller inaccuracies · None · **unestimated**
 
 **Deferred by explicit PO decision (recorded, not forgotten)**
 
